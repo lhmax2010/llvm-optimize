@@ -14,6 +14,9 @@
    才会进入 Gerrit 流程；本工作线当前只推送上述 GitHub 仓库。
 6. **超过 10 MB 的文件不进仓库。** 按 10 MB = 10,000,000 字节检查，
    将文件放在 `temp/`，并在相关文档中写明其工作区绝对路径。
+7. **完成回复列出本次所有交付文件的 raw 链接。** 文档使用
+   `https://raw.githubusercontent.com/lhmax2010/llvm-optimize/main/docs/<文件名>`，
+   脚本及其配套输入使用同一前缀下的 `tools/<路径>`。
 
 目录职责：
 

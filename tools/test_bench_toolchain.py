@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+"""Small regression checks for measurement validity and resource enforcement."""
+import copy
+import hashlib
+import importlib.util
+import json
+from pathlib import Path
+import sys
+import tempfile
+from types import SimpleNamespace
+import unittest
+from unittest.mock import patch
+
+import bench_toolchain as bench
+
+
+class HarnessChecks(unittest.TestCase):
+    def temporary(self):
+        temp = tempfile.TemporaryDirectory(dir=bench.WORKSPACE / "temp")
+        self.addCleanup(temp.cleanup)
+        return Path(temp.name)
+
+    def sample(self, wall, suspect=False):
+        return dict(wall_s=wall, user_s=wall / 2, sys_s=wall / 4,
+                    max_rss_kib=1234, suspect=suspect)
+
+    def result(self):
+        samples = [self.sample(v) for v in (100, 10, 10, 10, 10)]
+        return dict(protocol_hash="same", fixture_hash="same", toolchains={"a": "same"},
+                    results={"a": {"A": {"summary": bench.summarize(samples)}}})
+
+    def test_discard_warmup_and_sample_standard_deviation(self):
+        values = [self.sample(v) for v in (1000, 1, 2, 3, 4)]
+        result = bench.summarize(values)
+        self.assertEqual(result["statistics"]["wall_s"]["median"], 2.5)
+        self.assertEqual(result["statistics"]["wall_s"]["min"], 1)
+        self.assertAlmostEqual(result["statistics"]["wall_s"]["stddev"], (5 / 3) ** .5)
+
+    def test_bad_warmup_does_not_taint_retained_samples(self):
+        samples = [self.sample(100, True)] + [self.sample(10) for _ in range(4)]
+        self.assertEqual(bench.summarize(samples)["suspect_retained"], 0)
+
+    def test_noise_gate_rejects_drift_and_suspicion(self):
+        first = self.result()
+        second = copy.deepcopy(first)
+        second["results"]["a"]["A"]["summary"]["statistics"]["wall_s"]["median"] = 10.5
+        self.assertEqual(bench.calibration(first, second)["status"], "FAIL")
+        second = copy.deepcopy(first)
+        second["results"]["a"]["A"]["summary"]["suspect_retained"] = 1
+        self.assertEqual(bench.calibration(first, second)["status"], "FAIL")
+        self.assertEqual(bench.calibration(first, first)["status"], "PASS")
+
+    def test_noise_gate_refuses_changed_fixture_or_protocol(self):
+        for key in ("fixture_hash", "protocol_hash", "toolchains"):
+            first, second = self.result(), self.result()
+            second[key] = "changed"
+            with self.assertRaises(bench.BenchError):
+                bench.calibration(first, second)
+
+    def test_memory_preflight(self):
+        with patch.object(bench, "available_memory", return_value=bench.MEMORY_LIMIT - 1):
+            with self.assertRaisesRegex(bench.BenchError, "LOW_MEMORY"):
+                bench.memory_guard()
+
+    def test_affinity_limit(self):
+        allowed = {2, 3, 6, 7}
+        self.assertEqual(bench.parse_cpus(None, allowed), [2, 3])
+        self.assertEqual(bench.parse_cpus("6-7", allowed), [6, 7])
+        for value in ("2,3,6", "99", "7-6", "invalid"):
+            with self.assertRaises(bench.BenchError):
+                bench.parse_cpus(value, allowed)
+
+    def test_real_tu_empty_target_hash_and_unsafe_flags(self):
+        root = self.temporary()
+        self.assertEqual(bench.real_inputs(root), [])
+        source = root / "demo.ii"
+        source.write_text("int f() { return 0; }\n")
+        sidecar = root / "demo.flags.json"
+        data = dict(target=bench.TARGET, sha256=bench.digest(source), flags=["-O2"],
+                    source="fixture", original_command=["clang++"], preprocess_command=["clang++", "-E"])
+        bench.save(sidecar, data)
+        self.assertEqual(len(bench.real_inputs(root)), 1)
+        for key, value in (("target", "x86_64-linux-gnu"), ("sha256", "wrong"),
+                           ("flags", ["-Xclang", "-load", "plugin.so"]),
+                           ("flags", ["--sysroot=/other"]), ("flags", ["-flto=thin"])):
+            changed = dict(data, **{key: value})
+            bench.save(sidecar, changed)
+            with self.assertRaises(bench.BenchError):
+                bench.real_inputs(root)
+
+    def test_historical_generator_hashes(self):
+        path = bench.INPUTS / "generate_synthetic.py"
+        spec = importlib.util.spec_from_file_location("generator_test", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        output = self.temporary()
+        actual = module.generate(output, 1)
+        expected = json.loads((bench.INPUTS / "provenance.json").read_text())["historical_manifest"]["sources"]
+        self.assertEqual(actual, expected)
+
+    def test_actual_address_space_limit(self):
+        root = self.temporary()
+        args = SimpleNamespace(cpu_set=[min(bench.os.sched_getaffinity(0))], timeout=10, load_threshold=1e9)
+        runner = bench.Runner(args, root, root)
+        # prlimit must prevent allocation before the host can allocate 5 GiB.
+        with self.assertRaises(bench.BenchError):
+            runner.command([sys.executable, "-c", "bytearray(5 * 1024**3)"], tag="memory-negative")
+        self.assertIn("MemoryError", Path(runner.commands[-1]["stderr"]).read_text())
+
+    def test_actual_timeout_is_failure(self):
+        root = self.temporary()
+        args = SimpleNamespace(cpu_set=[min(bench.os.sched_getaffinity(0))], timeout=.05, load_threshold=1e9)
+        runner = bench.Runner(args, root, root)
+        with self.assertRaises(bench.BenchError):
+            runner.command([sys.executable, "-c", "import time; time.sleep(5)"], tag="timeout-negative")
+        self.assertTrue(runner.commands[-1]["timed_out"])
+        self.assertLess(runner.commands[-1]["wall_s"], 1)
+
+    def test_actual_affinity_limit_and_aslr_personality(self):
+        root = self.temporary()
+        cpu = min(bench.os.sched_getaffinity(0))
+        args = SimpleNamespace(cpu_set=[cpu], timeout=10, load_threshold=1e9, aslr="off")
+        runner = bench.Runner(args, root, root)
+        record = runner.command([sys.executable, "-c",
+            "import json,os,resource; print(json.dumps([sorted(os.sched_getaffinity(0)),"
+            "resource.getrlimit(resource.RLIMIT_AS),int(open('/proc/self/personality').read(),16)]))"],
+            tag="resource-positive")
+        affinity, limits, personality = json.loads(Path(record["stdout"]).read_text())
+        self.assertEqual(affinity, [cpu])
+        self.assertEqual(limits, [bench.MEMORY_LIMIT, bench.MEMORY_LIMIT])
+        self.assertTrue(personality & 0x40000)
+
+
+if __name__ == "__main__":
+    unittest.main()
