@@ -1,7 +1,12 @@
 # 预处理翻译单元入口
 
-本轮保持目录为空。没有 `.ii` 时，结果必须标记 `REAL_TU_ABSENT`。
-后续可从 LLVM 自身编译中采集输入；本机不进行 Chromium 全量构建。
+本目录收录 docs/13 的 10 个 LLVM ARM 预处理输入，使用最终 RPM 中的 clang 22.1.8
+采集；没有修改 LLVM 的源码或生成配置头。`selection.json` 固定原 Ninja 目标与历史
+x86_64 编译耗时（该耗时只用于选材，不是 ARM 基准数据）。
+`llvm_sema_SemaExprCXX.ii` 超过 10 MB，保存在对应 sidecar 的绝对 `input` 路径。
+其他 `.ii` 与 sidecar 一并提交。重新采集可使用 `tools/collect_llvm_real_tu.py`，
+传入 `--candidates tools/bench_inputs/real_tu/selection.json`；完整用法见 docs/13。
+没有输入时结果仍标记 `REAL_TU_ABSENT`；本机不进行 Chromium 全量构建。
 
 每个输入由两个同名文件组成，名字仅用字母、数字、下划线和短横线：
 
@@ -42,3 +47,8 @@ include、PCH、插件、响应文件、依赖输出或链接选项。脚本采�
 新增输入后，输入集身份会改变，必须重新完成两轮噪声校准。
 
 这是快速筛选负载；结果与专用服务器 Chromium 全量耗时是否方向一致，需后续交叉验证。
+
+本次 bundled clang 18 参考轮使用它自己的资源目录重新生成 ARM 输入，仅保存在
+`temp/baseline-resume-20260917/reference-inputs/`。clang 18 不能直接消费本目录中
+clang 22 预处理选中的全部编译器内建功能；该参考轮的输入、资源目录及链接夹具不同，
+不是受控对照，不能用其比值声称优化收益。

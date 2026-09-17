@@ -15,6 +15,29 @@ import bench_toolchain as bench
 
 
 class HarnessChecks(unittest.TestCase):
+    def test_loader_library_path_is_explicit_and_fingerprinted(self):
+        root = self.temporary()
+        (root / 'bin').mkdir()
+        library = root / 'runtime'
+        library.mkdir()
+        (library / 'libexample.so.1').write_bytes(b'runtime-v1')
+        for name in ('clang', 'clang++', 'ld.lld', 'llvm-ar'):
+            (root / 'bin' / name).symlink_to('/usr/bin/true')
+        stdout = root / 'version.txt'
+        stdout.write_text('fixture version\n')
+        seen = []
+        class FakeRunner:
+            def command(self, argv, **kwargs):
+                seen.append(argv)
+                return {'stdout': str(stdout)}
+        args = SimpleNamespace(roots={'test': root}, loaders={'test': Path('/usr/bin/true')},
+                               library_paths={'test': library})
+        first = bench.toolchains(args, FakeRunner())
+        self.assertTrue(all(argv[:3] == ['/usr/bin/true', '--library-path', str(library)] for argv in seen))
+        (library / 'libexample.so.1').write_bytes(b'runtime-v2')
+        second = bench.toolchains(args, FakeRunner())
+        self.assertNotEqual(first['test']['runtime_sha256'], second['test']['runtime_sha256'])
+
     def temporary(self):
         temp = tempfile.TemporaryDirectory(dir=bench.WORKSPACE / "temp")
         self.addCleanup(temp.cleanup)

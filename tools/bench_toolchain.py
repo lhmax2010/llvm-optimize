@@ -152,6 +152,8 @@ def real_inputs(directory):
         r"-g(?:0|1|2|3|line-tables-only)?|-f(?:no-)?(?:exceptions|rtti|"
         r"omit-frame-pointer|strict-aliasing|signed-char|unsigned-char|"
         r"unwind-tables|asynchronous-unwind-tables|function-sections|data-sections)|"
+        r"-fPIC|-fno-semantic-interposition|-fvisibility-inlines-hidden|-fno-common|"
+        r"-gdwarf-4|-frecord-gcc-switches|"
         r"-fvisibility=(?:hidden|default)|-m(?:cpu|arch|fpu)=[A-Za-z0-9_.+-]+|"
         r"-mfloat-abi=(?:soft|softfp|hard)|-m(?:thumb|arm)|-pthread)\Z")
     for sidecar in sorted(directory.glob("*.flags.json")):
@@ -280,16 +282,24 @@ def toolchains(args, runner):
     for name, root in args.roots.items():
         tools = {}
         loader = args.loaders.get(name)
+        library_path = args.library_paths.get(name)
         if loader:
             native_elf(loader)
         for tool in ("clang", "clang++", "ld.lld", "llvm-ar"):
             path = root / "bin" / tool
             machine = native_elf(path)
-            prefix = ([str(loader)] if loader else []) + [str(path)]
+            prefix = ([str(loader)] if loader else [])
+            if library_path:
+                prefix += ["--library-path", str(library_path)]
+            prefix += [str(path)]
             rec = runner.command(prefix + ["--version"], tag=name + "-identity")
             tools[tool] = {"path": str(path), "sha256": digest(path), "machine": machine,
                            "prefix": prefix, "version": Path(rec["stdout"]).read_text()}
         result[name] = {"root": str(root), "loader": str(loader) if loader else None, "tools": tools}
+        if library_path:
+            result[name]["library_path"] = str(library_path)
+            result[name]["runtime_sha256"] = {p.name: digest(p) for p in sorted(library_path.iterdir()) if p.is_file()}
+            result[name]["loader_sha256"] = digest(loader)
     return result
 
 
@@ -482,6 +492,7 @@ def main(argv=None):
     p.add_argument("--sysroot", type=Path, required=True, help="existing ARMv7 GBS root; never modified")
     p.add_argument("--resource-dir", type=Path, required=True, help="one fixed Clang resource directory (contains include/) for all compared variants")
     p.add_argument("--loader", action="append", default=[], metavar="NAME=ELF_LOADER", help="optional native dynamic loader; no chroot/accel, tool binaries unchanged")
+    p.add_argument("--library-path", action="append", default=[], metavar="NAME=DIR", help="independent extracted runtime library directory; requires matching --loader, recorded with library hashes")
     p.add_argument("--cpus", help="taskset list; default first half of inherited CPU affinity, cannot exceed half")
     p.add_argument("--runs", type=int, default=5, help="total runs per case, including one discarded warmup (default 5)")
     p.add_argument("--scales", type=float, nargs=3, default=[1, 2, 2], metavar=("A", "B", "C"), help="historical generator scales (default 1 2 2); use 1 1 1 for historical input hashes")
@@ -502,8 +513,13 @@ def main(argv=None):
             if not shutil.which(command):
                 raise BenchError(f"Required program missing: {command}")
         args.roots, args.loaders = named_paths(args.toolchain), named_paths(args.loader)
+        args.library_paths = named_paths(args.library_path)
         if args.loaders.keys() - args.roots.keys():
             raise BenchError("Loader name has no matching toolchain")
+        if args.library_paths.keys() - args.loaders.keys():
+            raise BenchError("Library path requires a matching --loader")
+        if any(not path.is_dir() for path in args.library_paths.values()):
+            raise BenchError("Library path must be a directory")
         allowed = os.sched_getaffinity(0)
         args.inherited_affinity = sorted(allowed)
         args.nproc = len(allowed)

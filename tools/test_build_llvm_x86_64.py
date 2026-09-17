@@ -17,16 +17,22 @@ class BuildGates(unittest.TestCase):
         for memory, disk in ((16*b.GIB-1, 60*b.GIB), (16*b.GIB, 60*b.GIB-1)):
             with self.assertRaises(RuntimeError):
                 b.resource_plan(memory, disk, 20)
-        for memory in (16, 17, 22, 23, 64):
-            plan = b.resource_plan(memory*b.GIB, 60*b.GIB, 20)
-            self.assertLess(plan['link_jobs'] * 8, memory * .6)
-            self.assertLessEqual(plan['link_jobs']*8 + plan['compile_jobs']*2 + 2,
-                                 plan['memory_max_gib'])
-            self.assertEqual(plan['gbs_threads'], 1)
+        # The observed large link cannot be safely budgeted under the approved cap.
+        for memory in (16, 17, 22, 23, 28, 30, 64):
+            with self.assertRaisesRegex(RuntimeError, 'full build refused'):
+                b.resource_plan(memory*b.GIB, 60*b.GIB, 20)
+        # Exercise arithmetic for a hypothetical future approved capacity, without
+        # raising the production cap or launching any process.
+        with patch.object(b, 'MAX_BUILD_MEMORY_GIB', 32):
+            plan = b.resource_plan(64*b.GIB, 60*b.GIB, 20)
+        self.assertLess(plan['link_jobs'] * b.LINK_ESTIMATE_GIB, 64 * .6)
+        self.assertLessEqual(plan['link_jobs']*b.LINK_ESTIMATE_GIB + plan['compile_jobs']*2 + 2,
+                             plan['memory_max_gib'])
+        self.assertEqual(plan['gbs_threads'], 1)
 
     def test_only_concurrency_edits(self):
         spec = (b.WORKSPACE/'llvm'/b.SPEC).read_text()
-        changed = b.changed_concurrency(spec, b.resource_plan(23*b.GIB, 100*b.GIB, 20))
+        changed = b.changed_concurrency(spec, dict(ninja_jobs=4, compile_jobs=4, link_jobs=1))
         self.assertTrue(b.only_concurrency_changed(spec, changed))
         self.assertFalse(b.only_concurrency_changed(spec, changed.replace('-O3', '-O2')))
         self.assertFalse(b.only_concurrency_changed(spec, changed + '\n%define _toolchain clang\n'))
@@ -55,7 +61,8 @@ class BuildGates(unittest.TestCase):
     def test_sampler_cleanup_with_harmless_processes(self):
         """Exercise actual threads/processes; replace GBS BEFORE subprocess launch."""
         real_popen = subprocess.Popen
-        for scenario in ('pass', 'bad_cache', 'low_memory', 'child_failure', 'deadline', 'interrupted'):
+        for scenario in ('pass', 'bad_cache', 'low_memory', 'child_failure', 'deadline', 'interrupted',
+                         'masked_failure', 'missing_status', 'rewritten_cache', 'held_completion'):
             with self.subTest(scenario=scenario), tempfile.TemporaryDirectory(
                     prefix='build-guard-test-', dir=b.WORKSPACE/'temp') as tmp:
                 directory = Path(tmp)
@@ -69,6 +76,21 @@ class BuildGates(unittest.TestCase):
                         f'p=Path({str(cache)!r}); p.parent.mkdir(parents=True); '
                         f'p.write_text({contents!r}); time.sleep(3); '
                         f'raise SystemExit({7 if scenario == "child_failure" else 0})')
+                completion = directory/'rpm.exit'
+                release = directory/'rpm.release'
+                if scenario == 'masked_failure':
+                    code = f'from pathlib import Path; Path({str(completion)!r}).write_text("7"); ' + code
+                if scenario == 'rewritten_cache':
+                    code = code.replace('time.sleep(3);',
+                        f'time.sleep(3); p.write_text({contents.replace("Release", "MinSizeRel")!r}); time.sleep(3);')
+                if scenario == 'held_completion':
+                    code = ('from pathlib import Path\nimport time\n'
+                            f'p=Path({str(cache)!r}); p.parent.mkdir(parents=True); p.write_text({contents!r})\n'
+                            f'Path({str(completion)!r}).write_text("0")\n'
+                            'for _ in range(100):\n'
+                            f' if Path({str(release)!r}).exists(): break\n'
+                            ' time.sleep(.05)\n'
+                            'else: raise SystemExit(8)\n')
                 launched = []
 
                 def harmless_popen(command, **kwargs):
@@ -100,14 +122,20 @@ class BuildGates(unittest.TestCase):
                     with patch.object(b.sp, 'Popen', harmless_popen), patch.object(
                             b, 'mem_available', return_value=(1 if scenario == 'low_memory' else 20)*b.GIB), patch.object(
                             b, 'CONFIG_GATE_SECONDS', 0 if scenario == 'deadline' else 900):
-                        if scenario == 'pass':
-                            b.build(audit, args, plan, directory/'unused-buildconf', 'prlimit')
+                        if scenario in ('pass','held_completion'):
+                            b.build(audit, args, plan, directory/'unused-buildconf', 'prlimit',
+                                    completion_file=completion if scenario == 'held_completion' else None,
+                                    release_file=release if scenario == 'held_completion' else None)
+                            if scenario == 'held_completion':
+                                self.assertTrue(release.exists())
+                                self.assertTrue((audit.directory/'scope-after-rpm.json').exists())
                         elif scenario == 'interrupted':
                             with self.assertRaises(KeyboardInterrupt):
                                 b.build(audit, args, plan, directory/'unused-buildconf', 'prlimit')
                         else:
                             with self.assertRaises(RuntimeError):
-                                b.build(audit, args, plan, directory/'unused-buildconf', 'prlimit')
+                                b.build(audit, args, plan, directory/'unused-buildconf', 'prlimit',
+                                        completion_file=completion if scenario in ('masked_failure','missing_status') else None)
                     self.assertEqual(len(launched), 1)
                     outcome = json.loads((audit.directory/'outcome.json').read_text())
                     audit.log('SIMULATION outcome: ' + json.dumps(outcome))

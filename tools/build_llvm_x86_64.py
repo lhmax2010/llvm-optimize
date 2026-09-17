@@ -23,6 +23,9 @@ import uuid
 import xml.etree.ElementTree as ET
 
 GIB = 1024 ** 3
+MAX_BUILD_MEMORY_GIB = 18
+# Observed clang-22 VmHWM was 16.831097 GiB; round upward, never reuse 8 GiB.
+LINK_ESTIMATE_GIB = 16.84
 CONFIG_GATE_SECONDS = 900
 WORKSPACE = Path(__file__).resolve().parents[1]
 SPEC = Path("packaging/llvm.spec")
@@ -50,16 +53,22 @@ def resource_plan(available, free_disk, cpus):
         raise RuntimeError(f"MemAvailable {available / GIB:.3f} GiB < 16 GiB")
     if free_disk < 60 * GIB:
         raise RuntimeError(f"disk free {free_disk / GIB:.3f} GiB < 60 GiB")
-    # Leave >= 4 GiB outside the build. One link, 2 GiB per compiler, 2 GiB overhead.
-    limit = math.floor(available / GIB) - 4
+    # This planner admits full builds. The independently audited --noprep resume
+    # has its own plan because the large LLVM link targets are already complete.
+    limit = min(MAX_BUILD_MEMORY_GIB, math.floor(available / GIB) - 4)
     links = 1
-    compiles = max(1, min(4, max(1, cpus // 2), (limit - 8 * links - 2) // 2))
-    assert links * 8 * GIB < available * 0.60
-    assert links * 8 + compiles * 2 + 2 <= limit
+    if links * LINK_ESTIMATE_GIB * GIB >= available * 0.60:
+        raise RuntimeError(f"full build refused: observed link estimate {LINK_ESTIMATE_GIB} GiB "
+                           "does not fit below 60% of MemAvailable; the old 8 GiB estimate is invalid")
+    compiles = min(4, max(1, cpus // 2), math.floor((limit - LINK_ESTIMATE_GIB * links - 2) / 2))
+    if compiles < 1:
+        raise RuntimeError(f"full build refused: {limit} GiB cap cannot budget a {LINK_ESTIMATE_GIB} GiB "
+                           "link, one 2 GiB compiler and 2 GiB overhead; capacity decision required")
+    assert links * LINK_ESTIMATE_GIB + compiles * 2 + 2 <= limit
     return dict(available_bytes=available, disk_free_bytes=free_disk, nproc=cpus,
                 memory_max_gib=limit, gbs_threads=1, ninja_jobs=compiles,
                 compile_jobs=compiles, link_jobs=links,
-                link_estimate_gib=8, compiler_budget_gib=2, overhead_gib=2,
+                link_estimate_gib=LINK_ESTIMATE_GIB, compiler_budget_gib=2, overhead_gib=2,
                 link_budget_gib=available / GIB * 0.60)
 
 
@@ -229,8 +238,10 @@ def cgroup_stats(unit):
                      "MemoryCurrent", "-p", "MemoryPeak", "-p", "MemoryMax"],
                     stdout=sp.PIPE, stderr=sp.DEVNULL, text=True, timeout=10)
     values = dict(line.split("=", 1) for line in result.stdout.splitlines() if "=" in line)
-    path = Path("/sys/fs/cgroup") / values.get("ControlGroup", "").lstrip("/")
-    for name in ("memory.events", "memory.peak", "cgroup.events"):
+    if not values.get("ControlGroup"):
+        return values
+    path = Path("/sys/fs/cgroup") / values["ControlGroup"].lstrip("/")
+    for name in ("memory.events", "memory.peak", "memory.stat", "cpu.stat", "cgroup.events"):
         try:
             values[name] = (path / name).read_text().strip()
         except OSError:
@@ -258,10 +269,13 @@ def stop_build(audit, child, unit):
     child.wait(timeout=30)
 
 
-def build(audit, args, plan, chosen, mechanism):
+def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None,
+          completion_file=None, release_file=None):
     unit = "llvm-baseline-" + uuid.uuid4().hex + ".scope" if mechanism == "systemd" else None
-    command = ["gbs", "-c", str(args.config), "build", "-A", "x86_64", "-B", str(args.buildroot),
-               "--threads", "1", "--include-all", "-D", str(chosen), str(args.source)]
+    if command is None:
+        command = ["gbs", "-c", str(args.config), "build", "-A", "x86_64", "-B", str(args.buildroot),
+                   "--threads", "1", "--include-all", "--define", "_smp_mflags -j4",
+                   "-D", str(chosen), str(args.source)]
     command = ["nice", "-n", "15", "ionice", "-c3"] + command
     if unit:
         command = ["systemd-run", "--user", "--scope", "--unit=" + unit, "-p",
@@ -276,7 +290,8 @@ def build(audit, args, plan, chosen, mechanism):
     problem = []
     verified = {}
     start = time.monotonic()
-    child = sp.Popen(command, stdout=sp.PIPE, stderr=sp.STDOUT, text=True,
+    child = sp.Popen(command, stdin=sp.PIPE if input_text is not None else sp.DEVNULL,
+                     stdout=sp.PIPE, stderr=sp.STDOUT, text=True,
                      errors="replace", bufsize=1, start_new_session=True)
 
     def output():
@@ -287,13 +302,37 @@ def build(audit, args, plan, chosen, mechanism):
     def monitor():
         try:
             next_sample = 0.0
-            with (audit.directory / "samples.jsonl").open("w", buffering=1) as samples:
+            cache_seen = None
+            completion_captured = False
+            with (audit.directory / "samples.jsonl").open("w", buffering=1) as samples, \
+                 (audit.directory / "process-memory.jsonl").open("w", buffering=1) as memory:
                 while not stop.is_set():
                     now = time.monotonic()
                     available = mem_available()
                     if available < 2 * GIB:
                         raise RuntimeError(f"MemAvailable {available} < 2 GiB: emergency stop")
                     tree = process_tree(child.pid)
+                    rows = []
+                    for pid in tree:
+                        try:
+                            proc = Path("/proc") / str(pid)
+                            argv = (proc / "cmdline").read_bytes().decode(errors="replace").rstrip("\0").split("\0")
+                            info = dict(line.split(":", 1) for line in (proc / "status").read_text().splitlines() if ":" in line)
+                            rows.append(dict(pid=pid, argv=argv, info={key: info.get(key, "").strip()
+                                for key in ("Name", "VmRSS", "VmHWM", "Threads")}))
+                        except (OSError, ValueError):
+                            continue
+                    memory.write(json.dumps(dict(timestamp=stamp(), elapsed=now-start, rows=rows)) + "\n")
+                    if release_file is not None and completion_file.exists() and not completion_captured:
+                        # RPM has finished. Keep its shell alive until cumulative kernel counters are saved.
+                        audit.json("scope-after-rpm.json", cgroup_stats(unit))
+                        if unit:
+                            result = audit.run(["systemctl", "--user", "show", unit, "-p", "Result", "-p",
+                                "MemoryPeak", "-p", "MemoryMax", "-p", "MemorySwapMax", "-p",
+                                "CPUUsageNSec", "-p", "ActiveState"], check=False)
+                            (audit.directory / "scope-after-rpm.log").write_text(result.stdout)
+                        release_file.write_text(stamp() + "\n")
+                        completion_captured = True
                     if not unit and sum(tree.values()) > plan["memory_max_gib"] * GIB:
                         raise RuntimeError("aggregate process-tree RSS exceeds fallback budget")
                     if now >= next_sample:
@@ -304,25 +343,28 @@ def build(audit, args, plan, chosen, mechanism):
                                       free_m=sp.check_output(["free", "-m"], text=True))
                         samples.write(json.dumps(sample) + "\n")
                         next_sample = now + 30
-                    if not verified:
-                        if now - start >= CONFIG_GATE_SECONDS:
-                            raise RuntimeError("no validated CMakeCache within 15 minutes")
-                        # Restrict the walk to actual package build directories, never the LLVM source tree.
-                        for cache in args.buildroot.glob("local/BUILD-ROOTS/*/home/abuild/rpmbuild/BUILD/llvm-*/build/CMakeCache.txt"):
-                            text = cache.read_text()
-                            shutil.copy2(cache, audit.directory / "CMakeCache.txt")
-                            values, errors = validate_cache(text)
-                            for key, value in (("LLVM_PARALLEL_COMPILE_JOBS", plan["compile_jobs"]),
-                                               ("LLVM_PARALLEL_LINK_JOBS", plan["link_jobs"])):
-                                if values.get(key) != str(value):
-                                    errors.append(f"{key} must be {value}, found {values.get(key)}")
-                            audit.json("cache-gate.json", dict(path=str(cache), elapsed=now-start,
-                                                             values=values, errors=errors))
-                            if errors:
-                                raise RuntimeError("CMake gate failed: " + "; ".join(errors))
-                            verified.update(values)
-                            audit.log(f"CMAKE GATE PASS at {now-start:.1f}s: {cache}")
-                            break
+                    if not verified and now - start >= CONFIG_GATE_SECONDS:
+                        raise RuntimeError("no validated CMakeCache within 15 minutes")
+                    # Also revalidate a copied cache whenever CMake rewrites it during a resume.
+                    for cache in args.buildroot.glob("local/BUILD-ROOTS/*/home/abuild/rpmbuild/BUILD/llvm-*/build/CMakeCache.txt"):
+                        signature = (str(cache), cache.stat().st_mtime_ns, cache.stat().st_size)
+                        if signature == cache_seen:
+                            continue
+                        text = cache.read_text()
+                        shutil.copy2(cache, audit.directory / "CMakeCache.txt")
+                        values, errors = validate_cache(text)
+                        for key, value in (("LLVM_PARALLEL_COMPILE_JOBS", plan["compile_jobs"]),
+                                           ("LLVM_PARALLEL_LINK_JOBS", plan["link_jobs"])):
+                            if values.get(key) != str(value):
+                                errors.append(f"{key} must be {value}, found {values.get(key)}")
+                        audit.json("cache-gate.json", dict(path=str(cache), elapsed=now-start,
+                                                         values=values, errors=errors))
+                        if errors:
+                            raise RuntimeError("CMake gate failed: " + "; ".join(errors))
+                        verified.update(values)
+                        cache_seen = signature
+                        audit.log(f"CMAKE GATE PASS at {now-start:.1f}s: {cache}")
+                        break
                     stop.wait(2)
         except Exception as error:
             problem.append(str(error))
@@ -334,6 +376,10 @@ def build(audit, args, plan, chosen, mechanism):
     sampler.start()
     interrupted = None
     try:
+        if input_text is not None:
+            audit.log("CHROOT INPUT:\n" + input_text)
+            child.stdin.write(input_text)
+            child.stdin.close()
         while True:
             if problem:
                 stop_build(audit, child, unit)
@@ -357,7 +403,20 @@ def build(audit, args, plan, chosen, mechanism):
         if reader.is_alive():
             stop_build(audit, child, unit)
             reader.join(timeout=30)
+        if not reader.is_alive():
+            child.stdout.close()
+        if child.stdin is not None and not child.stdin.closed:
+            child.stdin.close()
+        command_exit_code = None
+        if completion_file is not None:
+            try:
+                command_exit_code = int(completion_file.read_text().strip())
+                if command_exit_code:
+                    problem.append(f"chroot command exit status: {command_exit_code}")
+            except (OSError, ValueError) as error:
+                problem.append(f"missing/invalid chroot completion status: {error}")
         audit.json("outcome.json", dict(exit_code=child.returncode, elapsed_seconds=time.monotonic()-start,
+                                       command_exit_code=command_exit_code,
                                        cache_passed=bool(verified), problems=problem,
                                        sampler_reaped=not sampler.is_alive(), log_reader_reaped=not reader.is_alive(),
                                        interrupted=repr(interrupted) if interrupted else None))
@@ -365,11 +424,11 @@ def build(audit, args, plan, chosen, mechanism):
         raise interrupted
     if return_code or problem or not verified:
         raise RuntimeError(f"build failed/stopped: exit={return_code}, cache_passed={bool(verified)}, {problem}")
-    audit.log("GBS BUILD COMPLETE; RPMs still require verify_toolchain.sh and benchmark calibration")
+    audit.log("BUILD COMMAND COMPLETE; RPMs still require verify_toolchain.sh and benchmark calibration")
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__, epilog="No --define workaround. Default: preflight only. "
+    parser = argparse.ArgumentParser(description=__doc__, epilog="Never overrides _toolchain; debuginfo uses -j4. Default: preflight only. "
         "--run may edit ONLY the three spec concurrency numbers, leaves the diff for review, and requires a new root. "
         "Logs stay in temp/. Interrupted/failed build roots are preserved, never deleted automatically.")
     parser.add_argument("--run", action="store_true", help="start GBS only after all preflight gates pass")
