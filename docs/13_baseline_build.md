@@ -1,212 +1,287 @@
-# 自研优化版 x86_64 LLVM：构建前置检查与阻塞记录
+# 自研优化版 x86_64 LLVM：固定快照、限流构建与基线
 
-记录时间：2026-09-16，Asia/Shanghai。
+更新时间：2026-09-17T08:49:47+08:00。
 
-## 1. 当前结论：BLOCKED，尚未构建
+## 1. 状态与范围
 
-**当前生效的 Base 包源返回 HTTP 404，按任务第一步的包源门禁停止。**
-没有执行 `gbs build` 或 `rpmbuild`，没有创建正式构建根，没有修改
-`gbs_llvm.conf`、LLVM 源码或 spec；后续的 RPM 验证、真实 TU 采集、重新校准和
-正式基准均未执行。本报告不把旧的 0.220% 校准结果当成本次 clang 22 的结果。
+**BUILDING：配置门禁已通过，构建中。** 当前唯一源码基线是工作区 LLVM
+`f111162e94aa48ed367c9d2c039456c70e7160ae`。没有回退到已安装 RPM 的构建配方。
+使用原生 x86_64 GBS 构建，保留 spec 的 -O3、ThinLTO、-fomit-frame-pointer、
+静态链接 LLVM 库及 MLGO 设置。源码侧只允许三处并发数字变化。
 
-已交付限流构建入口、实现、产物检查脚本和保护逻辑测试；它们经过只读预检、
-查询命令和模拟子进程测试，**尚未经过真实 LLVM 构建验证**。
+本次已将 Base 和 Unified 分别固定为其 reference 当前实际指向的快照，
+完整预检通过，随后真实执行 `tools/build_llvm_x86_64.sh --run`。
+资源守护、配置门禁和日志机制沿用已有脚本，未改动 tools/ 中的实现。
+不构建 Chromium，不向 Gerrit 推送。
 
-| 前置条件 | 结果 | 证据 |
-| --- | --- | --- |
-| 工作区 LLVM HEAD | `f111162e94aa48ed367c9d2c039456c70e7160ae`，工作树干净 | P/script-check/commands.log 中 git 输出 |
-| 可用内存 ≥ 16 GiB | PASS：22.929450989 GiB | P/script-check/resource-plan.json |
-| 构建根所在磁盘可用 ≥ 60 GiB | PASS：1067.667564392 GiB | 同上 |
-| systemd 用户 scope 内存限额 | 可用；小进程探针确认设置和整组终止命令成功 | P/scope-control.log |
-| x86_64 包源 | **BLOCKED**：Base 404；Unified 有 3078 个 x86_64 RPM，但缺失下述基础构建包 | P/metadata-fetch.log、P/base-reference-readonly.log、P/script-check/repositories.json |
-| `_toolchain` | 当前可下载的 Unified build.conf 对 x86_64 定义为 clang | U:146–168；P/script-check/commands.log 的 `1\|clang` 输出 |
-| 正式构建与基准 | NOT RUN | P/script-check/stopped.json；正式构建根不存在 |
+验证体系分两层：本机基准台用于分钟级筛选 LLVM 变体；最终验收是专用构建服务器
+的 Chromium 全量构建耗时。本机不做后一层。本次 clang 22 与新增真实 TU 输入集
+必须重新校准，不能沿用 docs/12 的 clang 18 噪声结果。
 
-本报告路径缩写：
+路径约定（均是本机真实路径）：
 
-- `W` = `/home/linhao/Toolchain/development/llvm-optimize`
-- `S` = `W/llvm/packaging/llvm.spec`，上述 HEAD
-- `P` = `W/temp/baseline-build-preflight`
-- `U` = `P/repo.unified-standard.build.conf`
-- `B` = `W/temp/gbs-root-x86_64-baseline`（未创建）
+| 符号 | 路径 |
+| --- | --- |
+| W | `/home/linhao/Toolchain/development/llvm-optimize` |
+| S | `W/llvm/packaging/llvm.spec` |
+| Q | `W/temp/snapshot-resolution-20260917` |
+| A | `W/temp/snapshot-archive` |
+| P | `W/temp/baseline-preflight-20260917` |
+| L | `W/temp/baseline-build-20260917` |
+| B | `W/temp/gbs-root-x86_64-baseline` |
+| U | `A/tizen-unified-toolchain_20260814.092727/build.conf` |
 
-## 2. 包源阻塞与待决策的最小变更
+## 2. reference 解析与固定快照
 
-`gbs_llvm.conf:8–11` 的同一节存在两个未注释的 `url`。
-本机 GBS 使用 `BrainConfigParser(strict=False)`，后一项覆盖前一项，见
-`/usr/lib/python3/dist-packages/gitbuildsys/conf.py:319`。
-因此第 9 行的 reference URL 目前没有生效。
+先取得两个项目的目录索引和 reference 目录索引，沿索引中的 `build.xml` 链接读取
+根元素下的 `<id>`，再请求同名快照的 `repos/standard/packages/repodata/repomd.xml`。
+**reference 和固定快照的 repomd.xml 按完整字节比较相等**；归档后再次获取 reference
+并比较，确认解析期间没有发生切换。日期来自 XML 的 id，没有根据修改日期推断。
 
-原始输出摘录（P/metadata-fetch.log）：
+原始 XML 摘录（Q/*-reference-build.xml，全文亦在 Q/resolution.log）：
 
-```text
-2026-09-16T22:39:41.616978+08:00 GET http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20260804.124315/repos/standard/packages/repodata/repomd.xml
-HTTPError HTTP Error 404: Not Found
-2026-09-16T22:39:42.337410+08:00 GET https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/reference/repos/standard/packages/repodata/repomd.xml
-HTTP 200 FINAL https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/reference/repos/standard/packages/repodata/repomd.xml
-X86_64_PACKAGE_COUNT 3078
+```xml
+<id>tizen-base-toolchain_20260912.061113</id>
+<base_id url="http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/">reference</base_id>
+
+<id>tizen-unified-toolchain_20260814.092727</id>
+<base_id url="http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/">tizen-base-toolchain_20260813.050338</base_id>
 ```
 
-这里不是“所有源都没有 x86_64”。Unified 确有 x86_64 包，但其 primary.xml 中
-找不到 x86_64 的 `clang`、`llvm`、`lld`、`gcc`、`glibc`、`ninja`、`cmake`、
-`rpm-build`、`binutils` 这些包名；失效的 Base 源不能由它代替。
-逐项存在性检查保存为 P/unified-package-coverage.json。
-`S:51–60` 还直接要求 cmake、ninja 等构建依赖。
+Unified 的 `base_id` 是它原始构建时的 Base 身份，不能误当成 Unified 自己的快照 id。
+本任务按决策固定两个 reference 各自当前的目标，不擅自改选该历史 base_id。
 
-已只读检查配置第 9 行的
-[Base reference 仓库元数据](https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/reference/repos/standard/packages/repodata/repomd.xml)。
-它返回 HTTP 200，有 537 个 x86_64 包，包含 clang/llvm 22.1.8-1.6、
-cmake 3.31.2-1.2、ninja 1.13.1-1.9、glibc 2.40-1.10 和 rpm-build 4.14.1.1-1.4。
-这些是可供引导构建的仓库包，**不替代待构建的 f111162e 基线产物**。
-证据：P/base-reference-readonly.log 和保存的 primary.xml。
+| 项目 | 已解析快照 | reference / 快照 HTTP | repomd.xml SHA256（双方相同） |
+| --- | --- | --- | --- |
+| Tizen-Base-Toolchain | `tizen-base-toolchain_20260912.061113` | 200 / 200；二次复核仍一致 | `68b93454b4800a462e228260b11926a63ad8bba0589cc3f1a7dc4f0525bc2a74` |
+| Tizen-Unified-Toolchain | `tizen-unified-toolchain_20260814.092727` | 200 / 200；二次复核仍一致 | `e7af3f222f0ce958678d964589f2d156e8b47ba463ac0b3b0b96c74663382200` |
 
-待用户决定的最小变更如下，**尚未应用**（P/proposed-config.diff）：
+完整 GET URL、时间、HTTP 状态、字节数、SHA256、XML 原文和 RESOLVED 记录在
+Q/resolution.log；解析脚本保存在 Q/resolve.py。以下为实际包源：
+
+- https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20260912.061113/repos/standard/packages/
+- https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260814.092727/repos/standard/packages/
+
+### 配置变更
+
+改前 SHA256：`6696073dc5a459c5b90ed51d1a5d9c90eb1505d3989615ea729f993e046deb50`
+改后 SHA256：`a3fea7732532db26c11b88407464e0274a6d8b4277623364fe16b6980181b03f`
+
+改动仅涉及 URL 行：删除失效的重复 URL 与历史 URL 注释，每节保留一个固定快照 URL。
+未改变 profile、repo 顺序或 general.buildroot；命令行 `-B` 指定本次全新构建根。
+改前/改后原文件分别保存在 Q/gbs_llvm.conf.before 和 Q/gbs_llvm.conf.after。
+完整 diff（Q/config.diff）：
 
 ```diff
+--- a/gbs_llvm.conf
++++ b/gbs_llvm.conf
+@@ -6,11 +6,7 @@
+ repos = repo.base-standard, repo.unified-standard
+
  [repo.base-standard]
- url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/reference/repos/standard/packages/
+-url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/reference/repos/standard/packages/
+-#url=http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20260722.045200/repos/standard/packages/
 -url=http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20260804.124315/repos/standard/packages/
-+#url=http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20260804.124315/repos/standard/packages/
++url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20260912.061113/repos/standard/packages/
+
+ [repo.unified-standard]
+-url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/reference/repos/standard/packages/
+-#url=http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260725.003315/repos/standard/packages/
+-#url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260804.223836/repos/standard/packages/
++url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260814.092727/repos/standard/packages/
 ```
 
-上面仅摘录有关行，完整上下文见该 diff。选择此源后仍须重新运行所有前置检查；
-reference 内容会变化，脚本保存每次实际取得的元数据、摘要和 build.conf。
-没有自行换源，也没有加 `--define _toolchain` 绕过检查。
+### 元数据归档
 
-## 3. `_toolchain` 的定义来源与分支
+每个目录存放 repomd.xml、解压后的 primary.xml、下载到的原始压缩文件、build.conf、
+reference-build.xml、比较用的两份 reference repomd，以及包含 URL/摘要的 manifest.json。
+下载内容与 repomd.xml 声明的 checksum 逐项相符。元数据用于日后核对，**不是全部 RPM
+包的离线镜像**；不会承诺仅凭这些 XML 就能在远端包被清理后重建。
 
-GBS 的仓库处理逻辑按配置顺序读取 repo；标准仓库 repomd.xml 的 `type=build`
-项给出 build.conf，读取后赋给 `self.buildconf`。本配置最后是 Unified，
-依据 `/usr/lib/python3/dist-packages/gitbuildsys/utils.py:430–447,463–496`。
-当前 gbs 配置未设置单独的 `buildconf`。GBS 选择过程见
-`/usr/lib/python3/dist-packages/gitbuildsys/cmd_build.py:176–192`。
+| 归档目录（相对 W） | primary.xml 字节数 | 解压后 primary.xml SHA256 | build.conf SHA256 |
+| --- | ---: | --- | --- |
+| `temp/snapshot-archive/tizen-base-toolchain_20260912.061113/` | 4079780 | `5cf28889b7f9706281c019898e4c54e93e04c23d5b813f8f42eca03d7da16138` | `b8a19c32e5e153a745e3012da6dca3e3077e6a37b2b76cbf773743b6d8c9ff3c` |
+| `temp/snapshot-archive/tizen-unified-toolchain_20260814.092727/` | 21165478 | `beba1f62d83b1ab105ae1a114c8fa6277bc037615c090cef9547489e7e22d286` | `1e7610b6a922d27b80eb59c1c78bdf716f7de2e8e24700e0ee7c62522739ed52` |
 
-下载到的 U 有如下定义（不是 ARM 专属分支）：
+这些文件都在被 Git 忽略的 temp/。Unified primary.xml 超过 10 MB，未进入 Git。
+
+## 3. 完整预检结果与 `_toolchain`
+
+实际执行（未带 `--run`），退出码 0：
+
+```sh
+tools/build_llvm_x86_64.sh --log-dir temp/baseline-preflight-20260917
+```
+
+原始尾部关键输出（Q/preflight-console.log）：
 
 ```text
-146 Macros:
+1|clang
+[exit=0]
+MEMORY MECHANISM systemd
+PREFLIGHT PASS; no spec edit and no build. Use --run to proceed.
+```
+
+本报告中的上述四行去除了时间前缀；完整原始输出保存在 P/commands.log。
+P/repositories.json 记录两个固定源的 HTTP 200、x86_64 包清单及 build.conf 摘要。
+
+### 包与 BuildRequires
+
+先用本机 GBS 后端 Build::read_config("x86_64", U) 和 Build::Rpm::parse 解析 S，
+保留 GBS 的 `opensuse_bs=0` 定义；这只是读取 spec，不运行构建。
+结果见 Q/spec-build-requires.json。随后从归档 primary.xml 的 x86_64/noarch 包名及
+RPM provides 中解析直接 BuildRequires，原始匹配输出在 Q/dependencies.log/json。
+后续整个依赖闭包由真正 GBS 的依赖展开和安装检查。
+
+| Base 必须存在的 x86_64 包 | 实际版本-Release | 结果 |
+| --- | --- | --- |
+| clang | 22.1.8-1.6 | PASS |
+| llvm | 22.1.8-1.6 | PASS |
+| cmake | 3.31.2-1.2 | PASS |
+| ninja | 1.13.1-1.9 | PASS |
+| glibc | 2.40-1.10 | PASS |
+| rpm-build | 4.14.1.1-1.4 | PASS |
+| binutils | 2.43-1.9 | PASS |
+
+| spec 实际 BuildRequires | 提供包（均来自固定 Base） | 版本-Release |
+| --- | --- | --- |
+| cmake | cmake.x86_64 | 3.31.2-1.2 |
+| python3 | python3.x86_64 | 3.14.2-1.6 |
+| python3-devel | python3-devel.x86_64 | 3.14.2-1.6 |
+| patchelf | patchelf.x86_64 | 0.16.1-1.8 |
+| binutils-devel | binutils-devel.x86_64 | 2.43-1.9 |
+| libxml2-devel | libxml2-devel.x86_64 | 2.15.1-1.7 |
+| ninja | ninja.x86_64 | 1.13.1-1.9 |
+
+S:51–60 的 sed 在 `llvm_release_build=1` 分支，本次分支为 0，故不是本次实际
+BuildRequires。所有实际 7 项均通过，没有用“按惯例存在”填空。
+
+### 宏来源
+
+GBS 按 gbs_llvm.conf:6 的 repo 顺序读取 repomd 中的 build 元数据，最后的 Unified
+配置生效。实现依据：`/usr/lib/python3/dist-packages/gitbuildsys/utils.py:430–447,463–496`。
+本次重新下载的 U:146–184 是非架构专属的 Macros 段，其中：
+
+```text
 150 %__cc_clang %{_host}-clang
 151 %__cxx_clang %{_host}-clang++
 161 %_toolchain %{?_toolchain_override}%{!?_toolchain_override:clang}
 166 %__cc %{expand:%%{__cc_%{_toolchain}}}
 167 %__cxx %{expand:%%{__cxx_%{_toolchain}}}
-184 :Macros
 ```
 
-用本机 GBS 后端按 x86_64 解析该配置，再用 RPM 读取生成的宏文件：
+用 `/usr/lib/build/queryconfig --dist U --archpath x86_64 rawmacros` 得到宏文件，
+再用 `rpm --macros /usr/lib/rpm/macros:<生成文件> --eval '%{defined _toolchain}|%{_toolchain}'`
+实际得到 `1|clang`。P 与 L 的 commands.log 都记录了本次复核。
+因此 S:11–16 取真分支，`_toolchain_override=clang`、`llvm_release_build=0`，
+S:229–236 的 lld/ThinLTO/llvm-ar/llvm-ranlib 参数应生效。
+没有增加 `--define _toolchain`。
+
+U:121–127 的 mlgo_build_jobs=6 只在 armv7l/aarch64 分支，x86_64 不被其覆盖。
+S:7–8 自己默认启用 x86_64 MLGO；S:48 的默认任务数可按允许范围调整。
+
+## 4. 资源、并发、实际启动命令
+
+构建前原始资源输出（L/commands.log，实际启动前又重新检查精确值）：
+
+```text
+2026-09-17T08:43:32+08:00 $ nproc
+2026-09-17T08:43:32+08:00 20
+[exit=0]
+2026-09-17T08:43:32+08:00 $ free -g
+2026-09-17T08:43:32+08:00                total        used        free      shared  buff/cache   available
+Mem:              30           7           9           0          14          22
+Swap:              3           0           3
+[exit=0]
+2026-09-17T08:43:32+08:00 $ df -h /home/linhao/Toolchain/development/llvm-optimize/temp
+2026-09-17T08:43:32+08:00 Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       1.8T  672G  1.1T  39% /home
+[exit=0]
+2026-09-17T08:43:32+08:00 $ nproc
+2026-09-17T08:43:32+08:00 20
+[exit=0]
+2026-09-17T08:43:32+08:00
+```
+
+精确资源值：MemAvailable = 24485412864 B = 22.803818 GiB；
+可用磁盘 = 1146346184704 B = 1067.618080 GiB。
+均通过 16 GiB / 60 GiB 门槛，见 L/resource-plan.json。
+
+| 限制 | 实际设置 | 依据 |
+| --- | --- | --- |
+| systemd MemoryMax | 18 GiB | floor(可用 GiB) - 4，预留至少 4 GiB |
+| MemorySwapMax | 0 | 不让构建 scope 通过 swap 扩张内存 |
+| GBS 包并发 | 1 | --threads 1 |
+| Ninja 总任务数 | 4 | S:48 |
+| LLVM compile/link 池 | 4 / 1 | S:274–275 |
+| 链接内存预算 | 1 × 8 GiB < 13.682291 GiB | 严格小于可用内存的 60% |
+| 其余预算 | 编译 4 × 2 GiB + 开销 2 GiB | 与链接合计 18 GiB；编译 2 GiB 是预算假设，不是实测 |
+| CPU / I/O 调度 | nice 15 / ionice idle（-c3） | L/runtime-scope-check.log、L/priority-check.log 实测 |
+
+本次仅修改的 spec diff（L/spec-concurrency.diff）：
+
+```diff
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 54a07ce84218..6e159c542234 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -45,7 +45,7 @@ Source1002: mlgo_arm_model.tar.gz
+ Source1003: mlgo_aarch_model.tar.gz
+ Source1004: mlgo_x86_model.tar.gz
+
+-%{!?mlgo_build_jobs: %define mlgo_build_jobs 6}
++%{!?mlgo_build_jobs: %define mlgo_build_jobs 4}
+ %{!?mlgo_verify_configure_only: %define mlgo_verify_configure_only 0}
+
+ BuildRequires: cmake
+@@ -271,8 +271,8 @@ cmake \
+     -DLLVM_LIBDIR_SUFFIX=`echo %{_lib} | sed s/lib//g` \
+     -DCLANG_RESOURCE_DIR="../%{_lib}/clang/%{llvm_version}" \
+     -DLLVM_BINUTILS_INCDIR=/usr/include \
+-    -DLLVM_PARALLEL_COMPILE_JOBS=6 \
+-    -DLLVM_PARALLEL_LINK_JOBS=2 \
++    -DLLVM_PARALLEL_COMPILE_JOBS=4 \
++    -DLLVM_PARALLEL_LINK_JOBS=1 \
+ %if %{with mlgo}
+ %ifarch armv7l aarch64 x86_64
+     -DTENSORFLOW_AOT_PATH="${MLGO_AOT_DIR}/mlgo_sysroot" \
+```
+
+真实执行入口：
 
 ```sh
-/usr/lib/build/queryconfig --dist "$P/repo.unified-standard.build.conf" \
-  --archpath x86_64 rawmacros > "$P/x86_64.rpmmacros"
-rpm --macros "/usr/lib/rpm/macros:$P/x86_64.rpmmacros" \
-  --eval '%{defined _toolchain}|%{_toolchain}'
+tools/build_llvm_x86_64.sh --run --log-dir temp/baseline-build-20260917
 ```
 
-实际输出（脚本复核也相同）：
+脚本在执行前输出的完整底层命令（L/launch.json、commands.log）：
 
-```text
-1|clang
+```sh
+/usr/bin/time -v -o /home/linhao/Toolchain/development/llvm-optimize/temp/baseline-build-20260917/time-v.txt systemd-run --user --scope --unit=llvm-baseline-ce682bfbada047fcb575eaeebd4993ba.scope -p MemoryMax=18G -p MemorySwapMax=0 nice -n 15 ionice -c3 gbs -c /home/linhao/Toolchain/development/llvm-optimize/gbs_llvm.conf build -A x86_64 -B /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-baseline --threads 1 --include-all -D /home/linhao/Toolchain/development/llvm-optimize/temp/baseline-build-20260917/buildconfig.conf /home/linhao/Toolchain/development/llvm-optimize/llvm
 ```
 
-这里证明 **仓库配置的宏展开**，还没有新构建根的运行时宏证据。
-宿主 RPM 的 `_host` 展开是宿主环境的值，不能拿来宣称新 Tizen 根的最终 triple。
-首次试用宿主 `rpm --load ... --target ...` 时，宿主默认 `__cc` 覆盖了加载值；
-该试验输出保留在 P/macro-evaluation.log，但不用于判断 Tizen 编译器。
-上面的显式宏文件顺序输出见 P/macro-evaluation-controlled.log。
+`-D` 指向已下载并复核的原始 build.conf，内容没有增删宏；`--include-all` 让三处
+并发修改进入源码导出。源工作树在启动前经过检查，其他源码/spec 内容没有改变。
+GBS scope 实际名为 `llvm-baseline-ce682bfbada047fcb575eaeebd4993ba.scope`。
 
-据此，`S:11–16` 应取真分支：`_toolchain_override=clang`、`llvm_release_build=0`；
-`S:229–236` 应传 lld、ThinLTO、llvm-ar 和 llvm-ranlib。
-`U:121–127` 中 `mlgo_build_jobs=6` 只对 armv7l/aarch64 生效，x86_64 不被该段覆盖，
-所以可调整 `S:48` 的并发默认值。`S:7–8` 自身为 x86_64 默认开启 MLGO。
+### 守护与实测内存
 
-当前 spec 不再传 `LLVM_LINK_LLVM_DYLIB` / `CLANG_LINK_CLANG_DYLIB`。
-前者默认 OFF 来自 `llvm/llvm/CMakeLists.txt:912`；后者继承前者来自
-`llvm/clang/CMakeLists.txt:309`。静态链接 LLVM 库的预期需要这两个默认值和最终
-NEEDED 检查共同验证，不能仅以“参数已删除”宣布成功。
-`LLVM_BUILD_LLVM_DYLIB=ON` / `CLANG_BUILD_CLANG_DYLIB=ON` 仍会构建共享库；
-“构建共享库”与“工具链接共享库”是不同开关。
+脚本后台线程每 30 秒落盘 free -m 原文、loadavg、进程树 RSS 总和、PID 清单及 cgroup
+内存属性；每 2 秒检查 MemAvailable，小于 2 GiB 立即中止并保留现场。
+正常退出、失败及可捕获中断均在 finally 中 join 采样线程；结果写 outcome.json。
+本机 systemd 用户 scope 可用，实际使用 cgroup 聚合内存上限，没有走 prlimit 后备。
 
-## 4. 机器资源与限流计算
+截至本次报告生成：采样 13 次，可用内存最低 21.561661 GiB；
+进程树 RSS 求和最大 1144090624 B（1.065517 GiB）；从有效 scope 采样读到的
+MemoryPeak 最大 7214977024 B（6.719471 GiB）。RSS 求和重复计共享页，cgroup
+用量还包括文件缓存，两者不能混用。构建最终数据必须以结束后的记录补齐。
 
-2026-09-16 22:47:31 的原始输出（P/script-check/commands.log）：
+构建尚未结束；最终耗时、time -v 峰值 RSS 和真实采样器回收结果暂为 PENDING。
 
-```text
-$ nproc
-20
-$ free -g
-               total        used        free      shared  buff/cache   available
-Mem:              30           7          10           0          13          22
-Swap:              3           0           3
-$ df -h /home/linhao/Toolchain/development/llvm-optimize/temp
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sda1       1.8T  672G  1.1T  39% /home
-```
+## 5. CMake 预期与配置阶段门禁
 
-精确值取 `/proc/meminfo` 的 MemAvailable 和 `shutil.disk_usage`，避免把 `free -g`
-的向下取整当成精确值：内存 24,620,310,528 B = 22.929450989 GiB；
-磁盘 1,146,399,318,016 B = 1067.667564392 GiB。两项门槛均通过。
-
-| 项目 | 本次预检计划 | 计算或用途 |
-| --- | --- | --- |
-| 整个 scope 的 MemoryMax | 18 GiB | `floor(22.929450989) - 4`，在当前可用内存外留至少 4 GiB |
-| GBS `--threads` | 1 | GBS 的包级并发，不能代替 Ninja 并发限制 |
-| Ninja `mlgo_build_jobs` | 4 | 限制 Ninja 总任务数 |
-| `LLVM_PARALLEL_COMPILE_JOBS` | 4 | 最多半数 CPU，并额外封顶 4；每个编译任务暂按 2 GiB 预算 |
-| `LLVM_PARALLEL_LINK_JOBS` | 1 | 1 × 8 GiB = 8 GiB < 22.929450989 × 60% = 13.757670593 GiB |
-| 编译、链接和其他开销预算 | 18 GiB | 1 × 8 + 4 × 2 + 2 = 18 GiB；编译预算是限流假设，尚未实测 |
-
-原 spec 的链接并发 2 对应 16 GiB，超过 13.758 GiB，不能直接使用。
-计划仅将 `S:48` 的 6 改为 4、`S:274` 的 6 改为 4、`S:275` 的 2 改为 1。
-**本次实际 spec diff 为空**，因为包源门禁未通过；脚本只在 `--run` 且前置检查
-全部通过之后修改这三处数字，并保存完整 diff。启动前会重算资源，不固定沿用本表数字。
-
-### 内存机制与生命周期
-
-本机 systemd 用户 scope 实测可用，故后续应使用它，不需要 prlimit 后备路径。
-无构建负载的探针原始输出（P/scope-control.log）：
-
-```text
-ControlGroup=/user.slice/user-1000.slice/user@1000.service/app.slice/llvm-limit-probe-10624f6bb90a4cd38233ff5c4588aafd.scope
-MemoryCurrent=425984
-MemoryPeak=524288
-MemoryMax=1073741824
-MemorySwapMax=0
-rc=0
-['systemctl', '--user', 'kill', '--kill-whom=all', '--signal=SIGTERM', 'llvm-limit-probe-10624f6bb90a4cd38233ff5c4588aafd.scope']
-rc=0
-child_wait=-15
-```
-
-这里的 524,288 B 是 `/bin/sleep` 探针的 scope 峰值，**不是 LLVM 构建峰值**。
-LLVM 构建耗时和峰值均为 UNKNOWN / NOT RUN。
-
-实现见 `tools/build_llvm_x86_64.py` 的 `resource_plan`、`build`、`monitor`、
-`stop_build` 和 `main`：
-
-- 外层 `/usr/bin/time -v`，其内 `systemd-run --user --scope -p MemoryMax=<N>G
-  -p MemorySwapMax=0`，随后 `nice -n 15 ionice -c3 gbs ...`。MemoryMax 对 scope
-  内整个进程组生效，包含继承该 cgroup 的构建子进程。
-- 如果 systemd 探针失败，则使用继承给子进程的 `prlimit --as=<bytes>:<bytes>`。
-  **RLIMIT_AS 是逐进程地址空间上限，不是整个进程树的硬内存上限**；后备路径另以
-  每 2 秒进程树 RSS 检查中止超额构建。它仍有采样间隔，且终止特权子进程可能受权限
-  限制。本机没有用到此后备机制，不把它与 cgroup 的保障混为一谈。
-- 后台采样线程每 30 秒写 `samples.jsonl`，含 `free -m` 原文、loadavg、
-  外层构建进程及全部可追踪后代的 RSS 总和、PID/RSS 清单及 cgroup MemoryCurrent/
-  MemoryPeak/memory.events。RSS 求和会重复计算共享页，不能等同 cgroup 实际用量。
-- 守护轮询每 2 秒检查 MemAvailable；小于 2 GiB、配置不符或配置门禁超时即终止
-  scope 的全部进程。日志、源导出、失败构建根与 Cache 保留。
-- 后台工作采用进程内线程；正常退出、失败、SIGINT/SIGTERM/SIGHUP/SIGQUIT 均进入
-  `finally` 设置退出事件并 `join` 采样线程，将回收状态写入 `outcome.json`。
-  不会留下独立运行的采样进程。不可捕获的 SIGKILL 不会执行 Python 清理，但 OS
-  会随进程销毁其线程。
-
-真实 GBS 特权子进程的 scope 归属、终止效果和实际峰值，仍需首次获准构建时核验。
-
-## 5. x86_64 CMake 预期清单
-
-下表是 **从 S 推导的预期，尚非 CMakeCache 实测**。G = 展开的 `_host`，
-PFX = `_prefix`，LIB = `_lib`，A = 源码目录下 `mlgo_verify_assets`。
-新构建根尚不存在，G/PFX/LIB 的最终 RPM 宏值不以宿主宏猜测。
+本次 x86_64 预期参数如下，出处为 S；G 表示根内展开的 `_host`，PFX 表示 `_prefix`，
+LIB 表示 `_lib`，此节表中的 A 表示源码目录的 `mlgo_verify_assets`（与归档路径缩写无关）。
+不能把宿主 RPM 的 `_host` 当成 Tizen 根的实测 triple。
 
 | 参数 | x86_64 预期 | spec 行号或来源 |
 | --- | --- | --- |
@@ -244,8 +319,8 @@ PFX = `_prefix`，LIB = `_lib`，A = 源码目录下 `mlgo_verify_assets`。
 | `LLVM_LIBDIR_SUFFIX` | LIB 去掉 `lib` | S:271 |
 | `CLANG_RESOURCE_DIR` | `../LIB/clang/22` | S:18,272 |
 | `LLVM_BINUTILS_INCDIR` | `/usr/include` | S:273 |
-| `LLVM_PARALLEL_COMPILE_JOBS` | 当前 6；获准启动时按资源计划改为 4（重新计算为准） | S:274 |
-| `LLVM_PARALLEL_LINK_JOBS` | 当前 2；获准启动时按资源计划改为 1 | S:275 |
+| `LLVM_PARALLEL_COMPILE_JOBS` | 4（本次资源计划已应用） | S:274 |
+| `LLVM_PARALLEL_LINK_JOBS` | 1（本次资源计划已应用） | S:275 |
 | `TENSORFLOW_AOT_PATH` | `A/mlgo_sysroot` | S:278 |
 | `LLVM_MLGO_EXPORT_TF_XLA_RUNTIME` | OFF | S:279 |
 | `LLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS` | A 下的 5 个 XLA runtime objects，见下文 | S:212,280 |
@@ -266,138 +341,108 @@ MLGO 为 x86_64 默认开启（S:7–8），采用 S:165–166 的 x86 模型资
 `LLVM_TARGET_ARCH` 只出现在其他架构分支；x86_64 未传。
 没有擅自增加其他 CMake 参数，也没有使用 configure-only 宏。
 
-### 配置门禁状态
 
-**NOT RUN：没有真实 CMakeCache.txt，不能贴出实测关键行。**
-脚本自 GBS 启动计时，最多等待 900 秒，每 2 秒定位主 LLVM build 目录的 Cache；
-首次发现即复制到日志目录并验证以下七组条件，任何缺项也视为失败：
 
-1. Release；2. Thin；3. 两个 DYLIB 链接开关均为假；4. lld；5. assertions 为假；
-6. CXX flags 含独立的 `-O3` 且不含 `-Os`；7. targets 同时包含 X86 与 ARM。
+两个 LINK_DYLIB 开关的默认 OFF 分别来自 `llvm/llvm/CMakeLists.txt:912` 和
+`llvm/clang/CMakeLists.txt:309`。BUILD_DYLIB=ON 仍会构建共享库，不代表工具链接这些库。
+最终仍须通过工具 NEEDED 验证。断言的 No 与 OFF 在 CMake 中等价。
 
-另外核对 Cache 的两个并发池值与资源计划相等。布尔值接受 CMake 的
-OFF/NO/FALSE/0 等价表示。只有门禁通过才允许继续；本报告不将模拟 Cache 的
-PASS 当成真实配置通过。
+### 实际配置门禁
 
-## 6. 产物验证与 accel 对照：待构建
+脚本自 GBS 启动起 900 秒内必须发现并校验主构建目录的 CMakeCache；任何必需字段
+缺失或不符均中止，两个并发池也必须与计划一致。
 
-`tools/verify_toolchain.sh` 接受含 `bin/` 的根或 RPM 解包后的含 `usr/bin/` 的根，
-对五个工具逐项执行 `ls -la`、`file -L`、`readelf -h/-d`、`--version`，计算已解析
-ELF 文件的字节数和 SHA256，输出 JSON、原始日志与 Markdown 表。
-工具缺失、逃出解包根的符号链接、非 x86_64 ELF、版本查询失败，或 NEEDED 出现
-`libLLVM`/`libclang-cpp`，均返回 2（BLOCKER）。它不安装 RPM、不改变系统工具。
+门禁用时：297.775 秒；原 Cache：`/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-baseline/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/CMakeCache.txt`；结果：PASS。
 
-下表仅复用 docs/10 已有 accel 证据，新产物列保持 UNKNOWN：
-
-| 工具 | docs/10 accel 字节数 | accel LLVM NEEDED | 新基线大小 / NEEDED / SHA / 版本 |
-| --- | ---: | --- | --- |
-| clang | 131592 | libclang-cpp.so.22.1、libLLVM.so.22.1 | UNKNOWN / NOT BUILT |
-| clang++ | 131592 | 同上 | UNKNOWN / NOT BUILT |
-| ld.lld | 6449904 | libLLVM.so.22.1 | UNKNOWN / NOT BUILT |
-| llvm-ar | 81232 | libLLVM.so.22.1 | UNKNOWN / NOT BUILT |
-| llvm-ranlib | 81232 | libLLVM.so.22.1 | UNKNOWN / NOT BUILT |
-
-大小和依赖证据：`docs/10_tizen_llvm_build_config.md:1177–1179,1203,1209,1262`，
-原始逐项 ELF 数据见 `W/temp/build-config-audit/tool_inventory.json`。
-这些 accel 项目的包身份是 clang-accel-x86_64-armv7l；不能仅依据包名里的 0.4
-把它当成 clang 的版本。与新产物逐项版本的最终并排比较待构建后补齐。
-
-脚本查询验证使用现有 bundled 根和显式宿主 loader，未编译文件。
-clang/clang++/ld.lld/llvm-ar 的 ELF 查询和 `--version` 成功；该 bundled 根没有
-llvm-ranlib，脚本按预期返回 2，而非错误地判为工具集完整。
-输出：P/verify-smoke-command.log、P/verify-bundled-final.json/.log。
-这项测试不是新基线产物验证。
-
-## 7. 真实 TU、重新校准和正式基线：均未执行
-
-| 产出 | 当前状态 | 原因 / 后续条件 |
-| --- | --- | --- |
-| 新 RPM / `temp/toolchain-baseline/` | NOT BUILT | Base 源门禁失败，未启动构建 |
-| Sema/CodeGen/Transforms/Target/ARM/MC 的 8–10 个真实 TU | NOT COLLECTED | 无新 build.ninja 和新 clang++；real_tu 仍仅有 README |
-| clang 22 两轮完整校准 | UNKNOWN / NOT RUN | 无新产物及其资源目录 |
-| A/B/C、真实 TU、lld、ar 正式数据 | UNKNOWN / NOT RUN | 需新输入集的完整校准先通过 3% 门槛 |
-| bundled clang 18 参考轮 | NOT RUN | 没有先得到基线，本轮仅运行 --version 等查询 |
-| `temp/bench_results/baseline-*/` JSON | 未生成 | 不生成空数据冒充测量 |
-
-解除阻塞后的执行顺序仍是：配置门禁 → 完整 RPM 构建 → 解包验证 → 真实 TU →
-新工具链两轮校准 → 正式基线 → bundled 18 独立参考轮。
-真实 TU 必须按 `tools/bench_inputs/real_tu/README.md` 用 ARM triple 和 ARM sysroot
-预处理，不能把 LLVM 的 x86_64 预处理文本重新标为 ARM；原命令与实际预处理命令均需保留。
-超过 10 MB 的 `.ii` 放 temp，并由 flags sidecar 绝对路径引用。
-
-两套工具链必须分别使用自己的资源目录。将来 bundled 18 数据必须标为：
-**“资源目录不同，不是受控对照，仅供量级参考”**。
-本机不进行 Chromium 全量验证；基准台作为分钟级快速筛选层，最终吞吐验收仍在
-专用构建服务器执行 Chromium 全量构建，参见 docs/12。
-
-## 8. 用法、测试与证据索引
-
-```sh
-# 默认只检查，当前配置应因 HTTP 404 返回 2，不会改 spec 或启动构建。
-tools/build_llvm_x86_64.sh
-
-# 包源问题获得明确决定并处理之后，重新预检通过才能使用：
-tools/build_llvm_x86_64.sh --run
-
-# 查看参数；支持指定 source/config/buildroot/log-dir，拒绝复用已存在的构建根。
-tools/build_llvm_x86_64.sh --help
-tools/verify_toolchain.sh --help
-
-# 将来逐个解包所需 RPM，DEST 必须是独立 temp 目录；此处没有执行解包。
-# rpm2cpio /实际/产出的.rpm | (cd "$DEST" && cpio -idm --no-absolute-filenames)
-# tools/verify_toolchain.sh --root "$DEST" --output temp/实际日志目录/verification.json
-
-# 保护逻辑测试；GBS 启动调用在测试中替换为临时 Python 小进程。
-python3 tools/test_build_llvm_x86_64.py
-```
-
-脚本将下载到且通过宏检查的原始 build.conf 以 `gbs -D <日志目录>/buildconfig.conf`
-传入；内容不作修改，避免检查后又取另一份宏配置。没有通过 `-D` 添加新宏。
-正式启动形状如下，真正完整 argv 会在执行之前写入日志：
+CMakeCache 原始关键行（完整副本 L/CMakeCache.txt）：
 
 ```text
-/usr/bin/time -v -o <log>/time-v.txt systemd-run --user --scope --unit=<unique>.scope -p MemoryMax=18G -p MemorySwapMax=0 nice -n 15 ionice -c3 gbs -c /home/linhao/Toolchain/development/llvm-optimize/gbs_llvm.conf build -A x86_64 -B /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-baseline --threads 1 --include-all -D <log>/buildconfig.conf /home/linhao/Toolchain/development/llvm-optimize/llvm
+CLANG_LINK_CLANG_DYLIB:BOOL=OFF
+CMAKE_BUILD_TYPE:STRING=Release
+CMAKE_CXX_FLAGS:STRING=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer
+LLVM_ENABLE_ASSERTIONS:BOOL=No
+LLVM_ENABLE_LTO:STRING=Thin
+LLVM_LINK_LLVM_DYLIB:BOOL=OFF
+LLVM_PARALLEL_COMPILE_JOBS:STRING=4
+LLVM_PARALLEL_LINK_JOBS:STRING=1
+LLVM_TARGETS_TO_BUILD:STRING=X86;ARM;AArch64;BPF
+LLVM_USE_LINKER:UNINITIALIZED=lld
 ```
 
-此行是按本次资源计划展示的命令模板，**未执行**。`--include-all` 使仅有的 spec
-并发修改进入源码导出；脚本先拒绝 LLVM 工作树里其他修改或未跟踪文件，并比较
-HEAD 与工作树 spec，确认差异只限三处并发数字。
+## 6. 产物验证、真实 TU 和吞吐基线
 
-测试包括资源阈值边界、并发预算、不允许修改优化参数、全部 Cache 条件拒绝测试，
-以及正常退出、配置不符、低内存、子进程失败、配置超时、外部中断六种生命周期模拟。
-生命周期模拟没有启动 GBS 或任何编译器；均断言 `sampler_reaped=true` 和
-`log_reader_reaped=true`。模拟日志会显示待替换的命令模板，紧接着明确记录实际
-执行的 Python argv，不应将其模板误读为执行过 GBS。
+以下阶段必须等待构建成功，当前不能给出成功结论或测量数字：
 
-原始输出全部放在 P：
-
-| 文件 | 内容 |
+| 项目 | 当前数据 |
 | --- | --- |
-| `repo-index.log`、`metadata-fetch.log` | 当前两源目录/元数据的 HTTP 状态、URL、摘要和包计数 |
-| `repo.unified-standard.repomd.xml`、`.build.conf`、`.primary.xml` | 原始 Unified 元数据；primary 超过 10 MB，留 temp |
-| `unified-package-coverage.json` | Unified 中上述九个 x86_64 包名的存在性结果，均为 false |
-| `base-reference-readonly.log`、`base-reference.repomd.xml`、`.primary.xml` | 待选源的只读核验，未修改配置 |
-| `x86_64.rpmmacros`、`macro-evaluation*.log` | x86 宏提取和两种宿主查询的原始输出 |
-| `resources.json`、`local-preflight.log` | 较早一次资源快照及 systemd 真值探针 |
-| `scope-control.log` | 1 GiB scope 的属性、峰值和终止/回收输出 |
-| `script-check/` | 独立预检脚本的一次真实执行：命令、资源计划、仓库快照、宏查询、停止原因 |
-| `proposed-config.diff` | 未应用的单行换源建议 |
-| `gate-tests.log` | 5 个测试方法，含 6 种生命周期模拟的 outcome |
-| `verify-smoke-command.log`、`verify-bundled-final.json/.log` | 现有 bundled 工具的只读查询及预期退出码 2 |
-| `build-help.txt`、`verify-help.txt` | 两个入口的帮助输出 |
+| 新 RPM 解包到 temp/toolchain-baseline/ | PENDING / 未完成 |
+| clang、clang++、ld.lld、llvm-ar、llvm-ranlib 的大小/SHA256/NEEDED/版本 | UNKNOWN，待新产物 |
+| 静态链接 LLVM 库是否实际生效 | UNKNOWN；任一 NEEDED 含 libLLVM/libclang-cpp 则为 BLOCKER |
+| 8–10 个真实 TU（Sema/CodeGen/Transforms/Target/ARM/MC） | 未采集 |
+| clang 22 两轮完整噪声校准 | UNKNOWN / NOT RUN；门槛仍为 3% |
+| A/B/C + 真实 TU + lld + ar 正式基线 | UNKNOWN / NOT RUN |
+| bundled clang 18 独立参考轮 | UNKNOWN / NOT RUN |
+| 基线 JSON | 尚未生成 |
 
-## 9. 提交前自检
+产物验证入口是 tools/verify_toolchain.sh，不安装到宿主系统；解包使用 rpm2cpio | cpio。
+旧 accel 对照值如下（docs/10 的原始 ELF 清单）：
 
-1. **内存上限机制、实际峰值、采样器回收？** 已验证本机 systemd scope 可用，
-   计划 MemoryMax=18 GiB；正式构建尚未启动，实际 LLVM 峰值 UNKNOWN。
-   1 GiB sleep 探针峰值 524,288 B。六种模拟退出路径均验证线程回收；真实 GBS 回收待验证。
-2. **x86_64 的 `_toolchain` 是否定义？** 当前 Unified build.conf：是，clang；
-   U:161、x86_64 rawmacros 和 `1|clang` 输出为依据。新构建根的实测尚不存在。
-3. **CMakeCache 门禁是否全部通过？** 未运行。没有真实关键行，不能回答“已通过”；
-   预期表和检查器已经准备好。
-4. **新产物 NEEDED 是否仍有 LLVM 共享库？** UNKNOWN，没有新产物；检查器会将其判为 BLOCKER。
-5. **重新校准噪声底？** UNKNOWN / NOT RUN；不沿用 clang 18 的 0.220%。
-6. **是否修改 spec 并发数以外的内容？** 否。本次连并发数也尚未修改，LLVM 工作树干净。
-7. **是否构建 Chromium 或向 Gerrit 推送？** 否，也没有启动 LLVM 构建或 rpmbuild。
-8. **完成回复是否列出全部 raw 链接？** 列出本报告、构建 shell 入口、Python 实现、
-   产物验证脚本及测试脚本共 5 个链接。尚未产生真实 TU 或基准 JSON。
+| 工具 | accel 字节数 | accel LLVM NEEDED | 新基线 |
+| --- | ---: | --- | --- |
+| clang / clang++ | 131592 | libclang-cpp.so.22.1、libLLVM.so.22.1 | 待产物 |
+| ld.lld | 6449904 | libLLVM.so.22.1 | 待产物 |
+| llvm-ar / llvm-ranlib | 81232 | libLLVM.so.22.1 | 待产物 |
+
+证据：docs/10_tizen_llvm_build_config.md:1177–1179,1203,1209,1262；完整清单为
+W/temp/build-config-audit/tool_inventory.json。新产物版本必须实际执行 --version 后填写。
+
+真实 TU 从本次 build.ninja/.ninja_log 选择中等耗时文件；原始命令与用新 clang++
+执行的实际 ARM 预处理命令分别保留。遵守 tools/bench_inputs/real_tu/README.md，
+统一 ARM triple/sysroot，不能把 x86_64 预处理文本重标为 ARM。超过 10 MB 的 `.ii`
+留 temp，sidecar 通过绝对路径引用。
+
+新工具链用自己的 clang 22 资源目录，完成两轮校准后才跑正式数据。
+bundled clang 18 单独运行、使用它自己的资源目录，并必须注明：
+**资源目录不同，不是受控对照，仅供量级参考。**
+
+## 7. 复现与证据索引
+
+```sh
+# 当前固定配置下只做预检；新的 --log-dir 必须不存在。
+tools/build_llvm_x86_64.sh --log-dir temp/下一次预检目录
+# 当前 B 已使用，脚本会拒绝覆盖；不要对现有构建根再次 --run。
+tools/build_llvm_x86_64.sh --help
+tools/verify_toolchain.sh --help
+```
+
+| 证据路径 | 内容 |
+| --- | --- |
+| Q/index-requests.log、Q/*-index.html、Q/*-reference.html | 原始目录索引、HTTP 状态 |
+| Q/resolution.log、Q/resolve.py、Q/resolved.json | XML id 解析、双向 repomd 比较、归档摘要 |
+| A/两个快照目录/ | repomd、primary、build.conf、压缩原件、manifest |
+| Q/config-checksums.json、Q/config.diff、Q/gbs_llvm.conf.before/after | 完整配置前后证据 |
+| Q/spec-build-requires.json、Q/check_dependencies.py、Q/dependencies.log/json | GBS 后端解析和包/provides 匹配 |
+| P/commands.log、resource-plan.json、repositories.json、x86_64.rpmmacros | 不带 --run 的真实完整预检 |
+| L/launch.json、commands.log、build.log | 真实启动 argv、命令原始输出、逐行时间戳构建日志 |
+| L/resource-plan.json、spec-concurrency.diff | 启动前资源重算、仅三处数字的 spec diff |
+| L/runtime-scope-check.log、priority-check.log、samples.jsonl | 真实 scope 属性、nice/ionice、后台采样 |
+| L/cache-gate.json、CMakeCache.txt（出现后） | 门禁结果和实际 Cache 原件 |
+| L/outcome.json、time-v.txt（结束后） | 退出码、线程回收、外层时间/RSS |
+
+工具脚本与保护逻辑测试沿用提交 179196d，本轮没有调整限流或放宽任何门禁。
+所有大文件及原始输出留在 temp，不纳入提交。
+
+## 8. 提交前自检
+
+1. 内存机制为 systemd 用户 scope / MemoryMax=18 GiB / MemorySwapMax=0；实际峰值、
+   耗时与采样器回收状态见第 4 节，未结束时不声称已回收。
+2. `_toolchain` 已重新按固定 Unified build.conf 的 x86_64 分支验证为 clang，依据 U:161
+   以及 P、L 中的 `1|clang` 原始输出。
+3. CMakeCache 是否全部通过、关键行见第 5 节；没有结果时不得声称通过。
+4. 新产物 NEEDED 是否仍依赖 LLVM 共享库：待真实产物验证，不能以 spec 预期代替。
+5. 新噪声底：待 clang 22 + 新 TU 集的两轮校准，不沿用旧值。
+6. 除三处并发数外是否修改 LLVM 源码/spec：否。gbs_llvm.conf 只修改 URL 行，完整 diff
+   和前后 SHA256 见第 2 节；tools 实现未修改。
+7. 是否构建 Chromium 或向 Gerrit 推送：否。
+8. 配置门禁通过后的中间回复及最终回复均列报告、配置与全部相关 tools 的 raw 链接；
+   若后续生成真实 TU/sidecar，也逐个列出其 raw 链接。
