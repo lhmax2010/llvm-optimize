@@ -3,6 +3,7 @@
 
 Uses the benchmark's real TU sidecars, target, flags, and 4 GiB process limit.
 Both compilations use the same cwd and output pathname to avoid debug-path drift.
+Both explicitly select --driver-mode=g++; use clang-22 as both invocation names.
 Default: every real TU. --case selects a named input for the relink prerequisite.
 """
 import argparse
@@ -18,8 +19,8 @@ import bench_toolchain as bench
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--baseline', type=Path, required=True, help='baseline clang++ ELF or symlink')
-    p.add_argument('--candidate', type=Path, required=True, help='relocated/BOLT clang ELF or symlink')
+    p.add_argument('--baseline', type=Path, required=True, help='baseline clang-22 ELF or symlink')
+    p.add_argument('--candidate', type=Path, required=True, help='relocated/BOLT clang-22 ELF or symlink')
     p.add_argument('--loader', type=Path, required=True, help='same native ELF loader for both')
     p.add_argument('--library-path', type=Path, help='same optional independent runtime directory')
     p.add_argument('--sysroot', type=Path, required=True)
@@ -44,6 +45,7 @@ def main():
     a.output.mkdir(parents=True)
     raw = a.output/'raw'; raw.mkdir()
     result = dict(status='RUNNING',target=bench.TARGET,baseline=str(a.baseline),candidate=str(a.candidate),
+                  driver_mode='g++',
                   baseline_sha256=bench.digest(a.baseline),candidate_sha256=bench.digest(a.candidate),
                   sysroot=str(a.sysroot),resource_dir=str(a.resource_dir),units=[])
     def save(): bench.save(a.output/'result.json',result)
@@ -61,7 +63,7 @@ def main():
             if a.library_path: prefix += ['--library-path',str(a.library_path.resolve())]
             for unit in units:
                 files = []
-                common = bench.compiler_flags(a,a.resource_dir)+unit['flags']+[
+                common = ['--driver-mode=g++']+bench.compiler_flags(a,a.resource_dir)+unit['flags']+[
                     '-x','c++-cpp-output','-c',str(unit['path']),'-o',str(cwd/'output.o')]
                 row = dict(name=unit['name'],input_sha256=unit['sha256'],outputs=[])
                 result['units'].append(row)

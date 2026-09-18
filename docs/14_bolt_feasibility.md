@@ -1,5 +1,8 @@
 # 容量门禁重新标定与 BOLT 可行性实测
 
+> 后续实测见 [docs/15](15_bolt_measurement.md)：10 TU 重测已通过，BOLT 工具已增量补齐；
+> 剥离版和原始 ELF 的 BOLT 插桩均在 18 GiB cap 下 OOM。本文保留此前阶段的历史结果。
+
 日期：2026-09-18。状态：**容量门禁修正完成；单目标重链成功；BOLT 实测被阻塞，未完成。**
 
 同构基线现在允许在 18 GiB cap 下启动，异构配置仍拒绝。PGO 完整构建维持 **NO**，本次没有尝试。BOLT 的容量结论为 **有条件，实际内存需求 UNKNOWN**：本次只测到了带 relocations 的 clang 重链，尚未执行 `llvm-bolt`。不能把 lld 的内存数据当成 BOLT 的内存数据。

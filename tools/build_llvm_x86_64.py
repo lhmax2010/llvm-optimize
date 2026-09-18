@@ -284,6 +284,11 @@ def cgroup_stats(unit):
     return values
 
 
+def oom_kills(stats):
+    events = dict(line.split() for line in stats.get('memory.events', '').splitlines() if len(line.split()) == 2)
+    return int(events.get('oom_kill', 0))
+
+
 def stop_build(audit, child, unit):
     if unit:
         audit.run(["systemctl", "--user", "kill", "--kill-whom=all", "--signal=SIGKILL", unit], check=False)
@@ -305,7 +310,9 @@ def stop_build(audit, child, unit):
 
 
 def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None,
-          completion_file=None, release_file=None):
+          completion_file=None, release_file=None, cache_check=True):
+    if not cache_check and command is None:
+        raise ValueError('default GBS builds must retain the CMake gate')
     unit = "llvm-baseline-" + uuid.uuid4().hex + ".scope" if mechanism == "systemd" else None
     if command is None:
         command = ["gbs", "-c", str(args.config), "build", "-A", "x86_64", "-B", str(args.buildroot),
@@ -360,7 +367,8 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
                     memory.write(json.dumps(dict(timestamp=stamp(), elapsed=now-start, rows=rows)) + "\n")
                     if release_file is not None and completion_file.exists() and not completion_captured:
                         # RPM has finished. Keep its shell alive until cumulative kernel counters are saved.
-                        audit.json("scope-after-rpm.json", cgroup_stats(unit))
+                        final_scope = cgroup_stats(unit)
+                        audit.json("scope-after-rpm.json", final_scope)
                         if unit:
                             result = audit.run(["systemctl", "--user", "show", unit, "-p", "Result", "-p",
                                 "MemoryPeak", "-p", "MemoryMax", "-p", "MemorySwapMax", "-p",
@@ -368,6 +376,8 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
                             (audit.directory / "scope-after-rpm.log").write_text(result.stdout)
                         release_file.write_text(stamp() + "\n")
                         completion_captured = True
+                        if oom_kills(final_scope):
+                            raise RuntimeError('cgroup recorded an OOM kill; shell completion status is not sufficient')
                     if not unit and sum(tree.values()) > plan["memory_max_gib"] * GIB:
                         raise RuntimeError("aggregate process-tree RSS exceeds fallback budget")
                     if now >= next_sample:
@@ -378,6 +388,9 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
                                       free_m=sp.check_output(["free", "-m"], text=True))
                         samples.write(json.dumps(sample) + "\n")
                         next_sample = now + 30
+                    if not cache_check:
+                        stop.wait(2)
+                        continue
                     if not verified and now - start >= CONFIG_GATE_SECONDS:
                         raise RuntimeError("no validated CMakeCache within 15 minutes")
                     # Also revalidate a copied cache whenever CMake rewrites it during a resume.
@@ -452,14 +465,15 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
                 problem.append(f"missing/invalid chroot completion status: {error}")
         audit.json("outcome.json", dict(exit_code=child.returncode, elapsed_seconds=time.monotonic()-start,
                                        command_exit_code=command_exit_code,
-                                       cache_passed=bool(verified), problems=problem,
+                                       cache_passed=bool(verified) if cache_check else None, problems=problem,
                                        sampler_reaped=not sampler.is_alive(), log_reader_reaped=not reader.is_alive(),
                                        interrupted=repr(interrupted) if interrupted else None))
     if interrupted:
         raise interrupted
-    if return_code or problem or not verified:
+    if return_code or problem or (cache_check and not verified):
         raise RuntimeError(f"build failed/stopped: exit={return_code}, cache_passed={bool(verified)}, {problem}")
-    audit.log("BUILD COMMAND COMPLETE; RPMs still require verify_toolchain.sh and benchmark calibration")
+    audit.log("BUILD COMMAND COMPLETE; RPMs still require verify_toolchain.sh and benchmark calibration"
+              if cache_check else "EXPERIMENT COMMAND COMPLETE; CMake validation is a separate explicit step")
 
 
 def main():

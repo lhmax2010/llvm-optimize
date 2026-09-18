@@ -12,9 +12,19 @@ from unittest.mock import patch
 import bench_toolchain as bench
 import relink_clang_for_bolt as relink
 import verify_compiler_outputs as verify
+import build_llvm_x86_64 as guard
 
 
 class BoltPreparation(unittest.TestCase):
+    def test_oom_kill_is_not_confused_with_reclaim_pressure(self):
+        self.assertEqual(guard.oom_kills({'memory.events':'max 337097\noom 0\noom_kill 0'}),0)
+        self.assertEqual(guard.oom_kills({'memory.events':'max 337097\noom 1\noom_kill 1'}),1)
+        self.assertEqual(guard.oom_kills({}),0)
+
+    def test_default_gbs_cannot_disable_cache_gate(self):
+        with self.assertRaisesRegex(ValueError,'must retain'):
+            guard.build(None,None,None,None,None,cache_check=False)
+
     def test_link_rewrite_changes_only_outputs_and_emit_relocs(self):
         original = (': && /bin/clang++ -O3 -flto=thin input.o -o bin/clang-22 '
                     '-Wl,-rpath,"\\$ORIGIN/../lib64:" '
@@ -58,6 +68,8 @@ class BoltPreparation(unittest.TestCase):
             self.assertEqual(len(calls),2 if mismatch else 4)
             self.assertEqual(len(result['units']),1 if mismatch else 2)
             self.assertEqual(calls[0][calls[0].index('-o')+1],calls[1][calls[1].index('-o')+1])
+            self.assertTrue(all(c.count('--driver-mode=g++')==1 for c in calls))
+            self.assertEqual(result['driver_mode'],'g++')
             self.assertEqual(result['units'][0]['byte_equal'],not mismatch)
 
     def test_identical_outputs_pass(self): self.equality_case(False)
