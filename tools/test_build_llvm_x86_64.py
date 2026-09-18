@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Offline gate regression tests. Never starts GBS or compiles LLVM."""
 import json
+import copy
 from pathlib import Path
 import subprocess
 import sys
@@ -13,22 +14,63 @@ import build_llvm_x86_64 as b
 
 
 class BuildGates(unittest.TestCase):
+    @staticmethod
+    def profile():
+        return json.loads(b.BASELINE_PROFILE.read_text())
+
     def test_resource_thresholds(self):
+        configuration = self.profile()['configuration']
         for memory, disk in ((16*b.GIB-1, 60*b.GIB), (16*b.GIB, 60*b.GIB-1)):
             with self.assertRaises(RuntimeError):
-                b.resource_plan(memory, disk, 20)
-        # The observed large link cannot be safely budgeted under the approved cap.
-        for memory in (16, 17, 22, 23, 28, 30, 64):
-            with self.assertRaisesRegex(RuntimeError, 'full build refused'):
-                b.resource_plan(memory*b.GIB, 60*b.GIB, 20)
-        # Exercise arithmetic for a hypothetical future approved capacity, without
-        # raising the production cap or launching any process.
-        with patch.object(b, 'MAX_BUILD_MEMORY_GIB', 32):
-            plan = b.resource_plan(64*b.GIB, 60*b.GIB, 20)
-        self.assertLess(plan['link_jobs'] * b.LINK_ESTIMATE_GIB, 64 * .6)
-        self.assertLessEqual(plan['link_jobs']*b.LINK_ESTIMATE_GIB + plan['compile_jobs']*2 + 2,
-                             plan['memory_max_gib'])
-        self.assertEqual(plan['gbs_threads'], 1)
+                b.resource_plan(memory, disk, 20, configuration)
+
+    def test_measured_configuration_is_admitted_without_summing_peaks(self):
+        for available in (16, 18, 23, 30, 64):
+            plan = b.resource_plan(available*b.GIB, 60*b.GIB, 20, self.profile()['configuration'])
+            self.assertEqual(plan['admission'], 'MEASURED_BASELINE')
+            self.assertEqual(plan['memory_max_gib'], 18)
+            self.assertEqual([plan[k] for k in ('gbs_threads','ninja_jobs','compile_jobs','link_jobs','debuginfo_jobs')],
+                             [1,4,4,1,4])
+
+    def test_heterogeneous_configuration_is_refused(self):
+        for key, value in [('source_head','another-commit'), ('normalized_spec_sha256','instrumented-recipe'),
+                           ('gbs_config_sha256','different-repositories'), ('buildconf_sha256','different-macros'),
+                           ('repository_metadata',{'repo.base-standard':'changed-package-set'}),
+                           ('arch','aarch64'), ('ninja_jobs',8), ('compile_jobs',8), ('link_jobs',2),
+                           ('gbs_threads',2), ('debuginfo_jobs',40), ('LLVM_BUILD_INSTRUMENTED','IR')]:
+            with self.subTest(key=key):
+                candidate = copy.deepcopy(self.profile()['configuration'])
+                candidate[key] = value
+                with self.assertRaisesRegex(RuntimeError, 'capacity evidence does not cover'):
+                    b.resource_plan(64*b.GIB, 100*b.GIB, 20, candidate)
+
+    def test_recipe_identity_detects_pgo_and_configuration_changes(self):
+        spec = (b.WORKSPACE/'llvm'/b.SPEC).read_text()
+        def identity(s): return b.configuration_identity(b.EXPECTED_HEAD, s, b'config', b'buildconf')
+        baseline = identity(spec)
+        instrumented = identity(spec+'\n# hypothetical variant\n%define pgo -DLLVM_BUILD_INSTRUMENTED=IR\n')
+        self.assertNotEqual(baseline['normalized_spec_sha256'],instrumented['normalized_spec_sha256'])
+        changed = b.changed_concurrency(spec, dict(ninja_jobs=8,compile_jobs=8,link_jobs=2))
+        self.assertEqual(baseline['normalized_spec_sha256'],identity(changed)['normalized_spec_sha256'])
+        self.assertEqual([identity(changed)[k] for k in ('ninja_jobs','compile_jobs','link_jobs')],[8,8,2])
+
+    def test_entire_cmake_contract_including_pgo_is_checked(self):
+        parameters = self.profile()['cmake_parameters']
+        def cache(values): return ''.join(f'{k}:STRING={v}\n' for k,v in values.items())
+        self.assertEqual(b.validate_cache(cache(parameters), parameters)[1], [])
+        for key in parameters:
+            changed = dict(parameters)
+            changed[key] += '-DIFFERENT'
+            with self.subTest(key=key):
+                self.assertTrue(b.validate_cache(cache(changed), parameters)[1])
+        for key, value in [('LLVM_BUILD_INSTRUMENTED','IR'),('LLVM_PROFDATA_FILE','/tmp/new.profdata'),
+                           ('LLVM_ENABLE_BOLT','ON'),('CMAKE_CXX_FLAGS','-O3 -fprofile-instr-generate')]:
+            changed = dict(parameters); changed[key] = value
+            self.assertTrue(b.validate_cache(cache(changed), parameters)[1])
+        changed = dict(parameters)
+        for key in ('CMAKE_C_COMPILER','CMAKE_CXX_COMPILER'):
+            changed[key] = '/bin/'+changed[key]
+        self.assertEqual(b.validate_cache(cache(changed), parameters)[1], [])
 
     def test_only_concurrency_edits(self):
         spec = (b.WORKSPACE/'llvm'/b.SPEC).read_text()

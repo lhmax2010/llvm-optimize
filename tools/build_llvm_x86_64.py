@@ -6,7 +6,6 @@ import datetime as dt
 import gzip
 import hashlib
 import json
-import math
 import os
 from pathlib import Path
 import re
@@ -24,8 +23,7 @@ import xml.etree.ElementTree as ET
 
 GIB = 1024 ** 3
 MAX_BUILD_MEMORY_GIB = 18
-# Observed clang-22 VmHWM was 16.831097 GiB; round upward, never reuse 8 GiB.
-LINK_ESTIMATE_GIB = 16.84
+BASELINE_PROFILE = Path(__file__).with_name('llvm_baseline_capacity.json')
 CONFIG_GATE_SECONDS = 900
 WORKSPACE = Path(__file__).resolve().parents[1]
 SPEC = Path("packaging/llvm.spec")
@@ -48,28 +46,57 @@ def mem_available():
     raise RuntimeError("MemAvailable is missing")
 
 
-def resource_plan(available, free_disk, cpus):
+def normalized_spec(text):
+    for pattern in CONCURRENCY.values():
+        text = re.sub(pattern, lambda m: m[1] + "JOBS" + m[2], text)
+    return text
+
+
+def configuration_identity(head, spec, config, buildconf, *, repository_metadata=None, debuginfo_jobs=4):
+    """Fingerprint actual recipe inputs; this is not a caller's 'baseline' label.
+
+    The pinned recipe, source and repository macros determine CMake arguments.
+    The cache contract is checked separately when configure actually runs.
+    """
+    jobs = {}
+    for key, pattern in CONCURRENCY.items():
+        match = re.search(pattern, spec)
+        if match is None:
+            raise RuntimeError('missing concurrency setting: ' + key)
+        jobs[key+'_jobs'] = int(match[0][len(match[1]):-len(match[2])])
+    return dict(source_head=head,
+                normalized_spec_sha256=hashlib.sha256(normalized_spec(spec).encode()).hexdigest(),
+                gbs_config_sha256=hashlib.sha256(config).hexdigest(),
+                buildconf_sha256=hashlib.sha256(buildconf).hexdigest(),
+                repository_metadata=repository_metadata or {},
+                arch='x86_64', gbs_threads=1, debuginfo_jobs=debuginfo_jobs, **jobs)
+
+
+def validate_resources(available, free_disk, cpus):
     if available < 16 * GIB:
         raise RuntimeError(f"MemAvailable {available / GIB:.3f} GiB < 16 GiB")
     if free_disk < 60 * GIB:
         raise RuntimeError(f"disk free {free_disk / GIB:.3f} GiB < 60 GiB")
-    # This planner admits full builds. The independently audited --noprep resume
-    # has its own plan because the large LLVM link targets are already complete.
-    limit = min(MAX_BUILD_MEMORY_GIB, math.floor(available / GIB) - 4)
-    links = 1
-    if links * LINK_ESTIMATE_GIB * GIB >= available * 0.60:
-        raise RuntimeError(f"full build refused: observed link estimate {LINK_ESTIMATE_GIB} GiB "
-                           "does not fit below 60% of MemAvailable; the old 8 GiB estimate is invalid")
-    compiles = min(4, max(1, cpus // 2), math.floor((limit - LINK_ESTIMATE_GIB * links - 2) / 2))
-    if compiles < 1:
-        raise RuntimeError(f"full build refused: {limit} GiB cap cannot budget a {LINK_ESTIMATE_GIB} GiB "
-                           "link, one 2 GiB compiler and 2 GiB overhead; capacity decision required")
-    assert links * LINK_ESTIMATE_GIB + compiles * 2 + 2 <= limit
+    if cpus < 1:
+        raise RuntimeError('nproc must be positive')
+
+
+def resource_plan(available, free_disk, cpus, configuration, profile=None):
+    profile = profile or json.loads(BASELINE_PROFILE.read_text())
+    validate_resources(available, free_disk, cpus)
+    expected = profile['configuration']
+    differences = [key for key in sorted(set(expected) | set(configuration))
+                   if configuration.get(key) != expected.get(key)]
+    if differences:
+        raise RuntimeError('capacity evidence does not cover this configuration: '+', '.join(differences)+
+                           '; PGO/instrumentation and other unmeasured variants remain refused')
+    # These phases succeeded under this cap. Their independent peaks are not additive.
+    # Admission avoids an unsupported rebuild; the cgroup still protects the host if it fails.
     return dict(available_bytes=available, disk_free_bytes=free_disk, nproc=cpus,
-                memory_max_gib=limit, gbs_threads=1, ninja_jobs=compiles,
-                compile_jobs=compiles, link_jobs=links,
-                link_estimate_gib=LINK_ESTIMATE_GIB, compiler_budget_gib=2, overhead_gib=2,
-                link_budget_gib=available / GIB * 0.60)
+                memory_max_gib=MAX_BUILD_MEMORY_GIB, gbs_threads=1, ninja_jobs=4,
+                compile_jobs=4, link_jobs=1, debuginfo_jobs=4,
+                admission='MEASURED_BASELINE', configuration=configuration,
+                cmake_parameters=profile['cmake_parameters'], evidence=profile['evidence'])
 
 
 def changed_concurrency(original, plan):
@@ -83,14 +110,10 @@ def changed_concurrency(original, plan):
 
 
 def only_concurrency_changed(original, modified):
-    def normalize(text):
-        for pattern in CONCURRENCY.values():
-            text = re.sub(pattern, lambda m: m[1] + "JOBS" + m[2], text)
-        return text
-    return normalize(original) == normalize(modified)
+    return normalized_spec(original) == normalized_spec(modified)
 
 
-def validate_cache(text):
+def validate_cache(text, expected_parameters=None):
     values = {}
     for line in text.splitlines():
         match = re.match(r"([^/#][^:]*):[^=]+=(.*)$", line)
@@ -110,6 +133,18 @@ def validate_cache(text):
     targets = set(values.get("LLVM_TARGETS_TO_BUILD", "").split(";"))
     if not {"X86", "ARM"} <= targets:
         errors.append(f"LLVM_TARGETS_TO_BUILD lacks X86/ARM: {sorted(targets)}")
+    if expected_parameters is not None:
+        for key, expected in expected_parameters.items():
+            actual = values.get(key)
+            # Both representations occurred in the original and resumed CMake caches.
+            if key in ('CMAKE_C_COMPILER', 'CMAKE_CXX_COMPILER') and actual in (
+                    '/bin/'+expected, '/usr/bin/'+expected):
+                actual = expected
+            if actual != expected:
+                errors.append(f'baseline contract {key}: expected {expected!r}, found {actual!r}')
+        # This option was absent in the baseline; an injected BOLT build is not covered.
+        if values.get('LLVM_ENABLE_BOLT', 'OFF').upper() not in ('OFF', 'NO', 'FALSE', '0', ''):
+            errors.append('baseline contract LLVM_ENABLE_BOLT must be absent/OFF')
     return values, errors
 
 
@@ -352,7 +387,7 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
                             continue
                         text = cache.read_text()
                         shutil.copy2(cache, audit.directory / "CMakeCache.txt")
-                        values, errors = validate_cache(text)
+                        values, errors = validate_cache(text, plan.get('cmake_parameters'))
                         for key, value in (("LLVM_PARALLEL_COMPILE_JOBS", plan["compile_jobs"]),
                                            ("LLVM_PARALLEL_LINK_JOBS", plan["link_jobs"])):
                             if values.get(key) != str(value):
@@ -444,10 +479,8 @@ def main():
     try:
         for command in (["nproc"], ["free", "-g"], ["df", "-h", args.buildroot.parent]):
             audit.run(command)
-        plan = resource_plan(mem_available(), shutil.disk_usage(args.buildroot.parent).free,
-                             int(audit.run(["nproc"]).stdout))
-        audit.json("resource-plan.json", plan)
-        audit.log("RESOURCE PLAN " + json.dumps(plan))
+        cpus = int(audit.run(["nproc"]).stdout)
+        validate_resources(mem_available(), shutil.disk_usage(args.buildroot.parent).free, cpus)
         head = audit.run(["git", "-C", args.source, "rev-parse", "HEAD"]).stdout.strip()
         if head != args.expected_commit:
             raise RuntimeError(f"source HEAD {head} differs from expected {args.expected_commit}")
@@ -459,20 +492,32 @@ def main():
         if args.buildroot.exists():
             raise RuntimeError("fresh buildroot required: path already exists; preserve it and choose a new path")
         chosen = repositories(audit, args.config)
+        metadata = {row['name']: hashlib.sha256((audit.directory/(row['name']+'.repomd.xml')).read_bytes()).hexdigest()
+                    for row in json.loads((audit.directory/'repositories.json').read_text())}
+        proposed = changed_concurrency(current, dict(ninja_jobs=4, compile_jobs=4, link_jobs=1))
+        configuration = configuration_identity(head, proposed, args.config.read_bytes(), chosen.read_bytes(),
+                                               repository_metadata=metadata)
+        plan = resource_plan(mem_available(), shutil.disk_usage(args.buildroot.parent).free,
+                             cpus, configuration)
+        audit.json("resource-plan.json", plan)
+        audit.log("CAPACITY ADMISSION MEASURED_BASELINE; 18 GiB cap, 4/4/1, debuginfo -j4")
         probe = audit.run(["systemd-run", "--user", "--scope", "-p", "MemoryMax=1G", "-p",
                            "MemorySwapMax=0", "/bin/true"], check=False)
         mechanism = "systemd" if probe.returncode == 0 else "prlimit"
         audit.log("MEMORY MECHANISM " + mechanism)
         if mechanism == "prlimit":
-            audit.log("systemd unavailable: inherited RLIMIT_AS is PER PROCESS; aggregate RSS is polled every 2s, "
-                      "not an instantaneous aggregate cgroup limit. Privileged descendants may prevent cancellation.")
-            limit = plan["memory_max_gib"] * GIB
-            audit.run(["prlimit", f"--as={limit}:{limit}", "--", "/bin/true"])
+            raise RuntimeError('measured admission requires the same aggregate systemd cgroup limit; '
+                               'per-process prlimit is not equivalent evidence')
         if not args.run:
             audit.log("PREFLIGHT PASS; no spec edit and no build. Use --run to proceed.")
             return 0
         # Re-check resource thresholds immediately before mutation and launch.
-        plan = resource_plan(mem_available(), shutil.disk_usage(args.buildroot.parent).free, plan["nproc"])
+        current = (args.source / SPEC).read_text()
+        proposed = changed_concurrency(current, dict(ninja_jobs=4, compile_jobs=4, link_jobs=1))
+        configuration = configuration_identity(head, proposed, args.config.read_bytes(), chosen.read_bytes(),
+                                               repository_metadata=metadata)
+        plan = resource_plan(mem_available(), shutil.disk_usage(args.buildroot.parent).free,
+                             cpus, configuration)
         audit.json("resource-plan.json", plan)
         patched = changed_concurrency(current, plan)
         assert only_concurrency_changed(original, patched)
