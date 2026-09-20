@@ -130,6 +130,24 @@ class HarnessChecks(unittest.TestCase):
             runner.command([sys.executable, "-c", "bytearray(5 * 1024**3)"], tag="memory-negative")
         self.assertIn("MemoryError", Path(runner.commands[-1]["stderr"]).read_text())
 
+    def test_holdout_seed_changes_all_classes_without_changing_scale(self):
+        import re
+        spec = importlib.util.spec_from_file_location("seed_test", bench.INPUTS / "generate_synthetic.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        root = self.temporary()
+        for scale in (1, 2):
+            old, new, repeat = [root / f"{scale}-{x}" for x in ("old", "new", "repeat")]
+            training = module.generate(old, scale)
+            holdout = module.generate(new, scale, 20260920)
+            self.assertEqual(holdout, module.generate(repeat, scale, 20260920))
+            self.assertTrue(all(training[c]['sha256'] != holdout[c]['sha256'] for c in 'ABC'))
+            counts = lambda p: json.loads((p / 'generator.json').read_text())['counts']
+            self.assertEqual(counts(old), counts(new))
+            ids = lambda p: set(re.findall(r'sizeof\(Front<(\d+)>', (p/'A.cpp').read_text()))
+            self.assertFalse(ids(old) & ids(new))
+            self.assertEqual(len(ids(old)), len(ids(new)))
+
     def test_actual_timeout_is_failure(self):
         root = self.temporary()
         args = SimpleNamespace(cpu_set=[min(bench.os.sched_getaffinity(0))], timeout=.05, load_threshold=1e9)

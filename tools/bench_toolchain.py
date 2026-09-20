@@ -343,7 +343,7 @@ def single_run(args, prefix):
             cases = []
             for case, scale in zip("ABC", args.scales):
                 generated = directory / ("generated-" + case)
-                generator.generate(generated, scale)
+                generator.generate(generated, scale, args.seed)
                 cases.append({"name": case, "path": generated / (case + ".cpp"),
                               "flags": ["-std=c++17", "-O2"], "scale": scale,
                               "sha256": digest(generated / (case + ".cpp"))})
@@ -358,7 +358,7 @@ def single_run(args, prefix):
             result["protocol"] = {"target": TARGET, "sysroot": str(args.sysroot),
                 "resource_dir": str(args.resource_dir), "resource_header_hash": args.resource_hash,
                 "sysroot_header_hash": args.sysroot_hash, "cpus": args.cpu_set, "nproc": args.nproc,
-                "runs": args.runs, "scales": args.scales, "seed": generator.SEED,
+                "runs": args.runs, "scales": args.scales, "seed": args.seed,
                 "memory_limit_bytes": MEMORY_LIMIT, "load_threshold": args.load_threshold,
                 "aslr": args.aslr,
                 "link_repeats": args.link_repeats, "archive_repeats": args.archive_repeats,
@@ -496,6 +496,7 @@ def main(argv=None):
     p.add_argument("--cpus", help="taskset list; default first half of inherited CPU affinity, cannot exceed half")
     p.add_argument("--runs", type=int, default=5, help="total runs per case, including one discarded warmup (default 5)")
     p.add_argument("--scales", type=float, nargs=3, default=[1, 2, 2], metavar=("A", "B", "C"), help="historical generator scales (default 1 2 2); use 1 1 1 for historical input hashes")
+    p.add_argument("--seed", type=int, default=73419, help="synthetic seed (default historical 73419); non-default seeds change all A/B/C")
     p.add_argument("--shards", type=int, default=64, help="split B into this many unique objects; add A/C (default total 66)")
     p.add_argument("--link-repeats", type=int, default=4096, help="links per sample to amortize short-command noise (default 4096)")
     p.add_argument("--archive-repeats", type=int, default=1024, help="archives per sample; fresh output each time (default 1024)")

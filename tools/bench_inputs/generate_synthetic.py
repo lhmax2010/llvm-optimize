@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Historical synthetic generator, copied unchanged from bench_compiler.py.
+"""Historical synthetic generator with an explicit holdout seed.
 
 Seed 73419; scale 1: 320 template instances / 400 functions / 3000 blocks.
-Original generate() source lines 337-370; see provenance.json for hashes.
+Default outputs retain the historical hashes in provenance.json. Non-default
+seeds also change A's template IDs; historically only B/C consumed the RNG.
 """
 import argparse
 import hashlib
@@ -21,9 +22,9 @@ def save(path, data):
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
-def generate(out, scale=1):
+def generate(out, scale=1, seed=SEED):
     out.mkdir(parents=True, exist_ok=True)
-    rng = random.Random(SEED)
+    rng = random.Random(seed)
     counts = [max(1, round(n * scale)) for n in (320, 400, 3000)]
     headers = 'algorithm array atomic bitset chrono complex deque functional future iomanip iterator limits list map memory mutex numeric optional queue random regex set shared_mutex sstream stack string tuple type_traits unordered_map unordered_set utility variant vector'.split()
     a = ['// Synthetic A: parsing and unique standard-library template instantiation.\n']
@@ -32,7 +33,11 @@ def generate(out, scale=1):
           'template<int N> struct Front { using T=Tag<N>;\n',
           'using P=std::tuple<std::vector<T>,std::map<int,T>,std::variant<T,std::array<T,7>>,std::unordered_map<int,T>,std::deque<T>>;\n',
           'P value; static_assert(std::is_default_constructible<P>::value, "constructible"); };\n']
-    a += [f'static_assert(sizeof(Front<{i}>)>0, "instantiate");\n' for i in range(counts[0])]
+    # A separate stream preserves B/C's historical random-number sequence.
+    # Disjoint IDs prevent a nominal seed change from reusing the training A.
+    ids = (range(counts[0]) if seed == SEED else
+           random.Random(seed).sample(range(counts[0], counts[0] + 10_000_000), counts[0]))
+    a += [f'static_assert(sizeof(Front<{i}>)>0, "instantiate");\n' for i in ids]
     a += ['extern "C" unsigned frontend_anchor(unsigned x) { return x+1; }\n']
     b = ['// Synthetic B: many independent medium functions, no external headers.\n']
     for i in range(counts[1]):
@@ -53,14 +58,15 @@ def generate(out, scale=1):
         p = out / (name + '.cpp')
         write(p, ''.join(content))
         result[name] = {'sha256': sha(p), 'bytes': p.stat().st_size}
-    save(out / 'generator.json', {'seed': SEED, 'scale': scale, 'counts': counts, 'sources': result})
+    save(out / 'generator.json', {'seed': seed, 'scale': scale, 'counts': counts, 'sources': result})
     return result
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
     parser.add_argument("--scale", type=float, default=1)
+    parser.add_argument("--seed", type=int, default=SEED, help="73419 preserves historical inputs; other seeds change all A/B/C")
     args = parser.parse_args()
     if args.scale <= 0:
         parser.error("scale must be positive")
-    generate(args.output, args.scale)
+    generate(args.output, args.scale, args.seed)
