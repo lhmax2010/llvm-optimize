@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Byte-compare ARM object output from two native compilers; stop at first mismatch.
+"""Byte-compare target object output from two native compilers; stop at first mismatch.
 
 Uses the benchmark's real TU sidecars, target, flags, and 4 GiB process limit.
 Both compilations use the same cwd and output pathname to avoid debug-path drift.
@@ -25,6 +25,7 @@ def main():
     p.add_argument('--library-path', type=Path, help='same optional independent runtime directory')
     p.add_argument('--sysroot', type=Path, required=True)
     p.add_argument('--resource-dir', type=Path, required=True)
+    p.add_argument('--target', choices=[bench.TARGET, bench.AARCH64_TARGET], default=bench.TARGET)
     p.add_argument('--inputs', type=Path, default=bench.INPUTS/'real_tu')
     p.add_argument('--case', action='append', help='exact real_NAME; repeat, default all real inputs')
     p.add_argument('--cpu', type=int, default=min(os.sched_getaffinity(0)))
@@ -36,7 +37,7 @@ def main():
     if not a.output.is_relative_to(bench.WORKSPACE/'temp') or a.output.exists():
         p.error('--output must be a new directory under workspace temp/')
     if a.cpu not in os.sched_getaffinity(0): p.error('CPU outside inherited affinity')
-    units = bench.real_inputs(a.inputs)
+    units = bench.real_inputs(a.inputs,a.target)
     if a.case:
         if set(a.case)-{u['name'] for u in units}: p.error('unknown real TU case')
         units = [u for u in units if u['name'] in a.case]
@@ -44,7 +45,7 @@ def main():
     for path in (a.baseline,a.candidate,a.loader): bench.native_elf(path)
     a.output.mkdir(parents=True)
     raw = a.output/'raw'; raw.mkdir()
-    result = dict(status='RUNNING',target=bench.TARGET,baseline=str(a.baseline),candidate=str(a.candidate),
+    result = dict(status='RUNNING',target=a.target,baseline=str(a.baseline),candidate=str(a.candidate),
                   driver_mode='g++',
                   baseline_sha256=bench.digest(a.baseline),candidate_sha256=bench.digest(a.candidate),
                   sysroot=str(a.sysroot),resource_dir=str(a.resource_dir),units=[])
@@ -63,13 +64,13 @@ def main():
             if a.library_path: prefix += ['--library-path',str(a.library_path.resolve())]
             for unit in units:
                 files = []
-                common = ['--driver-mode=g++']+bench.compiler_flags(a,a.resource_dir)+unit['flags']+[
+                common = ['--driver-mode=g++']+bench.compiler_flags(a,a.resource_dir,a.target)+unit['flags']+[
                     '-x','c++-cpp-output','-c',str(unit['path']),'-o',str(cwd/'output.o')]
                 row = dict(name=unit['name'],input_sha256=unit['sha256'],outputs=[])
                 result['units'].append(row)
                 for label,compiler in [('baseline',a.baseline),('candidate',a.candidate)]:
                     record = runner.command(prefix+[str(compiler)]+common,tag=unit['name']+'-'+label)
-                    bench.verify_object(cwd/'output.o')
+                    bench.verify_object(cwd/'output.o',a.target)
                     retained = a.output/(unit['name']+'.'+label+'.o')
                     shutil.copyfile(cwd/'output.o',retained)
                     files.append(retained)

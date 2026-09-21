@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect genuine ARM-preprocessed LLVM TUs without editing sources/configuration.
+"""Collect genuine target-preprocessed LLVM TUs without editing sources/configuration.
 
 Candidates are the audited JSON list documented in docs/13. Their object names
 are resolved again against the supplied build.ninja using ninja -t compdb.
@@ -21,7 +21,7 @@ import sys
 import bench_toolchain as bench
 
 
-def translate(row, root, toolchain, sysroot, output, resource=None, loader=None):
+def translate(row, root, toolchain, sysroot, output, resource=None, loader=None, target=bench.TARGET):
     original = shlex.split(row['command'])
     flags, semantic, changes = [], [], []
     index = 1
@@ -48,7 +48,7 @@ def translate(row, root, toolchain, sysroot, output, resource=None, loader=None)
         index += 1
     source = root / row['file'].lstrip('/')
     resource = resource or toolchain/'lib64/clang/22'
-    command = ([str(loader)] if loader else []) + [str(toolchain/'bin/clang++'), '--target='+bench.TARGET,
+    command = ([str(loader)] if loader else []) + [str(toolchain/'bin/clang++'), '--target='+target,
                '--sysroot='+str(sysroot), '-resource-dir='+str(resource)]
     command += flags + ['-E', str(source), '-o', str(output)]
     return command, semantic, changes
@@ -60,7 +60,8 @@ def main():
     p.add_argument('--resource-dir', type=Path, help='compiler-owned resource directory; default TOOLCHAIN/lib64/clang/22')
     p.add_argument('--loader', type=Path, help='explicit native ELF loader for a non-host PT_INTERP; no binary changes')
     p.add_argument('--build-root', type=Path, required=True, help='scratch.x86_64.N chroot with completed BUILD tree')
-    p.add_argument('--sysroot', type=Path, required=True, help='existing ARMv7 GBS root')
+    p.add_argument('--sysroot', type=Path, required=True, help='existing target GBS root')
+    p.add_argument('--target', choices=[bench.TARGET, bench.AARCH64_TARGET], default=bench.TARGET)
     p.add_argument('--candidates', type=Path, required=True, help='audited ten-entry TU candidate JSON')
     p.add_argument('--output-dir', type=Path, required=True, help='new evidence/large-input directory under workspace temp/')
     p.add_argument('--publish-dir', type=Path, default=bench.INPUTS/'real_tu')
@@ -79,7 +80,7 @@ def main():
     a.output_dir.mkdir(parents=True)
     build = a.build_root/'home/abuild/rpmbuild/BUILD/llvm-22.1.8/build'
     log=(a.output_dir/'commands.log').open('w',buffering=1)
-    result=dict(status='IN_PROGRESS', target=bench.TARGET, build_root=str(a.build_root),
+    result=dict(status='IN_PROGRESS', target=a.target, build_root=str(a.build_root),
                 toolchain=str(a.toolchain), resource_dir=str(a.resource_dir),
                 loader=str(a.loader) if a.loader else None, units=[])
     environment=dict(os.environ)
@@ -117,10 +118,10 @@ def main():
             name='llvm_'+candidate['group']+'_'+Path(row['file']).stem
             if not re.fullmatch(r'[A-Za-z0-9_-]+',name): raise RuntimeError('invalid input name')
             output=a.output_dir/(name+'.ii')
-            command,flags,changes=translate(row,a.build_root,a.toolchain,a.sysroot,output,a.resource_dir,a.loader)
+            command,flags,changes=translate(row,a.build_root,a.toolchain,a.sysroot,output,a.resource_dir,a.loader,a.target)
             result['units'].append(dict(name=name,source=row['file'],original_command=shlex.split(row['command']),
                 preprocess_command=command, flags=flags, input=str(output),
-                removed_for_arm_elf_input=changes, historical_x86_compile_wall_s=candidate['build_wall_s']))
+                removed_for_target_elf_input=changes, historical_x86_compile_wall_s=candidate['build_wall_s']))
         save()
         if a.dry_run:
             result['status']='PLAN_ONLY';save();return 0
@@ -128,12 +129,13 @@ def main():
         if not (a.resource_dir/'include/stddef.h').is_file():
             raise RuntimeError('missing compiler resource headers')
         query=([str(a.loader)] if a.loader else [])+[str(a.toolchain/'bin/clang++'),
-               '--target='+bench.TARGET,'--sysroot='+str(a.sysroot),
+               '--target='+a.target,'--sysroot='+str(a.sysroot),
                '-resource-dir='+str(a.resource_dir),'-dM','-E','-x','c++','/dev/null']
         macros=run(['taskset','-c',str(a.cpu),'prlimit',f'--as={bench.MEMORY_LIMIT}:{bench.MEMORY_LIMIT}','--']+query,capture=True)
-        (a.output_dir/'arm-predefined-macros.txt').write_text(macros)
-        if '#define __arm__ 1' not in macros or '#define __x86_64__' in macros:
-            raise RuntimeError('preprocessor is not targeting ARM')
+        (a.output_dir/'target-predefined-macros.txt').write_text(macros)
+        expected, forbidden = ('__arm__', '__aarch64__') if a.target == bench.TARGET else ('__aarch64__', '__arm__')
+        if '#define '+expected+' 1' not in macros or '#define '+forbidden+' ' in macros or '#define __x86_64__' in macros:
+            raise RuntimeError('preprocessor is not targeting '+a.target)
         for unit in result['units']:
             bench.memory_guard()
             command=['/usr/bin/time','-v','-o',str(a.output_dir/(unit['name']+'.time.txt')),
@@ -141,17 +143,17 @@ def main():
                      'prlimit',f'--as={bench.MEMORY_LIMIT}:{bench.MEMORY_LIMIT}','--']+unit['preprocess_command']
             run(command)
             output=Path(unit['input'])
-            unit.update(sha256=bench.digest(output),bytes=output.stat().st_size,status='PREPROCESSED_ARM')
+            unit.update(sha256=bench.digest(output),bytes=output.stat().st_size,status='PREPROCESSED',target=a.target)
             save();print(unit['name'],unit['bytes'],'bytes',flush=True)
         # Validate all proposed sidecars before publishing any input into the harness.
         proposed=a.output_dir/'sidecars';proposed.mkdir()
         for unit in result['units']:
-            sidecar=dict(target=bench.TARGET,sha256=unit['sha256'],flags=unit['flags'],
+            sidecar=dict(target=a.target,sha256=unit['sha256'],flags=unit['flags'],
                          source=unit['source']+' @ f111162e94aa48ed367c9d2c039456c70e7160ae',
                          original_command=unit['original_command'],preprocess_command=unit['preprocess_command'],
                          input=unit['input'])
             (proposed/(unit['name']+'.flags.json')).write_text(json.dumps(sidecar,indent=2)+'\n')
-        bench.real_inputs(proposed)
+        bench.real_inputs(proposed,a.target)
         a.publish_dir.mkdir(parents=True,exist_ok=True)
         for unit in result['units']:
             destination=a.publish_dir/(unit['name']+'.flags.json')

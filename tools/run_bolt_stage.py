@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run one authorized BOLT experiment stage with the baseline resource guard.
 
-18 GiB cgroup, zero swap, nice 15, idle IO; 2s VmHWM and 30s free/load/RSS
+18 GiB cgroup by default (6 GiB for bounded pure rewriting), zero swap, nice 15, idle IO; 2s VmHWM and 30s free/load/RSS
 samples, emergency stop below 2 GiB available, and sampler cleanup on exit.
 The CMake gate is not applicable to arbitrary experiment commands. Full GBS
 builds retain their normal gate. This script never runs gbs build or edits spec.
@@ -58,6 +58,8 @@ def main():
     p.add_argument('--log-dir', type=Path, required=True, help='new directory under workspace temp/')
     p.add_argument('--root', type=Path, help='optional existing GBS chroot; run as abuild')
     p.add_argument('--cwd', required=True, help='working directory (root-relative absolute path in chroot mode)')
+    p.add_argument('--memory-max-gib', type=int, choices=[6,18], default=18,
+                   help='experiment-only cap; 6 for pure BOLT rewriting; does not change full-build policy')
     p.add_argument('--script', type=Path, help='host file containing the exact stage shell script')
     p.add_argument('command', nargs=argparse.REMAINDER, help='command after --; mutually exclusive with --script')
     a = p.parse_args()
@@ -95,7 +97,7 @@ def main():
             stdin = 'exec '+shlex.join(['su','-s','/bin/bash','-c',script,'-','abuild'])+'\n'
         else:
             cmd,stdin = ['/bin/bash',str(script_path)],None
-        plan = dict(memory_max_gib=18,operation='AUTHORIZED_BOLT_EXPERIMENT',ninja_jobs=4,
+        plan = dict(memory_max_gib=a.memory_max_gib,operation='AUTHORIZED_BOLT_EXPERIMENT',ninja_jobs=4,
                     compile_jobs=4,link_jobs=1)
         args = SimpleNamespace(buildroot=root.parents[2] if root else log)
         guard.build(audit,args,plan,None,'systemd',command=cmd,input_text=stdin,

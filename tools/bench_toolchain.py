@@ -2,7 +2,8 @@
 """Native LLVM throughput screening, without building LLVM or Chromium.
 
 Requires Linux, Python 3, taskset, prlimit and setarch. Toolchain roots contain bin/clang,
-bin/clang++, bin/ld.lld and bin/llvm-ar. Target is always ARMv7 Tizen; compiler
+bin/clang++, bin/ld.lld and bin/llvm-ar. ARMv7 Tizen is the default target;
+an explicit AArch64 corpus/sysroot can join the same interleaved run. Compiler
 executables must be native host ELF files. Sequential jobs, bounded affinity,
 4 GiB RLIMIT_AS per process, and at least 4 GiB available memory are enforced.
 """
@@ -28,6 +29,8 @@ import time
 WORKSPACE = Path(__file__).resolve().parents[1]
 INPUTS = Path(__file__).resolve().parent / "bench_inputs"
 TARGET = "armv7l-tizen-linux-gnueabi"
+AARCH64_TARGET = "aarch64-tizen-linux-gnu"
+CALIBRATION_POLICY = "compile-only-v2"
 MEMORY_LIMIT = 4 * 1024 ** 3
 SCHEMA = 1
 sys.dont_write_bytecode = True
@@ -138,7 +141,7 @@ def summarize(samples):
             "suspect_retained": sum(s["suspect"] for s in retained)}
 
 
-def real_inputs(directory):
+def real_inputs(directory, target=TARGET):
     units = []
     directory = Path(directory)
     if not directory.is_dir():
@@ -161,7 +164,7 @@ def real_inputs(directory):
         if not re.fullmatch(r"[A-Za-z0-9_-]+", name):
             raise BenchError(f"Invalid real-TU name: {name}")
         data = json.loads(sidecar.read_text())
-        if data.get("target") != TARGET:
+        if data.get("target") != target:
             raise BenchError(f"Target mismatch: {sidecar}")
         path = Path(data.get("input", directory / (name + ".ii"))).resolve(strict=True)
         if path.suffix != ".ii" or digest(path) != data.get("sha256"):
@@ -265,16 +268,21 @@ class Runner:
         return result
 
 
-def compiler_flags(args, resource):
-    return ["--target=" + TARGET, "--sysroot=" + str(args.sysroot),
+def compiler_flags(args, resource, target=TARGET, sysroot=None):
+    return ["--target=" + target, "--sysroot=" + str(sysroot or args.sysroot),
             "-resource-dir=" + str(resource)]
 
 
-def verify_object(path):
+def verify_object(path, target=TARGET):
     with path.open("rb") as stream:
         head = stream.read(20)
-    if head[:4] != b"\x7fELF" or head[4:6] != b"\x01\x01" or struct.unpack("<HH", head[16:20]) != (1, 40):
-        raise BenchError(f"Expected ARM ELF relocatable object: {path}")
+    expected = {TARGET: (1, 40), AARCH64_TARGET: (2, 183)}
+    if target not in expected:
+        raise BenchError(f"Unsupported object target: {target}")
+    elf_class, machine = expected[target]
+    if (len(head) != 20 or head[:4] != b"\x7fELF" or head[4:6] != bytes([elf_class, 1])
+            or struct.unpack("<HH", head[16:20]) != (1, machine)):
+        raise BenchError(f"Expected {target} ELF relocatable object: {path}")
 
 
 def toolchains(args, runner):
@@ -304,8 +312,9 @@ def toolchains(args, runner):
 
 
 def markdown(result):
+    targets = sorted({c["target"] for c in result["protocol"]["inputs"]})
     lines = ["# LLVM throughput screening", "", f"Status: {result['status']}; real TU: {result['real_tu_status']}",
-             f"CPU affinity: {result['protocol']['cpus']}; target: {TARGET}; first run discarded.", "",
+             f"CPU affinity: {result['protocol']['cpus']}; targets: {', '.join(targets)}; first run discarded.", "",
              "| Toolchain | Case | Wall median (s/op) | Min | SD | CV % | User | Sys | Peak RSS KiB | Suspect | Ratio to first |",
              "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
     baseline = {}
@@ -319,6 +328,7 @@ def markdown(result):
                          f"{st['sys_s']['median']:.6f} | {st['max_rss_kib']['max']:.0f} | "
                          f"{value['summary']['suspect_retained']} | {wall['median']/baseline[case]:.4f} |")
     lines += ["", "Lower time is better. Link/archive times are normalized per invocation; batching reduces timer noise.",
+              "Link/archive are diagnostic only: excluded from the compilation calibration gate and noise floor.",
               "Peak RSS is the maximum retained process RSS, not divided by batch repetitions.",
               "A ranking here is not a prediction of full Chromium build speedup.", ""]
     return "\n".join(lines)
@@ -351,11 +361,25 @@ def single_run(args, prefix):
             if real:
                 result["real_tu_status"] = "REAL_TU_PRESENT"
             cases += real
+            for case in cases:
+                case["target"] = TARGET
+            if args.aarch64_real_tu_dir:
+                extra = real_inputs(args.aarch64_real_tu_dir, AARCH64_TARGET)
+                if not extra:
+                    raise BenchError("Explicit aarch64 corpus is empty")
+                for case in extra:
+                    case["name"] = "real_aarch64_" + case["name"][5:]
+                    case["target"] = AARCH64_TARGET
+                cases += extra
             identities = toolchains(args, runner)
             result["toolchains"] = identities
             inputs = [{k: str(v) if isinstance(v, Path) else v for k, v in c.items() if k != "path"} for c in cases]
             # Fix the resource headers for all variants, so compiler selection does not change inputs.
             result["protocol"] = {"target": TARGET, "sysroot": str(args.sysroot),
+                "calibration_policy": CALIBRATION_POLICY,
+                "additional_target": ({"target": AARCH64_TARGET,
+                    "sysroot": str(args.aarch64_sysroot), "sysroot_header_hash": args.aarch64_sysroot_hash}
+                    if args.aarch64_real_tu_dir else None),
                 "resource_dir": str(args.resource_dir), "resource_header_hash": args.resource_hash,
                 "sysroot_header_hash": args.sysroot_hash, "cpus": args.cpu_set, "nproc": args.nproc,
                 "runs": args.runs, "scales": args.scales, "seed": args.seed,
@@ -417,11 +441,13 @@ def single_run(args, prefix):
                             repeats = args.archive_repeats
                         else:
                             language = ["-x", "c++-cpp-output"] if key.startswith("real_") else []
-                            command = tools["clang++"]["prefix"] + base + case["flags"] + language + ["-c", case["path"], "-o", output]
+                            case_base = compiler_flags(args, args.resource_dir, case["target"],
+                                args.aarch64_sysroot if case["target"] == AARCH64_TARGET else args.sysroot)
+                            command = tools["clang++"]["prefix"] + case_base + case["flags"] + language + ["-c", case["path"], "-o", output]
                         print(f"{prefix.name} {iteration+1}/{args.runs} {name} {key} x{repeats}", flush=True)
                         sample = runner.measure(command, output, name + "-" + key, repeats)
                         if key not in ("ld.lld", "llvm-ar"):
-                            verify_object(output)
+                            verify_object(output, case["target"])
                         else:
                             with output.open("rb") as stream:
                                 magic = stream.read(8)
@@ -452,6 +478,8 @@ def single_run(args, prefix):
 
 
 def calibration(first, second, limit=3.0):
+    if any(r.get("protocol", {}).get("calibration_policy") != CALIBRATION_POLICY for r in (first, second)):
+        raise BenchError("Historical/unknown calibration policy: do not reinterpret old runs with the new gate")
     if first["protocol_hash"] != second["protocol_hash"] or first["fixture_hash"] != second["fixture_hash"] or first["toolchains"] != second["toolchains"]:
         raise BenchError("Calibration inputs/protocol/tool identities changed")
     rows = []
@@ -463,14 +491,19 @@ def calibration(first, second, limit=3.0):
             change = 100 * (two["median"] / one["median"] - 1)
             suspicious = a["summary"]["suspect_retained"] + b["summary"]["suspect_retained"]
             rows.append({"toolchain": name, "case": case, "run1_s": one["median"], "run2_s": two["median"],
+                         "diagnostic_only": case in ("ld.lld", "llvm-ar"),
                          "change_pct": change, "absolute_change_pct": abs(change),
                          "run1_cv_pct": one["cv_pct"], "run2_cv_pct": two["cv_pct"],
                          "suspect_retained": suspicious,
                          "pass": abs(change) <= limit and max(one["cv_pct"], two["cv_pct"]) <= limit and not suspicious})
-    return {"schema": SCHEMA, "status": "PASS" if all(r["pass"] for r in rows) else "FAIL",
-            "noise_floor_pct": max(r["absolute_change_pct"] for r in rows), "threshold_pct": limit,
+    gated = [r for r in rows if not r["diagnostic_only"]]
+    if not gated:
+        raise BenchError("Calibration requires compilation cases")
+    return {"schema": SCHEMA, "calibration_policy": CALIBRATION_POLICY,
+            "status": "PASS" if all(r["pass"] for r in gated) else "FAIL",
+            "noise_floor_pct": max(r["absolute_change_pct"] for r in gated), "threshold_pct": limit,
             "protocol_hash": first["protocol_hash"], "rows": rows,
-            "definition": "max absolute difference of corresponding wall medians; also require per-run CV <= threshold and no suspect retained samples"}
+            "definition": "compilation only: max absolute difference of corresponding wall medians; also require per-run CV <= threshold and no suspect retained samples; ld.lld/llvm-ar rows are diagnostic only"}
 
 
 def header_tree_hash(root):
@@ -502,11 +535,13 @@ def main(argv=None):
     p.add_argument("--archive-repeats", type=int, default=1024, help="archives per sample; fresh output each time (default 1024)")
     p.add_argument("--aslr", choices=("off", "on"), default="off", help="default off uses setarch -R only for benchmark child processes; on requires recalibration")
     p.add_argument("--real-tu-dir", type=Path, default=INPUTS / "real_tu", help="optional .ii + .flags.json directory; empty -> REAL_TU_ABSENT")
+    p.add_argument("--aarch64-real-tu-dir", type=Path, help="additional AArch64 .ii corpus, interleaved in the SAME run; requires --aarch64-sysroot")
+    p.add_argument("--aarch64-sysroot", type=Path, help="existing AArch64 GBS root for additional corpus; ARM fixtures stay unchanged")
     p.add_argument("--timeout", type=float, default=180, help="seconds per subprocess before killing its process group")
     p.add_argument("--load-threshold", type=float, help="one-minute loadavg suspect threshold (default nproc/2)")
     p.add_argument("--work-dir", type=Path, default=Path("/dev/shm") if Path("/dev/shm").is_dir() else WORKSPACE / "temp", help="scratch parent on tmpfs or workspace temp; removed on success/failure")
     p.add_argument("--output", type=Path, default=WORKSPACE / "temp/bench_results" / time.strftime("bench-%Y%m%d-%H%M%S"), help="output prefix for JSON, markdown and raw logs")
-    p.add_argument("--calibrate", action="store_true", help="two consecutive complete runs; exit 2 unless every case differs <=3%%, CV<=3%%, and no retained load warnings")
+    p.add_argument("--calibrate", action="store_true", help="two complete runs; compilation-only gate: difference <=3%%, CV<=3%%, no retained load warnings; lld/ar diagnostic only")
     args = p.parse_args(argv)
     try:
         memory_guard()
@@ -536,6 +571,12 @@ def main(argv=None):
         if min(args.link_repeats, args.archive_repeats) < 1 or args.timeout <= 0 or args.load_threshold <= 0:
             raise BenchError("Repetitions, timeout and load threshold must be positive")
         args.sysroot = args.sysroot.resolve(strict=True)
+        if bool(args.aarch64_real_tu_dir) != bool(args.aarch64_sysroot):
+            raise BenchError("--aarch64-real-tu-dir and --aarch64-sysroot must be supplied together")
+        if args.aarch64_sysroot:
+            args.aarch64_sysroot = args.aarch64_sysroot.resolve(strict=True)
+            if not (args.aarch64_sysroot / "usr/include/stdlib.h").is_file():
+                raise BenchError("Missing AArch64 sysroot C headers")
         args.resource_dir = args.resource_dir.resolve(strict=True)
         if not (args.sysroot / "usr/include/stdlib.h").is_file() or not (args.resource_dir / "include/stddef.h").is_file():
             raise BenchError("Missing sysroot C headers or resource builtin headers")
@@ -553,16 +594,19 @@ def main(argv=None):
         args.resource_hash = header_tree_hash(args.resource_dir / "include")
         args.sysroot_hash = json_digest({"usr/include": header_tree_hash(args.sysroot / "usr/include"),
                                         "gcc": header_tree_hash(args.sysroot / "usr/lib/gcc")})
+        if args.aarch64_sysroot:
+            args.aarch64_sysroot_hash = json_digest({"usr/include": header_tree_hash(args.aarch64_sysroot / "usr/include"),
+                                                   "gcc": header_tree_hash(args.aarch64_sysroot / "usr/lib/gcc")})
         if args.calibrate:
             one = single_run(args, args.output.with_name(args.output.name + "-run1"))
             two = single_run(args, args.output.with_name(args.output.name + "-run2"))
             result = calibration(one, two)
             save(args.output.with_suffix(".json"), result)
             lines = ["# Noise calibration", "", f"{result['status']}: noise floor {result['noise_floor_pct']:.3f}%", "",
-                     "| Case | Run 1 s/op | Run 2 s/op | Difference % | CV 1 % | CV 2 % | Pass |",
-                     "| --- | ---: | ---: | ---: | ---: | ---: | --- |"]
+                     "| Case | Run 1 s/op | Run 2 s/op | Difference % | CV 1 % | CV 2 % | Pass | Diagnostic only |",
+                     "| --- | ---: | ---: | ---: | ---: | ---: | --- | --- |"]
             for row in result["rows"]:
-                lines.append(f"| {row['toolchain']}/{row['case']} | {row['run1_s']:.6f} | {row['run2_s']:.6f} | {row['change_pct']:.3f} | {row['run1_cv_pct']:.3f} | {row['run2_cv_pct']:.3f} | {row['pass']} |")
+                lines.append(f"| {row['toolchain']}/{row['case']} | {row['run1_s']:.6f} | {row['run2_s']:.6f} | {row['change_pct']:.3f} | {row['run1_cv_pct']:.3f} | {row['run2_cv_pct']:.3f} | {row['pass']} | {row['diagnostic_only']} |")
             args.output.with_suffix(".md").write_text("\n".join(lines) + "\n")
             print("\n".join(lines), flush=True)
             return 0 if result["status"] == "PASS" else 2

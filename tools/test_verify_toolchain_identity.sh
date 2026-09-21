@@ -45,7 +45,7 @@ export IDENTITY_TEST_REAL_READELF=$(command -v readelf)
 export IDENTITY_TEST_REAL_UNAME=$(command -v uname)
 export IDENTITY_TEST_MARKER="$suite_tmp/executed"
 mkdir "$suite_tmp/mock" "$suite_tmp/limited"
-for name in readlink sha256sum stat od uname awk readelf; do
+for name in readlink sha256sum stat od uname awk readelf cat; do
     ln -s "$(command -v "$name")" "$suite_tmp/limited/$name"
 done
 cat > "$suite_tmp/mock/awk" <<'MOCK'
@@ -66,6 +66,7 @@ exec "$IDENTITY_TEST_REAL_STAT" "$@"
 MOCK
 cat > "$suite_tmp/mock/uname" <<'MOCK'
 #!/bin/bash
+if [[ ${IDENTITY_TEST_MODE:-} == arm-host ]]; then echo armv7l; exit 0; fi
 if [[ ${IDENTITY_TEST_MODE:-} == unknown-host ]]; then echo unknown_arch; exit 0; fi
 if [[ ${IDENTITY_TEST_MODE:-} == uname-fail ]]; then exit 7; fi
 exec "$IDENTITY_TEST_REAL_UNAME" "$@"
@@ -168,4 +169,17 @@ check rpm-information-error 0 'RPM_QUERY_EXIT=7' --no-exec "$static"
 PATH="$suite_tmp/limited" check rpm-missing-information 0 'rpm missing; informational' --no-exec "$static"
 PATH="$suite_tmp/limited" check timeout-missing-native-query 0 'VERSION_EXIT=0' --loader "$loader" "$static"
 [[ ! -e "$IDENTITY_TEST_MARKER" ]] || { echo 'FAIL guard allowed execution' >&2; exit 1; }
+mkdir "$suite_tmp/binfmt-empty" "$suite_tmp/binfmt-arm" "$suite_tmp/binfmt-match" "$suite_tmp/binfmt-negative" "$suite_tmp/binfmt-bad"
+printf 'enabled\ninterpreter /emul/qemu-arm\nflags: F\noffset 0\nmagic 7f454c46\nmask ffffffff\n' > "$suite_tmp/binfmt-arm/arm-accel"
+printf 'enabled\ninterpreter /fixture/interpreter\nflags: F\noffset 1\nmagic 454c00\nmask ffff00\n' > "$suite_tmp/binfmt-match/generic"
+printf 'enabled\ninterpreter /fixture/interpreter\nflags: F\noffset 0\nmagic 00000000\nmask ffffffff\n' > "$suite_tmp/binfmt-negative/unrelated"
+printf 'enabled\nmagic nothex\n' > "$suite_tmp/binfmt-bad/broken"
+check binfmt-empty-negative 0 'BINFMT_DISPATCH_POSSIBLE=NO' --no-exec --binfmt-extra-dir "$suite_tmp/binfmt-empty" "$static"
+check binfmt-magic-negative 0 'BINFMT_DISPATCH_POSSIBLE=NO' --no-exec --binfmt-extra-dir "$suite_tmp/binfmt-negative" "$static"
+check binfmt-offset-mask-positive 0 'BINFMT_DISPATCH_POSSIBLE=YES' --loader "$suite_tmp/recording-loader" --binfmt-extra-dir "$suite_tmp/binfmt-match" "$static"
+check binfmt-arm-entry-native-positive 0 'BINFMT_DISPATCH_POSSIBLE=YES' --loader "$suite_tmp/recording-loader" --binfmt-extra-dir "$suite_tmp/binfmt-arm" "$static"
+PATH="$suite_tmp/mock:$PATH" IDENTITY_TEST_MODE=arm-host check binfmt-arm-host-arch-match 0 'ARCH_MISMATCH=NO' --loader "$suite_tmp/recording-loader" --binfmt-extra-dir "$suite_tmp/binfmt-arm" "$arm"
+PATH="$suite_tmp/mock:$PATH" IDENTITY_TEST_MODE=arm-host check binfmt-arm-host-guard 0 'BINFMT_DISPATCH_POSSIBLE=YES' --loader "$suite_tmp/recording-loader" --binfmt-extra-dir "$suite_tmp/binfmt-arm" "$arm"
+check binfmt-malformed-fail-closed 2 'BINFMT_DISPATCH_POSSIBLE=UNKNOWN' --loader "$suite_tmp/recording-loader" --binfmt-extra-dir "$suite_tmp/binfmt-bad" "$static"
+[[ ! -e "$IDENTITY_TEST_MARKER" ]] || { echo 'FAIL binfmt guard allowed execution' >&2; exit 1; }
 printf '%s/%s PASS: real ARM mismatch, dynamic/static LLVM dependency controls, wrappers, expectations, and error propagation.\n' "$count" "$count"

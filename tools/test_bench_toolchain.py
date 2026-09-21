@@ -50,6 +50,7 @@ class HarnessChecks(unittest.TestCase):
     def result(self):
         samples = [self.sample(v) for v in (100, 10, 10, 10, 10)]
         return dict(protocol_hash="same", fixture_hash="same", toolchains={"a": "same"},
+                    protocol={"calibration_policy": bench.CALIBRATION_POLICY},
                     results={"a": {"A": {"summary": bench.summarize(samples)}}})
 
     def test_discard_warmup_and_sample_standard_deviation(self):
@@ -79,6 +80,50 @@ class HarnessChecks(unittest.TestCase):
             second[key] = "changed"
             with self.assertRaises(bench.BenchError):
                 bench.calibration(first, second)
+
+    def test_link_archive_are_recorded_but_cannot_fail_compilation_gate(self):
+        first = self.result()
+        for case in ('ld.lld', 'llvm-ar'):
+            first['results']['a'][case] = copy.deepcopy(first['results']['a']['A'])
+        second = copy.deepcopy(first)
+        for case in ('ld.lld', 'llvm-ar'):
+            summary = second['results']['a'][case]['summary']
+            summary['statistics']['wall_s'].update(median=12, cv_pct=10)
+            summary['suspect_retained'] = 1
+        result = bench.calibration(first, second)
+        self.assertEqual(result['status'], 'PASS')
+        self.assertEqual(result['noise_floor_pct'], 0)
+        self.assertEqual(result['calibration_policy'], 'compile-only-v2')
+        self.assertEqual(len(result['rows']), 3)
+        self.assertEqual([r['diagnostic_only'] for r in result['rows']], [False, True, True])
+        second['results']['a']['A']['summary']['statistics']['wall_s']['median'] = 10.4
+        result = bench.calibration(first, second)
+        self.assertEqual(result['status'], 'FAIL')
+        self.assertAlmostEqual(result['noise_floor_pct'], 4)
+
+    def test_historical_policy_cannot_be_reinterpreted(self):
+        old = self.result()
+        old['protocol'].pop('calibration_policy')
+        with self.assertRaisesRegex(bench.BenchError, 'Historical'):
+            bench.calibration(old, old)
+
+    def test_aarch64_input_flags_and_output_machine_are_checked(self):
+        root = self.temporary()
+        source = root / 'demo.ii'
+        source.write_text('int f() { return 0; }\n')
+        bench.save(root/'demo.flags.json', dict(target=bench.AARCH64_TARGET,
+            sha256=bench.digest(source),flags=['-O2'],source='fixture',
+            original_command=['clang++'],preprocess_command=['clang++','-E']))
+        with self.assertRaises(bench.BenchError): bench.real_inputs(root)
+        self.assertEqual(len(bench.real_inputs(root,bench.AARCH64_TARGET)),1)
+        args = SimpleNamespace(sysroot=Path('/arm'))
+        flags = bench.compiler_flags(args,Path('/resource'),bench.AARCH64_TARGET,Path('/aarch64'))
+        self.assertEqual(flags[:2],['--target=aarch64-tizen-linux-gnu','--sysroot=/aarch64'])
+        obj=root/'test.o'
+        import struct
+        obj.write_bytes(b'\x7fELF\x02\x01'+b'\0'*10+struct.pack('<HH',1,183))
+        bench.verify_object(obj,bench.AARCH64_TARGET)
+        with self.assertRaises(bench.BenchError): bench.verify_object(obj)
 
     def test_memory_preflight(self):
         with patch.object(bench, "available_memory", return_value=bench.MEMORY_LIMIT - 1):

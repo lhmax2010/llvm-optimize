@@ -1,9 +1,15 @@
-# 20 BOLT spec 集成设计 v2、身份校验与本机诊断实验
+# 20 BOLT spec 集成设计 v2、双目标 profile 与验收协议
 
-日期：2026-09-21。本文件**完整取代 docs/18 的设计建议**；docs/18、docs/19 原文保留。
+修订日期：2026-09-21（新增实验如跨日，以附录 D 的实际时间为准）。本文件**完整取代 docs/18 的设计建议**；docs/18、docs/19 原文保留。
 用户已解除 docs/19 的停止条件：公开快照陈旧是调查结论，不是禁止面向工作区静态 spec
 设计和实验的理由。本文的设计已经展开；**本轮没有修改 spec，也没有部署到 OBS**。
-只有最终验收使用的 OBS 项目及其新 Base 快照仍须用户指定，不能用旧快照冒充新构建。
+最终验收使用的 OBS 项目及其新 Base 快照仍须用户指定，不能用旧快照冒充新构建。
+本版落实编译项校准门禁、八轮简单验收规则、armv7l+aarch64 profile v2。
+附录 A–C 保留上一版实验事实；历史 FAIL 不按新门禁重判。新增实验见附录 D。
+
+本轮实测：profile v2 与一次 6 GiB cap 纯重写完成，30 TU 全部逐字节 PASS；
+双目标三方两轮校准 **FAIL，编译项噪声底 3.334074%**。未执行正式轮，
+ARM 不劣于 v1 及 AArch64 增量收益均未确证；逐轮诊断比值和失败项见附录 D。
 
 对外统一表述：**筛选层多轮测量方向一致，BOLT 对 LLVM 自身源码编译负载有稳定正向影响，
 量级待构建服务器验收。** 本文的本机诊断结果不作为 Chromium 或全平台收益承诺。
@@ -58,7 +64,7 @@
 
 单 clang 方案必须在 LLVM RPM 中先保证所有 clang 别名指向或具有同一个已认证实体。
 这样 accel 的复制、cmp 与软链接恢复才不会把旧副本混入新包。别名处理不是可省的清理项。
-本轮 patchelf 实验见附录 C；它只验证这一个显式转换，**不替代 OBS brp/fdupes/转包试验**。
+上一版 patchelf 实验见附录 C；它只验证这一个显式转换，**不替代 OBS brp/fdupes/转包试验**。
 
 ### 1.3 身份：三份 ELF 哈希、可信发布清单、worker 实际调用
 
@@ -94,7 +100,7 @@ bash verify_toolchain_identity.sh --expect-bolt present /emul/usr
 bash verify_toolchain_identity.sh --no-exec /path/to/arm/clang-22
 ```
 
-脚本输出版本、SHA、Machine、`ARCH_MISMATCH`、完整 `readelf -dW`、
+脚本输出版本、SHA、Machine、`ARCH_MISMATCH`、`BINFMT_DISPATCH_POSSIBLE`、完整 `readelf -dW`、
 `NEEDED_LLVM_SHARED`、BOLT 节区/notes、RPM 查询输出/退出码。
 `present` 指观察到 `.note.bolt_info`；`partial` 指只有 `.bolt.org.*`；
 `absent` 指二者皆无。`.text.cold` 单独存在不能作为 BOLT 证明。
@@ -103,7 +109,17 @@ bash verify_toolchain_identity.sh --no-exec /path/to/arm/clang-22
 返回码：0 检查完成，1 SHA/BOLT 期望不符，2 输入/辅助工具/解析/版本查询不完整，
 3 识别到 shebang wrapper（无其他错误/期望失配时）。`WRAPPER=YES` 时不执行 wrapper；须另用 trace 查最终 ELF。
 RPM 无归属、查询错误或缺 rpm 均仅信息项；`--no-exec`、已知架构不匹配本身不使检查失败。
-未知架构返回 2；架构不匹配即使指定 loader 也自动跳过执行，防止 binfmt/accel 混入另一文件。
+未知架构返回 2；架构不匹配即使指定 loader 也自动跳过执行。
+另外只读扫描 `/proc/sys/fs/binfmt_misc/`：已注册条目的 magic/mask/offset 匹配当前 ELF，
+或存在 ARM/aarch64 名称/解释器注册，输出 `BINFMT_DISPATCH_POSSIBLE=YES`，自动禁执行。
+**即使 ARM chroot 中 `uname -m=armv7l` 且 Machine=ARM，也不绕过这道门禁**。
+这是保守的“可能分派”判断：disabled 注册也拦截，不声称内核一定会分派。
+注册目录缺失/不可读/格式错误则 UNKNOWN、禁执行、exit 2；可读空目录为 NO，仍保留架构门禁。
+NO 只说明当前可见注册未匹配，不能替代 worker 的实际 exec trace。
+`--binfmt-extra-dir DIR` 仅增加扫描目录供 mock/另一个 proc mount 使用，不能替代真实 proc 目录。
+本机当前只有 jar/python3.12 注册，与 ELF 不匹配；测试用 masked magic+非零 offset、
+ARM 注册+模拟同架构 uname 正例和空/不匹配目录负例验证；不修改 binfmt 注册。
+版本查询被跳过时，以只读 ELF 身份及实际 worker exec trace 完成核验，不强行执行壳。
 依赖 Bash 4+、coreutils、awk、readelf；rpm、timeout 可选。timeout 存在时版本查询限 15 秒。
 
 GN 已知使用平台 clang，验收仍保存 `ninja -C "$OUT" -t commands > commands.txt`，
@@ -113,8 +129,16 @@ GN 已知使用平台 clang，验收仍保存 `ninja -C "$OUT" -t commands > com
 ## 2. spec 的集成位置与隔离降级
 
 本节是**后续 spec 实施契约**，不是声称本轮已有可运行的 RPM 集成补丁。
-原 spec、LLVM 源码及容量脚本均未修改。下列命令和状态行为在实施时须逐项测试。
+原 spec、LLVM 源码及完整构建容量脚本均未修改。下列命令和状态行为在实施时须逐项测试。
 首版只改 x86_64 clang-22 实体及别名；不重写 lld、ar 或共享库。
+
+**对普通构建路径的改动清单（后续实施，不是本轮 spec diff）：**
+
+- 仅一项：普通 `ninja -j %{mlgo_build_jobs}` 增加 `-d keeprsp`，保留链接 rsp 供单 clang 重放。
+  不改变源、CMake 优化参数或调度并发；缺 rsp 时降级，不自行重建。
+
+新增可选 BOLT 阶段的宏、依赖与 manifest 契约在下文独立定义。`-d keeprsp` 虽不改代码生成，
+仍须进入集成指纹；不得用“仅保留文件”绕过首次集成容量认证。
 
 ### 2.1 条件、两套入队依赖与 build 开头断言
 
@@ -173,7 +197,7 @@ profile 包采用 §3 的独立 noarch 包。新包名是拟实施接口，不�
 3. 校验 profile manifest 与本次输入/配置认证绑定，执行：
 
    ```bash
-   llvm-bolt stripped/clang-22 -data "$PROFILE/merged.fdata" \
+   llvm-bolt stripped/clang-22 -data "$PROFILE/merged-v2.fdata" \
      -reorder-blocks=ext-tsp -reorder-functions=cdsort \
      -split-functions -split-all-cold -split-eh -dyno-stats \
      --thread-count=1 -stale-threshold=5 -o candidate/clang-22
@@ -184,15 +208,15 @@ profile 包采用 §3 的独立 noarch 包。新包名是拟实施接口，不�
    `-stale-threshold=5` 是新集成的拒绝门槛（不改变排序算法），依据见 §3.3。
    保存退出码、完整 stderr/dyno-stats、候选 SHA、profile 指标。任何解析缺项、退出非零、
    超时或 OOM 均不提升候选。不在生产包构建中插桩或训练。
-4. 对普通 clang 与候选编译训练 10 + 留出 10 个 ARM TU，固定资源目录/sysroot、flags、
+4. 对普通 clang 与候选编译 ARM 训练 10 + ARM 留出 10 + aarch64 训练 10 个 TU，固定各目标的资源目录/sysroot、flags、
    cwd、输出路径和 `clang-22 --driver-mode=g++`，保留 `-frecord-gcc-switches`。
-   对 20 对 `.o` 逐字节 `cmp`；任一差异 `FALLBACK_CORRECTNESS` 并阻止 BOLT 版发货。
+   对 30 对 `.o` 逐字节 `cmp`；任一差异 `FALLBACK_CORRECTNESS` 并阻止 BOLT 版发货。
    快速身份/节区/NEEDED 校验也须通过。至此写 `APPLIED` 状态，但只在 `%install` 替换。
 
-本项目当前训练 10 + 留出 10，共 **20 个 TU 的 BOLT 产物对照全部逐字节相同**；
-这不是未来任意输入/版本正确性的形式证明，新的集成候选仍执行上述门禁。
-正确性测试 corpus 作为独立固定版本 builder 测试资产依赖，包含 20 个 .ii、sidecar、
-ARM sysroot/资源目录身份和训练/留出标识，不混进 profile 训练集合。
+本项目 v1 已验证训练 10 + 留出 10，共 **20 个 TU 的 BOLT 产物对照全部逐字节相同**；
+这不是未来任意输入/版本正确性的形式证明，新的双目标集成候选执行上述 **30 TU** 门禁。
+正确性测试 corpus 作为独立固定版本 builder 测试资产依赖，包含 30 个 .ii、sidecar、
+ARM/aarch64 sysroot 与共同资源目录身份和训练/留出标识，不混进 profile 训练集合。
 缺测试资产则 `FALLBACK_CORRECTNESS_ASSETS`，不能跳过门禁提升候选。
 
 ### 2.3 资源隔离与失败判据
@@ -281,46 +305,76 @@ OBS 作业生成输入/包证据；本机采集执行器按冻结命令训练，
    使用与已验证 BOLT tools 同构的工具/runtime archive，全部 SHA 入 manifest；各参数
    以 `temp/bolt-final-20260918/instrument/stage.json` 原 argv 为基准核对，不能仅复制选项名
    而漏 runtime/binpath/PID 后缀。插桩失败保留现场，普通包继续可用；追加资源须另评估。
-4. 用现有训练 13 组：A/B/C，seed=73419、scale=1/2/2；real_tu 训练 10 个 ARM .ii。
-   固定 ARM triple/sysroot/资源目录与 sidecar flags，每组一次，保存输入/flags SHA、
-   运行时间、退出码、每 PID fdata；不把留出 10 个加入训练。
-   `merge-fdata -o "$RUN/merged.fdata" "$RUN"/profiles/*`，每个输入须存在、非空、退出 0。
+4. **profile v2 训练 23 组**：armv7l 13（A/B/C seed=73419、scale=1/2/2 + 原训练 10 .ii），
+   再加同 10 个 LLVM 源文件用 RPM 基线重新预处理的 aarch64 10 .ii。
+   ARM triple 为 `armv7l-tizen-linux-gnueabi`；aarch64 为 `aarch64-tizen-linux-gnu`。
+   各用对应 GBS sysroot，资源头同属该版 clang 22；宏检查须有 `__aarch64__`、无 `__arm__`。
+   输入/flags/目标/sysroot/资源目录 SHA 均入 corpus manifest；aarch64 目录独立为
+   `tools/bench_inputs/real_tu_aarch64/`，不重标 ARM/x86 的 .ii，也不把 ARM 留出 10 个用于训练。
+   每组一次，保存运行时间、退出码和一份 PID fdata。按已冻结的 23 文件清单执行
+   `merge-fdata <13 arm fdata> <10 aarch64 fdata> > merged-v2.fdata`，不扫描通配符混入额外负载。
    新 OBS clang 的资源目录不能冒用本机旧 headers；为该版本冻结新的 corpus manifest。
-5. 在该 stripped 输入试纯重写，满足 §3.3 和 20 TU 正确性；将 profile + manifest 打成
+5. 在该 stripped 输入试纯重写，满足 §3.3 和 30 TU 正确性；将 profile + manifest 打成
    独立 noarch RPM。下一次同图/已重认证构建即可应用，不能为了自举在首次 OBS 构建里循环训练。
 
-本轮**没有执行上述新插桩或重写**。已有训练 profile 是 153887224 B，SHA
-`d8b6c9146822fbe19ce0c3646d57d17e797d865100a7b0193562db6ea371c24d`；仅作为设计成本/格式样本，
-不自动授权新 OBS SHA 使用。
+本轮**不重新插桩**，复用 Q/instrumented 原件，只采新增 aarch64 10 组，合并后在
+6 GiB cap 下允许一次纯优化重写；实测及门禁见附录 D。旧 v1 profile 为 153887224 B，SHA
+`d8b6c9146822fbe19ce0c3646d57d17e797d865100a7b0193562db6ea371c24d`，保持不变。
+本机 v2 与未来首个生产 OBS profile 是两个认证对象；本机实测不自动授权新的 OBS 输入 SHA。
 
 ### 3.2 分发与版本
 
 首选独立 `noarch` RPM，例如 `llvm-bolt-profile-clang22-<profile-id>`，路径
-`/usr/share/llvm-bolt-profiles/<profile-id>/{merged.fdata,manifest.json}`；包 ID 永不复用，
+`/usr/share/llvm-bolt-profiles/<profile-id>/{merged-v2.fdata,manifest.json}`；包 ID 永不复用，
 NEVRA、RPM SHA、解包 profile SHA 都固定。profile 不进 Source0，不扩大非 x86_64 构建依赖。
 无 BOLT 分支不解析 profile/tools 包；精确依赖在入队时决定，见 §2.1。
 
-其他方案仍有明确边界：独立有条件 SourceN 可离线归档，但约 154 MB 分发成本及源文件
+其他方案仍有明确边界：独立有条件 SourceN 可离线归档，但本次 v2 为 171232190 B
+（v1为153887224 B）的分发成本及源文件
 缺失可能在 `%prep` 前阻断，要用两套入队配置；固定服务器路径只适合试验，必须只读、
 固定内容哈希并备份，可移植性低，不作为首版生产分发。均不使用滚动 latest。
 
-manifest 版本 `profile_schema=1`：保存 source/spec/patch SHA、MLGO 参数及模型 SHA、
+manifest 版本 `profile_schema=2`、`profile_version=v2`：保存 source/spec/patch SHA、MLGO 参数及模型 SHA、
 CMake/宏/目标架构、relocs SHA、stripped SHA、代码/重定位摘要、BOLT tool/runtime SHA、
-训练 corpus/flags/资源目录/sysroot SHA、profile SHA/bytes、命令、时间、owner/reviewer、
+分目标的 corpus（armv7l 13 / aarch64 10）、每个输入/flags/资源目录/sysroot SHA、profile SHA/bytes、命令、时间、owner/reviewer、
 认证输入列表、profile 统计及正确性结果。不同构建图生成新 profile-id，不覆盖旧文件。
+目标 corpus 的强制字段如下（尖括号为必须填入的摘要，不是允许的运行时缺省值）：
+
+```json
+{
+  "profile_schema": 2,
+  "profile_version": "v2",
+  "corpora": [
+    {"target": "armv7l-tizen-linux-gnueabi", "count": 13,
+     "synthetic": {"seed": 73419, "scales": [1, 2, 2]}, "real_tu_count": 10,
+     "inputs_flags_manifest_sha256": "<SHA256>", "sysroot_headers_sha256": "<SHA256>"},
+    {"target": "aarch64-tizen-linux-gnu", "count": 10, "real_tu_count": 10,
+     "inputs_flags_manifest_sha256": "<SHA256>", "sysroot_headers_sha256": "<SHA256>"}
+  ],
+  "resource_headers_sha256": "<shared clang 22 resource SHA256>",
+  "relocs_sha256": "<SHA256>", "stripped_sha256": "<SHA256>",
+  "profile_sha256": "<SHA256>", "candidate_sha256": "<SHA256>"
+}
+```
+
+实际每个输入的路径、SHA、flags 与 target 均在所引用的 manifest 展开，不仅记数量。
+两目标 sysroot 的头文件摘要分别计算；生成的 .ii 本身再以 SHA 固定，后续测量不重新 -E。
 
 **任一 source/spec/patch/MLGO 配置变化触发重训申请与重新认证**。
 即便只有重建时间路径导致新 ELF SHA，也必须重新认证，不能自动沿用 allowlist：
 先比较代码/重定位/符号图，核对新构建身份；在独立受限试验中测旧 profile 的匹配率、
-20 TU 正确性和筛选方向，维护者签署新输入 SHA 认证记录后才能复用。
-若配置变化实质改变图，重新走 13 组训练。待认证期间自动普通包降级。
+30 TU 正确性和筛选方向，维护者签署新输入 SHA 认证记录后才能复用。
+若配置变化实质改变图，重新走 23 组训练。待认证期间自动普通包降级。
 
 ### 3.3 stale 与覆盖率的可达门槛
 
 首版冻结为以下**工程准入政策**，不是上游保证或从吞吐拟合出的统计界限：
 
-- stale 函数占比 **≤5%**：分母为有非空 profile 的 regular functions，分子为无效（含
-  inferred-stale）profile functions；保持默认不启用 infer-stale，传 `-stale-threshold=5`。
+- stale **函数数量**占比 **≤5%**，不是样本权重占比。源码变量对应为
+  `100 * NumAllStaleFunctions / (ProfiledFunctions.size() + NumStaleProfileFunctions)`；
+  分母是参与该统计的有效+无效 profile 函数，不含提前跳过的 non-simple 函数。
+  分子含 invalid 和 inferred-stale，保持默认不启用 infer-stale，传 `-stale-threshold=5`。
+  严格 `>` 才错误退出，因此 5% 本身可通过，不用日志中四舍五入的百分比复算门禁。
 - 有效 profile 函数覆盖率 **≥10%**：`valid_profile_functions / total_regular_functions`；
   用数量计算，禁止把输出四舍五入后的 15.1 当原始数据。统计缺失/分母为 0 均拒绝提升。
 - 另记录 stale sample 占比与 non-simple 数，不把 non-simple 混成 stale；出现新解析警告
@@ -329,7 +383,9 @@ CMake/宏/目标架构、relocs SHA、stripped SHA、代码/重定位摘要、BO
 依据：docs/16 rewrite 原始日志是 **21802 / 144032** 有 profile，约 15.137%；
 另有 **378 non-simple profiled functions** 未优化。源码
 `llvm/bolt/lib/Passes/BinaryPasses.cpp:1466–1469、1487–1502、1524–1564`
-显示 non-simple 单列，stale 会从有效集合排除，超 stale-threshold 才失败；
+显示 non-simple 单列、分母在 :1524–1525、函数比例在 :1536–1538、
+阈值判断/错误退出在 :1561–1564。:1551–1559 的 stale **samples** 比例仅另行打印，
+不是 `-stale-threshold` 的判据；源码无需修改。stale 会从有效集合排除；
 默认阈值在同文件:211 起是 100%，不能依赖默认退出码约束陈旧 profile；
 `llvm/bolt/lib/Profile/StaleProfileMatching.cpp:50–53` 的 infer-stale 默认关闭。
 10% 给当前约 15.1% 覆盖留明确余量，5% 容许少量图变化但拒绝大面积失配。
@@ -409,7 +465,7 @@ brp-strip、find-debuginfo、fdupes、accel 转换后逐层保存 `readelf -SW/-
 要求实际观测到 `.note.bolt_info`、输入中已有 `.bolt.org.*` 与 `.text.cold` 保留，
 或按试包实测形成经过评审的允许变化规则。**现阶段不预先批准删除标记**；
 试包出现任何缺失先阻止 BOLT 发货，可发布普通包，查明后再固定该转换的判据。
-未来最终 worker 还执行 20 TU 等价性，不止在 build tree 里检查一次。
+未来最终 worker 还执行双目标 30 TU 等价性，不止在 build tree 里检查一次。
 
 ### 4.3 调试信息政策
 
@@ -435,7 +491,7 @@ BOLT 后地址改变，旧 DWARF 不能用于可靠源码行/变量/内联栈定
 
 ### 4.4 范围与发货硬条件
 
-首版只 BOLT clang，因为现有 profile/20 TU 正确性/筛选证据都针对它。
+首版只 BOLT clang，因为历史 profile/20 TU 与本次双目标 profile/30 TU 的正确性、筛选证据均针对它。
 不把 Chromium 链接只占 0.2% 外推到普通 RPM 包，也不因此永久排除 lld/llvm-ar。
 后续每个工具须独立 workload/profile/正确性/容量与包调用面认证。
 139929464 B 的 RPM clang 与 215899856 B 的现有 BOLT 文件来自**不同剥离方式**，
@@ -497,15 +553,17 @@ GNU ld/BFD 与 lld 都检查，避免某个 linker 的容忍行为掩盖索引�
 | docs/17 attempt2 run1 | 留出；诊断 | 同轮 RPM 与 stripped 分开列 | 校准对 FAIL 6.609160% | 不作验收收益 |
 | docs/17 attempt2 run2 | 留出；诊断 | 同上 | 同上 | 无后续正式轮 |
 
-本轮补齐的 A/A 与 relocs-only 是诊断实验，详见附录，不重新训练、不重写 BOLT。
+上一版补齐的 A/A 与 relocs-only 是诊断实验，详见附录 A/B；当时不训练、不重写 BOLT。
+本次新增双目标 profile/一次重写单列附录 D，不回填旧试验。
 文中保留的百分比只用于内部噪声/阈值/历史口径说明；对外收益表述采用本文开头的定性句。
 
-本轮身份脚本测试：`tools/test_verify_toolchain_identity.sh` 已入交付范围，覆盖 42 项。
+本轮身份脚本测试：`tools/test_verify_toolchain_identity.sh` 已入交付范围，本次扩为 49 项。
 真实正负对照为：现有 ARM 根 clang、docs/19 动态快照 x86_64 clang、静态 RPM clang、
 现有 BOLT clang。ARM 正例不执行，recording-loader 验证没有被调用。
 其余用私有 PATH mock 注入 awk/stat/readelf/uname/RPM 错误及 partial 特征；不改真实 ELF。
 测试可传 `--static/--dynamic/--arm/--bolt/--loader` 指定异机 fixture，缺 fixture 明确失败。
-原始输出 `E/identity-tests.log`，实测 **42/42 PASS**。完整分支与命令就在提交的测试脚本里。
+上一版 `E/identity-tests.log` 为 42/42 PASS；新增 binfmt 后原始输出
+`E2/identity-tests.log`，实测 **49/49 PASS**。完整分支与命令就在提交的测试脚本里。
 
 ## 6. Quickbuild 验收：预先冻结的操作与判据
 
@@ -555,8 +613,9 @@ launcher 就签字。缺 trace 权限/证据则验收未完成；不申请本机
 ### 6.2 轮次、失败传播与停止
 
 固定先做 **A0a、A0b 一对 A/A**，再 **A1 B1 B2 A2 A3 B3**，共八次完整服务器构建。
-配对固定 A1/B1、A2/B2、A3/B3；不用按快慢重排。若 AA 不稳，后六轮不启动，查明环境后
-新建试验 ID 重做全部协议。六轮中任一失败终止整个验收，保留已完成轮为诊断数据。
+配对固定 A1/B1、A2/B2、A3/B3；不用按快慢重排。A/A 用于给 §6.3 的阈值提供 d，
+不保留旧的独立 AA≤3% 统计准入条件；任一轮构建/身份/资源执行失败仍终止整个验收，
+已完成轮保留为诊断数据，不追加轮次。
 
 执行模板的 `BUILD` 必须是**等待 Quickbuild job 终态的适配器**；数组参数和其脚本 SHA
 冻结入 manifest，不是“提交请求成功就返回 0”的命令。适配器必须保存 job ID、每次查询、
@@ -602,56 +661,97 @@ PY
 内存 OOM、身份变化、输入图/任务数不等、缓存协议不符、缺失日志或 correctness 差异都停止。
 无关系统服务入侵资源隔离也终止并标环境无效；不挑某个快样本重跑替换。
 
-### 6.3 指标、区间、量化资源红线
+### 6.3 冻结配对、简单判定与量化资源红线
 
-主指标同时报告端到端有效 build wall 和单位编译成本：从完整 `.ninja_log` 按冻结的
-编译边清单求 `Σ(end-start)/编译任务数`，保持并行度/任务集合一致。这是任务 wall
-均值，不等于 CPU time；所有重试/重复边必须计入并单列，不能仅取最后一条掩盖失败。
-`.ninja_log` 单位毫秒、不同阶段分类由实际 commands 固定，不凭文件后缀混入归档/链接。
-第二口径为同一新 cgroup 的
-`Δcpu.stat(user_usec + system_usec)`，覆盖真实 accel 子进程，另报每任务 CPU 成本。
-跨机器/跨输入图/跨缓存策略绝对值不可比；本机训练/留出数字不能代替这些服务器指标。
+主指标同时报告有效完整 build wall、单位编译 wall（冻结编译边中所有尝试的
+`Σ(end-start)/编译任务数`）；第二口径为同一新 cgroup 的
+`Δcpu.stat(user_usec + system_usec)`，必须纳入实际 accel 子进程。
+从 `.ninja_log` 毫秒与 commands 分类，重试/重复边计入且单列，不仅保留最后一次。
+排队时间、跨机器/任务图/缓存策略的绝对耗时不可比较，历史本机轮不能作为服务器 A 组。
 
-AA 环境门槛冻结为：对 build wall、单位编译成本、CPU总成本、memory.peak，
-`abs(A0b/A0a-1) ≤ 3%`，否则本次验收停止。3%沿用项目筛选层噪声容忍目标，
-不是声称一次AA能估计完整置信分布；后续统计还保留实测 AA 误差带。
+冻结顺序 **A0a A0b A1 B1 B2 A2 A3 B3**，A 为同 source/spec/patch 的
+`without_clang_bolt` 构建。固定配对 A1/B1、A2/B2、A3/B3，禁止重排或追加轮。
+对每一指标分别计算 `d = abs(A0b/A0a - 1)`。A/A 不是置信区间估计，
+而是这一组执行的噪声参照；d 直接进入下面的统一阈值，不叠加旧的 AA≤3% 准入规则。
 
-三个配对各算 `r_i=B_i/A_i`、`x_i=ln(r_i)`；点估计 `exp(mean(x))`，
-95%区间 `exp(mean(x) ± 4.302653*sd(x,ddof=1)/sqrt(3))`（df=2）。
-额外以同指标 AA 漂移 `d=abs(ln(A0b/A0a))` 向两端各扩 d，作为保守环境误差带。
-这是预定小样本估计；若配对波动/趋势破坏解释，标“不确定”，不得缩小区间或追加最快轮。
-本次只看一次冻结的全部数据；不按中间结果提前宣称成功，不以不断加轮直到显著作停止规则。
+对三个时间/CPU 指标各自用自己的 d：
 
-收益成立必须**同时**满足：
+```text
+margin = max(0.03, 2*d)
+limit = 1 - margin
+r1 = B1/A1; r2 = B2/A2; r3 = B3/A3
+成立 = (r1 < limit and r2 < limit and r3 < limit)
+```
 
-| 指标 | 预定门槛（B/A，分母为同轮配对 A） | 来源与误差处理 |
+必须**三对全部严格小于**阈值；等于也不成立。任一对不满足标 **未确证**，不加轮。
+各项 `GM = (r1*r2*r3)^(1/3)` 只描述结果，不能用平均收益盖过某一对失败。
+不计算 t 区间，不靠选择轮次或无限加样本把结论改成成立。完整 build wall、单位编译 wall、
+CPU 第二口径须全部成立才批准整体收益；仅编译指标通过则只能报告编译阶段观察，
+Quickbuild 整体收益仍未确证。执行失败/缺证据/输入变化仍按 §6.2 立即停止。
+
+以下代码给出精确规则（各值必须来自同一次冻结的八轮；数值须有限且 >0）：
+
+```python
+import math
+
+def paired_gate(values):
+    # Frozen input order, not sorted by time.
+    a0a, a0b, a1, b1, b2, a2, a3, b3 = values
+    if not all(math.isfinite(x) and x > 0 for x in values):
+        raise ValueError("invalid or missing measurement")
+    d = abs(a0b/a0a - 1)
+    ratios = [b1/a1, b2/a2, b3/a3]
+    threshold = 1 - max(0.03, 2*d)
+    return {"d": d, "threshold": threshold, "ratios": ratios,
+            "established": all(r < threshold for r in ratios),
+            "geomean": math.prod(ratios)**(1/3)}
+```
+
+资源阈值维持工程预算；为了不用统计区间又不把误差当收益，采用**各对最大比值 + 2d**
+的保守上界，d 取该资源指标自己的 A/A 值。大误差不能放宽预算：
+
+| 指标 | 非退化门槛（B/A，分母为配对 A） | 依据与误差处理 |
 | --- | --- | --- |
-| 单位编译 wall | 加 AA 误差的区间上界 <1.00 | 对目标任务的方向性收益；不是预先指定收益百分比 |
-| cgroup user+sys CPU成本 | 加 AA 误差的区间上界 <1.00 | 独立 CPU 口径防止仅受墙钟环境影响 |
-| 完整 build wall | 加 AA 误差的区间上界 <1.00 | Quickbuild 最终吞吐目标；若只单位成本通过而总 wall 未通过，仅能称编译阶段成立、整包仍不确定 |
-| 编译构建期 memory.peak | 加 AA 误差的区间上界 ≤1.05，且任何轮无 OOM/新增swap | **+5% 是工程非退化容忍上限**，不是文件体积推算；大于此值不批准推广 |
-| 下游产物运行 wall/CPU | 固定工作负载的配对区间上界 ≤1.02 | **+2% 工程回归预算**，不是已有实测；需独立运行验收 |
-| 下游产物运行峰值内存 | 配对区间上界 ≤1.03，且每次无 OOM/新增swap | **+3% 工程回归预算**；RSS与cgroup分别报告，不互相替代 |
+| 编译期 cgroup memory.peak | `max(r1,r2,r3)+2d ≤1.05`，所有轮无 OOM/新增swap | +5% 工程预算；按峰值实测，不从文件体积推算 |
+| 下游运行 wall 与 CPU（分别） | `max(r1,r2,r3)+2d ≤1.02` | +2% 工程预算，生成代码预期不变，需独立执行验收 |
+| 下游运行 cgroup peak/RSS（分别） | `max(r1,r2,r3)+2d ≤1.03`，每轮无 OOM/新增swap | +3% 工程预算；RSS/cgroup不可互替 |
 
-阈值依据是首版工程风险预算：编译器布局变化允许有限 resident working set 变化，
-故编译内存设 5%；生成代码预期不变，下游运行设置更紧的 2% 时间/CPU、3% 内存上限。
-服务器数据尚未取得，不能把这些政策数写成实测推导值；实测误差按上述 AA 扩区间处理，
-不因误差大就放宽预算。
+下游运行单独用冻结的启动/页面加载/交互/退出套件，以资产和命令 SHA 固定输入，
+同机/隔离/缓存策略，独立 A/A 一对和 A/B 交错三对，顺序同上，不在运行中更换网页/网络内容。
+任一功能失败立即终止；上述保守上界越线即**未确证/不放行**，不加轮。
+5/2/3% 是首版风险预算，2d 是预先冻结的误差余量政策，均不冒称自然方差估计或已有实测。
+服务器尚未执行，不能给“下游资源不退化”的承诺。
 
-下游运行验收固定使用现有平台回归套件的确定输入/命令清单（以 manifest 的文件 SHA 冻结），
-涵盖 Chromium 启动、既定页面加载/交互与退出，禁止测试中更换网页内容/网络负载。
-先独立 AA 20 对、再 A/B 20 对，顺序交替 AB/BA；每对同机/缓存/隔离条件，
-测运行 wall、CPU、cgrouppeak/RSS、功能测试退出状态；点估计按 logratio，
-95% t 区间 df=19 临界 2.093024，再以 AA 的 logratio 区间最大绝对端点扩误差。
-未能压下测量误差使上界跨阈值时结论是**不确定，不能放行**，不把噪声从观察回归中扣掉。
-任一功能不正确立即失败。数据未取得前不给“下游资源不退化”的承诺。
-20 对是固定执行量，2/3/5% 是本版明确工程容忍值；项目负责人在执行前批准 manifest 后
-才成为发布门禁，执行后不得为结果好看改变这些数。
+发货还要求 §4.4 静态开发包门禁、最终 RPM/accel/worker **30 TU** 字节门禁、正确 debug
+策略、无未认证后处理。本轮不运行 Quickbuild 或 Chromium，仅交付模板与本机附录数据。
 
-服务器发货批准还要求：§4.4 静态开发包门禁、最终 RPM/accel/worker 20 TU 字节门禁、
-正确 debug 策略、无未认证后处理。上述本轮仅设计，**没有在本机构建 Chromium**。
+## 7. 基准台协议变更记录
 
-## 附录 A：本轮实验协议与 A/A 零对照
+**生效日期 2026-09-21，自本次提交引入的 `compile-only-v2` 协议起，只适用于此后运行。**
+附录 D 的新运行使用本次待提交的相同脚本 SHA，随本次提交交付；不追溯旧 JSON。
+`ld.lld`/`llvm-ar` 的 66 个小对象负载主要测约 4.5 ms 的启动成本，不在编译几何平均内。
+两项仍完整测量、写 rows 和原始统计，`diagnostic_only=true`；row.pass 仅表示其数值是否
+在阈值内，**不影响整体 PASS 或 noise_floor_pct**。报告显式列 Diagnostic only，避免误读。
+只对编译项应用中位数跨轮差≤3%、每轮 CV≤3%、无保留可疑样本；噪声底取编译项最大差。
+协议包含 `calibration_policy=compile-only-v2`、脚本 SHA、各目标输入及 sysroot 头文件 hash，
+因此 protocol hash 必变；新旧 hash 不可混成一对校准，也不能按新规则重判旧失败。
+`calibration()` 还会拒绝缺少新 policy 字段的旧 JSON，防止误用 API 追溯重判。
+
+历史判定固定保留：docs/17 两对 **FAIL 4.345326% / FAIL 6.609160%**，本文件附录 A
+**FAIL 3.846399%**。三次虽由 lld/ar 触发，但仍是当时协议的 FAIL。附录 B 的原 PASS 同样保留。
+测试覆盖“编译 4% 仍 FAIL”和“lld/ar 20%/CV超限/可疑，但编译全过则整体 PASS”，以及
+AArch64 target/对象 Machine 正反例。新增目标仅对明确传入的 corpus 生效；ARM夹具由首个
+工具链生成，23 编译项与 lld/ar 在同一轮按负载/轮次交错，不拼接不同轮的历史数据。
+
+## 8. 待定事项（本轮不执行）
+
+- 最终 OBS 项目与验收 Base 快照：待用户确认自研静态 spec 已进入哪个项目后固定，当前公开快照陈旧。
+- lld / llvm-ar 在全平台构建中的时间占比：待用户提供 Quickbuild 全平台日志后按实际调用分析。
+  链接+归档占比 **>10%** 才启动第二阶段：真实规模链接基准、lld 专用 profile、BOLT lld、
+  链接产物逐字节门禁；**<5%** 则搁置。5%–10%（含边界）继续待决，不擅自启动。
+  不能从 Chromium 的 0.2% 或当前小夹具推断全平台占比；本轮不训练/重写 lld。
+
+## 附录 A：上一版实验协议与 A/A 零对照（历史原判）
 
 以下路径全部以实际本机路径为准，原始大文件不提交：
 
@@ -670,11 +770,11 @@ E16 = W/temp/bolt-final-20260918
 身份测试显式绑 CPU 0，基准绑 CPU 2。三项基准/编译实验本身串行，不与另一重负载重叠；
 后台进程见 host-before 原始记录，不能据此假定整轮环境零干扰。
 
-两个实验均直接使用未修改的 `tools/bench_toolchain.py`，`--calibrate` 各跑两次完整
+两个历史实验均直接使用当时未修改的 `tools/bench_toolchain.py`，`--calibrate` 各跑两次完整
 同轮交错测量。真实输入为原训练 10 个 .ii，合成 seed=73419、scale=1/2/2；没有采新
 profile，也没有把留出集混入训练目录。CPU 2、ASLR off、N=5 丢首次、loadavg 阈值 10、
 ARM triple、同一 S sysroot、同一 `TC/lib64/clang/22` 资源目录，逐编译进程 4 GiB AS。
-夹具由每个实验的第一个工具链（RPM 基线）生成，64 objects，三者共用；lld 每样本
+夹具由每个实验的第一个工具链（RPM 基线）生成，64 shards 加 A/C 共66 objects，三者共用；lld 每样本
 4096 次、ar 1024 次，报告按单调用归一化，不能把这两类短调用与编译时间直接混加。
 loader 均为 `/lib64/ld-linux-x86-64.so.2`，libxml2 独立库目录
 `W/temp/toolchain-runtime-baseline/libxml2/usr/lib64`，没有安装到宿主。
@@ -697,8 +797,8 @@ nice -n 15 ionice -c3 python3 tools/bench_toolchain.py \
 ```
 
 A/A 两个名字的 clang SHA 都是 `3283505c…`；两套 lld/ar 也指向同一套基线文件。
-本轮不追着噪声门禁重跑，不因失败改协议；原有门禁为各工具/负载跨轮 wall 中位数差
-≤3%、每轮 CV≤3%、无保留的高负载可疑样本，见 `tools/bench_toolchain.py:454–473`。
+该历史实验不追着噪声门禁重跑，不因失败改协议；原有门禁为各工具/负载跨轮 wall 中位数差
+≤3%、每轮 CV≤3%、无保留的高负载可疑样本，见历史提交 `16aa9370e995ba543ee2189454d08b8ca13508d0` 的 `tools/bench_toolchain.py:454–473`。
 
 **实测状态：完整执行，校准 FAIL；仅诊断数据。** 最大跨轮噪声底 **3.846399%**，
 分母为同工具链同项目 run1 的 wall 中位数。两轮均无高负载保留样本；失败项是
@@ -759,7 +859,7 @@ A/A 两个名字的 clang SHA 都是 `3283505c…`；两套 lld/ar 也指向同�
 **因果边界：** stripped/relocs-only 对照同一次重链产物经过 `objcopy --strip-debug`
 这一步的影响；relocs-only/RPM 还包含重定位保留、debug 是否保留和 RPM 后处理差异，
 不能称为完全纯净的“重链单变量”。stripped/RPM 则是此前 BOLT 对照链条里的中间影响。
-本轮没有再引入未经打包的 ordinary-build ELF，所以不虚称完全分离了每一种后处理。
+该历史实验没有再引入未经打包的 ordinary-build ELF，所以不虚称完全分离了每一种后处理。
 这些比值都不包含 BOLT 重写本身，不能用来直接宣布新的 BOLT 净收益。
 
 **实测：两轮完整执行；原 3% 校准门禁 PASS，最大跨轮差 1.986133%。**
@@ -772,7 +872,7 @@ A/A 两个名字的 clang SHA 都是 `3283505c…`；两套 lld/ar 也指向同�
 | 1 | 1487.877 | 1188744 | 2.409033% | 0 | 是 |
 | 2 | 1466.421 | 1527232 | 2.207152% | 0 | 是 |
 
-全部组合通过既定门禁；本轮仍只回答中间处理对照，不把它当作新的 BOLT/Chromium 验收。
+全部组合通过既定门禁；该历史实验仍只回答中间处理对照，不把它当作新的 BOLT/Chromium 验收。
 
 **第 1 轮**；P=RPM、R=未剥离 relocs、S=stripped。所有时间为保留样本 wall 中位数，单位秒。
 
@@ -820,7 +920,7 @@ A/A 两个名字的 clang SHA 都是 `3283505c…`；两套 lld/ar 也指向同�
 两轮各项 user/sys/RSS/最小值/标准差及所有 sample 详见 D/relocs 的 JSON，未用历史测量当分母。
 
 两轮的 13 编译项几何平均都接近 1，未观察到可稳定分辨的大幅中间处理效应。
-这不等于证明精确零影响；也不能用本轮 S/P 去除历史 docs/16 的 B/P，跨轮反算所谓
+这不等于证明精确零影响；也不能用该历史实验 S/P 去除历史 docs/16 的 B/P，跨轮反算所谓
 纯 BOLT 收益。A/A 的失败与本三方校准的通过都保留，分别属于各自时段和协议标签。
 对外仍使用本文开头的定性口径，最终量级由服务器验收。
 
@@ -888,7 +988,285 @@ ABI-tag 的地址确有移动，BOLT note 地址/内容不变。完整 diff 在 
 `E/patchelf-equality/result.json` 与 raw/；汇总另存 `D/patchelf.json`。
 本实验没有性能/噪声门禁：它检验转换与字节一致性，**3% 门禁不适用**。
 
-## 附录 D：R01–R22 最终处置与证据
+## 附录 D：aarch64 profile v2 实验（本次新协议）
+
+### D.1 固定路径、资源与输入来源
+
+```text
+W  = /home/linhao/Toolchain/development/llvm-optimize
+E2 = W/temp/bolt-aarch64-v2-20260921
+D2 = W/temp/bench_results/bolt-aarch64-v2-20260921
+S64 = /home/linhao/GBS-ROOT-TIZEN-UNIFIED-LLVM/local/BUILD-ROOTS/scratch.aarch64.0
+TC = W/temp/toolchain-baseline/usr
+Q = W/temp/bolt-measurement-20260918/run
+E16 = W/temp/bolt-final-20260918
+```
+
+枚举 6 个现存 aarch64 根，见 E2/aarch64-roots.json；选与 ARM 根同系列的 S64，
+有 usr/include/stdlib.h，根内 clang 的只读 ELF header 为 Machine=AArch64。未运行该异架构 clang。
+实际预处理/编译均用原生 x86_64 RPM clang，显式 AArch64 triple 与 S64。证据：
+E2/aarch64-sysroot-inspection.txt、preprocess/commands.log、collection.json。
+启动 nproc=20，free -g available=21 GiB，磁盘 available=673 GiB；E2/preflight.log 保留主要进程。
+重写/采集均采用 6 GiB MemoryMax、MemorySwapMax=0、nice15/ionice-c3，沿用 2秒进程/30秒宿主采样、
+低于2GiB紧急中止与 finally 回收。编译逐个 CPU2、ASLR off、4GiB RLIMIT_AS；测量前另存 D2/*-host-before.txt。
+
+同原训练 selection.json 的 10 个源文件，重新 -E，而非改写旧 .ii 的 target 字段。预定义宏原文摘录：
+
+```text
+#define __aarch64__ 1
+__arm__ : ABSENT
+__x86_64__ : ABSENT
+```
+
+首行为 target-predefined-macros.txt 原行；ABSENT 为对完整输出检索的结果。所有 sidecar 包含
+target、SHA、完整原命令和 -E 命令，输出另经 ELF64/EM_AARCH64 对象格式检查。
+
+| 文件（同名 .flags.json 配套） | 原 LLVM 源文件 | .ii 字节 | .ii SHA256 |
+| --- | --- | ---: | --- |
+| llvm_sema_SemaStmt | clang/lib/Sema/SemaStmt.cpp | 9088683 | `b6573be55442a2e3cb6d164a8a3c429eb31ad5c2f26fb22032747567c05f62e6` |
+| llvm_sema_SemaExprCXX | clang/lib/Sema/SemaExprCXX.cpp | 10178219 | `b0e3072b0ba360c94c13fc444aedfa34b42a09f8906e243c74483ac1387b7eac` |
+| llvm_codegen_SelectionDAG | llvm/lib/CodeGen/SelectionDAG/SelectionDAG.cpp | 6639918 | `9a6284c2a607318eb15d5f6eac2045dea17ee8a0337af3afc8a6ddeb2d8e8ef9` |
+| llvm_codegen_MachinePipeliner | llvm/lib/CodeGen/MachinePipeliner.cpp | 6554330 | `c527c1fdba6d5fbda4c9d5f05977eeab72f57f08ecbf0dc03a88dc5283bac97e` |
+| llvm_transforms_Attributor | llvm/lib/Transforms/IPO/Attributor.cpp | 5483967 | `5d8197c27f485685feb34e725618d6ac8fba2ba96905f425be84dabdef2f4e85` |
+| llvm_transforms_WholeProgramDevirt | llvm/lib/Transforms/IPO/WholeProgramDevirt.cpp | 5700401 | `c683df3c5dc31263fafc6a6bdd8605e476d01ea8c79948e013417e5015218ee5` |
+| llvm_arm_ARMISelLowering | llvm/lib/Target/ARM/ARMISelLowering.cpp | 8218513 | `607cdc02caa0d60e609ef484009eec36934f8571e1bd3f716b65a7cf54d0d880` |
+| llvm_arm_ARMTargetTransformInfo | llvm/lib/Target/ARM/ARMTargetTransformInfo.cpp | 7606360 | `6e24b90e3d215d66afe40777370412789f2c510860cb89cf9fae140aceda9414` |
+| llvm_mc_MasmParser | llvm/lib/MC/MCParser/MasmParser.cpp | 3887337 | `8fecbaf28238e7f1fc994c4b15f1963ee856b83362ad6bd5172fc1df082f50ac` |
+| llvm_mc_AsmParser | llvm/lib/MC/MCParser/AsmParser.cpp | 4011311 | `065b0315c147b477df749c30774a2c56db37aeba4a61450e0c51e0205ccf4cd4` |
+
+目录为 tools/bench_inputs/real_tu_aarch64/。仅 SemaExprCXX 大于 10,000,000 B，留在
+`/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-aarch64-v2-20260921/preprocess/llvm_sema_SemaExprCXX.ii`，
+sidecar 以绝对 input 引用；其余9个 .ii与10个 sidecar提交。ARM训练/留出目录未修改。
+
+### D.2 复用插桩 ELF、10+13 合并与采集成本
+
+复用 Q/instrumented/bin/clang-22，SHA `685b2f3706a427c674d633602cc6309c5d45aad2c31723ca6d0cdaaac74d2ea1`，**未重新插桩**。
+该 ELF 内嵌 Q/profiles/clang 的 PID 前缀；每个新增 TU 产生恰好一份新 fdata，按前后文件集差登记。
+原13文件前后 SHA 全相同。新增10个与原13个按明确清单 merge，不混入其他 profile。
+v2 合并文件 `E2/profile-work/merged-v2.fdata` 为 **171232190 B**，
+SHA `d9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326`。profile-v2-manifest.json记录两目标 corpus、stripped/候选/profile SHA；
+profile-work/result.json记录每个 fdata路径/SHA/体积与原13文件 SHA。现有v1 merged.fdata未覆盖。
+
+新增10组插桩编译 wall 合计 **231.662382 s**，配套一次基线合计 **58.209330 s**，
+总量比 3.979815（插桩/RPM，仅采集开销诊断，非优化性能结论）。
+采集含基线/审计 wall 290.375087 s，含merge总wall 296.019211 s；
+10份新fdata总计 1314447043 B。原始命令与wait4数据在 profile-work/raw/。
+
+| aarch64 TU | 基线一次 wall s | 插桩一次 wall s | 插桩/RPM | 新 fdata B |
+| --- | ---: | ---: | ---: | ---: |
+| real_llvm_arm_ARMISelLowering | 8.595597 | 33.754477 | 3.926950 | 141111179 |
+| real_llvm_arm_ARMTargetTransformInfo | 4.868052 | 20.411787 | 4.193009 | 132294136 |
+| real_llvm_codegen_MachinePipeliner | 6.270901 | 24.465758 | 3.901474 | 133466102 |
+| real_llvm_codegen_SelectionDAG | 7.299528 | 28.582778 | 3.915702 | 138810522 |
+| real_llvm_mc_AsmParser | 2.784819 | 13.345525 | 4.792241 | 125865652 |
+| real_llvm_mc_MasmParser | 3.528278 | 14.898041 | 4.222469 | 125802060 |
+| real_llvm_sema_SemaExprCXX | 6.185450 | 24.438823 | 3.951018 | 128687762 |
+| real_llvm_sema_SemaStmt | 5.951124 | 23.573498 | 3.961184 | 126246302 |
+| real_llvm_transforms_Attributor | 6.689295 | 25.570952 | 3.822668 | 129079440 |
+| real_llvm_transforms_WholeProgramDevirt | 6.036286 | 22.620743 | 3.747460 | 133083888 |
+
+### D.3 唯一一次纯重写：6 GiB cap
+
+输入仍为 Q/stripped/bin/clang-22（226730672 B，SHA eccfb075…，完整值在 §3/manifest）；
+与 docs/16 v1 保持相同排序/拆分选项和单线程，增加 -stale-threshold=5 准入检查：
+
+```bash
+llvm-bolt "$Q/stripped/bin/clang-22" -o "$E2/optimized-v2/bin/clang-22" \
+  -data="$E2/profile-work/merged-v2.fdata" \
+  -reorder-blocks=ext-tsp -reorder-functions=cdsort \
+  -split-functions -split-all-cold -split-eh -dyno-stats \
+  --thread-count=1 -stale-threshold=5
+```
+
+完整实际命令含 `/lib64/ld-linux-x86-64.so.2 --library-path <独立libxml2>`，
+由 `tools/run_bolt_stage.py --memory-max-gib 6` 执行；精确 argv 在 E2/rewrite-scope/stage.json。
+
+| 指标 | 实测 | 原始记录 |
+| --- | --- | --- |
+| llvm-bolt 自身 wall | 24.43 s | rewrite-scope/tool-time-v.txt |
+| 自身 VmHWM / MaxRSS | 3857492 KiB = 3.678791 GiB | process-memory.jsonl + tool-time-v.txt，一致 |
+| scope wall | 26.324582 s | outcome.json |
+| scope MemoryPeak / MemoryMax | 3886170112 / 6442450944 B | scope-after-rpm.json |
+| memory.events | max=0、oom=0、oom_kill=0、oom_group_kill=0 | scope-after-rpm.json |
+| 宿主采样最低 MemAvailable | 22352379904 B；阶段不足30秒，仅1个宿主样本，不冒称连续最低值 | samples.jsonl |
+| 回收 | sampler_reaped=true、log_reader_reaped=true；退出0 | outcome.json |
+| bolt-v2 ELF | 218881120 B；SHA `f26b65625897189bd38ae02eb8b4cf5854ada84c08be9be3943f241dea647637` | profile-v2-manifest.json |
+
+峰值未贴 cap且events无压力/OOM，**不是截断值**。此实测支持本输入/不更新debug的纯重写可在6GiB中完成，
+不能推广成带debug更新/其他源码版本的内存保证。完整LLVM构建18GiB门禁不变。
+
+完整 dyno-stats 在 rewrite-scope/build.log；关键原行（统计来自合并profile，不是benchmark收益）：
+
+```text
+BOLT-INFO: 23592 out of 144032 functions in the binary (16.4%) have non-empty execution profile
+BOLT-INFO: 383 functions with profile could not be optimized
+         17422124951 : all function calls
+        815741765614 : executed instructions
+        194456200794 : executed load instructions
+         17422124951 : all function calls (=)
+        803493495029 : executed instructions (-1.5%)
+        194456200794 : executed load instructions (=)
+```
+
+非空profile 23592/144032，原v1为21802/144032；383 non-simple不能优化，不能算作stale。
+本次成功日志无invalid/stale警告，未开启infer-stale；按已核验源码计stale=0，5%门禁通过。
+
+### D.4 30 TU 字节正确性门禁
+
+ARM训练10 + ARM留出10 + aarch64训练10，**30/30逐字节PASS**。每对都用
+`clang-22 --driver-mode=g++`，同cwd/输出路径/资源头/目标sysroot，保留 -frecord-gcc-switches；
+实际 cmp 比较完整 .o，不排除 .GCC.command.line。证据 correctness-30.json 和三个 equality-*/result.json、
+raw/commands.json；完整对象留temp。候选先通过全部30项才启动测量。
+
+### D.5 三工具链、23编译项同轮交错
+
+顺序固定 rpm-baseline（TC，第一个生成共同夹具）、bolt-v1（E16/optimized）、bolt-v2（E2/optimized-v2）。
+性能负载正是v2训练的23组；ARM留出10只做正确性验证，未加入本轮性能表。
+因此即便校准通过，aarch64收益也仍是训练集筛选观察，需要后续服务器/独立负载验收泛化。
+ARM13 + aarch6410，N=5丢首次，CPU2、ASLR off、loadavg阈值10、同clang22资源目录、
+对应目标sysroot、共同66对象夹具、4GiB AS、tmpfs、lld4096/ar1024次归一化，两个完整校准轮后只在PASS时跑正式轮。
+测量期间未启动其他重实验，宿主仍有桌面/开发服务；20:00–20:01 loadavg 曾超过10，随后回落。
+E2/host-during-200004.txt、host-during-200129.txt保存环境切片；不能据此断言某个进程是噪声根因。
+高负载样本按原协议保留，任何门禁失败均照实报告。
+没有拿docs/13或16历史轮当对照。v2/v1只有profile训练覆盖与布局变化（stale参数只作准入检查）；
+v1/RPM、v2/RPM仍包含先前重链/剥离/BOLT，不能全部称纯BOLT。输入和分析口径在测量前由 E2/analysis-policy.json 冻结。
+
+新协议校准 **FAIL**，编译项噪声底 **3.334074%**；69个编译组合参与门禁，6个lld/ar组合仅诊断。
+protocol hash `872c7c39219bb89c638affef7a810fe7ef92d895e6b716a9bbfa47571a8b5694`。
+未通过项如下。按门禁不执行正式轮，不追加尝试、不更换负载或放宽阈值；下面两轮仅作诊断。
+
+| 工具链/项 | 跨轮差% | CV1% | CV2% | 可疑样本 |
+| --- | ---: | ---: | ---: | ---: |
+| rpm-baseline/A | 1.572374 | 1.997279 | 4.288191 | 0 |
+| rpm-baseline/real_llvm_mc_AsmParser | -1.507503 | 2.260966 | 3.364373 | 0 |
+| rpm-baseline/real_llvm_sema_SemaExprCXX | -0.937216 | 2.390141 | 3.127391 | 0 |
+| rpm-baseline/real_llvm_sema_SemaStmt | 0.758636 | 2.145240 | 2.692341 | 1 |
+| rpm-baseline/real_llvm_transforms_Attributor | 0.481416 | 2.489548 | 2.476116 | 1 |
+| rpm-baseline/real_llvm_transforms_WholeProgramDevirt | 0.253103 | 2.916396 | 2.764534 | 1 |
+| rpm-baseline/real_aarch64_llvm_arm_ARMISelLowering | -0.735394 | 4.383652 | 2.330624 | 1 |
+| rpm-baseline/real_aarch64_llvm_arm_ARMTargetTransformInfo | 1.663413 | 1.614572 | 2.395570 | 1 |
+| rpm-baseline/real_aarch64_llvm_codegen_MachinePipeliner | 1.048930 | 1.534585 | 1.897657 | 1 |
+| rpm-baseline/real_aarch64_llvm_transforms_Attributor | 3.334074 | 0.247380 | 1.844160 | 0 |
+| bolt-v1/A | 1.506848 | 1.532678 | 3.916657 | 0 |
+| bolt-v1/real_llvm_mc_AsmParser | -0.530714 | 2.511967 | 3.837387 | 0 |
+| bolt-v1/real_llvm_sema_SemaExprCXX | -1.379070 | 3.503220 | 2.866641 | 0 |
+| bolt-v1/real_llvm_sema_SemaStmt | 0.532391 | 2.833085 | 2.920411 | 1 |
+| bolt-v1/real_llvm_transforms_Attributor | 0.830446 | 2.284438 | 3.195697 | 1 |
+| bolt-v1/real_llvm_transforms_WholeProgramDevirt | 0.353536 | 4.483450 | 2.843538 | 1 |
+| bolt-v1/real_aarch64_llvm_arm_ARMISelLowering | 0.460457 | 3.211396 | 2.129063 | 1 |
+| bolt-v1/real_aarch64_llvm_arm_ARMTargetTransformInfo | 1.872777 | 3.418220 | 3.395321 | 1 |
+| bolt-v1/real_aarch64_llvm_mc_AsmParser | -0.913987 | 2.627485 | 3.095729 | 0 |
+| bolt-v1/real_aarch64_llvm_mc_MasmParser | 0.319571 | 3.259768 | 2.749543 | 0 |
+| bolt-v1/real_aarch64_llvm_transforms_Attributor | 3.080342 | 0.248965 | 1.720630 | 0 |
+| bolt-v1/real_aarch64_llvm_transforms_WholeProgramDevirt | 3.247547 | 0.569306 | 2.352958 | 0 |
+| bolt-v2/A | 0.579580 | 1.497007 | 4.149575 | 0 |
+| bolt-v2/real_llvm_sema_SemaStmt | -0.716481 | 1.902002 | 2.517028 | 1 |
+| bolt-v2/real_llvm_transforms_Attributor | 0.820916 | 2.740070 | 2.505753 | 1 |
+| bolt-v2/real_llvm_transforms_WholeProgramDevirt | 1.110782 | 2.330116 | 2.627556 | 1 |
+| bolt-v2/real_aarch64_llvm_arm_ARMISelLowering | -1.142517 | 2.976791 | 2.450835 | 1 |
+| bolt-v2/real_aarch64_llvm_arm_ARMTargetTransformInfo | 1.132051 | 3.267331 | 2.342504 | 1 |
+
+| 轮次 | 目标/项数 | GM(v2/v1) | GM(v2/RPM) | GM(v1/RPM) |
+| --- | --- | ---: | ---: | ---: |
+| calibration-run1 | armv7l / 13 | 1.004010 | 0.855496 | 0.852079 |
+| calibration-run1 | aarch64 / 10 | 0.996174 | 0.849719 | 0.852982 |
+| calibration-run2 | armv7l / 13 | 1.000433 | 0.855538 | 0.855168 |
+| calibration-run2 | aarch64 / 10 | 0.990335 | 0.847250 | 0.855518 |
+
+所有比值分母如列名，均为同轮wall中位数之比，GM不含lld/ar。<1为耗时降低，>1为耗时增加。
+两目标分别报告，不能用aarch64收益掩盖ARM退化；也不能把训练负载结果外推到Chromium/全平台。
+
+**对本轮两个性能问题的回答：均未确证。** ARM 的 v2/v1 几何平均依轮次为 1.004010 / 1.000433；这些点值不足以证明 v2 不劣于 v1。
+AArch64 的 v2/v1 依轮次为 0.996174 / 0.990335，v2/RPM 为 0.849719 / 0.847250；仅为未通过校准的数据描述。
+两轮不能合并包装成正式收益，也不能从相近点值宣称等效。没有生成正式轮 JSON；
+profile v2、纯重写容量和 30 TU 正确性已完成，但性能认证及生产发布授权均未获得。
+
+**calibration-run1逐项表**（校准/诊断；单位s）：
+
+| 目标/项 | RPM | v1 | v2 | v2/v1 | v2/RPM | v1/RPM |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| armv7l/A | 8.591445 | 7.660944 | 7.736480 | 1.009860 | 0.900486 | 0.891695 |
+| armv7l/B | 2.235561 | 1.724092 | 1.744825 | 1.012025 | 0.780486 | 0.771212 |
+| armv7l/C | 6.113277 | 5.842214 | 5.838570 | 0.999376 | 0.955064 | 0.955660 |
+| armv7l/real_llvm_arm_ARMISelLowering | 8.422611 | 7.245890 | 7.334838 | 1.012276 | 0.870851 | 0.860290 |
+| armv7l/real_llvm_arm_ARMTargetTransformInfo | 4.873971 | 4.037495 | 4.053651 | 1.004001 | 0.831694 | 0.828379 |
+| armv7l/real_llvm_codegen_MachinePipeliner | 6.290165 | 5.373172 | 5.434182 | 1.011355 | 0.863917 | 0.854218 |
+| armv7l/real_llvm_codegen_SelectionDAG | 6.961876 | 5.948444 | 5.962165 | 1.002307 | 0.856402 | 0.854431 |
+| armv7l/real_llvm_mc_AsmParser | 2.736538 | 2.304279 | 2.303134 | 0.999503 | 0.841623 | 0.842042 |
+| armv7l/real_llvm_mc_MasmParser | 3.375285 | 2.896913 | 2.899271 | 1.000814 | 0.858971 | 0.858272 |
+| armv7l/real_llvm_sema_SemaExprCXX | 6.162586 | 5.130145 | 5.151505 | 1.004164 | 0.835932 | 0.832466 |
+| armv7l/real_llvm_sema_SemaStmt | 5.951580 | 4.995422 | 4.977908 | 0.996494 | 0.836401 | 0.839344 |
+| armv7l/real_llvm_transforms_Attributor | 6.433878 | 5.456119 | 5.478992 | 1.004192 | 0.851585 | 0.848030 |
+| armv7l/real_llvm_transforms_WholeProgramDevirt | 5.889523 | 5.021477 | 5.001167 | 0.995955 | 0.849163 | 0.852612 |
+| aarch64/real_aarch64_llvm_arm_ARMISelLowering | 8.814108 | 7.573215 | 7.601347 | 1.003715 | 0.862407 | 0.859215 |
+| aarch64/real_aarch64_llvm_arm_ARMTargetTransformInfo | 5.015915 | 4.210423 | 4.165679 | 0.989373 | 0.830492 | 0.839413 |
+| aarch64/real_aarch64_llvm_codegen_MachinePipeliner | 6.406448 | 5.518888 | 5.488370 | 0.994470 | 0.856695 | 0.861458 |
+| aarch64/real_aarch64_llvm_codegen_SelectionDAG | 7.284095 | 6.337867 | 6.297278 | 0.993596 | 0.864524 | 0.870097 |
+| aarch64/real_aarch64_llvm_mc_AsmParser | 2.818656 | 2.416732 | 2.404029 | 0.994744 | 0.852899 | 0.857406 |
+| aarch64/real_aarch64_llvm_mc_MasmParser | 3.511478 | 3.015368 | 3.006068 | 0.996916 | 0.856069 | 0.858718 |
+| aarch64/real_aarch64_llvm_sema_SemaExprCXX | 6.190147 | 5.194066 | 5.138089 | 0.989223 | 0.830043 | 0.839086 |
+| aarch64/real_aarch64_llvm_sema_SemaStmt | 5.911178 | 4.937040 | 4.936168 | 0.999823 | 0.835057 | 0.835204 |
+| aarch64/real_aarch64_llvm_transforms_Attributor | 6.609706 | 5.676388 | 5.640950 | 0.993757 | 0.853434 | 0.858796 |
+| aarch64/real_aarch64_llvm_transforms_WholeProgramDevirt | 5.969032 | 5.080426 | 5.112245 | 1.006263 | 0.856461 | 0.851131 |
+| diagnostic/ld.lld | 0.004818 | 0.004834 | 0.004837 | 1.000804 | 1.004098 | 1.003292 |
+| diagnostic/llvm-ar | 0.002386 | 0.002382 | 0.002397 | 1.006550 | 1.004702 | 0.998164 |
+
+整轮wall 2168.861700s；全命令最大RSS 1188744KiB；scratch_removed=True。
+
+**calibration-run2逐项表**（校准/诊断；单位s）：
+
+| 目标/项 | RPM | v1 | v2 | v2/v1 | v2/RPM | v1/RPM |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| armv7l/A | 8.726534 | 7.776383 | 7.781319 | 1.000635 | 0.891685 | 0.891119 |
+| armv7l/B | 2.251514 | 1.750785 | 1.742668 | 0.995364 | 0.773999 | 0.777604 |
+| armv7l/C | 6.093533 | 5.912437 | 5.908077 | 0.999263 | 0.969565 | 0.970281 |
+| armv7l/real_llvm_arm_ARMISelLowering | 8.445427 | 7.325937 | 7.330997 | 1.000691 | 0.868043 | 0.867444 |
+| armv7l/real_llvm_arm_ARMTargetTransformInfo | 4.823415 | 4.024875 | 4.041794 | 1.004204 | 0.837953 | 0.834445 |
+| armv7l/real_llvm_codegen_MachinePipeliner | 6.234453 | 5.316471 | 5.331122 | 1.002756 | 0.855107 | 0.852757 |
+| armv7l/real_llvm_codegen_SelectionDAG | 6.936735 | 5.906305 | 5.906131 | 0.999970 | 0.851428 | 0.851453 |
+| armv7l/real_llvm_mc_AsmParser | 2.695284 | 2.292050 | 2.303448 | 1.004973 | 0.854622 | 0.850393 |
+| armv7l/real_llvm_mc_MasmParser | 3.356611 | 2.898945 | 2.898228 | 0.999753 | 0.863439 | 0.863652 |
+| armv7l/real_llvm_sema_SemaExprCXX | 6.104830 | 5.059397 | 5.092465 | 1.006536 | 0.834170 | 0.828753 |
+| armv7l/real_llvm_sema_SemaStmt | 5.996731 | 5.022017 | 4.942242 | 0.984115 | 0.824156 | 0.837459 |
+| armv7l/real_llvm_transforms_Attributor | 6.464851 | 5.501429 | 5.523970 | 1.004097 | 0.854462 | 0.850975 |
+| armv7l/real_llvm_transforms_WholeProgramDevirt | 5.904430 | 5.039230 | 5.056719 | 1.003471 | 0.856428 | 0.853466 |
+| aarch64/real_aarch64_llvm_arm_ARMISelLowering | 8.749290 | 7.608087 | 7.514500 | 0.987699 | 0.858870 | 0.869566 |
+| aarch64/real_aarch64_llvm_arm_ARMTargetTransformInfo | 5.099351 | 4.289274 | 4.212837 | 0.982179 | 0.826152 | 0.841141 |
+| aarch64/real_aarch64_llvm_codegen_MachinePipeliner | 6.473647 | 5.589639 | 5.621427 | 1.005687 | 0.868355 | 0.863445 |
+| aarch64/real_aarch64_llvm_codegen_SelectionDAG | 7.344153 | 6.368397 | 6.345431 | 0.996394 | 0.864011 | 0.867138 |
+| aarch64/real_aarch64_llvm_mc_AsmParser | 2.796975 | 2.394643 | 2.379178 | 0.993542 | 0.850625 | 0.856155 |
+| aarch64/real_aarch64_llvm_mc_MasmParser | 3.480802 | 3.025005 | 3.004935 | 0.993365 | 0.863288 | 0.869054 |
+| aarch64/real_aarch64_llvm_sema_SemaExprCXX | 6.242838 | 5.243241 | 5.106426 | 0.973906 | 0.817965 | 0.839881 |
+| aarch64/real_aarch64_llvm_sema_SemaStmt | 6.053091 | 5.077425 | 4.992610 | 0.983296 | 0.824803 | 0.838815 |
+| aarch64/real_aarch64_llvm_transforms_Attributor | 6.830079 | 5.851240 | 5.797482 | 0.990813 | 0.848816 | 0.856687 |
+| aarch64/real_aarch64_llvm_transforms_WholeProgramDevirt | 6.141708 | 5.245415 | 5.228845 | 0.996841 | 0.851367 | 0.854064 |
+| diagnostic/ld.lld | 0.005060 | 0.005057 | 0.004991 | 0.987004 | 0.986381 | 0.999369 |
+| diagnostic/llvm-ar | 0.002417 | 0.002437 | 0.002459 | 1.009207 | 1.017720 | 1.008435 |
+
+整轮wall 2192.502768s；全命令最大RSS 1519832KiB；scratch_removed=True。
+
+### D.6 复现入口与证据索引
+
+交付 `collect_llvm_real_tu.py --target aarch64-tizen-linux-gnu`、
+`extend_bolt_profile_aarch64.py`、`measure_bolt_aarch64.py`（rewrite/verify/calibrate/measure四阶段）。
+各脚本 --help 给参数；每阶段拒绝覆盖旧证据，profile采集入口要求恰好13个原fdata，
+本实验已完成后不应直接再次采集进该目录。现有二进制的profile前缀不可通过CLI随意更换；
+新实验需独占、认证过的输入/证据，不能为重试删除既有现场。
+
+| E2/D2 路径 | 内容 |
+| --- | --- |
+| E2/preflight.log、aarch64-roots.json、aarch64-sysroot-inspection.txt | 实际资源/根枚举与架构 |
+| E2/preprocess/ | 全部-E命令、宏、10个输入与sidecar计划 |
+| E2/profile-work/result.json、raw/ | 10次baseline+instrumented编译、23文件合并与哈希 |
+| E2/collect-scope/、rewrite-scope/ | cap/命令/time/VmHWM/cgroup/采样/回收，完整dyno-stats |
+| E2/profile-v2-manifest.json、correctness-30.json、equality-*/ | 输入/候选/profile身份、30个完整对象cmp |
+| E2/analysis-policy.json、pipeline.json、experiment-summary.json | 前置分析规则、阶段退出/时间、派生比值 |
+| D2/*-launch.json、*-host-before.txt、*.json、*-raw/；E2/host-during-*.txt | 精确同轮三方命令、宿主状态、每样本wall/user/sys/RSS/load与校准 |
+| E2/binfmt-registry.txt、identity-tests.log、identity-v2.txt | 宿主真实注册、49项正负测试、v2只读ELF身份 |
+| E2/harness-tests.log、all-tool-tests.log、acceptance-rule-tests.json | 编译门禁16项、工具原回归35项、八轮简单规则6项 |
+| E2/protected-before.json、protected-after.json、publication-verification.json | 原有资产保护与最终GitHub发布核验 |
+
+## 附录 E：R01–R22 处置与本版延续
 
 编号沿用 docs/19 的合并追踪编号，不声称等于三家原始评审编号。“采纳”区分设计契约、
 本轮代码/实验与未来试包验收；所有请求的本轮实现完成后才标完成，不把未来 OBS 验收
@@ -899,27 +1277,27 @@ ABI-tag 的地址确有移动，BOLT note 地址/内容不变。完整 diff 在 
 | 阻塞 | R01 | 采纳；停止门禁已按用户最新指令解除 | §1 完整流水线、陈旧快照、多级 hash；最终新快照待 OBS 项目确定 |
 | 高 | R02 | 采纳；完整设计 | §2 单 clang 重放、rsp/cwd、_toolchain 准入、隔离失败降级 |
 | 高 | R03 | 采纳；首版不改 branding | §1.3 Release+可信清单+节区+worker 实际路径 |
-| 高 | R04 | 采纳；自举与认证流程已定 | §3 本机有界 22 GiB、13 训练组、维护者责任、5% stale/10% coverage、双输入 SHA |
+| 高 | R04 | 采纳；自举与认证流程已定 | §3 本机有界 22 GiB、双目标 23 训练组、维护者责任、5% stale/10% coverage、双输入 SHA |
 | 高 | R05 | 采纳；独立 noarch RPM | §2.1、§3.2 两套入队依赖、无 profile 预期普通包 |
 | 高 | R06 | 采纳；固定状态/安装清单 | §4.1–4.2 原子 JSON、build 写/install 读/check 只读；缺损 fail-open |
 | 高 | R07 | 采纳；别名事务与转换门禁 | §1.2、§4.2 软硬链接与 brp；附录 C 实测 patchelf；完整试包仍是发货条件 |
 | 高 | R08 | 采纳；容量指纹与例外隔离 | §2.3 新指纹先认证；22 GiB 不泄漏完整 18 GiB 构建门禁 |
 | 高 | R10 | 采纳；口径已统一 | §5 逐轮正式/诊断、训练/留出、分母；20 TU 与文件体积差边界 |
-| 高 | R11 | 采纳；完整验收模板 | §6 固定八轮、配对/区间/停止、CPU第二口径、exec trace、5/2/3%资源预算 |
+| 高 | R11 | 采纳；完整验收模板 | §6 固定八轮、简单配对规则/停止、CPU第二口径、exec trace、5/2/3%资源预算 |
 | 高 | R12 | 采纳；发货硬条件 | §4.4 消费者静态链接验收或剔除 llvm-static-devel，未冒称已修复 |
-| 高 | R13 | 采纳；脚本/实机测试完成 | Machine/uname、真实 ARM 正例、自动 no-exec |
+| 高 | R13 | 采纳；脚本/实机测试完成 | Machine/uname + binfmt、真实 ARM 正例、自动 no-exec |
 | 高 | R14 | 采纳；脚本/实机测试完成 | 完整动态段与 NEEDED，动态快照 YES/静态基线 NO |
 | 高 | R15 | 采纳；脚本/测试完成 | expect-bolt 三态及失配非零 |
 | 高 | R16 | 采纳；脚本/测试完成 | RPM 仅信息、WRAPPER=YES/exit3，不执行 wrapper |
 | 高 | R17 | 采纳；脚本/故障注入完成 | awk/stat/readelf/uname 错误 UNKNOWN/exit2 |
 | 高 | R18 | 采纳；脚本/测试完成 | -x 检查，不可执行输入退出2 |
-| 高 | R20 | 采纳；测试代码随本轮推送 | 42/42 PASS，真实正负 ELF 与私有 PATH 故障注入 |
+| 高 | R20 | 采纳；测试代码随本轮推送 | 49/49 PASS，含 binfmt mock、真实正负 ELF 与故障注入 |
 | 中 | R09 | 采纳；PGO 口径修正 | §2.3 废弃加法模型，开发机暂缓，待服务器重估，可与 BOLT 叠加 |
 | 中 | R19 | 采纳；usage/测试完成 | timeout 可选，缺失时原生版本查询也通过 |
 | 中 | R21 | 采纳；完整 A/A 实验 | 附录 A；按实际门禁标记，失败数据亦保留，不追噪声 |
 | 中 | R22 | 采纳；三方交错实验 | 附录 B；固定4GiB AS，无放宽，完整比值及混杂边界 |
 
-## 附录 E：原始记录、检查与发布
+## 附录 F：上一版原始记录与本版检查/发布
 
 | 本机文件/目录 | 内容 |
 | --- | --- |
@@ -937,13 +1315,12 @@ ABI-tag 的地址确有移动，BOLT note 地址/内容不变。完整 diff 在 
 文档中的 E/D 等均已在附录 A 展开为固定绝对路径；大 ELF、profile、实验 JSON 和原始日志
 按 README 留在 temp，不上传。可复用的身份脚本及测试提交 tools，本次专用编排器留 temp。
 
-自检：不改 spec/LLVM 源码、不做 PGO/完整重建/新 BOLT 重写、不构建 Chromium、不推 Gerrit；
-仅编译已授权基准输入并修改已有 BOLT 文件的副本。docs18/19 保留；完整构建 18 GiB 门禁
-保持字节不变。最终 GitHub 提交包含本文、身份脚本、测试脚本三项；发布验证记录另存 temp。
+上述 E/D 表是上一版历史归档，原文件不重算、不覆盖。该版的 A/A FAIL、relocs PASS、
+patchelf PASS 仍保持原判。新增双目标实验与本版检查统一存附录 D 的 E2/D2。
 
-最终保护检查：**11 项保护文件全部同 SHA，另加 3.56 GB relocs ELF 前后 SHA 相同**；
-LLVM 源码树仍只有任务开始前的 `packaging/llvm.spec` 三处并发差异，spec 本身 hash 未变。
-四个完整基准轮都报告 scratch_removed=true；串行实验控制器、patchelf 与 cmp 均已退出。
-身份测试 **42/42 PASS**；A/A **FAIL 3.846399%**，三方 **PASS 1.986133%**，
-patchelf **6 个 BOLT 节区保留、3 个 TU 字节 PASS**。GitHub 发布仅使用 origin/main，
-提交号和 raw 校验由 E/publication-verification.json 记录，并在完成回复给固定提交链接。
+本版自检：不改 spec/LLVM 源码、不做 PGO/完整重建、不重新插桩、不构建 Chromium、不推 Gerrit。
+只使用已批准的预处理、已有插桩 clang 训练、一次 6 GiB 纯 BOLT 重写与基准测量。
+完整构建 18 GiB 门禁保持文件 hash 不变。原始 profile/旧候选均只读保护，新增 fdata 因现有
+插桩二进制内嵌 PID 输出前缀而在原 profiles 目录新增文件，并逐个登记，不覆盖旧 13 文件。
+提交只包含本次文档、工具与≤10 MB的配套输入；日志、profile、ELF、JSON 保留 temp。
+GitHub push 与 main/固定提交 raw 校验的结果见 E2/publication-verification.json（发布后生成）。
