@@ -7,9 +7,11 @@
 本版落实编译项校准门禁、八轮简单验收规则、armv7l+aarch64 profile v2。
 附录 A–C 保留上一版实验事实；历史 FAIL 不按新门禁重判。新增实验见附录 D。
 
-本轮实测：profile v2 与一次 6 GiB cap 纯重写完成，30 TU 全部逐字节 PASS；
+提交 795a5c4 的实测：profile v2 与一次 6 GiB cap 纯重写完成，30 TU 全部逐字节 PASS；
 双目标三方两轮校准 **FAIL，编译项噪声底 3.334074%**。未执行正式轮，
 ARM 不劣于 v1 及 AArch64 增量收益均未确证；逐轮诊断比值和失败项见附录 D。
+本次仅补充服务器 A/A 事前中止规则，并预注册 §7.1 的最后一次本机拆分校准；
+**尚未启动测量，等待用户确认夜间已关闭桌面应用。**
 
 对外统一表述：**筛选层多轮测量方向一致，BOLT 对 LLVM 自身源码编译负载有稳定正向影响，
 量级待构建服务器验收。** 本文的本机诊断结果不作为 Chromium 或全平台收益承诺。
@@ -554,10 +556,10 @@ GNU ld/BFD 与 lld 都检查，避免某个 linker 的容忍行为掩盖索引�
 | docs/17 attempt2 run2 | 留出；诊断 | 同上 | 同上 | 无后续正式轮 |
 
 上一版补齐的 A/A 与 relocs-only 是诊断实验，详见附录 A/B；当时不训练、不重写 BOLT。
-本次新增双目标 profile/一次重写单列附录 D，不回填旧试验。
+795a5c4 的双目标 profile/一次重写单列附录 D，不回填旧试验。
 文中保留的百分比只用于内部噪声/阈值/历史口径说明；对外收益表述采用本文开头的定性句。
 
-本轮身份脚本测试：`tools/test_verify_toolchain_identity.sh` 已入交付范围，本次扩为 49 项。
+795a5c4 身份脚本测试：`tools/test_verify_toolchain_identity.sh` 已入库，共 49 项。
 真实正负对照为：现有 ARM 根 clang、docs/19 动态快照 x86_64 clang、静态 RPM clang、
 现有 BOLT clang。ARM 正例不执行，recording-loader 验证没有被调用。
 其余用私有 PATH mock 注入 awk/stat/readelf/uname/RPM 错误及 partial 特征；不改真实 ELF。
@@ -614,8 +616,13 @@ launcher 就签字。缺 trace 权限/证据则验收未完成；不申请本机
 
 固定先做 **A0a、A0b 一对 A/A**，再 **A1 B1 B2 A2 A3 B3**，共八次完整服务器构建。
 配对固定 A1/B1、A2/B2、A3/B3；不用按快慢重排。A/A 用于给 §6.3 的阈值提供 d，
-不保留旧的独立 AA≤3% 统计准入条件；任一轮构建/身份/资源执行失败仍终止整个验收，
-已完成轮保留为诊断数据，不追加轮次。
+A0b 完成后，对每一指标计算 `d = |A0b/A0a − 1|`，包括时间、CPU 第二口径和资源指标。
+**任一指标 d > 0.10，则判服务器环境不稳，中止验收、不启动 A1**；保留两轮原始证据。
+查明环境后另建试验 ID，从 A0a 重做全部八轮，不能沿用此次 A/A 或部分 A/B。
+全部 d ≤ 0.10 才继续后六轮，并按 §6.3 的 `max(0.03, 2d)` 判据判断收益。
+这是事前环境中止条件，不改通过判据，也不恢复 AA≤3% 条件；0.10 边界允许继续。
+下游运行的独立八轮同样在自身 A/A 后执行此检查。任何指标缺失/非有限/非正数均拒绝启动 A1。
+任一轮构建/身份/资源执行失败仍终止整个验收；已完成轮保留为诊断数据，不追加轮次。
 
 执行模板的 `BUILD` 必须是**等待 Quickbuild job 终态的适配器**；数组参数和其脚本 SHA
 冻结入 manifest，不是“提交请求成功就返回 0”的命令。适配器必须保存 job ID、每次查询、
@@ -672,7 +679,8 @@ PY
 冻结顺序 **A0a A0b A1 B1 B2 A2 A3 B3**，A 为同 source/spec/patch 的
 `without_clang_bolt` 构建。固定配对 A1/B1、A2/B2、A3/B3，禁止重排或追加轮。
 对每一指标分别计算 `d = abs(A0b/A0a - 1)`。A/A 不是置信区间估计，
-而是这一组执行的噪声参照；d 直接进入下面的统一阈值，不叠加旧的 AA≤3% 准入规则。
+而是这一组执行的噪声参照；先执行 §6.2 的任一 d > 0.10 中止检查，
+通过后 d 进入下面的统一阈值，不叠加旧的 AA≤3% 准入规则。
 
 对三个时间/CPU 指标各自用自己的 d：
 
@@ -689,22 +697,43 @@ r1 = B1/A1; r2 = B2/A2; r3 = B3/A3
 CPU 第二口径须全部成立才批准整体收益；仅编译指标通过则只能报告编译阶段观察，
 Quickbuild 整体收益仍未确证。执行失败/缺证据/输入变化仍按 §6.2 立即停止。
 
-以下代码给出精确规则（各值必须来自同一次冻结的八轮；数值须有限且 >0）：
+调度器必须在 A0b 完成后，先将所有指标的两次值传给 `aa_preflight()`；只有 CONTINUE
+才入队 A1。`paired_gate()` 再做防御检查，不能靠八轮结束后检查来替代事前中止。
+以下代码给出精确规则（数值须有限且 >0；后六轮来自同一试验 ID）：
 
 ```python
 import math
+from decimal import Decimal
+
+def aa_preflight(metrics):
+    # Called immediately after A0b, before scheduling ANY A1.
+    if not metrics:
+        raise ValueError("missing A/A metrics")
+    drift = {}
+    for name, pair in metrics.items():
+        a0a, a0b = pair
+        if not all(math.isfinite(x) and x > 0 for x in pair):
+            raise ValueError("invalid or missing A/A measurement")
+        # Decimal keeps the exact 0.10 boundary from failing due to float rounding.
+        drift[name] = abs(Decimal(str(a0b))/Decimal(str(a0a)) - 1)
+    abort = any(d > Decimal("0.10") for d in drift.values())
+    return {"status": "ABORT_ENVIRONMENT" if abort else "CONTINUE",
+            "drift": {name: float(d) for name, d in drift.items()}}
 
 def paired_gate(values):
-    # Frozen input order, not sorted by time.
+    preflight = aa_preflight({"metric": values[:2]})
+    if preflight["status"] == "ABORT_ENVIRONMENT":
+        return {**preflight, "established": False}  # No later measurements required.
     a0a, a0b, a1, b1, b2, a2, a3, b3 = values
     if not all(math.isfinite(x) and x > 0 for x in values):
         raise ValueError("invalid or missing measurement")
-    d = abs(a0b/a0a - 1)
-    ratios = [b1/a1, b2/a2, b3/a3]
-    threshold = 1 - max(0.03, 2*d)
-    return {"d": d, "threshold": threshold, "ratios": ratios,
+    d = abs(Decimal(str(a0b))/Decimal(str(a0a)) - 1)
+    ratios = [Decimal(str(b))/Decimal(str(a)) for a,b in [(a1,b1),(a2,b2),(a3,b3)]]
+    threshold = 1 - max(Decimal("0.03"), 2*d)
+    return {"status": "EVALUATED", "d": float(d), "threshold": float(threshold),
+            "ratios": list(map(float, ratios)),
             "established": all(r < threshold for r in ratios),
-            "geomean": math.prod(ratios)**(1/3)}
+            "geomean": math.prod(map(float, ratios))**(1/3)}
 ```
 
 资源阈值维持工程预算；为了不用统计区间又不把误差当收益，采用**各对最大比值 + 2d**
@@ -727,8 +756,8 @@ def paired_gate(values):
 
 ## 7. 基准台协议变更记录
 
-**生效日期 2026-09-21，自本次提交引入的 `compile-only-v2` 协议起，只适用于此后运行。**
-附录 D 的新运行使用本次待提交的相同脚本 SHA，随本次提交交付；不追溯旧 JSON。
+**生效日期 2026-09-21，自提交 `795a5c4` 引入的 `compile-only-v2` 协议起，只适用于此后运行。**
+附录 D 使用该提交的脚本 SHA；本次目标筛选会再次改变脚本/协议 hash，不追溯旧 JSON。
 `ld.lld`/`llvm-ar` 的 66 个小对象负载主要测约 4.5 ms 的启动成本，不在编译几何平均内。
 两项仍完整测量、写 rows 和原始统计，`diagnostic_only=true`；row.pass 仅表示其数值是否
 在阈值内，**不影响整体 PASS 或 noise_floor_pct**。报告显式列 Diagnostic only，避免误读。
@@ -742,6 +771,77 @@ def paired_gate(values):
 测试覆盖“编译 4% 仍 FAIL”和“lld/ar 20%/CV超限/可疑，但编译全过则整体 PASS”，以及
 AArch64 target/对象 Machine 正反例。新增目标仅对明确传入的 corpus 生效；ARM夹具由首个
 工具链生成，23 编译项与 lld/ar 在同一轮按负载/轮次交错，不拼接不同轮的历史数据。
+
+### 7.1 本机校准最终尝试（预注册，等待用户确认）
+
+预注册 ID：`FINAL-SPLIT-20260921`。这是本机**最后一次**校准尝试；无论结果如何，
+随后转三家评审与 Quickbuild 验收，不再安排本机重试。采用用户已定的失败解释：
+795a5c4 附录 D 在 20:00–20:01 宿主 loadavg 超过10，出现 suspect 与 CV 超限，
+同时69个编译组合取最大偏差会增加撞线概率；不把这次 FAIL 归因于基准台实现缺陷。
+历史 FAIL、全部原始样本与附录 D 保持原判，不能用本次结果覆盖。
+
+**预注册提交证据：** 本节及机器可读计划首次进入 Git 的提交，提交信息固定为
+`Preregister final split BOLT calibration`。该提交先推送，再由用户确认夜间已关闭桌面应用。
+同一提交无法在自身内容中写入自身 SHA；完整 SHA 由推送后的回复提供，启动器要求
+`--preregistered-commit <完整40位SHA>`，核对干净 HEAD 与 origin/main 均为该 SHA，
+将提交号、Git author/committer 时间、计划 SHA 写入 `attempt.json` 和 `preregistration-git.txt`。
+执行后更新本文时回填该预注册提交号，不用结果提交冒充预注册。可只读查看：
+
+```bash
+git log -1 --format=fuller --grep='^Preregister final split BOLT calibration$'
+```
+
+冻结条件（机器可读版：`tools/final_bolt_calibration_plan.json`）：
+
+| 项目 | 事前约定 |
+| --- | --- |
+| 执行顺序 | A=armv7l 13项×3工具链，两轮完整校准；若PASS则紧接A正式轮。然后B=aarch64 10项×3工具链，两轮完整校准；若PASS则紧接B正式轮。串行执行，不交叠 |
+| 工具链顺序 | rpm-baseline、bolt-v1、bolt-v2；每个目标内同轮交错，沿用奇偶轮反转；RPM始终生成共同夹具 |
+| 独立门禁 | A的39个、B的30个编译组合分别取最大偏差；每项跨轮中位数差≤3%、每轮CV≤3%、无保留suspect。lld/ar仍完整测量、仅诊断 |
+| 启动窗口 | 用户确认夜间关闭桌面应用后才允许启动；入口记录loadavg原文、前20进程RSS、/proc/meminfo及MemAvailable字节数。入口1分钟loadavg>3直接拒绝，不等待、不自动重试；等于3允许 |
+| 运行环境 | CPU2、ASLR off、N=5丢首次、编译进程4GiB AS、tmpfs；load suspect阈值10；保留可疑样本，不筛掉 |
+| 负载 | ARM A/B/C seed73419、scale1/2/2 + 原ARM训练10；AArch64为原v2的10个.ii。留出10不进入性能表；输入/flags/SHA冻结，不重新预处理 |
+| 资源目录/sysroot | 同TC/lib64/clang/22；ARM与AArch64分别用附录D的固定根，头文件hash须与795a5c4一致 |
+| 链接/归档 | 两目标都保留附录D的共同66个ARM对象夹具；lld4096/ar1024次归一化。B中生成A/B/C仅供夹具，不计入B的10个计时编译项 |
+| 采样 | 从本次运行开始到结束，每30秒记录loadavg，另记起止；保存采样最大值、>10的样本时间与相邻界限，不能冒称连续最大值/精确越线时刻 |
+| 失败/通过 | 目标校准FAIL不跑该目标正式轮、不重试；一个目标FAIL仍执行另一目标。执行错误、身份/输入变化、采样失败则停止，不把错误当完整校准FAIL。PASS仅允许该目标一次正式轮 |
+| 正式轮 | 参数/工具/夹具须与该目标校准完全相同；同轮v2/v1、v2/RPM、v1/RPM逐项比值与编译GM；注明分母、正式/诊断、全部为训练集 |
+| 一次性 | 固定新目录拒绝复用；拒绝启动也保存记录，不自动换ID、改阈值、换负载或重试。结果不支持再安排本机校准 |
+
+拆分是把69个组合的“取最大”改为39和30两个较小集合各自取最大，降低多重比较下
+撞线概率；**判据本身不放宽**，不声称修正了统计置信水平。A/B结果分开发布，不能只报
+通过者，也不把两目标重新合成一个校准PASS。这个改变在运行前进入Git，不能事后选集合。
+“启动 load≤3”只用于本次入口启动；运行中仍使用原load>10 suspect规则，采样仅留证，
+不动态暂停或改变协议。Quickbuild的A/A d>0.10规则不替代本机3%校准规则。
+
+执行入口已经实现，但本次提交**不执行**：
+
+```bash
+# 默认仅打印冻结命令，不执行任何 clang：
+python3 tools/run_final_bolt_calibration.py
+# 仅在用户明确确认安静窗口后执行；PREREG_COMMIT为本预注册提交完整SHA：
+python3 tools/run_final_bolt_calibration.py --run --quiet-window-confirmed \
+  --preregistered-commit "$PREREG_COMMIT"
+```
+
+启动器只允许测量，不含采profile/BOLT/重建入口。冻结文件保存旧输入hash、三个二进制
+及运行库身份、精确原命令和夹具hash；目标筛选是唯一负载选择变化。子进程退出/信号
+路径都会回收采样线程，异常终止测量进程组并保留现场。相关测试使用mock，不启动clang。
+
+固定原始输出目录：
+`/home/linhao/Toolchain/development/llvm-optimize/temp/bench_results/bolt-final-split-20260921/`。
+保存顶层环境、attempt、loadavg与Git证据，以及 `armv7l/`、`aarch64/` 各自
+`calibration-run1/2.json`、`calibration.json`、逐项Markdown与原始命令；通过者另有formal。
+阶段起止时间供分别归属load样本。运行后在此节追加全部逐项表、各自noise_floor、正式轮
+（若有）与环境最大load/>10时段；失败诊断表同样保留，不以历史轮作对照。
+
+| 当前执行状态 | ARM校准 | AArch64校准 | 正式轮 | 启动环境 |
+| --- | --- | --- | --- | --- |
+| **WAITING_USER_CONFIRMATION** | NOT_RUN | NOT_RUN | NOT_RUN | NOT_CAPTURED（未到启动时刻） |
+
+两次均未通过时结论固定为：**“v2 性能认证本机未确证，转 Quickbuild”**。仅一个通过时，
+只报告该目标正式结果，另一个未确证；两个通过仍只是训练集筛选结果，不能外推全平台。
+任何结果后都结束本机校准，转评审与Quickbuild；不因点值接近门槛再加轮。
 
 ## 8. 待定事项（本轮不执行）
 
@@ -988,7 +1088,7 @@ ABI-tag 的地址确有移动，BOLT note 地址/内容不变。完整 diff 在 
 `E/patchelf-equality/result.json` 与 raw/；汇总另存 `D/patchelf.json`。
 本实验没有性能/噪声门禁：它检验转换与字节一致性，**3% 门禁不适用**。
 
-## 附录 D：aarch64 profile v2 实验（本次新协议）
+## 附录 D：aarch64 profile v2 实验（795a5c4 实测归档）
 
 ### D.1 固定路径、资源与输入来源
 
@@ -1316,11 +1416,20 @@ profile v2、纯重写容量和 30 TU 正确性已完成，但性能认证及生
 按 README 留在 temp，不上传。可复用的身份脚本及测试提交 tools，本次专用编排器留 temp。
 
 上述 E/D 表是上一版历史归档，原文件不重算、不覆盖。该版的 A/A FAIL、relocs PASS、
-patchelf PASS 仍保持原判。新增双目标实验与本版检查统一存附录 D 的 E2/D2。
+patchelf PASS 仍保持原判。795a5c4 的双目标实验与该版检查存附录 D 的 E2/D2；本次预注册不覆盖这些记录。
 
-本版自检：不改 spec/LLVM 源码、不做 PGO/完整重建、不重新插桩、不构建 Chromium、不推 Gerrit。
+795a5c4 自检（历史）：不改 spec/LLVM 源码、不做 PGO/完整重建、不重新插桩、不构建 Chromium、不推 Gerrit。
 只使用已批准的预处理、已有插桩 clang 训练、一次 6 GiB 纯 BOLT 重写与基准测量。
 完整构建 18 GiB 门禁保持文件 hash 不变。原始 profile/旧候选均只读保护，新增 fdata 因现有
 插桩二进制内嵌 PID 输出前缀而在原 profiles 目录新增文件，并逐个登记，不覆盖旧 13 文件。
 提交只包含本次文档、工具与≤10 MB的配套输入；日志、profile、ELF、JSON 保留 temp。
 GitHub push 与 main/固定提交 raw 校验的结果见 E2/publication-verification.json（发布后生成）。
+
+本次预注册自检：未启动校准或正式测量，等待用户确认；未执行 clang 编译、profile采集或BOLT。
+未改 spec/LLVM源码/完整构建18GiB门禁，不构建Chromium、不推Gerrit。
+`tools/test_final_bolt_calibration.py` **16项PASS**（直接执行§6.3文档公式，含d=0.11中止、
+d=0.09继续、d=0.10边界、严格小于、启动load正负例、独立目标/不重试、回收、冻结身份）；
+`tools/test_bench_toolchain.py` **17项PASS**（包括13/10目标筛选及原门禁/资源检查）。
+测试记录、只读检查及发布证据：
+`/home/linhao/Toolchain/development/llvm-optimize/temp/final-calibration-prereg-20260921/`。
+同目录的preregistration.json在提交推送后记录真实SHA与Git时间；启动环境及实验结果仍为NOT_RUN。

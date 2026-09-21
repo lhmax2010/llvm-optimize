@@ -334,6 +334,17 @@ def markdown(result):
     return "\n".join(lines)
 
 
+def select_compile_cases(cases, target):
+    """Filter timed compilation only; the shared ARM fixture is unchanged."""
+    if target == "all":
+        return cases
+    triple = {"armv7l": TARGET, "aarch64": AARCH64_TARGET}[target]
+    selected = [case for case in cases if case["target"] == triple]
+    if not selected:
+        raise BenchError(f"No compilation inputs for {target}")
+    return selected
+
+
 def single_run(args, prefix):
     started = time.monotonic()
     evidence = prefix.parent / (prefix.name + "-raw")
@@ -357,6 +368,7 @@ def single_run(args, prefix):
                 cases.append({"name": case, "path": generated / (case + ".cpp"),
                               "flags": ["-std=c++17", "-O2"], "scale": scale,
                               "sha256": digest(generated / (case + ".cpp"))})
+            synthetic = list(cases)  # Always retained for the original ARM fixture.
             real = real_inputs(args.real_tu_dir)
             if real:
                 result["real_tu_status"] = "REAL_TU_PRESENT"
@@ -371,12 +383,14 @@ def single_run(args, prefix):
                     case["name"] = "real_aarch64_" + case["name"][5:]
                     case["target"] = AARCH64_TARGET
                 cases += extra
+            cases = select_compile_cases(cases, args.compile_target)
             identities = toolchains(args, runner)
             result["toolchains"] = identities
             inputs = [{k: str(v) if isinstance(v, Path) else v for k, v in c.items() if k != "path"} for c in cases]
             # Fix the resource headers for all variants, so compiler selection does not change inputs.
             result["protocol"] = {"target": TARGET, "sysroot": str(args.sysroot),
                 "calibration_policy": CALIBRATION_POLICY,
+                "compile_target_filter": args.compile_target, "fixture_target": TARGET,
                 "additional_target": ({"target": AARCH64_TARGET,
                     "sysroot": str(args.aarch64_sysroot), "sysroot_header_hash": args.aarch64_sysroot_hash}
                     if args.aarch64_real_tu_dir else None),
@@ -400,7 +414,7 @@ def single_run(args, prefix):
             fixtures = directory / "fixtures"
             fixtures.mkdir()
             # Compile each unique B function exactly once, partitioned into many objects.
-            body = cases[1]["path"].read_text()
+            body = synthetic[1]["path"].read_text()
             functions = body.split('extern "C"')[1:]
             fixture_tool = next(iter(identities.values()))["tools"]["clang++"]["prefix"]
             objects = []
@@ -412,7 +426,7 @@ def single_run(args, prefix):
                 verify_object(obj)
                 objects.append(obj)
             # Use A/C compiler outputs too; all variants then link/archive these identical objects.
-            for case in (cases[0], cases[2]):
+            for case in (synthetic[0], synthetic[2]):
                 obj = fixtures / (case["name"] + ".o")
                 runner.command(fixture_tool + base + case["flags"] + ["-c", case["path"], "-o", obj], tag="fixture")
                 verify_object(obj)
@@ -537,6 +551,8 @@ def main(argv=None):
     p.add_argument("--real-tu-dir", type=Path, default=INPUTS / "real_tu", help="optional .ii + .flags.json directory; empty -> REAL_TU_ABSENT")
     p.add_argument("--aarch64-real-tu-dir", type=Path, help="additional AArch64 .ii corpus, interleaved in the SAME run; requires --aarch64-sysroot")
     p.add_argument("--aarch64-sysroot", type=Path, help="existing AArch64 GBS root for additional corpus; ARM fixtures stay unchanged")
+    p.add_argument("--compile-target", choices=("all", "armv7l", "aarch64"), default="all",
+                   help="select timed compilation cases only; shared ARM link/archive fixture stays unchanged")
     p.add_argument("--timeout", type=float, default=180, help="seconds per subprocess before killing its process group")
     p.add_argument("--load-threshold", type=float, help="one-minute loadavg suspect threshold (default nproc/2)")
     p.add_argument("--work-dir", type=Path, default=Path("/dev/shm") if Path("/dev/shm").is_dir() else WORKSPACE / "temp", help="scratch parent on tmpfs or workspace temp; removed on success/failure")
@@ -573,6 +589,8 @@ def main(argv=None):
         args.sysroot = args.sysroot.resolve(strict=True)
         if bool(args.aarch64_real_tu_dir) != bool(args.aarch64_sysroot):
             raise BenchError("--aarch64-real-tu-dir and --aarch64-sysroot must be supplied together")
+        if args.compile_target == "aarch64" and not args.aarch64_real_tu_dir:
+            raise BenchError("AArch64-only timing requires its corpus and sysroot")
         if args.aarch64_sysroot:
             args.aarch64_sysroot = args.aarch64_sysroot.resolve(strict=True)
             if not (args.aarch64_sysroot / "usr/include/stdlib.h").is_file():
@@ -619,4 +637,9 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    def interrupted(signum, _frame):
+        # Unwind Runner.command so its separately grouped compiler is reaped too.
+        raise BenchError(f"Interrupted by signal {signum}")
+    signal.signal(signal.SIGTERM, interrupted)
+    signal.signal(signal.SIGINT, interrupted)
     sys.exit(main())

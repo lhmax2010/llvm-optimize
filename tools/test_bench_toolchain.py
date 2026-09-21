@@ -125,6 +125,18 @@ class HarnessChecks(unittest.TestCase):
         bench.verify_object(obj,bench.AARCH64_TARGET)
         with self.assertRaises(bench.BenchError): bench.verify_object(obj)
 
+    def test_target_split_selects_13_or_10_without_mutating_fixture_inputs(self):
+        arm = [dict(name=str(i), target=bench.TARGET) for i in range(13)]
+        a64 = [dict(name=str(i), target=bench.AARCH64_TARGET) for i in range(10)]
+        cases = arm + a64
+        original = copy.deepcopy(cases)
+        self.assertEqual(bench.select_compile_cases(cases, 'armv7l'), arm)
+        self.assertEqual(bench.select_compile_cases(cases, 'aarch64'), a64)
+        self.assertEqual(bench.select_compile_cases(cases, 'all'), original)
+        self.assertEqual(cases, original)
+        with self.assertRaises(bench.BenchError):
+            bench.select_compile_cases(arm, 'aarch64')
+
     def test_memory_preflight(self):
         with patch.object(bench, "available_memory", return_value=bench.MEMORY_LIMIT - 1):
             with self.assertRaisesRegex(bench.BenchError, "LOW_MEMORY"):
