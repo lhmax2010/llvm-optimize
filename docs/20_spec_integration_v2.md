@@ -1,6 +1,6 @@
 # 20 BOLT spec 集成设计 v2、双目标 profile 与验收协议
 
-修订日期：2026-09-21（新增实验如跨日，以附录 D 的实际时间为准）。本文件**完整取代 docs/18 的设计建议**；docs/18、docs/19 原文保留。
+修订日期：2026-09-22（§7.1 为预注册最终尝试；附录 A–D 为历史实验）。本文件**完整取代 docs/18 的设计建议**；docs/18、docs/19 原文保留。
 用户已解除 docs/19 的停止条件：公开快照陈旧是调查结论，不是禁止面向工作区静态 spec
 设计和实验的理由。本文的设计已经展开；**本轮没有修改 spec，也没有部署到 OBS**。
 最终验收使用的 OBS 项目及其新 Base 快照仍须用户指定，不能用旧快照冒充新构建。
@@ -10,8 +10,9 @@
 提交 795a5c4 的实测：profile v2 与一次 6 GiB cap 纯重写完成，30 TU 全部逐字节 PASS；
 双目标三方两轮校准 **FAIL，编译项噪声底 3.334074%**。未执行正式轮，
 ARM 不劣于 v1 及 AArch64 增量收益均未确证；逐轮诊断比值和失败项见附录 D。
-本次仅补充服务器 A/A 事前中止规则，并预注册 §7.1 的最后一次本机拆分校准；
-**尚未启动测量，等待用户确认夜间已关闭桌面应用。**
+本版补充服务器 A/A 事前中止规则，并完成 §7.1 已预注册的最后一次本机拆分校准：
+**ARM FAIL（噪声底4.272374%），未运行正式轮；AArch64 PASS（0.835047%），完成正式轮。**
+本机校准线结束，不再重试；后续转三家评审与Quickbuild，不能把局部PASS当成双目标认证通过。
 
 对外统一表述：**筛选层多轮测量方向一致，BOLT 对 LLVM 自身源码编译负载有稳定正向影响，
 量级待构建服务器验收。** 本文的本机诊断结果不作为 Chromium 或全平台收益承诺。
@@ -772,7 +773,7 @@ def paired_gate(values):
 AArch64 target/对象 Machine 正反例。新增目标仅对明确传入的 corpus 生效；ARM夹具由首个
 工具链生成，23 编译项与 lld/ar 在同一轮按负载/轮次交错，不拼接不同轮的历史数据。
 
-### 7.1 本机校准最终尝试（预注册，等待用户确认）
+### 7.1 本机校准最终尝试（预注册已执行，本机不再重试）
 
 预注册 ID：`FINAL-SPLIT-20260921`。这是本机**最后一次**校准尝试；无论结果如何，
 随后转三家评审与 Quickbuild 验收，不再安排本机重试。采用用户已定的失败解释：
@@ -780,12 +781,12 @@ AArch64 target/对象 Machine 正反例。新增目标仅对明确传入的 corp
 同时69个编译组合取最大偏差会增加撞线概率；不把这次 FAIL 归因于基准台实现缺陷。
 历史 FAIL、全部原始样本与附录 D 保持原判，不能用本次结果覆盖。
 
-**预注册提交证据：** 本节及机器可读计划首次进入 Git 的提交，提交信息固定为
-`Preregister final split BOLT calibration`。该提交先推送，再由用户确认夜间已关闭桌面应用。
-同一提交无法在自身内容中写入自身 SHA；完整 SHA 由推送后的回复提供，启动器要求
-`--preregistered-commit <完整40位SHA>`，核对干净 HEAD 与 origin/main 均为该 SHA，
-将提交号、Git author/committer 时间、计划 SHA 写入 `attempt.json` 和 `preregistration-git.txt`。
-执行后更新本文时回填该预注册提交号，不用结果提交冒充预注册。可只读查看：
+**预注册提交证据：** `ea7d1207a2894e9f2267ec1f3aa92a0a8b4e2e1f`，提交信息为
+`Preregister final split BOLT calibration`，Git committer时间 **2026-09-21 22:28:42 +08:00**。
+文档、脚本和机器可读计划先提交并推送；用户后续确认“开始”，才在2026-09-22启动。
+启动器核对干净HEAD与origin/main都等于该SHA，将提交号、Git时间、计划SHA写入
+`attempt.json` 和 `preregistration-git.txt`。本版是结果归档，不能用本版提交时间替代预注册。
+以下冻结条件在运行后没有调整。可只读查看原预注册提交：
 
 ```bash
 git log -1 --format=fuller --grep='^Preregister final split BOLT calibration$'
@@ -814,12 +815,12 @@ git log -1 --format=fuller --grep='^Preregister final split BOLT calibration$'
 “启动 load≤3”只用于本次入口启动；运行中仍使用原load>10 suspect规则，采样仅留证，
 不动态暂停或改变协议。Quickbuild的A/A d>0.10规则不替代本机3%校准规则。
 
-执行入口已经实现，但本次提交**不执行**：
+以下为冻结的执行入口；本次已执行完毕，**不得再次启动本机校准**。默认仍只打印计划：
 
 ```bash
 # 默认仅打印冻结命令，不执行任何 clang：
 python3 tools/run_final_bolt_calibration.py
-# 仅在用户明确确认安静窗口后执行；PREREG_COMMIT为本预注册提交完整SHA：
+# 本次已执行的命令模板（归档，勿重跑）；PREREG_COMMIT为上述预注册完整SHA：
 python3 tools/run_final_bolt_calibration.py --run --quiet-window-confirmed \
   --preregistered-commit "$PREREG_COMMIT"
 ```
@@ -832,16 +833,314 @@ python3 tools/run_final_bolt_calibration.py --run --quiet-window-confirmed \
 `/home/linhao/Toolchain/development/llvm-optimize/temp/bench_results/bolt-final-split-20260921/`。
 保存顶层环境、attempt、loadavg与Git证据，以及 `armv7l/`、`aarch64/` 各自
 `calibration-run1/2.json`、`calibration.json`、逐项Markdown与原始命令；通过者另有formal。
-阶段起止时间供分别归属load样本。运行后在此节追加全部逐项表、各自noise_floor、正式轮
-（若有）与环境最大load/>10时段；失败诊断表同样保留，不以历史轮作对照。
+阶段起止时间供分别归属load样本。以下已列全部逐项表、各自noise_floor、正式轮
+（通过者）与环境最大load/>10时段；失败诊断表同样保留，没有以历史轮作对照。
 
 | 当前执行状态 | ARM校准 | AArch64校准 | 正式轮 | 启动环境 |
 | --- | --- | --- | --- | --- |
-| **WAITING_USER_CONFIRMATION** | NOT_RUN | NOT_RUN | NOT_RUN | NOT_CAPTURED（未到启动时刻） |
+| **COMPLETE_NO_MORE_LOCAL_ATTEMPTS** | FAIL 4.272374% | PASS 0.835047% | 仅AArch64完成一轮 | load1=1.59，MemAvailable=24503046144 B |
 
 两次均未通过时结论固定为：**“v2 性能认证本机未确证，转 Quickbuild”**。仅一个通过时，
 只报告该目标正式结果，另一个未确证；两个通过仍只是训练集筛选结果，不能外推全平台。
 任何结果后都结束本机校准，转评审与Quickbuild；不因点值接近门槛再加轮。
+
+#### 7.1.1 预注册执行记录与最终结论
+
+本次预注册提交为 **`ea7d1207a2894e9f2267ec1f3aa92a0a8b4e2e1f`**，Git committer时间
+**2026-09-21 22:28:42 +08:00**，已先push。用户在后续消息中确认“开始”，才执行冻结入口；
+实际启动 **2026-09-22T00:21:32.562370+08:00**，结束 **2026-09-22T02:03:03.060858+08:00**。未改参数/样本/输入/工具，不追加轮次。
+启动记录：`loadavg_raw=1.59 1.32 1.26 3/1429 762552`，1分钟值 **1.59≤3**；
+MemAvailable **24503046144 B**（22.820240 GiB）。
+这是实际读数，不据用户确认推断所有桌面/后台进程消失。前20进程RSS原始输出（KiB）：
+
+```text
+    PID COMMAND           RSS
+   9122 code            1405320
+   9116 code            730436
+ 302824 xdg-desktop-por 578748
+   4625 code            421180
+   4366 code            396772
+   4496 code            380624
+  10516 claude          378824
+   9095 code            363736
+   4358 code            320152
+   2871 gnome-shell     307832
+   4248 code            273024
+  10549 code            265404
+  14419 claude          243116
+  14329 claude          240032
+   5070 claude          236756
+   9159 codex           230308
+   4660 code            229896
+   2331 epp-client-daem 227196
+  15501 nautilus        222612
+   4789 codex           219448
+```
+
+30秒采样最高1分钟loadavg **4.28**；超过10的样本 **0**。
+采样器回收 **True**，错误 **None**。该最大值是离散采样最大值，不是连续峰值。
+未观察到>10时段；逐测量前后的load仍按基准台原规则判suspect，不以30秒采样替代。
+
+| 目标 | 实际开始 | 实际结束（含正式轮若有） | 目标期间采样max load1 | >10样本 |
+| --- | --- | --- | ---: | ---: |
+| armv7l | 2026-09-22T00:21:36.050415+08:00 | 2026-09-22T01:06:35.311988+08:00 | 4.28 | 0 |
+| aarch64 | 2026-09-22T01:06:35.335654+08:00 | 2026-09-22T02:03:03.060027+08:00 | 2.16 | 0 |
+
+| 目标 | 校准判定 | noise_floor % | 未通过编译组合 | 正式轮 |
+| --- | --- | ---: | ---: | --- |
+| armv7l | **FAIL** | 4.272374 | 8 | 未执行（校准FAIL） |
+| aarch64 | **PASS** | 0.835047 | 0 | 已执行 |
+
+armv7l 编译组合 39 项：跨轮差>3%有 5 项，
+任一轮CV>3%有 5 项，
+保留suspect的组合有 0 项（各类可重叠，不相加冒充失败总数）。
+
+aarch64 编译组合 30 项：跨轮差>3%有 0 项，
+任一轮CV>3%有 0 项，
+保留suspect的组合有 0 项（各类可重叠，不相加冒充失败总数）。
+
+仅对通过校准的目标报告正式轮；另一目标未确证，不能把局部PASS表述为双目标认证通过。
+**本机校准线到此结束，无论上述结果如何都不再重试；后续转三家评审和Quickbuild。**
+
+| 目标/轮次 | 性质 | GM(v2/v1) | GM(v2/RPM) | GM(v1/RPM) |
+| --- | --- | ---: | ---: | ---: |
+| armv7l/calibration-run1 | 校准诊断/训练集 | 1.002496 | 0.854402 | 0.852275 |
+| armv7l/calibration-run2 | 校准诊断/训练集 | 1.004235 | 0.854986 | 0.851380 |
+| aarch64/calibration-run1 | 校准诊断/训练集 | 0.995011 | 0.847232 | 0.851480 |
+| aarch64/calibration-run2 | 校准诊断/训练集 | 0.995636 | 0.848649 | 0.852368 |
+| aarch64/formal | 正式/训练集 | 0.995354 | 0.848116 | 0.852074 |
+
+比值均为同轮wall中位数之比，分母如列名；<1表示耗时降低，>1表示耗时增加。GM仅含编译项，
+lld/ar仍诊断。v2/v1比较双目标与ARM-only profile的布局；v2/RPM、v1/RPM包含原重链/剥离/BOLT，
+不是纯BOLT拆分收益。全为训练输入（ARM13/AArch6410），不含留出集；不外推Chromium或全平台。
+相近比值不构成独立统计非退化证明；未通过的轮不得用于正式收益表述。
+
+#### 7.1.2 armv7l 逐项校准与测量
+
+校准protocol hash：`81dfe4ad6f089a29eeed0422ca9586a73a75221b2c0de46e823e9c5801ae8909`。以下保留所有编译与诊断行，门禁不省略失败项。
+
+| 工具链/项 | 跨轮差 % | CV1 % | CV2 % | 保留suspect | row.pass | diagnostic_only |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| rpm-baseline/A | -1.424359 | 3.588765 | 0.758672 | 0 | False | False |
+| rpm-baseline/B | -2.431687 | 1.601369 | 0.210240 | 0 | True | False |
+| rpm-baseline/C | -4.064013 | 3.035621 | 0.132084 | 0 | False | False |
+| rpm-baseline/real_llvm_arm_ARMISelLowering | -2.908033 | 1.889254 | 0.211200 | 0 | True | False |
+| rpm-baseline/real_llvm_arm_ARMTargetTransformInfo | -1.694742 | 0.877711 | 0.279759 | 0 | True | False |
+| rpm-baseline/real_llvm_codegen_MachinePipeliner | -2.200946 | 1.756354 | 0.201027 | 0 | True | False |
+| rpm-baseline/real_llvm_codegen_SelectionDAG | -2.843868 | 1.931653 | 0.611955 | 0 | True | False |
+| rpm-baseline/real_llvm_mc_AsmParser | -1.943643 | 2.186278 | 0.767030 | 0 | True | False |
+| rpm-baseline/real_llvm_mc_MasmParser | -0.582451 | 0.767090 | 0.307267 | 0 | True | False |
+| rpm-baseline/real_llvm_sema_SemaExprCXX | -1.348434 | 1.031340 | 0.258786 | 0 | True | False |
+| rpm-baseline/real_llvm_sema_SemaStmt | -0.919048 | 0.825021 | 0.546815 | 0 | True | False |
+| rpm-baseline/real_llvm_transforms_Attributor | -0.233868 | 1.249805 | 0.165086 | 0 | True | False |
+| rpm-baseline/real_llvm_transforms_WholeProgramDevirt | -0.729688 | 1.512003 | 0.376977 | 0 | True | False |
+| rpm-baseline/ld.lld | -0.528980 | 1.439831 | 0.153962 | 0 | True | True |
+| rpm-baseline/llvm-ar | 0.333478 | 1.528938 | 1.731928 | 0 | True | True |
+| bolt-v1/A | -2.171142 | 4.038165 | 0.687272 | 0 | False | False |
+| bolt-v1/B | -3.469343 | 2.423387 | 0.241181 | 0 | False | False |
+| bolt-v1/C | -4.060246 | 2.547546 | 0.067667 | 0 | False | False |
+| bolt-v1/real_llvm_arm_ARMISelLowering | -2.061388 | 1.760182 | 0.280377 | 0 | True | False |
+| bolt-v1/real_llvm_arm_ARMTargetTransformInfo | -1.740006 | 2.439992 | 0.780794 | 0 | True | False |
+| bolt-v1/real_llvm_codegen_MachinePipeliner | -2.707122 | 1.985106 | 0.209705 | 0 | True | False |
+| bolt-v1/real_llvm_codegen_SelectionDAG | -2.827440 | 2.004090 | 0.521254 | 0 | True | False |
+| bolt-v1/real_llvm_mc_AsmParser | -1.928699 | 2.230354 | 0.928355 | 0 | True | False |
+| bolt-v1/real_llvm_mc_MasmParser | -0.532458 | 0.994394 | 0.501219 | 0 | True | False |
+| bolt-v1/real_llvm_sema_SemaExprCXX | -0.874321 | 1.281035 | 0.439464 | 0 | True | False |
+| bolt-v1/real_llvm_sema_SemaStmt | -0.728321 | 1.383903 | 0.294391 | 0 | True | False |
+| bolt-v1/real_llvm_transforms_Attributor | -0.864781 | 1.675499 | 0.460367 | 0 | True | False |
+| bolt-v1/real_llvm_transforms_WholeProgramDevirt | -0.693833 | 1.663092 | 0.677677 | 0 | True | False |
+| bolt-v1/ld.lld | -0.512144 | 1.829785 | 0.247299 | 0 | True | True |
+| bolt-v1/llvm-ar | -0.057702 | 1.340329 | 0.529614 | 0 | True | True |
+| bolt-v2/A | -3.559196 | 5.114231 | 0.315029 | 0 | False | False |
+| bolt-v2/B | -2.711827 | 1.845060 | 0.199088 | 0 | True | False |
+| bolt-v2/C | -4.272374 | 2.885736 | 0.167753 | 0 | False | False |
+| bolt-v2/real_llvm_arm_ARMISelLowering | -1.938776 | 2.285265 | 0.239557 | 0 | True | False |
+| bolt-v2/real_llvm_arm_ARMTargetTransformInfo | -1.510268 | 1.689536 | 0.536444 | 0 | True | False |
+| bolt-v2/real_llvm_codegen_MachinePipeliner | -2.511864 | 1.839802 | 0.411654 | 0 | True | False |
+| bolt-v2/real_llvm_codegen_SelectionDAG | -2.502345 | 1.321945 | 0.326350 | 0 | True | False |
+| bolt-v2/real_llvm_mc_AsmParser | -1.059964 | 3.099178 | 0.213358 | 0 | False | False |
+| bolt-v2/real_llvm_mc_MasmParser | -0.125677 | 0.675790 | 0.509944 | 0 | True | False |
+| bolt-v2/real_llvm_sema_SemaExprCXX | -0.629934 | 1.158342 | 0.785904 | 0 | True | False |
+| bolt-v2/real_llvm_sema_SemaStmt | -0.206784 | 1.156258 | 0.037252 | 0 | True | False |
+| bolt-v2/real_llvm_transforms_Attributor | -0.714533 | 1.045505 | 0.639277 | 0 | True | False |
+| bolt-v2/real_llvm_transforms_WholeProgramDevirt | -0.676008 | 1.145060 | 0.018938 | 0 | True | False |
+| bolt-v2/ld.lld | -0.752494 | 1.229141 | 0.296364 | 0 | True | True |
+| bolt-v2/llvm-ar | -0.586268 | 2.557062 | 0.610607 | 0 | True | True |
+
+**calibration-run1（校准/诊断，训练集）**
+
+| 项 | RPM s | v1 s | v2 s | v2/v1 | v2/RPM | v1/RPM |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| A | 8.373248 | 7.523491 | 7.641795 | 1.015725 | 0.912644 | 0.898515 |
+| B | 2.253722 | 1.745383 | 1.752934 | 1.004326 | 0.777795 | 0.774444 |
+| C | 6.137816 | 5.911611 | 5.919143 | 1.001274 | 0.964373 | 0.963146 |
+| real_llvm_arm_ARMISelLowering | 8.424065 | 7.192691 | 7.198215 | 1.000768 | 0.854482 | 0.853827 |
+| real_llvm_arm_ARMTargetTransformInfo | 4.783723 | 3.970509 | 3.993565 | 1.005807 | 0.834823 | 0.830004 |
+| real_llvm_codegen_MachinePipeliner | 6.200499 | 5.304762 | 5.310785 | 1.001135 | 0.856509 | 0.855538 |
+| real_llvm_codegen_SelectionDAG | 6.895490 | 5.881840 | 5.895137 | 1.002261 | 0.854927 | 0.852998 |
+| real_llvm_mc_AsmParser | 2.652189 | 2.254123 | 2.251040 | 0.998633 | 0.848748 | 0.849910 |
+| real_llvm_mc_MasmParser | 3.275470 | 2.814595 | 2.800679 | 0.995056 | 0.855046 | 0.859295 |
+| real_llvm_sema_SemaExprCXX | 6.043758 | 4.980607 | 4.988178 | 1.001520 | 0.825344 | 0.824091 |
+| real_llvm_sema_SemaStmt | 5.773037 | 4.811499 | 4.806012 | 0.998860 | 0.832493 | 0.833443 |
+| real_llvm_transforms_Attributor | 6.201319 | 5.274070 | 5.288861 | 1.002805 | 0.852861 | 0.850475 |
+| real_llvm_transforms_WholeProgramDevirt | 5.696764 | 4.822742 | 4.844031 | 1.004414 | 0.850313 | 0.846576 |
+| ld.lld | 0.004716 | 0.004706 | 0.004730 | 1.004990 | 1.002956 | 0.997976 |
+| llvm-ar | 0.002317 | 0.002313 | 0.002326 | 1.005770 | 1.003970 | 0.998210 |
+
+整轮wall 1364.721989s，所有命令最大RSS 1188744KiB，scratch_removed=True，状态 MEASURED。
+该轮编译项最大CV 5.114231%，保留suspect样本 0；均如实披露，不调整样本或追加重试。
+fixture hash：`30acab6c36503bcf53f5ad6467d17a58ede7f0205f95f68dedd1125494a9096a`。
+
+
+**calibration-run2（校准/诊断，训练集）**
+
+| 项 | RPM s | v1 s | v2 s | v2/v1 | v2/RPM | v1/RPM |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| A | 8.253983 | 7.360145 | 7.369809 | 1.001313 | 0.892879 | 0.891708 |
+| B | 2.198919 | 1.684829 | 1.705397 | 1.012208 | 0.775562 | 0.766208 |
+| C | 5.888374 | 5.671585 | 5.666255 | 0.999060 | 0.962278 | 0.963183 |
+| real_llvm_arm_ARMISelLowering | 8.179091 | 7.044422 | 7.058658 | 1.002021 | 0.863013 | 0.861272 |
+| real_llvm_arm_ARMTargetTransformInfo | 4.702652 | 3.901422 | 3.933251 | 1.008158 | 0.836390 | 0.829622 |
+| real_llvm_codegen_MachinePipeliner | 6.064030 | 5.161155 | 5.177385 | 1.003145 | 0.853786 | 0.851110 |
+| real_llvm_codegen_SelectionDAG | 6.699391 | 5.715535 | 5.747621 | 1.005614 | 0.857932 | 0.853142 |
+| real_llvm_mc_AsmParser | 2.600640 | 2.210647 | 2.227180 | 1.007479 | 0.856397 | 0.850040 |
+| real_llvm_mc_MasmParser | 3.256392 | 2.799609 | 2.797160 | 0.999125 | 0.858975 | 0.859727 |
+| real_llvm_sema_SemaExprCXX | 5.962262 | 4.937060 | 4.956756 | 1.003989 | 0.831355 | 0.828052 |
+| real_llvm_sema_SemaStmt | 5.719980 | 4.776456 | 4.796074 | 1.004107 | 0.838477 | 0.835048 |
+| real_llvm_transforms_Attributor | 6.186816 | 5.228461 | 5.251071 | 1.004324 | 0.848752 | 0.845097 |
+| real_llvm_transforms_WholeProgramDevirt | 5.655196 | 4.789280 | 4.811285 | 1.004595 | 0.850772 | 0.846881 |
+| ld.lld | 0.004691 | 0.004682 | 0.004694 | 1.002562 | 1.000702 | 0.998145 |
+| llvm-ar | 0.002324 | 0.002311 | 0.002312 | 1.000451 | 0.994767 | 0.994318 |
+
+整轮wall 1328.928985s，所有命令最大RSS 1519804KiB，scratch_removed=True，状态 MEASURED。
+该轮编译项最大CV 0.928355%，保留suspect样本 0；均如实披露，不调整样本或追加重试。
+fixture hash：`30acab6c36503bcf53f5ad6467d17a58ede7f0205f95f68dedd1125494a9096a`。
+
+#### 7.1.3 aarch64 逐项校准与测量
+
+校准protocol hash：`fa1d35ecf70c9d9fd26e63189d2656c0c6fc2baa6fa4fa2e62dec33fbb03c46e`。以下保留所有编译与诊断行，门禁不省略失败项。
+
+| 工具链/项 | 跨轮差 % | CV1 % | CV2 % | 保留suspect | row.pass | diagnostic_only |
+| --- | ---: | ---: | ---: | ---: | --- | --- |
+| rpm-baseline/real_aarch64_llvm_arm_ARMISelLowering | 0.281619 | 0.629295 | 0.734378 | 0 | True | False |
+| rpm-baseline/real_aarch64_llvm_arm_ARMTargetTransformInfo | -0.089501 | 0.423491 | 0.476917 | 0 | True | False |
+| rpm-baseline/real_aarch64_llvm_codegen_MachinePipeliner | 0.835047 | 0.636036 | 0.123870 | 0 | True | False |
+| rpm-baseline/real_aarch64_llvm_codegen_SelectionDAG | -0.252605 | 0.227075 | 0.292179 | 0 | True | False |
+| rpm-baseline/real_aarch64_llvm_mc_AsmParser | -0.191430 | 0.953444 | 0.556109 | 0 | True | False |
+| rpm-baseline/real_aarch64_llvm_mc_MasmParser | 0.216152 | 0.318950 | 0.770228 | 0 | True | False |
+| rpm-baseline/real_aarch64_llvm_sema_SemaExprCXX | -0.472055 | 0.370793 | 0.343866 | 0 | True | False |
+| rpm-baseline/real_aarch64_llvm_sema_SemaStmt | -0.305709 | 0.414494 | 0.238158 | 0 | True | False |
+| rpm-baseline/real_aarch64_llvm_transforms_Attributor | 0.026673 | 0.204417 | 0.081231 | 0 | True | False |
+| rpm-baseline/real_aarch64_llvm_transforms_WholeProgramDevirt | -0.200537 | 0.486206 | 0.196995 | 0 | True | False |
+| rpm-baseline/ld.lld | 0.638875 | 0.190587 | 0.589032 | 0 | True | True |
+| rpm-baseline/llvm-ar | 0.704295 | 1.464781 | 0.992420 | 0 | True | True |
+| bolt-v1/real_aarch64_llvm_arm_ARMISelLowering | 0.346391 | 0.614194 | 0.751905 | 0 | True | False |
+| bolt-v1/real_aarch64_llvm_arm_ARMTargetTransformInfo | 0.439985 | 0.665146 | 0.134914 | 0 | True | False |
+| bolt-v1/real_aarch64_llvm_codegen_MachinePipeliner | 0.140554 | 0.390658 | 0.447697 | 0 | True | False |
+| bolt-v1/real_aarch64_llvm_codegen_SelectionDAG | 0.390312 | 0.303942 | 0.341410 | 0 | True | False |
+| bolt-v1/real_aarch64_llvm_mc_AsmParser | -0.053468 | 0.538298 | 1.598745 | 0 | True | False |
+| bolt-v1/real_aarch64_llvm_mc_MasmParser | -0.104021 | 1.030457 | 0.771949 | 0 | True | False |
+| bolt-v1/real_aarch64_llvm_sema_SemaExprCXX | -0.380244 | 0.213222 | 0.633519 | 0 | True | False |
+| bolt-v1/real_aarch64_llvm_sema_SemaStmt | 0.135857 | 0.225666 | 0.432807 | 0 | True | False |
+| bolt-v1/real_aarch64_llvm_transforms_Attributor | 0.022062 | 0.439523 | 0.470640 | 0 | True | False |
+| bolt-v1/real_aarch64_llvm_transforms_WholeProgramDevirt | -0.050258 | 0.167084 | 0.645826 | 0 | True | False |
+| bolt-v1/ld.lld | 0.642924 | 0.247376 | 0.244317 | 0 | True | True |
+| bolt-v1/llvm-ar | -1.114600 | 0.733965 | 0.901693 | 0 | True | True |
+| bolt-v2/real_aarch64_llvm_arm_ARMISelLowering | 0.283497 | 0.933249 | 0.155919 | 0 | True | False |
+| bolt-v2/real_aarch64_llvm_arm_ARMTargetTransformInfo | 0.557292 | 0.785272 | 0.518716 | 0 | True | False |
+| bolt-v2/real_aarch64_llvm_codegen_MachinePipeliner | -0.150978 | 0.457015 | 0.251340 | 0 | True | False |
+| bolt-v2/real_aarch64_llvm_codegen_SelectionDAG | -0.014764 | 0.554240 | 0.346329 | 0 | True | False |
+| bolt-v2/real_aarch64_llvm_mc_AsmParser | 0.002433 | 1.023271 | 0.477694 | 0 | True | False |
+| bolt-v2/real_aarch64_llvm_mc_MasmParser | 0.552435 | 0.648475 | 0.956656 | 0 | True | False |
+| bolt-v2/real_aarch64_llvm_sema_SemaExprCXX | -0.094490 | 0.133135 | 0.616542 | 0 | True | False |
+| bolt-v2/real_aarch64_llvm_sema_SemaStmt | -0.009036 | 0.521876 | 0.080645 | 0 | True | False |
+| bolt-v2/real_aarch64_llvm_transforms_Attributor | 0.405849 | 0.691989 | 0.426171 | 0 | True | False |
+| bolt-v2/real_aarch64_llvm_transforms_WholeProgramDevirt | -0.015794 | 0.483442 | 0.093885 | 0 | True | False |
+| bolt-v2/ld.lld | 0.308035 | 0.182101 | 0.300958 | 0 | True | True |
+| bolt-v2/llvm-ar | 0.147793 | 1.077926 | 1.196564 | 0 | True | True |
+
+**calibration-run1（校准/诊断，训练集）**
+
+| 项 | RPM s | v1 s | v2 s | v2/v1 | v2/RPM | v1/RPM |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| real_aarch64_llvm_arm_ARMISelLowering | 8.447398 | 7.309997 | 7.272809 | 0.994913 | 0.860953 | 0.865355 |
+| real_aarch64_llvm_arm_ARMTargetTransformInfo | 4.853891 | 4.039466 | 4.014194 | 0.993744 | 0.827005 | 0.832212 |
+| real_aarch64_llvm_codegen_MachinePipeliner | 6.194106 | 5.360762 | 5.348587 | 0.997729 | 0.863496 | 0.865462 |
+| real_aarch64_llvm_codegen_SelectionDAG | 7.109806 | 6.117153 | 6.080513 | 0.994010 | 0.855229 | 0.860383 |
+| real_aarch64_llvm_mc_AsmParser | 2.715539 | 2.311817 | 2.309708 | 0.999088 | 0.850552 | 0.851329 |
+| real_aarch64_llvm_mc_MasmParser | 3.381791 | 2.917337 | 2.893394 | 0.991793 | 0.855580 | 0.862660 |
+| real_aarch64_llvm_sema_SemaExprCXX | 5.981713 | 4.987438 | 4.961806 | 0.994861 | 0.829496 | 0.833781 |
+| real_aarch64_llvm_sema_SemaStmt | 5.724266 | 4.805534 | 4.788584 | 0.996473 | 0.836541 | 0.839502 |
+| real_aarch64_llvm_transforms_Attributor | 6.459480 | 5.510092 | 5.464382 | 0.991704 | 0.845948 | 0.853024 |
+| real_aarch64_llvm_transforms_WholeProgramDevirt | 5.822379 | 4.960278 | 4.939562 | 0.995824 | 0.848375 | 0.851933 |
+| ld.lld | 0.004676 | 0.004667 | 0.004682 | 1.003324 | 1.001423 | 0.998105 |
+| llvm-ar | 0.002317 | 0.002309 | 0.002318 | 1.003902 | 1.000502 | 0.996614 |
+
+整轮wall 1123.299497s，所有命令最大RSS 1187680KiB，scratch_removed=True，状态 MEASURED。
+该轮编译项最大CV 1.030457%，保留suspect样本 0；均如实披露，不调整样本或追加重试。
+fixture hash：`30acab6c36503bcf53f5ad6467d17a58ede7f0205f95f68dedd1125494a9096a`。
+
+
+**calibration-run2（校准/诊断，训练集）**
+
+| 项 | RPM s | v1 s | v2 s | v2/v1 | v2/RPM | v1/RPM |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| real_aarch64_llvm_arm_ARMISelLowering | 8.471188 | 7.335318 | 7.293427 | 0.994289 | 0.860969 | 0.865914 |
+| real_aarch64_llvm_arm_ARMTargetTransformInfo | 4.849547 | 4.057239 | 4.036565 | 0.994904 | 0.832359 | 0.836622 |
+| real_aarch64_llvm_codegen_MachinePipeliner | 6.245829 | 5.368297 | 5.340512 | 0.994824 | 0.855052 | 0.859501 |
+| real_aarch64_llvm_codegen_SelectionDAG | 7.091846 | 6.141029 | 6.079616 | 0.989999 | 0.857268 | 0.865928 |
+| real_aarch64_llvm_mc_AsmParser | 2.710341 | 2.310581 | 2.309764 | 0.999646 | 0.852204 | 0.852506 |
+| real_aarch64_llvm_mc_MasmParser | 3.389101 | 2.914302 | 2.909379 | 0.998310 | 0.858451 | 0.859904 |
+| real_aarch64_llvm_sema_SemaExprCXX | 5.953476 | 4.968474 | 4.957117 | 0.997714 | 0.832643 | 0.834550 |
+| real_aarch64_llvm_sema_SemaStmt | 5.706767 | 4.812062 | 4.788151 | 0.995031 | 0.839030 | 0.843220 |
+| real_aarch64_llvm_transforms_Attributor | 6.461203 | 5.511308 | 5.486559 | 0.995510 | 0.849155 | 0.852985 |
+| real_aarch64_llvm_transforms_WholeProgramDevirt | 5.810703 | 4.957785 | 4.938782 | 0.996167 | 0.849946 | 0.853216 |
+| ld.lld | 0.004706 | 0.004697 | 0.004697 | 0.999986 | 0.998131 | 0.998146 |
+| llvm-ar | 0.002333 | 0.002283 | 0.002321 | 1.016718 | 0.994973 | 0.978613 |
+
+整轮wall 1124.793698s，所有命令最大RSS 1519796KiB，scratch_removed=True，状态 MEASURED。
+该轮编译项最大CV 1.598745%，保留suspect样本 0；均如实披露，不调整样本或追加重试。
+fixture hash：`30acab6c36503bcf53f5ad6467d17a58ede7f0205f95f68dedd1125494a9096a`。
+
+
+**formal（正式，训练集）**
+
+| 项 | RPM s | v1 s | v2 s | v2/v1 | v2/RPM | v1/RPM |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| real_aarch64_llvm_arm_ARMISelLowering | 8.438910 | 7.343373 | 7.278924 | 0.991224 | 0.862543 | 0.870180 |
+| real_aarch64_llvm_arm_ARMTargetTransformInfo | 4.855412 | 4.065625 | 4.031945 | 0.991716 | 0.830402 | 0.837339 |
+| real_aarch64_llvm_codegen_MachinePipeliner | 6.263552 | 5.319307 | 5.330985 | 1.002195 | 0.851112 | 0.849248 |
+| real_aarch64_llvm_codegen_SelectionDAG | 7.093354 | 6.139232 | 6.089964 | 0.991975 | 0.858545 | 0.865491 |
+| real_aarch64_llvm_mc_AsmParser | 2.720540 | 2.322423 | 2.313845 | 0.996306 | 0.850509 | 0.853662 |
+| real_aarch64_llvm_mc_MasmParser | 3.363032 | 2.907811 | 2.916760 | 1.003077 | 0.867301 | 0.864640 |
+| real_aarch64_llvm_sema_SemaExprCXX | 5.966504 | 4.987024 | 4.968548 | 0.996295 | 0.832740 | 0.835837 |
+| real_aarch64_llvm_sema_SemaStmt | 5.743241 | 4.803865 | 4.760811 | 0.991038 | 0.828942 | 0.836438 |
+| real_aarch64_llvm_transforms_Attributor | 6.463722 | 5.536046 | 5.493079 | 0.992239 | 0.849832 | 0.856480 |
+| real_aarch64_llvm_transforms_WholeProgramDevirt | 5.816193 | 4.956923 | 4.944872 | 0.997569 | 0.850191 | 0.852263 |
+| ld.lld | 0.004701 | 0.004697 | 0.004703 | 1.001281 | 1.000573 | 0.999292 |
+| llvm-ar | 0.002319 | 0.002324 | 0.002308 | 0.992983 | 0.995457 | 1.002492 |
+
+整轮wall 1125.553400s，所有命令最大RSS 1187680KiB，scratch_removed=True，状态 MEASURED。
+该轮编译项最大CV 1.390181%，保留suspect样本 0；均如实披露，不调整样本或追加重试。
+fixture hash：`30acab6c36503bcf53f5ad6467d17a58ede7f0205f95f68dedd1125494a9096a`。
+
+#### 7.1.4 原始记录与自检
+
+全部原始输出在本节冻结的 `temp/bench_results/bolt-final-split-20260921/`：
+`host-before.json`、`preregistration-git.txt`、`attempt.json`、`loadavg.jsonl`、`loadavg-summary.json`，
+以及两目标目录中的命令、日志、每样本JSON/Markdown；逐项派生摘要在
+`temp/final-calibration-prereg-20260921/final-results-summary.json`。所有JSON/大日志留temp不提交。
+只运行已有三个clang的基准测量；无新profile、无BOLT重写、无LLVM/Chromium构建、无spec/源码修改、无Gerrit推送。
+启动前执行已push的预注册SHA核验；运行中脚本与计划未改，历史FAIL未重判；无追加尝试。
+
+正式训练集结果的解读：AArch64 `GM(v2/v1)=0.995354`，`GM(v2/RPM)=0.848116`，
+`GM(v1/RPM)=0.852074`。v2/v1点值接近1，本轮没有另设显著性或非退化检验，
+不能据此宣称v2对v1的微小增量收益已经确证。ARM的两轮诊断v2/v1为1.002496、1.004235，
+校准FAIL，仍不能确证ARM非退化；不重试。所有收益的最终量级和是否成立交由Quickbuild验收。
+
+本结果更新的Git提交/push原文与main/固定提交raw校验，归档至
+`temp/final-calibration-prereg-20260921/results-publication.log`、`results-publication-verification.json`。
+冻结脚本、计划、历史文档、spec及ELF核验见同目录 `results-validation.json`。
 
 ## 8. 待定事项（本轮不执行）
 
@@ -1425,11 +1724,17 @@ patchelf PASS 仍保持原判。795a5c4 的双目标实验与该版检查存附�
 提交只包含本次文档、工具与≤10 MB的配套输入；日志、profile、ELF、JSON 保留 temp。
 GitHub push 与 main/固定提交 raw 校验的结果见 E2/publication-verification.json（发布后生成）。
 
-本次预注册自检：未启动校准或正式测量，等待用户确认；未执行 clang 编译、profile采集或BOLT。
+ea7d120预注册阶段自检（历史）：该提交时未启动校准或正式测量，等待用户确认；未执行clang编译、profile采集或BOLT。
 未改 spec/LLVM源码/完整构建18GiB门禁，不构建Chromium、不推Gerrit。
 `tools/test_final_bolt_calibration.py` **16项PASS**（直接执行§6.3文档公式，含d=0.11中止、
 d=0.09继续、d=0.10边界、严格小于、启动load正负例、独立目标/不重试、回收、冻结身份）；
 `tools/test_bench_toolchain.py` **17项PASS**（包括13/10目标筛选及原门禁/资源检查）。
 测试记录、只读检查及发布证据：
 `/home/linhao/Toolchain/development/llvm-optimize/temp/final-calibration-prereg-20260921/`。
-同目录的preregistration.json在提交推送后记录真实SHA与Git时间；启动环境及实验结果仍为NOT_RUN。
+同目录的preregistration.json记录预注册SHA与Git时间；其NOT_RUN是预注册当时状态，当前执行记录以§7.1及D-final/attempt.json为准。
+其中D-final为`temp/bench_results/bolt-final-split-20260921`。
+
+本次执行自检：预注册之后获用户确认才启动；启动load≤3；按目标独立完成两轮；
+ARM失败跳过正式轮，AArch64通过后只跑一轮正式测量；全程无参数调整或重试。
+采样器已回收，五轮scratch_removed均为true；不改spec/LLVM源码、不采profile、不跑BOLT，
+不构建LLVM工程或Chromium、不向Gerrit推送。本机校准结束，转三家评审与Quickbuild。
