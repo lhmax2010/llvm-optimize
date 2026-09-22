@@ -14,6 +14,15 @@ import build_llvm_x86_64 as b
 
 
 class BuildGates(unittest.TestCase):
+    def test_linker_output_direct_response_and_unknown(self):
+        self.assertEqual(b.linker_output(['ld.lld','-o','bin/clang-22'], []),
+                         ('bin/clang-22', 'linker_argv'))
+        self.assertEqual(b.linker_output(['ld.lld','@response'],
+                         ['clang++','@inputs','-o','lib64/libclang-cpp.so.22.1']),
+                         ('lib64/libclang-cpp.so.22.1', 'parent_driver_argv'))
+        self.assertEqual(b.linker_output(['ld.lld','@response'], []), (None,'UNKNOWN'))
+        self.assertEqual(b.linker_output(['ld.lld','-o'], []), (None,'UNKNOWN'))
+
     @staticmethod
     def profile():
         return json.loads(b.BASELINE_PROFILE.read_text())
@@ -31,6 +40,55 @@ class BuildGates(unittest.TestCase):
             self.assertEqual(plan['memory_max_gib'], 18)
             self.assertEqual([plan[k] for k in ('gbs_threads','ninja_jobs','compile_jobs','link_jobs','debuginfo_jobs')],
                              [1,4,4,1,4])
+
+    def test_hybrid_certification_is_exact_and_opt_in(self):
+        trial = json.loads(b.HYBRID_PROFILE.read_text())['configuration']
+        with self.assertRaises(RuntimeError):
+            b.resource_plan(24*b.GIB, 100*b.GIB, 20, trial)
+        plan = b.resource_plan(24*b.GIB, 100*b.GIB, 20, trial, certify_fingerprint='hybrid-trial')
+        self.assertEqual(plan['admission'], 'CERTIFICATION_HYBRID_TRIAL')
+        self.assertEqual(plan['memory_max_gib'], 18)
+        for key in trial:
+            changed = copy.deepcopy(trial); changed[key] = 'different'
+            with self.subTest(key=key), self.assertRaises(RuntimeError):
+                b.resource_plan(24*b.GIB, 100*b.GIB, 20, changed, certify_fingerprint='hybrid-trial')
+        for name in ('pgo', 'bolt', 'another-trial'):
+            with self.assertRaises(RuntimeError):
+                b.resource_plan(24*b.GIB, 100*b.GIB, 20, trial, certify_fingerprint=name)
+
+    def test_hybrid_authorization_does_not_leak_to_baseline(self):
+        baseline = self.profile()['configuration']
+        with self.assertRaises(RuntimeError):
+            b.resource_plan(24*b.GIB, 100*b.GIB, 20, baseline, certify_fingerprint='hybrid-trial')
+        self.assertEqual(b.resource_plan(24*b.GIB, 100*b.GIB, 20, baseline)['memory_max_gib'],18)
+        with self.assertRaises(RuntimeError):
+            b.resource_plan(15*b.GIB, 100*b.GIB, 20,
+                json.loads(b.HYBRID_PROFILE.read_text())['configuration'], certify_fingerprint='hybrid-trial')
+
+    def test_hybrid_cache_contract_and_default_remain_separate(self):
+        parameters = json.loads(b.HYBRID_PROFILE.read_text())['cmake_parameters']
+        def cache(p): return ''.join(f'{k}:STRING={v}\n' for k,v in p.items())
+        self.assertFalse(b.validate_cache(cache(parameters),parameters,certify_fingerprint='hybrid-trial')[1])
+        self.assertTrue(b.validate_cache(cache(parameters),parameters)[1])
+        for key in parameters:
+            changed=dict(parameters);changed[key]+='-wrong'
+            with self.subTest(key=key):
+                self.assertTrue(b.validate_cache(cache(changed),parameters,certify_fingerprint='hybrid-trial')[1])
+        changed=dict(parameters,LLVM_ENABLE_BOLT='ON')
+        self.assertTrue(b.validate_cache(cache(changed),parameters,certify_fingerprint='hybrid-trial')[1])
+
+    def test_hybrid_source_guard_checks_branch_inventory_and_bytes(self):
+        source=b.WORKSPACE/'temp/llvm-hybrid-trial'
+        with self.assertRaises(RuntimeError): b.trial_source_identity(b.WORKSPACE/'llvm')
+        expected=json.loads(b.HYBRID_PROFILE.read_text())['configuration']
+        status=''.join(' M '+name+'\n' for name in expected['source_files'])
+        # Never modifies the source; force rejection before actual file reads when possible.
+        for outputs in ([b'main\n'], [b'hybrid-link-trial\n',b' M extra.cpp\n']):
+            with patch.object(b.sp,'check_output',side_effect=outputs), self.assertRaises(RuntimeError):
+                b.trial_source_identity(source)
+        with patch.object(b.sp,'check_output',side_effect=[b'hybrid-link-trial\n',status.encode(),b'wrong diff']), \
+             self.assertRaisesRegex(RuntimeError,'differs from approved'):
+            b.trial_source_identity(source)
 
     def test_heterogeneous_configuration_is_refused(self):
         for key, value in [('source_head','another-commit'), ('normalized_spec_sha256','instrumented-recipe'),

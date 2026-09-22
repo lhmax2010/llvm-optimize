@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-09-22。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-历史状态核对到 `153e33e`；本次混合链接调查与完整设计以 [docs/21](21_spec_integration_v3.md) 为准，
+历史状态核对到 `8facdfa`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，本次本机试验结果见 [docs/22](22_hybrid_link_trial.md)，
 取代 docs/20 的后续实施方案；历史报告、校准判定和预注册文件保持原样。
 以下 `temp/` 均相对工作区 `/home/linhao/Toolchain/development/llvm-optimize`，仅保存在本机，不在 GitHub。
 
@@ -12,14 +12,14 @@
 其他工具走共享库路径；别名继承实体形态，上游强制静态例外待审。仅 clang 做首版 BOLT，生成 ARM/AArch64 代码。
 基线是工作区 LLVM `f111162e94aa48ed367c9d2c039456c70e7160ae` 的自研 spec，
 不是旧公开快照配方。本机筛选不能替代专用服务器 Chromium 全量及全平台验收。
-依据：docs/13 §1；docs/21 §0、§1、§4、§6。历史全静态 RPM 仍作为已有基线证据，混合版本尚未构建。
+依据：docs/13 §1；docs/21 §0、§1、§4、§6。历史全静态 RPM 仍作为已有基线证据；混合版本一次构建成功且30 TU通过，但额外静态工具及归档索引尚有BLOCKER。
 
 | 阶段 | 范围 | 当前状态 |
 | --- | --- | --- |
 | 摸底与基准台 | 配方、工具调用面、身份、资源限制、可重复测量 | 完成；历史报告保留各自证据边界 |
 | 静态 RPM 基线 | 固定快照、构建、debuginfo 续跑、工具验证、基线数据 | 已完成；static-devel保留，既有归档索引缺陷须通过修复与消费者验收 |
 | BOLT 筛选 | 容量、插桩/profile、重写、正确性、训练/留出、中间对照、双目标 | 本机工作已结束；最终 ARM 校准 FAIL，AArch64 PASS 并完成正式轮 |
-| 集成设计与评审 | docs/21 完整 v3、混合链接拟议补丁、身份/活性脚本与协议检查 | **当前阶段：docs/21修订交三家评审；混合补丁已准本机一次正确性试构建，先推本修订再启动；不进OBS/Gerrit** |
+| 集成设计与评审 | docs/21 完整 v3、混合链接拟议补丁、身份/活性脚本与协议检查 | **当前阶段：docs/21修订交三家评审；本机一次混合构建成功、30 TU PASS，范围/索引缺陷待处理；不进OBS/Gerrit** |
 | OBS 试包与服务器验收 | LLVM RPM → qemu-accel → 新 Base 快照 → Quickbuild | 未执行；项目/验证快照待用户提供，试包与收益验收均未完成 |
 | 后续工具/PGO | 依全平台调用占比和服务器容量决定 | 挂账；没有自动启动授权 |
 
@@ -58,7 +58,8 @@
 | 2026-09-22 | `80bc93a` | `docs/20_spec_integration_v2.md` | 获确认后执行：ARM FAIL 4.272374%，AArch64 PASS 0.835047% 并完成正式轮；本机不再重试。 |
 | 2026-09-22 | `312a358` | `docs/STATUS.md` | 建立五段状态备案与每任务同 commit 维护规则。 |
 | 2026-09-22 | `153e33e` | `docs/21_spec_integration_v3.md`、`tools/check_bolt_liveness.sh`及测试、身份/基准台/验收规则脚本与测试、`docs/STATUS.md` | 混合机制有条件可行但未应用/构建；两种 strip 均退出0却使副本失活；完成 v3 与功能检查，本机性能校准保持关闭。 |
-| 2026-09-22 | 本修订提交（`git log -1 -- docs/21_spec_integration_v3.md`定位） | docs/21、STATUS、活性脚本与测试、验收规则测试 | 保留static-devel并恢复索引门禁；host-arch覆盖；seed改文件级；Quickbuild交内部团队；先推修订再启动本机试构建。 |
+| 2026-09-22 | `8facdfa` | docs/21、STATUS、活性脚本与测试、验收规则测试 | 保留static-devel并恢复索引门禁；host-arch覆盖；seed改文件级；Quickbuild交内部团队；先推修订再启动本机试构建。 |
+| 2026-09-22 | 本提交（`git log -1 -- docs/22_hybrid_link_trial.md`定位） | docs/22、STATUS、构建/活性脚本与测试、混合认证指纹 | 新根18GiB构建成功，22 RPM、30 TU PASS；额外五工具仍静态，223空/3残缺归档索引，一次ranlib不能修残缺表。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -90,10 +91,15 @@
 | 本机 patchelf 副本实验保留 `.note.bolt_info`、`.bolt.org.*`、`.text.cold`，3 TU 完整 .o PASS；不能替代 OBS brp/fdupes/完整 accel 转包验证。 | docs/20 附录 C | 硬证据；单一显式转换 |
 | 身份脚本新增 NAME_ONLY、扩展名、foreign 注册表错误、只读非可执行文件及强制 no-exec 测试 override；67 项 PASS。基准台完整性与任意行 suspect 门禁 19 项 PASS；验收规则共29项 PASS；冻结 plan/启动器未改。 | docs/21 §7、附录 E；`temp/spec-v3-20260922/*tests*.log` | 硬证据（功能/协议测试）；无新性能认证 |
 | 原 BOLT clang 活性 PASS；R1 GNU strip/eu-strip 处理副本均退出0，前者 LOAD=5 但 version/最小TU SIGSEGV，后者 LOAD=0、version/编译127；原件SHA未变。后处理仅看退出码或 BOLT note 不够。 | docs/21 附录 C；`temp/spec-v3-20260922/liveness/` | 硬证据；仅所列工具/输入/默认 strip 参数 |
-| AddLLVM 有 per-target DISABLE 开关，但 Clang/LLD 静态组件 PUBLIC LLVM 传递边需一并处理；提出七文件补丁，仅 git apply --check，未配置/链接。 | docs/21 §0、附录 A；`temp/spec-v3-20260922/source-evidence.txt`、`proposed-hybrid.patch` | 硬证据（源码机制）；最终混合 NEEDED/图/SHA UNKNOWN |
+| AddLLVM per-target与Clang/LLD PUBLIC传递边的七文件补丁已在隔离分支试构建；CMake302.105秒通过，plugin导出分支OFF未覆盖；三静态实体与八共享抽查工具NEEDED符合。 | docs/22 §1–§5；`temp/hybrid-trial-20260922/run/`、`products/` | 硬证据；五个额外静态工具仍不符合范围 |
 | 按旧 accel 文件集合的模型，混合+BOLT v1 常规文件668507104 B，全静态工具+BOLT v1 为2763020832 B；旧包54806369 B。压缩代理分别152926303/632062933 B，不是实包预测保证。 | docs/21 §1.2；`temp/spec-v3-20260922/size-model.json` | 诊断（实测文件大小上的模型估算）；新 ldd 闭包/压缩实包未测 |
 | 两归档 primary 中包名及225开发归档路径/文件名 Requires 查询均0；不覆盖 OBS BuildRequires 或未声明的文件使用。基线 compiler-rt 另有45个.a，libarcher_static.a也归libomp-devel。 | docs/21 §0.1、附录 B；`temp/spec-v3-20260922/reverse-dependencies.json`及`*-files.txt` | 硬证据（查询范围）；删除安全性未闭合 |
 | 最后 ARM 原始数据为39/39组合跨轮负偏；v2/RPM配对GM跨轮变化0.068292%，不是所有行误差上界。run1 CV高、无load>10；与暖机共模漂移解释一致，未唯一证明物理根因。 | docs/21 §7；`temp/spec-v3-20260922/noise-reanalysis.json` | 诊断；原ARM FAIL不变 |
+| 混合指纹全新构建18GiB、4/4/1、debuginfo4成功，wall1:24:00，22二进制RPM；scope峰值18GiB并回收，OOM=0，采样器回收、scope inactive。普通基线准入未放宽。 | docs/22 §2–§4；`temp/hybrid-trial-20260922/run/outcome.json`、`scope-reaped.json` | 硬证据；单次受限容量实测，不是无上限峰值 |
+| 混合libLLVM链接129.854s/11.292168GiB，clang静态链接443.526s/15.177582GiB；2秒VmHWM采样有末区间遗漏界限。 | docs/22 §4；`temp/hybrid-trial-20260922/resource-summary.json` | 硬证据；构建资源，无性能比较 |
+| 混合clang对全静态TC：ARM训练10+留出10+AArch6410，完整.o全部逐字节PASS；统一driver/资源/sysroot/flags。RPM SHA不同，profile v2不能直接认证。 | docs/22 §6；`temp/hybrid-trial-20260922/correctness-*/result.json` | 硬证据；仅30个TU，不证明代码图/性能相同 |
+| 19个包.a清单空，static-devel225、libomp-devel1、compiler-rt45（明确保留运行库）。226开发归档中223无索引，3仅残缺；一次ranlib副本全非空，但3残缺未补齐，因为源码遇已有表直接return。原RPM不改。 | docs/22 §5.2；`temp/hybrid-trial-20260922/archives/`；llvm/llvm/tools/llvm-ar/llvm-ar.cpp:1084–1093 | 硬证据；非空不足认证完整性，发货BLOCKER |
+| 额外静态例外实测为llvm-config、llvm-exegesis、llvm-tblgen、clang-tblgen、lldb-tblgen；本轮未豁免或修改补丁。clang/lld活性及身份脚本检查PASS。 | docs/22 §5.1、§5.3；`temp/hybrid-trial-20260922/products/tools.json` | 硬证据；混合范围未全部满足 |
 
 对外统一口径：**筛选层多轮测量方向一致，BOLT 对 LLVM 自身源码编译负载有稳定正向影响，量级待构建服务器验收。**
 不对外给收益百分比，不称“五轮独立”，不将训练集结果或诊断比值当作留出泛化认证。
@@ -119,10 +125,9 @@
 | Quickbuild 固定 A/A一对+A/B三对；LLVM A/B各构建一次，八轮指Chromium。 | 全指标preflight；任一时间/CPU A/A d>0.10中止，最终d取A/A与A间漂移最大值；冻结δ与dead_zone，资源噪声同样阻止发货。δ、容差及协议由内部团队冻结；本设计不再给默认数值。 | docs/21 §6；`tools/test_final_bolt_calibration.py` |
 | 混合链接、保留llvm-static-devel；第一版只BOLT clang（本轮不做BOLT）。 | clang/clang++、ar家族、lld家族静态，其余共享；常规非devel包零LLVM.a，compiler-rt/libarcher不动。附录A获准本机试构建。 | 本轮用户决策；docs/21 §0、附录 A |
 | 历史接受的容差记录；当前Quickbuild参数转内部团队负责定稿。 | 保留2d≤tol、每对≤1+tol且GM≤1结构；不再将历史2%/3%/5%写成执行默认值。未冻结占位拒绝。 | 本轮用户决策；docs/21 §6.3 |
-| 本机只做功能/稳定性，不再性能校准；armv7l筛选层无合格认证。 | 保留docs/16一次训练正式PASS，不能替代留出/最终确认；本轮只做副本strip和脚本测试。 | 本轮用户决策；docs/21 §5、§7 |
+| 本机只做功能/稳定性，不再性能校准；armv7l筛选层无合格认证。 | 保留docs/16一次训练正式PASS，不能替代留出/最终确认；本轮在批准分支执行一次混合构建与30TU正确性、原始RPM及归档副本检查。 | 本轮用户决策；docs/21 §5、§7 |
 | compile-only-v3只约束未来记录：lld/ar时间/CV不入门禁，任意行retained suspect均FAIL。 | 增加摘要/全集/样本/summary完整性验证；冻结旧计划和启动器，历史JSON不重判。 | 本轮用户要求；docs/21 §7 |
 | 对外仅定性；内部数字标分母、是否含重链剥离、训练/留出、正式/诊断和门禁状态。 | 避免把耗时降低写成等幅吞吐提升，避免跨轮漂移和失败校准混入收益认证。 | docs/19 §4；docs/20 §5、§7.1.4 |
-
 | 用户四项决定（本修订） | ①static-devel/运行库保留、常规包零LLVM.a；②批准hybrid-link-trial本机一次正确性构建，失败不改补丁重试；③Quickbuild协议及数值交内部团队；④docs/21修订交三家评审。 | 本轮用户指令；docs/21 §0/§4/§6，V37–V40 |
 | seed与chroot修订 | 非seed RPM解包逐文件SHA/属性相同，SOURCE_DATE_EPOCH固定，不比RPM头；活性脚本允许显式host-arch并核ELF Machine。 | docs/21 §1.3/§3.1 |
 
@@ -134,15 +139,15 @@
 | 待用户提供 | Quickbuild 全平台日志 | 统计实际链接+归档占比；>10% 启动第二阶段真实链接基准/lld profile/BOLT lld/逐字节门禁；<5% 搁置；5%–10%（含边界）默认搁置。占比用链接/归档边累计时间除全部边累计时间，与总wall另列；不以Chromium 0.2%或小夹具代替。 | docs/21 §8 |
 | 待用户提供 | qemu-accel 完整源码、armv7l 生成 spec、baselibs_body、对应 OBS 宏与构建日志 | 已取 SRPM 仅含 aarch64 spec；原 VCS `e01aa7250a1a73aa8f88ba9ac4a05cbc954d1c9f` 的公共获取受凭据/403/TLS 阻碍。补齐分支和隐式后处理，不能把通用主体当完整 armv7l 执行日志。 | docs/19 §2.1–2.2；docs/20 §1.2 |
 | 待评审 | docs/21完整v3与V01–V36落实、七文件混合提案、脚本/strip实验 | docs/20保持历史原文；已采纳/实现不等于评审通过，不再安排本机校准。 | docs/21附录D/E |
-| 待验证 | 其他工具共享依赖及上游静态例外 | 范围已定：保留static-devel及runtime，删除包反依赖审计不再需要；已存在的上游静态例外仍须列明实测。 | docs/21 §0.1、§4.4、附录 A/B |
-| 本轮试验/后续待验 | 混合构建与profile rebind、accel试包 | 新容量/磁盘/inode；图提取器正负认证；同job seed非seed包解包文件内容/属性一致（不比RPM头）；热缓存两模式；patchelf双次确定性、alias/strip/活性与30 TU。均未执行。 | docs/21 §0、§1–§4 |
+| 待评审/修订 | 五个额外静态工具未符合混合范围 | llvm-config、llvm-exegesis与三tblgen实测仍静态；修订方案或由用户确认明确例外，不能自动豁免/重建。保留static-devel及runtime。 | docs/22 §5.1；docs/21 §0.1 |
+| 后续待验 | 混合profile rebind、seed与accel试包 | 本机容量/混合RPM别名/活性/30TU已实测；尚待图提取器认证或重训、同job seed解包文件级等价、seed热缓存两模式、accel patchelf/alias/后处理链验证。 | docs/22 §4–§6；docs/21 §1–§4 |
 | 待内部团队定稿 | Quickbuild协议/δ/容差 | 本文仅结构与占位，内部团队在入队前冻结；dead_zone保留，不再提供δ建议值。 | docs/21 §6 |
-| 待评审/实施 | spec 集成补丁、profile 包、自举/重认证、状态文件、隔离降级、debuginfo 策略 | 当前仍为设计，未改 spec。评审后才试包；5% stale/10% coverage 为工程政策；新集成容量指纹独立登记，执行 §4.4 负对照；先在目标executor验证子cgroup委派。 | docs/21 §2–§4 |
+| 待评审/实施 | spec 集成补丁、profile 包、自举/重认证、状态文件、隔离降级、debuginfo 策略 | 生产BOLT集成仍为设计；只在本机hybrid-link-trial分支应用获批混合补丁，原spec未改。5% stale/10% coverage 为工程政策；新集成容量指纹独立登记，执行 §4.4 负对照；先在目标executor验证子cgroup委派。 | docs/21 §2–§4 |
 | 待试包/Quickbuild | 从 RPM 到 accel 到 worker 的最终身份和正确性 | 分别记录 OBS ELF/accel ELF/worker 哈希，跨 patchelf 不强求 SHA 相同；检查节区/别名/brp 后结果，worker `/emul/usr/bin/clang-22` 必查；ninja commands 和首次编译后非计时 exec trace 留证；最终产物再做 TU 门禁。 | docs/20 §1.2–§1.3、§4.2、§6.1 |
 | 待 Quickbuild | BOLT 实际收益、v2 对 v1 增量、ARM 非退化与筛选方向是否一致 | 按docs/21八轮公式先冻结参数并通过preflight；同资源/输入图/缓存，取完整 wall、单位编译成本、cpu.stat、memory.peak 与下游运行资源；实际 job/tee/后台状态非零立即停止。旧本机数据不作服务器 A 组。 | docs/21 §6；docs/20 §7.1.4 |
-| 待发货验收 | 静态开发包索引与后处理活性 | 常规包零LLVM.a，static-devel全归档armap非空、bfd/lld组件消费者及坏liblldCOFF.a负例；runtime保持。原索引缺陷未修复；两种spec修法待实施，每层后处理活性必过。 | docs/13 §12；docs/21 §4、附录 C |
+| 待发货验收 | 静态开发包索引与后处理活性 | 常规包零LLVM.a，static-devel全归档armap非空、bfd/lld组件消费者及坏liblldCOFF.a负例；runtime保持。新试验223空/3残缺索引；普通ranlib只补空，方案B不足，须改设计并做消费者验收。每层后处理活性必过。 | docs/13 §12；docs/22 §5.2；docs/21 §4、附录 C |
 | 待需求/实验 | BOLT clang 源码级 debuginfo | 首版 stripped-evaluation 不能假配旧 DWARF；如生产要求完整崩溃分析，须另测 update-debug 的容量/时间、最终符号化与 debuglink/build-id。当前成本 UNKNOWN。 | docs/21 §4.3 |
 | 待服务器容量评估 | PGO、其他工具 BOLT 与生产新输入 profile | 取得worker实际内存/并发/cgroup后重估PGO；现v2不自动认证混合输入，source/spec/patch/MLGO改变触发图与profile重认证；不擅自新建profile或重写。 | docs/21 §3、§8 |
 
 已关闭、不再作为待办：本机校准重试、用新门禁回判历史 FAIL、为补漂亮数字追加轮次。
-本修订先提交推送；源码/spec未改，仅做最小TU功能测试。随后按批准分支执行一次18GiB混合认证试构建，产物不进OBS；另以docs/22和STATUS同提交收尾。
+本轮先推8facdfa，再在隔离hybrid-link-trial分支完成唯一一次18GiB正确性试构建。原LLVM分支/spec及历史校准文件SHA不变；产物留本机，未进OBS/Gerrit。docs/22与本文件同提交收尾，不隐含修补后再构建或本机性能重试授权。

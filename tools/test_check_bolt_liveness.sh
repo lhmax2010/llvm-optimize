@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Uses existing original and strip-damaged copies; does not strip anything itself.
 set -euo pipefail
-if (($# != 3)); then
-    echo 'Usage: test_check_bolt_liveness.sh ORIGINAL_BOLT GNU_STRIP_COPY NEW_EVIDENCE_DIR' >&2
+if (($# != 3 && $# != 6)); then
+    echo 'Usage: test_check_bolt_liveness.sh ORIGINAL_BOLT GNU_STRIP_COPY NEW_EVIDENCE_DIR [LLD CLANG LIBRARY_PATH]' >&2
     exit 2
 fi
 here=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
@@ -38,3 +38,14 @@ assert d['status']=='ERROR' and d['host_arch_override']=='YES'
 assert all(cmd['tag']!='version' for cmd in d['commands'])
 print('PASS: native / correct override equivalent; wrong override refused; strip negative; no performance measurement')
 PY
+if (($# == 6)); then
+    "$here/check_bolt_liveness.sh" "$4" --tool-kind lld --compiler "$5" \
+        --host-arch x86_64 --loader /lib64/ld-linux-x86-64.so.2 --library-path "$6" --output "$3/lld"
+    python3 - "$3/lld/result.json" <<'PY'
+import json,sys
+r=json.load(open(sys.argv[1]))
+assert r['status']=='PASS' and r['tool_kind']=='lld'
+assert r['version_exit']==r['compile_exit']==r['link_exit']==0 and r['linked_elf']
+print('PASS: lld version and minimal ARM relocatable link')
+PY
+fi

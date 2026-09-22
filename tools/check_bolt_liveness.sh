@@ -5,13 +5,16 @@ exec python3 - "$@" <<'PY'
 import argparse, hashlib, json, os, platform, re, shutil, signal, subprocess, sys
 from pathlib import Path
 
-p = argparse.ArgumentParser(description='Check native clang LOAD segments, entry, version and a minimal TU. '
+p = argparse.ArgumentParser(description='Check native clang/lld LOAD segments, entry, version and a minimal TU. '
     'Requires Python3, readelf, taskset, prlimit, nice, ionice. Each query has a 30s timeout, '
     '4 GiB AS, one CPU and no core dumps. No system installation; evidence directory must be new.')
 p.add_argument('clang', type=Path)
 p.add_argument('--output', required=True, type=Path)
 p.add_argument('--loader', type=Path)
 p.add_argument('--library-path')
+p.add_argument('--tool-kind', choices=('clang', 'lld'), default='clang',
+    help='lld uses GNU flavor and links a minimal relocatable object; default clang compiles it')
+p.add_argument('--compiler', type=Path, help='Native clang ELF for the lld fixture; same loader/library-path')
 p.add_argument('--target', default='armv7l-tizen-linux-gnueabi')
 p.add_argument('--host-arch', choices=('x86_64', 'aarch64'),
     help='Explicit execution-host architecture, for a chroot with a foreign uname personality; '
@@ -19,6 +22,8 @@ p.add_argument('--host-arch', choices=('x86_64', 'aarch64'),
 p.add_argument('--expected-load-count', type=int, help='Optional count from certified input at this layer')
 a = p.parse_args()
 if a.library_path and not a.loader: p.error('--library-path requires --loader')
+if a.tool_kind == 'lld' and (not a.compiler or not a.compiler.is_file() or not os.access(a.compiler, os.X_OK)):
+    p.error('--tool-kind lld requires an executable --compiler')
 for name in ('readelf', 'taskset', 'prlimit', 'nice', 'ionice'):
     if not shutil.which(name): p.error('missing '+name)
 if not a.clang.is_file() or not os.access(a.clang, os.X_OK): p.error('input must be an executable regular ELF')
@@ -57,7 +62,7 @@ def sha(path):
         for b in iter(lambda:f.read(1024*1024), b''): h.update(b)
     return h.hexdigest()
 result = dict(input=str(a.clang), sha256=sha(a.clang), target=a.target,
-              host_arch_override='YES' if a.host_arch else 'NO')
+              host_arch_override='YES' if a.host_arch else 'NO', tool_kind=a.tool_kind)
 try:
     rc, header = run(['readelf','-hW',a.clang], 'header')
     if rc: raise ValueError('readelf header failed')
@@ -77,15 +82,23 @@ try:
                 filesz=int(fields[4],16),memsz=int(fields[5],16),flags=''.join(fields[6:-1])))
     inside = any(x['vaddr'] <= entry < x['vaddr']+x['memsz'] and 'E' in x['flags'] for x in loads)
     result.update(load_count=len(loads),entry=hex(entry),entry_in_executable_load=inside,loads=loads)
-    prefix = ([str(a.loader)] + (['--library-path',a.library_path] if a.library_path else [])) if a.loader else []
-    prefix += [str(a.clang)]
+    loader_prefix = ([str(a.loader)] + (['--library-path',a.library_path] if a.library_path else [])) if a.loader else []
+    prefix = loader_prefix + [str(a.clang)]
+    if a.tool_kind == 'lld': prefix += ['-flavor', 'gnu']
     vr, _ = run(prefix+['--version'], 'version', True)
     source = a.output/'minimal.cpp'; source.write_text('int bolt_liveness(int x) { return x + 1; }\n')
     obj = a.output/'minimal.o'
-    cr, _ = run(prefix+['--driver-mode=g++','--target='+a.target,'-nostdinc','-x','c++','-O2','-c',source,'-o',obj], 'compile', True)
+    compiler = loader_prefix+[str(a.compiler.resolve())] if a.tool_kind == 'lld' else prefix
+    cr, _ = run(compiler+['--driver-mode=g++','--target='+a.target,'-nostdinc','-x','c++','-O2','-c',source,'-o',obj], 'compile', True)
     object_ok = cr == 0 and obj.is_file() and obj.read_bytes()[:4] == b'\x7fELF'
+    link_ok = True
+    if a.tool_kind == 'lld':
+        linked = a.output/'linked.o'
+        lr, _ = run(prefix+['-r',obj,'-o',linked], 'link', True)
+        link_ok = lr == 0 and linked.is_file() and linked.read_bytes()[:4] == b'\x7fELF'
+        result.update(link_exit=lr, linked_elf=link_ok)
     count_ok = a.expected_load_count is None or len(loads) == a.expected_load_count
-    passed = bool(loads) and inside and vr == 0 and object_ok and count_ok
+    passed = bool(loads) and inside and vr == 0 and object_ok and count_ok and link_ok
     result.update(version_exit=vr,compile_exit=cr,object_elf=object_ok,load_count_matches=count_ok,
                   status='PASS' if passed else 'FAIL')
     code = 0 if passed else 1
@@ -95,7 +108,7 @@ result['input_unchanged'] = sha(a.clang) == result['sha256']
 if not result['input_unchanged']: result['status']='ERROR';code=2
 result['commands'] = records
 (a.output/'result.json').write_text(json.dumps(result,indent=2)+'\n')
-for key in ('status','host_arch_override','host_arch','load_count','entry_in_executable_load','version_exit','compile_exit','input_unchanged'):
+for key in ('status','host_arch_override','host_arch','load_count','entry_in_executable_load','version_exit','compile_exit','link_exit','input_unchanged'):
     print(key.upper()+'='+str(result.get(key,'UNKNOWN')))
 sys.exit(code)
 PY

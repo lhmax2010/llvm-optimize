@@ -24,6 +24,7 @@ import xml.etree.ElementTree as ET
 GIB = 1024 ** 3
 MAX_BUILD_MEMORY_GIB = 18
 BASELINE_PROFILE = Path(__file__).with_name('llvm_baseline_capacity.json')
+HYBRID_PROFILE = Path(__file__).with_name('llvm_hybrid_trial_fingerprint.json')
 CONFIG_GATE_SECONDS = 900
 WORKSPACE = Path(__file__).resolve().parents[1]
 SPEC = Path("packaging/llvm.spec")
@@ -81,8 +82,13 @@ def validate_resources(available, free_disk, cpus):
         raise RuntimeError('nproc must be positive')
 
 
-def resource_plan(available, free_disk, cpus, configuration, profile=None):
-    profile = profile or json.loads(BASELINE_PROFILE.read_text())
+def resource_plan(available, free_disk, cpus, configuration, profile=None, *, certify_fingerprint=None):
+    if certify_fingerprint is not None:
+        if certify_fingerprint != 'hybrid-trial' or profile is not None:
+            raise RuntimeError('only the pinned hybrid-trial certification is allowed')
+        profile = json.loads(HYBRID_PROFILE.read_text())
+    else:
+        profile = profile or json.loads(BASELINE_PROFILE.read_text())
     validate_resources(available, free_disk, cpus)
     expected = profile['configuration']
     differences = [key for key in sorted(set(expected) | set(configuration))
@@ -95,8 +101,31 @@ def resource_plan(available, free_disk, cpus, configuration, profile=None):
     return dict(available_bytes=available, disk_free_bytes=free_disk, nproc=cpus,
                 memory_max_gib=MAX_BUILD_MEMORY_GIB, gbs_threads=1, ninja_jobs=4,
                 compile_jobs=4, link_jobs=1, debuginfo_jobs=4,
-                admission='MEASURED_BASELINE', configuration=configuration,
+                admission='CERTIFICATION_HYBRID_TRIAL' if certify_fingerprint else 'MEASURED_BASELINE',
+                certify_fingerprint=certify_fingerprint, configuration=configuration,
                 cmake_parameters=profile['cmake_parameters'], evidence=profile['evidence'])
+
+
+def trial_source_identity(source):
+    """Bind the trial to the exact approved seven-file diff; no general bypass."""
+    expected = json.loads(HYBRID_PROFILE.read_text())['configuration']
+    if source.resolve() != (WORKSPACE/'temp/llvm-hybrid-trial').resolve():
+        raise RuntimeError('hybrid trial requires the isolated temp/llvm-hybrid-trial worktree')
+    def git(*args):
+        return sp.check_output(['git', '-C', str(source), *args])
+    branch = git('branch', '--show-current').decode().strip()
+    if branch != 'hybrid-link-trial':
+        raise RuntimeError('hybrid trial source branch mismatch')
+    status = git('status', '--porcelain', '--untracked-files=all').decode().splitlines()
+    if any(line[:3] != ' M ' for line in status) or {line[3:] for line in status} != set(expected['source_files']):
+        raise RuntimeError('hybrid trial changed/untracked source inventory mismatch')
+    files = {name: hashlib.sha256((source/name).read_bytes()).hexdigest() for name in expected['source_files']}
+    diff = git('diff', '--no-ext-diff', '--binary', 'HEAD')
+    if files != expected['source_files'] or hashlib.sha256(diff).hexdigest() != expected['source_diff_sha256']:
+        raise RuntimeError('hybrid trial source differs from approved patch')
+    return dict(trial='hybrid-trial', source_branch=branch, source_files=files,
+                source_diff_sha256=hashlib.sha256(diff).hexdigest(),
+                approved_design_commit=expected['approved_design_commit'])
 
 
 def changed_concurrency(original, plan):
@@ -113,7 +142,9 @@ def only_concurrency_changed(original, modified):
     return normalized_spec(original) == normalized_spec(modified)
 
 
-def validate_cache(text, expected_parameters=None):
+def validate_cache(text, expected_parameters=None, *, certify_fingerprint=None):
+    if certify_fingerprint not in (None, 'hybrid-trial'):
+        raise ValueError('unknown CMake certification contract')
     values = {}
     for line in text.splitlines():
         match = re.match(r"([^/#][^:]*):[^=]+=(.*)$", line)
@@ -124,7 +155,16 @@ def validate_cache(text, expected_parameters=None):
     for key, value in expected.items():
         if values.get(key) != value:
             errors.append(f"{key}: expected {value}, found {values.get(key, 'MISSING')}")
-    for key in ("LLVM_LINK_LLVM_DYLIB", "CLANG_LINK_CLANG_DYLIB", "LLVM_ENABLE_ASSERTIONS"):
+    off_keys = ["LLVM_ENABLE_ASSERTIONS"]
+    if certify_fingerprint:
+        expected.update(LLVM_LINK_LLVM_DYLIB='ON', CLANG_LINK_CLANG_DYLIB='ON', TIZEN_HYBRID_LINK='ON')
+        off_keys += ['LLVM_TOOL_LLVM_DRIVER_BUILD', 'BUILD_SHARED_LIBS']
+        for key, value in expected.items():
+            if values.get(key) != value:
+                errors.append(f'{key}: expected {value}, found {values.get(key, "MISSING")}')
+    else:
+        off_keys += ["LLVM_LINK_LLVM_DYLIB", "CLANG_LINK_CLANG_DYLIB"]
+    for key in off_keys:
         if values.get(key, "MISSING").upper() not in ("OFF", "NO", "FALSE", "0"):
             errors.append(f"{key}: expected OFF, found {values.get(key, 'MISSING')}")
     flags = shlex.split(values.get("CMAKE_CXX_FLAGS", ""))
@@ -309,6 +349,14 @@ def stop_build(audit, child, unit):
     child.wait(timeout=30)
 
 
+def linker_output(argv, parent_argv):
+    """The linker can hide -o in a response file; its clang parent still names it."""
+    for source, words in (('linker_argv', argv), ('parent_driver_argv', parent_argv)):
+        if '-o' in words and words.index('-o') + 1 < len(words):
+            return words[words.index('-o') + 1], source
+    return None, 'UNKNOWN'
+
+
 def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None,
           completion_file=None, release_file=None, cache_check=True):
     if not cache_check and command is None:
@@ -318,6 +366,17 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
         command = ["gbs", "-c", str(args.config), "build", "-A", "x86_64", "-B", str(args.buildroot),
                    "--threads", "1", "--include-all", "--define", "_smp_mflags -j4",
                    "-D", str(chosen), str(args.source)]
+        if plan.get('certify_fingerprint'):
+            completion_file = audit.directory/'gbs.exit'
+            release_file = audit.directory/'gbs.release'
+            # Preserve kernel peak/events before the scope disappears, including failed GBS.
+            hold = ('import subprocess,sys,time\nfrom pathlib import Path\n'
+                    'rc=subprocess.run(sys.argv[3:]).returncode\n'
+                    'Path(sys.argv[1]).write_text(str(rc))\n'
+                    'deadline=time.monotonic()+60\n'
+                    'while not Path(sys.argv[2]).exists() and time.monotonic()<deadline: time.sleep(.1)\n'
+                    'sys.exit(rc if rc else (0 if Path(sys.argv[2]).exists() else 125))\n')
+            command = [sys.executable, '-c', hold, str(completion_file), str(release_file)] + command
     command = ["nice", "-n", "15", "ionice", "-c3"] + command
     if unit:
         command = ["systemd-run", "--user", "--scope", "--unit=" + unit, "-p",
@@ -347,7 +406,8 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
             cache_seen = None
             completion_captured = False
             with (audit.directory / "samples.jsonl").open("w", buffering=1) as samples, \
-                 (audit.directory / "process-memory.jsonl").open("w", buffering=1) as memory:
+                 (audit.directory / "process-memory.jsonl").open("w", buffering=1) as memory, \
+                 (audit.directory / "linker-memory-observations.jsonl").open("w", buffering=1) as links:
                 while not stop.is_set():
                     now = time.monotonic()
                     available = mem_available()
@@ -362,6 +422,19 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
                             info = dict(line.split(":", 1) for line in (proc / "status").read_text().splitlines() if ":" in line)
                             rows.append(dict(pid=pid, argv=argv, info={key: info.get(key, "").strip()
                                 for key in ("Name", "VmRSS", "VmHWM", "Threads")}))
+                            if Path(argv[0]).name in ('ld.lld', 'lld'):
+                                parent_argv = []
+                                if '-o' not in argv:
+                                    parent = Path('/proc') / info['PPid'].strip()
+                                    parent_argv = (parent/'cmdline').read_bytes().decode(errors='replace').rstrip('\0').split('\0')
+                                target, target_source = linker_output(argv, parent_argv)
+                                if target is None:
+                                    continue
+                                output_path = proc/'root'/target.lstrip('/') if target.startswith('/') else proc/'cwd'/target
+                                links.write(json.dumps(dict(timestamp=stamp(), elapsed=now-start, pid=pid,
+                                    argv=argv, parent_argv=parent_argv, target=target, target_source=target_source, cwd=os.readlink(proc/'cwd'),
+                                    vmhwm=info.get('VmHWM','').strip(), rss=info.get('VmRSS','').strip(),
+                                    output_bytes=output_path.stat().st_size if output_path.exists() else None))+'\n')
                         except (OSError, ValueError):
                             continue
                     memory.write(json.dumps(dict(timestamp=stamp(), elapsed=now-start, rows=rows)) + "\n")
@@ -385,6 +458,7 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
                                       loadavg=Path("/proc/loadavg").read_text().strip(),
                                       process_tree_rss_bytes=sum(tree.values()), processes=tree,
                                       cgroup=cgroup_stats(unit),
+                                      disk_free_bytes=shutil.disk_usage(args.buildroot.parent).free,
                                       free_m=sp.check_output(["free", "-m"], text=True))
                         samples.write(json.dumps(sample) + "\n")
                         next_sample = now + 30
@@ -400,7 +474,8 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
                             continue
                         text = cache.read_text()
                         shutil.copy2(cache, audit.directory / "CMakeCache.txt")
-                        values, errors = validate_cache(text, plan.get('cmake_parameters'))
+                        values, errors = validate_cache(text, plan.get('cmake_parameters'),
+                                                        certify_fingerprint=plan.get('certify_fingerprint'))
                         for key, value in (("LLVM_PARALLEL_COMPILE_JOBS", plan["compile_jobs"]),
                                            ("LLVM_PARALLEL_LINK_JOBS", plan["link_jobs"])):
                             if values.get(key) != str(value):
@@ -484,6 +559,8 @@ def main():
     parser.add_argument("--config", type=Path, default=WORKSPACE / "gbs_llvm.conf")
     parser.add_argument("--source", type=Path, default=WORKSPACE / "llvm")
     parser.add_argument("--expected-commit", default=EXPECTED_HEAD)
+    parser.add_argument('--certify-fingerprint', choices=['hybrid-trial'],
+                        help='one pinned local mixed-link correctness trial; never widens baseline admission')
     parser.add_argument("--buildroot", type=Path, default=WORKSPACE / "temp/gbs-root-x86_64-baseline")
     parser.add_argument("--log-dir", type=Path, default=WORKSPACE / "temp/baseline-build" / dt.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
     args = parser.parse_args()
@@ -501,7 +578,11 @@ def main():
         original = audit.run(["git", "-C", args.source, "show", "HEAD:" + str(SPEC)]).stdout
         current = (args.source / SPEC).read_text()
         status = audit.run(["git", "-C", args.source, "status", "--porcelain", "--untracked-files=all"]).stdout
-        if any(line[3:] != str(SPEC) for line in status.splitlines()) or not only_concurrency_changed(original, current):
+        if args.certify_fingerprint:
+            trial_source_identity(args.source)
+            if args.buildroot != WORKSPACE/'temp/gbs-root-x86_64-hybrid-trial':
+                raise RuntimeError('hybrid trial requires the registered fresh buildroot')
+        elif any(line[3:] != str(SPEC) for line in status.splitlines()) or not only_concurrency_changed(original, current):
             raise RuntimeError("source has changes beyond the permitted spec concurrency numbers")
         if args.buildroot.exists():
             raise RuntimeError("fresh buildroot required: path already exists; preserve it and choose a new path")
@@ -511,10 +592,12 @@ def main():
         proposed = changed_concurrency(current, dict(ninja_jobs=4, compile_jobs=4, link_jobs=1))
         configuration = configuration_identity(head, proposed, args.config.read_bytes(), chosen.read_bytes(),
                                                repository_metadata=metadata)
+        if args.certify_fingerprint:
+            configuration.update(trial_source_identity(args.source))
         plan = resource_plan(mem_available(), shutil.disk_usage(args.buildroot.parent).free,
-                             cpus, configuration)
+                             cpus, configuration, certify_fingerprint=args.certify_fingerprint)
         audit.json("resource-plan.json", plan)
-        audit.log("CAPACITY ADMISSION MEASURED_BASELINE; 18 GiB cap, 4/4/1, debuginfo -j4")
+        audit.log('CAPACITY ADMISSION '+plan['admission']+'; 18 GiB cap, 4/4/1, debuginfo -j4')
         probe = audit.run(["systemd-run", "--user", "--scope", "-p", "MemoryMax=1G", "-p",
                            "MemorySwapMax=0", "/bin/true"], check=False)
         mechanism = "systemd" if probe.returncode == 0 else "prlimit"
@@ -530,12 +613,22 @@ def main():
         proposed = changed_concurrency(current, dict(ninja_jobs=4, compile_jobs=4, link_jobs=1))
         configuration = configuration_identity(head, proposed, args.config.read_bytes(), chosen.read_bytes(),
                                                repository_metadata=metadata)
+        if args.certify_fingerprint:
+            configuration.update(trial_source_identity(args.source))
         plan = resource_plan(mem_available(), shutil.disk_usage(args.buildroot.parent).free,
-                             cpus, configuration)
+                             cpus, configuration, certify_fingerprint=args.certify_fingerprint)
         audit.json("resource-plan.json", plan)
         patched = changed_concurrency(current, plan)
-        assert only_concurrency_changed(original, patched)
-        (args.source / SPEC).write_text(patched)
+        if args.certify_fingerprint:
+            if patched != current:
+                raise RuntimeError('certified trial concurrency must already be exact; refusing source mutation')
+            trial_source_identity(args.source)
+            audit.json('source-fingerprint.json', configuration)
+            (audit.directory/'source.diff').write_bytes(sp.check_output(
+                ['git','-C',str(args.source),'diff','--no-ext-diff','--binary','HEAD']))
+        else:
+            assert only_concurrency_changed(original, patched)
+            (args.source / SPEC).write_text(patched)
         diff = audit.run(["git", "-C", args.source, "diff", "HEAD", "--", SPEC]).stdout
         (audit.directory / "spec-concurrency.diff").write_text(diff)
         build(audit, args, plan, chosen, mechanism)
