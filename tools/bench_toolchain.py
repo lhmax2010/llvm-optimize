@@ -30,7 +30,7 @@ WORKSPACE = Path(__file__).resolve().parents[1]
 INPUTS = Path(__file__).resolve().parent / "bench_inputs"
 TARGET = "armv7l-tizen-linux-gnueabi"
 AARCH64_TARGET = "aarch64-tizen-linux-gnu"
-CALIBRATION_POLICY = "compile-only-v2"
+CALIBRATION_POLICY = "compile-only-v3"
 MEMORY_LIMIT = 4 * 1024 ** 3
 SCHEMA = 1
 sys.dont_write_bytecode = True
@@ -491,9 +491,70 @@ def single_run(args, prefix):
     return result
 
 
+def validate_calibration_run(result):
+    """Reject partial/tampered records before comparing any measured values.
+
+    Digests establish internal consistency, not authenticity; callers must still
+    bind the protocol/input inventory to their externally frozen manifest.
+    """
+    try:
+        if result.get("status") not in ("MEASURED", "MEASURED_WITH_WARNINGS"):
+            raise BenchError("Calibration needs a completed measured run")
+        if result.get("schema") != SCHEMA:
+            raise BenchError("Calibration schema mismatch")
+        protocol = result["protocol"]
+        if protocol.get("calibration_policy") != CALIBRATION_POLICY:
+            raise BenchError("Historical/unknown calibration policy: do not reinterpret old runs with the new gate")
+        if result["protocol_hash"] != json_digest(protocol):
+            raise BenchError("Invalid protocol digest")
+        if result["fixture_hash"] != json_digest(result["fixture_objects"]):
+            raise BenchError("Invalid fixture digest")
+        runs = protocol["runs"]
+        if type(runs) is not int or runs < 3:
+            raise BenchError("Invalid protocol sample count")
+        names = [item["name"] for item in protocol["inputs"]]
+        if not names or len(set(names)) != len(names) or any(not isinstance(n, str) or not n for n in names):
+            raise BenchError("Missing or duplicate compilation inventory")
+        if set(names) & {"ld.lld", "llvm-ar"}:
+            raise BenchError("Diagnostic names cannot be compilation inputs")
+        expected = set(names) | {"ld.lld", "llvm-ar"}
+        if not result["toolchains"] or set(result["results"]) != set(result["toolchains"]):
+            raise BenchError("Toolchain inventory incomplete")
+        any_suspect = False
+        for cases in result["results"].values():
+            if set(cases) != expected:
+                raise BenchError("Workload inventory incomplete")
+            for value in cases.values():
+                samples = value["samples"]
+                if len(samples) != runs:
+                    raise BenchError("Sample count mismatch")
+                for i, sample in enumerate(samples):
+                    if type(sample["iteration"]) is not int or sample["iteration"] != i or sample["discarded"] is not (i == 0):
+                        raise BenchError("Sample iteration/discard mismatch")
+                    if type(sample["suspect"]) is not bool:
+                        raise BenchError("Invalid suspect flag")
+                    for field in ("wall_s", "user_s", "sys_s", "max_rss_kib"):
+                        number = sample[field]
+                        if type(number) not in (int, float) or not math.isfinite(number) or number < 0:
+                            raise BenchError("Invalid sample metric")
+                        if field in ("wall_s", "max_rss_kib") and number == 0:
+                            raise BenchError("Zero sample wall/RSS")
+                computed = summarize(samples)
+                if value["summary"] != computed:
+                    raise BenchError("Summary inconsistent with complete samples")
+                any_suspect |= bool(computed["suspect_retained"])
+        expected_status = "MEASURED_WITH_WARNINGS" if any_suspect else "MEASURED"
+        if result["status"] != expected_status:
+            raise BenchError("Run status inconsistent with retained samples")
+    except (KeyError, TypeError, ValueError, OverflowError) as exc:
+        raise BenchError(f"Malformed calibration record: {exc}") from exc
+
+
 def calibration(first, second, limit=3.0):
-    if any(r.get("protocol", {}).get("calibration_policy") != CALIBRATION_POLICY for r in (first, second)):
-        raise BenchError("Historical/unknown calibration policy: do not reinterpret old runs with the new gate")
+    if not math.isfinite(limit) or limit < 0:
+        raise BenchError("Invalid calibration threshold")
+    for result in (first, second):
+        validate_calibration_run(result)
     if first["protocol_hash"] != second["protocol_hash"] or first["fixture_hash"] != second["fixture_hash"] or first["toolchains"] != second["toolchains"]:
         raise BenchError("Calibration inputs/protocol/tool identities changed")
     rows = []
@@ -513,11 +574,14 @@ def calibration(first, second, limit=3.0):
     gated = [r for r in rows if not r["diagnostic_only"]]
     if not gated:
         raise BenchError("Calibration requires compilation cases")
+    suspect_any = any(r["suspect_retained"] for r in rows)
+    suspect_diagnostic = any(r["suspect_retained"] for r in rows if r["diagnostic_only"])
     return {"schema": SCHEMA, "calibration_policy": CALIBRATION_POLICY,
-            "status": "PASS" if all(r["pass"] for r in gated) else "FAIL",
+            "status": "PASS" if all(r["pass"] for r in gated) and not suspect_any else "FAIL",
+            "suspect_any_row": suspect_any, "suspect_diagnostic_only": suspect_diagnostic,
             "noise_floor_pct": max(r["absolute_change_pct"] for r in gated), "threshold_pct": limit,
             "protocol_hash": first["protocol_hash"], "rows": rows,
-            "definition": "compilation only: max absolute difference of corresponding wall medians; also require per-run CV <= threshold and no suspect retained samples; ld.lld/llvm-ar rows are diagnostic only"}
+            "definition": "compilation only: max absolute difference of corresponding wall medians; also require per-run CV <= threshold and no suspect retained samples; ld.lld/llvm-ar timing/CV are diagnostic only, but any retained suspect row fails the run"}
 
 
 def header_tree_hash(root):

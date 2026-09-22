@@ -19,6 +19,8 @@ path or inspect inside its root instead of accidentally selecting a host file.
   --no-exec            Skip --version; inspect without executing the input.
   --binfmt-extra-dir DIR  Additionally inspect a registry directory (test/alternate
                        proc mount). Never replaces the real proc registry.
+  --binfmt-registry-dir DIR  TEST ONLY: replace registry view, force --no-exec,
+                       and print BINFMT_REGISTRY_OVERRIDDEN=YES.
   -h, --help           Show this help.
 
 Outputs include selected/resolved path, version, SHA256, ELF Machine, host arch,
@@ -27,9 +29,12 @@ Architecture mismatch automatically skips execution, even with --loader, to
 prevent binfmt/accel dispatch from mixing two binaries in one identity report.
 Unknown architecture also skips execution and causes incomplete-inspection exit 2.
 BINFMT_DISPATCH_POSSIBLE=YES also disables execution, even when Machine matches
-uname. Any ARM/AArch64 registration or matching ELF magic/mask triggers the guard.
-Disabled registrations are treated conservatively; unreadable/malformed magic
-registrations produce UNKNOWN, no execution, and exit 2. No registry is changed.
+uname. Matching magic/mask/offset or extension triggers the guard; an ARM/AArch64
+name alone is NAME_ONLY and does not disable execution. Disabled entries are
+conservatively checked. Unreadable/malformed registries disable execution and
+produce exit 2 unless a known architecture mismatch already forbids execution.
+UNKNOWN: inspect registry permissions, magic/mask/offset/extension and proc mount;
+never bypass UNKNOWN to execute a foreign binary. No registry is changed.
 Wrappers with a shebang have WRAPPER=YES and are never executed automatically.
 RPM ownership is INFORMATION ONLY: unowned files, RPM query errors, or missing
 rpm do not constitute inspection failure. Original output/return code is retained.
@@ -40,16 +45,20 @@ Exit: 0 = inspection completed (not endorsement); 1 = SHA/BOLT expectation misma
       2 = usage/read/tool/parse/version error or incomplete ELF inspection;
       3 = wrapper identified (without an inspection error or expectation mismatch).
 Errors take precedence over expectation mismatches. Intentional --no-exec and
-known architecture mismatch do not by themselves fail inspection.
+known architecture mismatch do not by themselves fail inspection. A non-executable
+input reports EXECUTABLE=NO and completes read-only inspection.
+TOCTOU: before/after metadata checks detect some changes, not an atomic snapshot.
+Use immutable deployments and independently record the actual exec trace; a PASS
+is not proof that a later process executed the same bytes.
 Requires Bash 4+, coreutils (including od/uname), awk, readelf.
 rpm is optional. timeout is optional; when present version queries have a 15s limit.
 HELP
 }
 die() { printf 'INSPECTION=UNKNOWN\nERROR=%s\n' "$*" >&2; exit 2; }
-expected= expect_bolt= loader= library_path= input= no_exec=0 binfmt_extra=
+expected= expect_bolt= loader= library_path= input= no_exec=0 binfmt_extra= binfmt_registry=/proc/sys/fs/binfmt_misc registry_override=0 arch_mismatch=UNKNOWN executable=YES
 while (($#)); do
     case "$1" in
-        --expected-sha256|--expect-bolt|--loader|--library-path|--binfmt-extra-dir)
+        --expected-sha256|--expect-bolt|--loader|--library-path|--binfmt-extra-dir|--binfmt-registry-dir)
             (($# >= 2)) || die "missing value for $1"
             case "$1" in
                 --expected-sha256) expected=$2 ;;
@@ -57,6 +66,7 @@ while (($#)); do
                 --loader) loader=$2 ;;
                 --library-path) library_path=$2 ;;
                 --binfmt-extra-dir) binfmt_extra=$2 ;;
+                --binfmt-registry-dir) binfmt_registry=$2; registry_override=1; no_exec=1 ;;
             esac; shift 2 ;;
         --no-exec) no_exec=1; shift ;;
         -h|--help) usage; exit 0 ;;
@@ -90,14 +100,14 @@ if [[ -d "$input" ]]; then
     [[ -n "$selected" ]] || die 'no clang found in input directory'
 fi
 [[ -f "$selected" && -r "$selected" ]] || die "not a readable regular file: $selected"
-[[ -x "$selected" ]] || die "input is not executable: $selected"
+[[ -x "$selected" ]] || { executable=NO; no_exec=1; }
 [[ "$selected" = /* ]] || selected=$PWD/$selected
 resolved=$(readlink -f -- "$selected") || die 'cannot resolve input'
 if [[ -n "$input_directory" && "$input_directory" != / && "$resolved" != "$input_directory/"* ]]; then
     die "clang resolves outside input directory: $resolved; pass explicit ELF path or inspect inside its root"
 fi
 before=$(stat -Lc '%d:%i:%s:%y:%z' -- "$resolved") || die 'initial stat failed'
-printf 'SELECTED_PATH=%s\nRESOLVED_PATH=%s\nEXECUTABLE=YES\n' "$selected" "$resolved"
+printf 'SELECTED_PATH=%s\nRESOLVED_PATH=%s\nEXECUTABLE=%s\n' "$selected" "$resolved" "$executable"
 status=0 mismatch=0 wrapper=0 is_elf=0 bolt_state=unknown
 if size=$(stat -Lc %s -- "$resolved") && [[ "$size" =~ ^[0-9]+$ ]]; then
     printf 'SIZE_BYTES=%s\n' "$size"
@@ -145,9 +155,9 @@ if [[ "$magic" == 7f454c46 ]]; then
             echo 'ARCH_MISMATCH=UNKNOWN'; echo 'WARNING=Architecture could not be verified; execution disabled.'
             no_exec=1; status=2
         elif [[ "$host_arch" != "$elf_arch" ]]; then
-            echo 'ARCH_MISMATCH=YES'; echo 'WARNING=FOREIGN ELF: execution disabled to prevent binfmt/accel dispatch.'
+            arch_mismatch=YES; echo 'ARCH_MISMATCH=YES'; echo 'WARNING=FOREIGN ELF: execution disabled to prevent binfmt/accel dispatch.'
             no_exec=1
-        else echo 'ARCH_MISMATCH=NO'; fi
+        else arch_mismatch=NO; echo 'ARCH_MISMATCH=NO'; fi
     else
         echo 'ELF=UNKNOWN'; printf '%s\n' "$header"; status=2; no_exec=1
     fi
@@ -159,38 +169,51 @@ fi
 
 binfmt_possible=NO
 scan_binfmt() {
-    local dir=$1 entry contents registration offset match_magic mask bytes index actual expected_byte mask_byte matched line
-    [[ -d "$dir" ]] || return 2
-    if [[ ! -r "$dir" || ! -x "$dir" ]]; then return 2; fi
+    local dir=$1 entry contents registration offset match_magic mask bytes index actual expected_byte mask_byte matched line extension
+    [[ -d "$dir" && -r "$dir" && -x "$dir" ]] || return 2
     for entry in "$dir"/*; do
         [[ -e "$entry" ]] || continue
         case "${entry##*/}" in status|register) continue ;; esac
         [[ -f "$entry" && -r "$entry" ]] || return 2
         contents=$(cat -- "$entry") || return 2
-        registration=${entry##*/}; registration=${registration,,}${contents,,}
+        registration=${entry##*/}; registration=${registration,,}
         case "$registration" in
             *arm*|*aarch64*)
-                binfmt_possible=YES
-                printf 'BINFMT_MATCH=%s (ARM/AArch64 registration)\n' "$entry" ;;
+                [[ "$binfmt_possible" != NO ]] || binfmt_possible=NAME_ONLY
+                printf 'BINFMT_NAME_HINT=%s\n' "$entry" ;;
         esac
-        offset=0; match_magic=; mask=
+        offset=0; match_magic=; mask=; extension=
         while IFS= read -r line; do
             case "$line" in
                 'offset '*) offset=${line#offset } ;;
                 'magic '*) match_magic=${line#magic } ;;
                 'mask '*) mask=${line#mask } ;;
+                'extension '*) extension=${line#extension } ;;
             esac
         done <<< "$contents"
-        [[ -n "$match_magic" ]] || continue  # Extension-only registrations.
+        if [[ -z "$match_magic" ]]; then
+            [[ -n "$extension" && "$extension" != *'/'* && "$extension" != *[[:space:]]* ]] || return 2
+            extension=${extension#.}
+            [[ -n "$extension" ]] || return 2
+            # Kernel extension matching uses the invoked filename, not its symlink target.
+            if [[ "${selected##*/}" == *."$extension" ]]; then
+                binfmt_possible=YES
+                printf 'BINFMT_MATCH=%s (filename extension)\n' "$entry"
+            fi
+            continue
+        fi
         [[ "$offset" =~ ^[0-9]+$ && ${#offset} -le 7 ]] || return 2
         offset=$((10#$offset))
         [[ "$match_magic" =~ ^([[:xdigit:]]{2})+$ && ${#match_magic} -le 8192 ]] || return 2
         if [[ -n "$mask" ]]; then
             [[ "$mask" =~ ^([[:xdigit:]]{2})+$ && ${#mask} == ${#match_magic} ]] || return 2
         fi
+        # Offsets beyond EOF cannot match; avoid treating od's EOF error as unreadable.
+        [[ "$size" =~ ^[0-9]+$ ]] || return 2
+        (( offset + ${#match_magic}/2 <= size )) || continue
         bytes=$(od -An -v -tx1 -j "$offset" -N "$((${#match_magic}/2))" -- "$resolved") || return 2
         bytes=${bytes//[[:space:]]/}
-        [[ ${#bytes} == ${#match_magic} ]] || continue
+        [[ ${#bytes} == ${#match_magic} ]] || return 2
         matched=1
         for ((index=0; index<${#match_magic}; index+=2)); do
             actual=${bytes:index:2}; expected_byte=${match_magic:index:2}; mask_byte=${mask:index:2}
@@ -204,14 +227,19 @@ scan_binfmt() {
         fi
     done
 }
+registry_error=0
+printf 'BINFMT_REGISTRY_OVERRIDDEN=%s\n' "$([[ $registry_override == 1 ]] && echo YES || echo NO)"
+[[ -z "$binfmt_extra" || -d "$binfmt_extra" ]] || die '--binfmt-extra-dir must exist'
 if ((is_elf)); then
-    if ! scan_binfmt /proc/sys/fs/binfmt_misc; then binfmt_possible=UNKNOWN; no_exec=1; status=2; fi
-    if [[ -n "$binfmt_extra" ]]; then
-        [[ -d "$binfmt_extra" ]] || die '--binfmt-extra-dir must exist'
-        if ! scan_binfmt "$binfmt_extra"; then binfmt_possible=UNKNOWN; no_exec=1; status=2; fi
-    fi
+    scan_binfmt "$binfmt_registry" || registry_error=1
+    if [[ -n "$binfmt_extra" ]]; then scan_binfmt "$binfmt_extra" || registry_error=1; fi
+    if ((registry_error)); then
+        echo 'BINFMT_REGISTRY=UNAVAILABLE_OR_MALFORMED'
+        binfmt_possible=UNKNOWN; no_exec=1
+        [[ "$arch_mismatch" == YES ]] || status=2
+    else echo 'BINFMT_REGISTRY=READABLE'; fi
     printf 'BINFMT_DISPATCH_POSSIBLE=%s\n' "$binfmt_possible"
-    if [[ "$binfmt_possible" != NO ]]; then
+    if [[ "$binfmt_possible" == YES || "$binfmt_possible" == UNKNOWN ]]; then
         no_exec=1; echo 'WARNING=BINFMT GUARD: execution disabled; uname may itself run through emulation.'
     fi
 else echo 'BINFMT_DISPATCH_POSSIBLE=NOT_APPLICABLE'; fi
@@ -261,12 +289,13 @@ if ((is_elf)); then
             elif ((bolt_org)); then bolt_state=partial
             else bolt_state=absent; fi
             printf 'BOLT_FEATURES=%s\n' "$bolt_state"
-            if ! awk '/\.note\.bolt_info|\.bolt\.org\.|\.text\.cold|\.rodata\.cold|\.gnu_debuglink/' <<< "$sections"; then
+            if ! awk '/\.note\.bolt_info|\.bolt\.org\.|\.text\.cold|\.rodata\.cold|\.gnu_debuglink/ {print; n++}
+                END {printf "SECTION_DETAIL_MATCHES=%d\n", n+0}' <<< "$sections"; then
                 echo 'SECTION_DETAILS=UNKNOWN'; status=2
             fi
         else echo 'BOLT_FEATURES=UNKNOWN'; status=2; fi
     else printf '%s\n' "$sections"; echo 'BOLT_FEATURES=UNKNOWN'; status=2; fi
-    echo 'ELF_NOTES_BEGIN'; readelf -nW -- "$resolved" 2>&1 || status=2; echo 'ELF_NOTES_END'
+    echo 'ELF_NOTES_BEGIN'; readelf -nW -- "$resolved" 2>&1 || { echo 'ELF_NOTES=UNKNOWN'; status=2; }; echo 'ELF_NOTES_END'
 else echo 'NEEDED_LLVM_SHARED=UNKNOWN'; echo 'BOLT_FEATURES=UNKNOWN'; fi
 if [[ -n "$expect_bolt" ]]; then
     if [[ "$bolt_state" == unknown ]]; then echo 'EXPECTED_BOLT=UNKNOWN'; status=2

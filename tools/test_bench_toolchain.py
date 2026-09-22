@@ -48,10 +48,25 @@ class HarnessChecks(unittest.TestCase):
                     max_rss_kib=1234, suspect=suspect)
 
     def result(self):
-        samples = [self.sample(v) for v in (100, 10, 10, 10, 10)]
-        return dict(protocol_hash="same", fixture_hash="same", toolchains={"a": "same"},
-                    protocol={"calibration_policy": bench.CALIBRATION_POLICY},
-                    results={"a": {"A": {"summary": bench.summarize(samples)}}})
+        samples = [dict(self.sample(v), iteration=i, discarded=i == 0)
+                   for i, v in enumerate((100, 10, 10, 10, 10))]
+        protocol = {"calibration_policy": bench.CALIBRATION_POLICY, "runs": 5,
+                    "inputs": [{"name": "A", "sha256": "a"*64}]}
+        fixture = [{"name": "part-0.o", "bytes": 1, "sha256": "b"*64}]
+        value = {"samples": samples, "summary": bench.summarize(samples)}
+        return dict(schema=bench.SCHEMA, status="MEASURED",
+                    protocol_hash=bench.json_digest(protocol), fixture_hash=bench.json_digest(fixture),
+                    fixture_objects=fixture, toolchains={"a": "same"}, protocol=protocol,
+                    results={"a": {k: copy.deepcopy(value) for k in ("A", "ld.lld", "llvm-ar")}})
+
+    def change_case(self, result, case, factor=1, suspect=False, uneven=False):
+        value = result["results"]["a"][case]
+        for sample in value["samples"]:
+            sample["wall_s"] *= factor
+        if suspect: value["samples"][1]["suspect"] = True
+        if uneven: value["samples"][1]["wall_s"] *= 1.5
+        value["summary"] = bench.summarize(value["samples"])
+        if suspect: result["status"] = "MEASURED_WITH_WARNINGS"
 
     def test_discard_warmup_and_sample_standard_deviation(self):
         values = [self.sample(v) for v in (1000, 1, 2, 3, 4)]
@@ -64,48 +79,60 @@ class HarnessChecks(unittest.TestCase):
         samples = [self.sample(100, True)] + [self.sample(10) for _ in range(4)]
         self.assertEqual(bench.summarize(samples)["suspect_retained"], 0)
 
-    def test_noise_gate_rejects_drift_and_suspicion(self):
-        first = self.result()
-        second = copy.deepcopy(first)
-        second["results"]["a"]["A"]["summary"]["statistics"]["wall_s"]["median"] = 10.5
+    def test_noise_gate(self):
+        first = self.result(); second = copy.deepcopy(first)
+        self.change_case(second, "A", factor=1.05)
         self.assertEqual(bench.calibration(first, second)["status"], "FAIL")
-        second = copy.deepcopy(first)
-        second["results"]["a"]["A"]["summary"]["suspect_retained"] = 1
+        second = copy.deepcopy(first); self.change_case(second, "A", suspect=True)
         self.assertEqual(bench.calibration(first, second)["status"], "FAIL")
         self.assertEqual(bench.calibration(first, first)["status"], "PASS")
 
     def test_noise_gate_refuses_changed_fixture_or_protocol(self):
         for key in ("fixture_hash", "protocol_hash", "toolchains"):
-            first, second = self.result(), self.result()
-            second[key] = "changed"
-            with self.assertRaises(bench.BenchError):
-                bench.calibration(first, second)
+            first, second = self.result(), self.result(); second[key] = "changed"
+            with self.assertRaises(bench.BenchError): bench.calibration(first, second)
 
-    def test_link_archive_are_recorded_but_cannot_fail_compilation_gate(self):
-        first = self.result()
-        for case in ('ld.lld', 'llvm-ar'):
-            first['results']['a'][case] = copy.deepcopy(first['results']['a']['A'])
-        second = copy.deepcopy(first)
-        for case in ('ld.lld', 'llvm-ar'):
-            summary = second['results']['a'][case]['summary']
-            summary['statistics']['wall_s'].update(median=12, cv_pct=10)
-            summary['suspect_retained'] = 1
-        result = bench.calibration(first, second)
-        self.assertEqual(result['status'], 'PASS')
-        self.assertEqual(result['noise_floor_pct'], 0)
-        self.assertEqual(result['calibration_policy'], 'compile-only-v2')
-        self.assertEqual(len(result['rows']), 3)
-        self.assertEqual([r['diagnostic_only'] for r in result['rows']], [False, True, True])
-        second['results']['a']['A']['summary']['statistics']['wall_s']['median'] = 10.4
-        result = bench.calibration(first, second)
-        self.assertEqual(result['status'], 'FAIL')
-        self.assertAlmostEqual(result['noise_floor_pct'], 4)
+    def test_link_archive_timing_only_cannot_fail_compilation_gate(self):
+        first = self.result(); second = copy.deepcopy(first)
+        for case in ('ld.lld','llvm-ar'): self.change_case(second,case,1.2,uneven=True)
+        result=bench.calibration(first,second)
+        self.assertEqual(result['status'],'PASS'); self.assertEqual(result['noise_floor_pct'],0)
+        self.assertEqual(result['calibration_policy'],'compile-only-v3')
+        self.assertEqual([r['diagnostic_only'] for r in result['rows']],[False,True,True])
+        self.change_case(second,'A',1.04)
+        self.assertEqual(bench.calibration(first,second)['status'],'FAIL')
+
+    def test_lld_suspect_is_environment_failure(self):
+        first=self.result();second=copy.deepcopy(first)
+        self.change_case(second,'ld.lld',suspect=True)
+        result=bench.calibration(first,second)
+        self.assertEqual(result['status'],'FAIL')
+        self.assertTrue(result['suspect_any_row']);self.assertTrue(result['suspect_diagnostic_only'])
+        self.assertEqual(result['noise_floor_pct'],0)
+
+    def test_symmetric_deletion_and_forgery_rejected(self):
+        mutations=[
+            lambda r:r['results']['a'].pop('A'),
+            lambda r:r['results']['a'].pop('ld.lld'),
+            lambda r:r.update(protocol_hash='f'*64),
+            lambda r:r['protocol'].update(runs=6),
+            lambda r:r['results']['a']['A']['samples'].pop(),
+            lambda r:r.update(status='FAILED'),
+            lambda r:r['results']['a']['A']['summary']['statistics']['wall_s'].update(median=1),
+            lambda r:r['results']['a']['A']['summary'].pop('retained'),
+            lambda r:r['results']['a']['A']['samples'][1].update(discarded=True),
+            lambda r:r['results']['a']['A']['samples'][1].update(wall_s=float('nan')),
+            lambda r:r.update(fixture_hash='forged'),
+            lambda r:r['results'].update(extra=copy.deepcopy(r['results']['a'])),
+        ]
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                r=self.result();mutation(r)
+                with self.assertRaises(bench.BenchError):bench.calibration(r,copy.deepcopy(r))
 
     def test_historical_policy_cannot_be_reinterpreted(self):
-        old = self.result()
-        old['protocol'].pop('calibration_policy')
-        with self.assertRaisesRegex(bench.BenchError, 'Historical'):
-            bench.calibration(old, old)
+        old=self.result();old['protocol']['calibration_policy']='compile-only-v2'
+        with self.assertRaisesRegex(bench.BenchError,'Historical'):bench.calibration(old,old)
 
     def test_aarch64_input_flags_and_output_machine_are_checked(self):
         root = self.temporary()

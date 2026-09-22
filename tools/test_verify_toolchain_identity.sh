@@ -37,7 +37,7 @@ for file in "$static" "$dynamic" "$arm" "$bolt" "$loader"; do
     [[ -f "$file" && -x "$file" ]] || { echo "Missing executable fixture: $file" >&2; exit 2; }
 done
 suite_tmp=$(mktemp -d "${TMPDIR:-/tmp}/llvm-identity-tests.XXXXXXXX")
-trap 'rm -rf -- "$suite_tmp"' EXIT
+trap 'chmod -R u+rwX -- "$suite_tmp"; rm -rf -- "$suite_tmp"' EXIT
 bash_bin=$(command -v bash)
 export IDENTITY_TEST_REAL_AWK=$(command -v awk)
 export IDENTITY_TEST_REAL_STAT=$(command -v stat)
@@ -76,6 +76,7 @@ cat > "$suite_tmp/mock/readelf" <<'MOCK'
 case "${IDENTITY_TEST_MODE:-}:$1" in
     fail-header:-hW|fail-sections:-SW|fail-dynamic:-dW|fail-notes:-nW) exit 7 ;;
     empty-sections:-SW) echo 'injected invalid section listing'; exit 0 ;;
+    no-details:-SW) echo '  [ 1] .text PROGBITS 0000 0010 0010'; exit 0 ;;
     partial:-SW)
         set -o pipefail
         "$IDENTITY_TEST_REAL_READELF" "$@" | "$IDENTITY_TEST_REAL_AWK" '!/\.note\.bolt_info/'
@@ -96,7 +97,7 @@ exit 99
 MOCK
 printf '#!/bin/sh\ntouch "%s"\n' "$IDENTITY_TEST_MARKER" > "$suite_tmp/wrapper with spaces"
 printf 'not an ELF or script\n' > "$suite_tmp/non-elf"
-cp "$suite_tmp/wrapper with spaces" "$suite_tmp/non-executable"
+cp /usr/bin/true "$suite_tmp/non-executable"
 chmod +x "$suite_tmp/mock/"* "$suite_tmp/recording-loader" "$suite_tmp/wrapper with spaces" "$suite_tmp/non-elf"
 chmod -x "$suite_tmp/non-executable"
 count=0
@@ -113,7 +114,7 @@ check() {
     count=$((count+1)); printf 'PASS %02d %s\n' "$count" "$name"
 }
 check help 0 'timeout is optional' --help
-check static-native-query 0 'ARCH_MISMATCH=NO' --loader "$loader" "$static"
+check static-native-query 0 'VERSION_EXIT=0' --loader "$loader" "$static"
 check static-no-shared 0 'NEEDED_LLVM_SHARED=NO' --no-exec "$static"
 check dynamic-shared 0 'NEEDED_LLVM_SHARED=YES' --no-exec "$dynamic"
 check actual-arm-mismatch 0 'ARCH_MISMATCH=YES' --loader "$suite_tmp/recording-loader" "$arm"
@@ -130,7 +131,7 @@ check wrapper 3 'WRAPPER=YES' "$suite_tmp/wrapper with spaces"
 check wrapper-sha-mismatch 1 'EXPECTED_SHA256=FAIL' --expected-sha256 "$(printf '%064d' 0)" "$suite_tmp/wrapper with spaces"
 [[ ! -e "$IDENTITY_TEST_MARKER" ]] || { echo 'FAIL wrapper executed' >&2; exit 1; }
 check non-elf 2 'WRAPPER=UNKNOWN' "$suite_tmp/non-elf"
-check not-executable 2 'not executable' "$suite_tmp/non-executable"
+check not-executable 0 'EXECUTABLE=NO' "$suite_tmp/non-executable"
 check invalid-expectation 2 'invalid --expect-bolt' --expect-bolt yes "$static"
 sha=$(sha256sum < "$static"); sha=${sha%% *}
 check sha-positive 0 'EXPECTED_SHA256=PASS' --no-exec --expected-sha256 "${sha^^}" "$static"
@@ -160,7 +161,13 @@ export IDENTITY_TEST_MODE=uname-fail
 check uname-failure 2 'ARCH_MISMATCH=UNKNOWN' --loader "$suite_tmp/recording-loader" "$static"
 for mode in fail-header fail-sections fail-dynamic fail-notes empty-sections; do
     export IDENTITY_TEST_MODE=$mode
-    check "$mode" 2 'WRAPPER=NO' --no-exec "$static"
+    case $mode in
+        fail-header) expected_text='ELF=UNKNOWN' ;;
+        fail-sections|empty-sections) expected_text='BOLT_FEATURES=UNKNOWN' ;;
+        fail-dynamic) expected_text='NEEDED_LLVM_SHARED=UNKNOWN' ;;
+        fail-notes) expected_text='ELF_NOTES=UNKNOWN' ;;
+    esac
+    check "$mode" 2 "$expected_text" --no-exec "$static"
 done
 export IDENTITY_TEST_MODE=rpm-owned
 check rpm-information-owned 0 'fixture 0:22.1.8-1.x86_64' --no-exec "$static"
@@ -182,4 +189,37 @@ PATH="$suite_tmp/mock:$PATH" IDENTITY_TEST_MODE=arm-host check binfmt-arm-host-a
 PATH="$suite_tmp/mock:$PATH" IDENTITY_TEST_MODE=arm-host check binfmt-arm-host-guard 0 'BINFMT_DISPATCH_POSSIBLE=YES' --loader "$suite_tmp/recording-loader" --binfmt-extra-dir "$suite_tmp/binfmt-arm" "$arm"
 check binfmt-malformed-fail-closed 2 'BINFMT_DISPATCH_POSSIBLE=UNKNOWN' --loader "$suite_tmp/recording-loader" --binfmt-extra-dir "$suite_tmp/binfmt-bad" "$static"
 [[ ! -e "$IDENTITY_TEST_MARKER" ]] || { echo 'FAIL binfmt guard allowed execution' >&2; exit 1; }
+# New v3 controls. Overrides are test-only and may never enable execution.
+check extra-dir-missing 2 '--binfmt-extra-dir must exist' --no-exec --binfmt-extra-dir "$suite_tmp/missing" "$static"
+mkdir "$suite_tmp/binfmt-name" "$suite_tmp/binfmt-extension" "$suite_tmp/binfmt-no-kind" "$suite_tmp/binfmt-unreadable"
+printf 'enabled\noffset 0\nmagic 00000000\n' > "$suite_tmp/binfmt-name/arm-unrelated"
+check name-only-hint 0 'BINFMT_DISPATCH_POSSIBLE=NAME_ONLY' --loader "$loader" --binfmt-extra-dir "$suite_tmp/binfmt-name" "$static"
+check name-only-executes-native 0 'VERSION_EXIT=0' --loader "$loader" --binfmt-extra-dir "$suite_tmp/binfmt-name" "$static"
+printf 'enabled\nextension .demo\n' > "$suite_tmp/binfmt-extension/generic"
+ln -s "$static" "$suite_tmp/clang.demo"
+check extension-match 0 'BINFMT_DISPATCH_POSSIBLE=YES' --loader "$suite_tmp/recording-loader" --binfmt-extra-dir "$suite_tmp/binfmt-extension" "$suite_tmp/clang.demo"
+check extension-negative 0 'BINFMT_DISPATCH_POSSIBLE=NO' --loader "$loader" --binfmt-extra-dir "$suite_tmp/binfmt-extension" "$static"
+printf 'enabled\ninterpreter /fixture/no-kind\n' > "$suite_tmp/binfmt-no-kind/generic"
+check entry-without-match-kind 2 'BINFMT_REGISTRY=UNAVAILABLE_OR_MALFORMED' --binfmt-extra-dir "$suite_tmp/binfmt-no-kind" "$static"
+check override-empty 0 'BINFMT_REGISTRY_OVERRIDDEN=YES' --binfmt-registry-dir "$suite_tmp/binfmt-empty" "$static"
+check override-forces-no-exec 0 'SKIPPED' --binfmt-registry-dir "$suite_tmp/binfmt-empty" --loader "$suite_tmp/recording-loader" "$static"
+check override-missing 2 'BINFMT_REGISTRY=UNAVAILABLE_OR_MALFORMED' --binfmt-registry-dir "$suite_tmp/missing" "$static"
+chmod 000 "$suite_tmp/binfmt-unreadable"
+check registry-unreadable-native 2 'BINFMT_REGISTRY=UNAVAILABLE_OR_MALFORMED' --binfmt-registry-dir "$suite_tmp/binfmt-unreadable" "$static"
+check registry-unreadable-foreign 0 'BINFMT_REGISTRY=UNAVAILABLE_OR_MALFORMED' --binfmt-registry-dir "$suite_tmp/binfmt-unreadable" "$arm"
+chmod 700 "$suite_tmp/binfmt-unreadable"
+check registry-malformed-foreign 0 'ARCH_MISMATCH=YES' --binfmt-registry-dir "$suite_tmp/binfmt-bad" "$arm"
+check non-executable-read-only 0 'IDENTITY_STABILITY=PASS' "$suite_tmp/non-executable"
+check non-executable-skipped 0 'SKIPPED' --loader "$suite_tmp/recording-loader" "$suite_tmp/non-executable"
+python3 - "$suite_tmp/riscv-header" <<'PYRISC'
+from pathlib import Path
+import sys
+b=bytearray(Path('/usr/bin/true').read_bytes()); b[18:20]=(243).to_bytes(2,'little')
+Path(sys.argv[1]).write_bytes(b);Path(sys.argv[1]).chmod(0o755)
+PYRISC
+check riscv-synthetic-header 0 'ELF_MACHINE=RISC-V' --no-exec "$suite_tmp/riscv-header"
+check riscv-mismatch 0 'ARCH_MISMATCH=YES' --loader "$suite_tmp/recording-loader" "$suite_tmp/riscv-header"
+check section-count-positive 0 'SECTION_DETAIL_MATCHES=1' --no-exec "$suite_tmp/non-executable"
+IDENTITY_TEST_MODE=no-details check section-count-zero 0 'SECTION_DETAIL_MATCHES=0' --no-exec "$suite_tmp/non-executable"
+[[ ! -e "$IDENTITY_TEST_MARKER" ]] || { echo 'FAIL v3 guard allowed execution' >&2; exit 1; }
 printf '%s/%s PASS: real ARM mismatch, dynamic/static LLVM dependency controls, wrappers, expectations, and error propagation.\n' "$count" "$count"

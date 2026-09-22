@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import re
 import tempfile
+import sys
 import unittest
 from unittest.mock import Mock, patch
 
@@ -41,6 +42,91 @@ class AcceptanceRules(unittest.TestCase):
         for pair in ([100,0],[100,float('nan')]):
             with self.assertRaises(ValueError):gate({'wall':pair})
         with self.assertRaises(ValueError):gate({})
+
+
+class AcceptanceRulesV3(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.doc=(final.bench.WORKSPACE/'docs/21_spec_integration_v3.md').read_text()
+        code=next(c for c in re.findall(r'```python\n(.*?)\n```',cls.doc,re.S) if 'def resource_gate(' in c)
+        cls.rules={};exec(compile(code,'docs/21 §6.3','exec'),cls.rules)
+
+    def metrics(self):
+        r={n:dict(values=[100,100,100,80,80,100,100,80],delta=.2)
+           for n in self.rules['BENEFIT']}
+        r.update({n:dict(values=[100,100,100,99,99,100,100,99]) for n in self.rules['TOL']})
+        return r
+
+    def test_resource_positive(self):
+        self.assertEqual(self.rules['resource_gate'](self.metrics(),'compile_memory')['status'],'NONREGRESSION')
+
+    def test_resource_within_tolerance_but_geomean_regresses(self):
+        m=self.metrics();m['runtime_wall']['values']=[100,100,100,101,101,100,100,101]
+        self.assertEqual(self.rules['resource_gate'](m,'runtime_wall')['status'],'REGRESSION_OR_NOT_CONFIRMED')
+
+    def test_resource_noise_is_not_permission_to_ship(self):
+        m=self.metrics();m['compile_memory']['values'][1]=103
+        self.assertEqual(self.rules['resource_gate'](m,'compile_memory')['status'],'INCONCLUSIVE_NOISE')
+
+    def test_paired_gate_checks_every_metric_first(self):
+        m=self.metrics();m['build_cpu']['values'][1]=111
+        self.assertEqual(self.rules['paired_gate'](m,'unit_compile')['status'],'ABORT_ENVIRONMENT')
+        m.pop('runtime_rss')
+        with self.assertRaises(ValueError): self.rules['paired_gate'](m,'unit_compile')
+
+    def test_9_percent_can_continue_when_delta_is_frozen_large_enough(self):
+        m=self.metrics();m['unit_compile']['values'][1]=109
+        self.assertEqual(self.rules['aa_preflight'](m)['status'],'CONTINUE')
+        r=self.rules['paired_gate'](m,'unit_compile')
+        self.assertEqual(r['threshold'],.82);self.assertTrue(r['established'])
+        m['unit_compile']['values'][3]=82
+        self.assertFalse(self.rules['paired_gate'](m,'unit_compile')['established'])
+
+    def test_dead_zone_at_three_percent_floor(self):
+        m=self.metrics();m['build_wall']['delta']=.03
+        r=self.rules['aa_preflight'](m)
+        self.assertEqual(r['status'],'INSUFFICIENT_RESOLUTION');self.assertIn('build_wall',r['dead_zone'])
+
+    def test_dead_zone_above_floor_can_continue(self):
+        m=self.metrics();m['build_wall']['delta']=.031
+        self.assertEqual(self.rules['aa_preflight'](m)['status'],'CONTINUE')
+
+    def test_drift_aa_larger_is_preserved(self):
+        m=self.metrics();m['unit_compile']['values'][1]=102
+        self.assertEqual(self.rules['paired_gate'](m,'unit_compile')['d'],.02)
+
+    def test_drift_a_pairs_larger_is_used(self):
+        m=self.metrics();m['unit_compile']['values'][6]=104
+        self.assertAlmostEqual(self.rules['paired_gate'](m,'unit_compile')['d'],.04)
+
+    def test_drift_uses_both_ratio_directions(self):
+        m=self.metrics();m['unit_compile']['values'][6]=99
+        self.assertAlmostEqual(self.rules['paired_gate'](m,'unit_compile')['d'],100/99-1)
+
+    def test_drift_can_end_wall_as_unresolved_noise(self):
+        m=self.metrics();m['build_wall']['values'][6]=104
+        self.assertEqual(self.rules['paired_gate'](m,'build_wall')['status'],'NOISE_EXCEEDS_DETECTABLE_EFFECT')
+
+    def identity_template(self, rc, text):
+        code=re.search(r"<<'PYIDENTITY'\n(.*?)\nPYIDENTITY",self.doc,re.S).group(1)
+        with tempfile.TemporaryDirectory(dir=final.bench.WORKSPACE/'temp') as td:
+            path=Path(td)/'identity.txt';path.write_text(text)
+            with patch.object(sys,'argv',['template',str(rc),str(path)]):
+                exec(compile(code,'docs/21 §6.1 identity template','exec'),{})
+
+    def identity_ok(self):
+        return '\n'.join(['EXPECTED_SHA256=PASS','EXPECTED_BOLT=PASS','IDENTITY_STABILITY=PASS',
+            'EXECUTABLE=YES','VERSION_EXIT=0','ARCH_MISMATCH=NO','BINFMT_REGISTRY_OVERRIDDEN=NO',
+            'BINFMT_DISPATCH_POSSIBLE=NO'])
+
+    def test_identity_template_accepts_only_complete_success(self):
+        self.identity_template(0,self.identity_ok())
+        with self.assertRaises(AssertionError):self.identity_template(1,self.identity_ok())
+
+    def test_identity_template_missing_pass_rejected(self):
+        for marker in ['EXPECTED_SHA256=PASS','EXPECTED_BOLT=PASS','IDENTITY_STABILITY=PASS','EXECUTABLE=YES']:
+            with self.subTest(marker=marker),self.assertRaises(AssertionError):
+                self.identity_template(0,self.identity_ok().replace(marker,''))
 
 
 class FinalCalibrationControls(unittest.TestCase):
