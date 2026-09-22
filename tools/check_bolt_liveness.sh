@@ -13,6 +13,9 @@ p.add_argument('--output', required=True, type=Path)
 p.add_argument('--loader', type=Path)
 p.add_argument('--library-path')
 p.add_argument('--target', default='armv7l-tizen-linux-gnueabi')
+p.add_argument('--host-arch', choices=('x86_64', 'aarch64'),
+    help='Explicit execution-host architecture, for a chroot with a foreign uname personality; '
+         'still checks the ELF Machine against this value. Reports HOST_ARCH_OVERRIDE=YES.')
 p.add_argument('--expected-load-count', type=int, help='Optional count from certified input at this layer')
 a = p.parse_args()
 if a.library_path and not a.loader: p.error('--library-path requires --loader')
@@ -53,12 +56,14 @@ def sha(path):
     with path.open('rb') as f:
         for b in iter(lambda:f.read(1024*1024), b''): h.update(b)
     return h.hexdigest()
-result = dict(input=str(a.clang), sha256=sha(a.clang), target=a.target)
+result = dict(input=str(a.clang), sha256=sha(a.clang), target=a.target,
+              host_arch_override='YES' if a.host_arch else 'NO')
 try:
     rc, header = run(['readelf','-hW',a.clang], 'header')
     if rc: raise ValueError('readelf header failed')
     machine = re.search(r'^\s*Machine:\s*(.+)$', header, re.M).group(1)
-    host = platform.machine()
+    host = a.host_arch if a.host_arch else platform.machine()
+    result['host_arch'] = host
     native = {'x86_64':'Advanced Micro Devices X86-64', 'aarch64':'AArch64'}
     if native.get(host) != machine: raise ValueError('native ELF required; use identity checker for foreign ELF')
     rc, ph = run(['readelf','-lW',a.clang], 'program-headers')
@@ -90,7 +95,7 @@ result['input_unchanged'] = sha(a.clang) == result['sha256']
 if not result['input_unchanged']: result['status']='ERROR';code=2
 result['commands'] = records
 (a.output/'result.json').write_text(json.dumps(result,indent=2)+'\n')
-for key in ('status','load_count','entry_in_executable_load','version_exit','compile_exit','input_unchanged'):
+for key in ('status','host_arch_override','host_arch','load_count','entry_in_executable_load','version_exit','compile_exit','input_unchanged'):
     print(key.upper()+'='+str(result.get(key,'UNKNOWN')))
 sys.exit(code)
 PY

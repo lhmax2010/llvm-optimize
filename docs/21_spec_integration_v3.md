@@ -1,13 +1,15 @@
 # 21 BOLT 集成设计 v3：混合链接、后处理活性与服务器验收
 
-日期：2026-09-22。本文完整取代 docs/20 的后续实施设计；docs/20 原文、历史校准与判定保持不动。
-先读并核对了 [STATUS.md](STATUS.md)，起点为 `312a358`。本轮只有源码/元数据调查、
+修订日期：2026-09-22。用户已批准混合补丁本机正确性试构建，产物不进 OBS/Gerrit；本次先推送修订，再执行试验并另报 docs/22。
+本文完整取代 docs/20 的后续实施设计；docs/20 原文、历史校准与判定保持不动。
+先读并核对了 [STATUS.md](STATUS.md)，起点为 `312a358`。上一轮153e33e包含源码/元数据调查、
 已有 ELF 副本的 strip 实验、脚本及测试；**未应用补丁，未 configure/build LLVM，未构建混合版，
 未采 profile、未运行 BOLT、未做性能校准或 Chromium 构建、未推 Gerrit**。
 
-用户裁决：下游运行 wall/CPU 容差 2%、内存 3%，编译期内存容差 5%；
+用户最新裁决：static-devel、compiler-rt、libarcher保留；常规包不含LLVM归档；
+混合补丁获准本机试构建；Quickbuild参数交内部团队冻结，原容差不再作为本文默认执行值；
 本机性能校准结束，后续本机只做功能/稳定性验证；目标改为混合链接。
-量化容差是用户接受的工程政策，不是从这几轮实验估计出的自然误差。
+具体验收数字由内部团队定稿，本文仅给结构、代码与占位。
 
 路径：`W=/home/linhao/Toolchain/development/llvm-optimize`；`E=W/temp/spec-v3-20260922`；
 `TC=W/temp/toolchain-baseline/usr`；`Q=W/temp/bolt-measurement-20260918/run`；
@@ -22,7 +24,7 @@
 目标：clang/clang++、llvm-ar、lld/ld.lld **静态链接 LLVM/Clang 组件库**，其他工具维持共享库路径；
 不指 libc 全静态。clang++ 是 clang 别名，lld/ld.lld 是同一实体家族；llvm-ranlib/lib/dlltool
 也是 llvm-ar 别名，不能同一个实体一面静态、一面动态。别名均继承实体链接形态。
-静态组件仍须存在于 build tree 供链接；取消的是 llvm-static-devel 发布，不是禁止构建 .a。
+静态组件仍须存在于 build tree 供链接；llvm-static-devel 照常发布；常规非devel工具包不含LLVM .a，compiler-rt与libarcher不动。
 
 **源码机制结论：有条件可行，尚未构建验证。** executable 的 per-target 开关存在，
 clang driver 可用目录局部 CLANG_LINK_CLANG_DYLIB=OFF；但 clang/lld 的静态组件接口
@@ -34,29 +36,27 @@ clang driver 可用目录局部 CLANG_LINK_CLANG_DYLIB=OFF；但 clang/lld 的�
 不能把“全局 ON”写成“其余每个 ELF 都必然动态”。精确静态实体/别名和这些例外须纳入审批清单；
 如要求消除所有例外，须另审这些目标的附加补丁，不在本轮悄悄扩范围。见附录 A.1。
 
-四项前置全部关闭前，不进入 BOLT spec 实施：
+本轮本机试验已获准；OBS/BOLT spec正式集成仍须关闭以下前置。产物只留本机。
 
 | 前置 | 当前状态 | 完成判据 |
 | --- | --- | --- |
-| 混合补丁批准 | 待用户批准 | 审定七文件提案、别名/上游例外、归档移除范围与 CMake 开发接口处理 |
-| 反向依赖审计 | 本机快照运行依赖查询完成；OBS BuildRequires UNKNOWN | 在目标 OBS 项目取得 buildinfo、反向依赖及文件级消费者证据；禁止把 0 个 Requires 当成无构建消费者 |
-| 混合构建实测 | NOT RUN | 只在获批后执行；验证 CMake、最终 NEEDED、图摘要、profile rebind、资源/磁盘/inode 新指纹 |
-| accel 试包 | NOT RUN | 补完整源码/宏日志，验证字节转换、别名、节区、活性、最终 worker 身份与正确性 |
+| 混合补丁批准 | 本机正确性试构建已批准 | 只应用附录A七文件版本，保留static-devel；不因configure/链接失败修改补丁重试 |
+| 混合构建实测 | **本轮执行** | docs/22记录CMake、NEEDED、归档索引、30 TU、图/SHA和18GiB认证指纹；失败也是结果 |
+| accel试包 | 尚未授权执行 | 完整源码/宏、patchelf确定性、别名、逐层活性和worker正确性通过后才进生产 |
 
-### 0.1 静态库移除的范围风险
+### 0.1 静态归档的发布范围
 
-S:83–89 定义 llvm-static-devel；S:529–532 用 `%{_libdir}/lib*.a` 收文件。
-实际基线此包含 **225 个 .a**，其中 libarcher_static.a 同时在 libomp-devel；
-compiler-rt 子包另有 **45 个 .a**。S:609–624 的 runtime/OpenMP 列表与主开发包不同。
-因此“撤下 llvm-static-devel”和“所有子包零 .a”不是同一操作。
-本轮已单独向用户确认 runtime 范围，未收到确认前不把运行库删除当成授权的实施步骤。
-附录 A 的最小提案只删除顶层开发归档、保留 libarcher_static.a 和 compiler-rt，**属于待批准提案**。
-若用户坚持全 RPM 零 .a，附录 A 列出替代 diff 和下游运行库阻塞；不能静默保留或静默删除。
+S:83–89定义llvm-static-devel，S:529–532收 `%{_libdir}/lib*.a`，**全部保持**。
+基线static-devel有225个.a，compiler-rt另有45个运行库归档，libarcher_static.a也归libomp-devel；
+后两类按用户决定不改。因不删除static-devel，本轮不再需要删除包的反向依赖审计；附录B仅保留参考。
 
-移除 .a 还可能使 llvm/clang/lld 的已安装 CMake export 引用不存在的 archive。
-S:514–526、578–582 发布这些 cmake 目录；AddClang.cmake:123–146 与 AddLLD.cmake:15–30
-注册组件导出。试包必须用干净消费者执行 find_package/共享库链接，必要时生成共享库专用
-export 集并更新依赖；本轮未构建，具体 export 结果 UNKNOWN，不宣称提案已是可发货补丁。
+常规包指llvm、clang、lld、libllvm等非devel工具/共享库包；以实际RPM NAME分类，匹配`*-devel`
+（包括llvm-static-devel）的不纳入常规包零归档判定。**compiler-rt是明确保留的运行库例外**，
+单列其.a清单，不将它悄悄计入“所有非devel都为零”的声明。libarcher位于devel包保持原样。
+对每个常规非devel RPM执行 `rpm -qpl "$rpm"` 落盘，再 `grep -E '\.a$'`，必须退出1且结果为空；
+退出0为BLOCKER，rpm/grep其他错误为检查失败。枚举全产出包，禁止只抽查四个包。
+这样明确区分“静态库供开发者选择”和“其他可执行工具应动态使用libLLVM/libclang-cpp”。
+别名继承实体，上游强制静态例外须在试构建报告明确列出，不能按全局ON猜NEEDED。
 
 ## 1. 生效路径、accel 体积与身份
 
@@ -128,8 +128,13 @@ worker 从可信发布资产取得 accel 输出清单（不能现场自算 expec
 CC_EMUL=/emul/usr/bin/clang-22
 EXPECTED_SHA=发布清单中已核验的实际SHA
 ./verify_toolchain_identity.sh --expected-sha256 "$EXPECTED_SHA" --expect-bolt present "$CC_EMUL"
-./check_bolt_liveness.sh "$CC_EMUL" --output "$EVIDENCE/liveness"
+./check_bolt_liveness.sh "$CC_EMUL" --host-arch x86_64 --output "$EVIDENCE/liveness"
 ```
+
+armv7l personality下uname可返回armv7l，但worker的/emul中x86_64 ELF可直接执行。
+活性检查显式`--host-arch x86_64`，输出HOST_ARCH_OVERRIDE=YES，仍要求ELF Machine为x86_64；
+该参数不改变宿主配置。身份脚本在worker的原生x86_64管理上下文执行，避免personality令其主动跳过执行；
+不能伪造身份脚本的ARCH_MISMATCH/版本字段来通过模板。
 
 A 组要求 expect-bolt absent；两组都记录脚本 SHA/完整输出/退出码。binfmt UNKNOWN 不准绕过，
 foreign ELF 自动只读，NAME_ONLY 仅提示；test-only registry override 不准用于生产验收。
@@ -140,7 +145,7 @@ foreign ELF 自动只读，NAME_ONLY 仅提示；test-only registry override 不
 
 ### 2.1 三种入口与无条件 keeprsp
 
-普通路径显式改动清单：混合链接补丁/取消开发静态包；**所有 A/B/seed 普通 ninja 都无条件
+普通路径显式改动清单：混合链接补丁（保留static-devel）；**所有 A/B/seed 普通 ninja 都无条件
 `-d keeprsp`**，与 `%{with clang_bolt}` 无关。同一 source/spec/patch/CMake 的 A/B 普通
 ninja argv、环境、cwd、shell 逐字节一致；只有主构建完成后的候选处理不同。
 启动普通 ninja 前运行同一冻结 ninja 的 `-d list` 并保存 stdout/rc；不支持 keeprsp 则写
@@ -220,11 +225,13 @@ stripped ELF（现有参照 226730672 B，未来实际记录）、relocs/strippe
 对象清单/图摘要、CMake/source/spec/MLGO 身份和工具/环境清单。不把 3.56 GB relocs ELF 装进正常 clang 包。
 seed 是独立子包/资产，不进 accel 收集列表。
 
-**ordinary 与 seed 模式的普通 RPM 逐包字节相同**为强门禁，而非只比较 ELF/payload。
-为此预先固定 SOURCE_DATE_EPOCH、实际 RPM 支持的 buildtime/buildhost/mtime 规范、排序、
-压缩和签名策略；两个模式的非 seed 包必须 cmp。若目标 RPM 不支持复现、或额外子包改变 debuginfo
-分组导致差异，记 SEED_REPRODUCIBILITY_BLOCKER，不以去签名/仅 payload 相同冒充通过。
-目标根支持哪些 reproducibility 宏要在试包前查清；本轮未试包，不保证此要求已实现。
+**ordinary与seed的非seed RPM按文件级比较**：保持相同SOURCE_DATE_EPOCH；按包NAME/架构
+对应非seed包，用 `rpm2cpio | cpio` 分别解到独立目录，对路径全集生成排序清单，记录每个常规文件
+SHA256、类型、mode（含特殊权限）、uid/gid；软链接记录原始link target；硬链接记录路径组。
+同一组必须保持拓扑，目录/设备也记录类型及设备号；比对RPM声明的caps/xattrs（若有）。
+任一缺文件、内容或属性差异是SEED_PAYLOAD_BLOCKER。RPM头部的buildtime/buildhost/签名/压缩字节不比。
+目的是证明seed模式不改变普通产物，**RPM级逐字节可复现不是本项目能保证的前提**。
+即使ELF相同，额外子包导致普通debuginfo文件改变也不能通过；必须检查完整非seed payload。
 
 维护者 lhmax2010 批准输入/图与 profile 发布。下载 OBS seed 后，在本机按单次有界
 22 GiB、1线程、SwapMax=0、nice/ionice/采样/低于2 GiB中止入口插桩；保留 runtime archive、
@@ -357,11 +364,77 @@ RPM debuglink/build-id 一致性；目前 UNKNOWN，不能引用 3.7 GiB 作为�
 
 ### 4.4 静态开发包门禁与功能红线
 
-不发布 llvm-static-devel 后，原“修复归档索引再发货”改为：**检查拟发货包中禁止的 .a 为零，
-反向依赖审计通过**；不是宣布既有索引缺陷已修复。若要求整个 RPM 集零 .a，必须同时处理 §0.1
-的 compiler-rt/libomp 运行库兼容性；未定范围/审计不通过不发货。附录 A 分开列清两种范围。
-CMake 导出、llvm-config 和使用共享库的消费者仍要验收，不能只删除 %files 条目留下失效开发接口。
-若将来恢复发布：**全归档 armap** 检查 + lld 组件消费者实际链接/运行 + 删除索引的负对照为硬条件。
+static-devel照常发布。常规非devel包按§0.1逐RPM检查 `.a$` 为空；compiler-rt运行库明确单列保留。
+恢复归档发货硬条件（docs/13“GNU strip 对 ThinLTO 静态归档的处理”）：
+
+1. 从拟发货static-devel及其他含归档开发包解包，逐个.a运行`llvm-nm --print-armap`，命令成功且
+   **Archive map段内至少一个索引条目**；不能把后面的普通成员符号输出非空当成armap存在。
+   原始输出、归档SHA/成员清单、索引条目数逐一留存；任何空/缺失/解析失败都是BLOCKER。
+2. 干净消费者使用该包的llvm-config静态flags，链接包含lldCOFF调用的小程序，bfd、lld各一次并运行。
+   使用实际相同版本LLVMgold插件支持bfd读取ThinLTO bitcode；无插件/开发依赖或链接失败都是未验收，
+   不准改成动态链接规避。显式检查消费者NEEDED无libLLVM/libclang-cpp。
+3. 负对照用已知坏的
+   `temp/baseline-resume-20260917/static-archive-rpm/usr/lib64/liblldCOFF.a`，SHA
+   `9e8915f4a853a8a97285f34c2b51eb2bc16eb3fb3de943fdabf43f1b3e252617`。
+   索引检查必须拒绝；消费者链接也记录实际结果，不预断所有链接器一定拒绝无索引归档。
+
+消费者示例（参数来自实际解包包，开发依赖在试验根内准备，不能指向宿主另一版本）：
+
+```cpp
+#include "lld/Common/Driver.h"
+LLD_HAS_DRIVER(coff)
+int main() {
+  const char *args[] = {"lld-link", "/help"};
+  return lld::coff::link(args, llvm::outs(), llvm::errs(), false, false) ? 0 : 1;
+}
+```
+
+从`llvm-config --link-static --cxxflags --ldflags --libs all --system-libs`分组取argv，
+链接顺序为consumer.o、`--start-group -llldCOFF -llldCommon <LLVM静态libs> --end-group <system-libs>`；
+分别传`-fuse-ld=bfd -Wl,-plugin,<同版LLVMgold.so>`和`-fuse-ld=lld`。
+源码接口依据`llvm/lld/include/lld/Common/Driver.h:53–61`、`llvm/lld/COFF/CMakeLists.txt`。
+
+两种**待实施**spec修法（本次混合补丁不包含它们；目标OBS宏展开须先核实）：
+
+方案A：将传给brp的strip包装为跳过.a。已核实R1
+`usr/lib/rpm/platform/x86_64-linux/macros:70–80`向brp-strip/static-archive/comment-note传`%{__strip}`；
+`brp-strip-static-archive:15–20`每次传一个归档。拟议spec片段：
+
+```diff
+@@ spec宏区
++%global __llvm_original_strip %{__strip}
++%global __strip %{_builddir}/llvm-%{version}/clang-bolt/strip-no-archives
+@@ %install，任何brp执行前
++mkdir -p %{_builddir}/llvm-%{version}/clang-bolt
++cat > %{__strip} <<'STRIPWRAPPER'
++#!/bin/sh
++for arg do
++  case "$arg" in *.a) exit 0 ;; esac
++done
++exec %{__llvm_original_strip} "$@"
++STRIPWRAPPER
++chmod 0755 %{__strip}
+```
+
+副作用：归档内调试段保留，开发RPM可能变大；此包装只覆盖使用`%{__strip}`的调用，
+不能假定覆盖find-debuginfo的eu-strip或其他硬编码strip。多文件调用若混入.a会整次跳过，
+因此目标宏中必须确认逐文件调用，或另做支持拆分argv的包装。BOLT ELF的strip防护另按§4.3处理。
+
+方案B：原brp完整执行后，逐个.a补llvm-ranlib，放在post_brp finalizer之前：
+
+```diff
+@@ spec宏区（捕获原宏，不递归）
++%global __llvm_original_os_install_post %{__os_install_post}
++%define __os_install_post %{__llvm_original_os_install_post} \
++  find "%{buildroot}" -type f -name '*.a' -exec /usr/bin/llvm-ranlib '{}' + || exit 1 \
++%{nil}
+```
+
+副作用：每个归档字节/SHA改变，增加串行后处理；只修索引，不能恢复被strip损坏的成员，
+须比较修复前后成员payload并重做全armap/双linker消费者门禁。ranlib必须支持本版bitcode。
+原宏若含提前exit，末尾hook不会执行，必须在目标宏展开检查中拒绝；--nocheck不可跳过它。
+本次试构建若复现缺索引，只允许在独立解包副本补一次ranlib并重查，保留原RPM与两套结果，
+不能把“修复副本通过”写成“原RPM已可发货”。
 
 BOLT 前后对最终混合/RPM/accel 形态重做 ARM训练10+ARM留出10+AArch64训练10，共30 TU 完整 .o cmp；
 两边同 clang-22 --driver-mode=g++、保留 -frecord-gcc-switches，不过滤节区。任何差异 BLOCKER。
@@ -395,7 +468,10 @@ v2的理由是训练代表性覆盖 ARM+AArch64，非宣称其微小增量已确
 对外只说：**筛选层多轮测量方向一致，BOLT 对 LLVM 自身源码编译负载有稳定正向影响，量级待构建服务器验收。**
 再补：**候选含重链与剥离；docs/20 附录 B 已实测这些中间处理的几何平均影响接近1.000，不等于严格零影响。**
 
-## 6. Quickbuild 验收协议（实施前冻结）
+## 6. Quickbuild 验收结构（内部团队定稿）
+
+验收协议与δ/容差等数值由内部团队负责定稿；本文只提供结构、代码和占位，不给δ建议值，
+不作为可直接发起Quickbuild的参数清单。所有占位必须在内部试验入队前冻结，未冻结即拒绝。
 
 ### 6.1 工具链、身份与数据
 
@@ -428,6 +504,8 @@ PYIDENTITY
 ```
 
 身份/活性/首次编译后非计时 exec trace 必做，CC_EMUL必须指向实际/emul ELF。
+活性调用为`./check_bolt_liveness.sh "$CC_EMUL" --host-arch x86_64 --output "$EVIDENCE/liveness"`，
+原因见§1.3的armv7l personality；覆写仅用于已确认的实际执行主机架构。
 
 ### 6.2 顺序、失败传播与 A/A 中止
 
@@ -438,7 +516,7 @@ PYIDENTITY
 下方代码输入须由各自试验完整采集，同一指标的八值不跨试验拼接。
 在尚无下游轮数据时先独立取得其A/A，完整 preflight 才可继续相关后六轮；不要用伪0或默认值占位。
 
-对**全部指标**计算A/A d；任一**时间/CPU指标**d>0.10，中止整个验收、不启动A1；
+对**全部指标**计算A/A d；任一**时间/CPU指标**d超过内部冻结的ENV_ABORT，中止整个验收、不启动A1；
 内存也计算d，但由资源噪声门禁处理。查明环境后另建ID从头八轮，不自动等待/追加/替换坏轮。
 本条替代 v2“任何指标>0.10”的表述。任一身份、功能、job、cgroup、日志完整性失败都停止。
 
@@ -479,24 +557,17 @@ PYJOB
 所有有序A对都取，等价于最大A/最小A−1；只取max，不能选较小者。此公式先冻结再运行。
 A/A阶段还没有A1–A3，只能用d_AA作事前检查；结束后必须再纳入A间漂移，不能提前假定为0后不复核。
 
-入队前冻结最小可辨收益δ：建议 unit_compile=0.10、build_cpu=0.10，用户可在入队前改；
-用户给出的 build_wall=0.03 建议值与 `margin=max(0.03,2d)`、`margin≥δ` 拒绝条件存在
-**确定性死区**：即使d=0也拒绝。本文不私自改成别的数。
-若坚持δ_wall=0.03，则结果必为 INSUFFICIENT_RESOLUTION，不能启动A/B；要开展总wall收益验收，
-用户须在试验入队前明确批准 δ_wall>0.03（例如0.06）。这是待定参数，不是在运行后调门槛。
-`aa_preflight.dead_zone` 明确给每个冲突指标的margin/δ。
+各收益指标δ、floor、时间中止阈值、总wall噪声上界和所有资源tol均为**待内部团队冻结**。
+保留dead_zone：A/A后margin=max(floor,2d)≥δ时INSUFFICIENT_RESOLUTION，不启动后续轮。
+不能在结果出来后调δ或选较小漂移。`aa_preflight.dead_zone`逐指标输出margin/δ冲突。
 
-收益规则：各自三对B/A都严格小于`1-margin`才成立，GM不盖过失败对；
-总wall另分为 **成立 / 未确证 / 噪声超过可检测效应**（最终margin>0.06时第三类优先）。
-最终A间漂移令margin≥δ也记分辨力不足。时间/CPU三项均成立才能称整体收益；仅编译项成立只能报告编译阶段。
+收益结构：三对B/A都严格小于1-margin才成立；总wall超过内部冻结的噪声上界时另列
+NOISE_EXCEEDS_DETECTABLE_EFFECT。资源结构：2d≤tol，且max(r)≤1+tol、GM(r)≤1才非退化；
+INCONCLUSIVE_NOISE不发货。本文不再给这些参数默认数值；测试中的数值只是合成测试夹具。
+所有轮无OOM/新增swap/功能失败仍为硬条件。内部团队须补齐应用负载、采集方式及整体发布判定。
 
-资源规则：tol为已接受容差（编译peak .05；下游wall/CPU .02；下游peak/RSS .03）。
-`2d>tol` → INCONCLUSIVE_NOISE；否则 `max(r)≤1+tol` **且** `GM(r)≤1.00` 才非退化。
-不是“允许平均变慢2%”；内存上限也不是从ELF体积推算。INCONCLUSIVE_NOISE同样不发货，原因记环境噪声。
-所有轮无OOM/新增swap、无功能失败是独立硬条件。
-
-精确代码如下；all_metrics每项形如 `{"values":[A0a,A0b,A1,B1,B2,A2,A3,B3],"delta":0.10}`，
-资源项不用delta。A/A阶段values为两项；任何指标缺失都拒绝。代码由测试直接从本文提取执行：
+精确代码如下；all_metrics每项形如 `{"values":[A0a,A0b,A1,B1,B2,A2,A3,B3],"delta":"内部冻结的数值"}`，
+资源项不用delta。先为代码中的None占位赋已冻结数值；A/A阶段values为两项；任何指标缺失都拒绝。代码由测试直接从本文提取执行：
 
 ```python
 import math
@@ -504,13 +575,16 @@ from decimal import Decimal
 
 # Freeze these names, kinds, tolerances and each benefit delta before queuing A0a.
 BENEFIT = ('build_wall', 'unit_compile', 'build_cpu')
-TOL = {'compile_memory': .05, 'runtime_wall': .02, 'runtime_cpu': .02,
-       'runtime_memory': .03, 'runtime_rss': .03}
+TOL = dict.fromkeys(('compile_memory', 'runtime_wall', 'runtime_cpu', 'runtime_memory', 'runtime_rss'))
+FLOOR = ENV_ABORT = WALL_NOISE = None  # Internal team must freeze numeric values.
 TIME = set(BENEFIT) | {'runtime_wall', 'runtime_cpu'}
 REQUIRED = set(BENEFIT) | set(TOL)
 D = lambda value: Decimal(str(value))
 
 def _validate(all_metrics):
+    parameters = [FLOOR, ENV_ABORT, WALL_NOISE, *TOL.values()]
+    if any(type(v) not in (int, float) or not math.isfinite(v) or not 0 < v < 1 for v in parameters):
+        raise ValueError('acceptance parameters have not been frozen by the internal team')
     if set(all_metrics) != REQUIRED:
         raise ValueError('missing/extra metric: freeze the complete inventory')
     for name, item in all_metrics.items():
@@ -525,10 +599,10 @@ def _validate(all_metrics):
 def aa_preflight(all_metrics):
     _validate(all_metrics)
     drift = {n: abs(D(v['values'][1])/D(v['values'][0])-1) for n,v in all_metrics.items()}
-    dead = {n: {'margin': float(max(D(.03),2*drift[n])), 'delta': all_metrics[n]['delta']}
-            for n in BENEFIT if max(D(.03),2*drift[n]) >= D(all_metrics[n]['delta'])}
+    dead = {n: {'margin': float(max(D(FLOOR),2*drift[n])), 'delta': all_metrics[n]['delta']}
+            for n in BENEFIT if max(D(FLOOR),2*drift[n]) >= D(all_metrics[n]['delta'])}
     noisy_resource = [n for n,tol in TOL.items() if 2*drift[n] > D(tol)]
-    status = ('ABORT_ENVIRONMENT' if any(drift[n] > D(.10) for n in TIME)
+    status = ('ABORT_ENVIRONMENT' if any(drift[n] > D(ENV_ABORT) for n in TIME)
               else 'INSUFFICIENT_RESOLUTION' if dead
               else 'INCONCLUSIVE_NOISE' if noisy_resource else 'CONTINUE')
     return {'status':status, 'd':{n:float(d) for n,d in drift.items()},
@@ -550,8 +624,8 @@ def paired_gate(all_metrics, metric_name):
     if pre['status']!='CONTINUE': return pre
     if metric_name not in BENEFIT: raise ValueError('use resource_gate for resources')
     d,ratios,gm=_paired(all_metrics,metric_name)
-    margin=max(D(.03),2*d)
-    if metric_name=='build_wall' and margin>D(.06):
+    margin=max(D(FLOOR),2*d)
+    if metric_name=='build_wall' and margin>D(WALL_NOISE):
         status='NOISE_EXCEEDS_DETECTABLE_EFFECT'
     elif margin>=D(all_metrics[metric_name]['delta']): status='INSUFFICIENT_RESOLUTION'
     elif all(r < 1-margin for r in ratios): status='ESTABLISHED'
@@ -618,12 +692,12 @@ NAME_ONLY不禁原生执行；magic/mask/offset和extension实际匹配才YES；
 
 | 项目 | 当前状态/下一步 |
 | --- | --- |
-| 混合补丁 | 附录A只读拟议；批准前不应用、不configure、不构建；传递接口、上游静态例外和别名要一起审 |
-| .a 范围及开发接口 | runtime范围待确认；OBS反向BuildRequires/文件级消费者待审，CMake导出必须可用；无审计不发货 |
-| 混合构建实测 | 新容量/磁盘/inode指纹、NEEDED、图摘要与profile自动rebind未测，不沿用全静态认证 |
+| 混合补丁 | 已批准本机正确性试构建，见docs/22；不等于批准OBS/BOLT集成；configure/链接失败不改补丁重试 |
+| 静态开发包 | 照常发布；常规包零LLVM.a，全归档armap及bfd/lld消费者门禁恢复；修法待实施；不再需要删除包的反向依赖审计 |
+| 混合构建实测 | 本轮执行一次认证试验；18GiB/4/4/1/-j4，新指纹只对获批补丁放行；产物不进OBS |
 | accel试包 | 完整qemu源码/armv7l生成材料/宏日志、patchelf双次确定性、去重/alias、strip防护与逐层活性待验 |
 | OBS项目/快照 | 待用户给自研spec所在项目；新快照钉校验和，当前旧公开快照不替代 |
-| Quickbuild参数 | δ_wall=.03与预注册floor产生死区；用户须决定是否接受不入队，或在入队前批准>.03；不得执行后调整 |
+| Quickbuild参数 | 全部由内部团队冻结；本设计只给结构/代码/占位，dead_zone保留，不再给δ建议值 |
 | Quickbuild资源/执行器 | 取得实际CPU/内存/并发/cgroup数据，先做最小委派job；据此触发PGO容量重估，PGO可与BOLT叠加 |
 | 全平台lld/ar占比 | 待全平台日志：`.ninja_log`链接+归档边`Σ(end−start)`占**全部边时间总和**比例，与总wall另列；不把并行累计时间直接除总wall当占比 |
 | 第二阶段工具 | 5%/10%为首版工程阈值；>10%考虑真实规模链接基准/lld专用profile/BOLT lld/产物字节门禁；<5%及5%–10%（含边界）默认搁置并记录 |
@@ -662,12 +736,11 @@ AddLLVM的配置期export_executable_symbols遍历对生成表达式的处理也
 若当前CMake/目标无法安全按consumer区分，替代是独立静态build目录只产三个实体、动态目录产其余；
 代价是重复组件构建、磁盘/缓存/身份复杂度和新容量认证，不能作为本轮偷偷构建的绕路。
 
-### A.2 最小开发库范围提案
+### A.2 获批的本机试构建补丁
 
-以下diff基于当前含三处并发数的S与f111162e源码生成，E/proposed-hybrid.patch；
-仅执行 `git -C llvm apply --check ../temp/spec-v3-20260922/proposed-hybrid.patch`，未应用。
-它不包含BOLT集成代码，后者必须等§0四项前置完成。archive删除范围仍待用户确认；
-CMake导出缺archive的消费者问题是必须补齐的试包前置，不把此文本当已验证可发货补丁。
+以下七文件补丁保留static-devel、compiler-rt和libarcher；只改变混合链接机制。
+本次第一提交不应用；推送后在独立hybrid-link-trial源码工作树应用，主源码/spec原件不动。
+它不含BOLT、keeprsp或归档修复改动；configure/链接失败保留输出，不修改此补丁重试。
 
 ```diff
 --- a/llvm/cmake/modules/AddLLVM.cmake
@@ -826,22 +899,7 @@ CMake导出缺archive的消费者问题是必须补齐的试包前置，不把�
  add_llvm_tool_symlink(llvm-lib llvm-ar)
 --- a/packaging/llvm.spec
 +++ b/packaging/llvm.spec
-@@ -79,14 +79,6 @@
- %description devel
- This package contains library and header files needed to develop
- new native programs that use the LLVM infrastructure.
--
--%package static-devel
--Summary: Static libraries for LLVM
--Requires: %{name} = %{version}
--
--%description static-devel
--This package contains static libraries needed to develop new
--native programs that use the LLVM infrastructure.
-
- %package -n libllvm
- Summary: LLVM shared libraries
-@@ -256,6 +248,13 @@
+@@ -256,6 +256,13 @@
  %endif
      -DCLANG_ENABLE_ARCMT=OFF \
      -DLLVM_BUILD_LLVM_DYLIB=ON \
@@ -855,52 +913,12 @@ CMake导出缺archive的消费者问题是必须补齐的试包前置，不把�
      -DCLANG_BUILD_CLANG_DYLIB=ON \
      -DLLVM_ENABLE_PROJECTS="clang;lldb;clang-tools-extra;lld;compiler-rt;openmp" \
      -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
-@@ -391,6 +390,11 @@
- # Install the clang python bits
- mkdir -p %{buildroot}%{python3_sitelib}
- cp -a ../clang/bindings/python/clang %{buildroot}%{python3_sitelib}/
-+
-+# Keep build-tree archives for the selected static tools; do not publish
-+# component development archives. Runtime archives need a separate scope decision.
-+find %{buildroot}%{_libdir} -maxdepth 1 -type f \
-+  -name '*.a' ! -name 'libarcher_static.a' -delete
-
- rm -rf %{buildroot}%{_libdir}/debug/*
- rm -rf %{buildroot}/usr/lib/libear/*
-@@ -526,11 +530,6 @@
- %{_prefix}/bin/amdgpu-arch
- %{_prefix}/bin/nvptx-arch
-
--%files static-devel
--%manifest %{name}.manifest
--%defattr(-,root,root,-)
--%{_libdir}/lib*.a
--
- %files -n libllvm
- %manifest %{name}.manifest
- %defattr(-,root,root,-)
 ```
 
-若明确批准**全部子包零.a**，上述install删除段应改为下列替代，另删除libomp-devel的
-`%{_libdir}/libarcher_static.a`文件项（不是把它留在未归属文件区）：
+## 附录 B：历史反向依赖查询（不再作为前置）
 
-```diff
-- find %{buildroot}%{_libdir} -maxdepth 1 -type f \
--   -name '*.a' ! -name 'libarcher_static.a' -delete
-+ find %{buildroot}%{_prefix} -name '*.a' \( -type f -o -type l \) -delete
-@@
- %files -n libomp-devel
--%ifnarch %arm
--%{_libdir}/libarcher_static.a
--%endif
- %{_libdir}/cmake/openmp/FindOpenMPTarget.cmake
-```
-
-该替代会删除45个compiler-rt归档，包含builtins/sanitizer与orc运行库；必须先确认生产driver
-不需要这些库或有经批准的独立供应方案。未确认即运行库兼容性BLOCKER，不在本机实施。
-主提案保留runtime也必须在最终报告/包清单声明，不能声称“所有RPM零.a”已满足。
-
-## 附录 B：归档与反向依赖调查
+static-devel照常发布，**本轮不再需要删除包的反向依赖审计**。以下为153e33e的历史查询和
+OBS参考命令；UNKNOWN不是本轮启动阻塞，也不把历史0命中改写为完整BuildRequires审计。
 
 实际spec路径S，不用旧安装包spec替代；源码范围见§0.1。文件清单来自当前22 RPM的
 `rpm -qpl`：E/llvm-static-devel-files.txt、compiler-rt-files.txt、libomp-devel-files.txt。
@@ -967,9 +985,9 @@ tools/test_check_bolt_liveness.sh "$E16/optimized/bin/clang-22" "$E/liveness/str
 
 | 编号 | 项目 | 本轮状态/位置 |
 | --- | --- | --- |
-| V01 | 三项用户决策与状态备案 | 采纳；§0/§5/§7及STATUS，同commit |
+| V01 | 用户决策与状态备案 | 采纳；最新四项更正在V37–V40，两个提交分别更新STATUS |
 | V02 | per-target混合机制/最小补丁 | 调查+七文件拟议；附录A，未应用；仅三开关不足 |
-| V03 | 静态开发库移除/反向依赖 | 本机Requires审计完成，OBS BuildRequires与runtime范围待定；§0.1/附录B |
+| V03 | 原开发库移除/反依赖 | 已被V37取代；保留包，无需删除包反依赖前置 |
 | V04 | accel混合/全静态体积 | 文件级估算完成；§1.2，压缩值明确代理模型 |
 | V05 | clang输入与图摘要 | §3.2设计完成，混合实物尚无，不能保证SHA相同 |
 | V06 | GNU/eu-strip活性复现 | 完成，二者退出0但副本失活；附录C |
@@ -982,7 +1000,7 @@ tools/test_check_bolt_liveness.sh "$E16/optimized/bin/clang-22" "$E/liveness/str
 | V13 | 磁盘12GiB/成功才清理 | §2.3、§4.1枚举同步 |
 | V14 | 逐编译4GiB子cgroup/父余额 | §2.3；executor委派最小job前置 |
 | V15 | BOLT依赖失败→ordinary | §2.1队列SUPERSEDED_BY_ORDINARY及路径资产替代 |
-| V16 | 三bcond/同job seed/普通RPM字节相同 | §2.1/§3.1；复现强门禁未验证，不能用payload替代 |
+| V16 | 三bcond/同job seed | 文件级内容/属性门禁，见V39；不比RPM头 |
 | V17 | 两级rebind/混合首次认证 | §3.2；图提取器必须先认证，不使用弱摘要 |
 | V18 | LLVM各一次/Chromium八轮 | §3.2/§6明确 |
 | V19 | N/M/S覆盖率/禁infer-stale | §3.3，源码行号修正:51–53 |
@@ -990,12 +1008,12 @@ tools/test_check_bolt_liveness.sh "$E16/optimized/bin/clang-22" "$E/liveness/str
 | V21 | 普通完整复制/安装事务/回滚 | §4.2，恢复失败非零，再入先恢复 |
 | V22 | pre/post_brp/finalizer/nocheck | §4.2，debug hook前alias复查 |
 | V23 | 每层活性/目标find-debuginfo | §4.2–4.3，实际strip负例支持必要性 |
-| V24 | 不发布static-devel新门禁 | §4.4；runtime范围未决不伪报全RPM零.a |
+| V24 | static-devel发货门禁 | 恢复全armap/双linker消费者/坏归档负例；两种修法待实施 |
 | V25 | 噪声参照/数字引用限定 | §5完成；明确GM口径和第二顺位 |
 | V26 | worker身份rc与PASS字段 | §6.1可执行模板与测试 |
-| V27 | 全指标preflight/时间d>0.10 | §6.2/代码及测试 |
-| V28 | max漂移/delta/dead_zone | §6.3代码及测试；δwall=.03死区明确挂账 |
-| V29 | 总wall三分/resource_gate | §6.3；工程容差、噪声不发货，测试覆盖 |
+| V27 | 全指标preflight/时间中止阈值 | §6.2/代码及测试 |
+| V28 | max漂移/delta/dead_zone | 结构保留；数值交内部团队冻结，未配置拒绝 |
+| V29 | 总wall三分/resource_gate | §6.3结构保留，容差为内部团队占位；测试用合成值 |
 | V30 | 暖机共模/判定规则变化 | §7；更正39/39，不唯一归因物理原因 |
 | V31 | 本机不再校准/v2代表性 | §5/§7；本轮没有性能运行 |
 | V32 | PGO触发/lld-ar口径 | §8；5–10%默认搁置 |
@@ -1003,10 +1021,14 @@ tools/test_check_bolt_liveness.sh "$E16/optimized/bin/clang-22" "$E/liveness/str
 | V34 | non-exec/节名计数/TOCTOU/override | 脚本与测试完成；override强制不执行 |
 | V35 | 校准完整性/compile-only-v3/suspect | 基准台与19项测试；旧判定不重算 |
 | V36 | 验收规则/模板测试与冻结文件 | test_final_bolt_calibration.py；计划和启动器不改 |
+| V37 | .a范围与本机补丁授权 | static-devel/runtime保留；常规包零LLVM.a、索引门禁恢复；补丁仅准本机一次试构建 |
+| V38 | chroot活性覆盖 | --host-arch可选、与ELF核对、显式标记；默认/正确覆盖/错误覆盖测试 |
+| V39 | seed文件级一致性 | 全非seed包解包比SHA/类型/权限/链接，SOURCE_DATE_EPOCH固定，不比RPM头 |
+| V40 | §6交内部团队 | 只留结构代码与占位；δ/容差不作本文推荐；dead_zone逻辑和测试保留 |
 
 ## 附录 E：测试、保护与交付边界
 
-身份测试67项PASS；基准台19项PASS；验收规则29项PASS（含冻结历史规则）；活性原件正例/strip副本负例PASS。
+身份测试67项PASS；基准台19项PASS；验收规则历史29项PASS（本修订新结果见下述日志）；活性原件正例/strip副本负例PASS。
 验收规则测试与文档代码/补丁检查的最终原始输出见E/final-tests.log和E/validation.json。
 这些是功能/协议检查，不是新校准、混合构建或OBS验收。
 本轮初次身份测试的预期计数错误也保留E/identity-tests.log（/usr/bin/true本身有gnu_debuglink，
@@ -1031,3 +1053,8 @@ tools/test_check_bolt_liveness.sh "$E16/optimized/bin/clang-22" "$E/liveness/str
 | liveness/ | 两strip命令/版本/退出码、readelf、version/最小TU结果、正负测试 |
 | warning-evidence.txt、noise-reanalysis.json | 历史日志/JSON只读摘录，不重新运行或改判 |
 | identity-tests*.log、bench-tests.log、final-tests.log | 实际功能测试输出 |
+
+本次修订验证与第一提交证据位于 `W/temp/hybrid-trial-20260922/revision/`：
+`liveness-tests.log`、`rules-tests.log`、`approved-hybrid.patch`、`revision-validation.json`。
+第一提交只改本文、STATUS、活性脚本与相关测试；源码工作树/spec原件保持不动。
+第二步试验结果独立写入docs/22，不能用本页尚未执行的设计表宣称实测通过。

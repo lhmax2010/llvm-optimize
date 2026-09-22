@@ -50,6 +50,15 @@ class AcceptanceRulesV3(unittest.TestCase):
         cls.doc=(final.bench.WORKSPACE/'docs/21_spec_integration_v3.md').read_text()
         code=next(c for c in re.findall(r'```python\n(.*?)\n```',cls.doc,re.S) if 'def resource_gate(' in c)
         cls.rules={};exec(compile(code,'docs/21 §6.3','exec'),cls.rules)
+        # Synthetic test policy, not recommended production acceptance values.
+        cls.rules.update(FLOOR=.03, ENV_ABORT=.10, WALL_NOISE=.06)
+        cls.rules['TOL'].update(compile_memory=.05, runtime_wall=.02, runtime_cpu=.02,
+                                runtime_memory=.03, runtime_rss=.03)
+
+    def test_unfrozen_internal_policy_is_refused(self):
+        with patch.dict(self.rules, FLOOR=None):
+            with self.assertRaisesRegex(ValueError, 'not been frozen'):
+                self.rules['aa_preflight'](self.metrics())
 
     def metrics(self):
         r={n:dict(values=[100,100,100,80,80,100,100,80],delta=.2)
