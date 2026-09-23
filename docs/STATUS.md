@@ -1,8 +1,9 @@
 # LLVM 吞吐优化分支状态
 
-更新日期：2026-09-22。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-历史状态核对到 `8facdfa`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，本次本机试验结果见 [docs/22](22_hybrid_link_trial.md)，
-取代 docs/20 的后续实施方案；历史报告、校准判定和预注册文件保持原样。
+更新日期：2026-09-23。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
+历史状态核对到 `559879a`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，混合构建见 [docs/22](22_hybrid_link_trial.md)，
+最新归档根因与失败停止报告见 [docs/23](23_archive_fix_and_profile_rebind.md)。
+docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预注册文件保持原样。
 以下 `temp/` 均相对工作区 `/home/linhao/Toolchain/development/llvm-optimize`，仅保存在本机，不在 GitHub。
 
 ## 1. 计划
@@ -19,7 +20,7 @@
 | 摸底与基准台 | 配方、工具调用面、身份、资源限制、可重复测量 | 完成；历史报告保留各自证据边界 |
 | 静态 RPM 基线 | 固定快照、构建、debuginfo 续跑、工具验证、基线数据 | 已完成；static-devel保留，既有归档索引缺陷须通过修复与消费者验收 |
 | BOLT 筛选 | 容量、插桩/profile、重写、正确性、训练/留出、中间对照、双目标 | 本机工作已结束；最终 ARM 校准 FAIL，AArch64 PASS 并完成正式轮 |
-| 集成设计与评审 | docs/21 完整 v3、混合链接拟议补丁、身份/活性脚本与协议检查 | **当前阶段：docs/21修订交三家评审；本机一次混合构建成功、30 TU PASS，范围/索引缺陷待处理；不进OBS/Gerrit** |
+| 集成设计与评审 | docs/21 完整 v3、混合链接拟议补丁、身份/活性脚本与协议检查 | **当前阶段：docs/21修订交三家评审；本机一次混合构建成功、30 TU PASS，范围缺陷待处理；归档根因已复现，重打包失败停止、profile实证未跑；不进OBS/Gerrit** |
 | OBS 试包与服务器验收 | LLVM RPM → qemu-accel → 新 Base 快照 → Quickbuild | 未执行；项目/验证快照待用户提供，试包与收益验收均未完成 |
 | 后续工具/PGO | 依全平台调用占比和服务器容量决定 | 挂账；没有自动启动授权 |
 
@@ -59,7 +60,8 @@
 | 2026-09-22 | `312a358` | `docs/STATUS.md` | 建立五段状态备案与每任务同 commit 维护规则。 |
 | 2026-09-22 | `153e33e` | `docs/21_spec_integration_v3.md`、`tools/check_bolt_liveness.sh`及测试、身份/基准台/验收规则脚本与测试、`docs/STATUS.md` | 混合机制有条件可行但未应用/构建；两种 strip 均退出0却使副本失活；完成 v3 与功能检查，本机性能校准保持关闭。 |
 | 2026-09-22 | `8facdfa` | docs/21、STATUS、活性脚本与测试、验收规则测试 | 保留static-devel并恢复索引门禁；host-arch覆盖；seed改文件级；Quickbuild交内部团队；先推修订再启动本机试构建。 |
-| 2026-09-22 | 本提交（`git log -1 -- docs/22_hybrid_link_trial.md`定位） | docs/22、STATUS、构建/活性脚本与测试、混合认证指纹 | 新根18GiB构建成功，22 RPM、30 TU PASS；额外五工具仍静态，223空/3残缺归档索引，一次ranlib不能修残缺表。 |
+| 2026-09-22 | `559879a` | docs/22、STATUS、构建/活性脚本与测试、混合认证指纹 | 新根18GiB构建成功，22 RPM、30 TU PASS；额外五工具仍静态，223空/3残缺归档索引，一次ranlib不能修残缺表。 |
+| 2026-09-23 | 本提交（`git log -1 -- docs/23_archive_fix_and_profile_rebind.md`定位） | docs/23、STATUS | Analysis索引9445→82由GNU strip副本复现；重打包入口遗漏install-pre清理而失败，按约定停止，profile重链/BOLT/30TU未执行。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -100,6 +102,8 @@
 | 混合clang对全静态TC：ARM训练10+留出10+AArch6410，完整.o全部逐字节PASS；统一driver/资源/sysroot/flags。RPM SHA不同，profile v2不能直接认证。 | docs/22 §6；`temp/hybrid-trial-20260922/correctness-*/result.json` | 硬证据；仅30个TU，不证明代码图/性能相同 |
 | 19个包.a清单空，static-devel225、libomp-devel1、compiler-rt45（明确保留运行库）。226开发归档中223无索引，3仅残缺；一次ranlib副本全非空，但3残缺未补齐，因为源码遇已有表直接return。原RPM不改。 | docs/22 §5.2；`temp/hybrid-trial-20260922/archives/`；llvm/llvm/tools/llvm-ar/llvm-ar.cpp:1084–1093 | 硬证据；非空不足认证完整性，发货BLOCKER |
 | 额外静态例外实测为llvm-config、llvm-exegesis、llvm-tblgen、clang-tblgen、lldb-tblgen；本轮未豁免或修改补丁。clang/lld活性及身份脚本检查PASS。 | docs/22 §5.1、§5.3；`temp/hybrid-trial-20260922/products/tools.json` | 硬证据；混合范围未全部满足 |
+| Analysis的131成员含125 bitcode+6 ELF；原RPM的82条索引恰好来自6 ELF，一次GNU strip -g副本9445→82且映射与RPM相同，退出0仍损坏索引。 | docs/23 §1.1；`temp/archive-profile-rebind-20260923/root-cause/` | 硬证据；当前R工具/输入组合 |
+| 唯一重打包尝试失败：试验入口漏处理Tizen install-pre清空BUILDROOT，rpmbuild rc=1、新RPM=0；不是修法被证伪，也不能断言RPM不支持短路。按失败即停，未重试或继续profile实验。 | docs/23 §1.2、§2；`temp/archive-profile-rebind-20260923/repack-scope/outcome.json` | 硬证据；修法包级验收与profile适用性仍缺失 |
 
 对外统一口径：**筛选层多轮测量方向一致，BOLT 对 LLVM 自身源码编译负载有稳定正向影响，量级待构建服务器验收。**
 不对外给收益百分比，不称“五轮独立”，不将训练集结果或诊断比值当作留出泛化认证。
@@ -140,14 +144,14 @@
 | 待用户提供 | qemu-accel 完整源码、armv7l 生成 spec、baselibs_body、对应 OBS 宏与构建日志 | 已取 SRPM 仅含 aarch64 spec；原 VCS `e01aa7250a1a73aa8f88ba9ac4a05cbc954d1c9f` 的公共获取受凭据/403/TLS 阻碍。补齐分支和隐式后处理，不能把通用主体当完整 armv7l 执行日志。 | docs/19 §2.1–2.2；docs/20 §1.2 |
 | 待评审 | docs/21完整v3与V01–V36落实、七文件混合提案、脚本/strip实验 | docs/20保持历史原文；已采纳/实现不等于评审通过，不再安排本机校准。 | docs/21附录D/E |
 | 待评审/修订 | 五个额外静态工具未符合混合范围 | llvm-config、llvm-exegesis与三tblgen实测仍静态；修订方案或由用户确认明确例外，不能自动豁免/重建。保留static-devel及runtime。 | docs/22 §5.1；docs/21 §0.1 |
-| 后续待验 | 混合profile rebind、seed与accel试包 | 本机容量/混合RPM别名/活性/30TU已实测；尚待图提取器认证或重训、同job seed解包文件级等价、seed热缓存两模式、accel patchelf/alias/后处理链验证。 | docs/22 §4–§6；docs/21 §1–§4 |
+| 后续待验 | 混合profile rebind、seed与accel试包 | 本机容量/混合RPM别名/活性/30TU已实测；docs/23在打包失败后未启动profile适用性实证，保持未认证、不能据此要求重训；尚待图提取器认证或适用性测试后决定重训、同job seed解包文件级等价、seed热缓存两模式、accel patchelf/alias/后处理链验证。 | docs/22 §4–§6；docs/21 §1–§4 |
 | 待内部团队定稿 | Quickbuild协议/δ/容差 | 本文仅结构与占位，内部团队在入队前冻结；dead_zone保留，不再提供δ建议值。 | docs/21 §6 |
 | 待评审/实施 | spec 集成补丁、profile 包、自举/重认证、状态文件、隔离降级、debuginfo 策略 | 生产BOLT集成仍为设计；只在本机hybrid-link-trial分支应用获批混合补丁，原spec未改。5% stale/10% coverage 为工程政策；新集成容量指纹独立登记，执行 §4.4 负对照；先在目标executor验证子cgroup委派。 | docs/21 §2–§4 |
 | 待试包/Quickbuild | 从 RPM 到 accel 到 worker 的最终身份和正确性 | 分别记录 OBS ELF/accel ELF/worker 哈希，跨 patchelf 不强求 SHA 相同；检查节区/别名/brp 后结果，worker `/emul/usr/bin/clang-22` 必查；ninja commands 和首次编译后非计时 exec trace 留证；最终产物再做 TU 门禁。 | docs/20 §1.2–§1.3、§4.2、§6.1 |
 | 待 Quickbuild | BOLT 实际收益、v2 对 v1 增量、ARM 非退化与筛选方向是否一致 | 按docs/21八轮公式先冻结参数并通过preflight；同资源/输入图/缓存，取完整 wall、单位编译成本、cpu.stat、memory.peak 与下游运行资源；实际 job/tee/后台状态非零立即停止。旧本机数据不作服务器 A 组。 | docs/21 §6；docs/20 §7.1.4 |
-| 待发货验收 | 静态开发包索引与后处理活性 | 常规包零LLVM.a，static-devel全归档armap非空、bfd/lld组件消费者及坏liblldCOFF.a负例；runtime保持。新试验223空/3残缺索引；普通ranlib只补空，方案B不足，须改设计并做消费者验收。每层后处理活性必过。 | docs/13 §12；docs/22 §5.2；docs/21 §4、附录 C |
+| 待发货验收 | 静态开发包索引与后处理活性 | 常规包零LLVM.a，static-devel全归档armap与构建树完整对照、bfd/lld组件消费者及坏liblldCOFF.a负例；runtime保持。docs/22为223空/3残缺；docs/23已复现GNU strip根因，提出spec局部去掉归档strip。唯一重打包因试验入口错误失败，226完整映射/22包非.a等价/消费者负例均未验；后续另行授权，不自动重试。每层后处理活性必过。 | docs/13 §12；docs/22 §5.2；docs/23 §1；docs/21 §4、附录 C |
 | 待需求/实验 | BOLT clang 源码级 debuginfo | 首版 stripped-evaluation 不能假配旧 DWARF；如生产要求完整崩溃分析，须另测 update-debug 的容量/时间、最终符号化与 debuglink/build-id。当前成本 UNKNOWN。 | docs/21 §4.3 |
 | 待服务器容量评估 | PGO、其他工具 BOLT 与生产新输入 profile | 取得worker实际内存/并发/cgroup后重估PGO；现v2不自动认证混合输入，source/spec/patch/MLGO改变触发图与profile重认证；不擅自新建profile或重写。 | docs/21 §3、§8 |
 
 已关闭、不再作为待办：本机校准重试、用新门禁回判历史 FAIL、为补漂亮数字追加轮次。
-本轮先推8facdfa，再在隔离hybrid-link-trial分支完成唯一一次18GiB正确性试构建。原LLVM分支/spec及历史校准文件SHA不变；产物留本机，未进OBS/Gerrit。docs/22与本文件同提交收尾，不隐含修补后再构建或本机性能重试授权。
+前轮混合试构建结果保留在559879a/docs/22。本轮docs/23完成归档根因复现，但短路重打包试验入口遗漏Tizen install-pre清理而失败；依“每步失败即停不重试”停止，未执行clang重链/剥离、BOLT、30TU或活性。工作树spec等七项受保护输入SHA不变，原22RPM不改；最小归档修复补丁仅供评审，待用户批准后进Gerrit，本轮未推Gerrit。docs/23与本文件同提交收尾，不隐含失败实验重试授权。
