@@ -1,10 +1,11 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-09-23。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-历史状态核对到 `583dad4`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，混合构建见 [docs/22](22_hybrid_link_trial.md)，
+历史状态核对到 `c12c0e1`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，混合构建见 [docs/22](22_hybrid_link_trial.md)，
 归档根因与前次失败记录见 [docs/23](23_archive_fix_and_profile_rebind.md)；
 旧混合根核查停止记录见 [docs/24](24_archive_fix_verification.md)，该根已隔离，不再读写。
-当前归档修复优先；指定全静态基线图与历史 SHA 不符停止，见 [docs/25](25_archive_index_fix.md)。
+docs/25保留前次停止记录；用户已更正旧构建图门禁，改用docs/13的22 RPM作唯一基线。
+当前普查因libarcher含bitcode触发运行库格式停止条件，见 [docs/26](26_archive_index_fix.md)。
 docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预注册文件保持原样。
 以下 `temp/` 均相对工作区 `/home/linhao/Toolchain/development/llvm-optimize`，仅保存在本机，不在 GitHub。
 
@@ -12,7 +13,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
 **当前第一任务：基于工作区全静态 spec 修复 llvm-static-devel 归档索引，并以一次新根完整构建验收；设计 v4 与 BOLT 实施暂缓。**
-本轮指定全静态构建树的 build.ninja 与 docs/14 SHA 不符，第一步即停止；新构建尚未启动。
+本轮22 RPM身份匹配、270唯一归档普查完成；libarcher含bitcode，按用户第一步第4项停止。旧图SHA问题不再是门禁；新构建尚未启动。
 后续混合目标保留：原生 x86_64 clang/clang++、llvm-ar、lld/ld.lld 静态链接 LLVM 库，
 其他工具走共享库路径；别名继承实体形态，上游强制静态例外待审。仅 clang 做首版 BOLT，生成 ARM/AArch64 代码。
 基线是工作区 LLVM `f111162e94aa48ed367c9d2c039456c70e7160ae` 的自研 spec，
@@ -24,7 +25,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 | 摸底与基准台 | 配方、工具调用面、身份、资源限制、可重复测量 | 完成；历史报告保留各自证据边界 |
 | 静态 RPM 基线 | 固定快照、构建、debuginfo 续跑、工具验证、基线数据 | 已完成；static-devel保留，既有归档索引缺陷须通过修复与消费者验收 |
 | BOLT 筛选 | 容量、插桩/profile、重写、正确性、训练/留出、中间对照、双目标 | 本机工作已结束；最终 ARM 校准 FAIL，AArch64 PASS 并完成正式轮 |
-| 归档索引修复 | 工作区全静态 spec、逐成员普查、选择性 strip、一次完整构建与 RPM/消费者验收 | **当前第一任务；docs/25 第一阶段身份 FAIL：三个构建 ELF SHA 匹配，但 Ninja 图不匹配；尚未普查/修法/构建** |
+| 归档索引修复 | 工作区全静态 spec、逐成员普查、选择性 strip、一次完整构建与 RPM/消费者验收 | **当前第一任务；docs/26基准/普查完成，libarcher bitcode触发格式停止；未改spec、未构建，等待明确运行库范围** |
 | 集成设计与评审 | docs/21 完整 v3、混合链接拟议补丁、身份/活性脚本与协议检查 | 历史混合构建/30 TU结果保留；设计 v4 与 BOLT 实施暂缓，待归档修复完成 |
 | OBS 试包与服务器验收 | LLVM RPM → qemu-accel → 新 Base 快照 → Quickbuild | 未执行；项目/验证快照待用户提供，试包与收益验收均未完成 |
 | 后续工具/PGO | 依全平台调用占比和服务器容量决定 | 挂账；没有自动启动授权 |
@@ -68,7 +69,8 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 | 2026-09-22 | `559879a` | docs/22、STATUS、构建/活性脚本与测试、混合认证指纹 | 新根18GiB构建成功，22 RPM、30 TU PASS；额外五工具仍静态，223空/3残缺归档索引，一次ranlib不能修残缺表。 |
 | 2026-09-23 | `dab197c` | docs/23、STATUS | Analysis索引9445→82由GNU strip副本复现；重打包入口遗漏install-pre清理而失败，按约定停止，profile重链/BOLT/30TU未执行。 |
 | 2026-09-23 | `583dad4` | docs/24、STATUS | 独占核查通过但22 RPM SHA全异、cache多2文件/7168B，SOURCES spec也已变化；第零步停止，无普查/install/profile实验，未修复资产。 |
-| 2026-09-23 | 本提交（`git log -1 -- docs/25_archive_index_fix.md`定位） | docs/25、STATUS | 归档修复升为第一任务；外来改动备份核对后恢复，新根/新分支就位；全静态基线三个ELF匹配但build.ninja SHA异，第一步停止，完整构建0次。 |
+| 2026-09-23 | `c12c0e1` | docs/25、STATUS | 归档修复升为第一任务；外来改动备份核对后恢复，新根/新分支就位；全静态基线三个ELF匹配但build.ninja SHA异，第一步停止，完整构建0次。 |
+| 2026-09-23 | 本提交（`git log -1 -- docs/26_archive_index_fix.md`定位） | docs/26、STATUS、归档检查/普查脚本及测试 | 22 RPM与坏COFF SHA通过；270唯一路径/271包条目普查完成；compiler-rt全机器码，libarcher含bitcode且双包归属，按约定停止，构建0次。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -113,6 +115,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 | 唯一重打包尝试失败：试验入口漏处理Tizen install-pre清空BUILDROOT，rpmbuild rc=1、新RPM=0；不是修法被证伪，也不能断言RPM不支持短路。按失败即停，未重试或继续profile实验。 | docs/23 §1.2、§2；`temp/archive-profile-rebind-20260923/repack-scope/outcome.json` | 硬证据；修法包级验收与profile适用性仍缺失 |
 | 本轮独占检查无相关外部进程/既有锁；会话锁已回收。B/clang体积及已提交docs/23的SHA参考匹配，三归档计数9445/14276/5023匹配；22 RPM对docs/22 SHA为0/22匹配，cache为12471文件/20363368128B（+2/+7168），SOURCES spec SHA已异。仅证明文件身份差异，未比较RPM payload或定位写入者。 | docs/24 §1–§3；`temp/archive-fix-verification-20260923-173328/assets.json`、锁记录 | 硬证据；第零步FAIL，不能外推修法或profile结果 |
 | 指定全静态B0的clang-22/lld/llvm-ar三SHA匹配docs/13；build.ninja当前133b142f…，docs/14为81216d3d…，第一步身份核查退出2。docs/15此前登记同目录获准加bolt重新configure；不能把目录继续当原始图，也不能从图差异推断归档损坏。后续RPM/归档检查未跑。 | docs/25 §1；`temp/archive-index-fix-20260923/baseline-identity.json`；docs/15 §3.2 | 硬证据（3 ELF/图身份）；归档与修法仍未测 |
+| docs/13基线22 RPM SHA全匹配，重新解包坏liblldCOFF.a为9e8915f4…；270唯一归档/271包条目。compiler-rt45个、1964成员全ELF且索引完整覆盖机器码外部定义；static-devel225个（含libarcher）222空索引/3混合残缺。libarcher唯一成员ompt-tsan.cpp.o头4243c0de，空索引，同时属于libomp-devel与static-devel，触发运行库格式停止条件。 | docs/26 §1–§2、附录A；`temp/archive-index-fix-rpm-20260923/census-summary.json`、`runtime-blocker-raw.json` | 硬证据；只读基线普查，非新修法验收 |
 
 对外统一口径：**筛选层多轮测量方向一致，BOLT 对 LLVM 自身源码编译负载有稳定正向影响，量级待构建服务器验收。**
 不对外给收益百分比，不称“五轮独立”，不将训练集结果或诊断比值当作留出泛化认证。
@@ -145,6 +148,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 | seed与chroot修订 | 非seed RPM解包逐文件SHA/属性相同，SOURCE_DATE_EPOCH固定，不比RPM头；活性脚本允许显式host-arch并核ELF Machine。 | docs/21 §1.3/§3.1 |
 | 本轮单会话独占、逐项完整性不符即停，不修复；docs/23保留，外来会话证据仅作线索。 | 用户新任务第零步；两项共享资产不匹配触发全局停止，第二/三部分的独立性不能绕过第零步。外来未提交STATUS先备份，本文件从已提交dab197c及本会话证据更新。 | docs/24 §0–§6 |
 | 归档修复优先于BOLT，设计v4暂缓；改用工作区全静态spec新根一次完整构建，隔离旧混合根不读写。 | 本轮用户决策；只有独立archive-fix-trial允许修法，保留4/4/1，18GiB/swap0/debuginfo4。身份不符即停，不自行用改后图放行。 | docs/25 §0–§5 |
+| 撤销旧构建树SHA作为本次归档修复基准；只用docs/13的22 RPM新解包。R0仅RPMS和usr/lib/rpm允许读取。运行库compiler-rt或libarcher含bitcode/其他即停，不自行扩大修法。 | 用户第二次执行更正；docs/15重新configure是已登记合法变更。22 RPM已核验，实际因libarcher bitcode停止；设计v4/BOLT继续暂缓。 | docs/26 §0–§5 |
 
 ## 5. 挂账
 
@@ -160,15 +164,15 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 | 待评审/实施 | spec 集成补丁、profile 包、自举/重认证、状态文件、隔离降级、debuginfo 策略 | 生产BOLT集成仍为设计；只在本机hybrid-link-trial分支应用获批混合补丁，原spec未改。5% stale/10% coverage 为工程政策；新集成容量指纹独立登记，执行 §4.4 负对照；先在目标executor验证子cgroup委派。 | docs/21 §2–§4 |
 | 待试包/Quickbuild | 从 RPM 到 accel 到 worker 的最终身份和正确性 | 分别记录 OBS ELF/accel ELF/worker 哈希，跨 patchelf 不强求 SHA 相同；检查节区/别名/brp 后结果，worker `/emul/usr/bin/clang-22` 必查；ninja commands 和首次编译后非计时 exec trace 留证；最终产物再做 TU 门禁。 | docs/20 §1.2–§1.3、§4.2、§6.1 |
 | 待 Quickbuild | BOLT 实际收益、v2 对 v1 增量、ARM 非退化与筛选方向是否一致 | 按docs/21八轮公式先冻结参数并通过preflight；同资源/输入图/缓存，取完整 wall、单位编译成本、cpu.stat、memory.peak 与下游运行资源；实际 job/tee/后台状态非零立即停止。旧本机数据不作服务器 A 组。 | docs/21 §6；docs/20 §7.1.4 |
-| 待发货验收 | 静态开发包索引与后处理活性 | 常规包零LLVM.a，static-devel全归档armap与构建树完整对照、bfd/lld组件消费者及坏liblldCOFF.a负例；runtime保持。docs/22为223空/3残缺；docs/23已复现GNU strip根因，提出spec局部去掉归档strip。唯一重打包因试验入口错误失败，226完整映射/22包非.a等价/消费者负例均未验；docs/24全局前置失败未普查；本轮已改为docs/25全静态新根完整构建任务，但在其基线图身份核查处停止，仍未普查/修法/构建。需明确该历史配置变更的基准口径，不自动恢复/重试。每层后处理活性必过。 | docs/13 §12；docs/22 §5.2；docs/23 §1；docs/21 §4、附录 C |
+| 待发货验收 | 静态开发包索引与后处理活性 | 常规包零LLVM.a，static-devel全归档armap与构建树完整对照、bfd/lld组件消费者及坏liblldCOFF.a负例；runtime保持。docs/22为223空/3残缺；docs/23已复现GNU strip根因，提出spec局部去掉归档strip。唯一重打包因试验入口错误失败，226完整映射/22包非.a等价/消费者负例均未验；docs/24全局前置失败未普查；docs/25的旧图门禁已由用户更正；docs/26用22 RPM重新普查完成，但libarcher含bitcode触发运行库格式停止，修法/新构建/验收仍未执行。每层后处理活性必过。 | docs/13 §12；docs/22 §5.2；docs/23 §1；docs/21 §4、附录 C |
 | 待需求/实验 | BOLT clang 源码级 debuginfo | 首版 stripped-evaluation 不能假配旧 DWARF；如生产要求完整崩溃分析，须另测 update-debug 的容量/时间、最终符号化与 debuglink/build-id。当前成本 UNKNOWN。 | docs/21 §4.3 |
 | 待服务器容量评估 | PGO、其他工具 BOLT 与生产新输入 profile | 取得worker实际内存/并发/cgroup后重估PGO；现v2不自动认证混合输入，source/spec/patch/MLGO改变触发图与profile重认证；不擅自新建profile或重写。 | docs/21 §3、§8 |
-| 当前第一任务/待输入口径明确 | 全静态基线图与docs/14身份不匹配 | 明确是否接受docs/15授权configure后的构建树作归档普查来源及身份范围，或提供原始身份的构建树；仍需核RPM/归档。原W/llvm未改，新根未初始化，新分支仅继承并发；不自动改SHA放行。 | docs/25 §1、§5 |
+| 当前第一任务/待运行库范围决定 | libarcher_static.a实际为bitcode；局部归档修法尚未实现 | 用户明确是否将libarcher现有索引缺陷纳入修复及运行库验收范围；它同时属于libomp-devel和llvm-static-devel。compiler-rt纯机器码已确认；后续仍需精确指纹、一次完整构建和全部新包验收，不擅自豁免。 | docs/26 §2.3–§5 |
 | 已隔离/暂缓 | 旧混合构建根与profile适用性；设计v4 | docs/24旧根不再读写；外来docs/23与重链脚本改动在备份SHA匹配后已按新授权恢复HEAD，不再是脏工作树。设计v4及BOLT后续等归档任务完成。 | docs/24；docs/25 §0 |
 
 已关闭、不再作为待办：本机校准重试、用新门禁回判历史 FAIL、为补漂亮数字追加轮次。
-历史混合试构建见559879a/docs/22，根因与前次短路失败见dab197c/docs/23，旧混合根身份异常见583dad4/docs/24；历史报告不改判。
-本轮docs/25将归档修复升为当前第一任务，设计v4/BOLT暂缓；不读写旧混合根。
-外来docs/23与重链脚本改动确认temp/foreign-artifacts备份SHA一致后恢复HEAD；原W/llvm及spec不改。
-新archive-fix-trial工作树仅继承4/4/1；指定全静态B0三个ELF SHA匹配，但build.ninja与docs/14记录不同，按约定立即停止。
-尚未执行归档普查、修法、认证入口修改、完整构建或RPM验收；一次完整构建实际0次。锁收尾回收，继续前先明确基准身份口径。
+历史混合试构建/根因/隔离记录保留；docs/25不改。用户已确认docs/15重新configure合法，本轮不再以旧build.ninja门禁阻断修复。
+本轮docs/26先核验22 RPM全部SHA，新解包后坏COFF身份通过；完整普查270唯一归档，因libarcher含bitcode按第一步第4项停止。
+R0只读指定RPMS与usr/lib/rpm，旧BUILD、旧TC及混合根未访问；原W/llvm、spec及试验spec未改。
+archive-fix-trial仍只含原4/4/1差异，构建认证入口未改，完整构建0次；锁收尾回收。
+归档修复仍第一优先级，设计v4/BOLT暂缓；待用户明确libarcher运行库处理范围，不自动扩大修法或启动构建。
