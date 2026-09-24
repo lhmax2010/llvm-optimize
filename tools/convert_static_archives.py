@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import re
 import signal
+import shlex
 import struct
 import subprocess
 import threading
@@ -21,19 +22,38 @@ import time
 
 from inspect_llvm_archives import inspect, member_kind
 
+# Verified against the saved real-TU command and LLVM 22 source. These options
+# must be supplied to native code generation; they are not recovered merely by
+# loading IR. Debug metadata, CPU/features and linkage remain in the input IR.
+BACKEND_FLAGS = ['-O3', '-ffunction-sections', '-fdata-sections',
+                 '-funique-section-names', '-faddrsig', '-g', '-gdwarf-4',
+                 '-ffp-contract=on']
+
 
 def sha(path):
     with Path(path).open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def ir_settings(lines):
+def ir_settings(lines, require_recorded_options=False):
     """Read relocation flags and retained function attributes, never edit IR."""
     retained = []
     triple = None
     levels = {}
     cpus, features = set(), set()
+    command_id, recorded_command = None, None
     for line in lines:
+        if line.startswith('!llvm.commandline = '):
+            match = re.fullmatch(r'!llvm.commandline = !\{!(\d+)\}\s*', line)
+            if not match:
+                raise ValueError('exactly one recorded command is required')
+            command_id = match[1]
+        if command_id is not None and line.startswith('!'+command_id+' = '):
+            match = re.fullmatch(r'!\d+ = !\{!"(.*)"\}\s*', line)
+            if not match:
+                raise ValueError('invalid recorded command metadata')
+            recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+                lambda m: chr(int(m[1], 16)), match[1]))
         if line.startswith('target triple = '):
             triple = line.split('"')[1]
             retained.append(line.rstrip())
@@ -57,12 +77,25 @@ def ir_settings(lines):
         raise ValueError('unsupported PIC/PIE flags')
     if 'Code Model' in levels:
         raise ValueError('explicit code model requires separate certification')
+    if require_recorded_options:
+        if not recorded_command:
+            raise ValueError('missing original command: backend policy cannot be certified')
+        optimizations = [x for x in recorded_command if re.fullmatch(r'-O(?:[0-3szg]|fast)', x)]
+        if not optimizations or optimizations[-1] != '-O3':
+            raise ValueError('original optimization level is not O3')
+        for option in ('function-sections', 'data-sections'):
+            settings = [x for x in recorded_command if x in ('-f'+option, '-fno-'+option)]
+            if not settings or settings[-1] != '-f'+option:
+                raise ValueError('original command lacks enabled '+option)
+        if '-gdwarf-4' not in recorded_command:
+            raise ValueError('original DWARF setting not certified')
     # Function-level CPU/features remain in the IR; do not override with -march.
-    flags = ['--no-default-config', '--target='+triple, '-x', 'ir', '-O3', '-c']
+    flags = ['--no-default-config', '--target='+triple, '-x', 'ir', *BACKEND_FLAGS, '-c']
     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
-                target_features=sorted(features), flags=flags, evidence=retained)
+                target_features=sorted(features), flags=flags, evidence=retained,
+                recorded_command=recorded_command)
 
 
 def pic_relocations(data):
@@ -203,7 +236,7 @@ def convert(root, output, clang, disassembler, loader=None, library_path=None):
                 with text_ir.open('wb') as out:
                     command.run([*prefix, str(disassembler), str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
                 with text_ir.open() as lines:
-                    settings = ir_settings(lines)
+                    settings = ir_settings(lines, require_recorded_options=True)
                 (source.parent/'ir-settings.json').write_text(json.dumps(settings, indent=2)+'\n')
                 text_ir.unlink()
                 record = command.run([*prefix, str(clang), *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')

@@ -42,6 +42,25 @@ class ConversionPolicyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ir_settings(['target triple = "aarch64-tizen-linux-gnu"'])
 
+    def test_recorded_backend_options_are_required_and_last_flag_wins(self):
+        def module(flags):
+            return ['target triple = "x86_64-tizen-linux-gnu"',
+                    '!llvm.commandline = !{!7}',
+                    '!7 = !{!"clang '+flags+'"}']
+        flags = '-O3 -flto=thin -ffunction-sections -fdata-sections -gdwarf-4'
+        data = ir_settings(module(flags), require_recorded_options=True)
+        self.assertIn('-ffunction-sections', data['flags'])
+        self.assertIn('-fdata-sections', data['flags'])
+        self.assertNotIn('-flto=thin', data['flags'])
+        self.assertIn('-flto=thin', data['recorded_command'])
+        for extra in [' -O2', ' -fno-function-sections', ' -fno-data-sections']:
+            with self.subTest(extra=extra), self.assertRaises(ValueError):
+                ir_settings(module(flags+extra), require_recorded_options=True)
+        with self.assertRaises(ValueError):
+            ir_settings(module('-O3'), require_recorded_options=True)
+        with self.assertRaises(ValueError):
+            ir_settings(['target triple = "x86_64-tizen-linux-gnu"'], require_recorded_options=True)
+
     def test_native_machine_and_wrong_machine(self):
         data = native()
         self.assertEqual(pic_relocations(data)['forbidden'], [])
