@@ -25,6 +25,7 @@ GIB = 1024 ** 3
 MAX_BUILD_MEMORY_GIB = 18
 BASELINE_PROFILE = Path(__file__).with_name('llvm_baseline_capacity.json')
 HYBRID_PROFILE = Path(__file__).with_name('llvm_hybrid_trial_fingerprint.json')
+ARCHIVE_PROFILE = Path(__file__).with_name('llvm_archive_fix_trial_fingerprint.json')
 CONFIG_GATE_SECONDS = 900
 WORKSPACE = Path(__file__).resolve().parents[1]
 SPEC = Path("packaging/llvm.spec")
@@ -84,9 +85,10 @@ def validate_resources(available, free_disk, cpus):
 
 def resource_plan(available, free_disk, cpus, configuration, profile=None, *, certify_fingerprint=None):
     if certify_fingerprint is not None:
-        if certify_fingerprint != 'hybrid-trial' or profile is not None:
-            raise RuntimeError('only the pinned hybrid-trial certification is allowed')
-        profile = json.loads(HYBRID_PROFILE.read_text())
+        profiles = {'hybrid-trial': HYBRID_PROFILE, 'archive-fix-trial': ARCHIVE_PROFILE}
+        if certify_fingerprint not in profiles or profile is not None:
+            raise RuntimeError('only explicitly pinned trial certifications are allowed')
+        profile = json.loads(profiles[certify_fingerprint].read_text())
     else:
         profile = profile or json.loads(BASELINE_PROFILE.read_text())
     validate_resources(available, free_disk, cpus)
@@ -101,13 +103,61 @@ def resource_plan(available, free_disk, cpus, configuration, profile=None, *, ce
     return dict(available_bytes=available, disk_free_bytes=free_disk, nproc=cpus,
                 memory_max_gib=MAX_BUILD_MEMORY_GIB, gbs_threads=1, ninja_jobs=4,
                 compile_jobs=4, link_jobs=1, debuginfo_jobs=4,
-                admission='CERTIFICATION_HYBRID_TRIAL' if certify_fingerprint else 'MEASURED_BASELINE',
+                admission=('CERTIFICATION_'+certify_fingerprint.upper().replace('-', '_'))
+                          if certify_fingerprint else 'MEASURED_BASELINE',
                 certify_fingerprint=certify_fingerprint, configuration=configuration,
                 cmake_parameters=profile['cmake_parameters'], evidence=profile['evidence'])
 
 
-def trial_source_identity(source):
+def archive_trial_source_identity(source):
+    """Accept only the certified spec/Source bytes in the dedicated worktree."""
+    profile = json.loads(ARCHIVE_PROFILE.read_text())
+    expected = profile['configuration']
+    if source.resolve() != (WORKSPACE/'temp/llvm-archivefix-trial').resolve():
+        raise RuntimeError('archive trial requires the isolated registered worktree')
+    def git(*args):
+        return sp.check_output(['git', '-C', str(source), *args])
+    if git('rev-parse', 'HEAD').decode().strip() != expected['source_head']:
+        raise RuntimeError('archive trial HEAD mismatch')
+    branch = git('branch', '--show-current').decode().strip()
+    if branch != 'archive-fix-trial':
+        raise RuntimeError('archive trial branch mismatch')
+    status = git('status', '--porcelain', '--untracked-files=all').decode().splitlines()
+    required = {' M packaging/llvm.spec', ' A packaging/llvm-static-archives-native.py'}
+    if set(status) != required:
+        raise RuntimeError('archive trial changed/untracked inventory mismatch')
+    files = {name: hashlib.sha256((source/name).read_bytes()).hexdigest() for name in expected['source_files']}
+    diff = git('diff', '--no-ext-diff', '--binary', 'HEAD')
+    patch = Path(profile['evidence']['patch_path']).read_bytes()
+    if (files != expected['source_files'] or hashlib.sha256(diff).hexdigest() != expected['source_diff_sha256'] or
+            hashlib.sha256(patch).hexdigest() != expected['packaging_patch_sha256']):
+        raise RuntimeError('archive trial spec/Source/diff/patch differs from certified bytes')
+    return {k: expected[k] for k in ('trial','source_branch','source_files','source_diff_sha256','packaging_patch_sha256')}
+
+
+def archive_trial_root(root, session):
+    """The sole allowed existing root contains only this session's live lock."""
+    if root.resolve() != (WORKSPACE/'temp/gbs-root-x86_64-archivefix').resolve():
+        raise RuntimeError('archive trial requires the registered fresh buildroot')
+    lock = root/'.llvm-optimize-exclusive.lock'
+    if not session or not root.is_dir() or set(root.iterdir()) != {lock}:
+        raise RuntimeError('archive trial root must contain only the exclusive session lock')
+    record = json.loads(lock.read_text())
+    if record.get('session') != session or record.get('root') != str(root.resolve()):
+        raise RuntimeError('archive trial exclusive lock ownership mismatch')
+    try:
+        os.kill(int(record['pid']), 0)
+    except (ValueError, KeyError, OSError) as error:
+        raise RuntimeError('archive trial lock holder is not alive') from error
+    return record
+
+
+def trial_source_identity(source, trial='hybrid-trial'):
     """Bind the trial to the exact approved seven-file diff; no general bypass."""
+    if trial == 'archive-fix-trial':
+        return archive_trial_source_identity(source)
+    if trial != 'hybrid-trial':
+        raise RuntimeError('unknown source certification')
     expected = json.loads(HYBRID_PROFILE.read_text())['configuration']
     if source.resolve() != (WORKSPACE/'temp/llvm-hybrid-trial').resolve():
         raise RuntimeError('hybrid trial requires the isolated temp/llvm-hybrid-trial worktree')
@@ -143,7 +193,7 @@ def only_concurrency_changed(original, modified):
 
 
 def validate_cache(text, expected_parameters=None, *, certify_fingerprint=None):
-    if certify_fingerprint not in (None, 'hybrid-trial'):
+    if certify_fingerprint not in (None, 'hybrid-trial', 'archive-fix-trial'):
         raise ValueError('unknown CMake certification contract')
     values = {}
     for line in text.splitlines():
@@ -156,7 +206,7 @@ def validate_cache(text, expected_parameters=None, *, certify_fingerprint=None):
         if values.get(key) != value:
             errors.append(f"{key}: expected {value}, found {values.get(key, 'MISSING')}")
     off_keys = ["LLVM_ENABLE_ASSERTIONS"]
-    if certify_fingerprint:
+    if certify_fingerprint == 'hybrid-trial':
         expected.update(LLVM_LINK_LLVM_DYLIB='ON', CLANG_LINK_CLANG_DYLIB='ON', TIZEN_HYBRID_LINK='ON')
         off_keys += ['LLVM_TOOL_LLVM_DRIVER_BUILD', 'BUILD_SHARED_LIBS']
         for key, value in expected.items():
@@ -559,8 +609,9 @@ def main():
     parser.add_argument("--config", type=Path, default=WORKSPACE / "gbs_llvm.conf")
     parser.add_argument("--source", type=Path, default=WORKSPACE / "llvm")
     parser.add_argument("--expected-commit", default=EXPECTED_HEAD)
-    parser.add_argument('--certify-fingerprint', choices=['hybrid-trial'],
-                        help='one pinned local mixed-link correctness trial; never widens baseline admission')
+    parser.add_argument('--certify-fingerprint', choices=['hybrid-trial','archive-fix-trial'],
+                        help='one exact pinned local trial; never widens baseline admission')
+    parser.add_argument('--exclusive-lock-session', help='archive trial only: existing live exclusive lock session')
     parser.add_argument("--buildroot", type=Path, default=WORKSPACE / "temp/gbs-root-x86_64-baseline")
     parser.add_argument("--log-dir", type=Path, default=WORKSPACE / "temp/baseline-build" / dt.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
     args = parser.parse_args()
@@ -579,12 +630,14 @@ def main():
         current = (args.source / SPEC).read_text()
         status = audit.run(["git", "-C", args.source, "status", "--porcelain", "--untracked-files=all"]).stdout
         if args.certify_fingerprint:
-            trial_source_identity(args.source)
-            if args.buildroot != WORKSPACE/'temp/gbs-root-x86_64-hybrid-trial':
+            trial_source_identity(args.source, args.certify_fingerprint)
+            if args.certify_fingerprint == 'archive-fix-trial':
+                audit.json('exclusive-lock.json', archive_trial_root(args.buildroot, args.exclusive_lock_session))
+            elif args.buildroot != WORKSPACE/'temp/gbs-root-x86_64-hybrid-trial':
                 raise RuntimeError('hybrid trial requires the registered fresh buildroot')
         elif any(line[3:] != str(SPEC) for line in status.splitlines()) or not only_concurrency_changed(original, current):
             raise RuntimeError("source has changes beyond the permitted spec concurrency numbers")
-        if args.buildroot.exists():
+        if args.buildroot.exists() and args.certify_fingerprint != 'archive-fix-trial':
             raise RuntimeError("fresh buildroot required: path already exists; preserve it and choose a new path")
         chosen = repositories(audit, args.config)
         metadata = {row['name']: hashlib.sha256((audit.directory/(row['name']+'.repomd.xml')).read_bytes()).hexdigest()
@@ -593,7 +646,7 @@ def main():
         configuration = configuration_identity(head, proposed, args.config.read_bytes(), chosen.read_bytes(),
                                                repository_metadata=metadata)
         if args.certify_fingerprint:
-            configuration.update(trial_source_identity(args.source))
+            configuration.update(trial_source_identity(args.source, args.certify_fingerprint))
         plan = resource_plan(mem_available(), shutil.disk_usage(args.buildroot.parent).free,
                              cpus, configuration, certify_fingerprint=args.certify_fingerprint)
         audit.json("resource-plan.json", plan)
@@ -614,7 +667,7 @@ def main():
         configuration = configuration_identity(head, proposed, args.config.read_bytes(), chosen.read_bytes(),
                                                repository_metadata=metadata)
         if args.certify_fingerprint:
-            configuration.update(trial_source_identity(args.source))
+            configuration.update(trial_source_identity(args.source, args.certify_fingerprint))
         plan = resource_plan(mem_available(), shutil.disk_usage(args.buildroot.parent).free,
                              cpus, configuration, certify_fingerprint=args.certify_fingerprint)
         audit.json("resource-plan.json", plan)
@@ -622,7 +675,9 @@ def main():
         if args.certify_fingerprint:
             if patched != current:
                 raise RuntimeError('certified trial concurrency must already be exact; refusing source mutation')
-            trial_source_identity(args.source)
+            trial_source_identity(args.source, args.certify_fingerprint)
+            if args.certify_fingerprint == 'archive-fix-trial':
+                archive_trial_root(args.buildroot, args.exclusive_lock_session)
             audit.json('source-fingerprint.json', configuration)
             (audit.directory/'source.diff').write_bytes(sp.check_output(
                 ['git','-C',str(args.source),'diff','--no-ext-diff','--binary','HEAD']))

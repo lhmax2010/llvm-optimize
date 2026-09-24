@@ -4,7 +4,8 @@
 Run in a bounded scope. Compile and link are separate invocations; links take
 only existing .o inputs. C++/glibc are host dependencies, LLVM headers/libraries
 are explicitly selected, and the Tizen libxml2 runtime stays in --library-path.
-No host installation, binary patching, or fallback after a failed check.
+Compilation retains 4 GiB AS; links have no AS ceiling and require cgroup control.
+Every operation records 50 ms process memory samples. No retry after failure.
 """
 import argparse
 import json
@@ -12,9 +13,9 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
-import time
 
-from convert_static_archives import Commands, sha
+from convert_static_archives import sha
+from native_archive_commands import MeasuredCommands
 
 IR = '''source_filename = "archive-consumer"
 define i32 @archive_probe_fn(i32 %x) {
@@ -113,12 +114,12 @@ def main():
     a=p.parse_args()
     baseline,archives,out=a.baseline.resolve(),a.archives.resolve(),a.output.resolve()
     out.mkdir(parents=True,exist_ok=False)
-    command=Commands(); result=dict(status='RUNNING',checks=[])
+    command=MeasuredCommands(); result=dict(status='RUNNING',checks=[])
     def save(): (out/'result.json').write_text(json.dumps(result,indent=2)+'\n')
     def passed(name,**extra): result['checks'].append(dict(name=name,status='PASS',**extra));save()
-    def capture(argv,name):
+    def capture(argv,name,phase="query"):
         dest=out/(name+'.txt')
-        with dest.open('wb') as stream:command.run(argv,out/name,stdout=stream)
+        with dest.open('wb') as stream:command.run(argv,out/name,stdout=stream,phase=phase)
         return dest.read_text()
     try:
         prefix=out/'prefix';(prefix/'bin').mkdir(parents=True)
@@ -153,7 +154,7 @@ def main():
         def compile_one(name,source,extra=()):
             obj=out/(name+'.o')
             argv=clang+cxxflags+list(extra)+['-v','-c',str(source),'-o',str(obj)]
-            command.run(argv,out/('compile-'+name))
+            command.run(argv,out/('compile-'+name),phase='compile')
             return obj
         def link(name,objects,libs,linker='/usr/bin/ld.bfd',extra=(),search=None):
             if any(x.suffix!='.o' or not x.is_file() for x in objects):raise ValueError('only existing .o compilation inputs allowed at link stage')
@@ -161,10 +162,10 @@ def main():
             dry=subprocess.run([*argv,'-###'],capture_output=True,text=True,check=True)
             (out/(name+'-driver.txt')).write_text(dry.stdout+dry.stderr)
             validate_link_driver(dry.stderr)
-            command.run(argv,out/('link-'+name))
+            command.run(argv,out/('link-'+name),phase='link')
             return out/name
         def run_ir(exe,name,args):
-            text=capture([str(a.loader),'--library-path',a.library_path,str(exe),*map(str,args)],'run-'+name)
+            text=capture([str(a.loader),'--library-path',a.library_path,str(exe),*map(str,args)],'run-'+name,phase='run')
             if text!=expected:raise RuntimeError('IR differs from baseline opt: '+name)
             needed=capture(['readelf','-dW',str(exe)],name+'-dynamic')
             if 'Shared library: [libLLVM' in needed or 'Shared library: [libclang' in needed:raise RuntimeError('consumer unexpectedly uses LLVM shared library')
@@ -184,18 +185,15 @@ def main():
             capture([str(a.loader),'--library-path',a.library_path,'--list',str(exe)],name+'-runtime')
         obj_b=compile_one('b',out/'b.cpp')
         (out/'minimal.s').write_text(MINIMAL_ASM)
-        command.run(['/usr/bin/as','--64',str(out/'minimal.s'),'-o',str(out/'minimal.o')],out/'compile-minimal')
+        command.run(['/usr/bin/as','--64',str(out/'minimal.s'),'-o',str(out/'minimal.o')],out/'compile-minimal',phase='compile')
         for flavor,path in [('bfd','/usr/bin/ld.bfd'),('lld',lld)]:
             name='b-'+flavor;exe=link(name,[obj_b],['-Wl,--start-group','-llldELF','-llldCommon',*libs_b,'-Wl,--end-group'],path)
             generated=out/(name+'-generated')
-            text=capture([str(a.loader),'--library-path',a.library_path,str(exe),str(out/'minimal.o'),str(generated)],'run-'+name)
+            text=capture([str(a.loader),'--library-path',a.library_path,str(exe),str(out/'minimal.o'),str(generated)],'run-'+name,phase='run')
             if text!='lld-in-process-link-ok\n':raise RuntimeError('unexpected lld public API result')
-            argv=['prlimit','--as=4294967296','--core=0','--',str(generated)]
-            actual=subprocess.run(argv,capture_output=True,text=True)
-            rec=dict(argv=argv,exit=actual.returncode,stdout=actual.stdout,stderr=actual.stderr,expected_exit=37)
-            (out/(name+'-generated-run.json')).write_text(json.dumps(rec,indent=2)+'\n')
-            if actual.returncode!=37:raise RuntimeError('in-process lld output exit differs from 37')
-            passed(name,generated_exit=37)
+            command.run([str(generated)],out/(name+'-generated-run'),phase='run',expected_exit=37)
+            passed(name,generated_exit=37,bytes=exe.stat().st_size,sha256=sha(exe),
+                   generated_sha256=sha(generated))
         shared_obj=compile_one('a-shared',out/'a.cpp',['-DSHARED_PROBE'])
         shared=link('libprobe.so',[shared_obj],libs_a,extra=['-shared','-Wl,-z,defs,-z,text'])
         shared_main=compile_one('shared-main',out/'shared-main.cpp')
@@ -207,12 +205,7 @@ def main():
         argv=clang+['--ld-path=/usr/bin/ld.bfd',str(obj_a),*search,*libs_a,*resolved,'-o',str(out/'negative')]
         dry=subprocess.run([*argv,'-###'],capture_output=True,text=True,check=True)
         (out/'negative-driver.txt').write_text(dry.stderr);validate_link_driver(dry.stderr)
-        start=time.monotonic()
-        with (out/'negative.log').open('wb') as stream:
-            actual=subprocess.run(['prlimit','--as=4294967296','--core=0','--',*argv],stdout=stream,stderr=subprocess.STDOUT)
-        negative=dict(argv=argv,exit=actual.returncode,elapsed_seconds=time.monotonic()-start)
-        (out/'negative.json').write_text(json.dumps(negative,indent=2)+'\n')
-        if actual.returncode==0:raise RuntimeError('unconverted bitcode unexpectedly linked without plugin')
+        negative=command.run(argv,out/'negative',phase='link',expected_exit='nonzero')
         log=(out/'negative.log').read_text()
         if not any(t in log.lower() for t in ('archive has no index','file format not recognized','file not recognized')):
             raise RuntimeError('negative control failed for an unrecognized reason')
