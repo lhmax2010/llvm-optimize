@@ -20,10 +20,10 @@
     "source_branch": "archive-fix-trial",
     "source_files": {
       "packaging/llvm.spec": "83dc994ab6d7ffe65cdf2bf38dbe027599775ffa71c6614219123856f8be1d2d",
-      "packaging/llvm-static-archives-native.py": "735f4731c6061638a35dce7daf8e03b5e582da3e16e7d38d2edecc1b852319a8"
+      "packaging/llvm-static-archives-native.py": "2476c5efa061499d7963e0f0976f0c9c86944b688f5bcc48ea40911574af399e"
     },
-    "source_diff_sha256": "58078a578ec4473549cb999f0065ccc0b6ad984511b3bca5cc13abaa75629636",
-    "packaging_patch_sha256": "0369cc0fc821ba358346d2f650d5c09abdb0a3d6435fa48ef8db3a60a0b71dd9"
+    "source_diff_sha256": "17574bea7e2f91eadb5b0f72a29b65865a6f2d3dad8f3565c700371c797d6274",
+    "packaging_patch_sha256": "4ca1dc3e51ee7eeb8b9c526d50c4d5345ef967b4537ddbc1107c86427c099413"
   },
   "cmake_parameters": {
     "BUILD_SHARED_LIBS": "OFF",
@@ -113,10 +113,11 @@
     "TIZEN": "1"
   },
   "evidence": {
-    "authorization": "User docs/29 task: one full build after all offline consumers pass; x86_64 packaging conversion only",
+    "authorization": "User docs/30 task: remove unmet Source dependencies, five-archive equivalence, memory wait up to six hours, one full build",
     "baseline_compile_configuration": "docs/13; unchanged CMake parameters, 18 GiB, 4/4/1, debuginfo -j4",
     "offline_evidence": "temp/static-native-conversion-v3-20260924/consumers/result.json",
-    "patch_path": "/home/linhao/Toolchain/development/llvm-optimize/temp/static-native-conversion-v3-20260924/archive-native-conversion.patch",
-    "stop_rule": "one full build; any failure stops without changing patch or retry"
+    "patch_path": "/home/linhao/Toolchain/development/llvm-optimize/temp/archive-fix-full-build-20260927/archive-native-conversion.patch",
+    "stop_rule": "one full build; any failure stops without changing patch or retry",
+    "environment_preflight": "temp/archive-fix-full-build-20260927"
   }
 }

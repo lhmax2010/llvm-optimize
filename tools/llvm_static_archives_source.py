@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Standalone RPM Source; copied policy from the certified docs/28 converter.
+# Standalone RPM Source; docs/28 conversion policy, wait4 resource accounting.
 # Embedded inspect_llvm_archives.py SHA256 81008a4859172318da880f224e53c5136958c29ebc9e12194e8f729fbd2d9ae0
 #!/usr/bin/env python3
 """Read GNU/BSD ar metadata without executing members; retain duplicate identities.
@@ -317,8 +317,9 @@ class Commands:
         prefix = Path(prefix)
         timing = prefix.with_suffix('.time')
         log = prefix.with_suffix('.log')
-        command = ['/usr/bin/time', '-f', '%e %U %S %M %x', '-o', str(timing),
-                   'prlimit', '--as=4294967296', '--core=0', '--', *map(str, argv)]
+        # GNU time is absent from the pinned Tizen buildroot. Keep limits in
+        # prlimit (util-linux); wait4 returns per-child, not process-global usage.
+        command = ['/usr/bin/prlimit', '--as=4294967296', '--core=0', '--', *map(str, argv)]
         start = time.monotonic()
         with log.open('wb') as err:
             with self.lock:
@@ -328,17 +329,19 @@ class Commands:
                                          stderr=err, start_new_session=True)
                 self.children.add(child)
             try:
-                rc = child.wait()
+                _, status, usage = os.wait4(child.pid, 0)
+                rc = os.waitstatus_to_exitcode(status)
+                child.returncode = rc
             finally:
                 with self.lock:
                     self.children.discard(child)
+        elapsed = time.monotonic()-start
         record = dict(argv=list(map(str, argv)), bounded_argv=command,
-                      elapsed_seconds=time.monotonic()-start, exit=rc)
-        if timing.exists():
-            record['time_raw'] = timing.read_text()
-            line = record['time_raw'].splitlines()[-1].split()
-            if len(line) == 5:
-                record.update(wall=float(line[0]), user=float(line[1]), sys=float(line[2]), max_rss_kib=int(line[3]))
+                      elapsed_seconds=elapsed, exit=rc, wall=elapsed,
+                      user=usage.ru_utime, sys=usage.ru_stime, max_rss_kib=usage.ru_maxrss,
+                      accounting='os.wait4; Linux ru_maxrss is KiB')
+        record['time_raw'] = f"{elapsed:.9f} {usage.ru_utime:.9f} {usage.ru_stime:.9f} {usage.ru_maxrss} {rc}\n"
+        timing.write_text(record['time_raw'])
         prefix.with_suffix('.json').write_text(json.dumps(record, indent=2)+'\n')
         if rc:
             self.cancel()

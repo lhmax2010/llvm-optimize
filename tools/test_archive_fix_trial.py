@@ -84,7 +84,7 @@ class ArchiveTrialTests(unittest.TestCase):
             return {n.name:ast.dump(n,include_attributes=False) for n in ast.parse(Path(path).read_text()).body
                     if isinstance(n,(ast.FunctionDef,ast.ClassDef))}
         src=definitions(source.__file__);orig=definitions(original.__file__)
-        for name in ('sha','ir_settings','pic_relocations','Commands','convert'):
+        for name in ('sha','ir_settings','pic_relocations','convert'):
             self.assertEqual(src[name],orig[name],name)
         trial=b.WORKSPACE/'temp/llvm-archivefix-trial/packaging/llvm-static-archives-native.py'
         self.assertEqual(Path(source.__file__).read_bytes(),trial.read_bytes())

@@ -48,6 +48,29 @@ def mem_available():
     raise RuntimeError("MemAvailable is missing")
 
 
+def wait_for_build_memory(audit, deadline, *, read=mem_available,
+                          clock=time.monotonic, sleep=time.sleep):
+    """Preauthorized admission only: 16 GiB, five-minute polls, one deadline.
+
+    Does not launch or retry any build and never kills another process.
+    Call at each existing resource checkpoint to close preflight-time races.
+    """
+    while True:
+        available = read()
+        now = clock()
+        row = dict(timestamp=stamp(), available_bytes=available,
+                   threshold_bytes=16*GIB, remaining_seconds=max(0, deadline-now),
+                   admitted=available >= 16*GIB)
+        with (audit.directory/'memory-admission.jsonl').open('a') as stream:
+            stream.write(json.dumps(row)+'\n')
+        audit.log(f"MEMORY ADMISSION {available} bytes; admitted={row['admitted']}")
+        if available >= 16*GIB:
+            return available
+        if now >= deadline:
+            raise RuntimeError('preauthorized six-hour memory wait expired; no build launched')
+        sleep(min(300, deadline-now))
+
+
 def normalized_spec(text):
     for pattern in CONCURRENCY.values():
         text = re.sub(pattern, lambda m: m[1] + "JOBS" + m[2], text)
@@ -612,17 +635,22 @@ def main():
     parser.add_argument('--certify-fingerprint', choices=['hybrid-trial','archive-fix-trial'],
                         help='one exact pinned local trial; never widens baseline admission')
     parser.add_argument('--exclusive-lock-session', help='archive trial only: existing live exclusive lock session')
+    parser.add_argument('--wait-for-memory', action='store_true',
+                        help='preauthorized only: poll MemAvailable every 300 seconds for at most six hours; no build retry')
     parser.add_argument("--buildroot", type=Path, default=WORKSPACE / "temp/gbs-root-x86_64-baseline")
     parser.add_argument("--log-dir", type=Path, default=WORKSPACE / "temp/baseline-build" / dt.datetime.now().strftime("%Y%m%d-%H%M%S-%f"))
     args = parser.parse_args()
     for name in ("config", "source", "buildroot", "log_dir"):
         setattr(args, name, getattr(args, name).resolve())
     audit = Audit(args.log_dir)
+    memory_deadline = time.monotonic()+6*60*60
+    def admitted_memory():
+        return wait_for_build_memory(audit, memory_deadline) if args.wait_for_memory else mem_available()
     try:
         for command in (["nproc"], ["free", "-g"], ["df", "-h", args.buildroot.parent]):
             audit.run(command)
         cpus = int(audit.run(["nproc"]).stdout)
-        validate_resources(mem_available(), shutil.disk_usage(args.buildroot.parent).free, cpus)
+        validate_resources(admitted_memory(), shutil.disk_usage(args.buildroot.parent).free, cpus)
         head = audit.run(["git", "-C", args.source, "rev-parse", "HEAD"]).stdout.strip()
         if head != args.expected_commit:
             raise RuntimeError(f"source HEAD {head} differs from expected {args.expected_commit}")
@@ -647,7 +675,7 @@ def main():
                                                repository_metadata=metadata)
         if args.certify_fingerprint:
             configuration.update(trial_source_identity(args.source, args.certify_fingerprint))
-        plan = resource_plan(mem_available(), shutil.disk_usage(args.buildroot.parent).free,
+        plan = resource_plan(admitted_memory(), shutil.disk_usage(args.buildroot.parent).free,
                              cpus, configuration, certify_fingerprint=args.certify_fingerprint)
         audit.json("resource-plan.json", plan)
         audit.log('CAPACITY ADMISSION '+plan['admission']+'; 18 GiB cap, 4/4/1, debuginfo -j4')
@@ -668,7 +696,7 @@ def main():
                                                repository_metadata=metadata)
         if args.certify_fingerprint:
             configuration.update(trial_source_identity(args.source, args.certify_fingerprint))
-        plan = resource_plan(mem_available(), shutil.disk_usage(args.buildroot.parent).free,
+        plan = resource_plan(admitted_memory(), shutil.disk_usage(args.buildroot.parent).free,
                              cpus, configuration, certify_fingerprint=args.certify_fingerprint)
         audit.json("resource-plan.json", plan)
         patched = changed_concurrency(current, plan)
