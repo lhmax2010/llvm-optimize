@@ -3,7 +3,9 @@
 日期：2026-09-29。本报告记录实际行为，不给出采用哪一种方案的建议。
 docs/25–32 保留原样；本轮不续做 docs/32 的 v2 完整构建。
 
-**阶段状态（2026-09-29 20:34 +08:00）：实验一、实验二宿主部分、实验三调查已完成；Tizen bfd 包按预期因归档格式失败。Tizen lld 的 A 链接成功，B 仍在6 GiB cap下链接，尚未进入 `%check`。本次发布是中间记录，不是完整任务验收结束；继续同一次运行，不重试、不调整cap。**
+**本轮收尾状态：strip、宿主消费者和固定快照调查完成；Tizen bfd 的 A 链接因 bitcode 格式失败。Tizen lld 的 A 链接成功，另行运行后输出与根内 opt 一致；B 在6 GiB下发生持续内存回收/I/O抖动，代理在保存现场后诊断性中止，完整包的 `%check` 未执行。B 的兼容性与最终完成耗时仍 UNKNOWN，不是 OOM，也不是已证实的 lld 格式不兼容；没有重试或提高cap。**
+
+中间记录已于提交 `4d80d949d58b4a17baa3a8bc503f8a1cc8e22765` 推送；本版本补齐两次尝试的最终状态、运行检查与回收证据，不把中止项目记成通过。
 
 ## 0. 范围、身份与原始证据
 
@@ -174,13 +176,40 @@ A 失败后按 `set -e` 停止，B 链接和 `%check` 均未执行。没有重�
 峰值恰到 cap，安装归档时以文件缓存为主，不等于 bfd 自身用了6 GiB，也不能当无约束自然峰值；bfd 的RSS以上述wait4数值为准。
 采样器/日志线程均回收（`E/tizen-bfd/outcome.json` 两项 true）。完整采样、scope退出前快照与原始日志同目录。
 
-### 3.2 lld 测试包
+### 3.2 lld 测试包：A 通过，B 诊断性中止
 
-此包在bfd结束后于19:25:11启动，准入MemAvailable=16188317696 B；同样6 GiB/swap0，没有并行GBS。
-后续结果在本轮完成后填入；完整原始输出持续写入 `E/tizen-lld/`。
+此包在bfd结束后于19:25:11启动，准入MemAvailable=16188317696 B（15.077 GiB）；同样6 GiB/swap0，没有并行GBS。GBS于21:34:00退出1，入口总wall=7729.408 s。两根安装的225个归档再次逐SHA核对，均等于BC集；不是安装了转换版而误测。证据 `E/tizen-summary.json`、`E/tizen-{bfd,lld}/installed-hq-archives.json`。
 
-A-lld 已退出0：wall=64.106504 s、max RSS=6012260 KiB（`build.log:536`）。B 从19:31:51开始，20:33:12后的进程检查仍存活，已运行3686 s、累计CPU34:20；当时累计读盘1762341175296 B、尚未写出结果。该时刻 OOM/OOM-kill=0，宿主30秒采样可用8.873 GiB。原始进程stat/io在 `link-progress-diagnostics.jsonl`，cgroup回收及I/O压力快照在 `resource-pressure-observation.json`。
-这组值是**进行中的下界/快照**，不是最终wall、自然内存峰值或成功验收。20:34:16全机独占复查仅有本scope的gbs/rpmbuild/ld.lld，外来构建进程0（`E/exclusive-during-long-link.json`）。
+| 链接 | exit | wall s | user / sys s | wait4 最大 RSS KiB | 产物 / 状态 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| A-lld | 0 | 64.106504 | 571.790468 / 5.806388 | 6012260 | 496362592 B，可执行；随后单独验证输出正确 |
+| B-lld | 1（driver收到子进程终止） | 7325.348061 | 318.508247 / 3700.474587 | 6101756 | **代理诊断性中止，未完成**；不是完成所需时间 |
+
+完整链接argv和wait4记录在 `E/tizen-lld/build.log:536,540`，`:538–539`原文：
+
+```text
+clang++: error: unable to execute command: Terminated
+clang++: error: linker command failed due to signal (use -v to see invocation)
+```
+
+中止依据和边界：B从19:31:51开始，21:31:34时累计read_bytes=3574943432704 B（约3.57 TB），user CPU=318.21 s、system CPU=3606.43 s；相对19:39的记录，约112分钟只增加约52 s的user CPU。该时刻RssAnon=6100812 KiB、RssFile=128 KiB，VmPeak=10730456 KiB（虚拟地址空间，不是RSS），37线程。scope反复触顶、文件页反复重新读入，支持“当前6 GiB条件下严重回收抖动”的诊断。原始/proc stat/status/io在 `link-progress-diagnostics.jsonl`，回收/压力记录在 `resource-pressure-observation.json`、`diagnostic-abort.json`。
+
+**21:33:42.993的SIGTERM由本代理发出，只针对已校验PID、启动时间、argv和cgroup的本次B链接进程568406。用户未给新的运行时限批准；这也不是运行前预注册的超时/失败门禁。** 代理因上述资源抖动作出诊断性中止，保留未完成结果，不把中止转述为用户决定、OOM、格式不兼容或“最终不能链接”。没有重试B、降低线程数或改动6 GiB上限。GBS与采样器自行完成退出收集。
+
+scope最终MemoryPeak=6442450944 B，MemoryMax=6442450944 B，MemorySwapMax=0；memory.events为max=17864441、oom=0、oom_kill=0。256个30秒样本中宿主最低MemAvailable=9411018752 B（8.765 GiB），未触发2 GiB保护线。单进程RSS和scope峰值均受此cap约束，不能声称是无约束自然峰值。进程树RSS相加会重复计算共享页，不可与cgroup物理记账混用。原始证据 `scope-after-rpm.json`、`launch.json`、`samples.jsonl`、`process-memory.jsonl`、`outcome.json`。
+
+A二进制SHA256=`30555321de66daad7ad45f6ef6f1d373b4541bd2492f9b7d1bede4adf2b24aa3`。B停止后，用同一新Tizen根在独立6 GiB/swap0 scope执行 `opt -S -O2 input.ll -o postabort-expected.ll` 和 `./a input.ll`，无编译/链接；两者exit0、362字节输出相同，SHA256=`64c048175d1c1fb90ddd869f493564b1b25bfe35f8157abbfa001e8a65218f92`。该检查只证明A运行正确，**不冒充包内完整 `%check` 通过**，B生成物的退出码37未检查。
+
+该额外运行准入16267767808 B，scope峰值108244992 B；opt/A运行wall分别11.285311/23.980570 s，是单次冷读盘环境下的功能检查，不作性能结论。最初的检查驱动因heredoc中的换行转义错误在Python解析阶段退出，opt/A均未执行；保留 `tizen-a-postabort-harness-syntax-error.log` 和 `tizen-a-postabort-scope/`。修正驱动后上述首次实际运行成功，证据 `E/check_linked_tizen_a.py`、`tizen-a-postabort.json/.log`、`tizen-a-runtime-scope/`。没有新增GBS build次数。
+
+### 3.3 两包资源汇总
+
+| 包 | 准入 MemAvailable B | cap / swap | scope峰值 B | 宿主采样最低 B | GBS wall s | 收尾 |
+| --- | ---: | --- | ---: | ---: | ---: | --- |
+| bfd | 16506318848 | 6 GiB / 0 | 6442450944 | 16038318080 | 396.149 | 预期格式失败；未重试 |
+| lld | 16188317696 | 6 GiB / 0 | 6442450944 | 9411018752 | 7729.408 | B诊断性中止；A单独运行通过；未重试 |
+
+两个 `outcome.json` 的 `sampler_reaped`、`log_reader_reaped` 均为true。通用wrapper错误文本里的 `cache_passed=False` 不是本次失败原因：这两个测试包不构建LLVM、不使用CMake门禁；结构化outcome的cache_passed为null。新规则满足后立即启动，旧16 GiB等待记录没有删除或按新阈值回判。
 
 ## 4. 旧版本读取实测
 
@@ -290,11 +319,11 @@ ARM 的 GNU ld 默认是根据 cfg/宏/源码推导，实际 chroot 调用未获
 | --- | --- | --- |
 | 索引 | 225档因strip失败未改写，完整索引保留 | 225档最终索引逐成员完整，docs/30 §3.1 |
 | strip日志 | BC集225次exit1、225条错误；整包退出状态取决于宏链/顺序，未完整构建HQ | 标准brp执行，GNU strip格式错误0，docs/30 §3.2 |
-| GNU ld无LTO/插件 | 宿主A失败；Tizen状态见§3 | 宿主A/B/共享库/GC与Tizen A+B PASS，docs/30 §3.4、§4 |
+| GNU ld无LTO/插件 | 宿主与Tizen A均file format not recognized | 宿主A/B/共享库/GC与Tizen A+B PASS，docs/30 §3.4、§4 |
 | GCC消费者 | g+++bfd实际失败（默认GCC插件不读取LLVM22bitcode） | 本轮同一g++生成的a.o链接转换库PASS，IR与opt一致（E/additional-controls/） |
 | lld消费者成本 | 本次A 83.13s / 6150588KiB / 496359272B | 历史A 0.87s / 299540KiB / 47378880B；非受控成本并列 |
 | GNU ld+LLVMgold | 本次A成功70.79s，输出正确 | 无插件即已成功；未额外测插件组 |
-| Tizen内部lld | 见§3当轮结果 | docs/30两程序%check通过 |
+| Tizen内部lld | A链接64.106504s/6012260KiB，单独运行IR正确；B在7325.348s被诊断性中止，完整%check未执行 | docs/30两程序%check通过 |
 | 版本错位 | LLD18读取LLVM22 BinaryFormat报Unknown attribute kind | 同一LLD18读取转换版BinaryFormat成功（-r/whole-archive正对照），不外推全部归档/API兼容 |
 | 当前固定快照真实受影响数 | 找到2直接BR包/5组合，均走共享LLVM；未证实受影响包 | 未对真实包做替换重构；作用边界同左 |
 | 225档未压缩总字节 | 5482378620（IR调试信息留存） | 520479520（转换后标准strip）；不能把差额全部归为bitcode格式本身 |
@@ -302,10 +331,13 @@ ARM 的 GNU ld 默认是根据 cfg/宏/源码推导，实际 chroot 调用未获
 
 ## 7. UNKNOWN 与实验边界
 
+- Tizen B-lld在本次6 GiB预算下最终能否完成、总耗时和生成物正确性：诊断性中止导致未取得结果；不补造成功/失败结论，不把当前观测外推成所有lld消费者的下界。
+
 - 真实 HQ LLVM 完整构建是否结束成功：本任务不构建LLVM，只复现strip和模拟消费者载体；需要实际HQ spec全日志和最终文件顺序。
 - ARM 根内 driver 实际调用：本机 binfmt/chroot 的 su 不能执行，保留失败；没有更改宿主注册/sysctl/capability。需要可运行的ARM环境或worker exec trace。
 - bcc 最终 ld exec、四个 .NET 参照包最终链接argv：公开日志不完整；已读spec/scripts并指出条件，没有按惯例填值。需要 CMake link.txt/verbose日志/trace。
 - 覆盖范围只包含这两个固定公开快照。新增私有包、其他快照、未显式声明BuildRequires而依赖Support间接带入的消费者、`llvm-config --link-static` 的第三方应用仍需自己的依赖/链接证据。
+- 225档包含 `libarcher_static.a`，其同时归属 `llvm-static-devel` 与 `libomp-devel`（docs/26 §2.2–2.3、docs/30 §3.1）。本轮按要求只替换模拟static-devel，其他21 RPM保持docs/30原件；没有调查所有libomp-devel消费者，也没有验证两个不同内容的同路径包同时安装。不能将此模拟载体扩称完整HQ包集或全平台零影响证明。
 - 性能数字为单次功能实验和docs/30历史成本，不是校准后的性能收益，也不是Chromium/全平台收益。
 
 ## 附录：命令、原始输出与检查
@@ -324,7 +356,7 @@ ARM 的 GNU ld 默认是根据 cfg/宏/源码推导，实际 chroot 调用未获
 | 网络/源包 | E/fetch.py、fetch_consumer_logs.py、extract_build_scripts.py、prepare_effective_sources.py | downloads/**及request.json、sources/、dependency-scan-summary.json |
 | 默认工具链查询 | E/query_defaults.py，stdin和argv均另存JSON | 三架构default-query.log、platform-defaults.json、rpm-macro-evidence/ |
 
-网络索引清单见 `E/download-index.json`；下面保留关键下载身份。最终测试状态收尾时补齐。
+网络索引清单见 `E/download-index.json`；下面保留关键下载身份。两个测试包最终状态见§3。
 
 ### 下载身份
 
@@ -419,3 +451,28 @@ ARM 的 GNU ld 默认是根据 cfg/宏/源码推导，实际 chroot 调用未获
 | 19:04:52 | 16266723328 | 15.149567 |
 | 19:09:52 | 16206520320 | 15.093498 |
 | 19:14:52 | 16781361152 | 15.628860 |
+
+
+### 其他阶段容量与收尾核对
+
+下表是新测试包政策发布前的离线阶段，按§0既有计算选取cap；不是对测试包6 GiB政策的放宽。MemoryPeak含页缓存，不能替代单进程RSS。
+
+| 离线阶段 | cap GiB | scope峰值 B | wall s | OOM / OOM-kill |
+| --- | ---: | ---: | ---: | --- |
+| 三样本strip | 7 | 395640832 | 4.318 | 0 / 0 |
+| BC集复制/225档strip | 7 | 2927919104 | 110.300 | 0 / 0 |
+| 宿主消费者 | 6 | 6442450944 | 165.074 | 0 / 0 |
+| 旧LLVM读取 | 8 | 48496640 | 12.170 | 0 / 0 |
+| GCC/旧LLVM机器码正对照 | 7 | 580718592 | 8.184 | 0 / 0 |
+| HQ模拟RPM重打包 | 8 | 8448053248 | 778.390 | 0 / 0 |
+
+证据 `E/completed-stage-resources.json` 与各scope目录。宿主消费者触cap/max事件2421，故成本也属于受限条件；不能与docs/30作受控性能比值。
+
+收尾自检：
+
+1. 测试包准入已改为8 GiB、scope6 GiB/swap0；全部69条旧等待读数保留，两包准入和峰值见§3。完整LLVM的16/18门禁未改。
+2. 两个测试包各一次、串行；0次真实消费者包构建（已定位的直接BR消费者没有满足“实际静态链接且HQ不能链接”的触发条件）；0次LLVM/Chromium/BOLT构建或运行。
+3. A的Tizen链接/运行通过，B未完成，完整lld包%check未执行；诊断性中止由代理决定、无用户新增时限批准，已明确披露。
+4. W/llvm/spec、gbs配置和docs/25–32的受保护SHA与开场相同，W/llvm原有diff不变；未读写隔离旧混合根。结束核对 `E/final-integrity.json`。
+5. 所有采样器/日志收集已回收，无遗留gbs/rpmbuild/ninja/lld/llvm-bolt；锁持有至实验与收尾核查结束，释放记录 `E/lock-released.json`。
+6. 未推Gerrit；只将本报告、STATUS和两个只读调查脚本提交GitHub。原始输出与临时测试包保留在E，不上传。

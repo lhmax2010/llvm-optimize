@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-09-29。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-历史状态核对到 `4adbdfb`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，混合构建见 [docs/22](22_hybrid_link_trial.md)，
+历史状态核对到 `4d80d94`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，混合构建见 [docs/22](22_hybrid_link_trial.md)，
 归档根因与前次失败记录见 [docs/23](23_archive_fix_and_profile_rebind.md)；
 旧混合根核查停止记录见 [docs/24](24_archive_fix_verification.md)，该根已隔离，不再读写。
 docs/25保留前次停止记录；用户已更正旧构建图门禁，改用docs/13的22 RPM作唯一基线。
@@ -9,7 +9,7 @@ docs/26 的 libarcher 范围停止已由用户新方案解除：全部 bitcode �
 docs/27 旧转换产物作废；docs/28–29 的后端选项、链接 AS 诊断与离线门禁保留历史结论。历史完成 [docs/30](30_archive_fix_full_build.md)：移除构建根缺失的 GNU time 依赖，五归档逐成员回归 PASS；一次完整构建成功，22 RPM、225 开发归档、45 compiler-rt、全部宿主消费者和 Tizen bfd/lld 两次测试包验收 PASS。补丁仅限 x86_64，待提交评审；没有推 Gerrit。
 上一轮完成 [docs/31](31_archive_fix_submission.md)：从 LLVM 干净 HEAD 生成单提交 format-patch，Source 与 docs/30 同字节，提交 spec 与实测输入仅差 6/6/2 对 4/4/1；补丁与 Source 已置 patches/archive-index-fix/ 供评审，没有推 Gerrit。
 上一轮 [docs/32](32_archive_fix_v2.md)：v2 Source/spec 与测试已修订，3853条白名单、类型元数据普查、五档第一遍回归通过；运行期间出现另一会话的 Ninja，10:52中止独占实验。确定性及600s复验未完成，完整构建未启动，认证 INCOMPLETE；未覆盖docs/31的v1补丁。
-本轮 [docs/33](33_llvm_strip_alternative.md) **运行中（2026-09-29 20:34 +08:00中间发布）**：strip、宿主消费者与快照调查完成；小测试包采用用户新定8 GiB准入/6 GiB cap。bfd因bitcode格式失败；lld的A链接成功、B仍链接中、%check未执行。继续同一次运行，不把中间发布当成完整验收结束。
+本轮 [docs/33](33_llvm_strip_alternative.md) 收尾：225档llvm-strip均失败且不改文件，宿主无插件GNU ld失败、lld22/LLVMgold22的A通过；公开快照直接BR两包实际走共享LLVM。按新8 GiB准入/6 GiB cap串行执行两个Tizen测试包：bfd格式失败；lld A链接及独立运行通过，B在7325.348s因严重内存回收/I/O抖动由代理诊断性中止，无OOM，整包%check未执行。B兼容性仍UNKNOWN，不将中止记成用户预注册门禁或本征链接失败；没有重试/加cap。
 docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预注册文件保持原样。
 以下 `temp/` 均相对工作区 `/home/linhao/Toolchain/development/llvm-optimize`，仅保存在本机，不在 GitHub。
 
@@ -83,6 +83,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-09-27 | `2267ab4` | docs/30、STATUS、Source/认证指纹/内存等待及测试 | 环境预检修正 GNU time 依赖，五归档回归与45测试PASS；一次完整构建22 RPM，225开发/45运行库、其他文件零差异、七消费者及Tizen bfd/lld两个A+B包内验收全PASS。 |
 | 2026-09-28 | `81ca23c` | docs/31、STATUS、patches/archive-index-fix/ 下补丁与 Source | 干净 f111162e 上最终 format-patch apply --check PASS，完整 tree 一致；Source SHA2476c5ef…，spec 与docs/30仅三处并发差异，无构建/无Gerrit推送。 |
 | 2026-09-29 | `4adbdfb` | docs/32、STATUS、候选Source/测试及构建指纹 | 68测试PASS；3853命令分类、类型普查与五档第一遍同SHA；外部Ninja破坏独占后中止，确定性/600s复验未完，无完整构建，v2未发布为可提交format-patch。 |
+| 2026-09-29 | `4d80d94` | docs/33、STATUS、probe_hq_llvm_strip.py、inventory_llvm_source_consumers.py | 中间发布strip/宿主/快照调查与新8/6内存规则；当时Tizen B-lld仍运行，未冒称完整验收。 |
+| 2026-09-29 | 本提交 | docs/33、STATUS | 两包串行各一次，bfd格式失败；lld A链接/独立运行正确，B在6GiB下持续抖动后诊断性中止、无OOM/%check未执行；完整记录等待读数、峰值、边界与回收，无方案选择结论。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -157,6 +159,9 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 完整索引BC的A：clang+bfd无插件与g+++bfd失败；lld22和bfd+LLVMgold22均成功且IR与opt一致。 | docs/33 §2；E33/host-consumers/result.json | 硬证据（正确性）；链接耗时/RSS是受限单次诊断，不是性能认证 |
 | LLD18读LLVM22 BinaryFormat报Unknown attribute kind；同工具读取转换后的机器码BinaryFormat成功。g+++bfd链接转换库成功，A输出正确。 | docs/33 §2/§4；E33/old-llvm/、additional-controls/ | 硬证据；版本结论限该样本 |
 | 固定Base/Unified源元数据361/1061条：static-devel直接BR只有bcc-tools、bpftrace；bcc三架构与bpftrace两ARM实际选择共享LLVM/clang，不能把BR名单等同静态库受影响名单。 | docs/33 §5；E33/dependency-scan-summary.json、consumer-buildlog-evidence.json、sources/ | 硬证据（限定公开固定快照）；未完整跟踪最终ld exec的项明确UNKNOWN |
+| Tizen模拟HQ RPM：225归档身份核对；bfd A报file format not recognized；lld A链接64.106504s/6012260KiB，单独运行输出与同根opt逐字节相同。 | docs/33 §3；E33/tizen-summary.json、tizen-a-postabort.json | 硬证据（限定A）；包内完整%check未执行 |
+| B-lld在6GiB下7325.348s后由代理诊断性中止，RSS峰6101756KiB；scopepeak=6GiB、oom/oom_kill=0，宿主最低8.765GiB。不能解释为本征不兼容或成功耗时；用户未新增时限批准。 | docs/33 §3.2；E33/tizen-lld/diagnostic-abort.json、build.log、scope-after-rpm.json | 诊断；B最终链接/运行结果UNKNOWN |
+| 完整LLVM16GiB准入/18GiBcap未改；本轮两小包按8GiB/6GiB/swap0串行，全部69旧等待读数保留。保护资产SHA相同，采样/日志线程已回收、锁已释放。 | docs/33 §0、§3、附录；E33/final-integrity.json、lock-released.json | 硬证据 |
 
 ## 4. 人工裁决前提
 
@@ -217,6 +222,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 待发货/其他流水线验收 | 混合/OBS/其他架构的静态库与后处理 | docs/30已经闭合工作区全静态x86_64新RPM的机器码/索引、运行库、后处理、文件差异与Tizen消费者；不能直接替代未来混合配方、OBS输出或ARM/AArch64。旧改宏方案作废，后续保持原brp并按各自输入重新认证。 | docs/30 §3–§5；docs/21 §4；docs/28 §5 |
 | 待需求/实验 | BOLT clang 源码级 debuginfo | 首版 stripped-evaluation 不能假配旧 DWARF；如生产要求完整崩溃分析，须另测 update-debug 的容量/时间、最终符号化与 debuglink/build-id。当前成本 UNKNOWN。 | docs/21 §4.3 |
 | 待服务器容量评估 | PGO、其他工具 BOLT 与生产新输入 profile | 取得worker实际内存/并发/cgroup后重估PGO；现v2不自动认证混合输入，source/spec/patch/MLGO改变触发图与profile重认证；不擅自新建profile或重写。 | docs/21 §3、§8 |
+| 待裁决/补证据 | HQ方案的Tizen B-lld完整运行与实际平台覆盖 | 本轮6GiB约122分钟链接未完成、代理诊断性中止；不擅自提高cap/重试。A已通过，不替代B或完整%check。公开快照源primary只覆盖显式直接依赖；两个直接BR包实际共享，未找到满足真实包失败对照触发条件的对象，未构建真实消费者包。 | docs/33 §3、§5、§7 |
 | 暂缓/待恢复条件与裁决 | v2离线补齐、6/6/2新完整构建与全验收 | docs/32独占中途失效；另一工作区Ninja PID447427，未结束他人进程。确定性第二遍、修正后600s实跑未完成；当前认证INCOMPLETE拒绝启动。v1 format-patch SHA0c40c91c…与Source2476c5ef…保持原样；新候选Source在tools和S，不能混称已验证补丁。 | docs/32 §0、§2、§4–§5 |
 | 待用户裁决 | 两条验收前提不成立 | 追加-fvisibility=hidden的IR探针字节/符号/可见性均不变，建议用真实删除强符号作为负例；独立buildroot的-bi重新安装bitcode，建议安装转换后直接重跑Source验证SKIP。两项已询问，未收到裁决，不当成批准。 | docs/32 §3 |
 | 待其他架构输入 | ARM/AArch64 static-devel与转换器兼容性、耗时 | 两现有根与cache均无static-devel；accel clang实测22.1.8并有ARM/AArch64目标，不等于实际IR读取已验证。需对应归档及真实调用路由，不能套用x86 O3或耗时。 | docs/27 §5；docs/28 §5（工作区ARM/AArch64分支均有ThinLTO，需各自转换认证） |
