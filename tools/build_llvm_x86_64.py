@@ -112,6 +112,9 @@ def resource_plan(available, free_disk, cpus, configuration, profile=None, *, ce
         if certify_fingerprint not in profiles or profile is not None:
             raise RuntimeError('only explicitly pinned trial certifications are allowed')
         profile = json.loads(profiles[certify_fingerprint].read_text())
+        if (certify_fingerprint == 'archive-fix-trial' and
+                profile.get('evidence', {}).get('offline_gate_status') != 'PASS'):
+            raise RuntimeError('archive-fix-trial offline gates are incomplete; full build is not admitted')
     else:
         profile = profile or json.loads(BASELINE_PROFILE.read_text())
     validate_resources(available, free_disk, cpus)
@@ -121,11 +124,11 @@ def resource_plan(available, free_disk, cpus, configuration, profile=None, *, ce
     if differences:
         raise RuntimeError('capacity evidence does not cover this configuration: '+', '.join(differences)+
                            '; PGO/instrumentation and other unmeasured variants remain refused')
-    # These phases succeeded under this cap. Their independent peaks are not additive.
-    # Admission avoids an unsupported rebuild; the cgroup still protects the host if it fails.
+    # Baseline phases succeeded under this cap; explicit trials remain unproven.
+    # Peaks are not additive. Trial admission binds exact inputs; the cap protects the host.
     return dict(available_bytes=available, disk_free_bytes=free_disk, nproc=cpus,
-                memory_max_gib=MAX_BUILD_MEMORY_GIB, gbs_threads=1, ninja_jobs=4,
-                compile_jobs=4, link_jobs=1, debuginfo_jobs=4,
+                memory_max_gib=MAX_BUILD_MEMORY_GIB,
+                **{key: expected[key] for key in ("gbs_threads", "ninja_jobs", "compile_jobs", "link_jobs", "debuginfo_jobs")},
                 admission=('CERTIFICATION_'+certify_fingerprint.upper().replace('-', '_'))
                           if certify_fingerprint else 'MEASURED_BASELINE',
                 certify_fingerprint=certify_fingerprint, configuration=configuration,
@@ -160,7 +163,7 @@ def archive_trial_source_identity(source):
 
 def archive_trial_root(root, session):
     """The sole allowed existing root contains only this session's live lock."""
-    if root.resolve() != (WORKSPACE/'temp/gbs-root-x86_64-archivefix').resolve():
+    if root.resolve() != (WORKSPACE/'temp/gbs-root-x86_64-archivefix-v2').resolve():
         raise RuntimeError('archive trial requires the registered fresh buildroot')
     lock = root/'.llvm-optimize-exclusive.lock'
     if not session or not root.is_dir() or set(root.iterdir()) != {lock}:
@@ -670,7 +673,7 @@ def main():
         chosen = repositories(audit, args.config)
         metadata = {row['name']: hashlib.sha256((audit.directory/(row['name']+'.repomd.xml')).read_bytes()).hexdigest()
                     for row in json.loads((audit.directory/'repositories.json').read_text())}
-        proposed = changed_concurrency(current, dict(ninja_jobs=4, compile_jobs=4, link_jobs=1))
+        proposed = current if args.certify_fingerprint else changed_concurrency(current, dict(ninja_jobs=4, compile_jobs=4, link_jobs=1))
         configuration = configuration_identity(head, proposed, args.config.read_bytes(), chosen.read_bytes(),
                                                repository_metadata=metadata)
         if args.certify_fingerprint:
@@ -678,7 +681,7 @@ def main():
         plan = resource_plan(admitted_memory(), shutil.disk_usage(args.buildroot.parent).free,
                              cpus, configuration, certify_fingerprint=args.certify_fingerprint)
         audit.json("resource-plan.json", plan)
-        audit.log('CAPACITY ADMISSION '+plan['admission']+'; 18 GiB cap, 4/4/1, debuginfo -j4')
+        audit.log('CAPACITY ADMISSION '+plan['admission']+f"; 18 GiB cap, {plan['ninja_jobs']}/{plan['compile_jobs']}/{plan['link_jobs']}, debuginfo -j{plan['debuginfo_jobs']}")
         probe = audit.run(["systemd-run", "--user", "--scope", "-p", "MemoryMax=1G", "-p",
                            "MemorySwapMax=0", "/bin/true"], check=False)
         mechanism = "systemd" if probe.returncode == 0 else "prlimit"
@@ -691,7 +694,7 @@ def main():
             return 0
         # Re-check resource thresholds immediately before mutation and launch.
         current = (args.source / SPEC).read_text()
-        proposed = changed_concurrency(current, dict(ninja_jobs=4, compile_jobs=4, link_jobs=1))
+        proposed = current if args.certify_fingerprint else changed_concurrency(current, dict(ninja_jobs=4, compile_jobs=4, link_jobs=1))
         configuration = configuration_identity(head, proposed, args.config.read_bytes(), chosen.read_bytes(),
                                                repository_metadata=metadata)
         if args.certify_fingerprint:

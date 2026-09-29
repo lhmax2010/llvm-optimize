@@ -3,15 +3,15 @@
   "profile": "archive-fix-trial",
   "configuration": {
     "source_head": "f111162e94aa48ed367c9d2c039456c70e7160ae",
-    "normalized_spec_sha256": "417394ee694a2c8070357f914d30dda77b529114be74d6f2a00fe16a15577db9",
+    "normalized_spec_sha256": "6cf4576e218956623d6348b2b1ec2923c8d45144cc5e2205b0d12006892f530c",
     "gbs_config_sha256": "a3fea7732532db26c11b88407464e0274a6d8b4277623364fe16b6980181b03f",
     "buildconf_sha256": "1e7610b6a922d27b80eb59c1c78bdf716f7de2e8e24700e0ee7c62522739ed52",
     "arch": "x86_64",
     "gbs_threads": 1,
     "debuginfo_jobs": 4,
-    "ninja_jobs": 4,
-    "compile_jobs": 4,
-    "link_jobs": 1,
+    "ninja_jobs": 6,
+    "compile_jobs": 6,
+    "link_jobs": 2,
     "repository_metadata": {
       "repo.base-standard": "68b93454b4800a462e228260b11926a63ad8bba0589cc3f1a7dc4f0525bc2a74",
       "repo.unified-standard": "e7af3f222f0ce958678d964589f2d156e8b47ba463ac0b3b0b96c74663382200"
@@ -19,11 +19,11 @@
     "trial": "archive-fix-trial",
     "source_branch": "archive-fix-trial",
     "source_files": {
-      "packaging/llvm.spec": "83dc994ab6d7ffe65cdf2bf38dbe027599775ffa71c6614219123856f8be1d2d",
-      "packaging/llvm-static-archives-native.py": "2476c5efa061499d7963e0f0976f0c9c86944b688f5bcc48ea40911574af399e"
+      "packaging/llvm.spec": "6a91a0bf3d8d2044473662b65ed3d32d4696a697ccd52200d983ce4334aeafdf",
+      "packaging/llvm-static-archives-native.py": "6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557"
     },
-    "source_diff_sha256": "17574bea7e2f91eadb5b0f72a29b65865a6f2d3dad8f3565c700371c797d6274",
-    "packaging_patch_sha256": "4ca1dc3e51ee7eeb8b9c526d50c4d5345ef967b4537ddbc1107c86427c099413"
+    "source_diff_sha256": "751a629228ed49fb013d95d8d8a451dc341e841c142db67198c7624d36f1ccdb",
+    "packaging_patch_sha256": "751a629228ed49fb013d95d8d8a451dc341e841c142db67198c7624d36f1ccdb"
   },
   "cmake_parameters": {
     "BUILD_SHARED_LIBS": "OFF",
@@ -102,8 +102,8 @@
     "LLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.h",
     "LLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.o",
     "LLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.o",
-    "LLVM_PARALLEL_COMPILE_JOBS": "4",
-    "LLVM_PARALLEL_LINK_JOBS": "1",
+    "LLVM_PARALLEL_COMPILE_JOBS": "6",
+    "LLVM_PARALLEL_LINK_JOBS": "2",
     "LLVM_PROFDATA_FILE": "",
     "LLVM_TARGETS_TO_BUILD": "X86;ARM;AArch64;BPF",
     "LLVM_TARGET_TRIPLE_ENV": "x86_64-tizen-linux-gnu",
@@ -113,11 +113,13 @@
     "TIZEN": "1"
   },
   "evidence": {
-    "authorization": "User docs/30 task: remove unmet Source dependencies, five-archive equivalence, memory wait up to six hours, one full build",
-    "baseline_compile_configuration": "docs/13; unchanged CMake parameters, 18 GiB, 4/4/1, debuginfo -j4",
-    "offline_evidence": "temp/static-native-conversion-v3-20260924/consumers/result.json",
-    "patch_path": "/home/linhao/Toolchain/development/llvm-optimize/temp/archive-fix-full-build-20260927/archive-native-conversion.patch",
-    "stop_rule": "one full build; any failure stops without changing patch or retry",
-    "environment_preflight": "temp/archive-fix-full-build-20260927"
+    "authorization": "User docs/32 task: v2 reviewed native archive policy; one x86_64 6/6/2 full build after offline gates, no automatic fallback",
+    "baseline_compile_configuration": "docs/13 compiler flags and CMake parameters, except explicitly authorized first 6/6/2 trial; 18 GiB, swap0, debuginfo -j4",
+    "offline_evidence": "temp/archive-fix-v2-20260929",
+    "patch_path": "/home/linhao/Toolchain/development/llvm-optimize/temp/archive-fix-v2-20260929/archive-native-conversion-v2.diff",
+    "stop_rule": "one full build; failure stops and reports; memory-related 6/6/2 failure needs a new user decision",
+    "environment_preflight": "docs/30 plus docs/32 explicit buildsubdir and util-linux checks",
+    "offline_gate_status": "INCOMPLETE",
+    "offline_gate_reason": "Exclusive execution lost during offline verification; determinism and corrected timeout run interrupted; no full build has started"
   }
 }
