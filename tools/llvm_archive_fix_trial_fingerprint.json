@@ -3,7 +3,7 @@
   "profile": "archive-fix-trial",
   "configuration": {
     "source_head": "f111162e94aa48ed367c9d2c039456c70e7160ae",
-    "normalized_spec_sha256": "6cf4576e218956623d6348b2b1ec2923c8d45144cc5e2205b0d12006892f530c",
+    "normalized_spec_sha256": "9a3e4606980b81d4728ae381cd9e3f560142fa7a98cc2d7578d16f4b16bff31a",
     "gbs_config_sha256": "a3fea7732532db26c11b88407464e0274a6d8b4277623364fe16b6980181b03f",
     "buildconf_sha256": "1e7610b6a922d27b80eb59c1c78bdf716f7de2e8e24700e0ee7c62522739ed52",
     "arch": "x86_64",
@@ -19,11 +19,11 @@
     "trial": "archive-fix-trial",
     "source_branch": "archive-fix-trial",
     "source_files": {
-      "packaging/llvm.spec": "6a91a0bf3d8d2044473662b65ed3d32d4696a697ccd52200d983ce4334aeafdf",
+      "packaging/llvm.spec": "a9bbb24c142382c000a13a3fe70549c44e7ab33969a1a75337f0da675afd3969",
       "packaging/llvm-static-archives-native.py": "6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557"
     },
-    "source_diff_sha256": "751a629228ed49fb013d95d8d8a451dc341e841c142db67198c7624d36f1ccdb",
-    "packaging_patch_sha256": "751a629228ed49fb013d95d8d8a451dc341e841c142db67198c7624d36f1ccdb"
+    "source_diff_sha256": "6bf352d1e746fe9954ccd958be919de54c9546d5436fe5a05a3eacb8eb40be34",
+    "packaging_patch_sha256": "6bf352d1e746fe9954ccd958be919de54c9546d5436fe5a05a3eacb8eb40be34"
   },
   "cmake_parameters": {
     "BUILD_SHARED_LIBS": "OFF",
@@ -113,13 +113,18 @@
     "TIZEN": "1"
   },
   "evidence": {
-    "authorization": "User docs/32 task: v2 reviewed native archive policy; one x86_64 6/6/2 full build after offline gates, no automatic fallback",
+    "authorization": "User docs/34 unattended task: v2 plus x86_64 __strip=llvm-strip, one 6/6/2 build only after all offline gates; project-scoped exclusivity",
     "baseline_compile_configuration": "docs/13 compiler flags and CMake parameters, except explicitly authorized first 6/6/2 trial; 18 GiB, swap0, debuginfo -j4",
-    "offline_evidence": "temp/archive-fix-v2-20260929",
-    "patch_path": "/home/linhao/Toolchain/development/llvm-optimize/temp/archive-fix-v2-20260929/archive-native-conversion-v2.diff",
-    "stop_rule": "one full build; failure stops and reports; memory-related 6/6/2 failure needs a new user decision",
+    "offline_evidence": "temp/archive-fix-v2-build-20260929",
+    "patch_path": "/home/linhao/Toolchain/development/llvm-optimize/temp/archive-fix-v2-build-20260929/archive-native-conversion-v2-with-hq.diff",
+    "stop_rule": "One full build; any failure stops without retry; 6/6/2 memory failure is reported, never downgraded automatically",
     "environment_preflight": "docs/30 plus docs/32 explicit buildsubdir and util-linux checks",
-    "offline_gate_status": "INCOMPLETE",
-    "offline_gate_reason": "Exclusive execution lost during offline verification; determinism and corrected timeout run interrupted; no full build has started"
+    "offline_gate_status": "PASS",
+    "offline_gate_reason": "All current llvm-strip overlay, final Source determinism, actual strong-symbol deletion and 600 second timeout gates passed; inherited six negatives and 3853-command/type census retain exact final Source binding",
+    "offline_gate_manifest": "/home/linhao/Toolchain/development/llvm-optimize/temp/archive-fix-v2-build-20260929/offline-gates.json",
+    "offline_gate_manifest_sha256": "342c770d48aabf260522318b59b128cb91c27979bc6d30068d667d6d9d3ab1ae",
+    "execution_status": "PAUSED_BY_USER on 2026-09-30 after 7530/7634 tasks; no RPM acceptance or capacity PASS",
+    "resume_policy": "Wait for explicit user resume; preserve existing BUILD/cache and validate an incremental continuation without destructive prep; no automatic restart or concurrency/cap change",
+    "pause_checkpoint": "temp/archive-fix-v2-build-20260929/pause-20260930-1919"
   }
 }
