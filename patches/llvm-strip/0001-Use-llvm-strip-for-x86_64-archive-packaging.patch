@@ -1,0 +1,52 @@
+From f86dc69a7461a9708c2280fe49961c9730dd9beb Mon Sep 17 00:00:00 2001
+From: FatTank <hao.lin@samsung.com>
+Date: Fri, 9 Oct 2026 21:30:51 +0800
+Subject: [PATCH] Use llvm-strip for x86_64 archive packaging
+
+The platform now builds with LLVM. Use llvm-strip for the LLVM package's
+x86_64 static archive post-processing as well.
+
+Override __strip only for x86_64. With the current debuginfo-enabled
+RPM macro chain, brp-strip-static-archive is its only active consumer;
+find-debuginfo continues to use eu-strip. Keep archive conversion and
+all other packaging steps unchanged.
+
+llvm-strip changes compiler-rt member ELF structure, including string
+tables, section numbering and some section entry sizes. All allocated
+section types, flags, sizes and contents remain identical to the
+GNU-stripped baseline, as do archive symbol-to-member mappings.
+
+Validation: one incremental RPM rebuild, all 225 development archives
+native with complete indexes and no DWARF, and all 45 compiler-rt
+archives checked member by member. All 270 llvm-strip invocations exit
+successfully. Non-static-library files, including clang, lld and
+llvm-ar, are byte-identical to the prior package contents.
+
+Host LLVM/lld API consumers and Tizen consumer packages pass with both
+plugin-free GNU ld without LTO and lld. Compiler-rt tests pass on both
+the host and Tizen with both linkers: ASan detects heap overflow and
+accepts a valid program, UBSan diagnoses signed overflow, instrumented
+profiles merge successfully, and 128-bit division uses the builtins
+runtime and returns the expected result.
+
+Limit this change to x86_64. Follow up on ARM after static archive
+conversion is available and validated there.
+
+Change-Id: Iac085555112855d60cc7591931e91466691db6b2
+Signed-off-by: FatTank <hao.lin@samsung.com>
+---
+ packaging/llvm.spec | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 8240282641a3..a7c504953c16 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -1,3 +1,7 @@
++%ifarch x86_64
++# With debuginfo, __strip handles static archives; find-debuginfo uses eu-strip.
++%define __strip %{_bindir}/llvm-strip
++%endif
+ %define keepstatic 1
+ 
+ # MLGO AOT support for LLVM MLGO (Ahead-of-Time compilation)

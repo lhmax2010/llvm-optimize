@@ -15,7 +15,9 @@ docs/27 旧转换产物作废；docs/28–29 的后端选项、链接 AS 诊断�
 
 **2026-10-09 docs/37完成：在docs/35同一x86_64 buildconfig/宏环境下，只读展开cb679968与f111162e。公共C/CXX/ASM flags只多一个原已存在的诊断token，编译器别名和显式OFF逐项核查；225档/3,853条历史命令替换新公共flags后，现有classify_options全部PASS、未分类0、末项策略不变。结论为认证策略覆盖；不是新配方完整构建/%install认证。Source、spec、补丁与认证指纹均未改。证据：docs/37、temp/target-recipe-policy-check-20261009。**
 
-**2026-10-09 docs/38停止：22个docs/35 RPM与N的17,689路径全部匹配；当前debuginfo宏链只有静态归档后处理实际使用%__strip。/home可用50.800056GiB，计入全部允许cache回收的乐观上界仍仅50.816586GiB；允许清理的独立安装树在另一个SSD，无法补齐60GiB门槛。未删除文件、未改spec、构建/消费者/新提交补丁均0；锁已释放。证据：temp/llvm-strip-x86_64-20261009。用户确认356627 PS2已上传；本轮没有向Gerrit推送。**
+**2026-10-09 docs/38首次停止（834f9aa，历史记录）：22个docs/35 RPM与N的17,689路径全部匹配；当前debuginfo宏链只有静态归档后处理实际使用%__strip。/home可用50.800056GiB，计入全部允许cache回收的乐观上界仍仅50.816586GiB；允许清理的独立安装树在另一个SSD，无法补齐60GiB门槛。未删除文件、未改spec、构建/消费者/新提交补丁均0；锁已释放。证据：temp/llvm-strip-x86_64-20261009。用户确认356627 PS2已上传；本轮没有向Gerrit推送。**
+
+**2026-10-09 docs/38续接完成：按新增授权先rename保全docs/35的22 RPM+SRPM，只清理第一类旧解包载荷后/home可用97.118GiB，未删第2/3类。仅加x86_64三行宏，唯一一次-ba --noprep成功（6318.155s，scope峰值17.504GiB，无OOM）；225开发归档、45 compiler-rt/1964成员的SHF_ALLOC及索引PASS，结构与docs/34逐成员同SHA；17,689路径仅270个.a不同，非静态库差异0。270次llvm-strip全部exit0，七宿主消费者及宿主/Tizen bfd/lld运行库探针全PASS；两个测试根114包仅比docs/36多compiler-rt。已无交互fetch核验356627 PS2=67619ec8bbbac7238a6cfc33a481ccfbcd12206f；独立4行补丁apply/tree PASS，patch SHA49c56182…，新Change-Id Iac085555112855d60cc7591931e91466691db6b2，待用户上传。证据：temp/llvm-strip-x86_64-20261009/continue-20261009；未推Gerrit。**
 
 docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预注册文件保持原样。
 以下 `temp/` 均相对工作区 `/home/linhao/Toolchain/development/llvm-optimize`，仅保存在本机，不在 GitHub。
@@ -23,7 +25,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-**归档修复v2的验收与提交材料已完成；用户确认已上传Gerrit 356627 patchset 2（67619ec8bbba，父cb679968），当前评审中，本轮未fetch核验。docs/35–36的RPM/消费者/幂等全部PASS，docs/37已闭合相同宏环境的参数策略覆盖。当前任务为LLVM包仅x86_64切换llvm-strip的独立change：docs/38完成对照身份与宏链核查，因原构建根所在/home空间不足60GiB而停止；没有修改试验spec或启动增量构建，运行库消费者和新补丁均未执行。设计v4/BOLT及其他架构继续暂缓。**
+**归档修复v2已在Gerrit 356627 PS2评审中，本轮fetch已核验提交/父提交。docs/38的LLVM包仅x86_64切换llvm-strip也已完成增量构建、225/45归档与非静态库门禁、七宿主消费者、宿主/Tizen sanitizer/profile/builtins和两Tizen A/B测试包。独立后续补丁已生成并通过干净父提交apply/tree核验，待用户review上传；没有自动推Gerrit。S试验spec现在是4711c7f6…且带三行llvm-strip宏，只由本轮私有精确指纹认证；原通用GNU-strip认证文件未变，不能直接用于放行该S。设计v4/BOLT及ARM/AArch64实施继续暂缓。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
 一次完整 LLVM 构建 16,011.555 s，18 GiB/swap0/4/4/1/debuginfo4，无 OOM；真实 %install 转换 225 归档、3,853 bitcode（含回写 1,054.025 s）。新 RPM 225 开发归档格式/顺序/完整索引及零调试节 PASS，45 运行库成员和索引与基线一致。
 17,689 路径仅 225 开发归档与 45 compiler-rt ar 时间戳变化，其他文件差异 0；clang/lld/ar SHA 相同。七项宿主消费者及两个独立 Tizen 根的 bfd/lld A+B %check 均 PASS。实测候选 patch SHA `4ca1dc3e…`；docs/31提交版 SHA `0c40c91c…`，W 原件、docs/25–30 均未改。
@@ -39,7 +41,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 静态 RPM 基线 | 固定快照、构建、debuginfo 续跑、工具验证、基线数据 | 已完成；历史基线缺陷保留，新x86_64 RPM修法与消费者验收见docs/30 |
 | BOLT 筛选 | 容量、插桩/profile、重写、正确性、训练/留出、中间对照、双目标 | 本机工作已结束；最终 ARM 校准 FAIL，AArch64 PASS 并完成正式轮 |
 | 静态库兼容性修复 | bitcode→机器码、保持原brp宏、GNU ld无LTO/插件消费者、完整构建及新RPM验收 | **v2新RPM/归档/非归档、独立-bi/SKIP、七宿主消费者与两Tizen包均PASS；基于cb679968的v2补丁已生成并验apply，用户确认356627 PS2已上传、评审中；本轮未重建新目标配方** |
-| LLVM包x86_64切换llvm-strip | 叠在356627之后，新增compiler-rt真实运行库消费者及包内验收 | **docs/38第零步磁盘准入STOP；对照身份/宏链已核查，新配置、构建、动态验收和提交补丁均未执行** |
+| LLVM包x86_64切换llvm-strip | 叠在356627之后，新增compiler-rt真实运行库消费者及包内验收 | **docs/38全部PASS；独立后续补丁仅4新增行，父356627 PS2已核验；待用户review上传，未推Gerrit** |
 | 集成设计与评审 | docs/21 完整 v3、混合链接拟议补丁、身份/活性脚本与协议检查 | 历史混合构建/30 TU结果保留；设计 v4 与 BOLT 实施暂缓，待归档修复完成 |
 | OBS 试包与服务器验收 | LLVM RPM → qemu-accel → 新 Base 快照 → Quickbuild | 未执行；项目/验证快照待用户提供，试包与收益验收均未完成 |
 | 后续工具/PGO | 依全平台调用占比和服务器容量决定 | 挂账；没有自动启动授权 |
@@ -99,7 +101,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-09 | `9f27fbc` | docs/35、STATUS、认证执行状态 | 授权清理后增量产出22RPM；225开发/45运行库、非归档零差异、独立-bi/SKIP与7宿主消费者PASS；Tizen bfd依赖解析FAIL、Base HTTP404，按规则停止，无重试/无v2最终补丁。 |
 | 2026-10-09 | `213041c` | docs/36、STATUS、patches/archive-index-fix/ | 107历史Base缓存RPM与原primary摘要一致；两Tizen包113环境零NEVRA差异、A/B及身份PASS；v2补丁基于刷新tizen_base cb679968，apply/tree验证PASS，无LLVM重建/无Gerrit推送。 |
 | 2026-10-09 | `25e2b18` | docs/37、STATUS | 原根rpmspec/完整宏环境只读展开；cb679968参数差异已分类，225档/3,853条派生命令全PASS、未分类0；认证策略覆盖，无构建/转换/spec/Source/补丁变更。 |
-| 2026-10-09 | 本提交（`git log -1 -- docs/38_llvm_strip_x86_64.md`） | docs/38、STATUS | 22RPM与N的17,689路径身份PASS，宏链作用范围只读核查完成；允许清理后空间上界50.816586GiB<60GiB，第零步STOP；未改spec、未构建/验收/生成llvm-strip补丁。 |
+| 2026-10-09 | `834f9aa` | docs/38、STATUS | 22RPM与N的17,689路径身份PASS，宏链作用范围只读核查完成；允许清理后空间上界50.816586GiB<60GiB，第零步STOP；未改spec、未构建/验收/生成llvm-strip补丁。 |
+| 2026-10-09 | 本提交（`git log -1 -- docs/38_llvm_strip_x86_64.md`） | docs/38、STATUS、patches/llvm-strip/ | 授权rename保全+清理后一次增量22RPM成功；225/45归档、270次strip、非静态库零差异、宿主/Tizen全部消费者PASS；叠在356627 PS2的独立4行补丁apply/tree PASS，未推Gerrit。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -229,13 +232,23 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | docs/35同一根、buildconfig和define下，target cb679968与validated f111162e的optflags相同；C/CXX/ASM flags仅新增一次已有的-Wno-unused-command-line-argument。名称不同的编译器在本根为同ELF别名，显式两项OFF同旧默认。 | docs/37 §0–§2；E37/exact-showrc.diff、*-exact-build.txt、*-cmake.json、root-showrc.stdout | 硬证据（只读参数展开）；限定本宏/工具环境 |
 | 新公共flags精确替换3853条原bitcode命令中唯一对应子序列；225档全部classify_options PASS，未分类0，末项O3/DWARF4/分段/fp-contract与原策略相同；源码/补丁没有改动。 | docs/37 §3；E37/all-target-command-tokens.jsonl、policy-result.json、final-integrity.json | 硬证据（纯文本分类）；证明参数策略覆盖，不是新配方IR/转换/完整构建PASS |
 
-本轮闭合（docs/38）；E38=`temp/llvm-strip-x86_64-20261009`：
+历史闭合（docs/38 的 `834f9aa`）；E38=`temp/llvm-strip-x86_64-20261009`：
 
 | 结论与边界 | 证据 | 强度 |
 | --- | --- | --- |
 | docs/35的22个RPM摘要/大小、N的17,689路径类型/模式/大小/SHA或链接目标均一致，额外非目录路径0。 | docs/38 §0.1/附录A；E38/rpm-identity.json、N-identity.json、N-files.json | 硬证据；仅本轮对照身份，不代替新配置产物验收 |
 | 当前LLVM spec开debuginfo的宏链中，%__strip只传给brp-strip-static-archive；find-debuginfo在当前环境走elfutils的eu-strip。 | docs/38 §1；E38/all-strip-macro-references.stdout、macro-query.stdout、macro-inputs.json | 硬证据（文件与展开）；不外推到关闭debuginfo或其他包 |
-| 允许清理的独立安装树位于另一文件系统；本根cache计入全部分配块回收仍仅50.816586GiB，低于60GiB。 | docs/38 §2；E38/resource-admission.json、cache-inventory.json、df-bytes.log | 硬证据（当前容量准入），不是构建失败或llvm-strip功能失败 |
+| 允许清理的独立安装树位于另一文件系统；本根cache计入全部分配块回收仍仅50.816586GiB，低于60GiB。 | `834f9aa` 中 docs/38 §2；E38/resource-admission.json、cache-inventory.json、df-bytes.log | 硬证据（首次历史容量准入），已由新增清理授权解除；不是构建失败或llvm-strip功能失败 |
+
+本轮闭合（docs/38）；下列未展开 JSON 路径均在 `E38/continue-20261009/`：
+
+| 结论与边界 | 证据 | 强度 |
+| --- | --- | --- |
+| 当前开启debuginfo的LLVM包中，%__strip只被静态归档后处理实际消费；find-debuginfo仍用eu-strip。本次270档llvm-strip全部exit0，原其余brp链不变。 | docs/38 §1、§3.4；E38/continue-20261009/postprocessing-result.json、rpm-exec-exit.trace | 硬证据；限当前宏链/debuginfo配置 |
+| 225开发档无bitcode/DWARF、完整索引及顺序PASS；45 compiler-rt/1964成员所有SHF_ALLOC类型/flags/大小/载荷SHA、完整索引相同，无新结构差异类别。64成员66共同节sh_entsize变化是已登记结构差异。 | docs/38 §3.1–§3.2；new-archives-result.json、runtime-archives-result.json、runtime-structure-common-sections.json | 硬证据；不要求compiler-rt全ELF字节相同 |
+| 新解包对docs/35 N共17689路径，仅270个.a不同，非静态库差异0；clang/lld/ar未变。七项宿主API消费者、宿主及Tizen bfd/lld的ASan好/坏、UBSan、profile合并、128位builtins全部PASS。 | docs/38 §3.3、§4、§5；new-vs-docs35-file-comparison.json、runtime-host/result.json、tizen-{bfd,lld}/ | 硬证据；所列功能消费者，不覆盖运行库所有功能 |
+| 18GiB增量构建峰值17.503872GiB，无OOM；bfd小包6GiB达到cap并回收但无OOM，lld峰值5697142784B。均正常完成，不能把bfd受限峰值当自然需求。 | docs/38 §2.2、§5；scope-after-rpm.json、outcome.json | 硬证据；资源观测，不作性能比较 |
+| 后续补丁父提交67619ec8bbba已fetch核验，只加x86_64宏3行+注释1行；干净父提交apply及tree相同PASS。 | docs/38 §6；patches/llvm-strip/；submission-result.json | 硬证据；待用户提交评审，未合入 |
 
 ## 4. 人工裁决前提
 
@@ -303,7 +316,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 本轮人工任务范围（docs/37）：只读核查cb679968在docs/35同一宏环境的编译参数；有差异仅调用既有分类函数。不能借此修改Source/补丁或启动构建，失败只报告。本轮分类通过，未扩大到新配方完整构建。依据：用户本次任务、docs/37 §0及§4。
 
-本轮人工决定（docs/38）：用户确认归档修复已作为356627 PS2上传（67619ec8bbba，父cb679968），仅LLVM包、仅x86_64改用llvm-strip，作为独立后续change；本轮未独立fetch核验该远端身份。compiler-rt验收改为所有SHF_ALLOC节及完整索引一致、允许已登记的非加载结构差异，并增加宿主/Tizen sanitizer、profile、builtins消费者。60GiB磁盘门槛不变；只可清理docs/35的SSD独立安装树与本根lto.cache。本轮两者不能补足原根空间，未删除/迁根/降门槛。构建与验收一旦失败即停，不改后重试；不向Gerrit推送。依据：用户本次任务、docs/38 §0–§3。
+本轮人工决定（docs/38）：仅LLVM包、仅x86_64改用llvm-strip，作为356627 PS2之后的独立change；compiler-rt门禁为全部SHF_ALLOC指定字段/载荷及完整索引一致，允许docs/34已登记结构差异，并以宿主/Tizen sanitizer、profile、builtins补功能证据。原834f9aa磁盘STOP保持历史有效。用户补充授权：先rename保全docs/35原22RPM+SRPM，再按三类顺序仅清理/home载荷，达到75GiB立即停止；保留指定资产及日志/JSON/脚本。本次只执行第一类、未删除第2/3类，原60GiB启动门槛不变。非静态库对照仍为N；补丁叠在实际fetch核验的PS2上；构建/验收失败即停不重试，不推Gerrit。依据：用户主任务与清理补充；docs/38 §0、§2–§6。
 
 ## 5. 挂账
 
@@ -323,8 +336,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 待需求/实验 | BOLT clang 源码级 debuginfo | 首版 stripped-evaluation 不能假配旧 DWARF；如生产要求完整崩溃分析，须另测 update-debug 的容量/时间、最终符号化与 debuglink/build-id。当前成本 UNKNOWN。 | docs/21 §4.3 |
 | 待服务器容量评估 | PGO、其他工具 BOLT 与生产新输入 profile | 取得worker实际内存/并发/cgroup后重估PGO；现v2不自动认证混合输入，source/spec/patch/MLGO改变触发图与profile重认证；不擅自新建profile或重写。 | docs/21 §3、§8 |
 | 待裁决/补证据 | HQ方案的Tizen B-lld完整运行与实际平台覆盖 | 本轮6GiB约122分钟链接未完成、代理诊断性中止；不擅自提高cap/重试。A已通过，不替代B或完整%check。公开快照源primary只覆盖显式直接依赖；两个直接BR包实际共享，未找到满足真实包失败对照触发条件的对象，未构建真实消费者包。 | docs/33 §3、§5、§7 |
-| 评审中/待目标流水线 | 归档修复v2与356627 PS2 | docs/35+36门禁闭合，用户确认356627 PS2已上传；本轮未fetch，不将远端身份列作代理实测。docs/37确认同宏环境参数策略覆盖；刷新后的目标配方仍需流水线正常构建，新选项须重新核查。 | 用户docs/38任务；docs/36 §3–§4；docs/37 §4 |
-| 待空间/验收 | x86_64 LLVM包切换llvm-strip的独立change | 原根/home在计入全部允许cache回收后仍差9.183414GiB；须实际满足60GiB再继续。新三行配置未应用；225/45归档、非静态库、270次strip、宿主/Tizen运行库及原消费者、基于356627 PS2的补丁均未执行；不能用旧结果代替。 | docs/38 §2–§3；E38/resource-admission.json |
+| 评审中/待目标流水线 | 归档修复v2与356627 PS2 | docs/35+36门禁闭合；docs/38已fetch核验PS2提交67619ec8bbba及父cb679968。docs/37确认同宏环境参数策略覆盖；目标配方仍需流水线正常构建，新选项须重新核查。 | docs/36 §3–§4；docs/37 §4；docs/38 §6 |
+| 待评审/用户上传 | x86_64 LLVM包切换llvm-strip的独立change | 本机要求已全PASS；补丁SHA49c56182…、新Change-Id Iac085555112855d60cc7591931e91466691db6b2，叠在356627 PS2。仅x86_64/current debuginfo宏链认证；用户review上传，目标流水线另验。 | docs/38 §3–§6；patches/llvm-strip/ |
 | 已闭合（保留记录） | 修正后的续跑验收 | 新RPM第1–4项PASS后独立buildroot真实-bi重新转换225档并验收，通过后对同树Source SKIP，225档SHA不变；这两项不再挂账。 | docs/35 §4；C/independent-archives-result.json、independent-skip-verification.json |
 | 待其他架构输入 | ARM/AArch64 static-devel与转换器兼容性、耗时 | 两现有根与cache均无static-devel；accel clang实测22.1.8并有ARM/AArch64目标，不等于实际IR读取已验证。需对应归档及真实调用路由，不能套用x86 O3或耗时。 | docs/27 §5；docs/28 §5（工作区ARM/AArch64分支均有ThinLTO，需各自转换认证） |
 | 已隔离/暂缓 | 旧混合构建根与profile适用性；设计v4 | docs/24旧根不再读写；外来docs/23与重链脚本改动在备份SHA匹配后已按新授权恢复HEAD，不再是脏工作树。设计v4及BOLT后续等归档任务完成。 | docs/24；docs/25 §0 |
@@ -334,4 +347,4 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交补丁保留；docs/25–31不改。
 当前tools/llvm_static_archives_source.py与patches/archive-index-fix/中的v2 Source同SHA6bd0546a…；提交patch已更新为ddef2221…。v1保留在Git历史及E36/v1-backup，不能混用两个版本身份。
 原宏关闭方案继续作废；转换只在x86_64安装根进行，W/llvm/spec不动；代理未推Gerrit，用户已确认上传356627 PS2。
-归档修复v2提交材料及两Tizen包验收已在docs/36完成；固定Base缓存复原解除此消费者环境的依赖阻塞，不代表远端404消失。docs/37已闭合相同环境下编译参数策略覆盖；当前归档修复评审中，待目标流水线完整验证；新llvm-strip任务在磁盘门禁停止，不自动构建新的LLVM配方或上传Gerrit。设计v4/BOLT及其他架构没有自动启动授权。
+归档修复v2提交材料及两Tizen包验收已在docs/36完成；固定Base缓存复原解除此消费者环境的依赖阻塞，不代表远端404消失。docs/37已闭合相同环境下编译参数策略覆盖；当前归档修复评审中，待目标流水线完整验证；新llvm-strip任务已在授权清理后完成增量与全部消费者，独立补丁已准备；不自动构建新的LLVM配方或上传Gerrit。设计v4/BOLT及其他架构没有自动启动授权。
