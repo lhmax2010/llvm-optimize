@@ -13,13 +13,15 @@ docs/27 旧转换产物作废；docs/28–29 的后端选项、链接 AS 诊断�
 **2026-10-09 docs/35历史收尾（9f27fbc）：授权三项清理后109.523GiB，原60GiB门槛PASS；唯一一次标准提交配置-ba --noprep成功（5381.375s，scope峰值16.408GiB，无OOM）。22新RPM：225开发归档验收PASS；45 compiler-rt的1,964成员字节一致，17,689路径非归档差异0；标准brp链通过。独立buildroot真实-bi、同树Source SKIP与七项宿主消费者全部PASS。Tizen bfd在依赖解析阶段FAIL，固定Base repomd只读查询HTTP404；未创建测试chroot，未编译/链接。按规则停止，lld测试包与v2最终补丁未执行，没有重试。证据：temp/archive-fix-v2-final-20261009/continue-20261009；scope/采样器/临时挂载/项目锁均已回收。f49a561磁盘停止历史保留。**
 **2026-10-09 docs/36完成：按新授权从docs/30两个测试根各107缓存RPM复原本地Base；107个摘要与原primary完全相符，缺失0，无需最新快照备用方案。bfd/lld各一次串行构建、A/B %check及225归档+4工具身份全部PASS；每根113包NEVRA与docs/30差异0。tizen_base无交互fetch到cb679968，基于其生成v2 format-patch并完成干净base应用及完整tree一致性核对。patch SHA ddef2221…，Source仍6bd0546a…；已替换评审目录中的v1，旧摘要/副本保留。未重建LLVM、未改W原件/配置、未推Gerrit。新目标整套配方未在本轮重建，不能混同原认证输入。**
 
+**2026-10-09 docs/37完成：在docs/35同一x86_64 buildconfig/宏环境下，只读展开cb679968与f111162e。公共C/CXX/ASM flags只多一个原已存在的诊断token，编译器别名和显式OFF逐项核查；225档/3,853条历史命令替换新公共flags后，现有classify_options全部PASS、未分类0、末项策略不变。结论为认证策略覆盖；不是新配方完整构建/%install认证。Source、spec、补丁与认证指纹均未改。证据：docs/37、temp/target-recipe-policy-check-20261009。**
+
 docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预注册文件保持原样。
 以下 `temp/` 均相对工作区 `/home/linhao/Toolchain/development/llvm-optimize`，仅保存在本机，不在 GitHub。
 
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-**归档修复v2的本轮验收与提交材料已完成，当前进入用户评审/Gerrit上传阶段。docs/35的RPM/宿主/幂等及docs/36的两Tizen包全部PASS；缓存复原解除测试环境阻塞。提交基于刷新后的tizen_base cb679968，只有归档修复两处spec插入和已验Source；新基准整套配方仍需目标流水线正常构建，未冒称本轮重建。设计v4/BOLT和其他架构继续暂缓，等待后续任务。**
+**归档修复v2的本轮验收与提交材料已完成，当前进入用户评审/Gerrit上传阶段。docs/35的RPM/宿主/幂等及docs/36的两Tizen包全部PASS；缓存复原解除测试环境阻塞。提交基于刷新后的tizen_base cb679968，只有归档修复两处spec插入和已验Source；docs/37已闭合相同宏环境下的新配方编译参数认证策略覆盖核查，新基准整套配方仍需目标流水线正常构建。设计v4/BOLT和其他架构继续暂缓，等待后续任务。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
 一次完整 LLVM 构建 16,011.555 s，18 GiB/swap0/4/4/1/debuginfo4，无 OOM；真实 %install 转换 225 归档、3,853 bitcode（含回写 1,054.025 s）。新 RPM 225 开发归档格式/顺序/完整索引及零调试节 PASS，45 运行库成员和索引与基线一致。
 17,689 路径仅 225 开发归档与 45 compiler-rt ar 时间戳变化，其他文件差异 0；clang/lld/ar SHA 相同。七项宿主消费者及两个独立 Tizen 根的 bfd/lld A+B %check 均 PASS。实测候选 patch SHA `4ca1dc3e…`；docs/31提交版 SHA `0c40c91c…`，W 原件、docs/25–30 均未改。
@@ -92,7 +94,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-08 | `c1856d0` | docs/34、STATUS、认证指纹状态 | 核验后恢复同一构建，4:15:51正常产出22RPM、225开发档PASS；首个compiler-rt成员ELF与基线不同，按预定门禁停止；未继续消费者/测试包/续跑，v1不变，无Gerrit推送。 |
 | 2026-10-09 | `f49a561` | docs/35、STATUS、认证指纹 | S/根内spec恢复标准提交配置，Source不变；87项头文件dry-run。磁盘连全部允许cache回收上界仍不足60GiB，增量构建0次、缓存未删，后续验收/补丁未执行。 |
 | 2026-10-09 | `9f27fbc` | docs/35、STATUS、认证执行状态 | 授权清理后增量产出22RPM；225开发/45运行库、非归档零差异、独立-bi/SKIP与7宿主消费者PASS；Tizen bfd依赖解析FAIL、Base HTTP404，按规则停止，无重试/无v2最终补丁。 |
-| 2026-10-09 | 本提交（`git log -1 -- docs/36_archive_fix_tizen_consumers.md`） | docs/36、STATUS、patches/archive-index-fix/ | 107历史Base缓存RPM与原primary摘要一致；两Tizen包113环境零NEVRA差异、A/B及身份PASS；v2补丁基于刷新tizen_base cb679968，apply/tree验证PASS，无LLVM重建/无Gerrit推送。 |
+| 2026-10-09 | `213041c` | docs/36、STATUS、patches/archive-index-fix/ | 107历史Base缓存RPM与原primary摘要一致；两Tizen包113环境零NEVRA差异、A/B及身份PASS；v2补丁基于刷新tizen_base cb679968，apply/tree验证PASS，无LLVM重建/无Gerrit推送。 |
+| 2026-10-09 | 本提交（`git log -1 -- docs/37_target_recipe_policy_check.md`） | docs/37、STATUS | 原根rpmspec/完整宏环境只读展开；cb679968参数差异已分类，225档/3,853条派生命令全PASS、未分类0；认证策略覆盖，无构建/转换/spec/Source/补丁变更。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -215,6 +218,13 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 无交互fetch取得tizen_base cb679968（已含x86_64 O3/ThinLTO）；单提交2d773cb6、作者FatTank、固定Change-Id，最终format-patch在干净base apply --check PASS且完整tree相同。只有两个spec插入块及Source；Source SHA6bd0546a…完全同已验输入。 | docs/36 §3；E36/target-fetch.json、submission-verification.json、submission-commands.jsonl | 硬证据；新目标整套配方未本轮重建 |
 | 评审目录v2 patch SHA ddef2221db9ba1c044b0087b9fcde2a93202fdf28c518b4d0dcd1c4653119ac6；v1旧patch/Source摘要与副本保留。docs25–35、W原spec和配置不动，无LLVM重建、无Gerrit推送，项目锁/进程/挂载回收。 | docs/36 §3.2、§4；E36/v1-backup/、final-integrity.json、lock-released.json | 硬证据 |
 
+本轮闭合（docs/37）；E37=`temp/target-recipe-policy-check-20261009`：
+
+| 结论 | 证据 | 强度/边界 |
+| --- | --- | --- |
+| docs/35同一根、buildconfig和define下，target cb679968与validated f111162e的optflags相同；C/CXX/ASM flags仅新增一次已有的-Wno-unused-command-line-argument。名称不同的编译器在本根为同ELF别名，显式两项OFF同旧默认。 | docs/37 §0–§2；E37/exact-showrc.diff、*-exact-build.txt、*-cmake.json、root-showrc.stdout | 硬证据（只读参数展开）；限定本宏/工具环境 |
+| 新公共flags精确替换3853条原bitcode命令中唯一对应子序列；225档全部classify_options PASS，未分类0，末项O3/DWARF4/分段/fp-contract与原策略相同；源码/补丁没有改动。 | docs/37 §3；E37/all-target-command-tokens.jsonl、policy-result.json、final-integrity.json | 硬证据（纯文本分类）；证明参数策略覆盖，不是新配方IR/转换/完整构建PASS |
+
 ## 4. 人工裁决前提
 
 下列为用户决策及其记录依据，区别于上一节的实测事实。后续 Session 不能擅自反转。
@@ -279,6 +289,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 本轮追加人工决定（docs/36）：允许从docs/30测试根缓存复原同Base环境；精确排除本项目Release=1包，缺项先查同NVR Unified，仍不足才可临时加最新Base且不改gbs配置。本轮107包齐备，备用分支未触发。只授权bfd/lld两小包各一次，8GiB准入/6GiB cap/串行；通过后刷新tizen_base并生成供用户上传的补丁，不重建LLVM、不推Gerrit。原docs/35的STOP规则不再阻止这次新授权；原历史记录仍不修改。依据：本次用户任务、docs/36 §0–§3。
 
+本轮人工任务范围（docs/37）：只读核查cb679968在docs/35同一宏环境的编译参数；有差异仅调用既有分类函数。不能借此修改Source/补丁或启动构建，失败只报告。本轮分类通过，未扩大到新配方完整构建。依据：用户本次任务、docs/37 §0及§4。
+
 ## 5. 挂账
 
 | 分类 | 未闭合项 | 所需材料/下一步与验收边界 | 依据 |
@@ -297,7 +309,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 待需求/实验 | BOLT clang 源码级 debuginfo | 首版 stripped-evaluation 不能假配旧 DWARF；如生产要求完整崩溃分析，须另测 update-debug 的容量/时间、最终符号化与 debuglink/build-id。当前成本 UNKNOWN。 | docs/21 §4.3 |
 | 待服务器容量评估 | PGO、其他工具 BOLT 与生产新输入 profile | 取得worker实际内存/并发/cgroup后重估PGO；现v2不自动认证混合输入，source/spec/patch/MLGO改变触发图与profile重认证；不擅自新建profile或重写。 | docs/21 §3、§8 |
 | 待裁决/补证据 | HQ方案的Tizen B-lld完整运行与实际平台覆盖 | 本轮6GiB约122分钟链接未完成、代理诊断性中止；不擅自提高cap/重试。A已通过，不替代B或完整%check。公开快照源primary只覆盖显式直接依赖；两个直接BR包实际共享，未找到满足真实包失败对照触发条件的对象，未构建真实消费者包。 | docs/33 §3、§5、§7 |
-| 待评审/用户上传 | 归档修复v2 format-patch与目标流水线 | docs/35+36门禁全部闭合；patches/archive-index-fix已替换v1为v2。基准cb679968、作者FatTank、Change-Id不变。用户安排三方评审和Gerrit上传；本轮未在刷新后的目标配方重新完整构建，目标流水线需正常构建，超认证原命令选项须重新认证。 | docs/36 §3–§4；E36/submission-verification.json |
+| 待评审/用户上传 | 归档修复v2 format-patch与目标流水线 | docs/35+36门禁全部闭合；patches/archive-index-fix已替换v1为v2。基准cb679968、作者FatTank、Change-Id不变。用户安排三方评审和Gerrit上传；docs/37已确认同宏环境下参数策略覆盖；未在刷新后的目标配方重新完整构建，目标流水线仍需正常构建，未来新选项须重新核查。 | docs/36 §3–§4；docs/37 §4；E36/submission-verification.json、E37/policy-result.json |
 | 已闭合（保留记录） | 修正后的续跑验收 | 新RPM第1–4项PASS后独立buildroot真实-bi重新转换225档并验收，通过后对同树Source SKIP，225档SHA不变；这两项不再挂账。 | docs/35 §4；C/independent-archives-result.json、independent-skip-verification.json |
 | 待其他架构输入 | ARM/AArch64 static-devel与转换器兼容性、耗时 | 两现有根与cache均无static-devel；accel clang实测22.1.8并有ARM/AArch64目标，不等于实际IR读取已验证。需对应归档及真实调用路由，不能套用x86 O3或耗时。 | docs/27 §5；docs/28 §5（工作区ARM/AArch64分支均有ThinLTO，需各自转换认证） |
 | 已隔离/暂缓 | 旧混合构建根与profile适用性；设计v4 | docs/24旧根不再读写；外来docs/23与重链脚本改动在备份SHA匹配后已按新授权恢复HEAD，不再是脏工作树。设计v4及BOLT后续等归档任务完成。 | docs/24；docs/25 §0 |
@@ -307,4 +319,4 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交补丁保留；docs/25–31不改。
 当前tools/llvm_static_archives_source.py与patches/archive-index-fix/中的v2 Source同SHA6bd0546a…；提交patch已更新为ddef2221…。v1保留在Git历史及E36/v1-backup，不能混用两个版本身份。
 原宏关闭方案继续作废；转换只在x86_64安装根进行，W/llvm/spec不动，Gerrit未推送。
-归档修复v2提交材料及两Tizen包验收已在docs/36完成；固定Base缓存复原解除此消费者环境的依赖阻塞，不代表远端404消失。当前待用户评审/上传和目标流水线验证；不自动构建新的LLVM配方或上传Gerrit。设计v4/BOLT及其他架构没有自动启动授权。
+归档修复v2提交材料及两Tizen包验收已在docs/36完成；固定Base缓存复原解除此消费者环境的依赖阻塞，不代表远端404消失。docs/37已闭合相同环境下编译参数策略覆盖；当前仍待用户评审/上传和目标流水线完整验证，不自动构建新的LLVM配方或上传Gerrit。设计v4/BOLT及其他架构没有自动启动授权。
