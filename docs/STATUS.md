@@ -1,6 +1,6 @@
 # LLVM 吞吐优化分支状态
 
-更新日期：2026-10-08。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
+更新日期：2026-10-09。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
 历史状态核对到 `4d80d94`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，混合构建见 [docs/22](22_hybrid_link_trial.md)，
 归档根因与前次失败记录见 [docs/23](23_archive_fix_and_profile_rebind.md)；
 旧混合根核查停止记录见 [docs/24](24_archive_fix_verification.md)，该根已隔离，不再读写。
@@ -10,14 +10,14 @@ docs/27 旧转换产物作废；docs/28–29 的后端选项、链接 AS 诊断�
 上一轮完成 [docs/31](31_archive_fix_submission.md)：从 LLVM 干净 HEAD 生成单提交 format-patch，Source 与 docs/30 同字节，提交 spec 与实测输入仅差 6/6/2 对 4/4/1；补丁与 Source 已置 patches/archive-index-fix/ 供评审，没有推 Gerrit。
 上一轮 [docs/32](32_archive_fix_v2.md)：v2 Source/spec 与测试已修订，3853条白名单、类型元数据普查、五档第一遍回归通过；运行期间出现另一会话的 Ninja，10:52中止独占实验。确定性及600s复验未完成，完整构建未启动，认证 INCOMPLETE；未覆盖docs/31的v1补丁。
 上一轮 [docs/33](33_llvm_strip_alternative.md) 收尾：225档llvm-strip均失败且不改文件，宿主无插件GNU ld失败、lld22/LLVMgold22的A通过；公开快照直接BR两包实际走共享LLVM。按新8 GiB准入/6 GiB cap串行执行两个Tizen测试包：bfd格式失败；lld A链接及独立运行通过，B在7325.348s因严重内存回收/I/O抖动由代理诊断性中止，无OOM，整包%check未执行。B兼容性仍UNKNOWN，不将中止记成用户预注册门禁或本征链接失败；没有重试/加cap。
-**2026-10-08 docs/34收尾：同根-ba --noprep增量恢复后，6/6/2、18GiB/swap0正常产出22 RPM且无OOM；225个开发归档全部PASS。compiler-rt首档成员ELF字节与GNU strip基线不同（与离线llvm-strip输出相同），触发停止。后续消费者/测试包/续跑未执行，v2未覆盖v1；进程、采样器与锁已回收。**
+**2026-10-09 docs/35收尾：按用户决定恢复标准GNU strip提交配置，S spec与docs/32的6a91a0bf…逐字节一致、Source不变，原根导出spec也只删除获准的三行定义。dry-run为87项LLDB头文件stage/utility，未列编译/链接。磁盘18.761GiB；全部允许cache回收后的上界54.724GiB仍小于原60GiB准入，未启动增量构建，未清理缓存，未运行后续验收，v1补丁不变。docs/34历史结果保留。**
 docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预注册文件保持原样。
 以下 `temp/` 均相对工作区 `/home/linhao/Toolchain/development/llvm-optimize`，仅保存在本机，不在 GitHub。
 
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-**归档兼容性仍为第一优先级；docs/34本轮已按门禁停止并收尾。完整构建及225开发归档通过，但HQ llvm-strip导致compiler-rt成员ELF字节一致性失败；需用户先裁决该验收差异，不能自行豁免或继续剩余实验。docs/30–31的v1补丁保持原样；v2尚不可作为完整验收通过的提交。设计v4与BOLT继续暂缓。**
+**归档兼容性仍为第一优先级；本轮docs/35在恢复提交配置后因磁盘准入不足停止。标准GNU strip配置、最终v2 Source、6/6/2已登记，尚未执行本轮增量构建及全套验收；只有解决磁盘并重新核对现场后才可继续。docs/30–31的v1保持原样，v2尚不可作为完整验收通过的提交。设计v4与BOLT继续暂缓。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
 一次完整 LLVM 构建 16,011.555 s，18 GiB/swap0/4/4/1/debuginfo4，无 OOM；真实 %install 转换 225 归档、3,853 bitcode（含回写 1,054.025 s）。新 RPM 225 开发归档格式/顺序/完整索引及零调试节 PASS，45 运行库成员和索引与基线一致。
 17,689 路径仅 225 开发归档与 45 compiler-rt ar 时间戳变化，其他文件差异 0；clang/lld/ar SHA 相同。七项宿主消费者及两个独立 Tizen 根的 bfd/lld A+B %check 均 PASS。实测候选 patch SHA `4ca1dc3e…`；docs/31提交版 SHA `0c40c91c…`，W 原件、docs/25–30 均未改。
@@ -32,7 +32,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 摸底与基准台 | 配方、工具调用面、身份、资源限制、可重复测量 | 完成；历史报告保留各自证据边界 |
 | 静态 RPM 基线 | 固定快照、构建、debuginfo 续跑、工具验证、基线数据 | 已完成；历史基线缺陷保留，新x86_64 RPM修法与消费者验收见docs/30 |
 | BOLT 筛选 | 容量、插桩/profile、重写、正确性、训练/留出、中间对照、双目标 | 本机工作已结束；最终 ARM 校准 FAIL，AArch64 PASS 并完成正式轮 |
-| 静态库兼容性修复 | bitcode→机器码、保持原brp宏、GNU ld无LTO/插件消费者、一次完整构建与新RPM验收 | **v1在docs/30–31完整验证/发布；v2恢复后22RPM产出、225开发档PASS，compiler-rt首档ELF字节FAIL后停止，无OOM，后续消费者未执行** |
+| 静态库兼容性修复 | bitcode→机器码、保持原brp宏、GNU ld无LTO/插件消费者、完整构建及新RPM验收 | **v1已完整验证；docs/35已恢复标准提交配置，但磁盘准入拒绝，增量构建及新验收0次。docs/34的225开发档PASS保留为历史证据，不能替代本轮全部验收** |
 | 集成设计与评审 | docs/21 完整 v3、混合链接拟议补丁、身份/活性脚本与协议检查 | 历史混合构建/30 TU结果保留；设计 v4 与 BOLT 实施暂缓，待归档修复完成 |
 | OBS 试包与服务器验收 | LLVM RPM → qemu-accel → 新 Base 快照 → Quickbuild | 未执行；项目/验证快照待用户提供，试包与收益验收均未完成 |
 | 后续工具/PGO | 依全平台调用占比和服务器容量决定 | 挂账；没有自动启动授权 |
@@ -87,7 +87,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-09-29 | `4d80d94` | docs/33、STATUS、probe_hq_llvm_strip.py、inventory_llvm_source_consumers.py | 中间发布strip/宿主/快照调查与新8/6内存规则；当时Tizen B-lld仍运行，未冒称完整验收。 |
 | 2026-09-29 | `66c5671` | docs/33、STATUS | 两包串行各一次，bfd格式失败；lld A链接/独立运行正确，B在6GiB下持续抖动后诊断性中止、无OOM/%check未执行；完整记录等待读数、峰值、边界与回收，无方案选择结论。 |
 | 2026-09-30 | `d47d150` | docs/34、STATUS、verify_llvm_strip_overlay.py、认证指纹 | v2离线门禁补齐、70测试PASS；HQ llvm-strip叠加的一次6/6/2构建CMake PASS，7530/7634后按用户要求节前暂停；无OOM，现场保留、进程和锁已回收，未生成v2提交补丁。 |
-| 2026-10-08 | 本提交 | docs/34、STATUS、认证指纹状态 | 核验后恢复同一构建，4:15:51正常产出22RPM、225开发档PASS；首个compiler-rt成员ELF与基线不同，按预定门禁停止；未继续消费者/测试包/续跑，v1不变，无Gerrit推送。 |
+| 2026-10-08 | `c1856d0` | docs/34、STATUS、认证指纹状态 | 核验后恢复同一构建，4:15:51正常产出22RPM、225开发档PASS；首个compiler-rt成员ELF与基线不同，按预定门禁停止；未继续消费者/测试包/续跑，v1不变，无Gerrit推送。 |
+| 2026-10-09 | 本提交 | docs/35、STATUS、认证指纹 | S/根内spec恢复标准提交配置，Source不变；87项头文件dry-run。磁盘连全部允许cache回收上界仍不足60GiB，增量构建0次、缓存未删，后续验收/补丁未执行。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -178,6 +179,16 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 新RPM compiler-rt首档asan-preinit成员3536→3464B，ELF节11→10，字节一致性FAIL；索引/无DWARF通过。新输出与离线llvm-strip整档及成员SHA相同；allocated载荷相同只作诊断，不豁免门禁。其余44档及后续验收未继续。 | docs/34 §4.2–§4.3；E34/resume-20261008/failed-runtime-diagnosis/、archive-acceptance.log | 硬证据（字节与门禁）；语义等价仍未证明 |
 | 构建后仅回收本次已完成链接的20GiB可再生cache；没有改裁剪参数/对象/ELF/历史根。最终scope inactive、本项目构建进程0、采样器与锁均回收；W、docs25–33、v1等保护文件一致。 | docs/34 §3.4、§4.3；E34/resume-20261008/cache-reclaim-result.json、final-process-check.json、lock-released.json、final-protected-files.json | 硬证据 |
 
+
+本轮备案（docs/35）；E35=`temp/archive-fix-v2-final-20261009`：
+
+| 结论与边界 | 证据 | 证据强度 |
+| --- | --- | --- |
+| S spec恢复为6a91a0bf…，Source仍6bd0546a…，完整diff751a6292…；三者与docs/32候选一致。configuration对象逐项等于docs/32，根内导出spec仅作同一获准删除。 | docs/35 §1；E35/configuration-restoration.json、trial/root-spec-restoration.diff | 硬证据 |
+| 原根最终CMakeCache及4个关键ELF SHA匹配；Ninja两状态文件旧前缀SHA匹配。docs/34未单独存末态图/状态完整SHA，不能声称有该历史比对；本轮已存完整恢复清单。 | docs/35 §0.1；E35/current-state-audit.json、resume-input-manifest.json | 硬证据限已核项目；未存的历史摘要UNKNOWN，不判污染 |
+| ninja -n退出0：86个LLDB头文件stage+1个utility，未列编译/链接；查询宏为/bin/strip、clang、-j4。未运行CMake或%install。 | docs/35 §1.1；E35/dry-run.log、dry-run.json | 硬证据，仅dry-run和宏查询 |
+| 可用内存21.837860GiB满足；磁盘18.761387GiB，全部20872个cache回收上界54.724190GiB仍不足60GiB。原资源入口拒绝，未启动构建、未删缓存；没有耗时/峰值/新RPM或消费者结果。 | docs/35 §2–§3；E35/resource-admission.json、cache-inventory.json | 硬证据；回收数字为上界而非已释放空间 |
+
 ## 4. 人工裁决前提
 
 下列为用户决策及其记录依据，区别于上一节的实测事实。后续 Session 不能擅自反转。
@@ -231,6 +242,12 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 2026-09-30节前暂停，节后由用户明确恢复。 | 用户“我要下班了，能帮我暂停下么，节后继续”覆盖此前无人值守继续规则；按可能关机保存磁盘现场并释放内存，不将主动停止记为构建FAIL。恢复前核验对象/cache及不会清空BUILD的增量入口。 | docs/34 §3.2；temp/archive-fix-v2-build-20260929/pause-20260930-1919/ |
 | 2026-10-08恢复同一暂停构建。 | 用户“继续吧，结束后记得报告一起发出来”；先核验再正常-ba --noprep增量执行，不重做%prep、不改变并发或cap。 | docs/34 §3.3；E34/resume-20261008/ |
 
+
+本轮用户决定（docs/35）：恢复标准GNU strip提交配置；仍要求compiler-rt成员ELF与docs/13逐字节一致。
+授权原根一次正常-ba --noprep、两测试包和一次独立-bi；不重新完整构建。磁盘不足只允许回收本根lto.cache，
+不改资源规则或失败后重试。离线PASS按用户授权沿用docs/34最终Source证据；最终提交以tizen_base为基准，
+未启用ThinLTO时SKIP、超出认证选项策略则失败。依据：docs/35 §0–§4及本轮用户指令。
+
 ## 5. 挂账
 
 | 分类 | 未闭合项 | 所需材料/下一步与验收边界 | 依据 |
@@ -249,8 +266,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 待需求/实验 | BOLT clang 源码级 debuginfo | 首版 stripped-evaluation 不能假配旧 DWARF；如生产要求完整崩溃分析，须另测 update-debug 的容量/时间、最终符号化与 debuglink/build-id。当前成本 UNKNOWN。 | docs/21 §4.3 |
 | 待服务器容量评估 | PGO、其他工具 BOLT 与生产新输入 profile | 取得worker实际内存/并发/cgroup后重估PGO；现v2不自动认证混合输入，source/spec/patch/MLGO改变触发图与profile重认证；不擅自新建profile或重写。 | docs/21 §3、§8 |
 | 待裁决/补证据 | HQ方案的Tizen B-lld完整运行与实际平台覆盖 | 本轮6GiB约122分钟链接未完成、代理诊断性中止；不擅自提高cap/重试。A已通过，不替代B或完整%check。公开快照源primary只覆盖显式直接依赖；两个直接BR包实际共享，未找到满足真实包失败对照触发条件的对象，未构建真实消费者包。 | docs/33 §3、§5、§7 |
-| 待用户裁决/后续验收 | v2叠加llvm-strip的compiler-rt字节差异及余下验收 | 构建22RPM和225开发归档已PASS；首个runtime ELF字节FAIL，未自动视为语义等价。先裁决strip输出验收要求，再明确授权其余44档、非归档逐文件、七消费者/两测试包和最终补丁；不得自动重试。v1保留。 | docs/34 §4–§5；E34/resume-20261008/task-outcome.json |
-| 前序门禁阻塞 | 修正后的续跑验收 | 独立安装根真实-bi再次转换并验收，再对同一安装树Source要求SKIP；本轮均0次，因compiler-rt门禁先失败。不能拿离线幂等或正常构建替代。 | docs/34 §2、§4.3 |
+| 磁盘阻塞/后续验收 | v2标准提交配置的原根增量及全部验收 | 用户已决定恢复标准GNU strip配置，已落实，旧差异不再是待裁决项。可用18.761GiB；即使清全部授权cache仍差5.276GiB达60GiB。未删cache、未启动构建；先解决空间并核对E35恢复清单，再执行增量、225+45档/非归档/七消费者/两测试包及最终补丁；不自行清其他目录或降低门槛。 | docs/35 §0–§4；E35/resource-admission.json |
+| 前序门禁阻塞 | 修正后的续跑验收 | 独立安装根真实-bi再次转换并验收，再对同一安装树Source要求SKIP；docs/35因磁盘未启动增量，故这两项仍0次。不能拿离线幂等或历史正常构建替代。 | docs/35 §3 |
 | 待其他架构输入 | ARM/AArch64 static-devel与转换器兼容性、耗时 | 两现有根与cache均无static-devel；accel clang实测22.1.8并有ARM/AArch64目标，不等于实际IR读取已验证。需对应归档及真实调用路由，不能套用x86 O3或耗时。 | docs/27 §5；docs/28 §5（工作区ARM/AArch64分支均有ThinLTO，需各自转换认证） |
 | 已隔离/暂缓 | 旧混合构建根与profile适用性；设计v4 | docs/24旧根不再读写；外来docs/23与重链脚本改动在备份SHA匹配后已按新授权恢复HEAD，不再是脏工作树。设计v4及BOLT后续等归档任务完成。 | docs/24；docs/25 §0 |
 
@@ -259,4 +276,4 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交补丁保留；docs/25–31不改。
 当前tools/llvm_static_archives_source.py是v2候选，patches/archive-index-fix/仍是v1；区别必须保留，不能混用身份。
 原宏关闭方案继续作废；转换只在x86_64安装根进行，W/llvm/spec不动，Gerrit未推送。
-归档兼容性仍第一优先级；docs/34已完成恢复构建并在compiler-rt字节门禁失败后停止。v2不能标为完整验收通过，后续须先处理验收差异；不自动重试。设计v4/BOLT及其他架构没有自动启动授权。
+归档兼容性仍第一优先级；docs/35已落实用户的提交配置恢复，当前阻塞是磁盘准入，实际增量构建0次。v2仍未完整验收或生成提交补丁；不自动降低门槛、清理其他资产或重试。设计v4/BOLT及其他架构没有自动启动授权。
