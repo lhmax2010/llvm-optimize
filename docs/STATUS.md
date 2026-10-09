@@ -26,11 +26,13 @@ docs/27 旧转换产物作废；docs/28–29 的后端选项、链接 AS 诊断�
 docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预注册文件保持原样。
 以下 `temp/` 均相对工作区 `/home/linhao/Toolchain/development/llvm-optimize`，仅保存在本机，不在 GitHub。
 
+**2026-10-10夜间任务停止：A1完成；A2清单外共享Git依赖触发停止，三个Chromium目录未删；A3只拷日志/生成sudo脚本。B/x86与C两ARM均NOT RUN，未改Source/spec/补丁、未构建。无人值守阶段不问询不重试，按约定发布停止报告。证据docs/42、docs/40、temp/night-arm-stage1-20261010。**
+
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前容量前置工作：docs/41盘点完成，等用户逐项确认清理范围；没有自动删除授权，也没有据此启动ARM构建。
-**x86_64归档转换与llvm-strip两条修复已由用户上传Gerrit 356627、356639，等待review与目标流水线验收；本代理未推Gerrit。docs/39已完成ARM只读可行性与小实验：明确了两架构参数、转换器、PIC草案、完整构建阻塞和x86全量SHA回归契约，等待PM批准实施。ARM认证通过后只更新这两个change的patchset，356639重挂新356627，不另开review。当前Source/spec/patch仍仅认证x86_64；没有ARM实现或完整构建。设计v4/BOLT继续暂缓。S仍是docs/38的三行llvm-strip试验宏版本，原通用GNU-strip指纹不能直接放行它。**
+当前夜间任务STOPPED_BEFORE_B：A1已删35,384匹配载荷（180.533333GiB），A3日志/脚本已准备未执行；A2发现保留analysis/05E_worktree依赖chromium-efl/.git，在任何整目录rm之前停止。可用空间218.767GiB已过120线，但B/C均未执行。详见docs/42与docs/40。
+**x86_64归档转换与llvm-strip两条修复已由用户上传Gerrit 356627、356639，等待review与目标流水线验收；本代理未推Gerrit。docs/39已完成ARM只读可行性与小实验：明确了两架构参数、转换器、PIC草案、完整构建阻塞和x86全量SHA回归契约；本轮已获实施授权，但因A2依赖停止，尚未进入实施。ARM认证通过后只更新这两个change的patchset，356639重挂新356627，不另开review。当前Source/spec/patch仍仅认证x86_64；没有ARM实现或完整构建。设计v4/BOLT继续暂缓。S仍是docs/38的三行llvm-strip试验宏版本，原通用GNU-strip指纹不能直接放行它。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
 一次完整 LLVM 构建 16,011.555 s，18 GiB/swap0/4/4/1/debuginfo4，无 OOM；真实 %install 转换 225 归档、3,853 bitcode（含回写 1,054.025 s）。新 RPM 225 开发归档格式/顺序/完整索引及零调试节 PASS，45 运行库成员和索引与基线一致。
 17,689 路径仅 225 开发归档与 45 compiler-rt ar 时间戳变化，其他文件差异 0；clang/lld/ar SHA 相同。七项宿主消费者及两个独立 Tizen 根的 bfd/lld A+B %check 均 PASS。实测候选 patch SHA `4ca1dc3e…`；docs/31提交版 SHA `0c40c91c…`，W 原件、docs/25–30 均未改。
@@ -110,7 +112,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-09 | `834f9aa` | docs/38、STATUS | 22RPM与N的17,689路径身份PASS，宏链作用范围只读核查完成；允许清理后空间上界50.816586GiB<60GiB，第零步STOP；未改spec、未构建/验收/生成llvm-strip补丁。 |
 | 2026-10-09 | `08e0889` | docs/38、STATUS、patches/llvm-strip/ | 授权rename保全+清理后一次增量22RPM成功；225/45归档、270次strip、非静态库零差异、宿主/Tizen全部消费者PASS；叠在356627 PS2的独立4行补丁apply/tree PASS，未推Gerrit。 |
 | 2026-10-09 | `d849dc8` | docs/39、STATUS | ARM配方/策略差异与22.1.8工具查明；显式accel/QEMU小实验成功，自动binfmt/磁盘与全量认证仍有缺口；只交实施草案，未改Source或补丁。 |
-| 2026-10-10 | 本提交（`git log -1 -- docs/41_disk_inventory.md`） | docs/41、STATUS | 只读盘点102项目录/子范围，567条会话元数据；明确保留输入及权限/归属缺口，量化6.646GiB可删建议与173.887GiB仅载荷建议，未清理。 |
+| 2026-10-10 | `f6a0499` | docs/41、STATUS | 只读盘点102项目录/子范围，567条会话元数据；明确保留输入及权限/归属缺口，量化6.646GiB可删建议与173.887GiB仅载荷建议，未清理。 |
+| 2026-10-10 | 本提交（`git log -1 -- docs/42_disk_cleanup.md`） | docs/42、docs/40、STATUS | A1回收180.533333GiB；A2因保留05E工作树的共享Git依赖在rm前停止；A3日志与sudo脚本已准备未执行；B/C未执行。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -276,6 +279,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | P28/P29合计6.646GiB，限定旧二进制候选173.887GiB；以dev/inode/nlink扣除外部硬链接，总180.533GiB。docs/30 RPM+SRPM存在外部链接，释放记0；64GiB未启用swap未计入。 | docs/41 §4；E41/binary-payload-summary.json、inactive-swap.json | 硬证据（分配块估算；未删除，未来须复核打开文件/链接） |
 | Session只证明cwd/时间/标题关联，不能确证所有目录创建者；Gemini ID非唯一、早期创建Session存在缺口。 | docs/41 §2；E41/session-metadata.json、project-path-references.json | 硬证据（元数据关联）；创建者UNKNOWN不推测 |
 
+新增硬证据（docs/42 §0–§4）：35,384个旧载荷匹配dev/inode/大小后删除；1,485个缺旧清单候选保留；四根8,780份可读日志/文本SHA保全。Chromium主仓库公共.git仍被实际存在且Git可用的analysis/05E_worktree引用，三个待删目录均保留。可用空间已满足120GiB，但不绕过清单外依赖继续B/C。
+
 ## 4. 人工裁决前提
 
 下列为用户决策及其记录依据，区别于上一节的实测事实。后续 Session 不能擅自反转。
@@ -348,9 +353,11 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 本轮人工决定（docs/39）：仅调查与不超过30分钟小实验，不构建LLVM、不改spec/Source/补丁。用户确认356627与356639已上传；ARM若认证通过，转换扩展作为356627新patchset（原Change-Id不变），strip扩展作为356639新patchset并rebase在新的356627上；不新开review，x86已验证行为不变。依据：本轮用户任务；docs/39 §7–§9。
 
+本轮夜间人工规则（2026-10-10）：用户授权A指定清理→B x86全量SHA回归→C两ARM静态库第一段；规定之外停止，失败停止全部后续，每阶段/停止均提交推送；A2 Git报错可保留可得备份后删除，但未授权处理保留路径的共享Git依赖。A3四根仅生成sudo脚本；A1逐文件须匹配docs/41。最终停在A2依赖，不重新要求夜间确认。
+
 ## 5. 挂账
 
-- 磁盘清理：请用户按docs/41逐项决定；仅“可删”类约6.646GiB尚不能补足60GiB门槛。其他项目的创建Session/保留需求、64GiB未启用swap用途及权限盲区待确认；目前无任何删除操作。
+- 夜间停止项：先明确analysis/05E_worktree的共享Git元数据处置，才能继续A2以及B/C；三个Chromium目录未删，第三个小文本备份PARTIAL。四旧根日志已保全，temp/deleted-roots-logs/sudo-delete.sh留用户自行执行，本代理未运行。A1第6–8组1,485候选缺旧逐文件记录，仍保留；其他项目/swap无清理授权。
 
 | 分类 | 未闭合项 | 所需材料/下一步与验收边界 | 依据 |
 | --- | --- | --- | --- |
