@@ -1,6 +1,6 @@
 # LLVM 吞吐优化分支状态
 
-更新日期：2026-10-09。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
+更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
 历史状态核对到 `4d80d94`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，混合构建见 [docs/22](22_hybrid_link_trial.md)，
 归档根因与前次失败记录见 [docs/23](23_archive_fix_and_profile_rebind.md)；
 旧混合根核查停止记录见 [docs/24](24_archive_fix_verification.md)，该根已隔离，不再读写。
@@ -21,12 +21,15 @@ docs/27 旧转换产物作废；docs/28–29 的后端选项、链接 AS 诊断�
 
 **2026-10-09 docs/39完成：按cb679968分别用两ARM根原生rpmspec展开，ThinLTO均生效；ARM32 MinSizeRel/候选末项Os，AArch64 Release/候选末项O3，均保留stack protector，不能套x86策略。accel工具与原生clang均22.1.8；显式dispatcher进入/emul、两架构小C跨目标编译/bitcode往返及strip成功，全部编译实验6.507秒。普通GBS chroot因无ARM binfmt注册失败；包装器刷新根内resolver的副作用已在报告§0登记。当前磁盘40.93GiB低于60GiB，ARM完整构建资源与实际归档命令仍UNKNOWN。只交认证设计，未构建/改Source/改补丁/推Gerrit。用户确认356627与356639已上传；ARM如后续通过，更新同两个change的patchset，保持x86行为不变。证据：docs/39、temp/arm-archive-feasibility-20261009。**
 
+**2026-10-10 docs/41完成只读磁盘盘点：覆盖/home/linhao可读范围及567条agent元数据，253个权限盲区明确保留UNKNOWN。主表102项按项目/大小分组；P28/P29旧纯归档树可删建议6.646GiB，docs/38第2/3类已核算二进制载荷173.887GiB，合计180.533GiB（已扣范围外硬链接；尚未执行）。64GiB未启用swap另列需用户判断；Rnew/B、N、N38、H、rpms-docs35、docs35–39证据、Base本地仓库与ARM输入保留。仅是建议，任何清理仍等用户逐项确认；没有删除、移动、构建或推Gerrit。证据：docs/41、temp/disk-inventory-20261009。**
+
 docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预注册文件保持原样。
 以下 `temp/` 均相对工作区 `/home/linhao/Toolchain/development/llvm-optimize`，仅保存在本机，不在 GitHub。
 
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
+当前容量前置工作：docs/41盘点完成，等用户逐项确认清理范围；没有自动删除授权，也没有据此启动ARM构建。
 **x86_64归档转换与llvm-strip两条修复已由用户上传Gerrit 356627、356639，等待review与目标流水线验收；本代理未推Gerrit。docs/39已完成ARM只读可行性与小实验：明确了两架构参数、转换器、PIC草案、完整构建阻塞和x86全量SHA回归契约，等待PM批准实施。ARM认证通过后只更新这两个change的patchset，356639重挂新356627，不另开review。当前Source/spec/patch仍仅认证x86_64；没有ARM实现或完整构建。设计v4/BOLT继续暂缓。S仍是docs/38的三行llvm-strip试验宏版本，原通用GNU-strip指纹不能直接放行它。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
 一次完整 LLVM 构建 16,011.555 s，18 GiB/swap0/4/4/1/debuginfo4，无 OOM；真实 %install 转换 225 归档、3,853 bitcode（含回写 1,054.025 s）。新 RPM 225 开发归档格式/顺序/完整索引及零调试节 PASS，45 运行库成员和索引与基线一致。
@@ -106,7 +109,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-09 | `25e2b18` | docs/37、STATUS | 原根rpmspec/完整宏环境只读展开；cb679968参数差异已分类，225档/3,853条派生命令全PASS、未分类0；认证策略覆盖，无构建/转换/spec/Source/补丁变更。 |
 | 2026-10-09 | `834f9aa` | docs/38、STATUS | 22RPM与N的17,689路径身份PASS，宏链作用范围只读核查完成；允许清理后空间上界50.816586GiB<60GiB，第零步STOP；未改spec、未构建/验收/生成llvm-strip补丁。 |
 | 2026-10-09 | `08e0889` | docs/38、STATUS、patches/llvm-strip/ | 授权rename保全+清理后一次增量22RPM成功；225/45归档、270次strip、非静态库零差异、宿主/Tizen全部消费者PASS；叠在356627 PS2的独立4行补丁apply/tree PASS，未推Gerrit。 |
-| 2026-10-09 | 本提交（`git log -1 -- docs/39_arm_archive_conversion_feasibility.md`） | docs/39、STATUS | ARM配方/策略差异与22.1.8工具查明；显式accel/QEMU小实验成功，自动binfmt/磁盘与全量认证仍有缺口；只交实施草案，未改Source或补丁。 |
+| 2026-10-09 | `d849dc8` | docs/39、STATUS | ARM配方/策略差异与22.1.8工具查明；显式accel/QEMU小实验成功，自动binfmt/磁盘与全量认证仍有缺口；只交实施草案，未改Source或补丁。 |
+| 2026-10-10 | 本提交（`git log -1 -- docs/41_disk_inventory.md`） | docs/41、STATUS | 只读盘点102项目录/子范围，567条会话元数据；明确保留输入及权限/归属缺口，量化6.646GiB可删建议与173.887GiB仅载荷建议，未清理。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -264,9 +268,19 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | docs/35 strip前225档/3864成员记录仍在、SHA4d824c4f…；后续x86不变性必须逐档/逐成员对它核验。本轮没有运行全量回归。 | docs/39 §7；E39/x86-regression-anchor.json | 硬证据（基准可用性）；实现验证尚未执行 |
 | 当前/home40.93GiB低于60GiB；没有找到本机对应ARM LLVM完整构建日志。公开固定快照两直接BR消费者实际走共享LLVM，不能据此断言全平台无静态消费者。 | docs/39 §5–§6；E39/capacity-now.json；docs/33 §5 | 硬证据（限定范围）；ARM完整成本UNKNOWN |
 
+本轮闭合（docs/41）；E41=`temp/disk-inventory-20261009`：
+
+| 结论与边界 | 证据 | 证据强度 |
+| --- | --- | --- |
+| /home起始可用40.931GiB；可读大目录与本项目全部一级temp证据已盘点，253个不可读子目录及shared/lost+found未知。跨扫描目录账不冒充精确释放量。 | docs/41 §1、§3、§7；E41/du-*.tsv、inventory-rows.json、completion.json | 硬证据（限可读范围/时点） |
+| P28/P29合计6.646GiB，限定旧二进制候选173.887GiB；以dev/inode/nlink扣除外部硬链接，总180.533GiB。docs/30 RPM+SRPM存在外部链接，释放记0；64GiB未启用swap未计入。 | docs/41 §4；E41/binary-payload-summary.json、inactive-swap.json | 硬证据（分配块估算；未删除，未来须复核打开文件/链接） |
+| Session只证明cwd/时间/标题关联，不能确证所有目录创建者；Gemini ID非唯一、早期创建Session存在缺口。 | docs/41 §2；E41/session-metadata.json、project-path-references.json | 硬证据（元数据关联）；创建者UNKNOWN不推测 |
+
 ## 4. 人工裁决前提
 
 下列为用户决策及其记录依据，区别于上一节的实测事实。后续 Session 不能擅自反转。
+
+本轮磁盘裁决：只盘点、不删除/移动/压缩/改权限；Rnew/B、N、N38、H、rpms-docs35、docs35–39证据、base-local-repo强制保留。隔离旧混合根本轮仅获准目录stat/du盘点，未解除其构建/认证用途隔离。任何删除须另经用户逐项确认（docs/41）。
 
 | 决策 | 依据与范围 | 登记位置 |
 | --- | --- | --- |
@@ -335,6 +349,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 本轮人工决定（docs/39）：仅调查与不超过30分钟小实验，不构建LLVM、不改spec/Source/补丁。用户确认356627与356639已上传；ARM若认证通过，转换扩展作为356627新patchset（原Change-Id不变），strip扩展作为356639新patchset并rebase在新的356627上；不新开review，x86已验证行为不变。依据：本轮用户任务；docs/39 §7–§9。
 
 ## 5. 挂账
+
+- 磁盘清理：请用户按docs/41逐项决定；仅“可删”类约6.646GiB尚不能补足60GiB门槛。其他项目的创建Session/保留需求、64GiB未启用swap用途及权限盲区待确认；目前无任何删除操作。
 
 | 分类 | 未闭合项 | 所需材料/下一步与验收边界 | 依据 |
 | --- | --- | --- | --- |
