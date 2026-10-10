@@ -417,3 +417,89 @@ MemorySwapMax=0，nice15/ionice3，4worker，各子命令4GiB地址空间；30�
 -    parser.add_argument('--arch', choices=['x86_64'], required=True)
 +    parser.add_argument('--arch', choices=['x86_64', 'armv7l', 'aarch64'], required=True)
 ```
+
+## 6. C0环境门禁：启动前停止，未构建ARM包
+
+B已单独提交并推送：`e66396a9e05483ce7d272fe6d1b267df492db41e`。随后进入C的环境检查。
+**STOP_BEFORE_C0_GBS**：本任务禁止修改宿主sysctl；已安装的正常GBS跨架构初始化明确包含将宿主`vm.mmap_min_addr`写为0的步骤，当前实际值为`65536`。
+按“规定之外停止当前步骤”的无人值守规则，没有执行这一入口，也没有修改GBS、使用替代入口或临时更改系统配置绕过。
+这不是实测ARM编译失败、不是新的binfmt执行失败，也不能写成“GBS正常流程不能注册binfmt”；**本轮C0包构建次数为0**。
+
+### 6.1 可复核的入口与停止依据
+
+| 事实 | 证据 |
+| --- | --- |
+| docs/39两ARM根对应配置可定位 | `/home/linhao/Toolchain/gbs_llvm.conf`的general.buildroot为`~/GBS-ROOT-TIZEN-UNIFIED-LLVM`；SHA `436fd7d66db9262e1b680f63ef15894de1a43578208fc4394b2b73293565011b` |
+| 正常GBS把架构交给depanneur | `/usr/lib/python3/dist-packages/gitbuildsys/cmd_build.py:612–620`；ARM不在`:54–63`的32位personality替换表 |
+| 默认使用宿主build脚本 | `/usr/bin/depanneur:129`，`/usr/lib/build/build:33–34,1268`；本轮未设置VIRTUAL_ENV/BUILD_DIR替换 |
+| x86_64主机执行ARM会选择模拟分支 | `/usr/lib/build/common_functions:23–30,97–124`；`:115–119`发现initvm/qemu-reg后返回需要emulator |
+| initvm与注册表实际存在 | `/usr/lib/build/initvm.x86_64`、`/usr/lib/build/qemu-reg`；只stat/读取，未执行chmod/initvm |
+| 注册之后明确写宿主sysctl | `/usr/lib/build/init_buildsystem:766–778`，关键`:773`为下方原文 |
+| 当前mmap_min_addr | `/proc/sys/vm/mmap_min_addr`：`65536` |
+| 当前binfmt注册 | 仅jar/python3.12（另有status/register）；无arm/aarch64注册 |
+
+```sh
+# /usr/lib/build/init_buildsystem:769–775
+if check_use_emulator ; then
+    echo "registering binfmt handlers for cross build"
+    "$BUILD_DIR/$INITVM_NAME"
+    echo 0 > /proc/sys/vm/mmap_min_addr
+    read mmap_min_addr < /proc/sys/vm/mmap_min_addr
+```
+
+这是静态路径核查，不声称网络/初始化一定已执行到第773行；它足以说明直接授权外执行会有宿主配置写入风险，故在启动前停下。
+对应配置的Base/Unified条目仍是历史日期快照；本轮没有借此更换仓库、发起新GBS或声称其在线状态。
+配置安全字段、原始binfmt状态、宿主值、全部源码SHA、原文副本和只读命令输出：`E/c0-preflight/result.json`及同目录。
+
+### 6.2 用户侧注册命令（仅提供，未执行）
+
+下面用本机`qemu-reg`的ELF magic/mask；arm将直接QEMU入口换为`qemu-arm-binfmt`并加P，确保保留argv[0]交给accel-aware dispatcher。
+aarch64沿用该表的`qemu-arm64-binfmt:P`。docs/39 §2/§8已记录历史根里这些别名指向`qemu-binfmt`；新根仍必须做实际exec验证。
+**命令只解决注册，不会消除GBS第773行的sysctl写入；该冲突须先由用户决定环境政策/入口，再恢复C0。** 不提供或执行sysctl放宽命令，不保证仅注册即可通过整个C0。
+
+```sh
+sudo sh -s <<'ROOT'
+set -eu
+test "$(id -u)" = 0
+test -w /proc/sys/fs/binfmt_misc/register
+test ! -e /proc/sys/fs/binfmt_misc/aarch64
+test ! -e /proc/sys/fs/binfmt_misc/arm
+/usr/bin/printf '%s\n' ':aarch64:M::\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff:/usr/bin/qemu-arm64-binfmt:P' > /proc/sys/fs/binfmt_misc/register
+/usr/bin/printf '%s\n' ':arm:M::\x7fELF\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfa\xff\xff\xff:/usr/bin/qemu-arm-binfmt:P' > /proc/sys/fs/binfmt_misc/register
+ROOT
+```
+
+使用`printf %s`保留文字形式的`\xNN`；不使用`%b`把`\x00`提前展开成NUL。格式及P/F语义依据[Linux binfmt_misc文档](https://docs.kernel.org/admin-guide/binfmt-misc.html)，仅做文本/ELF魔数匹配校验，未写register。
+
+既有同名条目会使此命令停止，不覆盖他人注册；没有加F把宿主解释器固定到所有chroot。没有挂载binfmt_misc、安装软件或执行以上root命令。
+
+### 6.3 本轮C状态与后续边界
+
+| 要求 | armv7l | aarch64 |
+| --- | --- | --- |
+| C0极小GBS包/accel exec | NOT RUN：宿主sysctl约束在入口前停止 | NOT RUN：依赖ARM32阶段 |
+| C1 prep/configure/仅静态库目标 | NOT RUN | NOT RUN |
+| C2真实原命令/ABI/优化级普查 | NOT RUN | NOT RUN |
+| C3全量转换/PIC/符号/消费者/两种strip | NOT RUN | NOT RUN |
+
+没有创建新ARM构建根，没有ARM LLVM编译/安装/打包，没有修改ARM参数草案或重试。
+候选Source的ARM资格仍是**未认证**；x86不变性的B PASS独立成立。两份已上传补丁、W/llvm及其spec、gbs_llvm.conf保持原样。
+后续必须先解除C0入口约束，再按原C0→C1→C2→C3顺序执行；没有从docs/39小样本或本轮夹具推导真实ARM全库PASS。
+
+## 7. 本次收尾与证据清单
+
+B的scope/采样器已退出，项目锁已释放；没有本任务GBS/ninja/rpmbuild/编译器残留或新挂载。
+保护SHA复核、进程/挂载/锁状态见`E/final-cleanup.json`、`E/protected-final.json`、`E/lock-released.json`。
+B进度与本次停止各一提交并推GitHub；没有Gerrit推送。本报告前§1–4及docs/25–39、41、42原文保持不动。
+
+| 证据 | 内容 |
+| --- | --- |
+| `E/precheck.json`、`lock-acquired.json` | 空间准入、工作树、项目独占 |
+| `E/anchor-metadata.json`、`x86-input-check.json` | 历史基准与225原件身份 |
+| `E/candidate.json`、`source-vs-6bd0546a.diff` | 隔离实现身份、完整代码差异 |
+| `E/unit-tests.log`、`unit-tests-result.json` | 54相关旧测试+6新正负夹具PASS |
+| `E/x86-regression-result.json`、`x86-conversion/summary.json` | 225整档/3864成员/完整索引/后端flags逐项一致 |
+| `E/x86-conversion/members/` | 全部逐成员IR设置、命令、RSS、符号、重定位记录 |
+| `E/x86-regression-scope/` | 完整scope命令、日志、time、内存/进程采样及回收状态 |
+| `E/c0-preflight/` | 未启动C0的真实环境与源码证据；root命令仅文本 |
+| `E/b-commit.txt`、`b-push.log` | B阶段已发布的提交与push输出 |
