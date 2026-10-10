@@ -1,5 +1,7 @@
 # 44 ARM Source 第一轮评审：普查、PM 裁决与修订停止记录
 
+**续三进度：根内事实核查、宿主测试与根内分类验收已通过；新候选e2c2ebfa的x86全量不变性通过。两ARM与TLS/符号核查继续执行，详见§18起。以下此前状态均为历史记录。**
+
 **当前状态（续二）：600例取消诊断PASS；授权小修后宿主99/99 PASS，ARM根94/99 PASS、2 FAIL+3环境ERROR，按第三步门禁停止。全量x86/两ARM复验与符号只读核查未执行。详见§13–§17；下方原有“最新/本轮”文字完整保留为此前停止记录。**
 
 **最新状态（续接，2026-10-10）：第二步 ARM Source 修订已写入；第三步宿主测试第二次仍 FAIL，按“同一步骤第二次失败即停止”结束。** 95 项中 94 PASS，失败为既有 `test_g_failed_leader_descendants_are_killed`，读取后代进程状态为 `R (running)`、断言要求不存在或 `Z`。没有第三次尝试、没有改共用 Commands；ARM 根测试、x86 全量回归、两 ARM 重新转换和消费者、105/106 夹具、x86 module asm 只读实验均 NOT RUN。新候选未认证，不能取代历史1620或生产6bd。详见§7–§12；本页§0–§6完整保留首轮普查与当时停止结论，里面的“本轮”指此前普查轮。（证据：E2/unit-tests-host-retry.log、stop-result.json。）
@@ -43,59 +45,7 @@ prlimit --as=4294967296:4294967296 --   "$R/emul/lib64/ld-linux-x86-64.so.2"   -
 
 以下逐成员来自gate-result.json；ordinal为0起，同名序号为1起。51项的define数与module asm数均为0，所以没有触发用户第一步第1项的停止条件。这里的“无函数属性”不是“有函数却忘记目标属性”。（证据：gate-ir中的51份完整.ll及gate-result.json。）
 
-| 架构 | 归档 | 成员（ordinal / 同名序号） | define数 | module asm数 |
-|---|---|---|---:|---:|
-| armv7l | libLLVMABI.a | `Types.cpp.o` (0 / 1) | 0 | 0 |
-| armv7l | libLLVMAnalysis.a | `TFLiteUtils.cpp.o` (117 / 1) | 0 | 0 |
-| armv7l | libLLVMAnalysis.a | `DevelopmentModeInlineAdvisor.cpp.o` (37 / 1) | 0 | 0 |
-| armv7l | libLLVMAnalysis.a | `ModelUnderTrainingRunner.cpp.o` (88 / 1) | 0 | 0 |
-| armv7l | libLLVMDWARFLinker.a | `Utils.cpp.o` (1 / 1) | 0 | 0 |
-| armv7l | libLLVMDWP.a | `DWPError.cpp.o` (1 / 1) | 0 | 0 |
-| armv7l | libLLVMFrontendHLSL.a | `HLSLResource.cpp.o` (2 / 1) | 0 | 0 |
-| armv7l | libLLVMMC.a | `MCAsmMacro.cpp.o` (13 / 1) | 0 | 0 |
-| armv7l | libLLVMOrcShared.a | `OrcRTBridge.cpp.o` (4 / 1) | 0 | 0 |
-| armv7l | libLLVMPasses.a | `CodeGenPassBuilder.cpp.o` (0 / 1) | 0 | 0 |
-| armv7l | libLLVMPasses.a | `OptimizationLevel.cpp.o` (1 / 1) | 0 | 0 |
-| armv7l | libLLVMSandboxIR.a | `Argument.cpp.o` (0 / 1) | 0 | 0 |
-| armv7l | libLLVMSandboxIR.a | `Pass.cpp.o` (7 / 1) | 0 | 0 |
-| armv7l | libLLVMSupport.a | `UnicodeNameToCodepointGenerated.cpp.o` (139 / 1) | 0 | 0 |
-| armv7l | libLLVMSupport.a | `RWMutex.cpp.o` (169 / 1) | 0 | 0 |
-| armv7l | libLLVMSupport.a | `AutoConvert.cpp.o` (17 / 1) | 0 | 0 |
-| armv7l | libLLVMSupport.a | `zOSLibFunctions.cpp.o` (174 / 1) | 0 | 0 |
-| armv7l | libLLVMSupport.a | `blake3_neon.c.o` (3 / 1) | 0 | 0 |
-| armv7l | libLLVMSupport.a | `ABIBreak.cpp.o` (4 / 1) | 0 | 0 |
-| armv7l | libLLVMSupport.a | `MathExtras.cpp.o` (84 / 1) | 0 | 0 |
-| armv7l | libLLVMVectorize.a | `InstrMaps.cpp.o` (5 / 1) | 0 | 0 |
-| armv7l | libclangBasic.a | `CharInfo.cpp.o` (4 / 1) | 0 | 0 |
-| armv7l | libclangRewriteFrontend.a | `RewriteModernObjC.cpp.o` (5 / 1) | 0 | 0 |
-| armv7l | libclangRewriteFrontend.a | `RewriteObjC.cpp.o` (6 / 1) | 0 | 0 |
-| armv7l | libclangStaticAnalyzerCore.a | `CommonBugCategories.cpp.o` (15 / 1) | 0 | 0 |
-| armv7l | liblldMachO.a | `Target.cpp.o` (27 / 1) | 0 | 0 |
-| aarch64 | libLLVMABI.a | `Types.cpp.o` (0 / 1) | 0 | 0 |
-| aarch64 | libLLVMAnalysis.a | `TFLiteUtils.cpp.o` (117 / 1) | 0 | 0 |
-| aarch64 | libLLVMAnalysis.a | `DevelopmentModeInlineAdvisor.cpp.o` (37 / 1) | 0 | 0 |
-| aarch64 | libLLVMAnalysis.a | `ModelUnderTrainingRunner.cpp.o` (88 / 1) | 0 | 0 |
-| aarch64 | libLLVMDWARFLinker.a | `Utils.cpp.o` (1 / 1) | 0 | 0 |
-| aarch64 | libLLVMDWP.a | `DWPError.cpp.o` (1 / 1) | 0 | 0 |
-| aarch64 | libLLVMFrontendHLSL.a | `HLSLResource.cpp.o` (2 / 1) | 0 | 0 |
-| aarch64 | libLLVMMC.a | `MCAsmMacro.cpp.o` (13 / 1) | 0 | 0 |
-| aarch64 | libLLVMOrcShared.a | `OrcRTBridge.cpp.o` (4 / 1) | 0 | 0 |
-| aarch64 | libLLVMPasses.a | `CodeGenPassBuilder.cpp.o` (0 / 1) | 0 | 0 |
-| aarch64 | libLLVMPasses.a | `OptimizationLevel.cpp.o` (1 / 1) | 0 | 0 |
-| aarch64 | libLLVMSandboxIR.a | `Argument.cpp.o` (0 / 1) | 0 | 0 |
-| aarch64 | libLLVMSandboxIR.a | `Pass.cpp.o` (7 / 1) | 0 | 0 |
-| aarch64 | libLLVMSupport.a | `UnicodeNameToCodepointGenerated.cpp.o` (139 / 1) | 0 | 0 |
-| aarch64 | libLLVMSupport.a | `RWMutex.cpp.o` (169 / 1) | 0 | 0 |
-| aarch64 | libLLVMSupport.a | `AutoConvert.cpp.o` (17 / 1) | 0 | 0 |
-| aarch64 | libLLVMSupport.a | `zOSLibFunctions.cpp.o` (174 / 1) | 0 | 0 |
-| aarch64 | libLLVMSupport.a | `ABIBreak.cpp.o` (4 / 1) | 0 | 0 |
-| aarch64 | libLLVMSupport.a | `MathExtras.cpp.o` (84 / 1) | 0 | 0 |
-| aarch64 | libLLVMVectorize.a | `InstrMaps.cpp.o` (5 / 1) | 0 | 0 |
-| aarch64 | libclangBasic.a | `CharInfo.cpp.o` (4 / 1) | 0 | 0 |
-| aarch64 | libclangRewriteFrontend.a | `RewriteModernObjC.cpp.o` (5 / 1) | 0 | 0 |
-| aarch64 | libclangRewriteFrontend.a | `RewriteObjC.cpp.o` (6 / 1) | 0 | 0 |
-| aarch64 | libclangStaticAnalyzerCore.a | `CommonBugCategories.cpp.o` (15 / 1) | 0 | 0 |
-| aarch64 | liblldMachO.a | `Target.cpp.o` (27 / 1) | 0 | 0 |
+[51项逐成员完整表](44_census_tables.md#1-51个无函数属性成员)，因正文50KB上限原样移出；历史证据与结论不变。
 
 ## 2. 全部函数目标属性：精确值与逐值计数
 
@@ -221,21 +171,7 @@ AArch64三项的输入与本次llvm-dis输出摘要如下，均经输入成员SH
 
 评审来源仍为用户转述的Codex/Claude Code合并意见；输入没有逐条原评审作者，以下以本次PM编号为唯一可核对来源，不虚构三方归属。**“已写入”只描述代码实现，整套测试未通过，不称认证完成。** Source行号属于下列新SHA。（证据：本次任务第二步；Source与外置diff。）
 
-| PM项 | 本次写入内容 | 新Source证据 |
-|---|---|---|
-| 1 | 未知/STOP/LE检查均在非ALLOC跳过前；checked/types仅累计ALLOC | arm_pic_relocations:912起 |
-| 2 | A64 TLS ALLOW精确562/563/564/569；移除的旧GD/LD/描述符片段显式PENDING | ARM_TLS_ALLOWED/LOCAL_EXEC/PENDING:783–797 |
-| 3 | 每个define必须引用属性组，cpu/features/tune等于§2精确元组；无define放行 | ARM_CERTIFIED_FUNCTION_TARGET:486起；arm_function_targets:499；arm_ir_settings:706 |
-| 4 | A64 absolute移除317/580、allowed移除256 | arm_pic_relocations:933–943 |
-| 5 | 固定env LC_ALL=C GNU readelf -AW；aeabi与CPU_arch必需；缺项None，缺项与显式0不同 | arm_attributes:661；arm_thumb_gate:888 |
-| 6 | ARM专用ELF布局/边界校验；REL/RELA、扩展数量/名称/符号索引；raw shndx==0xfff1才是真ABS；重定位offset须在目标节内 | arm_elf_layout:544；arm_symbol_section:636 |
-| 7 | 指令ABS在可写ALLOC同样禁止；可写完整指针只放ARM32 2/38/55、A64 257；真ABS独立豁免 | arm_pic_relocations:947–955 |
-| 8 | 两架构精确module asm白名单先于ARM32原节跟踪；同名节保留各序列；输出GLOBAL符号必需 | arm_module_asm_whitelist:526；arm_check_module_asm_symbol:650；arm_mapping_modes:863；convert:1265起 |
-| 9 | -Wa,在通用-W诊断分类前显式拒绝 | arm_classify_options:430 |
-| 10 | ARM专用工具完整版本匹配；dis/nm路径/SHA/版本；ARM32另验env/readelf可执行与GNU身份 | validate_arm_tools:676；convert:1210起 |
-| 11 | ARM32 PENDING增13/17/18/19/109/165/166/167 | ARM_TLS_PENDING:794–797 |
-| 12 | 两-mtune注释补Driver/CodeGen源码出处；TARGET1按ABS32/REL32中更严格ABS解释 | ARM_EXACT_TOKENS:375–394；arm_pic_relocations:921 |
-| 13 | ARM summary增加纯机器码整档跳过的相对路径、SHA、成员数；x86不增加字段 | convert:1219–1221 |
+完整明细原样移至 [docs/44表格附件](44_census_tables.md) 的§8：13项修订实施明细，正文其余说明与历史判定不变。
 
 x86隔离：相对1620，原有非ARM函数体除`convert`与`policy_for_arch`两个分派点均AST相同；`classify_options/ir_settings/pic_relocations/validate_tools/Commands/install`等原函数未改。分派的x86 settings返回原`ir_settings`函数本体，工具预检仍调用原`validate_tools`。生产6bd的共用函数体也逐项AST相同。此项只证明源码隔离，**不替代225档的产物回归**。（证据：E2/source-isolation.json；本轮测试`test_original_functions_are_identical`、`test_x86_actual_convert_success_failure_all_arm_functions_blocked`。）
 
@@ -285,13 +221,7 @@ FAILED (failures=1)
 
 ### 9.3 新增28项测试索引
 
-| 组 | 新增测试名称（test_前缀省略）与覆盖 |
-|---|---|
-| TLS/重定位5项 | tls_literal_sets_and_disjointness；tls_boundary_numbers；removed_tls_and_invalid_constants_in_all_contexts；nonalloc_known_not_counted_unknown_rejected；writable_instruction_absolute_vs_pointer |
-| ELF结构6项 | rel_rela_architecture_matrix；extended_count_names_and_symbol_index；decoded_65521_is_real_section_not_absolute；missing_duplicate_badcount_extended_indexes；invalid_links_tables_payloads_and_truncation；relocation_offset_and_symbol_boundaries |
-| mapping/读取6项 | mapping_thumb_only；mapping_transition_deduplicated；mapping_duplicate_section_names_preserved；mapping_missing_and_out_of_bounds_rejected；reader_empty_no_aeabi_and_bad_format_rejected；missing_differs_from_zero_and_missing_vfp_valid |
-| 函数/参数/asm6项 | certified_function_targets_and_data_modules；cpu_features_tune_and_missing_groups_rejected；real_command_literals_and_assembler_escape；module_asm_exact_and_whitespace_only；module_asm_all_other_statements_rejected；module_asm_output_global_symbol_required |
-| 工具/x86隔离5项 | matching_full_versions_and_gnu_reader；disassembler_nm_version_mismatch；non_gnu_reader_rejected；x86_fixed_constants_and_original_function_objects；x86_actual_convert_success_failure_all_arm_functions_blocked |
+完整明细原样移至 [docs/44表格附件](44_census_tables.md) 的§9.3：新增28项测试索引，正文其余说明与历史判定不变。
 
 最后一项mock全部ARM函数为抛异常，实际调用x86 convert的native整档跳过成功与thin拒绝路径；它没有模拟全量3853次bitcode转换，不能代替下一步真实x86回归。（证据：ToolIsolationTests；E2/revision-metadata.json记录41个ARM模块完整测试名。）
 
@@ -495,3 +425,12 @@ x86路径不变的依据：本轮生产/候选Source及Commands均无修改，�
 测试修正提交`93a3a5b`后，ARM32根Python3.14.2一次运行99项，23.663830s：95 PASS、1 FAIL、3 ERROR；原始unittest仍exit1/FAIL，不篡改。三个ERROR分别为两个辅助模块缺/usr/bin/time、x86 as --64夹具环境不适用；唯一FAIL是AS读回[[-1,-1],[0,0]]，按§18实证及PM裁决记已知环境发现。除此之外95项全部PASS，含修正的timeout与后代回收测试，故本任务分类门禁PASS。（证据：E4/armv7l-test-records.json逐项记录、root-tests-classified.json、armv7l-unit-tests-final-result.json。）
 
 根内/proc/self/status可见；挂载前/中/后mountinfo完整保存，finally卸载exit0。复制的测试文件与宿主同SHA，未改那四项测试、未安装工具、未改Source。完整argv和原始异常见E4/root-test-commands.json、armv7l-unit-tests.log；解释器见armv7l-environment.json。随后执行宿主离线复验，不把此分类验收称为ARM生产AS限流通过。
+
+
+## 22. 续三：x86全量不变性PASS（2026-10-11）
+
+根内分类记录先推送`744a1fe`。输入E5/x86-input逐档before SHA均与docs/35锚点一致；用固定e2c2ebfa重新转换到E4/x86-final-conversion，225档after SHA、3,864个有序成员（ordinal/name/occurrence/SHA）、318,543项完整符号→成员索引及3,853组后端flags顺序均完全一致。3,853 bitcode转换、11原机器码保留；允许缺失W=1,920，强符号缺失0，与历史一致。（证据：E4/x86-final-input-check.json、x86-final-comparison-progress.json、x86-final-regression-result.json；锚点E5/anchor-metadata.json指向docs/35 ba-install-conversion-evidence/summary.json。）
+
+沿用18GiB cgroup/swap0、4 workers、每命令4GiB AS、nice15/ionice3、30秒采样及宿主<2GiB保护。转换wall 1694.557544s，scope 1761.789200s；scope峰 12474638336B（含文件缓存）、宿主最低可用 17857900544B；memory.events各项0，采样器和日志线程均回收。没有LLVM重建、%install或打包。（证据：E4/run_x86_final.py、x86-plan.json、x86-regression-scope/outcome.json、memory-summary.json及全部命令JSON。）
+
+为保持本页≤50KB，§1的51项表、§8修订明细表、§9.3测试索引原样移至[表格附件](44_census_tables.md)，没有删历史内容或重判。迁移摘要见E4/census-table-move.json、history-tables-move.json。

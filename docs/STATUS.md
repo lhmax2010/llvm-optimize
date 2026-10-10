@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
-更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/44续三）根内分类验收PASS**：宿主99/99；ARM根99项中95 PASS、3环境不适用、1已证实的QEMU AS限制发现，恰为PM允许项；timeout PASS，proc已卸载。Source仍e2c2ebfa，开始宿主全量回归。详见docs/44 §18–§21。
+更新日期：2026-10-11。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
+**当前任务（docs/44续三）x86全量回归PASS**：225档/3864有序成员/完整索引/3853 flags与docs/35完全一致，Source仍e2c2ebfa。宿主99PASS，ARM根95PASS+3环境不适用+1 AS已知发现。接下来两ARM宿主转换及TLS/符号检查；详见docs/44 §18–§22。
 
 **历史文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
 
@@ -141,7 +141,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `c4c635c` | docs/44 §18–§19、STATUS | 启动时延20/20>0.15s；两根AS不生效、nofile正常，原生prlimit缺席；允许继续宿主离线验证。 |
 | 2026-10-10 | 93a3a5b | docs/44 §20、timeout测试、STATUS | 仅改5秒/就绪前提；宿主99/99 PASS，准备根内分类验收。 |
 
-| 2026-10-10 | 本次根内测试提交 | docs/44 §21、STATUS | 95 PASS + 3环境不适用 + 1 AS已知发现；按PM规则通过，proc卸载 |
+| 2026-10-10 | 744a1fe | docs/44 §21、STATUS | 95 PASS + 3环境不适用 + 1 AS已知发现；按PM规则通过，proc卸载 |
+
+| 2026-10-11 | 本次x86回归提交 | docs/44 §22、表格附件、STATUS | 新候选x86全量225档/3864成员/318543索引/3853 flags与docs/35一致 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
