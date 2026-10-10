@@ -1,8 +1,8 @@
 # 40 ARM 静态库转换第一段：历史记录与 C 阶段续接
 
-> **最新状态（2026-10-10，§11）：armv7l 标准完整 `%build` PASS，7,147任务/1,998.953884s；210开发归档普查完成。C3在 `libLLVMARMCodeGen.a(ARMAsmPrinter.cpp.o)` 的未认证 `R_ARM_TLS_GD32`（104）处停止。** 没有OOM，未扩展规则或重试转换；消费者/strip与aarch64均未执行。构建树、缓存和失败现场保留，Source未改。
+> **最新状态（2026-10-10，§12）：TLS/Thumb候选Source修订、67测试与最终SHA的x86全量回归PASS（225档/3864成员/完整索引/后端flags均相同）。** 已先发布本阶段；ARM32全量转换与消费者、AArch64仍待后续执行，不能据此更新ARM生产patchset。
 >
-> **用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`。** 宿主开场和结束均为 0，本轮允许 GBS 标准初始化保持此值；结束不代恢复。重启也会重新加载系统配置、恢复该非持久化修改。GBS 注册条目保留，代理未手工注册。以下 §1–§10 保留历史状态，当前结论见 §11。
+> **用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`。** 宿主开场和结束均为 0，本轮允许 GBS 标准初始化保持此值；结束不代恢复。重启也会重新加载系统配置、恢复该非持久化修改。GBS 注册条目保留，代理未手工注册。以下 §1–§11 保留历史状态，当前结论见 §12。
 
 日期：2026-10-10（Asia/Shanghai）。本报告与[docs/42](42_disk_cleanup.md)、STATUS同commit发布。
 
@@ -1649,3 +1649,386 @@ GBS 123缓存RPM逐文件与§10相符；B10、输入/输出副本和失败成�
 本轮只执行获准标准ARM32 `%prep/%build` 与只读普查/副本转换；无 `%install`/打包、BOLT、性能校准、Chromium或Gerrit推送。
 
 仅docs/40与STATUS同commit推送；§1–§10正文保留，开头更新当前状态。提交与push原始输出保存 `E11/commit.txt`、`git-push.log`、`remote-head.txt`。
+
+## 12. TLS 与 Thumb 认证续接（2026-10-10）
+
+本节承接§11的停止；历史§1–§11不改判。本轮用户授权补充GD/LD/TLSDESC策略、修正Thumb、重新做x86全量回归，再按armv7l→aarch64顺序执行；仍禁止未知类型自动放行。`E12=/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010`。原始命令、输出、逐成员证据只保存在该目录。
+
+### 12.1 输入、实现边界和源码依据
+
+开场项目进程与锁检查、保护文件摘要见 `E12/precheck.json`、`lock-acquired.json`。持有本项目锁，不占用别的项目。W配置沿用用户版本 `28f1caf93cd39738a7da1e0da8d5f945f7372963bb9823a507f9157294272169`，仍不暂存；E9导出/buildconfig、B10与210档输入沿用§11，未重建ARM32、未更换仓库。
+
+新候选 `tools/llvm_static_archives_arm_trial.py` SHA256 **`1620a8da778062216bea61f6ac43eb6b64df9963b2d5778058be6ca7b31a7607`**。生产Source `6bd0546a…`、两份已上传补丁、W/llvm与spec均不改。所有新增行为位于ARM分派；x86仍使用原ir_settings/pic_relocations/命令构造。完整diff见本节末与 `E12/source-vs-6a36f173.diff`。
+
+Thumb依据：`llvm/clang/lib/Driver/ToolChain.cpp:1276` 的ARM triple处理调用 `arm::setArchNameInTriple`，`:1291` 的 `ComputeEffectiveClangTriple` 委托该计算；`llvm/clang/lib/Driver/ToolChains/Arch/ARM.cpp:286` 的Thumb默认条件不包括Linux ARMv7，`:310`–`:316` 读取显式 `-mthumb`，`:345`–`:351` 写入thumb架构。因此原命令 `-mthumb` 从ir改为restore，ARM32转换显式补回。任一转换/参考编译stderr出现 `-Woverride-module` 或 `overriding the module target triple` 均失败，保留完整stderr。
+
+每个ARM32 bitcode成员另以同一IR、原记录参数（去掉LTO/输入输出动作，显式 `-x ir -c`）生成参考对象。用readelf比较Tag_ARM_ISA_use、Tag_THUMB_ISA_use、Tag_ABI_VFP_args；用ELF mapping symbols `$a/$t/$d` 比较文件级内联汇编所处可执行节的模式序列（不要求代码地址/字节相同）。没有显式属性按ABI缺省0记录，不把缺失当作Thumb-2。每成员保留 `thumb-gate.json`、参考编译完整argv和资源数据；26个缺函数属性成员另逐项汇总。此门禁不是普通C++源码重新编译，也不改变构建树对象。
+
+LE在ARM解析器中直接抛错，先于SHF_ALLOC/可写/SHN_ABS分支，且不依赖PIC Level。IE、ARM32描述符及其他未认证类型仍硬失败；此次允许的TLS种类可出现在只读或可写可加载节。这是本轮明确授权的规则，不是失败后放宽。
+
+下表逐号列出ELF输入重定位策略。`definition`行号分别指 `llvm/llvm/include/llvm/BinaryFormat/ELFRelocs/ARM.def` / `AArch64.def`；lld行号分别指 `llvm/lld/ELF/Arch/ARM.cpp` / `AArch64.cpp` 的getRelExpr；ABI行号指已存档的 `temp/arm-archive-feasibility-20261009/aaelf32.stdout` / `aaelf64.stdout`（每份SHA及完整逐条定位存 `E12/tls-source-evidence.json`）。STOP包含用户要求待PM的类型以及当前未覆盖类型；动态输出重定位不因此自动获得ET_REL输入许可。
+
+AArch64的ABI表有legacy GD/LD与DTPREL片段；当前lld的getRelExpr并未实现其中多种，表中明确标注“无case”。允许其PIC对象格式**不证明当前lld能链接这些对象**，实际消费者仍是后续独立门禁。常用TLSDESC PAGE/LD64/ADD/CALL有对应case。ARM的GD32/LDM32/LDO32分别返回R_TLSGD_PC/R_TLSLD_PC/R_DTPREL（ARM.cpp:147–152）；AAELF32:2595起定义GOT TLS索引经DTPMOD/DTPOFF动态重定位修正，代码中的PC相对引用不要求改写文本。
+
+|架构 / 编号|类型|判定|LLVM定义行|lld getRelExpr 行 / 表达式|AAELF行|
+|---|---|---|---|---|---|
+|armv7l / 13|`R_ARM_TLS_DESC`|STOP_UNCERTIFIED|20|无case；default:197拒绝|1790,2630,2635|
+|armv7l / 17|`R_ARM_TLS_DTPMOD32`|STOP_UNCERTIFIED|24|无case；default:197拒绝|283,1798,2597,2652|
+|armv7l / 18|`R_ARM_TLS_DTPOFF32`|STOP_UNCERTIFIED|25|无case；default:197拒绝|1800,2597,2656|
+|armv7l / 19|`R_ARM_TLS_TPOFF32`|STOP_UNCERTIFIED|26|无case；default:197拒绝|284,1802,2618,2622,2658|
+|armv7l / 90|`R_ARM_TLS_GOTDESC`|STOP_UNCERTIFIED|97|无case；default:197拒绝|1946,2630|
+|armv7l / 91|`R_ARM_TLS_CALL`|STOP_UNCERTIFIED|98|无case；default:197拒绝|1948,2630|
+|armv7l / 92|`R_ARM_TLS_DESCSEQ`|STOP_UNCERTIFIED|99|无case；default:197拒绝|1950,2630|
+|armv7l / 93|`R_ARM_THM_TLS_CALL`|STOP_UNCERTIFIED|100|无case；default:197拒绝|1952,2631|
+|armv7l / 104|`R_ARM_TLS_GD32`|ALLOW|111|147→148 return R_TLSGD_PC;|1974,2578,2595,2601|
+|armv7l / 105|`R_ARM_TLS_LDM32`|ALLOW|112|149→150 return R_TLSLD_PC;|1976,2580,2601|
+|armv7l / 106|`R_ARM_TLS_LDO32`|ALLOW|113|151→152 return R_DTPREL;|1978,2582,2604,2608|
+|armv7l / 107|`R_ARM_TLS_IE32`|STOP_UNCERTIFIED|114|134→136 return R_GOT_PC;|1980,2584,2617|
+|armv7l / 108|`R_ARM_TLS_LE32`|FORBIDDEN_LE|115|188→189 return R_TPREL;|1982,2586,2611,2614|
+|armv7l / 109|`R_ARM_TLS_LDO12`|STOP_UNCERTIFIED|116|无case；default:197拒绝|1984,2171,2588,2608|
+|armv7l / 110|`R_ARM_TLS_LE12`|FORBIDDEN_LE|117|无case；default:197拒绝|1986,2173,2590,2614|
+|armv7l / 111|`R_ARM_TLS_IE12GP`|STOP_UNCERTIFIED|118|无case；default:197拒绝|1988,2175,2592,2621|
+|armv7l / 129|`R_ARM_THM_TLS_DESCSEQ16`|STOP_UNCERTIFIED|136|无case；default:197拒绝|1994,2631|
+|armv7l / 130|`R_ARM_THM_TLS_DESCSEQ32`|STOP_UNCERTIFIED|137|无case；default:197拒绝|1996,2632|
+|armv7l / 165|`R_ARM_TLS_GD32_FDPIC`|STOP_UNCERTIFIED|150|无case；default:197拒绝|该版本正文未列；不放行|
+|armv7l / 166|`R_ARM_TLS_LDM32_FDPIC`|STOP_UNCERTIFIED|151|无case；default:197拒绝|该版本正文未列；不放行|
+|armv7l / 167|`R_ARM_TLS_IE32_FDPIC`|STOP_UNCERTIFIED|152|无case；default:197拒绝|该版本正文未列；不放行|
+|aarch64 / 512|`R_AARCH64_TLSGD_ADR_PREL21`|ALLOW|67|无case；default:243拒绝|1488|
+|aarch64 / 513|`R_AARCH64_TLSGD_ADR_PAGE21`|ALLOW|68|无case；default:243拒绝|1490|
+|aarch64 / 514|`R_AARCH64_TLSGD_ADD_LO12_NC`|ALLOW|69|无case；default:243拒绝|1492|
+|aarch64 / 515|`R_AARCH64_TLSGD_MOVW_G1`|ALLOW|70|无case；default:243拒绝|1494|
+|aarch64 / 516|`R_AARCH64_TLSGD_MOVW_G0_NC`|ALLOW|71|无case；default:243拒绝|1496|
+|aarch64 / 517|`R_AARCH64_TLSLD_ADR_PREL21`|ALLOW|73|无case；default:243拒绝|1520|
+|aarch64 / 518|`R_AARCH64_TLSLD_ADR_PAGE21`|ALLOW|74|无case；default:243拒绝|1522|
+|aarch64 / 519|`R_AARCH64_TLSLD_ADD_LO12_NC`|ALLOW|75|无case；default:243拒绝|1524|
+|aarch64 / 520|`R_AARCH64_TLSLD_MOVW_G1`|ALLOW|76|无case；default:243拒绝|1526|
+|aarch64 / 521|`R_AARCH64_TLSLD_MOVW_G0_NC`|ALLOW|77|无case；default:243拒绝|1528|
+|aarch64 / 522|`R_AARCH64_TLSLD_LD_PREL19`|ALLOW|78|无case；default:243拒绝|1530|
+|aarch64 / 523|`R_AARCH64_TLSLD_MOVW_DTPREL_G2`|ALLOW|79|无case；default:243拒绝|1532|
+|aarch64 / 524|`R_AARCH64_TLSLD_MOVW_DTPREL_G1`|ALLOW|80|无case；default:243拒绝|1534|
+|aarch64 / 525|`R_AARCH64_TLSLD_MOVW_DTPREL_G1_NC`|ALLOW|81|无case；default:243拒绝|1536|
+|aarch64 / 526|`R_AARCH64_TLSLD_MOVW_DTPREL_G0`|ALLOW|82|无case；default:243拒绝|1538|
+|aarch64 / 527|`R_AARCH64_TLSLD_MOVW_DTPREL_G0_NC`|ALLOW|83|无case；default:243拒绝|1540|
+|aarch64 / 528|`R_AARCH64_TLSLD_ADD_DTPREL_HI12`|ALLOW|84|无case；default:243拒绝|1542|
+|aarch64 / 529|`R_AARCH64_TLSLD_ADD_DTPREL_LO12`|ALLOW|85|无case；default:243拒绝|1544|
+|aarch64 / 530|`R_AARCH64_TLSLD_ADD_DTPREL_LO12_NC`|ALLOW|86|无case；default:243拒绝|1546|
+|aarch64 / 531|`R_AARCH64_TLSLD_LDST8_DTPREL_LO12`|ALLOW|87|无case；default:243拒绝|1548|
+|aarch64 / 532|`R_AARCH64_TLSLD_LDST8_DTPREL_LO12_NC`|ALLOW|88|无case；default:243拒绝|1550|
+|aarch64 / 533|`R_AARCH64_TLSLD_LDST16_DTPREL_LO12`|ALLOW|89|无case；default:243拒绝|1552|
+|aarch64 / 534|`R_AARCH64_TLSLD_LDST16_DTPREL_LO12_NC`|ALLOW|90|无case；default:243拒绝|1554|
+|aarch64 / 535|`R_AARCH64_TLSLD_LDST32_DTPREL_LO12`|ALLOW|91|无case；default:243拒绝|1556|
+|aarch64 / 536|`R_AARCH64_TLSLD_LDST32_DTPREL_LO12_NC`|ALLOW|92|无case；default:243拒绝|1558|
+|aarch64 / 537|`R_AARCH64_TLSLD_LDST64_DTPREL_LO12`|ALLOW|93|无case；default:243拒绝|1560|
+|aarch64 / 538|`R_AARCH64_TLSLD_LDST64_DTPREL_LO12_NC`|ALLOW|94|无case；default:243拒绝|1562|
+|aarch64 / 539|`R_AARCH64_TLSIE_MOVW_GOTTPREL_G1`|STOP_UNCERTIFIED|95|无case；default:243拒绝|1592|
+|aarch64 / 540|`R_AARCH64_TLSIE_MOVW_GOTTPREL_G0_NC`|STOP_UNCERTIFIED|96|无case；default:243拒绝|1594|
+|aarch64 / 541|`R_AARCH64_TLSIE_ADR_GOTTPREL_PAGE21`|STOP_UNCERTIFIED|97|233→234 return RE_AARCH64_GOT_PAGE_PC;|1373,1383,1596|
+|aarch64 / 542|`R_AARCH64_TLSIE_LD64_GOTTPREL_LO12_NC`|STOP_UNCERTIFIED|98|222→223 return R_GOT;|1374,1383,1598|
+|aarch64 / 543|`R_AARCH64_TLSIE_LD_GOTTPREL_PREL19`|STOP_UNCERTIFIED|99|无case；default:243拒绝|1375,1600|
+|aarch64 / 544|`R_AARCH64_TLSLE_MOVW_TPREL_G2`|FORBIDDEN_LE|101|195→196 return R_TPREL;|1620|
+|aarch64 / 545|`R_AARCH64_TLSLE_MOVW_TPREL_G1`|FORBIDDEN_LE|102|193→196 return R_TPREL;|1622|
+|aarch64 / 546|`R_AARCH64_TLSLE_MOVW_TPREL_G1_NC`|FORBIDDEN_LE|103|194→196 return R_TPREL;|1624|
+|aarch64 / 547|`R_AARCH64_TLSLE_MOVW_TPREL_G0`|FORBIDDEN_LE|104|191→196 return R_TPREL;|1380,1381,1626|
+|aarch64 / 548|`R_AARCH64_TLSLE_MOVW_TPREL_G0_NC`|FORBIDDEN_LE|105|192→196 return R_TPREL;|1628|
+|aarch64 / 549|`R_AARCH64_TLSLE_ADD_TPREL_HI12`|FORBIDDEN_LE|106|184→196 return R_TPREL;|1359,1630|
+|aarch64 / 550|`R_AARCH64_TLSLE_ADD_TPREL_LO12`|FORBIDDEN_LE|107|无case；default:243拒绝|1632|
+|aarch64 / 551|`R_AARCH64_TLSLE_ADD_TPREL_LO12_NC`|FORBIDDEN_LE|108|185→196 return R_TPREL;|1634|
+|aarch64 / 552|`R_AARCH64_TLSLE_LDST8_TPREL_LO12`|FORBIDDEN_LE|109|无case；default:243拒绝|1636|
+|aarch64 / 553|`R_AARCH64_TLSLE_LDST8_TPREL_LO12_NC`|FORBIDDEN_LE|110|186→196 return R_TPREL;|1638|
+|aarch64 / 554|`R_AARCH64_TLSLE_LDST16_TPREL_LO12`|FORBIDDEN_LE|111|无case；default:243拒绝|1640|
+|aarch64 / 555|`R_AARCH64_TLSLE_LDST16_TPREL_LO12_NC`|FORBIDDEN_LE|112|187→196 return R_TPREL;|1642|
+|aarch64 / 556|`R_AARCH64_TLSLE_LDST32_TPREL_LO12`|FORBIDDEN_LE|113|无case；default:243拒绝|1644|
+|aarch64 / 557|`R_AARCH64_TLSLE_LDST32_TPREL_LO12_NC`|FORBIDDEN_LE|114|188→196 return R_TPREL;|1646|
+|aarch64 / 558|`R_AARCH64_TLSLE_LDST64_TPREL_LO12`|FORBIDDEN_LE|115|无case；default:243拒绝|1648|
+|aarch64 / 559|`R_AARCH64_TLSLE_LDST64_TPREL_LO12_NC`|FORBIDDEN_LE|116|189→196 return R_TPREL;|1650|
+|aarch64 / 560|`R_AARCH64_TLSDESC_LD_PREL19`|ALLOW|118|无case；default:243拒绝|1676|
+|aarch64 / 561|`R_AARCH64_TLSDESC_ADR_PREL21`|ALLOW|119|无case；default:243拒绝|1679|
+|aarch64 / 562|`R_AARCH64_TLSDESC_ADR_PAGE21`|ALLOW|120|172→173 return RE_AARCH64_TLSDESC_PAGE;|1681|
+|aarch64 / 563|`R_AARCH64_TLSDESC_LD64_LO12`|ALLOW|121|176→178 return R_TLSDESC;|1683|
+|aarch64 / 564|`R_AARCH64_TLSDESC_ADD_LO12`|ALLOW|122|177→178 return R_TLSDESC;|1685|
+|aarch64 / 565|`R_AARCH64_TLSDESC_OFF_G1`|ALLOW|123|无case；default:243拒绝|1687|
+|aarch64 / 566|`R_AARCH64_TLSDESC_OFF_G0_NC`|ALLOW|124|无case；default:243拒绝|1690|
+|aarch64 / 567|`R_AARCH64_TLSDESC_LDR`|ALLOW|125|无case；default:243拒绝|1692,1711|
+|aarch64 / 568|`R_AARCH64_TLSDESC_ADD`|ALLOW|126|无case；default:243拒绝|1695,1711|
+|aarch64 / 569|`R_AARCH64_TLSDESC_CALL`|ALLOW|127|182→183 return R_TLSDESC_CALL;|1698,1711|
+|aarch64 / 570|`R_AARCH64_TLSLE_LDST128_TPREL_LO12`|FORBIDDEN_LE|128|无case；default:243拒绝|1652|
+|aarch64 / 571|`R_AARCH64_TLSLE_LDST128_TPREL_LO12_NC`|FORBIDDEN_LE|129|190→196 return R_TPREL;|1654|
+|aarch64 / 572|`R_AARCH64_TLSLD_LDST128_DTPREL_LO12`|ALLOW|130|无case；default:243拒绝|1564|
+|aarch64 / 573|`R_AARCH64_TLSLD_LDST128_DTPREL_LO12_NC`|ALLOW|131|无case；default:243拒绝|1566|
+|aarch64 / 595|`R_AARCH64_AUTH_TLSDESC_ADR_PAGE21`|STOP_UNCERTIFIED|162|174→175 return RE_AARCH64_AUTH_TLSDESC_PAGE;|1788|
+|aarch64 / 596|`R_AARCH64_AUTH_TLSDESC_LD64_LO12`|STOP_UNCERTIFIED|163|179→181 return RE_AARCH64_AUTH_TLSDESC;|1790|
+|aarch64 / 597|`R_AARCH64_AUTH_TLSDESC_ADD_LO12`|STOP_UNCERTIFIED|164|180→181 return RE_AARCH64_AUTH_TLSDESC;|1792|
+|aarch64 / 80|`R_AARCH64_P32_TLSGD_ADR_PREL21`|STOP_UNCERTIFIED|201|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 81|`R_AARCH64_P32_TLSGD_ADR_PAGE21`|STOP_UNCERTIFIED|202|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 82|`R_AARCH64_P32_TLSGD_ADD_LO12_NC`|STOP_UNCERTIFIED|203|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 83|`R_AARCH64_P32_TLSLD_ADR_PREL21`|STOP_UNCERTIFIED|204|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 84|`R_AARCH64_P32_TLSLD_ADR_PAGE21`|STOP_UNCERTIFIED|205|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 85|`R_AARCH64_P32_TLSLD_ADD_LO12_NC`|STOP_UNCERTIFIED|206|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 86|`R_AARCH64_P32_TLSLD_LD_PREL19`|STOP_UNCERTIFIED|207|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 87|`R_AARCH64_P32_TLSLD_MOVW_DTPREL_G1`|STOP_UNCERTIFIED|208|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 88|`R_AARCH64_P32_TLSLD_MOVW_DTPREL_G0`|STOP_UNCERTIFIED|209|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 89|`R_AARCH64_P32_TLSLD_MOVW_DTPREL_G0_NC`|STOP_UNCERTIFIED|210|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 90|`R_AARCH64_P32_TLSLD_ADD_DTPREL_HI12`|STOP_UNCERTIFIED|211|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 91|`R_AARCH64_P32_TLSLD_ADD_DTPREL_LO12`|STOP_UNCERTIFIED|212|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 92|`R_AARCH64_P32_TLSLD_ADD_DTPREL_LO12_NC`|STOP_UNCERTIFIED|213|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 93|`R_AARCH64_P32_TLSLD_LDST8_DTPREL_LO12`|STOP_UNCERTIFIED|214|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 94|`R_AARCH64_P32_TLSLD_LDST8_DTPREL_LO12_NC`|STOP_UNCERTIFIED|215|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 95|`R_AARCH64_P32_TLSLD_LDST16_DTPREL_LO12`|STOP_UNCERTIFIED|216|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 96|`R_AARCH64_P32_TLSLD_LDST16_DTPREL_LO12_NC`|STOP_UNCERTIFIED|217|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 97|`R_AARCH64_P32_TLSLD_LDST32_DTPREL_LO12`|STOP_UNCERTIFIED|218|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 98|`R_AARCH64_P32_TLSLD_LDST32_DTPREL_LO12_NC`|STOP_UNCERTIFIED|219|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 99|`R_AARCH64_P32_TLSLD_LDST64_DTPREL_LO12`|STOP_UNCERTIFIED|220|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 100|`R_AARCH64_P32_TLSLD_LDST64_DTPREL_LO12_NC`|STOP_UNCERTIFIED|221|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 101|`R_AARCH64_P32_TLSLD_LDST128_DTPREL_LO12`|STOP_UNCERTIFIED|222|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 102|`R_AARCH64_P32_TLSLD_LDST128_DTPREL_LO12_NC`|STOP_UNCERTIFIED|223|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 103|`R_AARCH64_P32_TLSIE_ADR_GOTTPREL_PAGE21`|STOP_UNCERTIFIED|224|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 104|`R_AARCH64_P32_TLSIE_LD32_GOTTPREL_LO12_NC`|STOP_UNCERTIFIED|225|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 105|`R_AARCH64_P32_TLSIE_LD_GOTTPREL_PREL19`|STOP_UNCERTIFIED|226|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 106|`R_AARCH64_P32_TLSLE_MOVW_TPREL_G1`|STOP_UNCERTIFIED|227|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 107|`R_AARCH64_P32_TLSLE_MOVW_TPREL_G0`|STOP_UNCERTIFIED|228|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 108|`R_AARCH64_P32_TLSLE_MOVW_TPREL_G0_NC`|STOP_UNCERTIFIED|229|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 109|`R_AARCH64_P32_TLSLE_ADD_TPREL_HI12`|STOP_UNCERTIFIED|230|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 110|`R_AARCH64_P32_TLSLE_ADD_TPREL_LO12`|STOP_UNCERTIFIED|231|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 111|`R_AARCH64_P32_TLSLE_ADD_TPREL_LO12_NC`|STOP_UNCERTIFIED|232|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 112|`R_AARCH64_P32_TLSLE_LDST8_TPREL_LO12`|STOP_UNCERTIFIED|233|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 113|`R_AARCH64_P32_TLSLE_LDST8_TPREL_LO12_NC`|STOP_UNCERTIFIED|234|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 114|`R_AARCH64_P32_TLSLE_LDST16_TPREL_LO12`|STOP_UNCERTIFIED|235|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 115|`R_AARCH64_P32_TLSLE_LDST16_TPREL_LO12_NC`|STOP_UNCERTIFIED|236|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 116|`R_AARCH64_P32_TLSLE_LDST32_TPREL_LO12`|STOP_UNCERTIFIED|237|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 117|`R_AARCH64_P32_TLSLE_LDST32_TPREL_LO12_NC`|STOP_UNCERTIFIED|238|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 118|`R_AARCH64_P32_TLSLE_LDST64_TPREL_LO12`|STOP_UNCERTIFIED|239|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 119|`R_AARCH64_P32_TLSLE_LDST64_TPREL_LO12_NC`|STOP_UNCERTIFIED|240|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 120|`R_AARCH64_P32_TLSLE_LDST128_TPREL_LO12`|STOP_UNCERTIFIED|241|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 121|`R_AARCH64_P32_TLSLE_LDST128_TPREL_LO12_NC`|STOP_UNCERTIFIED|242|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 122|`R_AARCH64_P32_TLSDESC_LD_PREL19`|STOP_UNCERTIFIED|243|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 123|`R_AARCH64_P32_TLSDESC_ADR_PREL21`|STOP_UNCERTIFIED|244|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 124|`R_AARCH64_P32_TLSDESC_ADR_PAGE21`|STOP_UNCERTIFIED|245|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 125|`R_AARCH64_P32_TLSDESC_LD32_LO12`|STOP_UNCERTIFIED|246|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 126|`R_AARCH64_P32_TLSDESC_ADD_LO12`|STOP_UNCERTIFIED|247|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 127|`R_AARCH64_P32_TLSDESC_CALL`|STOP_UNCERTIFIED|248|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 184|`R_AARCH64_P32_TLS_DTPREL`|STOP_UNCERTIFIED|254|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 185|`R_AARCH64_P32_TLS_DTPMOD`|STOP_UNCERTIFIED|255|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 186|`R_AARCH64_P32_TLS_TPREL`|STOP_UNCERTIFIED|256|无case；default:243拒绝|该版本正文未列；不放行|
+|aarch64 / 187|`R_AARCH64_P32_TLSDESC`|STOP_UNCERTIFIED|257|无case；default:243拒绝|该版本正文未列；不放行|
+
+
+### 12.2 测试、真实夹具与最终Source的x86全量回归
+
+67项测试全部PASS（13.410827s）：§5的54项历史测试+6项原ARM夹具，以及本轮7项TLS/Thumb测试。每个TLS放行号逐一覆盖只读/可写节；LE覆盖可写、非可加载与SHN_ABS；IE/未认证描述符保持拒绝。AST对照及x86不可达ARM分派测试仍通过。原始输出 `E12/unit-tests-final.log`，完整模块列表 `unit-tests-final-result.json`。
+
+真实小C分别以两架构GD/LD/IE/LE模型编译；GD/LD PASS、IE按UNKNOWN拒绝、LE按FORBIDDEN拒绝。ARM编译器将LD降为GD（`llvm/llvm/lib/Target/ARM/ARMISelLowering.cpp:3489`–`:3496`），所以另执行 `llvm/lld/test/ELF/arm-tls-ldm32.s:23`–`:25` 的汇编夹具，实测105/106通过。AArch64小C的GD/LD均实际产生TLSDESC 562/563/564/569，不冒称实测了全部legacy GD/LD指令。逐条argv/资源/输出在 `E12/real-fixtures-final/summary.json` 与 `local-dynamic-fixture/result.json`。
+
+无函数属性的IR+文件级汇编正例：修正后的转换与原参数参考均为 `$t`；去掉-mthumb的专用负例实际出现-Woverride-module且变为`$a`，两项拒绝判据都有实际反例。此处只是小夹具，真实26成员须在后续全量ARM转换逐个核对。
+
+先启动的中间Source（399000c3…）回归与最终Source（1620a8da…）分开保存。中间运行期间的代码核查发现LE返回违规清单仍受旧调用处PIC Level判断影响；发布前改成ARM解析器直接抛错，重跑全部测试/夹具，再串行对**最终SHA**重新做225档全量回归。未发生产品输入失败后改规则重试；没有拿中间版本结果代替最终认证。中间Source原件为 `intermediate-source-399000c3.py`，其结果为 `x86-regression-result.json`；下表仅使用 `x86-final-*`。
+
+| 最终Source检查 | 结果 |
+| --- | --- |
+| E5/x86-input before SHA | 225/225 与docs/35一致 |
+| 整档 after SHA | 225/225 PASS |
+| 有序成员身份（序号、名称、同名序号）与SHA | 3864/3864 PASS |
+| 完整符号→成员索引 | 225/225 PASS |
+| 补回后端flags及顺序 | 3853/3853 PASS |
+| 原机器码成员原样保留 | 11 |
+| 允许缺失的弱符号（沿用既有策略） | `{"W": 1920}` |
+| 转换wall / 驱动wall | 1909.148431s / 1944.685407s |
+| 单成员最大RSS | 1,042,328 KiB |
+| scope采样MemoryPeak | 9,668,038,656 B（9.004063 GiB，含文件cache） |
+| 宿主最低MemAvailable | 18,311,897,088 B |
+| scope / 采样器 | exit0；sampler_reaped=True，log_reader_reaped=True |
+
+本轮该阶段资源：16GiB准入、18GiB MemoryMax、MemorySwapMax=0、nice15/ionice3、4worker、每命令4GiB AS，30s采样及宿主2GiB保护。未修改任何完整构建门禁。最终逐档/成员结果 `E12/x86-final-regression-result.json`；逐成员原始argv `x86-final-conversion/members/**/convert.json`，scope完整资源/命令在 `x86-final-regression-scope/`。时间是本机离线转换记录，不作性能对照。
+
+Source修订与x86不变性阶段PASS，先提交推送；此时armv7l全量转换、消费者与strip尚未执行，aarch64尚未启动。项目锁继续持有到后续阶段结束。
+
+### 12.3 新Source相对6a36f173的完整diff
+
+以下省略上下文，保留全部改动；带上下文原件见 `E12/source-vs-6a36f173.diff`。
+
+```diff
+--- 6a36f173/tools/llvm_static_archives_arm_trial.py
++++ 1620a8da/tools/llvm_static_archives_arm_trial.py
+@@ -378 +378 @@
+-        '-mthumb': ('ir', 'Thumb triple and target features'),
++        '-mthumb': ('restore', 'driver effective triple and file-scope Thumb mode'),
+@@ -546 +546 @@
+-        flags += ['-mfloat-abi=softfp', '-mlittle-endian']
++        flags += ['-mfloat-abi=softfp', '-mlittle-endian', '-mthumb']
+@@ -553,2 +553,149 @@
+-                recorded_command=recorded_command, policy=policy)
+-
++                recorded_command=recorded_command, policy=policy,
++                module_asm_sections=arm_module_asm_sections(lines) if arch == 'armv7l' else [])
++
++
++
++# ELFRelocs/ARM.def:111-117; ARM getRelExpr:147-152 (GD/LD).
++# AArch64.def:67-131; AArch64 getRelExpr:174-182 (TLSDESC), 184-196
++# (LE), 222-234 (IE). Legacy GD/LD are ABI-defined but not implemented by
++# this lld getRelExpr; permitting the object is not proof that lld can link it.
++ARM_TLS_ALLOWED = {
++    'armv7l': {104, 105, 106},
++    'aarch64': set(range(0x200, 0x21b)) | set(range(0x230, 0x23a)) | {0x23c, 0x23d},
++}
++ARM_TLS_LOCAL_EXEC = {
++    'armv7l': {108, 110},
++    'aarch64': set(range(0x220, 0x230)) | {0x23a, 0x23b},
++}
++ARM_TLS_PENDING = {
++    'armv7l': {90, 91, 92, 93, 107, 111, 129, 130},
++    'aarch64': set(range(0x21b, 0x220)),
++}
++
++
++def arm_reject_triple_override(record):
++    stderr = record.get('stderr', '')
++    if '-Woverride-module' in stderr or 'overriding the module target triple' in stderr:
++        raise ValueError('ARM conversion changed module target triple: '+stderr.strip())
++
++
++def arm_module_asm_sections(lines):
++    """Sections explicitly used by LLVM module-level assembler, including default .text."""
++    sections, current, previous, stack = set(), '.text', None, []
++    for line in lines:
++        if not line.startswith('module asm '):
++            continue
++        match = re.fullmatch(r'module asm "(.*)"\s*', line)
++        if not match:
++            raise ValueError('unrecognized ARM module asm encoding')
++        asm = re.sub(r'\\([0-9A-Fa-f]{2})', lambda m: chr(int(m[1], 16)), match[1])
++        for statement in asm.splitlines():
++            statement = statement.strip()
++            m = re.match(r'\.(pushsection|section)\s+("[^"]+"|[^,\s]+)', statement)
++            if m:
++                if m[1] == 'pushsection':
++                    stack.append(current)
++                previous, current = current, m[2].strip('"')
++            elif re.match(r'\.popsection\b', statement):
++                if not stack:
++                    raise ValueError('unbalanced ARM module asm popsection')
++                previous, current = current, stack.pop()
++            elif statement == '.previous':
++                if previous is None:
++                    raise ValueError('ARM module asm previous has no section')
++                current, previous = previous, current
++            elif re.match(r'\.(text|data|bss)\b', statement):
++                previous, current = current, statement.split()[0]
++            if statement and not statement.startswith(('#', '@', '//')):
++                sections.add(current)
++    if stack:
++        raise ValueError('unbalanced ARM module asm pushsection')
++    return sorted(sections)
++
++
++def arm_reference_flags(settings):
++    """Same IR through original driver flags; remove only LTO/action/input/dependency paths."""
++    argv = settings['recorded_command'][1:]
++    kept, i = [], 0
++    paired = {'-D', '-I', '-isystem', '-resource-dir'}
++    removed = {'-o', '-MT', '-MF', '-x'}
++    while i < len(argv):
++        token = argv[i]
++        if token in paired:
++            kept.extend(argv[i:i+2]); i += 2
++        elif token in removed:
++            i += 2
++        elif token in ('-c', '-MD', '-flto=thin'):
++            i += 1
++        elif not token.startswith('-') and re.search(r'\.(?:c|cc|cpp|cxx|C|ii|i|bc|ll|o|obj|s|S)$', token):
++            i += 1
++        else:
++            kept.append(token); i += 1
++    if '-mthumb' not in kept or any(x.startswith('-flto') for x in kept):
++        raise ValueError('uncertified ARM reference driver flags')
++    return ['--no-default-config', *kept, '-x', 'ir', '-c']
++
++
++def arm_mapping_modes(data, selected):
++    """ELF mapping symbols give ARM/Thumb/data transitions in module-asm sections."""
++    if member_kind(data) != 'machine' or data[4:6] != b'\x01\x01' or struct.unpack_from('<H', data, 18)[0] != 40:
++        raise ValueError('ARM mapping gate requires little-endian ELF32 ET_REL')
++    off = struct.unpack_from('<I', data, 32)[0]
++    stride, count, names = struct.unpack_from('<HHH', data, 46)
++    if not count:
++        count = struct.unpack_from('<IIIIIIIIII', data, off)[5]
++    sections = [struct.unpack_from('<IIIIIIIIII', data, off+i*stride) for i in range(count)]
++    if names == 65535:
++        names = sections[0][6]
++    strings = sections[names]; names_data = data[strings[4]:strings[4]+strings[5]]
++    found = {i: cstring(names_data, s[0]) for i, s in enumerate(sections)
++             if cstring(names_data, s[0]) in selected and s[2] & 4 and s[5]}
++    maps = {i: [] for i in found}
++    for section in sections:
++        if section[1] != 2:
++            continue
++        string_sec = sections[section[6]]; strings = data[string_sec[4]:string_sec[4]+string_sec[5]]
++        for pos in range(section[4], section[4]+section[5], section[9]):
++            name, value, size, info, other, shndx = struct.unpack_from('<IIIBBH', data, pos)
++            text = cstring(strings, name)
++            if shndx in maps and re.fullmatch(r'\$[atd](?:\..*)?', text):
++                maps[shndx].append((value, text[1]))
++    result = {}
++    for index, name in found.items():
++        modes = []
++        for _, mode in sorted(maps[index]):
++            if not modes or modes[-1] != mode:
++                modes.append(mode)
++        if not modes:
++            raise ValueError('ARM module asm section lacks mapping symbols: '+name)
++        result[name] = modes
++    return result
++
++
++def arm_thumb_gate(compiler, source, target, settings, command):
++    """ARM32-only reference compile; x86 never executes this extra command."""
++    reference = source.parent/'thumb-reference.o'
++    record = command.run([compiler, *arm_reference_flags(settings), str(source), '-o', str(reference)],
++                         source.parent/'thumb-reference')
++    arm_reject_triple_override(record)
++    def signature(path, label):
++        output = source.parent/(label+'.attributes.txt')
++        with output.open('wb') as stream:
++            command.run(['readelf', '-AW', str(path)], source.parent/(label+'-readelf'), stdout=stream)
++        text = output.read_text()
++        attributes = {}
++        for key in ('Tag_ARM_ISA_use', 'Tag_THUMB_ISA_use', 'Tag_ABI_VFP_args'):
++            values = re.findall(r'^\s*'+key+r': (.*)$', text, re.M)
++            if len(values) > 1:
++                raise ValueError('multiple ARM attribute values: '+key)
++            attributes[key] = values[0] if values else 'default(0)'
++        return dict(attributes=attributes, module_asm_modes=arm_mapping_modes(path.read_bytes(), settings['module_asm_sections']))
++    actual = signature(target, 'converted'); expected = signature(reference, 'reference')
++    result = dict(actual=actual, expected=expected, equal=actual == expected,
++                  no_function_attributes=not settings['target_cpu'] and not settings['target_features'],
++                  reference_sha256=sha(reference), reference_command=record)
++    atomic_json(source.parent/'thumb-gate.json', result)
++    if not result['equal']:
++        raise ValueError('ARM Thumb/ABI/module-asm mode differs from original-flags IR reference: '+str(target))
++    reference.unlink()
++    return result
+@@ -585 +732 @@
+-        # and TLS are deliberately absent pending platform/corpus evidence.
++        # remain uncertified; the separate TLS tables are explicit and bounded.
+@@ -597,0 +745,2 @@
++    tls_allowed = ARM_TLS_ALLOWED[arch]
++    tls_forbidden = ARM_TLS_LOCAL_EXEC[arch]
+@@ -603,2 +751,0 @@
+-        if not target[2] & 2:
+-            continue
+@@ -622,0 +770,7 @@
++            if kind in tls_forbidden:
++                # Reject here, independently of the caller's PIC Level check.
++                raise ValueError('forbidden '+arch+' TLS local-exec relocation '+str(kind)+' at section '+str(section[7]))
++            if kind in ARM_TLS_PENDING[arch]:
++                raise ValueError('uncertified '+arch+' TLS relocation '+str(kind)+' at section '+str(section[7]))
++            if not target[2] & 2:
++                continue
+@@ -624 +778 @@
+-            if kind not in absolute | allowed:
++            if kind not in absolute | allowed | tls_allowed:
+@@ -928,0 +1083,4 @@
++                if arch in ARM_OPTIMIZATION:
++                    arm_reject_triple_override(record)
++                if arch == 'armv7l':
++                    record['arm_thumb_gate'] = arm_thumb_gate(compiler, source, target, settings, command)
+```

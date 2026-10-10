@@ -72,4 +72,67 @@ class DispatchTests(unittest.TestCase):
         for arch,kind in [('armv7l',5),('aarch64',0x102)]:
             self.assertTrue(trial.arm_pic_relocations(reloc_elf(arch,[kind],writable=True),arch)['forbidden'])
 
+class TLSThumbTests(unittest.TestCase):
+    def test_tls_allowed_each_type_readonly_and_writable(self):
+        for arch, kinds in trial.ARM_TLS_ALLOWED.items():
+            for kind in sorted(kinds):
+                for writable in (False, True):
+                    with self.subTest(arch=arch, kind=kind, writable=writable):
+                        self.assertFalse(trial.arm_pic_relocations(reloc_elf(arch,[kind],writable=writable),arch)['forbidden'])
+
+    def test_local_exec_forbidden_even_debug_writable_and_absolute(self):
+        for arch, kinds in trial.ARM_TLS_LOCAL_EXEC.items():
+            for kind in sorted(kinds):
+                for kwargs in ({}, {'writable':True}, {'debug':True}, {'absolute':True}):
+                    with self.subTest(arch=arch, kind=kind, kwargs=kwargs),self.assertRaisesRegex(ValueError,'forbidden .* TLS local-exec'):
+                        trial.arm_pic_relocations(reloc_elf(arch,[kind],**kwargs),arch)
+
+    def test_initial_exec_arm_descriptors_and_unknown_stop(self):
+        for arch, kinds in trial.ARM_TLS_PENDING.items():
+            for kind in sorted(kinds):
+                for debug in (False,True):
+                    with self.subTest(arch=arch, kind=kind),self.assertRaisesRegex(ValueError,'uncertified'):
+                        trial.arm_pic_relocations(reloc_elf(arch,[kind],debug=debug),arch)
+        for arch,kind in [('armv7l',41),('aarch64',0x253)]:
+            with self.assertRaisesRegex(ValueError,'uncertified'):
+                trial.arm_pic_relocations(reloc_elf(arch,[kind]),arch)
+
+    def test_thumb_restore_and_reference_arguments(self):
+        argv=['clang','-Os','-gdwarf-4','-ffunction-sections','-fdata-sections',*sorted(trial.ARM_EXACT_TOKENS['armv7l']),'-flto=thin','-D','NAME.cpp','-I','path','-MT','target','-MF','deps','-MD','-o','a.o','-c','a.cpp']
+        policy=trial.arm_classify_options(argv,'armv7l')
+        self.assertEqual(next(x['category'] for x in policy['tokens'] if x['token']=='-mthumb'),'restore')
+        ref=trial.arm_reference_flags({'recorded_command':argv})
+        self.assertIn('-mthumb',ref);self.assertIn('NAME.cpp',ref)
+        for x in ['-flto=thin','a.cpp','a.o','-MD','deps','target']:self.assertNotIn(x,ref)
+        text=['target triple = "thumbv7-tizen-linux-gnueabi"','!llvm.commandline = !{!0}','!0 = !{!"'+' '.join(argv)+'"}']
+        self.assertIn('-mthumb',trial.arm_ir_settings(text,'armv7l')['flags'])
+        with self.assertRaisesRegex(ValueError,'reference driver'):
+            trial.arm_reference_flags({'recorded_command':[x for x in argv if x!='-mthumb']})
+
+    def test_override_warning_is_a_failure(self):
+        trial.arm_reject_triple_override({'stderr':''})
+        for message in ['[-Woverride-module]','warning: overriding the module target triple with armv7']:
+            with self.assertRaisesRegex(ValueError,'changed module target triple'):
+                trial.arm_reject_triple_override({'stderr':message})
+
+    def test_module_asm_section_tracking(self):
+        lines=['module asm ".text"','module asm ".thumb"','module asm ".pushsection .text.helper,\\22ax\\22"','module asm "nop"','module asm ".popsection"']
+        self.assertEqual(trial.arm_module_asm_sections(lines),['.text','.text.helper'])
+        self.assertEqual(trial.arm_module_asm_sections([]),[])
+        with self.assertRaisesRegex(ValueError,'unbalanced'):
+            trial.arm_module_asm_sections(['module asm ".popsection"'])
+
+    def test_thumb_gate_rejects_attribute_mismatch(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);src=root/'input.bc';src.write_bytes(b'bc');target=root/'actual.o';target.write_bytes(b'obj')
+            def run(argv,prefix,stdout=None):
+                if stdout is not None:
+                    stdout.write(b'Tag_THUMB_ISA_use: Thumb-2\n' if 'actual.o' in argv[-1] else b'Tag_THUMB_ISA_use: Thumb-1\n')
+                else:Path(argv[-1]).write_bytes(b'reference')
+                return {'stderr':''}
+            with mock.patch.object(trial,'arm_reference_flags',return_value=['-mthumb']),mock.patch.object(trial,'arm_mapping_modes',return_value={}):
+                with self.assertRaisesRegex(ValueError,'Thumb/ABI/module-asm'):
+                    trial.arm_thumb_gate('clang',src,target,{'module_asm_sections':[],'target_cpu':[],'target_features':[]},mock.Mock(run=run))
+
 if __name__=='__main__':unittest.main(verbosity=2)

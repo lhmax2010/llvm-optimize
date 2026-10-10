@@ -375,7 +375,7 @@ ARM_DRIVER_TRIPLES = {'armv7l': {'armv7l-tizen-linux-gnueabi', 'thumbv7-tizen-li
 ARM_EXACT_TOKENS = {
     'armv7l': {
         '-march=armv7-a': ('ir', 'triple/CPU/features'),
-        '-mthumb': ('ir', 'Thumb triple and target features'),
+        '-mthumb': ('restore', 'driver effective triple and file-scope Thumb mode'),
         '-mfpu=neon': ('ir', 'FPU target features'),
         '-mfloat-abi=softfp': ('restore', 'calling convention and backend FloatABI'),
         '-mlittle-endian': ('restore', 'driver endianness cross-check'),
@@ -543,15 +543,162 @@ def arm_ir_settings(lines, arch):
         if any('-thumb-mode' in f.split(',') or '-neon' in f.split(',') for f in features):
             raise ValueError('ARM IR features contradict certified Thumb/NEON policy')
         # Clang BackendUtil FloatABI and driver endianness are not inferred here.
-        flags += ['-mfloat-abi=softfp', '-mlittle-endian']
+        flags += ['-mfloat-abi=softfp', '-mlittle-endian', '-mthumb']
     elif arch == 'aarch64':
         tunes = set(re.findall(r'"tune-cpu"="([^"]+)"', ''.join(lines)))
         if tunes and tunes != {'cortex-a53'}:
             raise ValueError('uncertified AArch64 tune-cpu: '+repr(sorted(tunes)))
     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
                 target_features=sorted(features), flags=flags, evidence=retained,
-                recorded_command=recorded_command, policy=policy)
+                recorded_command=recorded_command, policy=policy,
+                module_asm_sections=arm_module_asm_sections(lines) if arch == 'armv7l' else [])
 
+
+
+# ELFRelocs/ARM.def:111-117; ARM getRelExpr:147-152 (GD/LD).
+# AArch64.def:67-131; AArch64 getRelExpr:174-182 (TLSDESC), 184-196
+# (LE), 222-234 (IE). Legacy GD/LD are ABI-defined but not implemented by
+# this lld getRelExpr; permitting the object is not proof that lld can link it.
+ARM_TLS_ALLOWED = {
+    'armv7l': {104, 105, 106},
+    'aarch64': set(range(0x200, 0x21b)) | set(range(0x230, 0x23a)) | {0x23c, 0x23d},
+}
+ARM_TLS_LOCAL_EXEC = {
+    'armv7l': {108, 110},
+    'aarch64': set(range(0x220, 0x230)) | {0x23a, 0x23b},
+}
+ARM_TLS_PENDING = {
+    'armv7l': {90, 91, 92, 93, 107, 111, 129, 130},
+    'aarch64': set(range(0x21b, 0x220)),
+}
+
+
+def arm_reject_triple_override(record):
+    stderr = record.get('stderr', '')
+    if '-Woverride-module' in stderr or 'overriding the module target triple' in stderr:
+        raise ValueError('ARM conversion changed module target triple: '+stderr.strip())
+
+
+def arm_module_asm_sections(lines):
+    """Sections explicitly used by LLVM module-level assembler, including default .text."""
+    sections, current, previous, stack = set(), '.text', None, []
+    for line in lines:
+        if not line.startswith('module asm '):
+            continue
+        match = re.fullmatch(r'module asm "(.*)"\s*', line)
+        if not match:
+            raise ValueError('unrecognized ARM module asm encoding')
+        asm = re.sub(r'\\([0-9A-Fa-f]{2})', lambda m: chr(int(m[1], 16)), match[1])
+        for statement in asm.splitlines():
+            statement = statement.strip()
+            m = re.match(r'\.(pushsection|section)\s+("[^"]+"|[^,\s]+)', statement)
+            if m:
+                if m[1] == 'pushsection':
+                    stack.append(current)
+                previous, current = current, m[2].strip('"')
+            elif re.match(r'\.popsection\b', statement):
+                if not stack:
+                    raise ValueError('unbalanced ARM module asm popsection')
+                previous, current = current, stack.pop()
+            elif statement == '.previous':
+                if previous is None:
+                    raise ValueError('ARM module asm previous has no section')
+                current, previous = previous, current
+            elif re.match(r'\.(text|data|bss)\b', statement):
+                previous, current = current, statement.split()[0]
+            if statement and not statement.startswith(('#', '@', '//')):
+                sections.add(current)
+    if stack:
+        raise ValueError('unbalanced ARM module asm pushsection')
+    return sorted(sections)
+
+
+def arm_reference_flags(settings):
+    """Same IR through original driver flags; remove only LTO/action/input/dependency paths."""
+    argv = settings['recorded_command'][1:]
+    kept, i = [], 0
+    paired = {'-D', '-I', '-isystem', '-resource-dir'}
+    removed = {'-o', '-MT', '-MF', '-x'}
+    while i < len(argv):
+        token = argv[i]
+        if token in paired:
+            kept.extend(argv[i:i+2]); i += 2
+        elif token in removed:
+            i += 2
+        elif token in ('-c', '-MD', '-flto=thin'):
+            i += 1
+        elif not token.startswith('-') and re.search(r'\.(?:c|cc|cpp|cxx|C|ii|i|bc|ll|o|obj|s|S)$', token):
+            i += 1
+        else:
+            kept.append(token); i += 1
+    if '-mthumb' not in kept or any(x.startswith('-flto') for x in kept):
+        raise ValueError('uncertified ARM reference driver flags')
+    return ['--no-default-config', *kept, '-x', 'ir', '-c']
+
+
+def arm_mapping_modes(data, selected):
+    """ELF mapping symbols give ARM/Thumb/data transitions in module-asm sections."""
+    if member_kind(data) != 'machine' or data[4:6] != b'\x01\x01' or struct.unpack_from('<H', data, 18)[0] != 40:
+        raise ValueError('ARM mapping gate requires little-endian ELF32 ET_REL')
+    off = struct.unpack_from('<I', data, 32)[0]
+    stride, count, names = struct.unpack_from('<HHH', data, 46)
+    if not count:
+        count = struct.unpack_from('<IIIIIIIIII', data, off)[5]
+    sections = [struct.unpack_from('<IIIIIIIIII', data, off+i*stride) for i in range(count)]
+    if names == 65535:
+        names = sections[0][6]
+    strings = sections[names]; names_data = data[strings[4]:strings[4]+strings[5]]
+    found = {i: cstring(names_data, s[0]) for i, s in enumerate(sections)
+             if cstring(names_data, s[0]) in selected and s[2] & 4 and s[5]}
+    maps = {i: [] for i in found}
+    for section in sections:
+        if section[1] != 2:
+            continue
+        string_sec = sections[section[6]]; strings = data[string_sec[4]:string_sec[4]+string_sec[5]]
+        for pos in range(section[4], section[4]+section[5], section[9]):
+            name, value, size, info, other, shndx = struct.unpack_from('<IIIBBH', data, pos)
+            text = cstring(strings, name)
+            if shndx in maps and re.fullmatch(r'\$[atd](?:\..*)?', text):
+                maps[shndx].append((value, text[1]))
+    result = {}
+    for index, name in found.items():
+        modes = []
+        for _, mode in sorted(maps[index]):
+            if not modes or modes[-1] != mode:
+                modes.append(mode)
+        if not modes:
+            raise ValueError('ARM module asm section lacks mapping symbols: '+name)
+        result[name] = modes
+    return result
+
+
+def arm_thumb_gate(compiler, source, target, settings, command):
+    """ARM32-only reference compile; x86 never executes this extra command."""
+    reference = source.parent/'thumb-reference.o'
+    record = command.run([compiler, *arm_reference_flags(settings), str(source), '-o', str(reference)],
+                         source.parent/'thumb-reference')
+    arm_reject_triple_override(record)
+    def signature(path, label):
+        output = source.parent/(label+'.attributes.txt')
+        with output.open('wb') as stream:
+            command.run(['readelf', '-AW', str(path)], source.parent/(label+'-readelf'), stdout=stream)
+        text = output.read_text()
+        attributes = {}
+        for key in ('Tag_ARM_ISA_use', 'Tag_THUMB_ISA_use', 'Tag_ABI_VFP_args'):
+            values = re.findall(r'^\s*'+key+r': (.*)$', text, re.M)
+            if len(values) > 1:
+                raise ValueError('multiple ARM attribute values: '+key)
+            attributes[key] = values[0] if values else 'default(0)'
+        return dict(attributes=attributes, module_asm_modes=arm_mapping_modes(path.read_bytes(), settings['module_asm_sections']))
+    actual = signature(target, 'converted'); expected = signature(reference, 'reference')
+    result = dict(actual=actual, expected=expected, equal=actual == expected,
+                  no_function_attributes=not settings['target_cpu'] and not settings['target_features'],
+                  reference_sha256=sha(reference), reference_command=record)
+    atomic_json(source.parent/'thumb-gate.json', result)
+    if not result['equal']:
+        raise ValueError('ARM Thumb/ABI/module-asm mode differs from original-flags IR reference: '+str(target))
+    reference.unlink()
+    return result
 
 
 def arm_pic_relocations(data, arch):
@@ -582,7 +729,7 @@ def arm_pic_relocations(data, arch):
         absolute = {2,5,6,7,8,38,43,44,47,48,55,132,133,134,135}
         narrow = {5,6,7,8}
         # NONE, relative code/data, GOT/PLT and EHABI PREL31. TARGET2/BASE_ABS
-        # and TLS are deliberately absent pending platform/corpus evidence.
+        # remain uncertified; the separate TLS tables are explicit and bounded.
         allowed = {0,1,3,4,10,11,24,25,26,27,28,29,30,40,42,45,46,49,50,
                    51,52,53,54,56,57,58,59,60,61,62,63,64,65,66,67,68,69,
                    96,97,98,102,103}
@@ -595,13 +742,13 @@ def arm_pic_relocations(data, arch):
                    0x11f,0x120,0x121,0x122,0x123,0x124,0x125,0x12b,
                    0x12c,0x12d,0x12e,0x12f,0x130,0x131,0x132,0x133,
                    0x134,0x135,0x136,0x137,0x138,0x139,0x13a,0x13b}
+    tls_allowed = ARM_TLS_ALLOWED[arch]
+    tls_forbidden = ARM_TLS_LOCAL_EXEC[arch]
     checked, forbidden, types = 0, [], Counter()
     for section in sections:
         if section[1] not in (4, 9):
             continue
         target = sections[section[7]]
-        if not target[2] & 2:
-            continue
         symidx = section[6]; symbols = sections[symidx]
         if symbols[1] != 2 or symbols[9] < struct.calcsize(symfmt):
             raise ValueError('invalid ARM relocation symbol table')
@@ -620,8 +767,15 @@ def arm_pic_relocations(data, arch):
                 if len(xindex) != 1 or si*4 >= xindex[0][5]:
                     raise ValueError('missing extended ARM symbol section index')
                 ndx = struct.unpack_from('<I', data, xindex[0][4]+4*si)[0]
+            if kind in tls_forbidden:
+                # Reject here, independently of the caller's PIC Level check.
+                raise ValueError('forbidden '+arch+' TLS local-exec relocation '+str(kind)+' at section '+str(section[7]))
+            if kind in ARM_TLS_PENDING[arch]:
+                raise ValueError('uncertified '+arch+' TLS relocation '+str(kind)+' at section '+str(section[7]))
+            if not target[2] & 2:
+                continue
             checked += 1; types[kind] += 1
-            if kind not in absolute | allowed:
+            if kind not in absolute | allowed | tls_allowed:
                 raise ValueError('uncertified '+arch+' relocation '+str(kind)+' at section '+str(section[7]))
             if ndx != 0xfff1 and (kind in narrow or kind in absolute and not target[2] & 1):
                 forbidden.append(dict(type=kind, target_section=section[7], symbol_index=si))
@@ -926,6 +1080,10 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
                 atomic_json(source.parent/'ir-settings.json', settings)
                 text_ir.unlink()
                 record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
+                if arch in ARM_OPTIMIZATION:
+                    arm_reject_triple_override(record)
+                if arch == 'armv7l':
+                    record['arm_thumb_gate'] = arm_thumb_gate(compiler, source, target, settings, command)
                 data = target.read_bytes()
                 relocs = policy['relocations'](data)
                 atomic_json(source.parent/'relocations.json', relocs)
