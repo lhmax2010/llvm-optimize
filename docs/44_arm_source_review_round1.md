@@ -1,4 +1,7 @@
-# 44 ARM Source 第一轮评审：只读普查与新策略冲突停止记录
+# 44 ARM Source 第一轮评审：普查、PM 裁决与修订停止记录
+
+**最新状态（续接，2026-10-10）：第二步 ARM Source 修订已写入；第三步宿主测试第二次仍 FAIL，按“同一步骤第二次失败即停止”结束。** 95 项中 94 PASS，失败为既有 `test_g_failed_leader_descendants_are_killed`，读取后代进程状态为 `R (running)`、断言要求不存在或 `Z`。没有第三次尝试、没有改共用 Commands；ARM 根测试、x86 全量回归、两 ARM 重新转换和消费者、105/106 夹具、x86 module asm 只读实验均 NOT RUN。新候选未认证，不能取代历史1620或生产6bd。详见§7–§12；本页§0–§6完整保留首轮普查与当时停止结论，里面的“本轮”指此前普查轮。（证据：E2/unit-tests-host-retry.log、stop-result.json。）
+
 
 日期：2026-10-10。起点 `ddc73105dbd46348c650414e7e48bfd95c5309e9`。
 
@@ -196,3 +199,148 @@ AArch64三项的输入与本次llvm-dis输出摘要如下，均经输入成员SH
 | census-scope/ | 时间、资源、命令日志、原始stdout/stderr与回收；通用包装器文件名build.log不表示执行了构建 |
 
 未改候选Source、测试、x86共用函数、spec、两份Gerrit补丁、W/llvm或配置；不构建、转换、打包、清盘、推Gerrit。只发布报告与STATUS。第五步已完成，docs/45独立汇集既有两补丁证据。收尾final-integrity.json确认上述受保护文件摘要全相同；census scope已inactive，sampler/log-reader回收，lock-released.json记录两项目锁已释放，final-processes.json确认本任务进程与挂载残留0。本轮没有创建GBS根或挂载。
+
+## 7. 续接授权、输入与符号声明来源
+
+本次续接起点 `b2ea0f9cb885c1a7a719e1acd02c3fea7fc7d5ac`，E2=`W/temp/arm-source-review-continue-20261010`。PM已解除§3的旧冲突：两架构仅允许解码并去首尾空白后恰为 `.globl _ZSt21ios_base_library_initv` 的 module asm；不能删除声明，转换产物必须保留同名GLOBAL符号（预期UND）。先前51项与全量普查沿用，不重做。其余13项修订及失败停止规则不变。（来源：用户本次附件“PM裁决”“第二步第8项”；§1–§3。）
+
+本轮只读核对两根实际头文件，GCC安装版本均为14.2.0；两个`iostream` SHA均为 `405900b25b2ecfda0e3ff3fd52c44b89df95d3fb89987235291abaec4a522d00`：
+
+| 根内路径 | 行号与含义 |
+|---|---|
+| R32/usr/lib/gcc/armv7l-tizen-linux-gnueabi/14.2.0/include/c++/iostream | 75–77：init_priority可用时初始化放在编译库；78–82：init_priority与_GLIBCXX_SYMVER_GNU条件下，82行为该.globl语句 |
+| R64/usr/lib64/gcc/aarch64-tizen-linux-gnu/14.2.0/include/c++/iostream | 同上，82行逐字相同 |
+
+`__extension__ __asm (".globl _ZSt21ios_base_library_initv");` 是实际声明。注释记录这两个根内路径、GCC版本与行号；“GCC13起”的历史起点采用PM给定前提，本轮没有另查GCC历史。证据E2/iostream-evidence.json包含完整编号摘录，R32/R64绝对路径见§0。
+
+用户配置仍SHA `28f1caf93cd39738a7da1e0da8d5f945f7372963bb9823a507f9157294272169`，开场已有的git改动未修改/暂存；生产Source、spec、两评审补丁全保持原SHA。E2/protected-start.json与final-integrity.json可逐项核对。本轮未进入构建根执行任何测试或命令，只读上述头文件。
+
+## 8. 13项修订：实现记录与认证边界
+
+评审来源仍为用户转述的Codex/Claude Code合并意见；输入没有逐条原评审作者，以下以本次PM编号为唯一可核对来源，不虚构三方归属。**“已写入”只描述代码实现，整套测试未通过，不称认证完成。** Source行号属于下列新SHA。（证据：本次任务第二步；Source与外置diff。）
+
+| PM项 | 本次写入内容 | 新Source证据 |
+|---|---|---|
+| 1 | 未知/STOP/LE检查均在非ALLOC跳过前；checked/types仅累计ALLOC | arm_pic_relocations:912起 |
+| 2 | A64 TLS ALLOW精确562/563/564/569；移除的旧GD/LD/描述符片段显式PENDING | ARM_TLS_ALLOWED/LOCAL_EXEC/PENDING:783–797 |
+| 3 | 每个define必须引用属性组，cpu/features/tune等于§2精确元组；无define放行 | ARM_CERTIFIED_FUNCTION_TARGET:486起；arm_function_targets:499；arm_ir_settings:706 |
+| 4 | A64 absolute移除317/580、allowed移除256 | arm_pic_relocations:933–943 |
+| 5 | 固定env LC_ALL=C GNU readelf -AW；aeabi与CPU_arch必需；缺项None，缺项与显式0不同 | arm_attributes:661；arm_thumb_gate:888 |
+| 6 | ARM专用ELF布局/边界校验；REL/RELA、扩展数量/名称/符号索引；raw shndx==0xfff1才是真ABS；重定位offset须在目标节内 | arm_elf_layout:544；arm_symbol_section:636 |
+| 7 | 指令ABS在可写ALLOC同样禁止；可写完整指针只放ARM32 2/38/55、A64 257；真ABS独立豁免 | arm_pic_relocations:947–955 |
+| 8 | 两架构精确module asm白名单先于ARM32原节跟踪；同名节保留各序列；输出GLOBAL符号必需 | arm_module_asm_whitelist:526；arm_check_module_asm_symbol:650；arm_mapping_modes:863；convert:1265起 |
+| 9 | -Wa,在通用-W诊断分类前显式拒绝 | arm_classify_options:430 |
+| 10 | ARM专用工具完整版本匹配；dis/nm路径/SHA/版本；ARM32另验env/readelf可执行与GNU身份 | validate_arm_tools:676；convert:1210起 |
+| 11 | ARM32 PENDING增13/17/18/19/109/165/166/167 | ARM_TLS_PENDING:794–797 |
+| 12 | 两-mtune注释补Driver/CodeGen源码出处；TARGET1按ABS32/REL32中更严格ABS解释 | ARM_EXACT_TOKENS:375–394；arm_pic_relocations:921 |
+| 13 | ARM summary增加纯机器码整档跳过的相对路径、SHA、成员数；x86不增加字段 | convert:1219–1221 |
+
+x86隔离：相对1620，原有非ARM函数体除`convert`与`policy_for_arch`两个分派点均AST相同；`classify_options/ir_settings/pic_relocations/validate_tools/Commands/install`等原函数未改。分派的x86 settings返回原`ir_settings`函数本体，工具预检仍调用原`validate_tools`。生产6bd的共用函数体也逐项AST相同。此项只证明源码隔离，**不替代225档的产物回归**。（证据：E2/source-isolation.json；本轮测试`test_original_functions_are_identical`、`test_x86_actual_convert_success_failure_all_arm_functions_blocked`。）
+
+| 文件 | SHA256 |
+|---|---|
+| 新ARM候选 tools/llvm_static_archives_arm_trial.py | `5608aa5e2fa655370ae722d1ea1685f4b9b181eae4b24e41ead756b9353d6e28` |
+| 修订测试 tools/test_arm_archive_trial.py | `4b721e8131f302a75866264df59ad8f7d61ddb1c9e1ccd6cf24d37c03156a04b` |
+| 外置完整统一diff docs/44_arm_source_round1.diff | `5bdd4b6b4e93a76c3a8a509cc4ddaaf4503094335b113e08c05d03c740982abc` |
+| x86生产Source（未改） | `6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557` |
+
+完整diff相对1620，三行上下文，479行、+270/-88、26730字节；为保证本报告≤50KB而外置，见[完整diff](44_arm_source_round1.diff)。旧版本在E2/candidate-before.py，新旧AST/文件摘要在E2/revision-metadata.json与final-integrity.json。代码与测试随本报告提交供评审，**新候选未通过完整门禁，不是可提交的生产Source**。
+
+## 9. 测试、一次辅助修正与最终停止
+
+保留此前54项共用测试和13项ARM测试（后者修复合成ELF的symtab→真实字符串表链接、固定TLS期望值、Thumb输出格式），新增28项，共95项。测试内TLS集合、目标属性及x86常量采用字面量；ELF结构矩阵含65521扩展实节对真ABS负对照。源文件语法可由Python3.9语法解析；本轮宿主解释器版本原文在E2/stop-result.json，**未运行ARM32根python，不推断其实际环境测试结果**。（证据：两个宿主测试日志、test_arm_archive_trial.py、revision-metadata.json。）
+
+运行命令（两次相同runner，只是第二次修正测试期望）：
+
+```sh
+python3 temp/arm-source-review-continue-20261010/run_tests.py
+```
+
+runner将`llvm_static_archives_source`测试模块绑定到候选Source，运行原九个模块。完整95个测试名与输出在E2/unit-tests-host.log及unit-tests-host-retry.log；用例中的正负探针不会构建LLVM/打包或做全量转换。（证据：run_tests.py；测试原文。）
+
+| 次数 | 总数/通过/失败/错误 | 耗时 | 失败点与处理 |
+|---|---|---:|---|
+| 首次 | 95/94/1/0 | 13.374秒（runner 13.374，日志精度） | 新增x86常量测试漏写旧有-g；不是Source变化 |
+| 唯一一次辅助修正后 | 95/94/1/0 | 13.377秒 | 旧取消/后代回收测试见R状态；本步骤第二次失败，STOP |
+
+### 9.1 辅助测试缺陷：只修期望，不改Source
+
+首次固定值列表遗漏`-g`，生产6bd及原1620的BACKEND_FLAGS原本均含`-g`，新候选也相同。只把固定字面量补为原真实值，没有删检查或改产品。E2/test-helper-correction.json与test-helper-correction.diff保存只读依据和完整修正；首轮结果另存unit-tests-host-initial-result.json，第二次未覆盖首轮日志。依据本次允许的辅助脚本缺陷条款，只重跑一次。
+
+### 9.2 第二次失败原文与边界
+
+```text
+FAIL: test_g_failed_leader_descendants_are_killed
+  (test_static_archives_source_v2.CancellationTests)
+File "tools/test_static_archives_source_v2.py", line 226
+    self.assertIn('Z', state)
+AssertionError: 'Z' not found in 'State:\tR (running)'
+Ran 95 tests in 13.377s
+FAILED (failures=1)
+```
+
+该既有测试启动退出7的父进程与忽略SIGTERM的后代；期望Commands返回后后代已不存在或处于Z。观察到R是失败断言当时的快照。**根因UNKNOWN**：本轮没有证据把它定性为调度竞态，也没有证据证明是本次ARM改动造成；原测试与共用Commands都未改。不通过增加睡眠、改期望或单测第三次重跑来放行。41项ARM/分派测试在第二轮均PASS，另一个共用测试失败，所以总体仍FAIL。（证据：unit-tests-host-retry.log；tools/test_static_archives_source_v2.py:211–226；source-isolation.json。）
+
+### 9.3 新增28项测试索引
+
+| 组 | 新增测试名称（test_前缀省略）与覆盖 |
+|---|---|
+| TLS/重定位5项 | tls_literal_sets_and_disjointness；tls_boundary_numbers；removed_tls_and_invalid_constants_in_all_contexts；nonalloc_known_not_counted_unknown_rejected；writable_instruction_absolute_vs_pointer |
+| ELF结构6项 | rel_rela_architecture_matrix；extended_count_names_and_symbol_index；decoded_65521_is_real_section_not_absolute；missing_duplicate_badcount_extended_indexes；invalid_links_tables_payloads_and_truncation；relocation_offset_and_symbol_boundaries |
+| mapping/读取6项 | mapping_thumb_only；mapping_transition_deduplicated；mapping_duplicate_section_names_preserved；mapping_missing_and_out_of_bounds_rejected；reader_empty_no_aeabi_and_bad_format_rejected；missing_differs_from_zero_and_missing_vfp_valid |
+| 函数/参数/asm6项 | certified_function_targets_and_data_modules；cpu_features_tune_and_missing_groups_rejected；real_command_literals_and_assembler_escape；module_asm_exact_and_whitespace_only；module_asm_all_other_statements_rejected；module_asm_output_global_symbol_required |
+| 工具/x86隔离5项 | matching_full_versions_and_gnu_reader；disassembler_nm_version_mismatch；non_gnu_reader_rejected；x86_fixed_constants_and_original_function_objects；x86_actual_convert_success_failure_all_arm_functions_blocked |
+
+最后一项mock全部ARM函数为抛异常，实际调用x86 convert的native整档跳过成功与thin拒绝路径；它没有模拟全量3853次bitcode转换，不能代替下一步真实x86回归。（证据：ToolIsolationTests；E2/revision-metadata.json记录41个ARM模块完整测试名。）
+
+## 10. 复验状态：停止后不继续执行
+
+| 任务 | 本轮结果与不可外推的范围 |
+|---|---|
+| 宿主全套测试 | FAIL，95项中94通过；无第三次重跑 |
+| ARM32根python全套测试/版本记录 | NOT RUN，宿主门禁第二次失败后停止 |
+| x86 225档/3864成员/完整索引/3853flags | NOT RUN；旧§12 PASS不绑定5608aa5e新候选 |
+| ARM32 210档重新转换、含asm的2成员GLOBAL符号 | NOT RUN；没有新after SHA/真实符号状态 |
+| A64 212档重新转换、含asm的3成员GLOBAL符号 | NOT RUN；没有新after SHA/真实符号状态 |
+| 两架构after SHA与docs/40 §12逐档相同 | UNKNOWN（未执行）；不能沿用旧消费者作为本候选认证 |
+| 消费者三套与两种strip | 本轮未重跑，亦未以“SHA相同”为由沿用认证；旧证据仍仅认证1620 |
+| ARM32 105/106共享库-z text、GNU/lld、dlopen | NOT RUN |
+| x86最终产物的同module asm成员只读核查 | NOT RUN；按第三步停止，不声称符号存在/缺失 |
+
+生产x86 Source6bd的`ir_settings`不解析module asm，`check_symbols`只比较定义外部符号，不能据此证明`.globl`引入的UND引用被保留。这是代码审查边界；本轮要求的docs/35产物符号核查未执行，结果UNKNOWN，不能拿ARM头文件声明推断x86产物。已在docs/45 §5独立披露。（证据：生产Source:275–329、499–521；本轮stop-result.json。）
+
+## 11. Gerrit只读身份补全与原始证据
+
+允许的只读查询已成功，未fetch/推送Gerrit，也未改两patch：
+
+```sh
+GIT_TERMINAL_PROMPT=0 \
+GIT_SSH_COMMAND='ssh -o BatchMode=yes -o NumberOfPasswordPrompts=0 -o ConnectTimeout=30' \
+timeout 60 git ls-remote \
+  ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm \
+  refs/changes/39/356639/1
+```
+
+```text
+b0465d099164a8f8c1ddd406e6f74c2ada8f9f9f	refs/changes/39/356639/1
+```
+
+退出0，stderr为空。该完整号替换docs/45原短号，不与本地format-patch封套号混写。（证据：E2/gerrit-356639-ls-remote.txt、gerrit-356639-ls-remote.stderr。）
+
+| E2下文件 | 用途 |
+|---|---|
+| candidate-before.py、tests-before.py | 本轮编辑前的原件副本 |
+| protected-start.json、final-integrity.json | 生产Source/spec/patch/用户配置未变；候选/测试新SHA |
+| iostream-evidence.json | 两ARM根头文件路径、SHA、编号摘录 |
+| revision-metadata.json、source-isolation.json | diff计数/摘要、函数行号、测试名、未改函数AST核对 |
+| run_tests.py、unit-tests-host.log、unit-tests-host-initial-result.json | 首轮完整命令与95项结果 |
+| test-helper-correction.diff/json | 唯一辅助修正的依据与diff |
+| unit-tests-host-retry.log、unit-tests-final-result.json、stop-result.json | 第二次FAIL、实际解释器、停止边界 |
+| lock-acquired.json、lock-released.json、final-processes.json、final-mountinfo.txt | 独占与退出回收、无本任务残留 |
+| gerrit-356639-ls-remote.* | 只读完整提交号 |
+
+## 12. 收尾与后续条件
+
+项目两把锁已由持锁进程正常释放（2026-10-10 20:34:34+08:00），收尾扫描没有本任务测试/构建进程残留；本轮未启动scope或采样器、未创建任何挂载。没有构建、转换真实归档、打包、清盘、改宿主配置、改spec或推Gerrit。用户原有gbs配置改动保持原样且不提交。（证据：E2/lock-released.json、final-processes.json、final-integrity.json。）
+
+当前可供评审的是**未通过全套测试的候选5608aa5e、测试与完整diff**；不能更新356627的生产附件。继续前需要明确处置既有取消测试的失败，随后才可重新启动测试与x86/ARM门禁；本任务没有授权自动第三次尝试。原1620的历史认证不作废，也不移植为5608的认证。第五步文档按要求完成并推送，停止报告保持可复核。

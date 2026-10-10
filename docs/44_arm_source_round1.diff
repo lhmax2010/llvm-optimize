@@ -1,0 +1,479 @@
+--- a/tools/llvm_static_archives_arm_trial.py (1620a8da)
++++ b/tools/llvm_static_archives_arm_trial.py
+@@ -379,10 +379,12 @@
+         '-mfpu=neon': ('ir', 'FPU target features'),
+         '-mfloat-abi=softfp': ('restore', 'calling convention and backend FloatABI'),
+         '-mlittle-endian': ('restore', 'driver endianness cross-check'),
++        # clang/lib/Driver/ToolChains/Arch/ARM.cpp:660-662.
+         '-mtune=cortex-a8': ('irrelevant', 'LLVM 22 ARM driver ignores mtune'),
+     },
+     'aarch64': {
+         '-march=armv8-a+fp+simd+crc+crypto': ('ir', 'CPU target features'),
++        # clang/lib/Driver/ToolChains/Arch/AArch64.cpp:233-238; CodeGenModule.cpp:2983-2984.
+         '-mtune=cortex-a53': ('ir', 'tune-cpu attribute'),
+     },
+ }
+@@ -418,7 +420,7 @@
+             if token.split('=', 1)[1] not in ARM_DRIVER_TRIPLES[arch]:
+                 raise ValueError('uncertified ARM driver target: '+token)
+             category, reason = 'irrelevant', 'target cross-checked against architecture policy'
+-        elif token.startswith('-m'):
++        elif token.startswith(('-m', '-Wa,')):
+             raise ValueError('unclassified original command token: '+token)
+         elif token in operand_options:
+             if index+1 == len(argv) or argv[index+1].startswith('-'):
+@@ -482,9 +484,230 @@
+ 
+ 
+ 
++# Exact define attribute tuples from docs/44 section 2 (813,881 definitions).
++ARM_CERTIFIED_FUNCTION_TARGET = {
++    'armv7l': ('generic', '+armv7-a,+d32,+dsp,+fp64,+neon,+read-tp-tpidruro,+thumb-mode,+vfp2,+vfp2sp,+vfp3,+vfp3d16,+vfp3d16sp,+vfp3sp,-aes,-fp-armv8,-fp-armv8d16,-fp-armv8d16sp,-fp-armv8sp,-fp16,-fp16fml,-fullfp16,-sha2,-vfp4,-vfp4d16,-vfp4d16sp,-vfp4sp', None),
++    'aarch64': ('generic', '+aes,+crc,+crypto,+fp-armv8,+neon,+outline-atomics,+sha2,+v8a,-fmv', 'cortex-a53'),
++}
++# GCC 14.2.0 in both recorded roots: R32/usr/lib/gcc/armv7l-tizen-linux-gnueabi/
++# 14.2.0/include/c++/iostream:75-82; R64/usr/lib64/gcc/aarch64-tizen-linux-gnu/
++# 14.2.0/include/c++/iostream:75-82. Library-side iostream initialization
++# needs this global reference. Preserve the IR, and verify its output symbol.
++ARM_CERTIFIED_MODULE_ASM = {'.globl _ZSt21ios_base_library_initv'}
++
++
++def arm_function_targets(lines, arch):
++    attributes, definitions = {}, []
++    for line in lines:
++        if line.startswith('attributes #'):
++            match = re.fullmatch(r'attributes #(\d+) = (.*)\s*', line.rstrip())
++            if not match or match[1] in attributes:
++                raise ValueError('invalid/duplicate ARM function attribute group')
++            attributes[match[1]] = match[2]
++        if line.startswith('define '):
++            if not line.rstrip().endswith('{'):
++                raise ValueError('uncertified multiline ARM function definition')
++            definitions.append(line)
++    for line in definitions:
++        groups = re.findall(r'\s#(\d+)(?=\s)', line)
++        if len(groups) != 1 or groups[0] not in attributes:
++            raise ValueError('ARM function definition lacks target attribute group: '+line.strip())
++        values = []
++        for key in ('target-cpu', 'target-features', 'tune-cpu'):
++            found = re.findall(r'"'+key+r'"="([^"]*)"', attributes[groups[0]])
++            if len(found) > 1:
++                raise ValueError('duplicate ARM function target attribute: '+key)
++            values.append(found[0] if found else None)
++        if tuple(values) != ARM_CERTIFIED_FUNCTION_TARGET[arch]:
++            raise ValueError('uncertified ARM function target attributes: '+repr(values))
++    return dict(definitions=len(definitions), certified=True)
++
++
++def arm_module_asm_whitelist(lines):
++    statements = []
++    for line in lines:
++        if not line.startswith('module asm '):
++            continue
++        match = re.fullmatch(r'module asm "(.*)"\s*', line)
++        if not match:
++            raise ValueError('unrecognized ARM module asm encoding')
++        encoded = match[1]
++        if re.search(r'\\(?![0-9A-Fa-f]{2})', encoded):
++            raise ValueError('invalid ARM module asm escape')
++        statement = re.sub(r'\\([0-9A-Fa-f]{2})', lambda m: chr(int(m[1], 16)), encoded).strip()
++        if statement not in ARM_CERTIFIED_MODULE_ASM:
++            raise ValueError('uncertified ARM module asm: '+repr(statement))
++        statements.append(statement)
++    return statements
++
++
++def arm_elf_layout(data, arch):
++    """Bounded ARM ET_REL reader, shared only by ARM checks (never x86)."""
++    if arch not in ARM_OPTIMIZATION:
++        raise ValueError('uncertified ARM ELF architecture')
++    bits, machine, ehsize, shsize = (1, 40, 52, 40) if arch == 'armv7l' else (2, 183, 64, 64)
++    if (len(data) < ehsize or member_kind(data) != 'machine' or
++            data[4:7] != bytes([bits, 1, 1]) or struct.unpack_from('<H', data, 18)[0] != machine or
++            struct.unpack_from('<I', data, 20)[0] != 1):
++        raise ValueError('not certified '+arch+' little-endian ET_REL header')
++    off = struct.unpack_from('<I' if bits == 1 else '<Q', data, 32 if bits == 1 else 40)[0]
++    header_size = struct.unpack_from('<H', data, 40 if bits == 1 else 52)[0]
++    stride, count, names = struct.unpack_from('<HHH', data, 46 if bits == 1 else 58)
++    sfmt = '<IIIIIIIIII' if bits == 1 else '<IIQQQQIIQQ'
++    symfmt = '<IIIBBH' if bits == 1 else '<IBBHQQ'
++    def bounded(start, size, label):
++        if start < 0 or size < 0 or start > len(data) or size > len(data)-start:
++            raise ValueError('ARM ELF '+label+' outside member')
++    if not ehsize <= header_size <= len(data) or stride < shsize or off < header_size:
++        raise ValueError('invalid ARM ELF section header')
++    bounded(off, stride, 'section zero')
++    zero = struct.unpack_from(sfmt, data, off)
++    if zero[1] != 0:
++        raise ValueError('ARM ELF section zero is not NULL')
++    count = count or zero[5]
++    if not count or count > (len(data)-off)//stride:
++        raise ValueError('ARM ELF section table outside member')
++    sections = [struct.unpack_from(sfmt, data, off+i*stride) for i in range(count)]
++    names = zero[6] if names == 0xffff else names
++    if names >= count or names and sections[names][1] != 3:
++        raise ValueError('invalid ARM ELF section name table')
++    for index, section in enumerate(sections):
++        if index and section[1] not in (0, 8):
++            bounded(section[4], section[5], 'section payload')
++    def contents(index):
++        s = sections[index]
++        return data[s[4]:s[4]+s[5]]
++    names_data = contents(names) if names else b'\0'
++    section_names = [cstring(names_data, s[0]) for s in sections]
++    extensions, symbols = {}, {}
++    for index, section in enumerate(sections):
++        if section[1] != 18:
++            continue
++        link = section[6]
++        if link >= count or sections[link][1] != 2 or link in extensions:
++            raise ValueError('invalid/duplicate ARM extended symbol index table')
++        if section[9] != 4 or section[5] % 4:
++            raise ValueError('invalid ARM extended index stride')
++        extensions[link] = list(struct.unpack('<'+'I'*(section[5]//4), contents(index)))
++    for index, section in enumerate(sections):
++        if section[1] != 2:
++            continue
++        link, step = section[6], section[9]
++        if link >= count or sections[link][1] != 3:
++            raise ValueError('invalid ARM symbol string table link')
++        if step < struct.calcsize(symfmt) or section[5] % step:
++            raise ValueError('invalid ARM symbol table stride')
++        n = section[5]//step
++        if section[7] > n or index in extensions and len(extensions[index]) != n:
++            raise ValueError('invalid ARM symbol/extended index count')
++        strings = contents(link); records = []
++        for pos in range(section[4], section[4]+section[5], step):
++            fields = struct.unpack_from(symfmt, data, pos)
++            name, value, size, info, other, ndx = fields if bits == 1 else (fields[0], fields[4], fields[5], fields[1], fields[2], fields[3])
++            records.append(dict(name=cstring(strings, name), value=value, size=size,
++                                info=info, other=other, raw_section=ndx))
++        symbols[index] = records
++    layout = dict(bits=bits, sections=sections, section_names=section_names,
++                  symbols=symbols, extensions=extensions, relocations=[])
++    for table, records in symbols.items():
++        for index in range(len(records)):
++            records[index].update(arm_symbol_section(layout, table, index))
++    for index, section in enumerate(sections):
++        if section[1] not in (4, 9):
++            continue
++        link, target, step = section[6], section[7], section[9]
++        if link not in symbols or not 0 < target < count:
++            raise ValueError('invalid ARM relocation sh_link/sh_info')
++        fmt = ('<IIi' if section[1] == 4 else '<II') if bits == 1 else ('<QQq' if section[1] == 4 else '<QQ')
++        if step < struct.calcsize(fmt) or section[5] % step:
++            raise ValueError('invalid ARM relocation stride')
++        for pos in range(section[4], section[4]+section[5], step):
++            r = struct.unpack_from(fmt, data, pos); info = r[1]
++            kind, si = (info & 255, info >> 8) if bits == 1 else (info & 0xffffffff, info >> 32)
++            if si >= len(symbols[link]):
++                raise ValueError('ARM relocation symbol outside table')
++            if r[0] >= sections[target][5]:
++                raise ValueError('ARM relocation offset outside target section')
++            layout['relocations'].append(dict(type=kind, offset=r[0], target=target,
++                                               symbol_index=si, symbol_table=link))
++    return layout
++
++
++def arm_symbol_section(layout, table, index):
++    symbol = layout['symbols'][table][index]
++    raw = symbol['raw_section']; decoded = raw
++    if raw == 0xffff:
++        if table not in layout['extensions']:
++            raise ValueError('missing extended ARM symbol section index')
++        decoded = layout['extensions'][table][index]
++        if not 0 < decoded < len(layout['sections']):
++            raise ValueError('extended ARM symbol section index outside table')
++    elif raw < 0xff00 and raw >= len(layout['sections']):
++        raise ValueError('ARM symbol section index outside table')
++    return dict(section_index=decoded, is_absolute=raw == 0xfff1)
++
++
++def arm_check_module_asm_symbol(data, arch, statements):
++    if not statements:
++        return dict(required=False)
++    layout = arm_elf_layout(data, arch)
++    matches = [s for records in layout['symbols'].values() for s in records
++               if s['name'] == '_ZSt21ios_base_library_initv' and s['info'] >> 4 == 1]
++    if not matches:
++        raise ValueError('ARM module asm global symbol missing: _ZSt21ios_base_library_initv')
++    return dict(required=True, symbol='_ZSt21ios_base_library_initv', matches=matches)
++
++
++def arm_attributes(text):
++    if not re.search(r'^Attribute Section: aeabi\s*$', text, re.M):
++        raise ValueError('ARM readelf output lacks aeabi attribute section')
++    keys = ('Tag_CPU_arch', 'Tag_ARM_ISA_use', 'Tag_THUMB_ISA_use', 'Tag_ABI_VFP_args')
++    result = {}
++    for key in keys:
++        matches = re.findall(r'^\s*'+key+r': (\S[^\r\n]*)$', text, re.M)
++        if len(matches) > 1 or len(re.findall(r'\b'+key+r'\b', text)) != len(matches):
++            raise ValueError('invalid ARM readelf attribute format: '+key)
++        result[key] = matches[0].strip() if matches else None
++    if result['Tag_CPU_arch'] is None:
++        raise ValueError('ARM readelf output lacks Tag_CPU_arch')
++    return result
++
++
++def validate_arm_tools(build, compiler, disassembler, nm, command, output, arch):
++    result = validate_tools(build, compiler, disassembler, nm, command, output)
++    compiler_match = re.search(r'clang version (\d+\.\d+\.\d+)\b', result['version'])
++    if not compiler_match:
++        raise ValueError('missing full ARM clang version')
++    full = compiler_match[1]; versions = {}
++    for label, tool in [('disassembler', disassembler), ('nm', nm)]:
++        path = output/(label+'-version.txt')
++        with path.open('wb') as stream:
++            command.run([tool, '--version'], output/(label+'-version-command'), stdout=stream)
++        text = path.read_text(); match = re.search(r'LLVM version (\d+\.\d+\.\d+)\b', text)
++        if not match or match[1] != full:
++            raise ValueError('ARM '+label+' version differs from clang '+full+': '+text.strip())
++        versions[label] = dict(path=str(tool), sha256=sha(tool), version=match[1], raw=text)
++    if arch == 'armv7l':
++        for tool in (Path('/usr/bin/env'), Path('/usr/bin/readelf')):
++            if not tool.is_file() or not os.access(tool, os.X_OK):
++                raise ValueError('missing ARM attribute reader tool: '+str(tool))
++        path = output/'readelf-version.txt'
++        with path.open('wb') as stream:
++            command.run(['/usr/bin/env', 'LC_ALL=C', '/usr/bin/readelf', '--version'], output/'readelf-version-command', stdout=stream)
++        raw = path.read_text()
++        if not re.match(r'GNU readelf \(GNU Binutils[^\n]*\)', raw):
++            raise ValueError('ARM attribute reader is not GNU readelf: '+raw.strip())
++        versions['readelf'] = dict(path='/usr/bin/readelf', sha256=sha('/usr/bin/readelf'), raw=raw,
++                                   env_sha256=sha('/usr/bin/env'))
++    result['arm_full_version'] = full; result['arm_tool_versions'] = versions
++    return result
++
++
+ def arm_ir_settings(lines, arch):
+     """Read LLVM 22 textual metadata/attributes without modifying input IR."""
+     lines = list(lines)
++    function_targets = arm_function_targets(lines, arch)
++    module_asm = arm_module_asm_whitelist(lines)
+     retained, metadata = [], {}
+     triple, command_id = None, None
+     levels, cpus, features = {}, set(), set()
+@@ -551,6 +774,7 @@
+     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
+                 target_features=sorted(features), flags=flags, evidence=retained,
+                 recorded_command=recorded_command, policy=policy,
++                function_targets=function_targets, module_asm=module_asm,
+                 module_asm_sections=arm_module_asm_sections(lines) if arch == 'armv7l' else [])
+ 
+ 
+@@ -561,15 +785,15 @@
+ # this lld getRelExpr; permitting the object is not proof that lld can link it.
+ ARM_TLS_ALLOWED = {
+     'armv7l': {104, 105, 106},
+-    'aarch64': set(range(0x200, 0x21b)) | set(range(0x230, 0x23a)) | {0x23c, 0x23d},
++    'aarch64': {562, 563, 564, 569},
+ }
+ ARM_TLS_LOCAL_EXEC = {
+     'armv7l': {108, 110},
+     'aarch64': set(range(0x220, 0x230)) | {0x23a, 0x23b},
+ }
+ ARM_TLS_PENDING = {
+-    'armv7l': {90, 91, 92, 93, 107, 111, 129, 130},
+-    'aarch64': set(range(0x21b, 0x220)),
++    'armv7l': {13, 17, 18, 19, 90, 91, 92, 93, 107, 109, 111, 129, 130, 165, 166, 167},
++    'aarch64': set(range(512, 544)) | {560, 561, 565, 566, 567, 568, 572, 573},
+ }
+ 
+ 
+@@ -637,29 +861,18 @@
+ 
+ 
+ def arm_mapping_modes(data, selected):
+-    """ELF mapping symbols give ARM/Thumb/data transitions in module-asm sections."""
+-    if member_kind(data) != 'machine' or data[4:6] != b'\x01\x01' or struct.unpack_from('<H', data, 18)[0] != 40:
+-        raise ValueError('ARM mapping gate requires little-endian ELF32 ET_REL')
+-    off = struct.unpack_from('<I', data, 32)[0]
+-    stride, count, names = struct.unpack_from('<HHH', data, 46)
+-    if not count:
+-        count = struct.unpack_from('<IIIIIIIIII', data, off)[5]
+-    sections = [struct.unpack_from('<IIIIIIIIII', data, off+i*stride) for i in range(count)]
+-    if names == 65535:
+-        names = sections[0][6]
+-    strings = sections[names]; names_data = data[strings[4]:strings[4]+strings[5]]
+-    found = {i: cstring(names_data, s[0]) for i, s in enumerate(sections)
+-             if cstring(names_data, s[0]) in selected and s[2] & 4 and s[5]}
++    """Preserve every same-named executable section's mapping sequence."""
++    layout = arm_elf_layout(data, 'armv7l')
++    found = {i: name for i, (name, section) in enumerate(zip(layout['section_names'], layout['sections']))
++             if name in selected and section[2] & 4 and section[5]}
+     maps = {i: [] for i in found}
+-    for section in sections:
+-        if section[1] != 2:
+-            continue
+-        string_sec = sections[section[6]]; strings = data[string_sec[4]:string_sec[4]+string_sec[5]]
+-        for pos in range(section[4], section[4]+section[5], section[9]):
+-            name, value, size, info, other, shndx = struct.unpack_from('<IIIBBH', data, pos)
+-            text = cstring(strings, name)
+-            if shndx in maps and re.fullmatch(r'\$[atd](?:\..*)?', text):
+-                maps[shndx].append((value, text[1]))
++    for records in layout['symbols'].values():
++        for sym in records:
++            index = sym['section_index']; text = sym['name']
++            if not sym['is_absolute'] and index in maps and re.fullmatch(r'\$[atd](?:\..*)?', text):
++                if sym['value'] >= layout['sections'][index][5]:
++                    raise ValueError('ARM mapping symbol offset outside section')
++                maps[index].append((sym['value'], text[1]))
+     result = {}
+     for index, name in found.items():
+         modes = []
+@@ -668,7 +881,7 @@
+                 modes.append(mode)
+         if not modes:
+             raise ValueError('ARM module asm section lacks mapping symbols: '+name)
+-        result[name] = modes
++        result.setdefault(name, []).append(modes)
+     return result
+ 
+ 
+@@ -681,14 +894,9 @@
+     def signature(path, label):
+         output = source.parent/(label+'.attributes.txt')
+         with output.open('wb') as stream:
+-            command.run(['readelf', '-AW', str(path)], source.parent/(label+'-readelf'), stdout=stream)
++            command.run(['/usr/bin/env', 'LC_ALL=C', '/usr/bin/readelf', '-AW', str(path)], source.parent/(label+'-readelf'), stdout=stream)
+         text = output.read_text()
+-        attributes = {}
+-        for key in ('Tag_ARM_ISA_use', 'Tag_THUMB_ISA_use', 'Tag_ABI_VFP_args'):
+-            values = re.findall(r'^\s*'+key+r': (.*)$', text, re.M)
+-            if len(values) > 1:
+-                raise ValueError('multiple ARM attribute values: '+key)
+-            attributes[key] = values[0] if values else 'default(0)'
++        attributes = arm_attributes(text)
+         return dict(attributes=attributes, module_asm_modes=arm_mapping_modes(path.read_bytes(), settings['module_asm_sections']))
+     actual = signature(target, 'converted'); expected = signature(reference, 'reference')
+     result = dict(actual=actual, expected=expected, equal=actual == expected,
+@@ -708,24 +916,9 @@
+     define the numbers and expressions. Unknown/TLS/platform policies require
+     separate certification. Low-12 address fragments are not full addresses.
+     """
+-    bits, machine = (1, 40) if arch == 'armv7l' else (2, 183)
+-    if (arch not in ARM_OPTIMIZATION or member_kind(data) != 'machine' or
+-            data[4:6] != bytes([bits, 1]) or struct.unpack_from('<H', data, 18)[0] != machine):
+-        raise ValueError('not certified '+arch+' little-endian ET_REL')
+-    if bits == 1:
+-        off = struct.unpack_from('<I', data, 32)[0]
+-        stride, count = struct.unpack_from('<HH', data, 46)
+-        sfmt, symfmt = '<IIIIIIIIII', '<IIIBBH'
+-    else:
+-        off = struct.unpack_from('<Q', data, 40)[0]
+-        stride, count = struct.unpack_from('<HH', data, 58)
+-        sfmt, symfmt = '<IIQQQQIIQQ', '<IBBHQQ'
+-    if stride < struct.calcsize(sfmt) or not off:
+-        raise ValueError('invalid ARM ELF section header')
+-    if not count:
+-        count = struct.unpack_from(sfmt, data, off)[5]
+-    sections = [struct.unpack_from(sfmt, data, off+i*stride) for i in range(count)]
++    layout = arm_elf_layout(data, arch)
+     if arch == 'armv7l':
++        # AAELF32 TARGET1 can mean ABS32 or REL32; treating it as absolute is stricter.
+         absolute = {2,5,6,7,8,38,43,44,47,48,55,132,133,134,135}
+         narrow = {5,6,7,8}
+         # NONE, relative code/data, GOT/PLT and EHABI PREL31. TARGET2/BASE_ABS
+@@ -734,10 +927,10 @@
+                    51,52,53,54,56,57,58,59,60,61,62,63,64,65,66,67,68,69,
+                    96,97,98,102,103}
+     else:
+-        absolute = {0x101,0x102,0x103,0x13d,0x244} | set(range(0x107,0x111))
++        absolute = {0x101,0x102,0x103} | set(range(0x107,0x111))
+         narrow = {0x102,0x103}
+         # ADRP+LO12, PREL, branches and GOT fragments; no TLS/PAuth default.
+-        allowed = {0,0x100,0x104,0x105,0x106,0x111,0x112,0x113,0x114,
++        allowed = {0,0x104,0x105,0x106,0x111,0x112,0x113,0x114,
+                    0x115,0x116,0x117,0x118,0x11a,0x11b,0x11c,0x11d,0x11e,
+                    0x11f,0x120,0x121,0x122,0x123,0x124,0x125,0x12b,
+                    0x12c,0x12d,0x12e,0x12f,0x130,0x131,0x132,0x133,
+@@ -745,47 +938,28 @@
+     tls_allowed = ARM_TLS_ALLOWED[arch]
+     tls_forbidden = ARM_TLS_LOCAL_EXEC[arch]
+     checked, forbidden, types = 0, [], Counter()
+-    for section in sections:
+-        if section[1] not in (4, 9):
++    writable_pointers = {2, 38, 55} if arch == 'armv7l' else {257}
++    for rel in layout['relocations']:
++        kind, si, target_index = rel['type'], rel['symbol_index'], rel['target']
++        if kind in tls_forbidden:
++            raise ValueError('forbidden '+arch+' TLS local-exec relocation '+str(kind)+' at section '+str(target_index))
++        if kind in ARM_TLS_PENDING[arch] or kind not in absolute | allowed | tls_allowed:
++            raise ValueError('uncertified '+arch+' relocation '+str(kind)+' at section '+str(target_index))
++        target = layout['sections'][target_index]
++        if not target[2] & 2:
+             continue
+-        target = sections[section[7]]
+-        symidx = section[6]; symbols = sections[symidx]
+-        if symbols[1] != 2 or symbols[9] < struct.calcsize(symfmt):
+-            raise ValueError('invalid ARM relocation symbol table')
+-        xindex = [s for s in sections if s[1] == 18 and s[6] == symidx]
+-        rfmt = ('<IIi' if section[1] == 4 else '<II') if bits == 1 else ('<QQq' if section[1] == 4 else '<QQ')
+-        if section[9] < struct.calcsize(rfmt) or section[5] % section[9]:
+-            raise ValueError('invalid ARM relocation stride')
+-        for pos in range(section[4], section[4]+section[5], section[9]):
+-            rel = struct.unpack_from(rfmt, data, pos); info = rel[1]
+-            kind, si = (info & 255, info >> 8) if bits == 1 else (info & 0xffffffff, info >> 32)
+-            if si*symbols[9] >= symbols[5]:
+-                raise ValueError('ARM relocation symbol index outside table')
+-            sym = struct.unpack_from(symfmt, data, symbols[4]+si*symbols[9])
+-            ndx = sym[5] if bits == 1 else sym[3]
+-            if ndx == 0xffff:
+-                if len(xindex) != 1 or si*4 >= xindex[0][5]:
+-                    raise ValueError('missing extended ARM symbol section index')
+-                ndx = struct.unpack_from('<I', data, xindex[0][4]+4*si)[0]
+-            if kind in tls_forbidden:
+-                # Reject here, independently of the caller's PIC Level check.
+-                raise ValueError('forbidden '+arch+' TLS local-exec relocation '+str(kind)+' at section '+str(section[7]))
+-            if kind in ARM_TLS_PENDING[arch]:
+-                raise ValueError('uncertified '+arch+' TLS relocation '+str(kind)+' at section '+str(section[7]))
+-            if not target[2] & 2:
+-                continue
+-            checked += 1; types[kind] += 1
+-            if kind not in absolute | allowed | tls_allowed:
+-                raise ValueError('uncertified '+arch+' relocation '+str(kind)+' at section '+str(section[7]))
+-            if ndx != 0xfff1 and (kind in narrow or kind in absolute and not target[2] & 1):
+-                forbidden.append(dict(type=kind, target_section=section[7], symbol_index=si))
++        checked += 1; types[kind] += 1
++        symbol = arm_symbol_section(layout, rel['symbol_table'], si)
++        if not symbol['is_absolute'] and (kind in narrow or kind in absolute and
++                not (kind in writable_pointers and target[2] & 1)):
++            forbidden.append(dict(type=kind, target_section=target_index, symbol_index=si))
+     return dict(checked=checked, forbidden=forbidden, types=dict(types))
+ 
+ 
+ def policy_for_arch(arch):
+     if arch == 'x86_64':
+         # These are the original functions; the ARM branches are unreachable.
+-        return dict(settings=lambda lines: ir_settings(lines, arch=arch), relocations=pic_relocations)
++        return dict(settings=ir_settings, relocations=pic_relocations)
+     if arch in ARM_OPTIMIZATION:
+         return dict(settings=lambda lines: arm_ir_settings(lines, arch),
+                     relocations=lambda data: arm_pic_relocations(data, arch))
+@@ -1031,10 +1205,16 @@
+     save()
+     old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
+     try:
+-        summary['tools'] = validate_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output)
++        if arch == 'x86_64':
++            summary['tools'] = validate_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output)
++        else:
++            summary['tools'] = validate_arm_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output, arch)
+         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+         summary['scanned_archives'] = len(archives)
+         summary['native_archives_skipped'] = sum(not data['bitcode'] for archive, data in archives)
++        if arch != 'x86_64':
++            summary['native_archives_skipped_inventory'] = [dict(path=str(a.relative_to(root)), sha256=d['sha256'], members=d['member_count'])
++                for a, d in archives if not d['bitcode']]
+         for archive, before in archives:
+             command.check()
+             if not before['bitcode']:
+@@ -1085,6 +1265,8 @@
+                 if arch == 'armv7l':
+                     record['arm_thumb_gate'] = arm_thumb_gate(compiler, source, target, settings, command)
+                 data = target.read_bytes()
++                if arch != 'x86_64':
++                    record['module_asm_symbol'] = arm_check_module_asm_symbol(data, arch, settings['module_asm'])
+                 relocs = policy['relocations'](data)
+                 atomic_json(source.parent/'relocations.json', relocs)
+                 if settings['pic_level'] and relocs['forbidden']:
