@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
+**当前任务（docs/44第一阶段）停止于Source修改前**：只读普查完成，51个无属性成员均无define；7,382个bitcode成员共813,881个define必需目标属性齐备。但AArch64真实输入有3条`.globl _ZSt21ios_base_library_initv` module asm，与本轮PM“任何A64 module asm拒绝”规则冲突；未自行豁免。候选仍1620a8da，Source/测试/补丁未改，新测试/x86与两ARM复验均NOT RUN。按任务独立完成docs/45评审材料包后收尾。证据：docs/44 §1–§5、temp/arm-source-review-round1-20261010。
+
+**历史文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
 
 **上轮收尾（docs/40 §12）**：ARM转换第一段全部PASS。Source1620a8da的67测试/夹具与x86 225档/3864成员不变性PASS；ARM32 210档、AArch64 212档全量转换/重定位、三套消费者和两种strip均PASS。AArch64唯一一次-bc成功（2321.728s、scope峰16.417GiB、无OOM）。两BUILD/原件/缓存保留，项目锁/进程/采样器/挂载回收。后续需ARM的spec集成与RPM验收，生产Source/两review补丁未动。
 
@@ -35,7 +37,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：向三家外部AI提交docs/43材料包供Source/测试评审；本轮只整理文档，不把材料准备记成评审通过或ARM发布验收。
+当前阶段：外部评审首轮只读普查已完成；AArch64真实module asm与拟实施新门禁冲突，Source修订/复验停止，待PM明确该声明的处理范围。并行任务docs/45仅整理已上传x86两补丁的既有证据，不改变生产代码。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -128,12 +130,15 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `cb899cd` | docs/40 §12、STATUS、ARM候选Source及测试 | TLS/Thumb修订，67测试和最终SHA的225档/3864成员x86全量回归PASS；先发布，再继续ARM32。 |
 | 2026-10-10 | `256267b` | docs/40 §12.4–12.7、STATUS | ARM32 210档/3690成员转换与Thumb/重定位PASS；未strip、GNU/LLVM strip三套消费者PASS；辅助资源目录遗漏修正一次。 |
 | 2026-10-10 | `2058761` | docs/40 §12.8–12.13、STATUS | AArch64-bc 7545任务PASS；212档/3706成员、3699 bitcode转换、全集重定位与三套消费者/两种strip全PASS；原件/cache保全，锁/进程/挂载回收，第一段结束。 |
-| 2026-10-10 | 本提交（`git log -1 -- docs/43_arm_conversion_review_package.md`） | docs/43、Source差异文档附件、docs/40入口、STATUS | 整理候选1620a8da外部评审包（≤50KB）：固定版本链接、策略/实测边界、67项测试；仅文档，既有认证结果不改判。 |
+| 2026-10-10 | `ddc7310` | docs/43、Source差异文档附件、docs/40入口、STATUS | 整理候选1620a8da外部评审包（≤50KB）：固定版本链接、策略/实测边界、67项测试；仅文档，既有认证结果不改判。 |
+| 2026-10-10 | 本提交（`git log -1 -- docs/44_arm_source_review_round1.md`） | docs/44、STATUS | 51无属性成员/全部函数属性普查通过；A64三条真实module asm与新禁止规则冲突，修改前STOP；无Source/测试/转换修改或复验。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
 
 ## 3. 已闭合结论
+
+- 硬证据：51无目标函数属性成员全部define=0、module asm=0；ARM32 484,265/A64 329,616个define必需属性齐备。实际module asm ARM32=2、A64=3，原文均`.globl _ZSt21ios_base_library_initv`；证据docs/44 §1–§3及E/census-result.json、module-asm-all.json。新门禁冲突不重判docs/40历史功能PASS。
 
 - 文档整理完成，非新增实测：docs/43把最终Source1620a8da与既有x86/ARM第一段证据绑定，并列出未覆盖类型/安装边界；完整diff相对生产6bd0546a。证据强度：硬证据（文档与固定版本核对），沿用docs/40 §12实测；67测试与全量回归没有在本轮重跑。
 
@@ -423,6 +428,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 本轮用户裁决（§12）：ARM32补回-mthumb；TLS GD/LD及AArch64描述符明确放行，LE任何节禁止，IE/ARM32描述符/其他未知仍交PM；每次Source改动重跑全部测试与x86全量回归。复用B10，不重建ARM32；AArch64只在ARM32全部通过后执行一次-bc；不清理。
 
+本轮PM裁决（docs/44）：只改ARM且先普查，A64任意module asm拒绝；不自行豁免声明或删IR。第一至四步停止仍须整理docs/45。辅助脚本仅在证明门禁不放宽时可修一次，本轮未触发；生产Source与两patch不改。
+
 ## 5. 挂账
 
 - 历史清理挂账：analysis/05E_worktree共享Git元数据尚需处理；用户已解除它对B/C的阻塞，清理不在当前范围；三个Chromium目录未删，第三个小文本备份PARTIAL。四旧根日志已保全，temp/deleted-roots-logs/sudo-delete.sh留用户自行执行，本代理未运行。A1第6–8组1,485候选缺旧逐文件记录，仍保留；其他项目/swap无清理授权。
@@ -432,7 +439,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 待用户提供 | OBS 项目、工作区自研 spec 的实际来源、最终验证 Base 快照 | 明确 source/spec/patch/MLGO 身份，之后钉元数据与 RPM；现公开旧快照不能冒充静态 BOLT 验证快照。 | docs/20 §1.1、§8 |
 | 待用户提供 | Quickbuild 全平台日志 | 统计实际链接+归档占比；>10% 启动第二阶段真实链接基准/lld profile/BOLT lld/逐字节门禁；<5% 搁置；5%–10%（含边界）默认搁置。占比用链接/归档边累计时间除全部边累计时间，与总wall另列；不以Chromium 0.2%或小夹具代替。 | docs/21 §8 |
 | 待用户提供 | qemu-accel 完整源码、armv7l 生成 spec、baselibs_body、对应 OBS 宏与构建日志 | 已取 SRPM 仅含 aarch64 spec；原 VCS `e01aa7250a1a73aa8f88ba9ac4a05cbc954d1c9f` 的公共获取受凭据/403/TLS 阻碍。补齐分支和隐式后处理，不能把通用主体当完整 armv7l 执行日志。 | docs/19 §2.1–2.2；docs/20 §1.2 |
-| 待外部评审 | ARM候选1620a8da与测试 | 三家AI按docs/43独立评审；关注旧式A64 TLS、module asm覆盖、非ALLOC未知类型、编号256、缺属性输入和安装依赖；本材料没有代替评审裁决。 | docs/43 §5–§6；docs/40 §12 |
+| 待PM裁决/后续修订 | ARM候选1620a8da与测试 | 首轮两家意见已由PM合并；普查发现3条真实A64 module asm与新规则冲突，未改Source。需先明确该声明的处理范围，之后才实施评审项和全部回归，不能把旧67测试当成新规则PASS。 | docs/44 §3–§5；docs/43 §5–§6 |
 | 待评审 | docs/21完整v3与V01–V36落实、七文件混合提案、脚本/strip实验 | docs/20保持历史原文；已采纳/实现不等于评审通过，不再安排本机校准。 | docs/21附录D/E |
 | 待评审/修订 | 五个额外静态工具未符合混合范围 | llvm-config、llvm-exegesis与三tblgen实测仍静态；修订方案或由用户确认明确例外，不能自动豁免/重建。保留static-devel及runtime。 | docs/22 §5.1；docs/21 §0.1 |
 | 后续待验 | 混合profile rebind、seed与accel试包 | 本机容量/混合RPM别名/活性/30TU已实测；docs/23在打包失败后未启动profile适用性实证；docs/24再因完整性门禁失败而未执行，保持未认证、不能据此要求重训；尚待图提取器认证或适用性测试后决定重训、同job seed解包文件级等价、seed热缓存两模式、accel patchelf/alias/后处理链验证。 | docs/22 §4–§6；docs/21 §1–§4 |
