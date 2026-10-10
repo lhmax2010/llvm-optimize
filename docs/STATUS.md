@@ -1,6 +1,8 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
+**当前执行（docs/40 §5）**：清理已与B/C解耦；x86全量回归PASS（225档、3864成员、60测试）；ARM真实归档尚未认证，C环境门禁待处理。
+
 历史状态核对到 `4d80d94`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，混合构建见 [docs/22](22_hybrid_link_trial.md)，
 归档根因与前次失败记录见 [docs/23](23_archive_fix_and_profile_rebind.md)；
 旧混合根核查停止记录见 [docs/24](24_archive_fix_verification.md)，该根已隔离，不再读写。
@@ -26,13 +28,13 @@ docs/27 旧转换产物作废；docs/28–29 的后端选项、链接 AS 诊断�
 docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预注册文件保持原样。
 以下 `temp/` 均相对工作区 `/home/linhao/Toolchain/development/llvm-optimize`，仅保存在本机，不在 GitHub。
 
-**2026-10-10夜间任务停止：A1完成；A2清单外共享Git依赖触发停止，三个Chromium目录未删；A3只拷日志/生成sudo脚本。B/x86与C两ARM均NOT RUN，未改Source/spec/补丁、未构建。无人值守阶段不问询不重试，按约定发布停止报告。证据docs/42、docs/40、temp/night-arm-stage1-20261010。**
+**历史2026-10-10夜间任务停止：A1完成；A2清单外共享Git依赖触发停止，三个Chromium目录未删；A3只拷日志/生成sudo脚本。B/x86与C两ARM均NOT RUN，未改Source/spec/补丁、未构建。无人值守阶段不问询不重试，按约定发布停止报告。证据docs/42、docs/40、temp/night-arm-stage1-20261010。**
 
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前夜间任务STOPPED_BEFORE_B：A1已删35,384匹配载荷（180.533333GiB），A3日志/脚本已准备未执行；A2发现保留analysis/05E_worktree依赖chromium-efl/.git，在任何整目录rm之前停止。可用空间218.767GiB已过120线，但B/C均未执行。详见docs/42与docs/40。
-**x86_64归档转换与llvm-strip两条修复已由用户上传Gerrit 356627、356639，等待review与目标流水线验收；本代理未推Gerrit。docs/39已完成ARM只读可行性与小实验：明确了两架构参数、转换器、PIC草案、完整构建阻塞和x86全量SHA回归契约；本轮已获实施授权，但因A2依赖停止，尚未进入实施。ARM认证通过后只更新这两个change的patchset，356639重挂新356627，不另开review。当前Source/spec/patch仍仅认证x86_64；没有ARM实现或完整构建。设计v4/BOLT继续暂缓。S仍是docs/38的三行llvm-strip试验宏版本，原通用GNU-strip指纹不能直接放行它。**
+当前任务仅B/C，与历史清理完全解耦；2026-10-10开场495.673GiB通过120线。B已完成：隔离ARM草案Source的225个x86归档/3864成员/完整索引及3853条flags均与docs/35一致，60相关测试PASS。C环境门禁待核查；不是ARM认证通过。详见docs/40 §5。
+**x86_64归档转换与llvm-strip两条修复已由用户上传Gerrit 356627、356639，等待review与目标流水线验收；本代理未推Gerrit。docs/39已完成ARM只读可行性与小实验：明确了两架构参数、转换器、PIC草案、完整构建阻塞和x86全量SHA回归契约；本轮已恢复B/C授权，B的隔离实现及x86全量回归已PASS，C尚未通过。ARM认证通过后只更新这两个change的patchset，356639重挂新356627，不另开review。当前Source/spec/patch仍仅认证x86_64；新增独立ARM草案Source但未认证；没有ARM完整构建。设计v4/BOLT继续暂缓。S仍是docs/38的三行llvm-strip试验宏版本，原通用GNU-strip指纹不能直接放行它。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
 一次完整 LLVM 构建 16,011.555 s，18 GiB/swap0/4/4/1/debuginfo4，无 OOM；真实 %install 转换 225 归档、3,853 bitcode（含回写 1,054.025 s）。新 RPM 225 开发归档格式/顺序/完整索引及零调试节 PASS，45 运行库成员和索引与基线一致。
 17,689 路径仅 225 开发归档与 45 compiler-rt ar 时间戳变化，其他文件差异 0；clang/lld/ar SHA 相同。七项宿主消费者及两个独立 Tizen 根的 bfd/lld A+B %check 均 PASS。实测候选 patch SHA `4ca1dc3e…`；docs/31提交版 SHA `0c40c91c…`，W 原件、docs/25–30 均未改。
@@ -49,7 +51,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | BOLT 筛选 | 容量、插桩/profile、重写、正确性、训练/留出、中间对照、双目标 | 本机工作已结束；最终 ARM 校准 FAIL，AArch64 PASS 并完成正式轮 |
 | 静态库兼容性修复 | bitcode→机器码、保持原brp宏、GNU ld无LTO/插件消费者、完整构建及新RPM验收 | **v2新RPM/归档/非归档、独立-bi/SKIP、七宿主消费者与两Tizen包均PASS；基于cb679968的v2补丁已生成并验apply，用户确认356627 PS2已上传、评审中；本轮未重建新目标配方** |
 | LLVM包x86_64切换llvm-strip | 叠在356627之后，新增compiler-rt真实运行库消费者及包内验收 | **docs/38全部PASS；用户确认已上传356639，依赖356627；目标流水线待验，代理未推Gerrit** |
-| ARM静态库转换 | 参数/工具/路由/PIC与x86不变性设计 | **docs/39调查与小实验完成；真实归档认证、两ARM完整试包及两个change更新尚未实施** |
+| ARM静态库转换 | 参数/工具/路由/PIC与x86不变性设计 | **docs/40 §5：隔离ARM草案Source的x86全量回归PASS；真实ARM归档与消费者认证待C环境门禁，两个change未改** |
 | 集成设计与评审 | docs/21 完整 v3、混合链接拟议补丁、身份/活性脚本与协议检查 | 历史混合构建/30 TU结果保留；设计 v4 与 BOLT 实施暂缓，待归档修复完成 |
 | OBS 试包与服务器验收 | LLVM RPM → qemu-accel → 新 Base 快照 → Quickbuild | 未执行；项目/验证快照待用户提供，试包与收益验收均未完成 |
 | 后续工具/PGO | 依全平台调用占比和服务器容量决定 | 挂账；没有自动启动授权 |
@@ -113,7 +115,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-09 | `08e0889` | docs/38、STATUS、patches/llvm-strip/ | 授权rename保全+清理后一次增量22RPM成功；225/45归档、270次strip、非静态库零差异、宿主/Tizen全部消费者PASS；叠在356627 PS2的独立4行补丁apply/tree PASS，未推Gerrit。 |
 | 2026-10-09 | `d849dc8` | docs/39、STATUS | ARM配方/策略差异与22.1.8工具查明；显式accel/QEMU小实验成功，自动binfmt/磁盘与全量认证仍有缺口；只交实施草案，未改Source或补丁。 |
 | 2026-10-10 | `f6a0499` | docs/41、STATUS | 只读盘点102项目录/子范围，567条会话元数据；明确保留输入及权限/归属缺口，量化6.646GiB可删建议与173.887GiB仅载荷建议，未清理。 |
-| 2026-10-10 | 本提交（`git log -1 -- docs/42_disk_cleanup.md`） | docs/42、docs/40、STATUS | A1回收180.533333GiB；A2因保留05E工作树的共享Git依赖在rm前停止；A3日志与sudo脚本已准备未执行；B/C未执行。 |
+| 2026-10-10 | `26da4ac` | docs/42、docs/40、STATUS | A1回收180.533333GiB；A2因保留05E工作树的共享Git依赖在rm前停止；A3日志与sudo脚本已准备未执行；B/C未执行。 |
+| 2026-10-10 | 本次B提交（`git log -1 -- tools/llvm_static_archives_arm_trial.py`） | docs/40、STATUS、新ARM试验Source及夹具 | 225原档身份一致；225整档/3864成员/完整索引/后端flags与docs/35完全一致；60测试PASS，ARM仍为待认证草案。 |
+
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -127,6 +131,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 | 结论与边界 | 证据 | 强度 |
 | --- | --- | --- |
+| 隔离ARM草案Source选择x86时，225原始归档身份一致；转换后225整档、3864有序成员及完整索引与docs/35完全相同，3853条后端flags顺序一致，60相关测试PASS。仅认证x86路径，不认证真实ARM归档。 | docs/40 §5；temp/arm-archive-stage1-20261010/x86-regression-result.json | 硬证据 |
 | 工作区 spec 配方未启用 PGO/BOLT；不能据此断言旧发布/accel 二进制也未使用，后者仍有 UNKNOWN。 | [docs/10 §1、§2.3](10_tizen_llvm_build_config.md) | 硬证据（配方）；发布身份缺口不填空 |
 | 静态 RPM 基线已产出 22 个二进制 RPM；clang/clang++/ld.lld/llvm-ar/llvm-ranlib 均无 libLLVM/libclang-cpp NEEDED。“静态”只指 LLVM 库，不指 libc。 | [docs/13 §7](13_baseline_build.md)；`temp/baseline-resume-20260917/rpm-inventory.json`；docs/20 §1.1 | 硬证据 |
 | 首轮 7634 任务在 18 GiB cap 下完成；OOM 在 debuginfo -j40，改 -j4 后产包。单次链接高水位 16.83 GiB，不能将不同阶段峰值简单相加。 | docs/13 §1、§7、§11；[docs/14 §2](14_bolt_feasibility.md) | 硬证据 |
@@ -355,9 +360,11 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 本轮夜间人工规则（2026-10-10）：用户授权A指定清理→B x86全量SHA回归→C两ARM静态库第一段；规定之外停止，失败停止全部后续，每阶段/停止均提交推送；A2 Git报错可保留可得备份后删除，但未授权处理保留路径的共享Git依赖。A3四根仅生成sudo脚本；A1逐文件须匹配docs/41。最终停在A2依赖，不重新要求夜间确认。
 
+本次用户裁决：仅执行B/C；清理与Chromium不在范围，也不再阻塞本任务。四个待用户sudo删除的旧根不读写。B失败不进C，ARM32失败不进AArch64；禁止宿主binfmt/sysctl/包变更，规定之外停止报告。
+
 ## 5. 挂账
 
-- 夜间停止项：先明确analysis/05E_worktree的共享Git元数据处置，才能继续A2以及B/C；三个Chromium目录未删，第三个小文本备份PARTIAL。四旧根日志已保全，temp/deleted-roots-logs/sudo-delete.sh留用户自行执行，本代理未运行。A1第6–8组1,485候选缺旧逐文件记录，仍保留；其他项目/swap无清理授权。
+- 历史清理挂账：analysis/05E_worktree共享Git元数据尚需处理；用户已解除它对B/C的阻塞，清理不在当前范围；三个Chromium目录未删，第三个小文本备份PARTIAL。四旧根日志已保全，temp/deleted-roots-logs/sudo-delete.sh留用户自行执行，本代理未运行。A1第6–8组1,485候选缺旧逐文件记录，仍保留；其他项目/swap无清理授权。
 
 | 分类 | 未闭合项 | 所需材料/下一步与验收边界 | 依据 |
 | --- | --- | --- | --- |
@@ -387,3 +394,5 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 当前tools/llvm_static_archives_source.py与patches/archive-index-fix/中的v2 Source同SHA6bd0546a…；提交patch已更新为ddef2221…。v1保留在Git历史及E36/v1-backup，不能混用两个版本身份。
 原宏关闭方案继续作废；转换只在x86_64安装根进行，W/llvm/spec不动；代理未推Gerrit，用户已确认上传356627 PS2。
 归档修复v2提交材料及两Tizen包验收已在docs/36完成；固定Base缓存复原解除此消费者环境的依赖阻塞，不代表远端404消失。docs/37已闭合相同环境下编译参数策略覆盖；当前归档修复评审中，待目标流水线完整验证；x86 llvm-strip已完成并由用户上传356639。docs/39 ARM可行性调查已完成，实施与完整试包待PM决定；不自动构建新配方或上传Gerrit。设计v4/BOLT没有自动启动授权。
+
+本次执行备案：用户明确清理任务不再阻塞B/C，四个待sudo删除旧根不读写；B已PASS，证据`temp/arm-archive-stage1-20261010`。x86不变性为硬证据，ARM能力仍未认证。无磁盘清理/宿主配置修改/补丁更新/Gerrit推送。
