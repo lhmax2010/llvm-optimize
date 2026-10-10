@@ -149,7 +149,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 | 2026-10-11 | 065cf5b | docs/44 §24、STATUS | 212档/3706成员全门禁PASS，after SHA全部相同，3个asm符号GLOBAL/UND，沿用消费者/strip |
 
-| 2026-10-11 | 本次收尾报告提交 | docs/44 §25–§27、表格附件、STATUS | TLS105/106 bfd/lld实跑PASS；x86 3个bitcode同asm成员符号保留；辅助一次修正、全部回收，根内AS待评审 |
+| 2026-10-11 | c1ebb68 | docs/44 §25–§27、表格附件、STATUS | TLS105/106 bfd/lld实跑PASS；x86 3个bitcode同asm成员符号保留；辅助一次修正、全部回收，根内AS待评审 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -500,3 +500,5 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 续三PM裁决：根内3项实验辅助测试环境不适用；已实证AS限制不生效的1项记开放问题而非离线阻塞；timeout仅证实启动时延后改5s并要求就绪、KILL及完整宽限期；根内测试临时挂proc。Source不改。
 
 本轮新增挂账：ARM32/AArch64 QEMU9.2.3路径下AS 1/4GiB均读回unlimited，nofile256有效；/emul无原生prlimit候选。如何保证ARM生产逐进程限制交外部评审，未选择方案；x86原生AS测试PASS。证据docs/44 §18–§19、docs/45 §5。
+
+2026-10-11材料封存：docs/44最终报告内容提交`c1ebb6866f91bab3a027737f80e8952e2aab0a24`；docs/45已钉该提交并补当前候选、diff、测试与表格链接（本次材料包提交可由git log追溯）。docs/44正文49440字节，历史内容完整保留于正文/表格附件。

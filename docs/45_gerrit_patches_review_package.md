@@ -1,6 +1,6 @@
 # 45 两个 Gerrit 补丁的外部评审材料包
 
-日期：2026-10-10。本文只汇集既有证据，不新增构建、转换或运行测试。评审对象为 **x86_64 生产补丁**；ARM 候选与本轮修订属于另一个待认证版本，不能替代这两份补丁。既有材料链接钉在已发布 Git 提交 `ddc73105dbd46348c650414e7e48bfd95c5309e9`；本轮docs/44最终报告内容钉在续二小修/测试停止提交 `b547f987739d068f267d62f9cd67981c46b0f56b`，均不随main漂移；也可由[本提交的docs/44](44_arm_source_review_round1.md)读取同字节版本。`temp/` 是本机证据，不在 GitHub；W=`/home/linhao/Toolchain/development/llvm-optimize`。（出处：docs/36 §3、docs/38 §6、docs/43 §1。）
+更新：2026-10-11。本文汇集评审证据；续三新增实验的命令与原始结果在docs/44及其E4证据目录，不把材料包写作本身当作新的实验。评审对象为 **x86_64 生产补丁**；ARM 候选与本轮修订属于另一个待认证版本，不能替代这两份补丁。既有材料链接钉在已发布 Git 提交 `ddc73105dbd46348c650414e7e48bfd95c5309e9`；本轮docs/44最终报告内容钉在续三最终收尾报告提交 `c1ebb6866f91bab3a027737f80e8952e2aab0a24`，均不随main漂移；也可由[本提交的docs/44](44_arm_source_review_round1.md)读取同字节版本。`temp/` 是本机证据，不在 GitHub；W=`/home/linhao/Toolchain/development/llvm-optimize`。（出处：docs/36 §3、docs/38 §6、docs/43 §1。）
 
 ## 1. 身份与依赖顺序
 
@@ -162,13 +162,15 @@ R为docs/38的试验构建根。行号来自其存档宏文件，不能直接套
 6. **目标配方未完整构建。** cb679968/67619ec8的源码配方在本轮未从干净目标重建；docs/37是现有3,853命令替换公共flags后的纯文本策略核查。未来新增token、宏默认或LLVM主版本变化会按设计失败，需重新分类和认证。（出处：docs/36 §3.1；docs/37 §4；docs/38 §6。）
 7. **llvm-strip结构差异允许但有边界。** 只放行既有分类，核全部SHF_ALLOC与完整索引并补真实运行；不是关闭debuginfo或把compiler-rt字节变化忽略。全库归档可能因标准strip工具版本变化而变，需要重新核验。（出处：docs/38 §3.2、§4–§5。）
 8. **当前默认选项不是通用接口。** -O3、DWARF4、分段开启、x86 triple与PIC等策略从认证语料确定；未启用ThinLTO且全native时为no-op，但工具/构建目录预检仍先执行。Python最低3.9，util-linux BR用于prlimit，摘要分块读取。（出处：SOURCE头注释、validate_tools/convert；docs/32 §1、docs/36 §3.2。）
-9. **ARM评审仍独立。** docs/43为1620候选历史认证，docs/44 §7–§12为5608修订停止历史；本轮§13–§17诊断600例支持取消测试时序问题，授权小修后候选为`e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`。宿主99/99 PASS；ARM32 Python3.14.2为94 PASS、2 FAIL、3环境ERROR，仍未通过全套门禁。x86与两ARM全量回归未启动，不把旧after SHA或消费者证据绑定到新候选。（出处：docs/44 §13–§17；E3/stop-result.json。）
+9. **ARM评审仍独立，续三固定输入复验已闭合。** Source仍`e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`，本轮无Source修改。宿主99/99 PASS；根内95PASS+4指定例外按PM分类通过。x86新一轮225档after SHA、3,864有序成员、318,543完整索引与3,853组flags均与docs/35相同；ARM32 210档与AArch64 212档after SHA分别与docs/40 §12全部相同，因此按授权沿用已有三套消费者/两种strip，没有重跑。5个ARM白名单asm成员均保留GLOBAL/NOTYPE/DEFAULT/UND（节索引0）。新增ARM32 TLS105/106夹具经bfd/lld共享链接并dlopen实际返回37，无TEXTREL，各有1条DTPMOD32。ARM仍无生产spec/RPM验收，根内AS问题仍开放。（出处：docs/44 §18–§27；E4各result，完整路径见第12项。）
 
-10. **x86 Source不检查module asm；本轮只读核查仍NOT RUN。** 生产6bd的ir_settings不解析该语句，check_symbols仅比较定义外部符号，不能证明.globl引入的UND引用存在。任务原定在docs/35最终产物定位含该声明的真实成员并报告`_ZSt21ios_base_library_initv`绑定/节索引；因第三步根内测试失败而停止，未执行此项，实际成员清单与符号状态UNKNOWN。不能以ARM原声明、源码路径或旧消费者通过推断x86最终符号。此处是证据缺口，不声称x86符号已丢失。（出处：生产Source:275–329、499–521；docs/44 §16；E3/stop-result.json。）
+10. **x86 Source不检查module asm；本轮只读核查补齐固定输入证据。** 生产6bd的ir_settings不解析该语句，check_symbols仅比较定义外部符号，不保护任意.globl产生的UND引用。对docs/35最终RPM解包扫描225档，并核对ARM普查对应的x86原始成员：libLLVMAnalysis.a/MLInlineAdvisor.cpp.o（ordinal80）、libLLVMCodeGen.a/MLRegAllocEvictAdvisor.cpp.o（137）、libarcher_static.a/ompt-tsan.cpp.o（0）的原bitcode实际都有`.globl _ZSt21ios_base_library_initv`；最终产物该符号全部为GLOBAL/NOTYPE/DEFAULT/UND，节索引0。这证明当前三个真实输入的声明保留，不是通用module asm契约。另有原机器码xla_compiled_cpu_function.cc.o与executable_run_options.cc.o也带同一GLOBAL/UND符号，但无IR，来源记UNKNOWN，不由符号推断asm文本。辅助脚本首次误把原机器码送llvm-dis；以ELF魔数和提取SHA只读定位后，仅修类型分派，在新目录授权重跑一次通过，Source/Commands未改。（出处：生产Source:275–329、499–521；docs/44 §26；E4/x86-module-asm-retry/result.json、x86-symbol-helper-diagnosis.json、x86-symbol-helper-fix.diff。）
 
 11. **生产Commands取消不保证返回时后代已消失。** 父进程已被wait4回收时，发送进程组SIGKILL的同一轮可break，不另等后代消失。对同字节Commands的预注册诊断（普通300次+4CPU负载300次）：两组各4次首读R，8次均SigPnd=0、ShdPnd=0x100；600例全在3秒内消失/Z，最长5.430058ms，两组p99为5.312265/5.287699ms（5ms轮询观测上界）。按该场景判据支持测试时序问题，不能外推为同步回收保证。测试现先验不存在/Z/待处理SIGKILL，再要求3秒内终止；Commands未修改。诊断辅助脚本曾把X(dead)误作存活，仅修一次后完整重跑，原失败证据保留。（出处：生产Source:437–453；docs/44 §13；`temp/arm-source-cancel-diagnosis-20261010/diagnostic-retry/observations.jsonl`。）
 
-12. **ARM根共用测试仍有边界。** 根内缺/usr/bin/time导致2 ERROR，宿主as --64夹具退出1；另有RLIMIT_AS期望4GiB而读回-1、timeout探针期望SIGKILL却收到SIGTERM这2 FAIL。根内/proc不可见，返回ok的后代测试不能独立证明根内状态可见性。未改测试断言/Commands或重试，两个FAIL原因未进一步实证；生产x86历史认证不因此自动作废，也不能替代新ARM环境验收。（出处：docs/44 §15；E3/unit-tests-armv7l.log、armv7l-environment.json。这里E3完整路径见docs/44 §13。）
+12. **开放问题：ARM构建根内AS限制不生效。** 续三在临时/proc下重测：ARM32与AArch64均在prlimit --as=4GiB和1GiB后读回unlimited/unlimited，--nofile=256却正确读回256/256；两根QEMU9.2.3，/emul未发现原生x86_64 prlimit/util-linux候选。按预注册判据证实限制在目标QEMU路径未施加，不据此宣称cgroup等价于单进程AS限制。可选方向包括提供/认证原生prlimit、明确记录AS未生效并设计其他保护、研究QEMU路径；本轮不选方案，不修改生产Commands。宿主原生99/99 PASS，同一AS测试正确读回4GiB；ARM离线转换仍在宿主运行，不能替代未来根内生产%install限流认证。（出处：docs/44 §18–§21；E4/facts-result.json，E4=`temp/arm-source-root-probes-20261010`。）
+
+13. **根内测试按PM分类通过，不宣称99/99。** Python启动到SIGTERM忽略处理器安装20/20超过原0.15s（159.558–170.290ms）；测试改ready前提+5s timeout，仍强制SIGKILL、wall≥8s、children空。宿主99PASS；ARM根99项为95PASS+3环境不适用（两个GNU time辅助测试、x86 as夹具）+1上述AS已知发现；其他无失败。根内proc可见且finally卸载，原始unittest exit1/FAIL与完整异常保留。（出处：docs/44 §18、§20–§21；E4/root-tests-classified.json。）
 
 ## 6. 外部评审读取清单
 
@@ -187,6 +189,13 @@ R为docs/38的试验构建根。行号来自其存档宏文件，不能直接套
 - [docs/43：历史ARM候选与测试](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/ddc73105dbd46348c650414e7e48bfd95c5309e9/docs/43_arm_conversion_review_package.md)
 - [历史ARM候选1620（非生产Source）](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/ddc73105dbd46348c650414e7e48bfd95c5309e9/tools/llvm_static_archives_arm_trial.py)
 
-- [docs/44：首轮历史与续二诊断、小修、根内测试停止最终报告](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/b547f987739d068f267d62f9cd67981c46b0f56b/docs/44_arm_source_review_round1.md)
+- [docs/44：首轮历史与续三事实、全量复验最终报告](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/c1ebb6866f91bab3a027737f80e8952e2aab0a24/docs/44_arm_source_review_round1.md)
+
+- [docs/44历史明细与根内99项测试表](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/c1ebb6866f91bab3a027737f80e8952e2aab0a24/docs/44_census_tables.md)
+- [当前ARM候选e2（未更新Gerrit补丁）](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/c1ebb6866f91bab3a027737f80e8952e2aab0a24/tools/llvm_static_archives_arm_trial.py)
+- [候选相对1620完整diff](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/c1ebb6866f91bab3a027737f80e8952e2aab0a24/docs/44_arm_source_round1.diff)
+- [ARM与分派测试](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/c1ebb6866f91bab3a027737f80e8952e2aab0a24/tools/test_arm_archive_trial.py)
+- [共用Source测试](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/c1ebb6866f91bab3a027737f80e8952e2aab0a24/tools/test_static_archives_source.py)
+- [v2与本轮timeout测试](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/c1ebb6866f91bab3a027737f80e8952e2aab0a24/tools/test_static_archives_source_v2.py)
 
 本文不提出合入结论；请分别审查两个change，并区分“代码设计”“现有固定输入验收”“目标流水线尚未发生的验证”。（证据边界：docs/36 §3.1；docs/37 §4；docs/38 §6。）
