@@ -1,8 +1,8 @@
-# 40 ARM 静态库转换第一段：A2安全停止，B/C未执行
+# 40 ARM 静态库转换第一段：历史记录与 C 阶段续接
 
-> **最新状态（2026-10-10，§8）：C0 仓库预检 STOP。** GBS 标准 binfmt/mmap 初始化已获授权；指定 Base 快照返回 HTTP 404，本轮没有启动 GBS，C1–C4 未执行。前次 B 的 x86 全量回归 PASS 保持有效。
+> **最新状态（2026-10-10，§9）：两架构 C0 PASS；C1 在源码导出后的代理校验器处 STOP。** 新配置两源均 200，accel clang 22.1.8、两架构编译/guest 运行通过，宏展开与 docs/39 一致。GBS 导出成功，但代理错误地用 Git 原 spec 的整文件 SHA 校验自动插入 `VCS:` 的导出 spec，断言失败；未进入 LLVM `%prep`/CMake/静态库编译，按约定不重试。不是 ARM 编译失败或参数漂移。
 >
-> **用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`。** 这是本次实测原值；若以后 GBS 临时写为 0，可用此命令恢复，重启也会重新加载系统配置、恢复这类非持久化修改。本轮前后均为 65536，**本轮无需执行恢复**；代理没有执行此命令，也没有手工注册 binfmt。以下 §1–§7 保留各次历史状态，当前结论见 §8。
+> **用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`。** 本轮 GBS 按授权已将原值 65536 写为 0；结束不代为恢复。重启也会重新加载系统配置、恢复该非持久化修改。GBS 注册的 qemu binfmt 条目保留，代理未手工注册。以下 §1–§8 保留历史状态，当前结论见 §9。
 
 日期：2026-10-10（Asia/Shanghai）。本报告与[docs/42](42_disk_cleanup.md)、STATUS同commit发布。
 
@@ -612,3 +612,247 @@ Filesystem      Size  Used Avail Use% Mounted on
 ```
 
 全部证据留 E_C，日志/元数据仅本机；本次没有需提交的新 Source 或脚本。
+
+## 9. 2026-10-10 新配置续接：C0 通过，C1 导出校验器错误停止
+
+本节取代 §8 的**当前**包源阻塞；不改判前次 404、§6 的历史政策停止或 §5 的 x86 PASS。
+本轮 11:53 +08:00 开场；两次 C0 于 12:03/12:14 结束，导出检查于 12:16 停止。结果码：**STOP_C1_EXPORT_VALIDATOR_VCS_METADATA**。
+**停止由代理编写的过严 SHA 断言造成，责任在本轮执行脚本，不能归因于用户配置、LLVM、GBS 导出或机器故障。**
+
+本节证据缩写：
+
+```text
+W  = /home/linhao/Toolchain/development/llvm-optimize
+E9 = W/temp/arm-archive-stage1-c-newrepo-20261010
+V9 = /var/tmp/llvm-optimize-arm-stage1-20261010
+R32 = V9/gbs-c0-armv7l/local/BUILD-ROOTS/scratch.armv7l.0
+R64 = V9/gbs-c0-aarch64/local/BUILD-ROOTS/scratch.aarch64.0
+```
+
+E9 保存完整命令、stdout/stderr、逐 30 秒资源样本、配置与仓库元数据；V9 保留两根及全部 GBS 缓存。
+这些绝对路径下的大文件/日志仅在本机，不上传 GitHub。没有读取或清理用户列出的四个旧根。
+
+### 9.1 独占、输入与用户配置
+
+开场 HEAD=`d1d720eac091475aeeb27cc97853442762734689`；`git status --short` 仅 ` M gbs_llvm.conf`，是用户已说明的修改。
+新配置 SHA 为 `28f1caf93cd39738a7da1e0da8d5f945f7372963bb9823a507f9157294272169`，执行前后相同。
+旧 Git HEAD 配置 SHA 为 `a3fea7732532db26c11b88407464e0274a6d8b4277623364fe16b6980181b03f`。
+**本轮所有 GBS 调用均显式 `-c W/gbs_llvm.conf`，没有使用 `~/Toolchain/gbs_llvm.conf`；未修改或暂存用户配置。**
+
+完整配置 diff（用户改动，不是本轮代理修改）：
+
+```diff
+diff --git a/gbs_llvm.conf b/gbs_llvm.conf
+index 58d118d..ed58cbb 100644
+--- a/gbs_llvm.conf
++++ b/gbs_llvm.conf
+@@ -6,7 +6,7 @@ buildroot = /home/linhao/Toolchain/development/llvm-optimize/temp/GBS-ROOT-TIZEN
+ repos = repo.base-standard, repo.unified-standard
+
+ [repo.base-standard]
+-url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20260912.061113/repos/standard/packages/
++url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261001.092726/repos/standard/packages/
+
+ [repo.unified-standard]
+ url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260814.092727/repos/standard/packages/
+```
+
+`precheck.json`：/home 可用 638,372,028,416 B；/var/tmp 可用 380,068,433,920 B；项目竞争构建进程 0。
+项目及 Rnew 两锁由 PID 750108 持有，记录在 `lock-acquired.json`，结束释放。
+W/llvm/spec、生产 Source、候选 Source、两份评审补丁的 SHA 前后相同，见 `protected-{start,final}.json`。
+候选仍为 `6a36f173c3efb05c7011aa7029aeb2ae3119e1f77a32536fcc791938bf20c4b7`；未改参数表或重定位表。
+
+### 9.2 仓库与包身份门禁 PASS
+
+配置中的完整 URL 为上方 diff 的新 Base URL、未变 Unified URL；对每个 URL 追加 `repodata/repomd.xml` 请求一次。
+没有换源、reference 解析、旧缓存回退或失败重试。原始 headers/body/命令在 `E9/repositories/`。
+
+| 仓库 / 快照 | HTTP | repomd.xml 字节 | SHA256 |
+| --- | ---: | ---: | --- |
+| Base / tizen-base-toolchain_20261001.092726 | 200 | 3,558 | `9db4185d657356bc96b0eea8082548014664e469f186619c8e68621d158c29e7` |
+| Unified / tizen-unified-toolchain_20260814.092727 | 200 | 4,476 | `e7af3f222f0ce958678d964589f2d156e8b47ba463ac0b3b0b96c74663382200` |
+
+两份 primary 均按 repomd 的 checksum 校验通过。压缩正文 SHA：Base `3600bf6291d9c700f773bb091691b7a5413e99884c86fe8963c55572e0656a69`；Unified `f379273fe499c9e93bf01d4eb754b027d8f674e3c72c3e2b131df968fd7533a1`。
+以下包来自 Base，Unified primary 没有同名目标条目；每包下载 URL 与 VCS 见 `repositories/packages.json`。
+
+| NEVRA（含 epoch） | 仓库 | primary 中 RPM SHA256 |
+| --- | --- | --- |
+| clang-0:22.1.8-1.6.armv7l | Base | `86a60cfa8898b169a4df7edb37f18fc1b30f8863215e2f9a5637d566bbcfb2b8` |
+| clang-0:22.1.8-1.7.aarch64 | Base | `49ff306320cfbb20f08f6ee1acc1a5d688e87812bfaa12b536476060237254f9` |
+| clang-accel-aarch64-0:0.4-1.1.aarch64 | Base | `3f7204919fe5dfb3d44d140f6f8fdac32311822fc36925f54479151bd6ca7923` |
+| clang-accel-armv7l-0:0.4-1.1.armv7l | Base | `989944352d4f85e2e9381c757ece4daf7bdbd0262730da519d1a4d6bba5a058e` |
+| clang-accel-x86_64-aarch64-0:0.4-1.1.aarch64 | Base | `00a3ed436cc6a2fffd7c76a03e5d4dc9ead4fa02b4f805a1a74b897e9c275d0e` |
+| clang-accel-x86_64-armv7l-0:0.4-1.1.armv7l | Base | `3336a12c1d5c2e0c7eacd3064520340c209163f645f1f083b2d6dd6add4e9b75` |
+| llvm-0:22.1.8-1.6.armv7l | Base | `2b3e438ecebcea4ca5182c5bbde8b08f192582dfe6bbb5b72b454fad9321aa5c` |
+| llvm-0:22.1.8-1.7.aarch64 | Base | `787ef54171f0aa200261b57e0e0d06c1467d8f1d34927fbb6b5e4677e2b9f1b2` |
+
+clang/llvm 的 VCS 均为 `platform/upstream/llvm#cb67996861d070d68fec2b4c623eed7d20ba2e23`。
+accel 包的 0.4 是打包项目版本，**LLVM 主版本以 ELF 自报为准**：两份 RPM 解包中的 `/emul/usr/bin/clang-22` 都为 141,497,504 B，SHA
+`31cdc6d78f8dcd471c7519f0bfbc5d57f80e2914ff4ea290702931d2ab80a864`，`clang version 22.1.8`。
+两次 GBS 新根内该 ELF 的 SHA 也一致。
+原始记录：`accel-check/download-verification.json`、`accel-check/*/identity.json`、`c0-*/check-outputs/gate.json`。
+
+解包 RPM 不自带 `/emul` loader；最初查询器对此作了错误定位，尚未执行 clang 即报 FileNotFound。
+只读定位后使用已有 ARM 根的 x86_64 loader 与包内库查询版本；C0 又在各新根中独立查询并编译验证。没有重跑 GBS 包。
+
+### 9.3 C0：两次极小包、binfmt 与 accel/guest 证据
+
+一次 armv7l、一次 aarch64，串行；每根全新。实际 GBS 命令模板如下，两个完整 argv 分别在 `c0-*/launch.json`：
+
+```sh
+gbs -c "$W/gbs_llvm.conf" build -A "$ARCH"   -B "$V9/gbs-c0-$ARCH" --threads 1 --include-all   --define '_smp_mflags -j4' "$E9/c0-package-$ARCH"
+```
+
+小包沿用测试包 8 GiB 准入/6 GiB cap、MemorySwapMax=0、nice15/ionice3；没有把该 cap 用作 C1 的容量授权。
+小 C 文件按 `__arm__`/`__aarch64__` 打印架构；明确分开 `clang -O1 -c` 与链接，再在 `%check` 中运行。
+命令及源文件：`prepare_c0.py`、`c0-package-*/packaging/probe.spec`、`c0-*/build.log`。
+
+执行证据：
+
+- `QEMU_STRACE=1 LD_DEBUG=files /usr/bin/clang --version` 以及编译/链接的原始 trace 保存在 `check-outputs/{version,compile,link}.route`。
+  armv7l 日志 `c0-armv7l/build.log:537` 自报 22.1.8；aarch64 日志 `c0-aarch64/build.log:538` 同版本。
+  两次原生 ARM 入口的运行 trace 实际加载 `/emul/usr/lib64/ld-linux-x86-64.so.2` 和 `/emul/usr/bin/../lib64/` 下的 x86_64 库；
+  例如 AArch64 编译进程原文见 `build.log:693–714`，ARM32 见相应 `compile.route`。
+  这是实际运行的 loader trace，与 `/usr/bin`、`/emul/usr/bin` 的 ELF 头/哈希和 binfmt 分派共同佐证 accel 路由；不是仅凭 `clang --version` 猜测。
+- `readelf -h probe` 分别为 ARM / AArch64；`QEMU_STRACE=1 ./probe` 有 guest 系统调用 trace，返回 0。
+  `%check` 原文分别为 `C0_GUEST_OK armv7l`、`C0_GUEST_OK aarch64`，随后各自 `C0_PACKAGE_PASS <arch>`。
+  全部 trace、文件头与查询 argv 在 `c0-*/check-outputs/`；两包 GBS 最终均 succeeded 1。
+
+| 时间点 | mmap_min_addr | 注册列表（不含 status/register） |
+| --- | ---: | --- |
+| 首次 GBS 前，11:57:31 | 65536 | jar、python3.12 |
+| armv7l GBS 完成 | 0 | jar、python3.12、arm、armeb、aarch64、riscv64 |
+| aarch64 GBS 完成及收尾 | 0 | 同上 |
+
+注册来源已核对：`/usr/lib/build/init_buildsystem:768–774` 调用 initvm 并写 mmap；
+随后正常根初始化运行 qemu-linux-user 的 postinstall，按 RPM 脚本重置对应 interpreter。
+脚本原文 `c0-*/check-outputs/qemu-linux-user-x86_64-cross-*.scripts.txt:3–19`；执行日志 ARM32 `build.log:196–199`、AArch64 `build.log:197–198`。
+最终 arm interpreter 为 `/usr/bin/qemu-arm-binfmt`、aarch64 为 `/usr/bin/qemu-aarch64-binfmt`，均 flags `P`；
+initvm 早期临时注册的 `qemu-arm-static` 不能当作最终 accel 路由。
+完整 magic/mask 与注册前后 mountinfo 见 `c0-*/host-{before,after}.json`、`final-cleanup-before-unlock.json`。
+
+初始化日志还保留 ARM32 的早期 armeb 条目不存在/写入报错，以及两根 qemu-accel preinstall 时 `liblto_plugin.so` 尚不存在的 mv 提示；
+没有隐藏这些行，也没有手工修复。后续正常安装、最终注册、编译和 `%check` 均成功；不把早期提示写成最终门禁 FAIL。
+已检索初始化脚本/路径及日志，所见宿主配置写入为获批的 binfmt/mmap 两类；未执行手工注册、其他 sysctl、宿主安装或 GBS/build 脚本修改。
+这不是一次对宿主所有文件写入的审计。
+
+GBS 缓存已保留并逐 RPM 登记路径、NEVRA、SHA：
+
+```text
+V9/gbs-c0-armv7l/local/cache   # 106 RPM
+V9/gbs-c0-aarch64/local/cache # 107 RPM
+E9/c0-<arch>/check-outputs/cache-inventory.json
+```
+
+### 9.4 新快照宏展开预检 PASS；尚无 LLVM CMakeCache
+
+在上述两新根内用该根 `rpmspec`、`.rpmrc`、`.rpmmacros` 展开相同 cb679968 的 spec。
+宏参数沿用 docs/39：`_smp_mflags -j4`、`_srcdefattr (-,root,root)`、`_build_create_debug 1`、`_topdir /home/abuild/rpmbuild`、对应 `--target`。
+`--rcfile` 与 `--macros` 显式包含 abuild 配置，避免误用宿主/默认 root 宏。
+只执行解析与把 CMake 调用替换为 printf 的变量展开；没有执行 `%build`。
+
+| 对照项 | armv7l | aarch64 |
+| --- | --- | --- |
+| 完整 CMake argv 与 docs/39 | 逐项相同 | 逐项相同 |
+| `%optflags` | 字符串相同 | 字符串相同 |
+| CMAKE_C/CXX/ASM_FLAGS | 与 docs/39 附录 A32 完全相同 | 与附录 A64 完全相同 |
+| CMAKE_BUILD_TYPE / LLVM_ENABLE_LTO | MinSizeRel / Thin | Release / Thin |
+| LLVM/CLANG_LINK_*_DYLIB | ON / ON | ON / ON |
+| LLVM_PARALLEL_COMPILE_JOBS / LINK_JOBS | 6 / 2 | 6 / 2 |
+| 构建期实际末项优化、IR、归档 | 尚未产生，UNKNOWN | 尚未产生，UNKNOWN |
+
+证据：`macro-precheck/*-{parsed.stdout,build.txt,cmake.json,comparison.json,optflags.stdout}` 与各 `.command.json`。
+固定目标 spec SHA `9ee73e37f1297a261b835bcd9c7fa2fbff72e271816950991cbe95be0945edda`。
+GBS 从本轮 W 配置取得的 buildconfig 保存在 `buildconfig-from-W.conf`，SHA `1e7610b6a922d27b80eb59c1c78bdf716f7de2e8e24700e0ee7c62522739ed52`。
+**这只闭合宏展开一致性，不冒称 LLVM configure/实际对象认证已通过。**
+
+### 9.5 C1 停止点：导出后整文件 SHA 断言未考虑 VCS 元数据
+
+在 E9 的独立 Git clone 中检出 cb679968；原 W/llvm 只作为只读对象来源。
+实际执行（完整命令/退出码 `c1-export-commands.jsonl`）：
+
+```sh
+gbs -c "$W/gbs_llvm.conf" export   --commit cb67996861d070d68fec2b4c623eed7d20ba2e23   --no-patch-export --outdir-directly --outdir "$E9/c1-export"   "$E9/c1-export-repository"
+```
+
+Git clone、checkout 和 GBS export 三个命令均 **exit 0**。GBS 输出：
+
+```text
+info: Creating (native) source archive llvm-22.1.8.tar.gz from 'cb67996861d070d68fec2b4c623eed7d20ba2e23'
+info: package files have been exported to:
+     /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c1-export
+```
+
+随后 `E9/prepare_c1_export.py:15` 用上述 Git spec SHA 断言导出文件整 SHA，发生 AssertionError，外层退出 1。
+导出 spec 实际 SHA 为 `390ac8fce01a807f23d1c3f5906c68e05e71a4747449f2fe01a317343ef9c5dd`。
+失败后仅做只读 diff，完整内容如下：
+
+```diff
+--- cb679968:packaging/llvm.spec
++++ GBS export llvm.spec
+@@ -30,6 +30,7 @@
+ %endif
+
+ Name:      llvm
++VCS:       home/linhao/Toolchain/development/llvm-optimize/llvm#cb67996861d070d68fec2b4c623eed7d20ba2e23
+ Summary:   The LLVM Project is a collection of modular and reusable compiler and toolchain technologies
+ Version:   22.1.8
+ Release:   1
+```
+
+`/usr/lib/python3/dist-packages/gitbuildsys/cmd_export.py:155` 显式传 `--git-spec-vcs-tag=%s#%(commit)s`，说明来源。
+从内存中的导出文本仅去除这一条 VCS 行后，与目标 spec **逐字节相同**；未修改磁盘上的导出文件。
+因此编译参数差异为 0，没有证据表明 ARM 配方/源码不兼容。
+但本轮执行检查已经失败，遵守“任一步失败即停止、不改后重试”：**没有修检查器重跑 export、没有启动后续 prep/configure 或库构建**。
+`c1-prep-plan.json` 只是准备好的计划，未执行；其中新的 `gbs-libraries-armv7l` 根没有创建。
+
+`c1-export-readonly-diagnosis.json` 记录上述结论，`c1-export-inventory.json` 保存成功导出的全部文件 SHA。
+外层通用 monitor 的 `chroot command exit status: 1` 是沿用的通用错误文案；本阶段没有执行 chroot，失败点是宿主 Python 断言。
+后续恢复应先把**导出身份检查**定义为：VCS 精确匹配目标提交，且除此一行外 spec 同字节，再复用已导出输入；
+不能放宽 CMake/编译参数、Source 或 ARM 重定位门禁。本轮只登记这一修正方向，不实施重试。
+
+### 9.6 资源与剩余阶段
+
+使用已有 build guard 的 cgroup、nice/ionice、每 30 秒 free/load/RSS/disk 样本、宿主可用 <2 GiB 中止与采样回收机制。
+导出使用 16 GiB 准入/18 GiB cap；它不是 LLVM 编译耗时。全部 scope 为 MemorySwapMax=0，无 OOM。
+
+| 阶段 | 外层 exit | wall 秒 | cap GiB | cgroup MemoryPeak 字节 | 最低宿主 MemAvailable（采样值） | oom_kill |
+| --- | ---: | ---: | ---: | --- | --- | ---: |
+| c0-armv7l | 0 | 344.287086 | 6 | 3,819,786,240（3.557453 GiB） | 19.849171 GiB | 0 |
+| c0-aarch64 | 0 | 418.848787 | 6 | 3,288,268,800（3.062439 GiB） | 20.178913 GiB | 0 |
+| c1-source-export | 1 | 106.852313 | 18 | 7,299,203,072（6.797913 GiB） | 19.796204 GiB | 0 |
+
+证据：`stage-summary.json`；各阶段 `launch.json`、`outcome.json`、`time-v.txt`、`samples.jsonl`、`process-memory.jsonl`、`scope-after-rpm.{json,log}`。
+这些是环境建立/导出单次资源观测，不作性能结论，不推算 ARM 库构建成本。
+
+| 工作项 | armv7l | aarch64 |
+| --- | --- | --- |
+| C0 两源、22 版本、binfmt/accel、极小包 guest | PASS | PASS |
+| 同新根宏展开对 docs/39 | PASS | PASS |
+| C1 原始源码导出 | GBS exit0，导出后代理校验器 exit1，STOP | 未开始 C4 |
+| C1 `%prep` / CMakeCache / 安装规则推导静态目标 / Ninja | NOT RUN | NOT RUN |
+| C2 原命令/IR/ABI/重定位全集 | NOT RUN | NOT RUN |
+| C3 转换、PIC/索引、消费者、GNU/LLVM strip | NOT RUN | NOT RUN |
+| C4 构建树处理与后续全流程 | 不适用 | NOT RUN，受 armv7l 停止阻断 |
+
+未修改候选 Source，因此没有相对 6a36f173 的新 diff、新 SHA 或 x86 重跑；§5 的 225 档/3864 成员/60 测试是既有结果，不记成本轮新测试。
+未知 relocation（如 TARGET2）的 PM 门禁未触发，不能据 C0 PASS 宣称真实 ARM 归档已经认证。
+
+### 9.7 收尾与证据保全
+
+- 两个极小包各一次；源码 export 一次；LLVM 完整/静态库构建、LLVM `%install`/打包、BOLT、性能校准、Chromium 均 0；未推 Gerrit。
+- 三个 scope 收尾均 `ActiveState=inactive / SubState=dead`；每个 outcome 的 sampler_reaped/log_reader_reaped 均 true；无本轮残留构建进程或 V9 下挂载。
+- 项目/Rnew 两锁收尾释放；证据 `final-cleanup-before-unlock.json`、`lock-released.json`、`final-cleanup.json`。
+- 所有缓存、导出 tarball、独立 clone、根和日志保留。没有磁盘清理，没有删除用户指定保留资产。
+- 仅 docs/40 与 STATUS 提交；用户 gbs_llvm.conf 修改仍保持未暂存且字节未变。Source、W/llvm/spec 和两个评审补丁未改。
+- 原 §1–§8 和其他历史报告不改；报告开头刷新当前状态/恢复命令；本 §9 与 STATUS 同 commit 推送 GitHub。
+
+收尾磁盘输出：
+
+```text
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       1.8T  1.2T  586G  67% /home
+/dev/nvme0n1p1  468G   99G  345G  23% /
+```
+
+推送后提交号与原始输出保存在 E9 的 `commit.txt`、`git-push.log`、`remote-head.txt`。
