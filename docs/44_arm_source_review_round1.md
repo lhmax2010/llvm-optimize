@@ -45,7 +45,7 @@ prlimit --as=4294967296:4294967296 --   "$R/emul/lib64/ld-linux-x86-64.so.2"   -
 
 以下逐成员来自gate-result.json；ordinal为0起，同名序号为1起。51项的define数与module asm数均为0，所以没有触发用户第一步第1项的停止条件。这里的“无函数属性”不是“有函数却忘记目标属性”。（证据：gate-ir中的51份完整.ll及gate-result.json。）
 
-[51项逐成员完整表](44_census_tables.md#1-51个无函数属性成员)，因正文50KB上限原样移出；历史证据与结论不变。
+[51项逐成员完整表](44_census_tables.md)，因正文50KB上限原样移出；历史证据与结论不变。
 
 ## 2. 全部函数目标属性：精确值与逐值计数
 
@@ -424,7 +424,7 @@ x86路径不变的依据：本轮生产/候选Source及Commands均无修改，�
 
 测试修正提交`93a3a5b`后，ARM32根Python3.14.2一次运行99项，23.663830s：95 PASS、1 FAIL、3 ERROR；原始unittest仍exit1/FAIL，不篡改。三个ERROR分别为两个辅助模块缺/usr/bin/time、x86 as --64夹具环境不适用；唯一FAIL是AS读回[[-1,-1],[0,0]]，按§18实证及PM裁决记已知环境发现。除此之外95项全部PASS，含修正的timeout与后代回收测试，故本任务分类门禁PASS。（证据：E4/armv7l-test-records.json逐项记录、root-tests-classified.json、armv7l-unit-tests-final-result.json。）
 
-根内/proc/self/status可见；挂载前/中/后mountinfo完整保存，finally卸载exit0。复制的测试文件与宿主同SHA，未改那四项测试、未安装工具、未改Source。完整argv和原始异常见E4/root-test-commands.json、armv7l-unit-tests.log；解释器见armv7l-environment.json。随后执行宿主离线复验，不把此分类验收称为ARM生产AS限流通过。
+根内/proc/self/status可见；挂载前/中/后mountinfo完整保存，finally卸载exit0。复制的测试文件与宿主同SHA，未改那四项测试、未安装工具、未改Source。完整argv和原始异常见E4/root-test-commands.json、unit-tests-armv7l.stderr；解释器见armv7l-environment.json。[99项逐项名称、原始结果与分类](44_census_tables.md)已完整列出。随后执行宿主离线复验，不把此分类验收称为ARM生产AS限流通过。
 
 
 ## 22. 续三：x86全量不变性PASS（2026-10-11）
@@ -434,3 +434,21 @@ x86路径不变的依据：本轮生产/候选Source及Commands均无修改，�
 沿用18GiB cgroup/swap0、4 workers、每命令4GiB AS、nice15/ionice3、30秒采样及宿主<2GiB保护。转换wall 1694.557544s，scope 1761.789200s；scope峰 12474638336B（含文件缓存）、宿主最低可用 17857900544B；memory.events各项0，采样器和日志线程均回收。没有LLVM重建、%install或打包。（证据：E4/run_x86_final.py、x86-plan.json、x86-regression-scope/outcome.json、memory-summary.json及全部命令JSON。）
 
 为保持本页≤50KB，§1的51项表、§8修订明细表、§9.3测试索引原样移至[表格附件](44_census_tables.md)，没有删历史内容或重判。迁移摘要见E4/census-table-move.json、history-tables-move.json。
+
+
+## 23. 续三：ARM32全量复验与证据沿用
+
+x86里程碑先推送`823dd96`。210个输入档与构建树/输入副本摘要、accel clang/dis/nm身份均重核；宿主执行固定e2c2ebfa，输出E4/armv7l-conversion。结果：210档、3,690成员（3,683 bitcode转换+7原机器码原样保留）；bitcode归零、成员身份/次序、454,301条精确外部定义符号索引、PIC/重定位/强符号门禁均PASS；允许缺W=2,953，强符号缺失0。3,683次Thumb参考门禁及完整ARM属性比较均PASS，26个无函数属性成员逐个包含在内；无triple覆盖警告。（证据：E4/armv7l-input-check.json、armv7l-conversion-result.json、armv7l-full-attributes.json、各成员relocations/command/thumb-gate.json。）
+
+**210/210个after SHA与docs/40 §12全部相同。** 旧基准为`temp/arm-archive-tls-thumb-20261010/armv7l-conversion/summary.json`，逐档值见E4/armv7l-comparison-result.json。依本轮授权，不重跑三套消费者及两种strip；沿用该目录`consumers-native-rerun`、`consumers-gnu`、`consumers-llvm`各7项PASS和`strip-gnu`、`strip-llvm`结果，其SHA及状态另存E4/armv7l-reused-evidence.json。没有把旧native首次辅助失败当成成功，也不把沿用写成新实测。105/106新夹具仍须另跑。
+
+| 白名单成员 | ordinal | 转换后目标符号状态 |
+|---|---:|---|
+| libLLVMAnalysis.a / MLInlineAdvisor.cpp.o | 80 | GLOBAL、NOTYPE、DEFAULT、UND；raw/decoded节索引0 |
+| libLLVMCodeGen.a / MLRegAllocEvictAdvisor.cpp.o | 137 | 同上 |
+
+目标符号均`_ZSt21ios_base_library_initv`，真实ELF解析info=16/other=0，value=size=0；这是全局未定义引用，未声称生成了定义。（证据：E4/armv7l-comparison-result.json的module_asm_symbols。）
+
+Thumb实际调用`/usr/bin/env LC_ALL=C /usr/bin/readelf -AW <对象>`，来源为宿主x86_64 ELF，不是ARM根工具；GNU Binutils for Ubuntu 2.42，readelf SHA `64c58e15274bbbb5153f31078e455e9e77ee5f51489e709bba5bb788ce9df2b0`。完整版本与实际argv在conversion/readelf-version.txt、readelf-version-command.json、每成员converted/reference-readelf.json；file证据E4/host-readelf-file.txt。
+
+资源规则同§22。转换及额外校验wall 1836.073389s，scope 1874.627240s；scope峰9775529984B（含缓存），宿主最低可用17527791616B，无OOM，采样器/日志线程回收。（证据：E4/armv7l-conversion-scope/outcome.json、memory-summary.json。）
