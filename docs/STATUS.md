@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/44续接）停止于测试第二次失败**：PM允许两架构精确`.globl _ZSt21ios_base_library_initv`并要求保留GLOBAL符号。13项ARM修订已写入，候选SHA `5608aa5e2fa655370ae722d1ea1685f4b9b181eae4b24e41ead756b9353d6e28`；共用x86函数AST未变。首轮95项测试因新固定值漏-g失败，唯一辅助修正后94/95 PASS，既有后代回收测试观察到R而非Z；未第三次尝试。ARM根测试、x86全量、两ARM全量/消费者、105/106与x86 module asm只读核查均NOT RUN，新候选未认证。生产6bd、spec、两patch与用户配置不变；项目锁已释放，无本任务进程/采样器/挂载残留。docs/44 §7–§12为本次停止报告，docs/45补全只读Gerrit完整号与证据缺口。
+**当前任务（docs/44续二）诊断阶段完成**：独立600例（普通300+四CPU负载300）全通过；8次首读R均有SIGKILL待处理，最长5.430ms内消失/Z。定性为预注册场景下的测试时序问题，原Commands保持不变。辅助诊断误将X(dead)当存活，按授权只修辅助判定并完整重跑一次；最终消失/Z门禁未放宽。准备进入测试与ARM保留节索引小修，尚未改Source/tests。证据docs/44 §13及temp/arm-source-cancel-diagnosis-20261010；项目锁继续持有。
 
 **历史文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
 
@@ -37,7 +37,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：module asm处理范围已由PM裁决；ARM候选5608aa5e实现修订但整套测试第二次FAIL，停止在全量复验前。既有取消测试观察到R的根因尚未查明，不能自行放宽或重试；生产代码与评审补丁未改。
+当前阶段：取消诊断600例PASS，进入授权测试/ARM小修与重新认证；旧5608候选尚未通过全量复验，生产6bd与评审补丁不改。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -134,10 +134,12 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `835ebef` | docs/44、STATUS | 51无属性成员/全部函数属性普查通过；A64三条真实module asm与新禁止规则冲突，修改前STOP；无Source/测试/转换修改或复验。 |
 | 2026-10-10 | `b2ea0f9` | docs/45、docs/44收尾、STATUS | 两待评审Gerrit补丁材料包完成，仅既有证据；保持ARM策略冲突STOP，Source/测试/patch未改，scope/锁/进程回收。 |
 | 2026-10-10 | `c8898cd` | docs/44 §7–§12、完整diff、候选Source/测试、STATUS | 13项修订已写入；唯一辅助修正后94/95 PASS，既有取消测试FAIL；全量复验NOT RUN。 |
-| 2026-10-10 | 本次文档收尾提交（`git log -1 -- docs/45_gerrit_patches_review_package.md`） | docs/45、STATUS | 只读补全356639 PS1完整号，链接本轮最终docs/44；披露x86 module asm符号核查未执行，维持测试STOP。 |
+| 2026-10-10 | `270f3ec` | docs/45、STATUS | 只读补全356639 PS1完整号，链接本轮最终docs/44；披露x86 module asm符号核查未执行，维持测试STOP。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
+
+| 2026-10-10 | 本次诊断提交（git log -- docs/44） | docs/44 §13、STATUS | 600例诊断PASS，8次R均挂起SIGKILL；原Commands不改，进入后续门禁。 |
 
 ## 3. 已闭合结论
 
@@ -475,3 +477,5 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 前次执行备案（e44fb63，初始化政策随后已解除）：用户明确清理任务不再阻塞B/C，四个待sudo删除旧根不读写；B已PASS；C0在GBS启动前停止，证据`temp/arm-archive-stage1-20261010`。x86不变性为硬证据，ARM能力仍未认证。无磁盘清理/宿主配置修改/补丁更新/Gerrit推送。
 
 当前挂账（docs/40 §12）：第一段已全部PASS（x86不变性、ARM32 Thumb/TLS及两ARM全量转换/消费者/两种strip）；需后续ARM spec集成与RPM验证。生产Source/两个review补丁仍未改，不等于ARM打包验证已完成。两套BUILD和各123缓存RPM保留供后续增量使用。
+
+本轮人工裁决（docs/44续二）：取消诊断通过才修测试；ABS/COMMON无真实节，其余保留索引拒绝，XINDEX逻辑不变；全套测试后才做x86/两ARM复验，任一停止仍完成文档。
