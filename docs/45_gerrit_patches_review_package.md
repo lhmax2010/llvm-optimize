@@ -1,6 +1,6 @@
 # 45 两个 Gerrit 补丁的外部评审材料包
 
-日期：2026-10-10。本文只汇集既有证据，不新增构建、转换或运行测试。评审对象为 **x86_64 生产补丁**；ARM 候选与本轮修订属于另一个待认证版本，不能替代这两份补丁。既有材料链接钉在已发布 Git 提交 `ddc73105dbd46348c650414e7e48bfd95c5309e9`；本轮docs/44另钉普查阶段提交 `835ebef1504136578a587d43197695de32fb0639`，均不随main漂移。`temp/` 是本机证据，不在 GitHub；W=`/home/linhao/Toolchain/development/llvm-optimize`。（出处：docs/36 §3、docs/38 §6、docs/43 §1。）
+日期：2026-10-10。本文只汇集既有证据，不新增构建、转换或运行测试。评审对象为 **x86_64 生产补丁**；ARM 候选与本轮修订属于另一个待认证版本，不能替代这两份补丁。既有材料链接钉在已发布 Git 提交 `ddc73105dbd46348c650414e7e48bfd95c5309e9`；本轮docs/44最终报告内容钉在修订停止提交 `c8898cdb9b6bb438a095ca3bd7ee788ff992ae18`，均不随main漂移；也可由[本提交的docs/44](44_arm_source_review_round1.md)读取同字节版本。`temp/` 是本机证据，不在 GitHub；W=`/home/linhao/Toolchain/development/llvm-optimize`。（出处：docs/36 §3、docs/38 §6、docs/43 §1。）
 
 ## 1. 身份与依赖顺序
 
@@ -9,14 +9,14 @@
 | 内容 | ThinLTO 静态归档转机器码 | LLVM 包的 x86_64 静态归档改用 llvm-strip |
 | Gerrit 地址（标识，不作为本文证据链接） | `https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/356627` | `https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/356639` |
 | 已上传标题（用户本轮确认） | `packaging: fix llvm-static-devel with ThinLTO` | `packaging: use llvm-strip for x86_64 archives` |
-| 已上传提交 | `67619ec8bbbac7238a6cfc33a481ccfbcd12206f` | `b0465d099164`（用户提供的短号；现有报告没有完整号） |
+| 已上传提交 | `67619ec8bbbac7238a6cfc33a481ccfbcd12206f` | `b0465d099164a8f8c1ddd406e6f74c2ada8f9f9f`（本轮只读ls-remote核验） |
 | 父提交 | `cb67996861d070d68fec2b4c623eed7d20ba2e23`，tizen_base | `67619ec8bbbac7238a6cfc33a481ccfbcd12206f` |
 | Change-Id | `Id4eb147e7ec4764d58a81110cf7bf57d21b64ac8` | `Iac085555112855d60cc7591931e91466691db6b2` |
 | 作者 | FatTank `<hao.lin@samsung.com>` | 同左 |
 | 仓库 format-patch 的提交封套 | `2d773cb6191e07610627a544af908b4c19da6abc` | `f86dc69a7461a9708c2280fe49961c9730dd9beb` |
 | format-patch SHA256 | `ddef2221db9ba1c044b0087b9fcde2a93202fdf28c518b4d0dcd1c4653119ac6` | `49c5618226a8d281d9aed9427eb651391684e17a4e75bf68673d5cf2bf8761a5` |
 
-**封套提交号与上传提交号不同，不可混写。** 用户确认上传时仅修改标题、其余内容一致；356627 PS2 的完整提交及父提交还经 docs/38 的 fetch 独立核验。356639 的上传短号以本轮用户说明为依据，不把本地候选 f86dc69a 当成已上传提交。本轮不访问/修改 Gerrit。（出处：docs/36 §3.1–3.3；docs/38 §6；用户本轮任务“第五步”。）
+**封套提交号与上传提交号不同，不可混写。** 用户确认上传时仅修改标题、其余内容一致；356627 PS2 的完整提交及父提交还经 docs/38 的 fetch 独立核验。356639 PS1本轮经无交互`git ls-remote refs/changes/39/356639/1`取得完整号，不把本地候选f86dc69a当成已上传提交；仅查询，不修改/推送Gerrit。原始输出见docs/44 §11、`temp/arm-source-review-continue-20261010/gerrit-356639-ls-remote.txt`（exit0，stderr空）。（出处：docs/36 §3.1–3.3；docs/38 §6；用户本轮任务“第五步”。）
 
 356627 的新增 `packaging/llvm-static-archives-native.py` 与仓库 `tools/llvm_static_archives_source.py`、`patches/archive-index-fix/llvm-static-archives-native.py` 同字节，SHA256 **`6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557`**。不能拿 ARM 候选 `1620a8da…` 替换本次评审附件。（出处：docs/36 §3.2、docs/43 §1。）
 
@@ -155,14 +155,16 @@ R为docs/38的试验构建根。行号来自其存档宏文件，不能直接套
 ## 5. 已知边界与评审重点
 
 1. **仅x86_64。** 当前Source choices、triple与PIC规则都只认证x86_64。356627拟议PS3才加入ARM；356639将rebase并扩架构，仍需后续spec/RPM验收。ARM Source不是本包附件的替代品。（出处：docs/36 §3.2；docs/43 §1、§5；本轮用户决定。）
-2. **版本闸门只核clang主版本22。** dis/nm仅查存在/可执行，现spec三工具都来自同一构建树；脚本未独立要求完整版本相同。ARM新工具预检不自动改变x86共用代码。（出处：[生产Source](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/ddc73105dbd46348c650414e7e48bfd95c5309e9/tools/llvm_static_archives_source.py):535–549；spec显式三路径；本轮docs/44 §4–§5。）
+2. **版本闸门只核clang主版本22。** dis/nm仅查存在/可执行，现spec三工具都来自同一构建树；脚本未独立要求完整版本相同。ARM新工具预检不自动改变x86共用代码。（出处：[生产Source](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/ddc73105dbd46348c650414e7e48bfd95c5309e9/tools/llvm_static_archives_source.py):535–549；spec显式三路径；本轮docs/44 §8–§10。）
 3. **强符号对照只比名称。** 不以该门禁证明符号类型、可见性、大小及全部语义一致；索引的精确多重集合是另一个检查。允许弱符号丢失也不是任意ABI变化的许可。（出处：[生产Source](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/ddc73105dbd46348c650414e7e48bfd95c5309e9/tools/llvm_static_archives_source.py):499–521；docs/35 §2.2、§3.1。）
 4. **逐档原子≠整库事务回滚。** 安装途中失败可能已有部分归档替换，状态INSTALL_FAILED、%install失败；本设计不恢复已写归档。重新真实%install与同树幂等已有分别验收。（出处：[生产Source](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/ddc73105dbd46348c650414e7e48bfd95c5309e9/tools/llvm_static_archives_source.py):563–577、730–769；docs/35 §4。）
 5. **纯机器码归档整档跳过。** 先拒thin/other，再按bitcode数决定跳过；不重做该档的转换/PIC/强符号检查，也不把SKIP等同全新生产环境认证。独立运行库验收补足当前固定输入的证据。（出处：[生产Source](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/ddc73105dbd46348c650414e7e48bfd95c5309e9/tools/llvm_static_archives_source.py):524–549、611–619；docs/35 §3.1、§4.2。）
 6. **目标配方未完整构建。** cb679968/67619ec8的源码配方在本轮未从干净目标重建；docs/37是现有3,853命令替换公共flags后的纯文本策略核查。未来新增token、宏默认或LLVM主版本变化会按设计失败，需重新分类和认证。（出处：docs/36 §3.1；docs/37 §4；docs/38 §6。）
 7. **llvm-strip结构差异允许但有边界。** 只放行既有分类，核全部SHF_ALLOC与完整索引并补真实运行；不是关闭debuginfo或把compiler-rt字节变化忽略。全库归档可能因标准strip工具版本变化而变，需要重新核验。（出处：docs/38 §3.2、§4–§5。）
 8. **当前默认选项不是通用接口。** -O3、DWARF4、分段开启、x86 triple与PIC等策略从认证语料确定；未启用ThinLTO且全native时为no-op，但工具/构建目录预检仍先执行。Python最低3.9，util-linux BR用于prlimit，摘要分块读取。（出处：SOURCE头注释、validate_tools/convert；docs/32 §1、docs/36 §3.2。）
-9. **ARM评审仍独立。** docs/43记录1620候选的67项历史测试与两ARM第一段结果；docs/44报告本次普查与是否进入修订/复验。历史PASS不预判更严格门禁一定通过。（出处：docs/40 §12、docs/43 §4–§6、docs/44。）
+9. **ARM评审仍独立。** docs/43记录1620候选的67项历史测试与两ARM第一段结果；docs/44 §7–§12报告本次候选5608aa5e的13项修订和测试停止：第二次95项中94 PASS，既有后代回收测试FAIL；ARM根测试及全量复验未执行。历史PASS不预判更严格门禁一定通过。（出处：docs/40 §12、docs/43 §4–§6、docs/44。）
+
+10. **x86 Source不检查module asm。** 生产6bd的ir_settings不解析该语句，check_symbols只比较定义外部符号，不会单凭这项检查证明.globl引入的UND引用存在。本轮原定在docs/35最终产物定位MLInlineAdvisor、MLRegAllocEvictAdvisor、ompt-tsan并核符号；因宿主测试步骤第二次失败，按停止规则未执行，实际成员清单与`_ZSt21ios_base_library_initv`状态均为UNKNOWN。不能把两个ARM头文件或1620旧消费者PASS当成x86符号检查结果，评审缺口保留。（出处：生产Source:275–329、499–521；docs/44 §9–§10；E2/stop-result.json。）
 
 ## 6. 外部评审读取清单
 
@@ -181,6 +183,6 @@ R为docs/38的试验构建根。行号来自其存档宏文件，不能直接套
 - [docs/43：历史ARM候选与测试](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/ddc73105dbd46348c650414e7e48bfd95c5309e9/docs/43_arm_conversion_review_package.md)
 - [历史ARM候选1620（非生产Source）](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/ddc73105dbd46348c650414e7e48bfd95c5309e9/tools/llvm_static_archives_arm_trial.py)
 
-- [docs/44：首轮普查与Source修改前停止记录](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/835ebef1504136578a587d43197695de32fb0639/docs/44_arm_source_review_round1.md)
+- [docs/44：首轮普查与本次修订、测试停止最终报告](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/c8898cdb9b6bb438a095ca3bd7ee788ff992ae18/docs/44_arm_source_review_round1.md)
 
 本文不提出合入结论；请分别审查两个change，并区分“代码设计”“现有固定输入验收”“目标流水线尚未发生的验证”。（证据边界：docs/36 §3.1；docs/37 §4；docs/38 §6。）

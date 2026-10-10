@@ -133,7 +133,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `ddc7310` | docs/43、Source差异文档附件、docs/40入口、STATUS | 整理候选1620a8da外部评审包（≤50KB）：固定版本链接、策略/实测边界、67项测试；仅文档，既有认证结果不改判。 |
 | 2026-10-10 | `835ebef` | docs/44、STATUS | 51无属性成员/全部函数属性普查通过；A64三条真实module asm与新禁止规则冲突，修改前STOP；无Source/测试/转换修改或复验。 |
 | 2026-10-10 | `b2ea0f9` | docs/45、docs/44收尾、STATUS | 两待评审Gerrit补丁材料包完成，仅既有证据；保持ARM策略冲突STOP，Source/测试/patch未改，scope/锁/进程回收。 |
-| 2026-10-10 | 本次Source/测试停止提交（`git log -1 -- docs/44_arm_source_review_round1.md`） | docs/44 §7–§12、完整diff、候选Source/测试、STATUS | 13项修订已写入；唯一辅助修正后94/95 PASS，既有取消测试FAIL；全量复验NOT RUN。 |
+| 2026-10-10 | `c8898cd` | docs/44 §7–§12、完整diff、候选Source/测试、STATUS | 13项修订已写入；唯一辅助修正后94/95 PASS，既有取消测试FAIL；全量复验NOT RUN。 |
+| 2026-10-10 | 本次文档收尾提交（`git log -1 -- docs/45_gerrit_patches_review_package.md`） | docs/45、STATUS | 只读补全356639 PS1完整号，链接本轮最终docs/44；披露x86 module asm符号核查未执行，维持测试STOP。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
