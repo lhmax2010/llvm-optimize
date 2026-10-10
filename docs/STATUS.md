@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/44续二）停止于第三步ARM根测试**：600例取消诊断PASS（8次R均有待处理SIGKILL，最长5.430ms）；按授权修测试与ARM保留节索引，候选`e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`。宿主99/99 PASS；ARM32 Python3.14.2为94 PASS、2 FAIL（4GiB读回-1、timeout收到TERM而非KILL）、3环境ERROR（time缺失两项、as --64一项）；未改断言或重跑。x86/两ARM全量、105/106、x86 module asm只读核查NOT RUN，新候选未认证。生产6bd/Commands/spec/patch/用户配置未改；锁/负载/采样器均回收，无新增挂载。详见docs/44 §13–§17。
+**当前任务（docs/44续三）事实核查PASS**：ARM32启动20/20>0.15s（159.558–170.290ms）；R32/R64两档AS均unlimited、nofile256生效，/emul无原生prlimit。按PM将AS作为ARM集成开放问题，离线宿主复验继续；准备仅修timeout测试为就绪标记+5s，Source/Commands不改。临时proc已卸载，项目锁继续持有。首次宿主mount入口无免密权限，按辅助条款改走已授权root chroot、相同挂载语义后一次通过；详见docs/44 §18–§19及E4。
 
 **历史文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
 
@@ -37,7 +37,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：授权小修已写入，宿主99测试PASS，ARM根全套FAIL而停止；待裁决根内测试契约/环境，再做新SHA全量认证。
+当前阶段：根内事实已确认，按PM进入测试修正/根内分类验收及全量复验；Source固定e2c2ebfa。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -137,7 +137,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `270f3ec` | docs/45、STATUS | 只读补全356639 PS1完整号，链接本轮最终docs/44；披露x86 module asm符号核查未执行，维持测试STOP。 |
 | 2026-10-10 | `9093af2` | docs/44 §13、STATUS | 600例诊断PASS，8次R均挂起SIGKILL；原Commands不改，进入后续门禁。 |
 | 2026-10-10 | `b547f98` | docs/44 §14–§17、diff、候选及两测试、STATUS | 宿主99 PASS；ARM根94 PASS/2 FAIL/3 ERROR；停止未复验，生产代码不改。 |
-| 2026-10-10 | 本次文档收尾提交（git log -- docs/45） | docs/45、STATUS | 钉docs/44最终内容到b547f98，披露Commands异步后代边界及根内测试STOP，x86符号核查仍UNKNOWN。 |
+| 2026-10-10 | `4662598` | docs/45、STATUS | 钉docs/44最终内容到b547f98，披露Commands异步后代边界及根内测试STOP，x86符号核查仍UNKNOWN。 |
+| 2026-10-10 | 本次事实核查提交 | docs/44 §18–§19、STATUS | 启动时延20/20>0.15s；两根AS不生效、nofile正常，原生prlimit缺席；允许继续宿主离线验证。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -482,3 +483,5 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 当前挂账（docs/40 §12）：第一段已全部PASS（x86不变性、ARM32 Thumb/TLS及两ARM全量转换/消费者/两种strip）；需后续ARM spec集成与RPM验证。生产Source/两个review补丁仍未改，不等于ARM打包验证已完成。两套BUILD和各123缓存RPM保留供后续增量使用。
 
 本轮人工裁决（docs/44续二）：取消诊断通过才修测试；ABS/COMMON无真实节，其余保留索引拒绝，XINDEX逻辑不变；全套测试后才做x86/两ARM复验，任一停止仍完成文档。
+
+续三PM裁决：根内3项实验辅助测试环境不适用；已实证AS限制不生效的1项记开放问题而非离线阻塞；timeout仅证实启动时延后改5s并要求就绪、KILL及完整宽限期；根内测试临时挂proc。Source不改。

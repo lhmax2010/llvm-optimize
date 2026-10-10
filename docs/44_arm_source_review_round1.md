@@ -453,3 +453,31 @@ sudo -n /usr/sbin/chroot --userspec=1000:1000 \
 生产Source6bd、工作区spec、两份已上传patch及旁附Source、用户GBS配置与开场SHA一致；用户配置既有git改动不提交。未重建LLVM、未打包/运行BOLT/做性能校准/构建Chromium/推Gerrit。docs/44原有全部内容保持，并追加本轮事实；完整diff与两个测试文件随Source提交。docs/45记录取消不等待后代消失的边界，同时保留x86 module asm未核查的缺口。（证据：E3/final-integrity.json、source-revision.json；git暂存清单。）
 
 继续所需条件：先裁决根内两个共用测试失败的环境/断言契约，补齐必要测试工具与/proc可见性方案，然后重新明确测试及后续复验授权；本轮不自行变更这些条件。新e2c2ebfa候选尚未完成产物认证，不作为356627更新附件。
+
+
+## 18. 续三：根内事实核查与PM裁决
+
+证据E4=`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010`。本轮Source固定e2c2ebfa，无代码修改；取得项目锁，无竞争构建进程。PM将两个GNU time测试和x86 as夹具归为根内环境不适用；AS限制若实证不生效，记开放问题而不阻塞宿主离线复验；timeout须先证实启动时延再修测试。历史FAIL保留。（证据：本轮任务；E4/protected-start.json、preflight-processes.txt、lock-acquired.json。）
+
+### 18.1 临时proc与一次辅助驱动修正
+
+GBS后端实际采用`mount -n -tproc none $BUILD_ROOT/proc`（宿主/usr/lib/build/build:602、1140；init_buildsystem:162–163）。首次辅助驱动直接sudo宿主mount退出1：`sudo: a password is required`，未挂载、未跑探针。只读sudo -n -l证明免密表允许root chroot，不允许该宿主mount调用；/bin与/usr/bin的mount同inode，非换路径即可解决。按辅助缺陷条款修正一次，通过既有免密chroot在根内执行相同proc挂载/卸载，未改权限、门禁或系统配置；同时按只读文件清单把版本查询由binfmt分派器改为根内真实qemu。修正后整个事实步骤一次通过。（证据：E4/initial-facts-commands.json、sudo-authorizations.txt、readonly-helper-diagnosis.json、helper-fix.diff/json。）
+
+每根分别执行`sudo -n /usr/sbin/chroot R /bin/mount -n -tproc none /proc`，探针用`--userspec=1000:1000`，finally保证`... /bin/umount /proc`。两次卸载exit0，前/中/后mountinfo完整保留；不使用lazy卸载、不改binfmt/sysctl。（证据：facts-commands.json及armv7l/aarch64-mountinfo-{before,during,after}.txt。）
+
+### 18.2 Python启动与资源限制实测
+
+ARM32根内已启动的python runner逐次Popen另一个python3，子进程`import signal,time; signal.signal(SIGTERM,SIG_IGN)`后立即输出monotonic_ns；从Popen前到处理器安装后的时间，共20次，不加prlimit启动开销。20/20均大于0.15秒：min159.557960ms、median164.570515ms、p95 168.314379ms、p99/p100 170.289930ms。证实原timeout=.15不能保证该环境先建立忽略TERM的前提；这项测量不声称已捕获上轮失败的同一调度轨迹。按用户公式p100<2.5s，测试timeout取5s。（证据：E4/startup_probe.py、startup-20.stdout、facts-result.json。）
+
+| 根 | prlimit --as=4294967296后AS soft/hard | --as=1073741824后AS | --nofile=256后nofile | QEMU | /emul原生prlimit/util-linux候选 |
+|---|---|---|---|---|---|
+| armv7l | unlimited/unlimited | unlimited/unlimited | 256/256 | qemu-arm 9.2.3 | 均未发现 |
+| aarch64 | unlimited/unlimited | unlimited/unlimited | 256/256 | qemu-aarch64 9.2.3 | 均未发现 |
+
+每项完整命令为`chroot --userspec=1000:1000 R /usr/bin/prlimit <选项> -- /bin/cat /proc/self/limits`。AS两次未施加而nofile正常，依预注册判据证实PM推断；1GiB与AArch64对照排除了仅以ARM32的4GiB数值溢出解释全部结果。QEMU版本后缀均`Tools:qemu:9.2.3_opensuse160`。binfmt分别指向/usr/bin/qemu-arm-binfmt与qemu-aarch64-binfmt，flags P、offset0；原文/魔数/掩码见E4/binfmt-registration.json，未修改注册。/emul全路径清单见两份emul-files.json；按prlimit/taskset/ionice/setsid/flock/nsenter/unshare等util-linux名称核对均无候选，所以没有可报告的原生prlimit文件身份或归属包，不猜来源。（证据：facts-result.json、六份*-as4/as1/nofile.stdout、*-qemu-version.stdout、facts-commands.json。）
+
+## 19. 开放问题：ARM构建根内地址空间限制不生效
+
+事实限于上述两根/QEMU9.2.3：目标prlimit设置AS后，目标cat观察到unlimited；其他nofile限制可施加。生产Commands默认4GiB AS在这条模拟执行路径不能按既有测试证明生效。这是ARM生产集成的开放问题，不能把cgroup的整体限额称为逐编译进程AS限制。（证据：§18.2；生产Source Commands.run；PM本轮裁决3。）
+
+x86路径不变的依据：本轮生产/候选Source及Commands均无修改，宿主上轮99测试中同一4GiB读回断言PASS（§15）；本轮将再跑宿主测试与全量不变性。后续离线ARM转换仍从宿主启动原生x86 accel工具，不经目标prlimit，因此用户允许继续该离线验证；这不认证未来ARM根内%install限流。可选方向供外部评审：在/emul提供/认证原生prlimit（当前没有）；明确记录目标AS未生效并另设计整体/单进程保护；评估QEMU路径或其他限制机制。各方向尚未选择/实施，不在本轮改Commands/安装包/放宽限额。（证据：§18；docs/40 §12工具路由；本轮约束。）
