@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/44续二）诊断阶段完成**：独立600例（普通300+四CPU负载300）全通过；8次首读R均有SIGKILL待处理，最长5.430ms内消失/Z。定性为预注册场景下的测试时序问题，原Commands保持不变。辅助诊断误将X(dead)当存活，按授权只修辅助判定并完整重跑一次；最终消失/Z门禁未放宽。准备进入测试与ARM保留节索引小修，尚未改Source/tests。证据docs/44 §13及temp/arm-source-cancel-diagnosis-20261010；项目锁继续持有。
+**当前任务（docs/44续二）停止于第三步ARM根测试**：600例取消诊断PASS（8次R均有待处理SIGKILL，最长5.430ms）；按授权修测试与ARM保留节索引，候选`e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`。宿主99/99 PASS；ARM32 Python3.14.2为94 PASS、2 FAIL（4GiB读回-1、timeout收到TERM而非KILL）、3环境ERROR（time缺失两项、as --64一项）；未改断言或重跑。x86/两ARM全量、105/106、x86 module asm只读核查NOT RUN，新候选未认证。生产6bd/Commands/spec/patch/用户配置未改；锁/负载/采样器均回收，无新增挂载。详见docs/44 §13–§17。
 
 **历史文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
 
@@ -37,7 +37,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：取消诊断600例PASS，进入授权测试/ARM小修与重新认证；旧5608候选尚未通过全量复验，生产6bd与评审补丁不改。
+当前阶段：授权小修已写入，宿主99测试PASS，ARM根全套FAIL而停止；待裁决根内测试契约/环境，再做新SHA全量认证。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -135,15 +135,17 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `b2ea0f9` | docs/45、docs/44收尾、STATUS | 两待评审Gerrit补丁材料包完成，仅既有证据；保持ARM策略冲突STOP，Source/测试/patch未改，scope/锁/进程回收。 |
 | 2026-10-10 | `c8898cd` | docs/44 §7–§12、完整diff、候选Source/测试、STATUS | 13项修订已写入；唯一辅助修正后94/95 PASS，既有取消测试FAIL；全量复验NOT RUN。 |
 | 2026-10-10 | `270f3ec` | docs/45、STATUS | 只读补全356639 PS1完整号，链接本轮最终docs/44；披露x86 module asm符号核查未执行，维持测试STOP。 |
+| 2026-10-10 | `9093af2` | docs/44 §13、STATUS | 600例诊断PASS，8次R均挂起SIGKILL；原Commands不改，进入后续门禁。 |
+| 2026-10-10 | 本次小修/测试停止提交 | docs/44 §14–§17、diff、候选及两测试、STATUS | 宿主99 PASS；ARM根94 PASS/2 FAIL/3 ERROR；停止未复验，生产代码不改。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
 
-| 2026-10-10 | 本次诊断提交（git log -- docs/44） | docs/44 §13、STATUS | 600例诊断PASS，8次R均挂起SIGKILL；原Commands不改，进入后续门禁。 |
-
 ## 3. 已闭合结论
 
-- 硬证据（实现/测试观察，非产物认证）：候选5608aa5e与1620的x86共用函数AST相同；95测试第二次94 PASS/1 FAIL，失败时子进程状态R。根因UNKNOWN，不能宣称新候选已通过；x86/ARM全量复验均未执行。证据docs/44 §8–§10、temp/arm-source-review-continue-20261010/source-isolation.json、unit-tests-host-retry.log。
+- 硬证据（限定场景）：取消诊断600例全通过，8次首读R均带SIGKILL，最长5.430ms；支持时序假设问题，不能推断Commands同步等待后代。新候选共用函数AST未改；99宿主测试PASS但根内全套FAIL，产物认证尚未完成。证据docs/44 §13–§17与E3。
+
+- 硬证据（实现/测试观察，非产物认证）：历史候选5608aa5e与1620的x86共用函数AST相同；历史95测试第二次94 PASS/1 FAIL，失败时子进程状态R。当时根因UNKNOWN（本轮诊断更新见§13），不能宣称新候选已通过；x86/ARM全量复验均未执行。证据docs/44 §8–§10、temp/arm-source-review-continue-20261010/source-isolation.json、unit-tests-host-retry.log。
 
 
 - 硬证据：51无目标函数属性成员全部define=0、module asm=0；ARM32 484,265/A64 329,616个define必需属性齐备。实际module asm ARM32=2、A64=3，原文均`.globl _ZSt21ios_base_library_initv`；证据docs/44 §1–§3及E/census-result.json、module-asm-all.json。新门禁冲突不重判docs/40历史功能PASS。
@@ -449,7 +451,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 待用户提供 | Quickbuild 全平台日志 | 统计实际链接+归档占比；>10% 启动第二阶段真实链接基准/lld profile/BOLT lld/逐字节门禁；<5% 搁置；5%–10%（含边界）默认搁置。占比用链接/归档边累计时间除全部边累计时间，与总wall另列；不以Chromium 0.2%或小夹具代替。 | docs/21 §8 |
 | 待用户提供 | qemu-accel 完整源码、armv7l 生成 spec、baselibs_body、对应 OBS 宏与构建日志 | 已取 SRPM 仅含 aarch64 spec；原 VCS `e01aa7250a1a73aa8f88ba9ac4a05cbc954d1c9f` 的公共获取受凭据/403/TLS 阻碍。补齐分支和隐式后处理，不能把通用主体当完整 armv7l 执行日志。 | docs/19 §2.1–2.2；docs/20 §1.2 |
 | 待外部复审 | 356627 PS2与356639 PS1 | 已交付docs/45固定版本材料；上传身份与本地封套区别、生产Source/spec、证据边界齐备。材料准备不是评审通过，代理未推Gerrit。 | docs/45 §1–§6 |
-| 待处置/复验 | ARM候选5608aa5e与测试 | module asm旧冲突已解除；新套件第二次95项中既有取消测试FAIL，根因未明。ARM根测试/x86与两ARM全量/105–106/x86符号只读核查未执行，不把1620历史PASS当成新候选认证。 | docs/44 §7–§12；E2/stop-result.json |
+| 待处置/复验 | ARM候选e2c2ebfa与根内测试 | 取消诊断已闭合；ARM根2 FAIL/3环境ERROR待裁决，x86与两ARM全量/105–106/x86符号只读核查未执行，不继承1620认证。 | docs/44 §13–§17；E3/stop-result.json |
 | 待评审 | docs/21完整v3与V01–V36落实、七文件混合提案、脚本/strip实验 | docs/20保持历史原文；已采纳/实现不等于评审通过，不再安排本机校准。 | docs/21附录D/E |
 | 待评审/修订 | 五个额外静态工具未符合混合范围 | llvm-config、llvm-exegesis与三tblgen实测仍静态；修订方案或由用户确认明确例外，不能自动豁免/重建。保留static-devel及runtime。 | docs/22 §5.1；docs/21 §0.1 |
 | 后续待验 | 混合profile rebind、seed与accel试包 | 本机容量/混合RPM别名/活性/30TU已实测；docs/23在打包失败后未启动profile适用性实证；docs/24再因完整性门禁失败而未执行，保持未认证、不能据此要求重训；尚待图提取器认证或适用性测试后决定重训、同job seed解包文件级等价、seed热缓存两模式、accel patchelf/alias/后处理链验证。 | docs/22 §4–§6；docs/21 §1–§4 |

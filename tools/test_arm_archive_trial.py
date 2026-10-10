@@ -63,6 +63,19 @@ def change_section(data,index,field,value):
     struct.pack_into(fmt,data,hs+index*ss,*fields);return bytes(data)
 
 
+def change_symbol_section(data, index, raw_section):
+    """Write the fixture's ELF st_shndx directly, independently of the parser."""
+    data = bytearray(data)
+    if data[4] == 1:
+        offset = struct.unpack_from('<IIIIIIIIII', data, 52+2*40)[4]
+        position = offset+index*16+14
+    else:
+        offset = struct.unpack_from('<IIQQQQIIQQ', data, 64+2*64)[4]
+        position = offset+index*24+6
+    struct.pack_into('<H', data, position, raw_section)
+    return bytes(data)
+
+
 TLS_ALLOW={'armv7l':{104,105,106},'aarch64':{562,563,564,569}}
 TLS_LE={'armv7l':{108,110},'aarch64':{544,545,546,547,548,549,550,551,552,553,554,555,556,557,558,559,570,571}}
 TLS_STOP={'armv7l':{13,17,18,19,90,91,92,93,107,109,111,129,130,165,166,167},
@@ -233,6 +246,42 @@ class ReviewRelocationTests(unittest.TestCase):
         self.assertTrue(trial.arm_pic_relocations(reloc_elf('armv7l',[38]),'armv7l')['forbidden'])
 
 class LayoutTests(unittest.TestCase):
+    def test_common_has_no_section_and_is_not_absolute(self):
+        for arch, kind in [('armv7l', 2), ('aarch64', 257)]:
+            data = change_symbol_section(reloc_elf(arch, [kind]), 1, 0xfff2)
+            symbol = trial.arm_elf_layout(data, arch)['symbols'][2][1]
+            self.assertIsNone(symbol['section_index'])
+            self.assertFalse(symbol['is_absolute'])
+            self.assertTrue(trial.arm_pic_relocations(data, arch)['forbidden'])
+
+    def test_absolute_has_no_section_and_remains_absolute(self):
+        for arch, kind in [('armv7l', 2), ('aarch64', 257)]:
+            data = reloc_elf(arch, [kind], absolute=True)
+            symbol = trial.arm_elf_layout(data, arch)['symbols'][2][1]
+            self.assertIsNone(symbol['section_index'])
+            self.assertTrue(symbol['is_absolute'])
+            self.assertFalse(trial.arm_pic_relocations(data, arch)['forbidden'])
+
+    def test_other_reserved_symbol_sections_rejected(self):
+        for arch in ('armv7l', 'aarch64'):
+            for raw in (0xff00, 0xfff3, 0xfffe):
+                with self.subTest(arch=arch, raw=raw), self.assertRaisesRegex(ValueError, 'reserved ARM symbol'):
+                    trial.arm_elf_layout(change_symbol_section(reloc_elf(arch, []), 1, raw), arch)
+
+    def test_common_mapping_never_matches_real_section_65522(self):
+        data = bytearray(reloc_elf('armv7l', [], xindex=65522, symbol_name='$t'))
+        # Install an executable .text at a real index numerically equal to COMMON.
+        section = list(struct.unpack_from('<IIIIIIIIII', data, 52+40))
+        section[2] = 6
+        struct.pack_into('<IIIIIIIIII', data, 52+65522*40, *section)
+        self.assertEqual(trial.arm_mapping_modes(bytes(data), ['.text']), {'.text': [['t']]})
+        common = change_symbol_section(data, 1, 0xfff2)
+        layout = trial.arm_elf_layout(common, 'armv7l')
+        self.assertGreater(len(layout['sections']), 65522)
+        self.assertIsNone(layout['symbols'][2][1]['section_index'])
+        with self.assertRaisesRegex(ValueError, 'lacks mapping symbols'):
+            trial.arm_mapping_modes(common, ['.text'])
+
     def test_rel_rela_architecture_matrix(self):
         for arch,kind in [('armv7l',104),('aarch64',562)]:
             for rela in (False,True):

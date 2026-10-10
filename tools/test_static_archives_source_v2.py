@@ -217,13 +217,25 @@ class CancellationTests(unittest.TestCase):
                     "pathlib.Path("+repr(str(pidfile))+").write_text(str(p.pid));time.sleep(.1);sys.exit(7)")
             with self.assertRaisesRegex(RuntimeError,'command failed'):
                 source.Commands().run([sys.executable,'-c',script],p/'failed-leader')
+            returned = time.monotonic()
             status=Path('/proc')/pidfile.read_text()/'status'
-            try:
-                state = next(line for line in status.read_text().splitlines() if line.startswith('State:'))
-            except (FileNotFoundError, ProcessLookupError):
-                pass
-            else:
-                self.assertIn('Z', state)
+            def snapshot():
+                try:
+                    fields = dict(line.split(':', 1) for line in status.read_text().splitlines())
+                except (FileNotFoundError, ProcessLookupError):
+                    return None
+                return {key: fields[key].strip() for key in ('State', 'SigPnd', 'ShdPnd')}
+            first = snapshot()
+            self.assertTrue(first is None or 'Z' in first['State'] or
+                            (int(first['SigPnd'], 16) | int(first['ShdPnd'], 16)) & 0x100,
+                            'live descendant without pending SIGKILL: '+repr(first))
+            last = first
+            while last is not None and 'Z' not in last['State'] and time.monotonic()-returned < 3:
+                time.sleep(.005)
+                last = snapshot()
+            self.assertTrue(last is None or 'Z' in last['State'],
+                            'descendant did not terminate within 3 seconds: '+repr((first, last)))
+            self.assertLessEqual(time.monotonic()-returned, 3)
 
     def test_g_signal_on_success_cannot_return_pass(self):
         with tempfile.TemporaryDirectory() as tmp:

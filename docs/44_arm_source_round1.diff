@@ -1,4 +1,4 @@
---- a/tools/llvm_static_archives_arm_trial.py (1620a8da)
+--- a/tools/llvm_static_archives_arm_trial.py
 +++ b/tools/llvm_static_archives_arm_trial.py
 @@ -379,10 +379,12 @@
          '-mfpu=neon': ('ir', 'FPU target features'),
@@ -22,7 +22,7 @@
              raise ValueError('unclassified original command token: '+token)
          elif token in operand_options:
              if index+1 == len(argv) or argv[index+1].startswith('-'):
-@@ -482,9 +484,230 @@
+@@ -482,9 +484,234 @@
  
  
  
@@ -184,6 +184,10 @@
 +        decoded = layout['extensions'][table][index]
 +        if not 0 < decoded < len(layout['sections']):
 +            raise ValueError('extended ARM symbol section index outside table')
++    elif 0xff00 <= raw <= 0xfffe:
++        if raw not in (0xfff1, 0xfff2):
++            raise ValueError('unsupported reserved ARM symbol section index: '+hex(raw))
++        decoded = None  # SHN_ABS and SHN_COMMON are not real sections.
 +    elif raw < 0xff00 and raw >= len(layout['sections']):
 +        raise ValueError('ARM symbol section index outside table')
 +    return dict(section_index=decoded, is_absolute=raw == 0xfff1)
@@ -253,7 +257,7 @@
      retained, metadata = [], {}
      triple, command_id = None, None
      levels, cpus, features = {}, set(), set()
-@@ -551,6 +774,7 @@
+@@ -551,6 +778,7 @@
      return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
                  target_features=sorted(features), flags=flags, evidence=retained,
                  recorded_command=recorded_command, policy=policy,
@@ -261,7 +265,7 @@
                  module_asm_sections=arm_module_asm_sections(lines) if arch == 'armv7l' else [])
  
  
-@@ -561,15 +785,15 @@
+@@ -561,15 +789,15 @@
  # this lld getRelExpr; permitting the object is not proof that lld can link it.
  ARM_TLS_ALLOWED = {
      'armv7l': {104, 105, 106},
@@ -280,7 +284,7 @@
  }
  
  
-@@ -637,29 +861,18 @@
+@@ -637,29 +865,18 @@
  
  
  def arm_mapping_modes(data, selected):
@@ -314,14 +318,14 @@
 +    for records in layout['symbols'].values():
 +        for sym in records:
 +            index = sym['section_index']; text = sym['name']
-+            if not sym['is_absolute'] and index in maps and re.fullmatch(r'\$[atd](?:\..*)?', text):
++            if index is not None and not sym['is_absolute'] and index in maps and re.fullmatch(r'\$[atd](?:\..*)?', text):
 +                if sym['value'] >= layout['sections'][index][5]:
 +                    raise ValueError('ARM mapping symbol offset outside section')
 +                maps[index].append((sym['value'], text[1]))
      result = {}
      for index, name in found.items():
          modes = []
-@@ -668,7 +881,7 @@
+@@ -668,7 +885,7 @@
                  modes.append(mode)
          if not modes:
              raise ValueError('ARM module asm section lacks mapping symbols: '+name)
@@ -330,7 +334,7 @@
      return result
  
  
-@@ -681,14 +894,9 @@
+@@ -681,14 +898,9 @@
      def signature(path, label):
          output = source.parent/(label+'.attributes.txt')
          with output.open('wb') as stream:
@@ -347,7 +351,7 @@
          return dict(attributes=attributes, module_asm_modes=arm_mapping_modes(path.read_bytes(), settings['module_asm_sections']))
      actual = signature(target, 'converted'); expected = signature(reference, 'reference')
      result = dict(actual=actual, expected=expected, equal=actual == expected,
-@@ -708,24 +916,9 @@
+@@ -708,24 +920,9 @@
      define the numbers and expressions. Unknown/TLS/platform policies require
      separate certification. Low-12 address fragments are not full addresses.
      """
@@ -374,7 +378,7 @@
          absolute = {2,5,6,7,8,38,43,44,47,48,55,132,133,134,135}
          narrow = {5,6,7,8}
          # NONE, relative code/data, GOT/PLT and EHABI PREL31. TARGET2/BASE_ABS
-@@ -734,10 +927,10 @@
+@@ -734,10 +931,10 @@
                     51,52,53,54,56,57,58,59,60,61,62,63,64,65,66,67,68,69,
                     96,97,98,102,103}
      else:
@@ -387,7 +391,7 @@
                     0x115,0x116,0x117,0x118,0x11a,0x11b,0x11c,0x11d,0x11e,
                     0x11f,0x120,0x121,0x122,0x123,0x124,0x125,0x12b,
                     0x12c,0x12d,0x12e,0x12f,0x130,0x131,0x132,0x133,
-@@ -745,47 +938,28 @@
+@@ -745,47 +942,29 @@
      tls_allowed = ARM_TLS_ALLOWED[arch]
      tls_forbidden = ARM_TLS_LOCAL_EXEC[arch]
      checked, forbidden, types = 0, [], Counter()
@@ -436,6 +440,7 @@
 -                forbidden.append(dict(type=kind, target_section=section[7], symbol_index=si))
 +        checked += 1; types[kind] += 1
 +        symbol = arm_symbol_section(layout, rel['symbol_table'], si)
++        # ABS/COMMON have no section to match; only genuine ABS is exempt.
 +        if not symbol['is_absolute'] and (kind in narrow or kind in absolute and
 +                not (kind in writable_pointers and target[2] & 1)):
 +            forbidden.append(dict(type=kind, target_section=target_index, symbol_index=si))
@@ -450,7 +455,7 @@
      if arch in ARM_OPTIMIZATION:
          return dict(settings=lambda lines: arm_ir_settings(lines, arch),
                      relocations=lambda data: arm_pic_relocations(data, arch))
-@@ -1031,10 +1205,16 @@
+@@ -1031,10 +1210,16 @@
      save()
      old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
      try:
@@ -468,7 +473,7 @@
          for archive, before in archives:
              command.check()
              if not before['bitcode']:
-@@ -1085,6 +1265,8 @@
+@@ -1085,6 +1270,8 @@
                  if arch == 'armv7l':
                      record['arm_thumb_gate'] = arm_thumb_gate(compiler, source, target, settings, command)
                  data = target.read_bytes()

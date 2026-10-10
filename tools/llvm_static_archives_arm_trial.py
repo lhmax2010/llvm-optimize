@@ -642,6 +642,10 @@ def arm_symbol_section(layout, table, index):
         decoded = layout['extensions'][table][index]
         if not 0 < decoded < len(layout['sections']):
             raise ValueError('extended ARM symbol section index outside table')
+    elif 0xff00 <= raw <= 0xfffe:
+        if raw not in (0xfff1, 0xfff2):
+            raise ValueError('unsupported reserved ARM symbol section index: '+hex(raw))
+        decoded = None  # SHN_ABS and SHN_COMMON are not real sections.
     elif raw < 0xff00 and raw >= len(layout['sections']):
         raise ValueError('ARM symbol section index outside table')
     return dict(section_index=decoded, is_absolute=raw == 0xfff1)
@@ -869,7 +873,7 @@ def arm_mapping_modes(data, selected):
     for records in layout['symbols'].values():
         for sym in records:
             index = sym['section_index']; text = sym['name']
-            if not sym['is_absolute'] and index in maps and re.fullmatch(r'\$[atd](?:\..*)?', text):
+            if index is not None and not sym['is_absolute'] and index in maps and re.fullmatch(r'\$[atd](?:\..*)?', text):
                 if sym['value'] >= layout['sections'][index][5]:
                     raise ValueError('ARM mapping symbol offset outside section')
                 maps[index].append((sym['value'], text[1]))
@@ -950,6 +954,7 @@ def arm_pic_relocations(data, arch):
             continue
         checked += 1; types[kind] += 1
         symbol = arm_symbol_section(layout, rel['symbol_table'], si)
+        # ABS/COMMON have no section to match; only genuine ABS is exempt.
         if not symbol['is_absolute'] and (kind in narrow or kind in absolute and
                 not (kind in writable_pointers and target[2] & 1)):
             forbidden.append(dict(type=kind, target_section=target_index, symbol_index=si))

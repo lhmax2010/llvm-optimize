@@ -1,5 +1,7 @@
 # 44 ARM Source 第一轮评审：普查、PM 裁决与修订停止记录
 
+**当前状态（续二）：600例取消诊断PASS；授权小修后宿主99/99 PASS，ARM根94/99 PASS、2 FAIL+3环境ERROR，按第三步门禁停止。全量x86/两ARM复验与符号只读核查未执行。详见§13–§17；下方原有“最新/本轮”文字完整保留为此前停止记录。**
+
 **最新状态（续接，2026-10-10）：第二步 ARM Source 修订已写入；第三步宿主测试第二次仍 FAIL，按“同一步骤第二次失败即停止”结束。** 95 项中 94 PASS，失败为既有 `test_g_failed_leader_descendants_are_killed`，读取后代进程状态为 `R (running)`、断言要求不存在或 `Z`。没有第三次尝试、没有改共用 Commands；ARM 根测试、x86 全量回归、两 ARM 重新转换和消费者、105/106 夹具、x86 module asm 只读实验均 NOT RUN。新候选未认证，不能取代历史1620或生产6bd。详见§7–§12；本页§0–§6完整保留首轮普查与当时停止结论，里面的“本轮”指此前普查轮。（证据：E2/unit-tests-host-retry.log、stop-result.json。）
 
 
@@ -377,3 +379,77 @@ p99按全部300例（含首读已终止）最近秩计算；耗时从Commands抛
 **定性：预注册场景证实测试时序假设问题。** 全部8个首读存活样本的第9号信号位0x100已在ShdPnd中，600例全在3秒内消失/Z，未发现预注册反例。这支持修正测试，不是证明Commands会同步等到全部后代消失。生产Commands在已回收父进程的情况下，发出SIGKILL的同一轮可break，确有这项边界。（证据：生产Source:437–453；E3/diagnostic-retry/observations.jsonl、各例observation.json、summary.json。）
 
 正式诊断wall 1900.553228秒（含scope回收）；18GiB/swap0、nice15/ionice3、30秒采样/宿主2GiB保护，scope峰64,118,784B，无OOM，四CPU负载进程与采样器均已回收。日志复用限流工具的命名不代表发生LLVM构建。下一步仅按授权修改测试与ARM保留节索引；此提交时Source/tests尚未改变。（证据：E3/diagnostic-retry-scope/{plan,launch,outcome,memory-summary}.json。）
+
+
+## 14. 续二：测试修正与ARM保留节索引小修
+
+诊断阶段已先提交推送`9093af2`，随后才编辑。取消测试仍使用原场景：Commands抛出后立即快照；不存在、Z、或SigPnd/ShdPnd含0x100至少满足一个；继而每5ms轮询，3秒内必须消失/Z。没有删除断言、只加sleep或改Commands；测试首读条件按用户原文，未把X额外加入接受集合（诊断中观察到X的事实另见§13.1）。
+
+ARM专用`arm_symbol_section`对原始0xff00–0xfffe：仅0xfff1/0xfff2返回section_index=None，其余拒绝；is_absolute仅由原始0xfff1决定。原始0xffff仍从SYMTAB_SHNDX解码，解码65521仍为真实节而非ABS。mapping显式排除None；PIC不把该符号做节匹配，只有真ABS可豁免绝对重定位，COMMON仍受原PIC门禁。相对5608仅这两个函数AST变化，PIC仅增说明注释；全部生产共用函数与Commands AST不变。（证据：E3/source-revision.json、Source与本次git diff。）
+
+新增4项固定字面量测试（原95→99）：
+- `test_common_has_no_section_and_is_not_absolute`。
+- `test_absolute_has_no_section_and_remains_absolute`。
+- `test_other_reserved_symbol_sections_rejected`。
+- `test_common_mapping_never_matches_real_section_65522`。
+
+覆盖两架构COMMON无节且非ABS、ABS无节仍豁免、保留0xff00/0xfff3/0xfffe拒绝，以及大于65522节的独立ELF夹具：XINDEX=$t→真实65522为正例；只把raw改为SHN_COMMON后不得匹配该节，须报缺mapping。既有XINDEX=65521负对照保留。
+
+| 文件 | 新SHA256 |
+|---|---|
+| tools/llvm_static_archives_arm_trial.py | `e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d` |
+| tools/test_arm_archive_trial.py | `555d0e1dce12f9196347cd943d3f98e9a9fee67b88046ec02f469de2d3d7c9c6` |
+| tools/test_static_archives_source_v2.py | `cddf8da7c29fa23814c7ca3548e20b4a9dc3ffd98106719f66b94d2690a41b6a` |
+| docs/44_arm_source_round1.diff | `0e7c7b8eb1cf5d559ad053d0e43a43dd0c9c651578129fa655aa6553e79a2b74` |
+
+相对1620的完整三行上下文diff已更新外置附件：484行、+275/-88、27056字节。此小修仍是待认证候选，不替换生产6bd或上传的两份patch。
+
+## 15. 续二：第三步测试结果与停止
+
+| 环境 | 解释器 | 总数 | PASS | FAIL / ERROR | wall |
+|---|---|---:|---:|---:|---:|
+| 宿主 | Python3.12.3 / GCC13.3.0 | 99 | 99 | 0 / 0 | 13.395422s |
+| armv7l构建根 | Python3.14.2 / Clang22.1.8 | 99 | 94 | 2 / 3 | 18.802692s |
+
+宿主一次全套PASS；ARM根也只跑一次，没有失败后修改或重跑。两边45项ARM/分派测试全PASS，含新增4项；旧54项共用测试在根内有以下5项问题。根内工具身份只读file显示python3.14/prlimit/as均ARM32 ELF。根内`/proc/self/status`不可见，因此后代测试虽显示ok，不能作为根内后代状态可见性的独立认证。未挂载proc、安装工具或修改根环境来绕过。（证据：E3/unit-tests-host.log、unit-tests-final-result.json、unit-tests-armv7l.log、armv7l-environment.json、armv7l-executable-identities.txt、armv7l-environment-limits.json。）
+
+| 根内用例 | 原始结果 | 判定/边界 |
+|---|---|---|
+| test_actual_limits_and_monitor_cleanup | FileNotFoundError: `/usr/bin/time` | 环境缺依赖，无法运行；不改测试 |
+| test_failure_stops_following_commands | 同上 | 环境缺依赖，无法运行；不改测试 |
+| test_sections_symbols_visibility_and_relocations | `as --64 ...probe.s -o ...probe.o` exit1 | 宿主x86汇编夹具在ARM根无法运行；异常未输出所捕获stderr，精确错误文本UNKNOWN，不编造 |
+| test_limits_accounting_and_no_external_time | 实际`[[-1,-1],[0,0]]`，期望`[[4294967296,4294967296],[0,0]]` | 4GiB地址空间限制未按测试期望读回；不是缺工具例外，保留FAIL |
+| test_g_success_and_timeout_reaped | 实际exit=-15，期望=-9 | 超时探针由SIGTERM终止，未达到测试预期SIGKILL；原因未由本次证据确定，保留FAIL |
+
+根内完整版本原文：`3.14.2 (main, Oct 1 2026, 21:46:23) [Clang 22.1.8 ]`。不能把32位环境下读回-1自行宣告等价于所要求的4GiB，也不把SIGTERM结果直接定性为已证实的启动时延。原单测临时目录退出已自行回收，未额外重跑探针取得更好的结果。（证据：E3/armv7l-unit-tests-final-result.json；完整根内日志。）
+
+运行方式：将当前tools Python文件同字节复制到R32独立`/home/abuild/arm-source-cancel-tests-20261010/tools/`；runner仍运行九个原模块，把production模块名绑定候选。复制清单逐文件SHA在E3/root-tests-manifest.json；没有改构建树、spec或工具。
+
+```sh
+python3 temp/arm-source-cancel-diagnosis-20261010/run_tests.py
+sudo -n /usr/sbin/chroot --userspec=1000:1000 \
+ /var/tmp/llvm-optimize-arm-c1-20261010/gbs-libraries-armv7l/local/BUILD-ROOTS/scratch.armv7l.0 \
+ /bin/sh -c 'cd /home/abuild/arm-source-cancel-tests-20261010 && python3 run_tests.py'
+```
+
+**第三步STOP。** 三个环境ERROR单列后仍有两个运行失败，不满足“能运行的必须PASS”。未改x86共用函数/Commands、未改变时间/内存断言、未在本步骤动用修正重跑。第一步唯一辅助修正仅用于诊断器识别X；它不授权把根内这两个FAIL记成PASS。（证据：E3/stop-result.json。）
+
+## 16. 续二：第四步未执行项目与证据边界
+
+| 项目 | 本轮结果 |
+|---|---|
+| x86 225档/3864有序成员/完整索引/3853 flags | NOT RUN；源码隔离和99宿主测试不能代替真实回归 |
+| ARM32 210档、AArch64 212档新输出全量转换 | NOT RUN；两架构after SHA与docs/40 §12是否全部相同为UNKNOWN |
+| 5个白名单module asm成员的输出符号绑定/节索引 | NOT RUN / UNKNOWN；不根据原声明猜GLOBAL/UND |
+| Thumb门禁本轮实际readelf路径、来源、版本 | NOT RUN；没有真实新转换调用记录，不把代码内路径当成实测 |
+| 消费者三套、GNU/LLVM strip复验 | 未重跑，也未援引“after SHA相同”继承旧认证；旧证据仅适用1620 |
+| ARM32 TLS105/106、bfd/lld -shared -z text、dlopen | NOT RUN |
+| docs/35最终x86产物同module asm成员只读核查 | NOT RUN；实际成员/符号状态UNKNOWN，已同步docs/45 §5 |
+
+## 17. 续二：回收、完整性与下一步
+
+项目锁在2026-10-10 21:57:41+08:00正常释放。四CPU负载进程/两次诊断scope采样器均回收；最终扫描无本任务残留进程、无新增挂载、两把锁不存在。新证据与根内测试副本保留，未做磁盘清理。（证据：E3/lock-released.json、final-processes.json、final-mountinfo.txt、两个scope/outcome.json。）
+
+生产Source6bd、工作区spec、两份已上传patch及旁附Source、用户GBS配置与开场SHA一致；用户配置既有git改动不提交。未重建LLVM、未打包/运行BOLT/做性能校准/构建Chromium/推Gerrit。docs/44原有全部内容保持，并追加本轮事实；完整diff与两个测试文件随Source提交。docs/45记录取消不等待后代消失的边界，同时保留x86 module asm未核查的缺口。（证据：E3/final-integrity.json、source-revision.json；git暂存清单。）
+
+继续所需条件：先裁决根内两个共用测试失败的环境/断言契约，补齐必要测试工具与/proc可见性方案，然后重新明确测试及后续复验授权；本轮不自行变更这些条件。新e2c2ebfa候选尚未完成产物认证，不作为356627更新附件。
