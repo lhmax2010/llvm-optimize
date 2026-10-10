@@ -1,10 +1,10 @@
 # 40 ARM 静态库转换第一段：历史记录与 C 阶段续接
 
-> **最新状态（2026-10-10，§12）：最终Source的x86全量不变性PASS；ARM32 210档全量转换、26缺属性成员Thumb、重定位全集、三套归档消费者与两种strip均PASS。** 已先发布Source阶段`cb899cd`，本阶段完成后继续AArch64；AArch64尚未认证。
+> **最新状态（2026-10-10，§12）：本轮第一段全部PASS。** Source `1620a8da`的67测试/夹具与x86 225档/3864成员不变性PASS；ARM32 210档及AArch64 212档转换、重定位、三套消费者与两种strip均PASS。AArch64唯一一次完整-bc成功；没有%install/打包。先前两个阶段已分别push `cb899cd`、`256267b`；本次发布AArch64与最终保全/回收结果。ARM发布包集成仍待后续任务。
 >
 > **用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`。** 宿主开场和结束均为 0，本轮允许 GBS 标准初始化保持此值；结束不代恢复。重启也会重新加载系统配置、恢复该非持久化修改。GBS 注册条目保留，代理未手工注册。以下 §1–§11 保留历史状态，当前结论见 §12。
 
-日期：2026-10-10（Asia/Shanghai）。本报告与[docs/42](42_disk_cleanup.md)、STATUS同commit发布。
+初始停止记录日期：2026-10-10（Asia/Shanghai），当时与[docs/42](42_disk_cleanup.md)、STATUS同commit发布。以下开篇保留该历史记录；本次续接结果见§12，阶段提交见§12.13。
 
 **STOPPED_BEFORE_B。** 夜间任务先清理再执行x86回归与ARM第一段。A1完成，但A2发现保留范围的`plan_evaluation/analysis/05E_worktree`依赖待删`chromium-efl/.git`；未得到关于这份额外依赖的处置规则，依无人值守“规定之外停止”要求结束全部后续步骤。三个Chromium目录均未删除；A3只备份日志并生成脚本。不能把本轮停止归因于x86回归或ARM能力。
 
@@ -2177,3 +2177,441 @@ clang-22: error: linker command failed with exit code 1 (use -v to see invocatio
 全部scope MemoryMax=18GiB、MemorySwapMax=0，nice15/ionice3；编译AS4GiB，原始30秒宿主采样与memory.events见各scope目录，OOM=0。初次辅助驱动失败的exit1不写成产品失败；授权一次修正后通过。ARM32转换实际并发4，未启动任何ARM32构建。
 
 `E12/armv7l-retention-after-consumers.json`复核：B10的CMakeCache/build.ninja/.ninja_log与关键ELF、210原件及210输入副本、123缓存RPM全部与§11相同。所有输出、缓存、BUILD均保留。项目锁继续持有至后续AArch64结束；本阶段未做磁盘清理、未install/打包、未改W/llvm/spec/生产Source/两补丁、未推Gerrit。先提交本报告与STATUS，再开始AArch64；本阶段PASS不等于AArch64已认证。
+
+
+### 12.8 AArch64一次标准完整%build：PASS
+
+ARM32阶段先以`256267b39a5639e0065a2b8c008c7ea5055a031e`提交并push，再启动本节。新根R64为`/var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/BUILD-ROOTS/scratch.aarch64.0`，B64为`R64/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`。B10、B64与两根GBS缓存均保留。本节证据仍为E12。
+
+复核配置SHA仍为`28f1caf93cd39738a7da1e0da8d5f945f7372963bb9823a507f9157294272169`，E9 buildconfig仍为`1e7610b6a922d27b80eb59c1c78bdf716f7de2e8e24700e0ee7c62522739ed52`，导出spec仍为`390ac8fce01a807f23d1c3f5906c68e05e71a4747449f2fe01a317343ef9c5dd`；10个导出文件摘要全部相同，源提交仍cb679968。见`aarch64-export-recheck.json`。
+
+从§9的aarch64缓存只读复制111个种子文件（107 RPM及元数据），新根用标准后端`--no-build`仅初始化，随后唯一一次`--stage=-bc --noinit`。`--no-build`退出点见本机`/usr/lib/build/build-recipe-spec:62`，不是一次额外编译。初始化104.798920s/exit0；前后mmap_min_addr均0，binfmt注册内容相同（`aarch64-host-after-init.json`）；未手工注册或修改宿主配置。完整命令及原始输出见`aarch64-init/commands.log`、`aarch64-build/commands.log`与各自build.log。
+
+受18GiB/swap0 scope、nice15/ionice3保护的实际后端命令：
+
+```sh
+sudo -n /usr/bin/build --uid 1000:1000 --target aarch64-tizen-linux --jobs 6 --cachedir /var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/cache --dist /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/buildconfig-from-W.conf --arch aarch64:noarch /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c1-export/llvm.spec --repository https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261001.092726/repos/standard/packages/ --repository https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260814.092727/repos/standard/packages/ --debug --root /var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/BUILD-ROOTS/scratch.aarch64.0 --define '_smp_mflags -j4' --stage=-bc --noinit
+```
+
+| 项目 | 实测 | 证据（E12下） |
+|---|---|---|
+| 构建阶段 | %prep + 完整%build；无%install、无RPM打包 | aarch64-rpm-stage-lines.json |
+| Ninja任务 | 7545/7545，最后yaml2obj | aarch64-build/ninja-tasks.json |
+| CMake门禁 | 72.499872s，62项全部PASS | aarch64-cmake-comparison.json |
+| 并发 | GBS jobs6、CMake compile6/link2；_smp_mflags=-j4（本轮无debuginfo阶段） | aarch64-build/plan.json；cache-gate.json |
+| scope总wall | 2321.728104s | aarch64-build/outcome.json |
+| scope MemoryPeak | 17627701248 B / 16.417076 GiB | aarch64-build/memory-summary.json |
+| 内存事件 | max/oom/oom_kill均0 | aarch64-build/memory-summary.json |
+| 宿主最低MemAvailable | 7486668800 B | aarch64-build/samples.jsonl |
+| 构建中最小磁盘可用 | 286889009152 B；较首次采样减少33487761408 B（文件系统口径） | aarch64-build/build-summary.json |
+| 安装规则静态库 | 212档，5280834808 B，缺失0 | aarch64-build/static-install-inventory.json |
+| 采样/日志线程 | 全部回收 | aarch64-build/outcome.json |
+
+公共C/CXX/ASM flags包含`-Os`，Release后缀`-O3 -DNDEBUG`覆盖它；实际bitcode末项O3也已逐成员确认。编译器名解析为`/bin/aarch64-tizen-linux-gnu-clang{,++}`，经同一实体/driver查询核验后与相对命令名等价，未忽略参数差异。门禁正负例见`aarch64-cache-gate-tests.json`。
+
+```text
+CMAKE_BUILD_TYPE=Release
+LLVM_ENABLE_LTO=Thin
+LLVM_PARALLEL_COMPILE_JOBS=6
+LLVM_PARALLEL_LINK_JOBS=2
+LLVM_LINK_LLVM_DYLIB=ON
+CLANG_LINK_CLANG_DYLIB=ON
+CMAKE_CXX_FLAGS=-Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument  -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -march=armv8-a+fp+simd+crc+crypto -mtune=cortex-a53 -g
+CMAKE_CXX_FLAGS_RELEASE=-O3 -DNDEBUG
+LLVM_TARGETS_TO_BUILD=AArch64;BPF
+```
+
+链接期采样VmHWM是观测下界，wall来自.ninja_log的实际action起止；不作性能比较。完整72条记录见`aarch64-link-memory.json`，前10项如下。
+
+| 目标 | 观测VmHWM KiB | action wall s | 输出B |
+|---|---:|---:|---:|
+| `lib64/libclang-cpp.so.22.1` | 15143848 | 89.31 | 954563248 |
+| `lib64/libclang.so.22.1.8` | 10369608 | 54.067 | 538979384 |
+| `lib64/libLLVM.so.22.1` | 10368812 | 104.739 | 1125554560 |
+| `bin/llvm-exegesis` | 5848696 | 50.643 | 540320592 |
+| `bin/clangd-fuzzer` | 5088836 | 31.369 | 375931216 |
+| `bin/clangd` | 4959404 | 30.132 | 400192648 |
+| `bin/clang-tidy` | 4051364 | 13.881 | 295084208 |
+| `lib64/liblldb.so.22.1.8` | 3223428 | 23.914 | 339194408 |
+| `bin/obj2yaml` | 2633256 | 10.436 | 138492272 |
+| `bin/lld` | 2565148 | 10.56 | 97393608 |
+
+实际执行证据：编译器/lld进入`R64/emul/usr/bin/`的x86_64 ELF；构建树TableGen通过qemu运行。原始`aarch64-build/execution-observations.jsonl`加`aarch64-extra-execution.jsonl`记录/proc exe与argv。补充观察器在整个argv中查找tblgen，覆盖binfmt的`qemu -0`前缀；`aarch64-tablegen-qemu-evidence.json`保存110条TableGen观测。这只是只读补充采样，无构建修正/重跑。
+
+### 12.9 AArch64归档与IR普查
+
+`aarch64-native-census/summary.json`：212档、3706成员，3699 bitcode、7机器码、0其他格式、无thin；7机器码成员重定位预检PASS。`aarch64-ir-census/summary.json`逐成员保存完整llvm.commandline、triple、PIC/PIE和调试元数据，`aarch64-ir-policy-summary.json`保存11640个token/类别对（含路径和宏）；全部已分类，没有新增白名单或修改Source。
+
+| 项目 | 实测 |
+|---|---|
+| triple | aarch64-tizen-linux-gnu，3699/3699 |
+| 末项优化 | -O3，3699/3699；原命令同时含公共-Os |
+| PIC/PIE | 2/0，3699/3699 |
+| DWARF | 4，3699/3699 |
+| tune-cpu | cortex-a53：3674；无函数属性：25 |
+| target-cpu | generic：3674；无函数属性：25 |
+
+ARM专有token `-march=armv8-a+fp+simd+crc+crypto`、`-mtune=cortex-a53`按§12既有策略为IR属性；转换补回项仍为已认证后端表。函数属性缺失不得报告成“全部成员含cortex-a53属性”。全部输入复制到`E12/aarch64-input/usr/lib64`，212原件与副本SHA一致（`aarch64-input-copy.json`），原件不改。
+
+<details><summary>212个安装规则归档原件及字节数（完整SHA与cmake_install.cmake:line见inventory）</summary>
+
+| 归档 | 字节 |
+|---|---:|
+| `libLLVMAArch64AsmParser.a` | 4787220 |
+| `libLLVMAArch64CodeGen.a` | 93907338 |
+| `libLLVMAArch64Desc.a` | 8758296 |
+| `libLLVMAArch64Disassembler.a` | 2018158 |
+| `libLLVMAArch64Info.a` | 96422 |
+| `libLLVMAArch64Utils.a` | 1026448 |
+| `libLLVMABI.a` | 27418 |
+| `libLLVMAggressiveInstCombine.a` | 3302594 |
+| `libLLVMAnalysis.a` | 134930498 |
+| `libLLVMAsmParser.a` | 10726200 |
+| `libLLVMAsmPrinter.a` | 30938872 |
+| `libLLVMBPFAsmParser.a` | 490322 |
+| `libLLVMBPFCodeGen.a` | 19231490 |
+| `libLLVMBPFDesc.a` | 847748 |
+| `libLLVMBPFDisassembler.a` | 288784 |
+| `libLLVMBPFInfo.a` | 91924 |
+| `libLLVMBinaryFormat.a` | 3020312 |
+| `libLLVMBitReader.a` | 11532946 |
+| `libLLVMBitWriter.a` | 8491166 |
+| `libLLVMBitstreamReader.a` | 675834 |
+| `libLLVMCAS.a` | 7864356 |
+| `libLLVMCFGuard.a` | 752554 |
+| `libLLVMCFIVerify.a` | 2157980 |
+| `libLLVMCGData.a` | 4928546 |
+| `libLLVMCodeGen.a` | 252064326 |
+| `libLLVMCodeGenTypes.a` | 95234 |
+| `libLLVMCore.a` | 84958184 |
+| `libLLVMCoroutines.a` | 12907750 |
+| `libLLVMCoverage.a` | 7433552 |
+| `libLLVMDTLTO.a` | 490016 |
+| `libLLVMDWARFCFIChecker.a` | 1597740 |
+| `libLLVMDWARFLinker.a` | 121228 |
+| `libLLVMDWARFLinkerClassic.a` | 6705576 |
+| `libLLVMDWARFLinkerParallel.a` | 15526346 |
+| `libLLVMDWP.a` | 1430748 |
+| `libLLVMDebugInfoBTF.a` | 1238230 |
+| `libLLVMDebugInfoCodeView.a` | 15342486 |
+| `libLLVMDebugInfoDWARF.a` | 24510350 |
+| `libLLVMDebugInfoDWARFLowLevel.a` | 1098608 |
+| `libLLVMDebugInfoGSYM.a` | 8258894 |
+| `libLLVMDebugInfoLogicalView.a` | 25984872 |
+| `libLLVMDebugInfoMSF.a` | 1744524 |
+| `libLLVMDebugInfoPDB.a` | 30216070 |
+| `libLLVMDebuginfod.a` | 2137818 |
+| `libLLVMDemangle.a` | 2473454 |
+| `libLLVMDiff.a` | 1361226 |
+| `libLLVMDlltoolDriver.a` | 675804 |
+| `libLLVMExecutionEngine.a` | 3164506 |
+| `libLLVMExegesis.a` | 15964712 |
+| `libLLVMExegesisAArch64.a` | 1059752 |
+| `libLLVMExtensions.a` | 28250 |
+| `libLLVMFileCheck.a` | 2735126 |
+| `libLLVMFrontendAtomic.a` | 558432 |
+| `libLLVMFrontendDirective.a` | 52764 |
+| `libLLVMFrontendDriver.a` | 101826 |
+| `libLLVMFrontendHLSL.a` | 2078934 |
+| `libLLVMFrontendOffloading.a` | 3461394 |
+| `libLLVMFrontendOpenACC.a` | 195662 |
+| `libLLVMFrontendOpenMP.a` | 10222008 |
+| `libLLVMFuzzMutate.a` | 4481298 |
+| `libLLVMFuzzerCLI.a` | 369716 |
+| `libLLVMGlobalISel.a` | 30656308 |
+| `libLLVMHipStdPar.a` | 1083140 |
+| `libLLVMIRPrinter.a` | 195426 |
+| `libLLVMIRReader.a` | 510488 |
+| `libLLVMInstCombine.a` | 38558536 |
+| `libLLVMInstrumentation.a` | 48994796 |
+| `libLLVMInterfaceStub.a` | 2718408 |
+| `libLLVMInterpreter.a` | 2742180 |
+| `libLLVMJITLink.a` | 44639590 |
+| `libLLVMLTO.a` | 19969556 |
+| `libLLVMLibDriver.a` | 971270 |
+| `libLLVMLineEditor.a` | 263866 |
+| `libLLVMLinker.a` | 3583142 |
+| `libLLVMMC.a` | 27064220 |
+| `libLLVMMCA.a` | 5759630 |
+| `libLLVMMCDisassembler.a` | 759992 |
+| `libLLVMMCJIT.a` | 1139910 |
+| `libLLVMMCParser.a` | 9034134 |
+| `libLLVMMIRParser.a` | 6382806 |
+| `libLLVMObjCARCOpts.a` | 5596188 |
+| `libLLVMObjCopy.a` | 18905266 |
+| `libLLVMObject.a` | 36468588 |
+| `libLLVMObjectYAML.a` | 45041774 |
+| `libLLVMOptDriver.a` | 6940620 |
+| `libLLVMOption.a` | 1784314 |
+| `libLLVMOrcDebugging.a` | 7544372 |
+| `libLLVMOrcJIT.a` | 87889888 |
+| `libLLVMOrcShared.a` | 1109840 |
+| `libLLVMOrcTargetProcess.a` | 10039112 |
+| `libLLVMPasses.a` | 46321430 |
+| `libLLVMPlugins.a` | 147450 |
+| `libLLVMProfileData.a` | 33507986 |
+| `libLLVMRemarks.a` | 5158816 |
+| `libLLVMRuntimeDyld.a` | 9551298 |
+| `libLLVMSandboxIR.a` | 10117332 |
+| `libLLVMScalarOpts.a` | 125551672 |
+| `libLLVMSelectionDAG.a` | 56137322 |
+| `libLLVMSupport.a` | 44572330 |
+| `libLLVMSupportLSP.a` | 2778814 |
+| `libLLVMSymbolize.a` | 4837290 |
+| `libLLVMTableGen.a` | 11876748 |
+| `libLLVMTableGenBasic.a` | 9529400 |
+| `libLLVMTableGenCommon.a` | 28436740 |
+| `libLLVMTarget.a` | 1595742 |
+| `libLLVMTargetParser.a` | 5714180 |
+| `libLLVMTelemetry.a` | 236354 |
+| `libLLVMTextAPI.a` | 10098728 |
+| `libLLVMTextAPIBinaryReader.a` | 1420382 |
+| `libLLVMTransformUtils.a` | 97339782 |
+| `libLLVMVectorize.a` | 87577608 |
+| `libLLVMWindowsDriver.a` | 324426 |
+| `libLLVMWindowsManifest.a` | 405368 |
+| `libLLVMXRay.a` | 5221502 |
+| `libLLVMipo.a` | 116264424 |
+| `libarcher_static.a` | 710826 |
+| `libclangAPINotes.a` | 9721768 |
+| `libclangAST.a` | 233065946 |
+| `libclangASTMatchers.a` | 17124628 |
+| `libclangAnalysis.a` | 48928174 |
+| `libclangAnalysisFlowSensitive.a` | 22095576 |
+| `libclangAnalysisFlowSensitiveModels.a` | 14160758 |
+| `libclangAnalysisLifetimeSafety.a` | 11115162 |
+| `libclangAnalysisScalable.a` | 876792 |
+| `libclangApplyReplacements.a` | 1729236 |
+| `libclangBasic.a` | 49166990 |
+| `libclangChangeNamespace.a` | 6277114 |
+| `libclangCodeGen.a` | 220768632 |
+| `libclangCrossTU.a` | 1862958 |
+| `libclangDaemon.a` | 178311196 |
+| `libclangDaemonTweaks.a` | 39597738 |
+| `libclangDependencyScanning.a` | 7984140 |
+| `libclangDirectoryWatcher.a` | 720032 |
+| `libclangDoc.a` | 25125920 |
+| `libclangDocSupport.a` | 382702 |
+| `libclangDriver.a` | 76716818 |
+| `libclangDynamicASTMatchers.a` | 52491410 |
+| `libclangEdit.a` | 1629492 |
+| `libclangExtractAPI.a` | 16910172 |
+| `libclangFormat.a` | 19598142 |
+| `libclangFrontend.a` | 56807342 |
+| `libclangFrontendTool.a` | 1101320 |
+| `libclangHandleCXX.a` | 519212 |
+| `libclangHandleLLVM.a` | 1511934 |
+| `libclangIncludeCleaner.a` | 10928022 |
+| `libclangIncludeFixer.a` | 3854372 |
+| `libclangIncludeFixerPlugin.a` | 905436 |
+| `libclangIndex.a` | 15627840 |
+| `libclangIndexSerialization.a` | 345302 |
+| `libclangInstallAPI.a` | 9381526 |
+| `libclangInterpreter.a` | 11113786 |
+| `libclangLex.a` | 25023912 |
+| `libclangMove.a` | 6603760 |
+| `libclangOptions.a` | 1162702 |
+| `libclangParse.a` | 32564388 |
+| `libclangQuery.a` | 6261960 |
+| `libclangReorderFields.a` | 3686500 |
+| `libclangRewrite.a` | 1534822 |
+| `libclangRewriteFrontend.a` | 3452240 |
+| `libclangSema.a` | 348267082 |
+| `libclangSerialization.a` | 57708502 |
+| `libclangStaticAnalyzerCheckers.a` | 185446162 |
+| `libclangStaticAnalyzerCore.a` | 64503490 |
+| `libclangStaticAnalyzerFrontend.a` | 7518212 |
+| `libclangSupport.a` | 754584 |
+| `libclangTidy.a` | 14109396 |
+| `libclangTidyAbseilModule.a` | 50143902 |
+| `libclangTidyAlteraModule.a` | 11572400 |
+| `libclangTidyAndroidModule.a` | 28066148 |
+| `libclangTidyBoostModule.a` | 5510478 |
+| `libclangTidyBugproneModule.a` | 264187042 |
+| `libclangTidyCERTModule.a` | 2649194 |
+| `libclangTidyConcurrencyModule.a` | 4816418 |
+| `libclangTidyCppCoreGuidelinesModule.a` | 69032714 |
+| `libclangTidyCustomModule.a` | 3379382 |
+| `libclangTidyDarwinModule.a` | 4600322 |
+| `libclangTidyFuchsiaModule.a` | 12865140 |
+| `libclangTidyGoogleModule.a` | 30103884 |
+| `libclangTidyHICPPModule.a` | 11478270 |
+| `libclangTidyLLVMLibcModule.a` | 8184632 |
+| `libclangTidyLLVMModule.a` | 18325894 |
+| `libclangTidyLinuxKernelModule.a` | 3181948 |
+| `libclangTidyMPIModule.a` | 4971280 |
+| `libclangTidyMain.a` | 1399688 |
+| `libclangTidyMiscModule.a` | 66879414 |
+| `libclangTidyModernizeModule.a` | 159157834 |
+| `libclangTidyObjCModule.a` | 16966626 |
+| `libclangTidyOpenMPModule.a` | 4914902 |
+| `libclangTidyPerformanceModule.a` | 48034146 |
+| `libclangTidyPlugin.a` | 863422 |
+| `libclangTidyPortabilityModule.a` | 10552392 |
+| `libclangTidyReadabilityModule.a` | 154499874 |
+| `libclangTidyUtils.a` | 36122594 |
+| `libclangTidyZirconModule.a` | 1423006 |
+| `libclangTooling.a` | 12817824 |
+| `libclangToolingASTDiff.a` | 6101864 |
+| `libclangToolingCore.a` | 1599932 |
+| `libclangToolingInclusions.a` | 1426488 |
+| `libclangToolingInclusionsStdlib.a` | 1170500 |
+| `libclangToolingRefactoring.a` | 32027326 |
+| `libclangToolingSyntax.a` | 10418720 |
+| `libclangTransformer.a` | 12373118 |
+| `libclangdMain.a` | 7060576 |
+| `libclangdRemoteIndex.a` | 100434 |
+| `libclangdSupport.a` | 4878912 |
+| `libfindAllSymbols.a` | 8204428 |
+| `liblldCOFF.a` | 26276334 |
+| `liblldCommon.a` | 4563420 |
+| `liblldELF.a` | 70571372 |
+| `liblldMachO.a` | 30353280 |
+| `liblldMinGW.a` | 792120 |
+| `liblldWasm.a` | 13637762 |
+
+</details>
+
+
+### 12.10 AArch64全量转换与重定位认证：PASS
+
+Source保持1620a8da，与§12.3最终x86回归相同；本架构普查后无需再改参数表或规则。转换器为R64的/emul原生x86_64 clang22.1.8，显式loader/独立库路径包装器及SHA见`aarch64-conversion-tools.json`；生产者与转换器主版本相同，逐成员原命令仍存档。
+
+| 项目 | 实测 |
+|---|---|
+| 归档/成员 | 212 / 3706 |
+| 转机器码/原机器码保留 | 3699 / 7，全部ELF64 AArch64 ET_REL、bitcode=0 |
+| 完整索引 | 307758项，每档等于外部定义符号多重集合，序号/名称/同名身份不变 |
+| 强符号缺失 | 0；W类允许缺失1698，逐成员留证 |
+| 三元组覆盖警告 | 0 |
+| 原件→转换后字节 | 5280834808 → 6696311532 |
+| 含调试节成员 | 3696（strip前） |
+| 转换wall | 1544.023960 s |
+| 单命令峰值RSS | 1446248 KiB |
+
+证据：`aarch64-conversion-result.json`、`aarch64-metrics.json`、`aarch64-conversion/summary.json`及`members/**/{before,after,ir-settings,convert,symbol*}.json`；完整二次普查见`aarch64-full-census/summary.json`与members.jsonl。未知重定位类型0；本批没有LE/IE或其他待PM类型，无新增放行。ADRP/LO12与TLS描述符有实际大量输入。
+
+| 编号/名称 | 目标节访问 | 可加载 | 数量 |
+|---|---|---|---:|
+| 257 / `R_AARCH64_ABS64` | readonly | nonalloc | 32948462 |
+| 257 / `R_AARCH64_ABS64` | writable | alloc | 396590 |
+| 258 / `R_AARCH64_ABS32` | readonly | nonalloc | 66209577 |
+| 260 / `R_AARCH64_PREL64` | readonly | alloc | 21 |
+| 261 / `R_AARCH64_PREL32` | readonly | alloc | 314536 |
+| 275 / `R_AARCH64_ADR_PREL_PG_HI21` | readonly | alloc | 288096 |
+| 277 / `R_AARCH64_ADD_ABS_LO12_NC` | readonly | alloc | 236407 |
+| 278 / `R_AARCH64_LDST8_ABS_LO12_NC` | readonly | alloc | 2040 |
+| 282 / `R_AARCH64_JUMP26` | readonly | alloc | 103886 |
+| 283 / `R_AARCH64_CALL26` | readonly | alloc | 1910650 |
+| 284 / `R_AARCH64_LDST16_ABS_LO12_NC` | readonly | alloc | 245 |
+| 285 / `R_AARCH64_LDST32_ABS_LO12_NC` | readonly | alloc | 1663 |
+| 286 / `R_AARCH64_LDST64_ABS_LO12_NC` | readonly | alloc | 38227 |
+| 299 / `R_AARCH64_LDST128_ABS_LO12_NC` | readonly | alloc | 10835 |
+| 311 / `R_AARCH64_ADR_GOT_PAGE` | readonly | alloc | 195565 |
+| 312 / `R_AARCH64_LD64_GOT_LO12_NC` | readonly | alloc | 195305 |
+| 562 / `R_AARCH64_TLSDESC_ADR_PAGE21` | readonly | alloc | 2028 |
+| 563 / `R_AARCH64_TLSDESC_LD64_LO12` | readonly | alloc | 2028 |
+| 564 / `R_AARCH64_TLSDESC_ADD_LO12` | readonly | alloc | 2028 |
+| 569 / `R_AARCH64_TLSDESC_CALL` | readonly | alloc | 2028 |
+
+每个类型的归档、成员、节、符号示例均在summary的examples中，完整逐成员统计在members.jsonl。只读非可加载调试节上的ABS32/ABS64单列，不误记为文本重定位；可加载只读节未出现不允许的绝对重定位。
+
+
+### 12.11 AArch64消费者、TLS运行证据与两种strip：全部PASS
+
+全部编译器、C++/glibc头文件、链接器、系统库及运行时来自R64；LLVM/lld头文件来自B64和其源码。资源头文件显式为`/usr/lib64/clang/22`，转换归档复制到各消费者自己的lib目录。`llvm-config --link-static`查询B64；每次先编译目标文件再链接。编译AS4GiB，链接无AS限制，所有步骤18GiB/swap0/nice15/ionice3；GNU ld的实际driver输出验证无LTO、plugin或cc1作业。完整argv、stdout/stderr及50ms资源记录见`E12/aarch64-consumers-{native,gnu,llvm}/`。
+
+进程观测确认clang、bfd/lld走R64/emul原生工具，测试程序经qemu-aarch64运行（`aarch64-consumer-summary.json` observed_exe及各*.memory.jsonl）。B64 opt对固定IR执行-O2的输出作为A的逐字节预期，未使用宿主opt或其他构建树opt。
+
+| 检查 | 未strip | GNU strip后 | llvm-strip后 |
+|---|---|---|---|
+| A：GNU ld，IR解析+O2，等于B64 opt输出 | PASS | PASS | PASS |
+| A：lld，同一输出 | PASS | PASS | PASS |
+| B：GNU ld，进程内lld链接，生成物exit37 | PASS | PASS | PASS |
+| B：lld，同一运行门禁 | PASS | PASS | PASS |
+| GNU ld shared -z defs -z text，无TEXTREL、dlopen输出 | PASS | PASS | PASS |
+| GNU ld --gc-sections，输出正确 | PASS | PASS | PASS |
+| 原bitcode + GNU ld无插件负对照 | 预期失败PASS | 预期失败PASS | 预期失败PASS |
+
+三套共享库均含10个`R_AARCH64_TLSDESC`动态重定位；三套的A-bfd/A-lld/shared/GC四次运行均记录`LLVM_CALL_ONCE_COUNT=6`，实际经过LLVM Pass注册的call_once路径。见`shared-dynamic-relocations.stdout`、`run-*.log`及§12.5同一源码调用链。ADR_PAGE21/LD64_LO12/ADD_LO12/CALL四类静态TLS描述符重定位均在§12.10大量出现，运行时TLS动态证据也已闭合。
+
+原bitcode负对照错误摘录：
+
+```text
+/usr/bin/ld.bfd: /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMPasses.a: error adding symbols: file format not recognized
+clang-22: error: linker command failed with exit code 1 (use -v to see invocation)
+```
+
+GNU/LLVM strip各对独立212档副本逐档执行R64 `/usr/bin/{strip,llvm-strip} -g`，均退出0、stderr为空；成员数/名称/次序/同名身份与完整符号→成员索引多重集合不变，无bitcode/其他格式/thin，调试节为0。原件及未strip转换输出保留。结果在`aarch64-strip-{gnu,llvm}/{progress,result}.json`，副本路径分别为R64 `/home/abuild/aarch64-tls-strip-{gnu,llvm}-20261010`。
+
+| 输入 | 全部归档字节 | A-bfd字节 | A-bfd+GC字节 |
+|---|---:|---:|---:|
+| native | 6696311532 | 709289528 | 688911928 |
+| gnu | 505924764 | 50389400 | 30012256 |
+| llvm | 463259024 | 50389400 | 30012256 |
+
+以下仅记录功能实验资源，不作吞吐或跨架构性能结论：
+
+| 输入 | A-bfd wall/RSS KiB | A-lld wall/RSS KiB | B-bfd wall/RSS KiB | B-lld wall/RSS KiB |
+|---|---|---|---|---|
+| native | 6.49s / 958472 | 0.67s / 2693992 | 8.63s / 1255064 | 0.85s / 3553616 |
+| gnu | 3.09s / 356776 | 0.24s / 319904 | 4.09s / 467888 | 0.25s / 428408 |
+| llvm | 2.97s / 348824 | 0.23s / 309232 | 3.92s / 455380 | 0.24s / 414400 |
+
+### 12.12 AArch64阶段资源与结果边界
+
+| 阶段 | scope wall s | scope MemoryPeak GiB | exit | sampler/log reader回收 |
+|---|---:|---:|---:|---|
+| `aarch64-init` | 104.798920 | 5.155033 | 0 | True/True |
+| `aarch64-build` | 2321.728104 | 16.417076 | 0 | True/True |
+| `aarch64-native-census-scope` | 6.168201 | 3.578442 | 0 | True/True |
+| `aarch64-ir-census-scope` | 308.150700 | 2.588032 | 0 | True/True |
+| `aarch64-conversion-scope` | 1594.103391 | 10.988628 | 0 | True/True |
+| `aarch64-full-census-scope` | 183.229122 | 0.647648 | 0 | True/True |
+| `aarch64-consumers-native-scope` | 52.435714 | 12.068241 | 0 | True/True |
+| `aarch64-strip-gnu-scope` | 102.802237 | 5.228153 | 0 | True/True |
+| `aarch64-consumers-gnu-scope` | 22.223871 | 1.788395 | 0 | True/True |
+| `aarch64-strip-llvm-scope` | 62.555640 | 4.344769 | 0 | True/True |
+| `aarch64-consumers-llvm-scope` | 22.273189 | 1.714882 | 0 | True/True |
+
+原始30秒宿主loadavg/free/MemAvailable、进程树RSS、memory.events与完整阶段命令均在上表目录。全部MemoryMax18GiB/MemorySwapMax0，未达到宿主2GiB中止线。转换阶段并发4/单编译AS4GiB；完整构建仍6/6/2，未调高cap、未改配置重跑。本轮aarch64初始化一次、完整-bc一次；没有%install与RPM打包，没有重建ARM32。
+
+AArch64辅助驱动无失败重跑；ARM32的唯一辅助入口修正仍为§12.6已登记的资源目录问题。Source最终SHA仍`1620a8da778062216bea61f6ac43eb6b64df9963b2d5778058be6ca7b31a7607`；相对6a36f173的完整diff在§12.3及E12/source-vs-6a36f173.diff。AArch64普查与转换未修改它，因此§12.3最终SHA的x86全量回归覆盖本次两ARM实测候选。
+
+**本轮第一段功能认证PASS：x86不变性、ARM32转换与TLS/Thumb/消费者、AArch64完整%build及转换/消费者全部通过。** 这是候选Source在本次固定配方/工具/归档全集上的认证；ARM的%install、RPM后处理集成与打包尚未执行，不能写成ARM发布包已验收。生产Source与两份已上传review补丁仍未修改，也没有向Gerrit推送。
+
+### 12.13 最终保全、回收与提交前自检
+
+`E12/final-retention.json`逐文件SHA重核PASS：
+
+| 保留对象 | ARM32 | AArch64 |
+|---|---:|---:|
+| CMakeCache/build.ninja/.ninja_log及关键ELF锚点 | 10，同§11 | 10，同本次-bc结束 |
+| 构建树原归档 | 210，未改 | 212，未改 |
+| 离线输入副本 | 210，未改 | 212，未改 |
+| GBS缓存RPM | 123，未改 | 123，未改 |
+
+W/gbs_llvm.conf、W/llvm/spec、生产Source6bd0546a、两份review补丁摘要均与开场相同；用户已有的gbs配置Git差异原样保留，未提交。候选Source仅为本轮1620a8da，与最终x86回归相同；其完整diff已在§12.3存档。没有读写被隔离的旧混合根，没有做磁盘清理。
+
+`E12/final-sanity.json`：全部scope采样/日志线程已回收、scope不活跃；补充执行观察器已退出；项目任务残留进程0、两ARM范围残留挂载0；两把项目锁已由持有进程释放，`lock-released.json`记录时间/PID。两套BUILD与缓存、转换输入/输出、日志和JSON全部保留。宿主mmap_min_addr仍为0，未代用户恢复；恢复命令见报告开头。
+
+结束时原始df（字节）：
+
+```text
+Filesystem         1B-blocks          Used    Available Use% Mounted on
+/dev/sda1      1967844950016 1279014899712 588793438208  69% /home
+/dev/nvme0n1p1  501809635328  205050265600 271193567232  44% /
+```
+
+| 自检 | 答案/证据 |
+|---|---|
+| Source改动后是否重跑全部测试及最终SHA x86全量回归 | 是，67测试/真实夹具，225整档/3864有序成员/完整索引/3853后端flags一致；§12.2–12.3 |
+| ARM32 Thumb/26缺属性成员是否逐个检查 | 是，3683参考对象门禁及全Tag_*相同，26项表见§12.4 |
+| 两架构TLS规则、全集与消费者是否闭合 | 是，§12.1–12.2规则/夹具，§12.4–12.5与§12.10–12.11实测；未知类型0，LE/IE不擅自放行 |
+| 是否重建ARM32或执行install/打包 | 否；仅AArch64一次标准-bc，§12.8 |
+| 是否修改W/llvm/spec/GBS配置/生产Source/两review补丁 | 否，final-retention.json；用户配置差异未动 |
+| 是否做清理、BOLT、性能校准、Chromium或推Gerrit | 否；本轮仅功能/资源验证，GitHub按阶段提交 |
+| 辅助脚本缺陷条款 | ARM32消费者资源头路径遗漏，诊断后一次修正重跑；§12.6。AArch64无失败重跑 |
+| 项目锁/进程/采样器/挂载 | 全部回收；final-sanity.json |
+
+阶段提交顺序：Source+x86=`cb899cd433df14b158ba9b6b13da59b1a76603d1`；ARM32=`256267b39a5639e0065a2b8c008c7ea5055a031e`；AArch64与最终收尾为本提交（用`git log -1 -- docs/40_arm_archive_conversion_stage1.md`定位）。各阶段STATUS同commit更新，历史停止记录不重写。

@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前执行（docs/40 §12）**：Source 1620a8da的67测试/真实夹具与x86全量不变性PASS；ARM32 210档/3690成员转换、Thumb、重定位、三套消费者及两种strip全部PASS。已发布ARM32阶段，下一步AArch64一次标准-bc；项目锁继续持有。
+**当前收尾（docs/40 §12）**：ARM转换第一段全部PASS。Source1620a8da的67测试/夹具与x86 225档/3864成员不变性PASS；ARM32 210档、AArch64 212档全量转换/重定位、三套消费者和两种strip均PASS。AArch64唯一一次-bc成功（2321.728s、scope峰16.417GiB、无OOM）。两BUILD/原件/缓存保留，项目锁/进程/采样器/挂载回收。后续需ARM的spec集成与RPM验收，生产Source/两review补丁未动。
 
 历史状态核对到 `4d80d94`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，混合构建见 [docs/22](22_hybrid_link_trial.md)，
 归档根因与前次失败记录见 [docs/23](23_archive_fix_and_profile_rebind.md)；
@@ -33,8 +33,8 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；ARM32全库与三套消费者/strip已全部通过，下一步AArch64一次-bc。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
-**x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source尚未认证。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
+当前任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
+**x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
 一次完整 LLVM 构建 16,011.555 s，18 GiB/swap0/4/4/1/debuginfo4，无 OOM；真实 %install 转换 225 归档、3,853 bitcode（含回写 1,054.025 s）。新 RPM 225 开发归档格式/顺序/完整索引及零调试节 PASS，45 运行库成员和索引与基线一致。
 17,689 路径仅 225 开发归档与 45 compiler-rt ar 时间戳变化，其他文件差异 0；clang/lld/ar SHA 相同。七项宿主消费者及两个独立 Tizen 根的 bfd/lld A+B %check 均 PASS。实测候选 patch SHA `4ca1dc3e…`；docs/31提交版 SHA `0c40c91c…`，W 原件、docs/25–30 均未改。
@@ -51,7 +51,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | BOLT 筛选 | 容量、插桩/profile、重写、正确性、训练/留出、中间对照、双目标 | 本机工作已结束；最终 ARM 校准 FAIL，AArch64 PASS 并完成正式轮 |
 | 静态库兼容性修复 | bitcode→机器码、保持原brp宏、GNU ld无LTO/插件消费者、完整构建及新RPM验收 | **v2新RPM/归档/非归档、独立-bi/SKIP、七宿主消费者与两Tizen包均PASS；基于cb679968的v2补丁已生成并验apply，用户确认356627 PS2已上传、评审中；本轮未重建新目标配方** |
 | LLVM包x86_64切换llvm-strip | 叠在356627之后，新增compiler-rt真实运行库消费者及包内验收 | **docs/38全部PASS；用户确认已上传356639，依赖356627；目标流水线待验，代理未推Gerrit** |
-| ARM静态库转换 | 参数/工具/路由/PIC与x86不变性设计 | **§12最终x86回归、ARM32全量转换/消费者/两种strip PASS；AArch64待执行，生产补丁不改** |
+| ARM静态库转换 | 参数/工具/路由/PIC与x86不变性设计 | **§12最终x86不变性、两ARM全量转换/重定位/消费者/两种strip PASS；AArch64-bc成功；ARM打包待后续，生产补丁不改** |
 | 集成设计与评审 | docs/21 完整 v3、混合链接拟议补丁、身份/活性脚本与协议检查 | 历史混合构建/30 TU结果保留；设计 v4 与 BOLT 实施暂缓，待归档修复完成 |
 | OBS 试包与服务器验收 | LLVM RPM → qemu-accel → 新 Base 快照 → Quickbuild | 未执行；项目/验证快照待用户提供，试包与收益验收均未完成 |
 | 后续工具/PGO | 依全平台调用占比和服务器容量决定 | 挂账；没有自动启动授权 |
@@ -123,10 +123,12 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `256d759` | docs/40 §10、STATUS | 导出spec/tar身份PASS；新ARM32 prep与宏参数PASS，代理configure准备宏查询修正后exit28，按第二次失败停止；LLVM编译0，缓存/现场保留。 |
 | 2026-10-10 | `8dd3d9a` | docs/40 §11、STATUS | ARM32标准-bc全7147任务PASS，scope峰15.335GiB；210档普查/参数PASS，转换遇TLS_GD32按门禁停止；消费者及A64未运行，原件/cache保留。 |
 | 2026-10-10 | `cb899cd` | docs/40 §12、STATUS、ARM候选Source及测试 | TLS/Thumb修订，67测试和最终SHA的225档/3864成员x86全量回归PASS；先发布，再继续ARM32。 |
+| 2026-10-10 | `256267b` | docs/40 §12.4–12.7、STATUS | ARM32 210档/3690成员转换与Thumb/重定位PASS；未strip、GNU/LLVM strip三套消费者PASS；辅助资源目录遗漏修正一次。 |
+| 2026-10-10 | 本提交（`git log -1 -- docs/40_arm_archive_conversion_stage1.md`） | docs/40 §12.8–12.13、STATUS | AArch64-bc 7545任务PASS；212档/3706成员、3699 bitcode转换、全集重定位与三套消费者/两种strip全PASS；原件/cache保全，锁/进程/挂载回收，第一段结束。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
-| 2026-10-10 | 本提交（`git log -1 -- docs/40_arm_archive_conversion_stage1.md`） | docs/40 §12.4–12.7、STATUS | ARM32 210档/3690成员转换与Thumb/重定位PASS；未strip、GNU/LLVM strip三套消费者PASS；辅助资源目录遗漏修正一次。 |
+
 
 ## 3. 已闭合结论
 
@@ -325,6 +327,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 本轮ARM32闭合：210档/3690成员、3683 bitcode转换、7原机器码保留；全属性/26缺函数属性/完整索引/重定位PASS，三套GNU ld/lld消费者、TLS动态重定位与call_once运行证据PASS。证据docs/40 §12.4–12.7、E12/armv7l-consumer-summary.json；强度：硬证据，仅当前ARM32输入与候选Source，非发布打包认证。
 
+本轮AArch64闭合：212档/3706成员，3699 bitcode转机器码、7原机器码保留；末项O3/PIC2/tune-cortex-a53策略及完整索引/重定位PASS；三套GNU ld/lld消费者、10个TLSDESC动态重定位与call_once=6全部PASS。一次标准-bc 2321.728s、7545任务、scope峰16.417076GiB，无OOM。证据docs/40 §12.8–12.13、E12/aarch64-consumer-summary.json、final-retention.json、final-sanity.json；强度：硬证据，资源数值仅诊断，不作性能结论，不替代ARM RPM集成验收。
+
 ## 4. 人工裁决前提
 
 下列为用户决策及其记录依据，区别于上一节的实测事实。后续 Session 不能擅自反转。
@@ -435,7 +439,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 评审中/待目标流水线 | 归档修复v2与356627 PS2 | docs/35+36门禁闭合；docs/38已fetch核验PS2提交67619ec8bbba及父cb679968。docs/37确认同宏环境参数策略覆盖；目标配方仍需流水线正常构建，新选项须重新核查。 | docs/36 §3–§4；docs/37 §4；docs/38 §6 |
 | 评审中/待目标流水线 | 356639：x86_64 LLVM包切换llvm-strip | 用户已确认上传、依赖356627；本机要求PASS，目标流水线另验。ARM条件需在转换认证后更新同change并rebase，不能借x86 PASS直接扩大范围。 | docs/38 §3–§6；docs/39 §8–§9；用户本轮确认 |
 | 已闭合（保留记录） | 修正后的续跑验收 | 新RPM第1–4项PASS后独立buildroot真实-bi重新转换225档并验收，通过后对同树Source SKIP，225档SHA不变；这两项不再挂账。 | docs/35 §4；C/independent-archives-result.json、independent-skip-verification.json |
-| 后续实测 | ARM/AArch64转换C阶段 | §12规则/Thumb修订及最终x86回归PASS；ARM32全库/消费者/strip全部PASS，待AArch64；其他未知类型仍停止。 | docs/40 §12；docs/39 §4、§7 |
+| 已闭合第一段；后续待实施 | ARM/AArch64转换与打包集成 | §12最终x86不变性、两ARM全库/重定位/三套消费者/strip均PASS；需另任务实施spec/Source集成与ARM RPM验收，再更新356627/356639的patchset。生产补丁未改，未知类型仍停止。 | docs/40 §12；docs/39 §4、§7 |
 | 已隔离/暂缓 | 旧混合构建根与profile适用性；设计v4 | docs/24旧根不再读写；外来docs/23与重链脚本改动在备份SHA匹配后已按新授权恢复HEAD，不再是脏工作树。设计v4及BOLT后续等归档任务完成。 | docs/24；docs/25 §0 |
 
 已关闭、不再作为待办：本机校准重试、用新门禁回判历史 FAIL、为补漂亮数字追加轮次。
@@ -447,4 +451,4 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 
 前次执行备案（e44fb63，初始化政策随后已解除）：用户明确清理任务不再阻塞B/C，四个待sudo删除旧根不读写；B已PASS；C0在GBS启动前停止，证据`temp/arm-archive-stage1-20261010`。x86不变性为硬证据，ARM能力仍未认证。无磁盘清理/宿主配置修改/补丁更新/Gerrit推送。
 
-当前挂账（docs/40 §12）：Source/x86与ARM32转换、26成员Thumb、重定位全集、三套消费者和两种strip均PASS；AArch64待本任务后续实测。生产Source/两个review补丁仍未改，不等于ARM打包验证已完成。
+当前挂账（docs/40 §12）：第一段已全部PASS（x86不变性、ARM32 Thumb/TLS及两ARM全量转换/消费者/两种strip）；需后续ARM spec集成与RPM验证。生产Source/两个review补丁仍未改，不等于ARM打包验证已完成。两套BUILD和各123缓存RPM保留供后续增量使用。
