@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/44续三）测试修正完成**：根内启动/AS事实核查PASS；仅改timeout测试为5秒与ready前提，宿主99/99 PASS。Source仍e2c2ebfa，Commands不改。接下来根内挂proc跑99项，按PM将3项辅助环境不适用与1项AS已知发现单列；其余必须PASS。详见docs/44 §18–§20。
+**当前任务（docs/44续三）根内分类验收PASS**：宿主99/99；ARM根99项中95 PASS、3环境不适用、1已证实的QEMU AS限制发现，恰为PM允许项；timeout PASS，proc已卸载。Source仍e2c2ebfa，开始宿主全量回归。详见docs/44 §18–§21。
 
 **历史文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
 
@@ -37,7 +37,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：根内事实已确认，按PM进入测试修正/根内分类验收及全量复验；Source固定e2c2ebfa。
+当前阶段：测试与根内分类门禁已通过，进入x86/两ARM全量复验；Source固定e2c2ebfa。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -139,7 +139,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `b547f98` | docs/44 §14–§17、diff、候选及两测试、STATUS | 宿主99 PASS；ARM根94 PASS/2 FAIL/3 ERROR；停止未复验，生产代码不改。 |
 | 2026-10-10 | `4662598` | docs/45、STATUS | 钉docs/44最终内容到b547f98，披露Commands异步后代边界及根内测试STOP，x86符号核查仍UNKNOWN。 |
 | 2026-10-10 | `c4c635c` | docs/44 §18–§19、STATUS | 启动时延20/20>0.15s；两根AS不生效、nofile正常，原生prlimit缺席；允许继续宿主离线验证。 |
-| 2026-10-10 | 本次测试修正提交 | docs/44 §20、timeout测试、STATUS | 仅改5秒/就绪前提；宿主99/99 PASS，准备根内分类验收。 |
+| 2026-10-10 | 93a3a5b | docs/44 §20、timeout测试、STATUS | 仅改5秒/就绪前提；宿主99/99 PASS，准备根内分类验收。 |
+
+| 2026-10-10 | 本次根内测试提交 | docs/44 §21、STATUS | 95 PASS + 3环境不适用 + 1 AS已知发现；按PM规则通过，proc卸载 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。

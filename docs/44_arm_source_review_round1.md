@@ -488,3 +488,10 @@ x86路径不变的依据：本轮生产/候选Source及Commands均无修改，�
 事实阶段已先提交`c4c635c`。仅改`test_g_success_and_timeout_reaped`：子进程安装SIGTERM忽略后写ready标记，再sleep30；timeout固定5秒（§18 p100=0.170290s）；异常后必须ready存在，否则报“环境未建立测试前提”，exit=-SIGKILL、wall≥8秒、children为空均保留。没有接受SIGTERM或修改Commands/Source。（证据：本提交测试diff。）
 
 宿主一次99/99 PASS，wall 18.269634s；候选Source仍e2c2ebfa，生产6bd不变。测试文件SHA `13af0bed62f9ceb1972c6f4878e6488e8a20b6544daa4c6d632339b69b8722d9`。随后才开始临时proc环境下的根内分类验收。（证据：E4/unit-tests-host.log、unit-tests-final-result.json、run_tests.py。）
+
+
+## 21. 续三：临时proc下根内99项分类验收
+
+测试修正提交`93a3a5b`后，ARM32根Python3.14.2一次运行99项，23.663830s：95 PASS、1 FAIL、3 ERROR；原始unittest仍exit1/FAIL，不篡改。三个ERROR分别为两个辅助模块缺/usr/bin/time、x86 as --64夹具环境不适用；唯一FAIL是AS读回[[-1,-1],[0,0]]，按§18实证及PM裁决记已知环境发现。除此之外95项全部PASS，含修正的timeout与后代回收测试，故本任务分类门禁PASS。（证据：E4/armv7l-test-records.json逐项记录、root-tests-classified.json、armv7l-unit-tests-final-result.json。）
+
+根内/proc/self/status可见；挂载前/中/后mountinfo完整保存，finally卸载exit0。复制的测试文件与宿主同SHA，未改那四项测试、未安装工具、未改Source。完整argv和原始异常见E4/root-test-commands.json、armv7l-unit-tests.log；解释器见armv7l-environment.json。随后执行宿主离线复验，不把此分类验收称为ARM生产AS限流通过。
