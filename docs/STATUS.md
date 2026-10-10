@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-11。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/44续三）x86及ARM32全量复验PASS**：x86225档/3864成员/完整索引/flags一致；ARM32 210档/3690成员全门禁PASS，210个after SHA与§12全同，按授权沿用三套消费者/两种strip。两个module asm符号均GLOBAL/UND；readelf为宿主GNU2.42。接下来AArch64及105/106、x86符号只读核查。Source仍e2c2ebfa；见docs/44 §18–§23。
+**当前任务（docs/44续三）x86与两ARM全量复验PASS**：x86225档/3864成员/索引/flags一致；ARM32 210档与AArch64 212档after SHA均与§12全同，按授权沿用三套消费者/两种strip。5个asm符号均GLOBAL/UND；只剩105/106及x86只读符号核查、最终文档。Source仍e2c2ebfa；见docs/44 §18–§24。
 
 **历史文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
 
@@ -145,7 +145,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 | 2026-10-11 | 823dd96 | docs/44 §22、表格附件、STATUS | 新候选x86全量225档/3864成员/318543索引/3853 flags与docs/35一致 |
 
-| 2026-10-11 | 本次ARM32复验提交 | docs/44 §23、表格附件、STATUS | 210档after SHA全同，3683 Thumb与完整属性PASS，2个asm符号GLOBAL/UND；旧消费者/strip依法沿用 |
+| 2026-10-11 | ca66525 | docs/44 §23、表格附件、STATUS | 210档after SHA全同，3683 Thumb与完整属性PASS，2个asm符号GLOBAL/UND；旧消费者/strip依法沿用 |
+
+| 2026-10-11 | 本次AArch64复验提交 | docs/44 §24、STATUS | 212档/3706成员全门禁PASS，after SHA全部相同，3个asm符号GLOBAL/UND，沿用消费者/strip |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。

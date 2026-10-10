@@ -452,3 +452,20 @@ x86里程碑先推送`823dd96`。210个输入档与构建树/输入副本摘要�
 Thumb实际调用`/usr/bin/env LC_ALL=C /usr/bin/readelf -AW <对象>`，来源为宿主x86_64 ELF，不是ARM根工具；GNU Binutils for Ubuntu 2.42，readelf SHA `64c58e15274bbbb5153f31078e455e9e77ee5f51489e709bba5bb788ce9df2b0`。完整版本与实际argv在conversion/readelf-version.txt、readelf-version-command.json、每成员converted/reference-readelf.json；file证据E4/host-readelf-file.txt。
 
 资源规则同§22。转换及额外校验wall 1836.073389s，scope 1874.627240s；scope峰9775529984B（含缓存），宿主最低可用17527791616B，无OOM，采样器/日志线程回收。（证据：E4/armv7l-conversion-scope/outcome.json、memory-summary.json。）
+
+
+## 24. 续三：AArch64全量复验与证据沿用
+
+ARM32里程碑先推送`ca66525`。AArch64输入/工具身份重核后，宿主运行同一e2c2ebfa，输出E4/aarch64-conversion：212档、3,706成员（3,699 bitcode转换+7原机器码保留）；bitcode归零、成员身份/次序、307,758项完整索引、PIC/重定位/函数属性/强符号门禁均PASS。允许缺失W=1,698、强符号缺失0。（证据：E4/convert_aarch64.py、aarch64-conversion-result.json、conversion/summary.json及各成员命令/检查JSON；这里conversion指该架构输出子目录。）
+
+**212/212个after SHA与docs/40 §12全部相同**，逐档值在E4/aarch64-comparison-result.json；旧基准为`temp/arm-archive-tls-thumb-20261010/aarch64-conversion/summary.json`。依授权沿用其`aarch64-consumers-native/gnu/llvm`各7项PASS和`aarch64-strip-gnu/llvm`结果，未重跑；文件摘要与PASS核对记录在E4/aarch64-reused-evidence.json。
+
+| 白名单成员 | ordinal | 转换后`_ZSt21ios_base_library_initv` |
+|---|---:|---|
+| libLLVMAnalysis.a / MLInlineAdvisor.cpp.o | 80 | GLOBAL / NOTYPE / DEFAULT / UND，raw/decoded节索引0 |
+| libLLVMCodeGen.a / MLRegAllocEvictAdvisor.cpp.o | 137 | 同上 |
+| libarcher_static.a / ompt-tsan.cpp.o | 0 | 同上 |
+
+连同§23的ARM32两项，5个白名单成员全部保留该符号（info16、other0、value/size0），不是推测原声明对应输出。（证据：E4/aarch64-comparison-result.json的module_asm_symbols。）
+
+资源同§22：转换wall1574.055995s、scope1616.626950s；scope峰9717932032B（含缓存）、宿主最低可用17461518336B，无OOM；采样器/日志线程回收。至此两ARM字节一致性均闭合，但ARM根内AS开放问题仍未解决；未打包、未更新Gerrit补丁。（证据：E4/aarch64-conversion-scope/outcome.json、memory-summary.json；§19。）
