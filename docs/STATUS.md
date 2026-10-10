@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-11。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/44续三）x86与两ARM全量复验PASS**：x86225档/3864成员/索引/flags一致；ARM32 210档与AArch64 212档after SHA均与§12全同，按授权沿用三套消费者/两种strip。5个asm符号均GLOBAL/UND；只剩105/106及x86只读符号核查、最终文档。Source仍e2c2ebfa；见docs/44 §18–§24。
+**当前任务（docs/44续三）完成**：宿主99PASS；根内95PASS+3指定环境不适用+1已实证AS发现。x86225档/3864成员/索引/3853 flags完全一致；ARM32 210档、AArch64 212档after SHA与§12全同，沿用三套消费者/两种strip。5个ARM asm符号GLOBAL/UND；105/106的bfd/lld共享链接与dlopen均PASS；x86三个bitcode同asm成员最终符号保留。Source仍e2c2ebfa，无代码改动；只修timeout测试。两处辅助脚本各授权修一次；锁、采样器、proc回收。ARM生产AS限制问题待评审，未打包/推Gerrit。见docs/44 §18–§27与docs/45。
 
 **历史文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
 
@@ -37,7 +37,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：测试与根内分类门禁已通过，进入x86/两ARM全量复验；Source固定e2c2ebfa。
+当前阶段：ARM候选e2c2ebfa固定输入离线复验完成，进入外部评审；ARM根内AS限制与生产集成/RPM验收尚未闭合。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -147,7 +147,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 | 2026-10-11 | ca66525 | docs/44 §23、表格附件、STATUS | 210档after SHA全同，3683 Thumb与完整属性PASS，2个asm符号GLOBAL/UND；旧消费者/strip依法沿用 |
 
-| 2026-10-11 | 本次AArch64复验提交 | docs/44 §24、STATUS | 212档/3706成员全门禁PASS，after SHA全部相同，3个asm符号GLOBAL/UND，沿用消费者/strip |
+| 2026-10-11 | 065cf5b | docs/44 §24、STATUS | 212档/3706成员全门禁PASS，after SHA全部相同，3个asm符号GLOBAL/UND，沿用消费者/strip |
+
+| 2026-10-11 | 本次收尾报告提交 | docs/44 §25–§27、表格附件、STATUS | TLS105/106 bfd/lld实跑PASS；x86 3个bitcode同asm成员符号保留；辅助一次修正、全部回收，根内AS待评审 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -360,6 +362,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 本轮AArch64闭合：212档/3706成员，3699 bitcode转机器码、7原机器码保留；末项O3/PIC2/tune-cortex-a53策略及完整索引/重定位PASS；三套GNU ld/lld消费者、10个TLSDESC动态重定位与call_once=6全部PASS。一次标准-bc 2321.728s、7545任务、scope峰16.417076GiB，无OOM。证据docs/40 §12.8–12.13、E12/aarch64-consumer-summary.json、final-retention.json、final-sanity.json；强度：硬证据，资源数值仅诊断，不作性能结论，不替代ARM RPM集成验收。
 
+- **续三固定输入复验闭合（硬证据）**：新Source e2c2ebfa的x86225档/3864成员/完整索引/3853 flags与docs/35完全相同；ARM32 210档/A64 212档与docs/40 §12逐档after SHA相同；5个ARM及3个x86 bitcode asm成员保留GLOBAL/UND；TLS105/106两链接器共享链接与dlopen PASS。证据docs/44 §22–§26、E4各result；旧消费者/strip按相同SHA授权沿用，未重跑。
+
 ## 4. 人工裁决前提
 
 本轮用户决定：只整理ARM Source与测试评审材料，单文件≤50KB，完整diff超限可外置文档附件；docs/40只加开头入口，其余不动。不改代码/spec/补丁、不运行测试/构建/转换；三家外部评审尚未执行。
@@ -494,3 +498,5 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 本轮人工裁决（docs/44续二）：取消诊断通过才修测试；ABS/COMMON无真实节，其余保留索引拒绝，XINDEX逻辑不变；全套测试后才做x86/两ARM复验，任一停止仍完成文档。
 
 续三PM裁决：根内3项实验辅助测试环境不适用；已实证AS限制不生效的1项记开放问题而非离线阻塞；timeout仅证实启动时延后改5s并要求就绪、KILL及完整宽限期；根内测试临时挂proc。Source不改。
+
+本轮新增挂账：ARM32/AArch64 QEMU9.2.3路径下AS 1/4GiB均读回unlimited，nofile256有效；/emul无原生prlimit候选。如何保证ARM生产逐进程限制交外部评审，未选择方案；x86原生AS测试PASS。证据docs/44 §18–§19、docs/45 §5。

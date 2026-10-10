@@ -1,6 +1,6 @@
 # 44 ARM Source 第一轮评审：普查、PM 裁决与修订停止记录
 
-**续三进度：根内事实核查、宿主测试与根内分类验收已通过；新候选e2c2ebfa的x86全量不变性通过。两ARM与TLS/符号核查继续执行，详见§18起。以下此前状态均为历史记录。**
+**续三完成（2026-10-11）：事实核查、修正后的宿主99项与根内分类验收、x86全量不变性、两ARM复验、105/106实跑和x86只读符号核查全部完成。Source未改；两ARM全部after SHA与§12相同，沿用旧消费者/strip。ARM根内AS限制不生效仍为开放问题。详见§18–§27；以下此前停止状态完整保留为历史。**
 
 **当前状态（续二）：600例取消诊断PASS；授权小修后宿主99/99 PASS，ARM根94/99 PASS、2 FAIL+3环境ERROR，按第三步门禁停止。全量x86/两ARM复验与符号只读核查未执行。详见§13–§17；下方原有“最新/本轮”文字完整保留为此前停止记录。**
 
@@ -106,21 +106,7 @@ AArch64三项的输入与本次llvm-dis输出摘要如下，均经输入成员SH
 
 意见来源统一为**用户转述的Codex、Claude Code两家评审及PM合并裁决**；输入未给逐条原作者，不虚构归属。下表记录拟采纳内容，本轮全部未写入代码，不能标成“已修复”。（出处：本轮任务背景与第二步。）
 
-| PM项 | 裁决内容 | 本轮状态 |
-|---|---|---|
-| 1 | 未知重定位在非ALLOC前拒绝，统计仍只计ALLOC | 未实施，停于§3 |
-| 2 | A64 TLS仅562/563/564/569；其余原ALLOW转PENDING | 未实施 |
-| 3 | 按每个define精确核cpu/features/tune | 普查完成，必需属性缺失0；门禁未实施 |
-| 4 | A64移除absolute317/580、allowed256 | 未实施 |
-| 5 | 固定GNU readelf/LC_ALL=C；aeabi/CPU_arch；缺失None | 未实施 |
-| 6 | ARM专用ELF边界/扩展索引解析，真ABS辨别 | 未实施 |
-| 7 | 指令绝对重定位不因可写而放行，仅完整宽度指针例外 | 未实施 |
-| 8 | ARM32 asm白名单与同名节多序列；A64任意asm拒绝 | 全集普查完成；A64有3条真实语句，与拟实施规则冲突，停止 |
-| 9 | 显式拒-Wa, | 未实施 |
-| 10 | ARM专用完整工具版本与GNU reader预检 | 未实施 |
-| 11 | ARM32补PENDING13/17/18/19/109/165/166/167 | 未实施 |
-| 12 | mtune源码注释、TARGET1严格ABS解释 | 未实施 |
-| 13 | ARM summary记录纯机器码整档跳过身份 | 未实施 |
+[完整历史表格](44_census_tables.md)见附件§4：首轮普查后的评审采纳状态（历史），原数据与判定未改。
 
 ## 5. 测试与全量复验状态
 
@@ -227,17 +213,7 @@ FAILED (failures=1)
 
 ## 10. 复验状态：停止后不继续执行
 
-| 任务 | 本轮结果与不可外推的范围 |
-|---|---|
-| 宿主全套测试 | FAIL，95项中94通过；无第三次重跑 |
-| ARM32根python全套测试/版本记录 | NOT RUN，宿主门禁第二次失败后停止 |
-| x86 225档/3864成员/完整索引/3853flags | NOT RUN；旧§12 PASS不绑定5608aa5e新候选 |
-| ARM32 210档重新转换、含asm的2成员GLOBAL符号 | NOT RUN；没有新after SHA/真实符号状态 |
-| A64 212档重新转换、含asm的3成员GLOBAL符号 | NOT RUN；没有新after SHA/真实符号状态 |
-| 两架构after SHA与docs/40 §12逐档相同 | UNKNOWN（未执行）；不能沿用旧消费者作为本候选认证 |
-| 消费者三套与两种strip | 本轮未重跑，亦未以“SHA相同”为由沿用认证；旧证据仍仅认证1620 |
-| ARM32 105/106共享库-z text、GNU/lld、dlopen | NOT RUN |
-| x86最终产物的同module asm成员只读核查 | NOT RUN；按第三步停止，不声称符号存在/缺失 |
+[完整历史表格](44_census_tables.md)见附件§10：前次测试停止后的复验状态（历史），原数据与判定未改。
 
 生产x86 Source6bd的`ir_settings`不解析module asm，`check_symbols`只比较定义外部符号，不能据此证明`.globl`引入的UND引用被保留。这是代码审查边界；本轮要求的docs/35产物符号核查未执行，结果UNKNOWN，不能拿ARM头文件声明推断x86产物。已在docs/45 §5独立披露。（证据：生产Source:275–329、499–521；本轮stop-result.json。）
 
@@ -259,17 +235,7 @@ b0465d099164a8f8c1ddd406e6f74c2ada8f9f9f	refs/changes/39/356639/1
 
 退出0，stderr为空。该完整号替换docs/45原短号，不与本地format-patch封套号混写。（证据：E2/gerrit-356639-ls-remote.txt、gerrit-356639-ls-remote.stderr。）
 
-| E2下文件 | 用途 |
-|---|---|
-| candidate-before.py、tests-before.py | 本轮编辑前的原件副本 |
-| protected-start.json、final-integrity.json | 生产Source/spec/patch/用户配置未变；候选/测试新SHA |
-| iostream-evidence.json | 两ARM根头文件路径、SHA、编号摘录 |
-| revision-metadata.json、source-isolation.json | diff计数/摘要、函数行号、测试名、未改函数AST核对 |
-| run_tests.py、unit-tests-host.log、unit-tests-host-initial-result.json | 首轮完整命令与95项结果 |
-| test-helper-correction.diff/json | 唯一辅助修正的依据与diff |
-| unit-tests-host-retry.log、unit-tests-final-result.json、stop-result.json | 第二次FAIL、实际解释器、停止边界 |
-| lock-acquired.json、lock-released.json、final-processes.json、final-mountinfo.txt | 独占与退出回收、无本任务残留 |
-| gerrit-356639-ls-remote.* | 只读完整提交号 |
+[完整历史表格](44_census_tables.md)见附件§11：前次Gerrit材料身份核对（历史）；原判定未改。
 
 ## 12. 收尾与后续条件
 
@@ -343,13 +309,7 @@ ARM专用`arm_symbol_section`对原始0xff00–0xfffe：仅0xfff1/0xfff2返回se
 
 宿主一次全套PASS；ARM根也只跑一次，没有失败后修改或重跑。两边45项ARM/分派测试全PASS，含新增4项；旧54项共用测试在根内有以下5项问题。根内工具身份只读file显示python3.14/prlimit/as均ARM32 ELF。根内`/proc/self/status`不可见，因此后代测试虽显示ok，不能作为根内后代状态可见性的独立认证。未挂载proc、安装工具或修改根环境来绕过。（证据：E3/unit-tests-host.log、unit-tests-final-result.json、unit-tests-armv7l.log、armv7l-environment.json、armv7l-executable-identities.txt、armv7l-environment-limits.json。）
 
-| 根内用例 | 原始结果 | 判定/边界 |
-|---|---|---|
-| test_actual_limits_and_monitor_cleanup | FileNotFoundError: `/usr/bin/time` | 环境缺依赖，无法运行；不改测试 |
-| test_failure_stops_following_commands | 同上 | 环境缺依赖，无法运行；不改测试 |
-| test_sections_symbols_visibility_and_relocations | `as --64 ...probe.s -o ...probe.o` exit1 | 宿主x86汇编夹具在ARM根无法运行；异常未输出所捕获stderr，精确错误文本UNKNOWN，不编造 |
-| test_limits_accounting_and_no_external_time | 实际`[[-1,-1],[0,0]]`，期望`[[4294967296,4294967296],[0,0]]` | 4GiB地址空间限制未按测试期望读回；不是缺工具例外，保留FAIL |
-| test_g_success_and_timeout_reaped | 实际exit=-15，期望=-9 | 超时探针由SIGTERM终止，未达到测试预期SIGKILL；原因未由本次证据确定，保留FAIL |
+[完整历史表格](44_census_tables.md)见附件§15：续二根内五项问题（历史）；原判定未改。
 
 根内完整版本原文：`3.14.2 (main, Oct 1 2026, 21:46:23) [Clang 22.1.8 ]`。不能把32位环境下读回-1自行宣告等价于所要求的4GiB，也不把SIGTERM结果直接定性为已证实的启动时延。原单测临时目录退出已自行回收，未额外重跑探针取得更好的结果。（证据：E3/armv7l-unit-tests-final-result.json；完整根内日志。）
 
@@ -366,15 +326,7 @@ sudo -n /usr/sbin/chroot --userspec=1000:1000 \
 
 ## 16. 续二：第四步未执行项目与证据边界
 
-| 项目 | 本轮结果 |
-|---|---|
-| x86 225档/3864有序成员/完整索引/3853 flags | NOT RUN；源码隔离和99宿主测试不能代替真实回归 |
-| ARM32 210档、AArch64 212档新输出全量转换 | NOT RUN；两架构after SHA与docs/40 §12是否全部相同为UNKNOWN |
-| 5个白名单module asm成员的输出符号绑定/节索引 | NOT RUN / UNKNOWN；不根据原声明猜GLOBAL/UND |
-| Thumb门禁本轮实际readelf路径、来源、版本 | NOT RUN；没有真实新转换调用记录，不把代码内路径当成实测 |
-| 消费者三套、GNU/LLVM strip复验 | 未重跑，也未援引“after SHA相同”继承旧认证；旧证据仅适用1620 |
-| ARM32 TLS105/106、bfd/lld -shared -z text、dlopen | NOT RUN |
-| docs/35最终x86产物同module asm成员只读核查 | NOT RUN；实际成员/符号状态UNKNOWN，已同步docs/45 §5 |
+[完整历史表格](44_census_tables.md)见附件§16：续二停止后的未执行清单（历史）；原判定未改。
 
 ## 17. 续二：回收、完整性与下一步
 
@@ -469,3 +421,32 @@ ARM32里程碑先推送`ca66525`。AArch64输入/工具身份重核后，宿主�
 连同§23的ARM32两项，5个白名单成员全部保留该符号（info16、other0、value/size0），不是推测原声明对应输出。（证据：E4/aarch64-comparison-result.json的module_asm_symbols。）
 
 资源同§22：转换wall1574.055995s、scope1616.626950s；scope峰9717932032B（含缓存）、宿主最低可用17461518336B，无OOM；采样器/日志线程回收。至此两ARM字节一致性均闭合，但ARM根内AS开放问题仍未解决；未打包、未更新Gerrit补丁。（证据：E4/aarch64-conversion-scope/outcome.json、memory-summary.json；§19。）
+
+
+## 25. 续三：ARM32 TLS105/106真实链接与dlopen
+
+两ARM复验里程碑已推送`065cf5b`。新汇编夹具以lld上游`llvm/lld/test/ELF/arm-tls-ldm32.s`的tlsldm/tlsldo表达式构造真实取TLS值函数；目标文件实有R_ARM_TLS_LDM32(105)、R_ARM_TLS_LDO32(106)及R_ARM_CALL。R32中分别用GNU ld与lld执行`-shared -Wl,-z,text,-z,defs`，各生成1条R_ARM_TLS_DTPMOD32、无TEXTREL；独立小主程序dlopen/dlsym调用，两者均输出`tls_value=37`、exit0。不是只生成未被执行的重定位。（证据：E4/tls-105-106/fixture.s、main.c、object-relocations.stdout、dynamic-bfd/lld.stdout、run-bfd/lld.stdout、result.json；完整逐命令argv/time/RSS见*.command.json。）
+
+clang、头文件、链接器、运行库均来自保留的Tizen ARM32根，工具沿现有accel路由、目标程序经既有qemu；宿主18GiB/swap0 scope，编译外层4GiB AS、链接无AS上限。临时proc挂载/卸载均exit0，前中后mountinfo保留；未改系统配置。证据为E4/tls_ld_fixture.py、tls-plan.json、tls-fixture-scope/outcome.json和tls-105-106/mount-commands.json。
+
+## 26. 续三：x86 module asm只读核查及辅助修正
+
+对象是docs/35最终解包N=`W/temp/toolchain-archivefix-v2-final`，而非本轮未strip转换输出。扫描225个最终归档中的目标符号，并无条件核查ARM普查中三个源成员在x86输入中的对应项；用实际原始bitcode反汇编确认语句，不因最终符号未找到就漏掉对应输入。最终查到3个bitcode成员的IR都含`module asm ".globl _ZSt21ios_base_library_initv"`：
+
+| x86归档 / 成员 | ordinal / 同名序号 | docs/35最终ELF符号状态 |
+|---|---|---|
+| libLLVMAnalysis.a / MLInlineAdvisor.cpp.o | 80 / 1 | GLOBAL / NOTYPE / DEFAULT / UND（节索引0） |
+| libLLVMCodeGen.a / MLRegAllocEvictAdvisor.cpp.o | 137 / 1 | 同上 |
+| libarcher_static.a / ompt-tsan.cpp.o | 0 / 1 | 同上 |
+
+另外libLLVMAnalysis.a的原机器码成员`xla_compiled_cpu_function.cc.o`（1/1）与`executable_run_options.cc.o`（4/1）最终也有同样GLOBAL/UND符号；它们没有LLVM IR，module asm来源记UNKNOWN_NO_IR_NATIVE，不由符号反推原文本。3个bitcode项证明当前固定输入保留了声明，不把生产6bd“不检查module asm”扩称为任意asm受支持。（证据：E4/x86-module-asm-retry/result.json、各成员original.ll、symbols.txt及命令JSON；文件选择范围亦写入result.json。）
+
+本步骤首次辅助脚本错误地把原机器码xla成员交给llvm-dis，收到`file doesn't start with bitcode header`；只读核查原成员kind=machine、魔数7f454c46、提取SHA与源d53085c5…一致，证实是检查驱动类型分派缺陷，不是转换Source或bitcode产品失败。按本步骤一次额度，只修辅助脚本：实际bitcode才反汇编；机器码仍保留完整符号观察并明确无IR。Source/Commands不动、门禁不减，在新目录重跑一次PASS。初次日志、诊断、完整diff和两个scope/outcome均保留于E4/x86-symbol-helper-diagnosis.json、x86-symbol-helper-fix.diff/json、x86-symbol-scope、x86-symbol-retry-scope。本轮共两处辅助步骤各修一次：§18挂载入口与本节类型分派；无第二次失败/产品失败重试。
+
+## 27. 续三：收尾、完整性与边界
+
+本轮完成全部授权步骤，无产品层面的停止。Source仍`e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`；相对1620的[完整diff](44_arm_source_round1.diff)原样保留，SHA仍0e7c7b8e…。生产6bd、Commands、ARM测试、spec、两已上传补丁、用户GBS配置均与开场SHA相同；代码只改§20的timeout测试。未打包/重建LLVM/清理磁盘/推Gerrit。（证据：E4/final-integrity.json；两种Source与patch的完整SHA在该文件。）
+
+全部scope采样器与日志线程回收；事实探针、根内单测、TLS夹具的临时proc均已卸载。2026-10-11 01:18:16+08:00释放两把项目锁，01:18:45复核无本任务进程、锁或两根proc挂载残留。证据E4/scope-cleanup-results.json、lock-released.json、final-processes-locks.json、final-mountinfo.txt。所有原始输出与新转换产物保留于E4；没有重判此前历史FAIL。
+
+宿主99/99、根内95PASS+3环境不适用+1AS发现、x86与两ARM固定输入复验闭合；§19的ARM生产AS限制问题仍待外部评审，离线产物相同不能解决根内限流。docs/45补齐x86只读结果及该边界；本轮不更新Gerrit候选、不作ARM打包验收结论。

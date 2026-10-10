@@ -195,3 +195,81 @@ Python3.14.2；临时/proc可见；只跑一次。原始unittest为95 PASS、1 F
 | `test_arm_archive_trial.ToolIsolationTests.test_non_gnu_reader_rejected` | PASS | PASS |
 | `test_arm_archive_trial.ToolIsolationTests.test_x86_actual_convert_success_failure_all_arm_functions_blocked` | PASS | PASS |
 | `test_arm_archive_trial.ToolIsolationTests.test_x86_fixed_constants_and_original_function_objects` | PASS | PASS |
+
+## §4：首轮普查后的评审采纳状态（历史）
+
+以下表格从docs/44原样迁移，历史判定不变。
+
+| PM项 | 裁决内容 | 本轮状态 |
+|---|---|---|
+| 1 | 未知重定位在非ALLOC前拒绝，统计仍只计ALLOC | 未实施，停于§3 |
+| 2 | A64 TLS仅562/563/564/569；其余原ALLOW转PENDING | 未实施 |
+| 3 | 按每个define精确核cpu/features/tune | 普查完成，必需属性缺失0；门禁未实施 |
+| 4 | A64移除absolute317/580、allowed256 | 未实施 |
+| 5 | 固定GNU readelf/LC_ALL=C；aeabi/CPU_arch；缺失None | 未实施 |
+| 6 | ARM专用ELF边界/扩展索引解析，真ABS辨别 | 未实施 |
+| 7 | 指令绝对重定位不因可写而放行，仅完整宽度指针例外 | 未实施 |
+| 8 | ARM32 asm白名单与同名节多序列；A64任意asm拒绝 | 全集普查完成；A64有3条真实语句，与拟实施规则冲突，停止 |
+| 9 | 显式拒-Wa, | 未实施 |
+| 10 | ARM专用完整工具版本与GNU reader预检 | 未实施 |
+| 11 | ARM32补PENDING13/17/18/19/109/165/166/167 | 未实施 |
+| 12 | mtune源码注释、TARGET1严格ABS解释 | 未实施 |
+| 13 | ARM summary记录纯机器码整档跳过身份 | 未实施 |
+
+## §10：前次测试停止后的复验状态（历史）
+
+以下表格从docs/44原样迁移，历史判定不变。
+
+| 任务 | 本轮结果与不可外推的范围 |
+|---|---|
+| 宿主全套测试 | FAIL，95项中94通过；无第三次重跑 |
+| ARM32根python全套测试/版本记录 | NOT RUN，宿主门禁第二次失败后停止 |
+| x86 225档/3864成员/完整索引/3853flags | NOT RUN；旧§12 PASS不绑定5608aa5e新候选 |
+| ARM32 210档重新转换、含asm的2成员GLOBAL符号 | NOT RUN；没有新after SHA/真实符号状态 |
+| A64 212档重新转换、含asm的3成员GLOBAL符号 | NOT RUN；没有新after SHA/真实符号状态 |
+| 两架构after SHA与docs/40 §12逐档相同 | UNKNOWN（未执行）；不能沿用旧消费者作为本候选认证 |
+| 消费者三套与两种strip | 本轮未重跑，亦未以“SHA相同”为由沿用认证；旧证据仍仅认证1620 |
+| ARM32 105/106共享库-z text、GNU/lld、dlopen | NOT RUN |
+| x86最终产物的同module asm成员只读核查 | NOT RUN；按第三步停止，不声称符号存在/缺失 |
+
+## §16：续二停止后的未执行清单（历史）
+
+原样移出的历史表，原结果不变。
+
+| 项目 | 本轮结果 |
+|---|---|
+| x86 225档/3864有序成员/完整索引/3853 flags | NOT RUN；源码隔离和99宿主测试不能代替真实回归 |
+| ARM32 210档、AArch64 212档新输出全量转换 | NOT RUN；两架构after SHA与docs/40 §12是否全部相同为UNKNOWN |
+| 5个白名单module asm成员的输出符号绑定/节索引 | NOT RUN / UNKNOWN；不根据原声明猜GLOBAL/UND |
+| Thumb门禁本轮实际readelf路径、来源、版本 | NOT RUN；没有真实新转换调用记录，不把代码内路径当成实测 |
+| 消费者三套、GNU/LLVM strip复验 | 未重跑，也未援引“after SHA相同”继承旧认证；旧证据仅适用1620 |
+| ARM32 TLS105/106、bfd/lld -shared -z text、dlopen | NOT RUN |
+| docs/35最终x86产物同module asm成员只读核查 | NOT RUN；实际成员/符号状态UNKNOWN，已同步docs/45 §5 |
+
+## §15：续二根内五项问题（历史）
+
+原样移出的历史表，原结果不变。
+
+| 根内用例 | 原始结果 | 判定/边界 |
+|---|---|---|
+| test_actual_limits_and_monitor_cleanup | FileNotFoundError: `/usr/bin/time` | 环境缺依赖，无法运行；不改测试 |
+| test_failure_stops_following_commands | 同上 | 环境缺依赖，无法运行；不改测试 |
+| test_sections_symbols_visibility_and_relocations | `as --64 ...probe.s -o ...probe.o` exit1 | 宿主x86汇编夹具在ARM根无法运行；异常未输出所捕获stderr，精确错误文本UNKNOWN，不编造 |
+| test_limits_accounting_and_no_external_time | 实际`[[-1,-1],[0,0]]`，期望`[[4294967296,4294967296],[0,0]]` | 4GiB地址空间限制未按测试期望读回；不是缺工具例外，保留FAIL |
+| test_g_success_and_timeout_reaped | 实际exit=-15，期望=-9 | 超时探针由SIGTERM终止，未达到测试预期SIGKILL；原因未由本次证据确定，保留FAIL |
+
+## §11：前次Gerrit材料身份核对（历史）
+
+原样移出的历史表，原结果不变。
+
+| E2下文件 | 用途 |
+|---|---|
+| candidate-before.py、tests-before.py | 本轮编辑前的原件副本 |
+| protected-start.json、final-integrity.json | 生产Source/spec/patch/用户配置未变；候选/测试新SHA |
+| iostream-evidence.json | 两ARM根头文件路径、SHA、编号摘录 |
+| revision-metadata.json、source-isolation.json | diff计数/摘要、函数行号、测试名、未改函数AST核对 |
+| run_tests.py、unit-tests-host.log、unit-tests-host-initial-result.json | 首轮完整命令与95项结果 |
+| test-helper-correction.diff/json | 唯一辅助修正的依据与diff |
+| unit-tests-host-retry.log、unit-tests-final-result.json、stop-result.json | 第二次FAIL、实际解释器、停止边界 |
+| lock-acquired.json、lock-released.json、final-processes.json、final-mountinfo.txt | 独占与退出回收、无本任务残留 |
+| gerrit-356639-ls-remote.* | 只读完整提交号 |
