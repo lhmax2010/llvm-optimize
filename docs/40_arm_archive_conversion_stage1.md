@@ -1,3 +1,4 @@
+> ARM Source 外部评审入口：[docs/43 精简自包含材料包](43_arm_conversion_review_package.md)（候选1620a8da；含完整差异附件与67项测试清单）。
 # 40 ARM 静态库转换第一段：历史记录与 C 阶段续接
 
 > **最新状态（2026-10-10，§12）：本轮第一段全部PASS。** Source `1620a8da`的67测试/夹具与x86 225档/3864成员不变性PASS；ARM32 210档及AArch64 212档转换、重定位、三套消费者与两种strip均PASS。AArch64唯一一次完整-bc成功；没有%install/打包。先前两个阶段已分别push `cb899cd`、`256267b`；本次发布AArch64与最终保全/回收结果。ARM发布包集成仍待后续任务。
