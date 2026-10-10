@@ -1,8 +1,8 @@
 # 40 ARM 静态库转换第一段：历史记录与 C 阶段续接
 
-> **最新状态（2026-10-10，§10）：导出身份、armv7l 新根 `%prep`、宏参数对照 PASS；C1 在代理的 CMake 驱动准备脚本第二次失败后 STOP。** tarball 的 184,836 个条目与目标 git archive 一致。实际 CMake 尚未启动，静态库编译、C2–C4 均未执行；不是 LLVM 构建失败。辅助脚本的三处缺陷、修正及重跑边界在 §10.4 完整登记。
+> **最新状态（2026-10-10，§11）：armv7l 标准完整 `%build` PASS，7,147任务/1,998.953884s；210开发归档普查完成。C3在 `libLLVMARMCodeGen.a(ARMAsmPrinter.cpp.o)` 的未认证 `R_ARM_TLS_GD32`（104）处停止。** 没有OOM，未扩展规则或重试转换；消费者/strip与aarch64均未执行。构建树、缓存和失败现场保留，Source未改。
 >
-> **用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`。** 宿主开场和结束均为 0，本轮允许 GBS 标准初始化保持此值；结束不代恢复。重启也会重新加载系统配置、恢复该非持久化修改。GBS 注册条目保留，代理未手工注册。以下 §1–§9 保留历史状态，当前结论见 §10。
+> **用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`。** 宿主开场和结束均为 0，本轮允许 GBS 标准初始化保持此值；结束不代恢复。重启也会重新加载系统配置、恢复该非持久化修改。GBS 注册条目保留，代理未手工注册。以下 §1–§10 保留历史状态，当前结论见 §11。
 
 日期：2026-10-10（Asia/Shanghai）。本报告与[docs/42](42_disk_cleanup.md)、STATUS同commit发布。
 
@@ -1081,3 +1081,571 @@ ARM 真实归档能力仍未认证；本轮没有产生可用于新 patchset 的
 本轮无 LLVM 静态库编译/完整构建/安装/打包，无 BOLT、性能校准、Chromium 或 Gerrit 推送；仅真实 LLVM prep 一次成功。
 只提交 docs/40 与 STATUS，用户的配置修改仍未暂存。§1–§9 原文保留，仅刷新报告开头的当前状态与恢复说明。
 提交与 push 原始输出保存 `E10/commit.txt`、`git-push.log`、`remote-head.txt`。
+
+## 11. 2026-10-10 续接：标准 rpmbuild -bc
+
+本节承接 `256d759231d855248da068f1d4c024041fab4b56`。用户弃用代理手工提取/重建 `%build` 前导与 CMake 的路线；本轮没有调用或修正 `prepare_configure.py`。
+改用标准 `/usr/bin/build --stage=-bc`，由 rpmbuild 原样执行 `%prep` 与完整 `%build`，允许所有编译/链接目标，禁止 `%install`/打包。
+这是本轮新增授权；此前“只编静态库”的历史结果与停止记录不改判。armv7l 失败即阻断 aarch64。
+
+### 11.1 输入、根与资源入口
+
+```text
+W   = /home/linhao/Toolchain/development/llvm-optimize
+E11 = W/temp/arm-archive-standard-build-20261010
+E9  = W/temp/arm-archive-stage1-c-newrepo-20261010
+V10 = /var/tmp/llvm-optimize-arm-c1-20261010
+R10 = V10/gbs-libraries-armv7l/local/BUILD-ROOTS/scratch.armv7l.0
+B10 = R10/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build
+```
+
+原始命令、日志、辅助脚本和 JSON 仅保存在 E11；没有覆盖 §10 的证据。
+开场主仓库只有用户的 ` M gbs_llvm.conf`，未修改或暂存。项目/Rnew 两锁持有者为 PID 798956。
+输入逐 SHA 重核全部通过：配置 `28f1caf93cd39738a7da1e0da8d5f945f7372963bb9823a507f9157294272169`；
+buildconfig `1e7610b6a922d27b80eb59c1c78bdf716f7de2e8e24700e0ee7c62522739ed52`；导出 spec `390ac8fce01a807f23d1c3f5906c68e05e71a4747449f2fe01a317343ef9c5dd`；
+导出 tarball `4ec43e91d8fa7b340acec9b1c3b292eb4983b718e119ed894add5a3f3b480ab1`，其余导出文件也全匹配 §9 inventory。
+本轮按授权只重核摘要，沿用 §10.1 已完成的 VCS/git archive 内容身份核验，没有重新导出。
+候选 Source 仍为 `6a36f173c3efb05c7011aa7029aeb2ae3119e1f77a32536fcc791938bf20c4b7`。
+证据：`precheck.json`、`protected-start.json`、`export-files-recheck.json`、`lock-acquired.json`。
+
+标准 backend 的 `--noinit` 由 `/usr/lib/build/build:817–820` 设置 DO_INIT=false，跳过已安装包初始化；`:1254–1285` 是被跳过的初始化分支。
+仍正常执行 recipe_setup/prepare、根挂载与 rpmbuild；`build-recipe-spec:24–39` 的构建工作目录重新准备和 `%prep` 重新解压均为标准行为。
+本轮没有清理磁盘、删除缓存或手工拼装 shell/CMake；只在 §10 同命令上改 stage 并加一次 `--noinit`。
+`build-recipe-spec:151–155` 将指定阶段交给 rpmbuild；保留 `--stage=-bc` 的等号写法。
+
+```sh
+sudo -n /usr/bin/build --uid 1000:1000 --target armv7l-tizen-linux \
+  --jobs 6 --cachedir "$V10/gbs-libraries-armv7l/local/cache" \
+  --dist "$E9/buildconfig-from-W.conf" \
+  --arch armv7l:armv7el:armv6l:armv5tejl:armv5tel:armv5l:armv4tl:armv4l:armv3l:noarch \
+  "$E9/c1-export/llvm.spec" \
+  --repository https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261001.092726/repos/standard/packages/ \
+  --repository https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260814.092727/repos/standard/packages/ \
+  --debug --root "$R10" --define '_smp_mflags -j4' --stage=-bc --noinit
+```
+
+外层由 `run_standard_build.py` 复用原 build guard：`/usr/bin/time -v`、systemd user scope MemoryMax=18G/MemorySwapMax=0、nice15/ionice3；
+16GiB 启动准入、spec 并发6/6/2不变。每30秒 free/loadavg/进程树RSS/磁盘样本、每2秒进程 VmHWM/链接目标、宿主可用<2GiB中止、退出回收均沿用。
+ARM Cache 检查独立比较 docs/39 的48个显式定义、各语言4种配置追加flags及生成器/BUILD_SHARED_LIBS，共62项；不会执行生成的CMake命令。
+BOOL按CMake布尔语义比较，flags按保留次序的token比较（连续空白不影响参数），编译器绝对路径只接受已核验别名。
+初始门禁测试1正10负通过；旧残留Cache不得认证新调用，重跑只接收 mtime/size 已改变的新Cache。
+证据：`armv7l-plan{,-rerun}.json`、`cache_gate.py`、`cache-gate-tests.txt`、每次 scope 的 `launch.json`/`samples.jsonl`/`process-memory.jsonl`。
+
+### 11.2 辅助检查器一次修正与重跑
+
+首次标准调用确已进入原样 `%build`；CMake打印 Configuring done (64.8s)，但检查器误把 `/bin/<triple>-clang{,++}` 与预期 `/usr/bin/…` 判为不同。
+其余60项无差异。监控于76.564500s结束（中止判定约76.5s），尚未进入Ninja。只读诊断证明根内 `bin -> usr/bin`，两种路径均解析为同一 `usr/bin/clang-22`，
+device=66305/inode=9080376/70,512B，SHA `23f30bae06a763cfb58ecb3495d1eeb908e305ef0b712018fed47222daf6ce00`。
+这是代理路径假设缺陷，不是 LLVM 配方/编译参数差异；原始失败不删除。
+
+修正仅允许上述已核对同inode的两条 `/bin` 别名；每次检查再次核验根内链接关系。
+新增正负例：已验证别名通过、未验证别名拒绝、其他路径拒绝、构建类型变化拒绝。
+完整 diff 在 `helper-cache-path-fix.diff`、`helper-runner-fix.diff`；只读证据 `helper-path-diagnosis.json`；测试 `cache-path-tests.json`。
+按用户辅助脚本条款只重跑一次，backend argv、spec、编译flags和资源规则均不改。
+首次停止的 `systemctl --user kill` 返回 Access denied，原文保留；实际 abuild子进程已被终止，标准backend打印失败并回收挂载。
+重跑前只读核查：构建进程0、R10挂载0、旧scope inactive/dead；没有遗留并行构建。
+首次scope结束后的累计MemoryPeak已不可读，已有采样保留，不把 UNKNOWN 写为0。
+
+重跑的真实CMake门禁于 **78.5s PASS**；完整62项对照 `armv7l-cmake-comparison.json`，原Cache在 `c1-armv7l-build-rerun/CMakeCache.txt`。
+本轮辅助重跑次数至此用完；后续产品失败不重试。
+
+### 11.3 C1：原样完整 %build 通过
+
+标准 rpmbuild 的实际 argv 含 `--target=armv7l-tizen-linux -bc`，见 `root-build.command.txt`、`c1-armv7l-build-rerun/execution-observations.jsonl` 首条；没有 `%install`、brp 或 RPM 生成阶段。
+成功这一轮从 13:56:29 到 14:29:48，**wall 1,998.953884 s（约33分19秒），Ninja 7,147/7,147，exit0**。
+此前一次辅助门禁中止的 configure 不冒充成功构建，也不从证据中抹去。
+
+**实际 CMakeCache 对照**：48个配方显式项、12个按配置追加flags及2个生成器/共享库项全部符合 docs/39 附录A；没有影响编译参数的差异。
+完整逐项 expected/actual 在 `armv7l-cmake-comparison.json`，Cache 原文在 `c1-armv7l-build-rerun/CMakeCache.txt`。关键值如下（C/CXX/ASM各行均真实核验）：
+
+```text
+CMAKE_C_COMPILER=/bin/armv7l-tizen-linux-gnueabi-clang
+CMAKE_CXX_COMPILER=/bin/armv7l-tizen-linux-gnueabi-clang++
+CMAKE_ASM_FLAGS=-Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument  -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=softfp -mthumb -Wp,-D__SOFTFP__ -D_FILE_OFFSET_BITS=64 -g
+CMAKE_C_FLAGS=-Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument  -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=softfp -mthumb -Wp,-D__SOFTFP__ -D_FILE_OFFSET_BITS=64 -g
+CMAKE_CXX_FLAGS=-Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument  -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=softfp -mthumb -Wp,-D__SOFTFP__ -D_FILE_OFFSET_BITS=64 -g
+LLVM_USE_LINKER=lld
+LLVM_ENABLE_LTO=Thin
+LLVM_ENABLE_ASSERTIONS=No
+CMAKE_BUILD_TYPE=MinSizeRel
+LLVM_TARGETS_TO_BUILD=ARM;BPF
+LLVM_BUILD_LLVM_DYLIB=ON
+CLANG_BUILD_CLANG_DYLIB=ON
+LLVM_LINK_LLVM_DYLIB=ON
+CLANG_LINK_CLANG_DYLIB=ON
+LLVM_OPTIMIZED_TABLEGEN=ON
+LLVM_PARALLEL_COMPILE_JOBS=6
+LLVM_PARALLEL_LINK_JOBS=2
+CMAKE_C_FLAGS_DEBUG=-g
+CMAKE_C_FLAGS_RELEASE=-O3 -DNDEBUG
+CMAKE_C_FLAGS_MINSIZEREL=-Os -DNDEBUG
+CMAKE_C_FLAGS_RELWITHDEBINFO=-O2 -g -DNDEBUG
+CMAKE_CXX_FLAGS_DEBUG=-g
+CMAKE_CXX_FLAGS_RELEASE=-O3 -DNDEBUG
+CMAKE_CXX_FLAGS_MINSIZEREL=-Os -DNDEBUG
+CMAKE_CXX_FLAGS_RELWITHDEBINFO=-O2 -g -DNDEBUG
+CMAKE_ASM_FLAGS_DEBUG=-g
+CMAKE_ASM_FLAGS_RELEASE=-O3 -DNDEBUG
+CMAKE_ASM_FLAGS_MINSIZEREL=-Os -DNDEBUG
+CMAKE_ASM_FLAGS_RELWITHDEBINFO=-O2 -g -DNDEBUG
+CMAKE_GENERATOR=Ninja
+BUILD_SHARED_LIBS=OFF
+```
+
+并发由 spec 的 `mlgo_build_jobs=6`/`LLVM_PARALLEL_COMPILE_JOBS=6`/`LLVM_PARALLEL_LINK_JOBS=2` 控制，Ninja 实际 `-j6`，scope外层18GiB/swap0；没有按x86的4/4/1改配方。
+`-D…FLAGS_MINSIZEREL` 的末项 `-Os` 在后述3,683个bitcode命令中再次确认；不能用公共flags或其他构建类型的 `-O3` 推翻实际末项。
+
+**实际执行链**：编译 argv 为 `/bin/armv7l-tizen-linux-gnueabi-clang++`，但 `/proc/PID/exe` 与 maps 指向 **R10/emul/usr/bin/clang-22**；
+141,497,504 B，SHA `31cdc6d78f8dcd471c7519f0bfbc5d57f80e2914ff4ea290702931d2ab80a864`，版本22.1.8。
+例如PID808235的记录保存在 execution-observations.jsonl。构建期自产的 `llvm-min-tblgen`、`llvm-tblgen`、`clang-tblgen` 则观察到 `/usr/bin/qemu-arm -0 <B10/bin/...> <B10/bin/...> ...`；
+66个被采样捕获的tablegen执行进程（不声称穷尽所有短进程），见 `build-phase-evidence.json` 与原 `process-memory.jsonl`。
+额外exe观察器仅匹配argv前两项，未捕获qemu后第三/四项的tblgen；这里使用完整进程采样的argv证据，不把缺记录误判为accel。
+
+| 阶段/边界 | 实际记录 | 证据（成功轮build.log行号） |
+| --- | --- | --- |
+| prep | 13:56:31进入，13:56:40进入build，边界差约9s | 19、33 |
+| CMake | Configuring 64.9s，Generating 2.4s | 1849–1858 |
+| Cache门禁 | 启动后78.520806s PASS | cache-gate.json |
+| Ninja | 首个任务完成13:57:49，最后完成14:29:47；完成时间跨度1,918s | 1860、9111 |
+| 标准backend完成 | 14:29:47打印finished，外层约14:29:48退出 | 9114；outcome.json |
+
+编译与链接交错，不把这1,918s拆成互斥的“编译wall+链接wall”；各任务列表保存在 `ninja-tasks.json`，构建树 `.ninja_log` 保留细粒度起止。
+下表各阶段wall是独立scope端到端时间；C2/C3不是新构建。所有成功保留的scope `memory.events` 的max/oom/oom_kill均0。
+
+| 操作 | exit | wall s | cgroup MemoryPeak B（GiB） | 最低宿主MemAvailable B |
+| --- | ---: | ---: | ---: | ---: |
+| C1标准-bc | 0 | 1998.953884 | 16,465,817,600（15.334988） | 13,406,343,168 |
+| C2 bitcode只读普查 | 0 | 257.691927 | 1,642,967,040（1.530132） | 21,891,801,088 |
+| C2原机器码只读普查 | 0 | 4.168496 | 148,410,368（0.138218） | 22,736,642,048 |
+| C3副本转换，门禁拒绝 | 1 | 58.487611 | 5,463,015,424（5.087830） | 22,534,610,944 |
+
+C1累计CPU usage 15,025.019980 CPU秒，不是wall；采样67次，单个编译进程最大已观察VmHWM 1,424,624 KiB。
+链接期Top10如下（2秒采样的进程VmHWM，短进程可能未覆盖；不能把不同PID峰值相加当整体峰值）：
+
+| 链接输出 | PID | 已观察VmHWM KiB | GiB |
+| --- | ---: | ---: | ---: |
+| `lib/libclang-cpp.so.22.1` | 827193 | 9,343,716 | 8.910862 |
+| `lib/libclang.so.22.1.8` | 834176 | 7,527,116 | 7.178417 |
+| `lib/libLLVM.so.22.1` | 823615 | 7,079,624 | 6.751656 |
+| `bin/clangd` | 837312 | 4,350,436 | 4.148899 |
+| `bin/clangd-fuzzer` | 837272 | 4,345,248 | 4.143951 |
+| `bin/llvm-exegesis` | 838318 | 2,966,076 | 2.828671 |
+| `lib/liblldb.so.22.1.8` | 831183 | 2,851,968 | 2.719849 |
+| `bin/clang-tidy` | 836964 | 2,841,760 | 2.710114 |
+| `bin/clangd-indexer` | 837369 | 2,460,660 | 2.346668 |
+| `bin/obj2yaml` | 839299 | 2,190,844 | 2.089352 |
+
+资源原始证据：各操作目录的 `launch.json`（完整time/systemd/nice/ionice argv）、`time-v.txt`、`samples.jsonl`、`process-memory.jsonl`、`scope-after-rpm.{json,log}`、`outcome.json`。
+第一轮辅助检查中止的scope最终MemoryPeak不可读，不写为0；其已有样本全部保留于 `c1-armv7l-build/`。
+
+构建期间 `/var/tmp` 所在文件系统最少空闲339,707,936,768 B；相对首样本减少22,461,325,312 B。这是30秒采样的文件系统占用变化，包含其他进程活动，不是目录独占峰值。
+收尾 `du -sxB1 B10`=22,547,320,832 B；未连续du构建目录，因此**目录自身瞬时磁盘峰值 UNKNOWN**，不能用收尾值假充峰值。`build-summary.json`、`samples.jsonl`、`build-du.txt`为依据。
+BUILD、ThinLTO cache、源目录及GBS缓存全保留。
+
+### 11.4 C1安装规则清单与C2普查
+
+从B10全部 `cmake_install.cmake` 的 `TYPE STATIC_LIBRARY` 条目中选安装目标 `/usr/lib`（即ARM32 `%{_libdir}/*.a`）对应开发库；没有执行install。
+共 **210档 / 4,652,224,292 B**，全部存在。每项规则文件、行号、源路径、大小、SHA见 `c1-armv7l-build-rerun/static-install-inventory.json`。
+不拿x86的225计数硬套ARM32：本次目标仅ARM/BPF；导出spec:648–651的 `%ifnarch %arm` 排除了ARM32的 `libarcher_static.a`。
+compiler-rt安装在clang资源目录，不属于本轮static-devel/libomp-devel清单。
+
+普查全部3,690个成员：**3,683 bitcode + 7机器码 + 0其他；thin归档0**。
+每成员保留ordinal、同名occurrence、header/data offset、SHA，完整结果 `armv7l-native-census/*.a.json`；原始7机器码的完整重定位、符号目标节及PIC判定另存 `*.relocations.json`。
+`armv7l-ir-census/<archive>/<ordinal>.json` 含每bitcode的llvm-dis完整argv/退出码/输出SHA、llvm.commandline、triple、datalayout、函数attrs、PIC/PIE/DWARF/Debug Info元数据及token分类。
+不是只抽样一条命令代替全集。
+
+| 认证输入项 | 全集结果 | 证据/解释 |
+| --- | --- | --- |
+| IR triple | 3,683/3,683 = thumbv7-tizen-linux-gnueabi | IR summary triples |
+| PIC/PIE | 3,683/3,683 = PIC2 / PIE0 | module flags及summary |
+| 原命令末项优化 | 3,683/3,683 = -Os | settings.policy.optimization |
+| 浮点ABI/端序/模式 | 原命令softfp、little-endian、mthumb；thumbv7 triple；候选显式重放softfp/little-endian | 全集recorded_command与flags |
+| CPU/features | 3,657个成员含generic CPU及相同ARMv7/NEON/Thumb features；26个无该函数属性记录 | ir-policy-summary.json；不对缺属性者补猜CPU |
+| mtune | 命令cortex-a8；未观测tune-cpu属性 | ARM driver当前忽略mtune的依据仍docs/39 §1.3 |
+| 后端补回策略 | 全集末项DWARF4、四种section/addrsig开关启用、fp-contract默认on；候选生成flags只有一种 | ir-policy-summary.json policies/settings |
+| token分类 | 11,580种token+分类组合（含路径/宏操作数），其中71种以`-`开头的switch+分类/理由组合；未分类0 | IR summary tokens、ir-policy-summary.json switches |
+| 调试元数据 | 全量保留DICompileUnit/DISubprogram计数及模块标志 | 每成员JSON debug/retained_ir；未strip |
+
+ARM新增switch类别沿用docs/39 §1.3源码证据：`-march/-mfpu/-mthumb`进入IR/triple/features（ARM.cpp:275–353,664–679），softfp还影响后端FloatABI（Clang.cpp:1475–1491、BackendUtil.cpp:383–391），
+little-endian进入datalayout且显式重放（ARM.cpp:34–45），mtune当前仅消费参数（ARM.cpp:660–662），stack protector进入ssp属性（CodeGenModule.cpp:2729–2740）。
+完整71项在 `ir-policy-summary.json`，没有发现必须扩展候选命令白名单的token；**这只闭合参数普查，不等于重定位全集/整库转换认证完成**。
+候选Source保持6a36f173，参数表没有定稿改动，§5的60测试及225档/3864成员x86 PASS为沿用历史证据，本轮未重跑或伪称新执行。
+
+全部原机器码与已生成转换对象的重定位分列如下。已生成列仅包含2个完成归档中的2成员，加失败归档保留的3个机器码对象；不是3,683个成员的全量转换。
+
+| 类型（数字） | 原机器码：只读ALLOC / 可写ALLOC | 已生成：只读ALLOC / 可写ALLOC | 已生成：非ALLOC |
+| --- | ---: | ---: | ---: |
+| R_ARM_NONE (0) | 114 / 0 | 612 / 0 | 0 |
+| R_ARM_ABS32 (2) | 0 / 5 | 0 / 1557 | 154747 |
+| R_ARM_REL32 (3) | 178 / 0 | 1517 / 0 | 0 |
+| R_ARM_THM_CALL (10) | 381 / 0 | 4072 / 0 | 0 |
+| R_ARM_CALL (28) | 36 / 0 | 0 / 0 | 0 |
+| R_ARM_THM_JUMP24 (30) | 5 / 0 | 61 / 0 | 0 |
+| R_ARM_TARGET1 (38) | 0 / 0 | 0 / 1 | 0 |
+| R_ARM_PREL31 (42) | 192 / 0 | 620 / 0 | 0 |
+| R_ARM_GOT_PREL (96) | 59 / 0 | 199 / 0 | 0 |
+| R_ARM_TLS_GD32 (104) | 0 / 0 | 3 / 0 | 0 |
+
+原机器码7成员在现有PIC规则下通过；ABS32在可写ALLOC中的使用不属于只读TEXTREL拒绝项。已生成对象中的154,747个非ALLOC ABS32主要落于调试节，原始节名保存在完整relocation JSON，未把非ALLOC计入只读可加载节门禁。
+统计解析器对docs/39两架构既有probe与readelf逐类型/计数交叉核对PASS，见 `relocation-parser-tests.json`；没有为统计目的执行新编译。
+
+### 11.5 C3停止：未经认证的TLS重定位104
+
+先把210档逐SHA只读复制到 `E11/armv7l-input/usr/lib/`，再在新 `armv7l-conversion/` 工作；原B10归档未改。
+工具用同根accel clang/llvm-dis/llvm-nm，经根内x86_64 loader和独立 `--library-path` 显式执行；实际ELF/包装器路径及SHA见 `armv7l-conversion-tools.json`。
+此路径不依赖宿主安装或ARM binfmt来转换；与C1 bitcode生产者是同一个accel clang22 ELF。
+
+转换flags原样为：
+
+```sh
+--no-default-config --target=thumbv7-tizen-linux-gnueabi -x ir -Os \
+  -ffunction-sections -fdata-sections -funique-section-names -faddrsig \
+  -g -gdwarf-4 -ffp-contract=on -c -fPIC -mfloat-abi=softfp -mlittle-endian
+```
+
+4workers，每命令prlimit AS=4GiB/core0，外层18GiB/swap0/nice15/ionice3/监控回收不变；没有传-flto。
+转换函数运行44.910675s，含复制/版本核验等的scope端到端58.487611s，退出1。
+**cgroup峰5,463,015,424 B，memory.events全0；停止不是OOM或超时。**
+仅完成 `libLLVMABI.a`、`libLLVMARMAsmParser.a`，各1成员，其身份/索引/符号检查通过；其余208档不能宣称转换PASS。
+
+原始停止输出：
+
+```text
+ValueError: uncertified armv7l relocation 104 at section 422
+status: FAILED
+reason: uncertified armv7l relocation 104 at section 422
+```
+
+出处：`c3-armv7l-convert/build.log`、`armv7l-conversion/summary.json`；候选Source:588–594明确将TLS留待认证，:624–625遇未认证类型抛异常。
+未修改Source、未再次转换、未增加例外。并行在途进程由候选cancel回收；后续只读取保留对象。
+
+| 定位项 | 实测 |
+| --- | --- |
+| 归档 | libLLVMARMCodeGen.a |
+| 成员身份 | ordinal=1（从0起）、name=ARMAsmPrinter.cpp.o、occurrence=1 |
+| 原bitcode SHA | b4f1996101f6c3623b7778d3d4084a98affadddda847506a263635c12095f0e0 |
+| 保留机器码SHA | 5de46a0524f45460fcecf1369ffb26ac0e776479c4c613e61d340fcf94f06b79 |
+| 编译命令本身 | exit0，0.481047s，wait4 maxRSS467,376KiB；后续PIC策略抛错 |
+| 新类型 | 104 = R_ARM_TLS_GD32；3处，都在不可写SHF_ALLOC代码节 |
+| 首个目标节 | #422 `.text._ZSt9call_onceIRFvRN4llvm12PassRegistryEEJSt17reference_wrapperIS1_EEEvRSt9once_flagOT_DpOT0_` |
+| 此节offset 0x4c/0x50 | `_ZSt15__once_callable` / `_ZSt11__once_call`，均SHN_UNDEF |
+| 第三处offset 0x18 | `.text._ZZNSt9once_flag18_Prepare_executionC1IZSt9call_onceIRFvRN4llvm12PassRegistryEEJSt17reference_wrapperIS4_EEEvRS_OT_DpOT0_EUlvE_EERSB_ENUlvE_8__invokeEv` → `_ZSt15__once_callable` |
+
+只读 `llvm-dis` 原bitcode证明两符号本来就是 `external thread_local`；不是转换助手临时注入TLS（`conversion-stop-diagnosis/failed-member-tls-ir-excerpt.txt` 原IR第355–356行）。
+完整 `readelf -rW/-SW/-AW`、命令退出码、全部5对象重定位存于 `conversion-stop-diagnosis/`。
+转换stderr还有 `warning: overriding the module target triple with armv7-tizen-linux-gnueabi [-Woverride-module]`，原文保留；输入是thumbv7，输出attributes含Thumb-2、VFPv3、NEONv1和Prefer Size。
+本轮未完成全部ARM attributes/浮点ABI及运行验证，不能仅据这些属性把全库兼容性写成PASS。
+
+**ABI与lld依据（全部只读，供PM裁决）：**
+
+- `llvm/llvm/include/llvm/BinaryFormat/ELFRelocs/ARM.def:111`：0x68即R_ARM_TLS_GD32。
+- `temp/arm-archive-feasibility-20261009/aaelf32.stdout:1974` 的AAELF32表将它定义为 `GOT(S)+A-P`；:2595–2599说明GOT新增两项，由TLS_DTPMOD32/TLS_DTPOFF32动态重定位，代码位置记录到GOT首项的偏移。原文来源仍docs/39 §4所存ARM ABI。
+- `llvm/lld/ELF/Arch/ARM.cpp:147–148` 返回 `R_TLSGD_PC`；:615–622写32位最终值；:893–899按32位有符号取addend。`llvm/llvm/lib/Target/ARM/MCTargetDesc/ARMELFObjectWriter.cpp:230` 也映射该类型。
+
+据此建议PM评估：将**104这一种**作为TLS GD的PC相对/GOT路径另行认证，不能把所有TLS编号自动归为安全，也不能把它直接当只读节S+A绝对重定位。
+所需下一轮证据应包括TLS正例、只读绝对重定位负例、GNU ld/lld真实共享链接无TEXTREL、运行TLS路径，以及Source改动后的全部测试/225档x86 SHA回归。
+这是分类建议，**本轮未批准、未实现、未验证该扩展**。未知重定位触发的是用户规定的停止边界；C2整库重定位认证未闭合，C3消费者/strip和C4全部停止。
+
+### 11.6 C1全部开发静态库清单
+
+每行大小为转换前构建树原件，归档按名字排序；逐成员格式/索引完整表在 `armv7l-native-census/`，规则路径/行号/SHA在 `static-install-inventory.json`。
+
+| 归档 | B | bitcode / 机器码成员 |
+| --- | ---: | ---: |
+| libLLVMABI.a | 25,442 | 1 / 0 |
+| libLLVMARMAsmParser.a | 3,792,182 | 1 / 0 |
+| libLLVMARMCodeGen.a | 59,419,974 | 49 / 0 |
+| libLLVMARMDesc.a | 5,842,962 | 13 / 0 |
+| libLLVMARMDisassembler.a | 1,834,704 | 1 / 0 |
+| libLLVMARMInfo.a | 92,702 | 1 / 0 |
+| libLLVMARMUtils.a | 139,368 | 1 / 0 |
+| libLLVMAggressiveInstCombine.a | 3,174,222 | 2 / 0 |
+| libLLVMAnalysis.a | 130,965,992 | 125 / 6 |
+| libLLVMAsmParser.a | 10,123,838 | 4 / 0 |
+| libLLVMAsmPrinter.a | 30,437,626 | 27 / 0 |
+| libLLVMBPFAsmParser.a | 492,810 | 1 / 0 |
+| libLLVMBPFCodeGen.a | 19,250,366 | 26 / 0 |
+| libLLVMBPFDesc.a | 849,804 | 5 / 0 |
+| libLLVMBPFDisassembler.a | 227,322 | 1 / 0 |
+| libLLVMBPFInfo.a | 90,460 | 1 / 0 |
+| libLLVMBinaryFormat.a | 3,131,190 | 14 / 0 |
+| libLLVMBitReader.a | 11,420,226 | 5 / 0 |
+| libLLVMBitWriter.a | 7,282,914 | 4 / 0 |
+| libLLVMBitstreamReader.a | 638,212 | 1 / 0 |
+| libLLVMCAS.a | 7,900,924 | 15 / 0 |
+| libLLVMCFGuard.a | 764,388 | 1 / 0 |
+| libLLVMCFIVerify.a | 2,171,826 | 2 / 0 |
+| libLLVMCGData.a | 4,941,728 | 7 / 0 |
+| libLLVMCodeGen.a | 244,598,490 | 237 / 1 |
+| libLLVMCodeGenTypes.a | 94,214 | 1 / 0 |
+| libLLVMCore.a | 81,690,084 | 80 / 0 |
+| libLLVMCoroutines.a | 12,727,732 | 11 / 0 |
+| libLLVMCoverage.a | 7,017,856 | 3 / 0 |
+| libLLVMDTLTO.a | 496,468 | 1 / 0 |
+| libLLVMDWARFCFIChecker.a | 1,594,476 | 4 / 0 |
+| libLLVMDWARFLinker.a | 117,712 | 2 / 0 |
+| libLLVMDWARFLinkerClassic.a | 6,812,322 | 4 / 0 |
+| libLLVMDWARFLinkerParallel.a | 15,450,442 | 11 / 0 |
+| libLLVMDWP.a | 1,388,918 | 2 / 0 |
+| libLLVMDebugInfoBTF.a | 1,233,358 | 2 / 0 |
+| libLLVMDebugInfoCodeView.a | 14,943,678 | 40 / 0 |
+| libLLVMDebugInfoDWARF.a | 24,478,376 | 29 / 0 |
+| libLLVMDebugInfoDWARFLowLevel.a | 1,017,386 | 3 / 0 |
+| libLLVMDebugInfoGSYM.a | 7,960,830 | 14 / 0 |
+| libLLVMDebugInfoLogicalView.a | 25,716,962 | 19 / 0 |
+| libLLVMDebugInfoMSF.a | 1,741,854 | 4 / 0 |
+| libLLVMDebugInfoPDB.a | 29,660,016 | 93 / 0 |
+| libLLVMDebuginfod.a | 2,125,194 | 4 / 0 |
+| libLLVMDemangle.a | 1,904,428 | 6 / 0 |
+| libLLVMDiff.a | 1,289,042 | 3 / 0 |
+| libLLVMDlltoolDriver.a | 692,412 | 1 / 0 |
+| libLLVMExecutionEngine.a | 3,087,694 | 5 / 0 |
+| libLLVMExegesis.a | 15,972,510 | 25 / 0 |
+| libLLVMExtensions.a | 26,526 | 1 / 0 |
+| libLLVMFileCheck.a | 2,702,756 | 1 / 0 |
+| libLLVMFrontendAtomic.a | 557,914 | 1 / 0 |
+| libLLVMFrontendDirective.a | 51,068 | 1 / 0 |
+| libLLVMFrontendDriver.a | 101,954 | 1 / 0 |
+| libLLVMFrontendHLSL.a | 2,030,646 | 6 / 0 |
+| libLLVMFrontendOffloading.a | 3,510,196 | 3 / 0 |
+| libLLVMFrontendOpenACC.a | 177,290 | 1 / 0 |
+| libLLVMFrontendOpenMP.a | 9,248,660 | 4 / 0 |
+| libLLVMFuzzMutate.a | 4,476,832 | 4 / 0 |
+| libLLVMFuzzerCLI.a | 337,610 | 1 / 0 |
+| libLLVMGlobalISel.a | 30,147,258 | 30 / 0 |
+| libLLVMHipStdPar.a | 1,085,640 | 1 / 0 |
+| libLLVMIRPrinter.a | 198,716 | 1 / 0 |
+| libLLVMIRReader.a | 512,094 | 1 / 0 |
+| libLLVMInstCombine.a | 37,689,278 | 15 / 0 |
+| libLLVMInstrumentation.a | 47,708,904 | 28 / 0 |
+| libLLVMInterfaceStub.a | 2,723,222 | 3 / 0 |
+| libLLVMInterpreter.a | 2,416,896 | 3 / 0 |
+| libLLVMJITLink.a | 43,572,606 | 35 / 0 |
+| libLLVMLTO.a | 19,826,098 | 6 / 0 |
+| libLLVMLibDriver.a | 976,986 | 1 / 0 |
+| libLLVMLineEditor.a | 268,298 | 1 / 0 |
+| libLLVMLinker.a | 3,551,552 | 2 / 0 |
+| libLLVMMC.a | 26,456,522 | 70 / 0 |
+| libLLVMMCA.a | 5,699,784 | 24 / 0 |
+| libLLVMMCDisassembler.a | 750,556 | 5 / 0 |
+| libLLVMMCJIT.a | 1,124,214 | 1 / 0 |
+| libLLVMMCParser.a | 8,378,256 | 13 / 0 |
+| libLLVMMIRParser.a | 6,223,010 | 3 / 0 |
+| libLLVMObjCARCOpts.a | 5,609,600 | 8 / 0 |
+| libLLVMObjCopy.a | 18,552,910 | 26 / 0 |
+| libLLVMObject.a | 35,414,558 | 36 / 0 |
+| libLLVMObjectYAML.a | 44,105,786 | 29 / 0 |
+| libLLVMOptDriver.a | 6,813,858 | 2 / 0 |
+| libLLVMOption.a | 1,696,116 | 4 / 0 |
+| libLLVMOrcDebugging.a | 7,714,182 | 7 / 0 |
+| libLLVMOrcJIT.a | 85,301,420 | 57 / 0 |
+| libLLVMOrcShared.a | 1,112,954 | 7 / 0 |
+| libLLVMOrcTargetProcess.a | 10,254,816 | 15 / 0 |
+| libLLVMPasses.a | 44,276,622 | 6 / 0 |
+| libLLVMPlugins.a | 148,400 | 1 / 0 |
+| libLLVMProfileData.a | 31,619,308 | 21 / 0 |
+| libLLVMRemarks.a | 5,078,222 | 11 / 0 |
+| libLLVMRuntimeDyld.a | 9,434,142 | 8 / 0 |
+| libLLVMSandboxIR.a | 9,945,320 | 15 / 0 |
+| libLLVMScalarOpts.a | 122,484,048 | 81 / 0 |
+| libLLVMSelectionDAG.a | 53,232,102 | 26 / 0 |
+| libLLVMSupport.a | 42,826,902 | 175 / 0 |
+| libLLVMSupportLSP.a | 2,691,840 | 3 / 0 |
+| libLLVMSymbolize.a | 4,653,964 | 5 / 0 |
+| libLLVMTableGen.a | 11,453,964 | 14 / 0 |
+| libLLVMTableGenBasic.a | 9,194,186 | 13 / 0 |
+| libLLVMTableGenCommon.a | 27,154,536 | 23 / 0 |
+| libLLVMTarget.a | 1,597,584 | 5 / 0 |
+| libLLVMTargetParser.a | 5,495,360 | 15 / 0 |
+| libLLVMTelemetry.a | 246,322 | 1 / 0 |
+| libLLVMTextAPI.a | 9,727,282 | 15 / 0 |
+| libLLVMTextAPIBinaryReader.a | 1,429,868 | 1 / 0 |
+| libLLVMTransformUtils.a | 95,795,980 | 94 / 0 |
+| libLLVMVectorize.a | 81,883,764 | 33 / 0 |
+| libLLVMWindowsDriver.a | 280,432 | 1 / 0 |
+| libLLVMWindowsManifest.a | 411,186 | 1 / 0 |
+| libLLVMXRay.a | 5,270,752 | 14 / 0 |
+| libLLVMipo.a | 109,920,184 | 45 / 0 |
+| libclangAPINotes.a | 8,302,588 | 5 / 0 |
+| libclangAST.a | 206,299,578 | 114 / 0 |
+| libclangASTMatchers.a | 14,691,932 | 3 / 0 |
+| libclangAnalysis.a | 44,897,308 | 31 / 0 |
+| libclangAnalysisFlowSensitive.a | 20,256,582 | 18 / 0 |
+| libclangAnalysisFlowSensitiveModels.a | 11,790,968 | 3 / 0 |
+| libclangAnalysisLifetimeSafety.a | 10,639,870 | 10 / 0 |
+| libclangAnalysisScalable.a | 886,600 | 4 / 0 |
+| libclangApplyReplacements.a | 1,693,662 | 1 / 0 |
+| libclangBasic.a | 48,388,308 | 73 / 0 |
+| libclangChangeNamespace.a | 5,374,490 | 1 / 0 |
+| libclangCodeGen.a | 212,077,212 | 101 / 0 |
+| libclangCrossTU.a | 1,830,048 | 1 / 0 |
+| libclangDaemon.a | 166,802,672 | 82 / 0 |
+| libclangDaemonTweaks.a | 38,055,076 | 20 / 0 |
+| libclangDependencyScanning.a | 7,788,878 | 7 / 0 |
+| libclangDirectoryWatcher.a | 722,550 | 2 / 0 |
+| libclangDoc.a | 22,231,286 | 11 / 0 |
+| libclangDocSupport.a | 352,520 | 2 / 0 |
+| libclangDriver.a | 70,447,784 | 76 / 0 |
+| libclangDynamicASTMatchers.a | 46,342,314 | 5 / 0 |
+| libclangEdit.a | 1,584,932 | 3 / 0 |
+| libclangExtractAPI.a | 14,100,448 | 6 / 0 |
+| libclangFormat.a | 18,450,518 | 23 / 0 |
+| libclangFrontend.a | 52,453,336 | 32 / 0 |
+| libclangFrontendTool.a | 1,102,922 | 1 / 0 |
+| libclangHandleCXX.a | 511,494 | 1 / 0 |
+| libclangHandleLLVM.a | 1,530,216 | 1 / 0 |
+| libclangIncludeCleaner.a | 10,591,834 | 8 / 0 |
+| libclangIncludeFixer.a | 3,783,590 | 6 / 0 |
+| libclangIncludeFixerPlugin.a | 922,024 | 1 / 0 |
+| libclangIndex.a | 14,611,112 | 9 / 0 |
+| libclangIndexSerialization.a | 345,800 | 1 / 0 |
+| libclangInstallAPI.a | 9,010,516 | 8 / 0 |
+| libclangInterpreter.a | 11,110,778 | 10 / 0 |
+| libclangLex.a | 24,364,784 | 25 / 0 |
+| libclangMove.a | 4,627,312 | 2 / 0 |
+| libclangOptions.a | 1,151,380 | 2 / 0 |
+| libclangParse.a | 31,562,240 | 18 / 0 |
+| libclangQuery.a | 4,391,262 | 2 / 0 |
+| libclangReorderFields.a | 2,852,190 | 2 / 0 |
+| libclangRewrite.a | 1,504,354 | 3 / 0 |
+| libclangRewriteFrontend.a | 3,401,860 | 8 / 0 |
+| libclangSema.a | 331,045,866 | 86 / 0 |
+| libclangSerialization.a | 52,197,558 | 17 / 0 |
+| libclangStaticAnalyzerCheckers.a | 175,053,686 | 134 / 0 |
+| libclangStaticAnalyzerCore.a | 60,015,296 | 49 / 0 |
+| libclangStaticAnalyzerFrontend.a | 7,272,060 | 7 / 0 |
+| libclangSupport.a | 675,554 | 1 / 0 |
+| libclangTidy.a | 10,547,330 | 9 / 0 |
+| libclangTidyAbseilModule.a | 31,909,346 | 22 / 0 |
+| libclangTidyAlteraModule.a | 6,153,624 | 6 / 0 |
+| libclangTidyAndroidModule.a | 13,146,546 | 17 / 0 |
+| libclangTidyBoostModule.a | 2,694,844 | 3 / 0 |
+| libclangTidyBugproneModule.a | 179,935,082 | 105 / 0 |
+| libclangTidyCERTModule.a | 1,611,684 | 1 / 0 |
+| libclangTidyConcurrencyModule.a | 2,033,460 | 3 / 0 |
+| libclangTidyCppCoreGuidelinesModule.a | 42,523,680 | 32 / 0 |
+| libclangTidyCustomModule.a | 1,411,176 | 2 / 0 |
+| libclangTidyDarwinModule.a | 1,818,200 | 3 / 0 |
+| libclangTidyFuchsiaModule.a | 5,490,844 | 8 / 0 |
+| libclangTidyGoogleModule.a | 15,851,726 | 16 / 0 |
+| libclangTidyHICPPModule.a | 6,040,358 | 6 / 0 |
+| libclangTidyLLVMLibcModule.a | 3,523,396 | 5 / 0 |
+| libclangTidyLLVMModule.a | 10,218,496 | 9 / 0 |
+| libclangTidyLinuxKernelModule.a | 1,316,198 | 2 / 0 |
+| libclangTidyMPIModule.a | 2,195,506 | 3 / 0 |
+| libclangTidyMain.a | 1,315,334 | 1 / 0 |
+| libclangTidyMiscModule.a | 42,853,622 | 28 / 0 |
+| libclangTidyModernizeModule.a | 115,920,184 | 50 / 0 |
+| libclangTidyObjCModule.a | 8,040,666 | 10 / 0 |
+| libclangTidyOpenMPModule.a | 2,182,744 | 3 / 0 |
+| libclangTidyPerformanceModule.a | 31,193,910 | 21 / 0 |
+| libclangTidyPlugin.a | 856,222 | 1 / 0 |
+| libclangTidyPortabilityModule.a | 4,884,302 | 6 / 0 |
+| libclangTidyReadabilityModule.a | 104,989,516 | 59 / 0 |
+| libclangTidyUtils.a | 24,428,760 | 23 / 0 |
+| libclangTidyZirconModule.a | 411,652 | 1 / 0 |
+| libclangTooling.a | 11,578,850 | 17 / 0 |
+| libclangToolingASTDiff.a | 5,800,910 | 1 / 0 |
+| libclangToolingCore.a | 1,535,658 | 2 / 0 |
+| libclangToolingInclusions.a | 1,408,414 | 3 / 0 |
+| libclangToolingInclusionsStdlib.a | 1,184,598 | 1 / 0 |
+| libclangToolingRefactoring.a | 29,930,300 | 12 / 0 |
+| libclangToolingSyntax.a | 8,760,856 | 8 / 0 |
+| libclangTransformer.a | 6,737,492 | 7 / 0 |
+| libclangdMain.a | 6,746,542 | 2 / 0 |
+| libclangdRemoteIndex.a | 98,750 | 1 / 0 |
+| libclangdSupport.a | 4,835,052 | 16 / 0 |
+| libfindAllSymbols.a | 5,368,494 | 8 / 0 |
+| liblldCOFF.a | 25,128,222 | 18 / 0 |
+| liblldCommon.a | 4,414,706 | 13 / 0 |
+| liblldELF.a | 65,592,590 | 41 / 0 |
+| liblldMachO.a | 29,424,804 | 30 / 0 |
+| liblldMinGW.a | 684,802 | 1 / 0 |
+| liblldWasm.a | 13,214,248 | 14 / 0 |
+
+### 11.7 辅助脚本修正的完整diff与边界
+
+以下仅是E11一次性检查/驱动脚本，未修改任何GBS/build脚本或候选Source。修正证明和正负对照见§11.2。
+
+```diff
+--- cache_gate.before.py
++++ cache_gate.py
+@@ -23,7 +23,7 @@
+    normalize=lambda x:'OFF' if x.upper() in ('0','OFF','FALSE','NO','N','IGNORE','NOTFOUND','') or x.endswith('-NOTFOUND') else 'ON'
+    equal=normalize(got)==normalize(exp)
+   elif key in ('CMAKE_C_COMPILER','CMAKE_CXX_COMPILER'):
+-   equal=got in (exp,'/usr/bin/'+exp)
++   equal=got in (exp,'/usr/bin/'+exp) or (got=='/bin/'+exp and '/bin/'+exp in unused.get('verified_compiler_aliases', []))
+   elif key.startswith('CMAKE_') and '_FLAGS' in key: equal=shlex.split(got)==shlex.split(exp)
+   else:equal=got==exp
+   if not equal:errors.append(f'{key}: expected {exp!r}, found {got!r}')
+--- run_standard_build.before.py
++++ run_standard_build.py
+@@ -6,7 +6,18 @@
+ from run_bolt_stage import summarize
+ E=Path(__file__).resolve().parent
+ from cache_gate import validate
+-guard.validate_cache=validate
++def root_validate(text,parameters,**kwargs):
++ # Only aliases independently verified by device/inode/SHA are accepted.
++ aliases=json.loads((E/'helper-path-diagnosis.json').read_text())['aliases']
++ verified=[]
++ for pair in aliases:
++  a,b=pair
++  # /bin is the relative usr/bin symlink in this root; recheck identity each gate.
++  root=Path(p['command'][p['command'].index('--root')+1])
++  left=root/a['input'].lstrip('/');right=root/b['input'].lstrip('/')
++  if os.readlink(root/'bin')=='usr/bin' and left.stat()==right.stat():verified.append(a['input'])
++ return validate(text,parameters,verified_compiler_aliases=verified)
++guard.validate_cache=root_validate
+ p=json.loads(Path(sys.argv[1]).read_text());log=E/p['label'];assert not log.exists();audit=guard.Audit(log)
+ available=guard.mem_available();assert available>=p['admission_gib']*guard.GIB,available
+ assert hashlib.sha256((W/'gbs_llvm.conf').read_bytes()).hexdigest()=='28f1caf93cd39738a7da1e0da8d5f945f7372963bb9823a507f9157294272169'
+@@ -38,6 +49,15 @@
+  return tree
+ guard.process_tree=traced_tree
+ for s in (signal.SIGTERM,signal.SIGINT,signal.SIGHUP):signal.signal(s,lambda sig,frame:(_ for _ in ()).throw(KeyboardInterrupt(str(sig))))
+-try:guard.build(audit,SimpleNamespace(buildroot=Path(p['root'])),plan,None,'systemd',command=[sys.executable,'-c',hold,str(completion),str(release),*p['command']],cache_check=True,completion_file=completion,release_file=release)
++# A prior aborted configure cache cannot certify the next standard invocation.
++class CacheRoot:
++ def __init__(self,path):
++  self.path=path;self.parent=path.parent
++  self.previous={str(x):(x.stat().st_mtime_ns,x.stat().st_size) for x in path.glob('local/BUILD-ROOTS/*/home/abuild/rpmbuild/BUILD/llvm-*/build/CMakeCache.txt')}
++  audit.json('previous-cache-signatures.json',self.previous)
++ def glob(self,pattern):
++  for x in self.path.glob(pattern):
++   if self.previous.get(str(x))!=(x.stat().st_mtime_ns,x.stat().st_size):yield x
++try:guard.build(audit,SimpleNamespace(buildroot=CacheRoot(Path(p['root']))),plan,None,'systemd',command=[sys.executable,'-c',hold,str(completion),str(release),*p['command']],cache_check=True,completion_file=completion,release_file=release)
+ finally:
+  trace.close();summarize(log);audit.stream.close()
+```
+
+收尾统计脚本另遇进程已退出时VmHWM字段为空，首次汇总IndexError；只把空字段视作“无样本”后重新解析既有JSON，不改变任何运行/门禁结果，不重跑构建或转换。
+缓存收尾目录发现器曾少一级local而输出空清单，已改用§10的123条精确路径逐SHA核验，`cache-retention-check.json` PASS；未以空清单声称缓存通过。
+这两处是只读报告汇总修正，不是产品失败重试；保留原始采样和§11.5拒绝结果。
+
+### 11.8 最终状态、保全与收尾
+
+| 工作项 | armv7l | aarch64 |
+| --- | --- | --- |
+| 配置/buildconfig/E9导出SHA | PASS | 共用输入；未启动新根 |
+| C0环境 | 沿用§9 PASS | 沿用§9 PASS，不代表本轮C4 |
+| C1完整-bc与Cache | PASS，7,147任务；仅一次完成，之前辅助门禁中止一次 | NOT RUN |
+| C2命令/IR/原机器码普查 | 全部210档普查完成、命令分类PASS；整库重定位认证未完成 | NOT RUN |
+| C3全量转换 | STOP：104未认证；2/210档完成 | NOT RUN |
+| 全库成员/符号/PIC/ABI验收 | 未完成；只读已生成5对象诊断 | NOT RUN |
+| GNU ld/lld消费者、共享库、GC、两种strip复验 | NOT RUN | NOT RUN |
+| Source改表/测试/x86全量回归 | 没改Source，不触发；§5历史PASS不伪称本轮执行 | NOT RUN |
+
+没有可上传的新ARM patchset；不能把成功 `%build` 等同于ARM转换方案通过。当前需要PM对R_ARM_TLS_GD32认证范围作决定，不是继续修手写CMake驱动。
+收尾重新SHA核对210个B10原归档及独立输入副本，全部与C1清单相符（`originals-and-copies-final.json`）；
+CMakeCache/build.ninja/.ninja_log与关键ELF摘要保存 `build-resume-anchors.json`，供下一轮原树增量身份核对，不声称授权下一轮安装/打包。
+GBS 123缓存RPM逐文件与§10相符；B10、输入/输出副本和失败成员均保留。
+
+保护文件开场/收尾摘要一致：用户配置、W/llvm/spec、候选Source、x86生产Source和两份已上传补丁均未改。用户配置仍只在工作树、未暂存。
+5个scope全inactive/dead；所有采样器/日志线程已回收，R10挂载0、本任务残留构建/转换进程0；项目/Rnew两锁结束释放。
+证据 `final-cleanup-before-unlock.json`、`lock-released.json`、`final-cleanup.json`。宿主mmap仍0、binfmt列表与开场一致，未手工注册/写sysctl/安装宿主包。
+收尾/home可用623,245,197,312 B，/var/tmp可用339,629,785,088 B（`final-df.txt`）；未做任何磁盘清理。
+本轮只执行获准标准ARM32 `%prep/%build` 与只读普查/副本转换；无 `%install`/打包、BOLT、性能校准、Chromium或Gerrit推送。
+
+仅docs/40与STATUS同commit推送；§1–§10正文保留，开头更新当前状态。提交与push原始输出保存 `E11/commit.txt`、`git-push.log`、`remote-head.txt`。

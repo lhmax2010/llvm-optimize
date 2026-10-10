@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前执行（docs/40 §10）**：导出 spec 唯一 VCS 与目标提交匹配，184,836 个 tar 条目对 git archive 零差异；新 armv7l 根 prep 及宏 argv 对照 PASS。代理的 CMake 驱动准备宏查询在一次修正后仍 exit28，按“同一步骤第二次失败即停”结束。实际 CMake/静态库编译/C2–C4 均未启动，不是 LLVM 产品失败。Source/config/两份补丁未改，缓存保留；宿主 mmap 仍0，锁/监控/挂载已回收。
+**当前执行（docs/40 §11）**：标准armv7l `%build` PASS（7,147任务，1,998.953884s，18GiB内scope峰15.334988GiB，无OOM）；210开发归档/3,683 bitcode+7机器码普查完成。副本转换在libLLVMARMCodeGen.a的ARMAsmPrinter.cpp.o遇未认证R_ARM_TLS_GD32（104），按规定停止，不改规则、不重试；消费者/strip与aarch64未执行。Source/config/补丁未改，构建树/123缓存RPM保留，锁/监控/挂载已回收。
 
 历史状态核对到 `4d80d94`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，混合构建见 [docs/22](22_hybrid_link_trial.md)，
 归档根因与前次失败记录见 [docs/23](23_archive_fix_and_profile_rebind.md)；
@@ -33,7 +33,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前任务为ARM C1–C4。§5隔离候选的225个x86归档/3864成员/完整索引与60测试已PASS；§9两根C0已PASS。本轮按新导出身份规则复用E9，spec及tar内容检查PASS，新ARM32根真实prep成功、完整宏参数与docs39相同；准备CMake驱动时辅助宏查询修正后再次非零，遵守一次重跑上限停止。实际CMake和真实ARM归档仍未产生。失败责任在代理辅助脚本，不归因于LLVM/GBS配方；下次需先解决只读宏查询入口，不能跳过退出码或放宽参数/重定位门禁。证据：docs/40 §10。
+当前任务ARM C1–C4已按未知重定位规则停止。§5 x86全量/60测试与§9 C0为既有PASS；本轮弃用手写CMake，使用原始spec标准-bc，ARM32完整构建及62项Cache通过。初次辅助检查器误判/bin与/usr/bin别名，经同inode只读证明修正、一次重跑后完成。210档原件普查与命令分类通过；转换第3档遇TLS_GD32，需PM认证该类型后再续。尚无ARM全库转换、消费者/strip或AArch64结果，不能据构建成功更新两个review的ARM patchset。证据：docs/40 §11。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source尚未认证。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
 一次完整 LLVM 构建 16,011.555 s，18 GiB/swap0/4/4/1/debuginfo4，无 OOM；真实 %install 转换 225 归档、3,853 bitcode（含回写 1,054.025 s）。新 RPM 225 开发归档格式/顺序/完整索引及零调试节 PASS，45 运行库成员和索引与基线一致。
@@ -51,7 +51,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | BOLT 筛选 | 容量、插桩/profile、重写、正确性、训练/留出、中间对照、双目标 | 本机工作已结束；最终 ARM 校准 FAIL，AArch64 PASS 并完成正式轮 |
 | 静态库兼容性修复 | bitcode→机器码、保持原brp宏、GNU ld无LTO/插件消费者、完整构建及新RPM验收 | **v2新RPM/归档/非归档、独立-bi/SKIP、七宿主消费者与两Tizen包均PASS；基于cb679968的v2补丁已生成并验apply，用户确认356627 PS2已上传、评审中；本轮未重建新目标配方** |
 | LLVM包x86_64切换llvm-strip | 叠在356627之后，新增compiler-rt真实运行库消费者及包内验收 | **docs/38全部PASS；用户确认已上传356639，依赖356627；目标流水线待验，代理未推Gerrit** |
-| ARM静态库转换 | 参数/工具/路由/PIC与x86不变性设计 | **§5 x86、§9 C0 PASS；§10导出身份/prep/宏参数PASS，CMake驱动准备第二次失败停止；实际configure/真实ARM归档/消费者未执行，两个change未改** |
+| ARM静态库转换 | 参数/工具/路由/PIC与x86不变性设计 | **§11 ARM32标准完整build与62项Cache PASS；210档普查完成，转换在未认证TLS_GD32停止，消费者/strip/AArch64未执行；Source及两个change未改** |
 | 集成设计与评审 | docs/21 完整 v3、混合链接拟议补丁、身份/活性脚本与协议检查 | 历史混合构建/30 TU结果保留；设计 v4 与 BOLT 实施暂缓，待归档修复完成 |
 | OBS 试包与服务器验收 | LLVM RPM → qemu-accel → 新 Base 快照 → Quickbuild | 未执行；项目/验证快照待用户提供，试包与收益验收均未完成 |
 | 后续工具/PGO | 依全平台调用占比和服务器容量决定 | 挂账；没有自动启动授权 |
@@ -120,7 +120,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `e44fb63` | docs/40、STATUS | B全量x86回归PASS已发布；C0查明正常GBS会写宿主mmap_min_addr，遵守禁止sysctl变更而不启动，ARM两阶段NOT RUN；锁/scope/采样器回收。 |
 | 2026-10-10 | `d1d720e` | docs/40 §8、STATUS | 标准GBS初始化获授权后只读预检：指定Base404、Unified200，GBS零次，C1–C4未执行；Source/配置/宿主状态不变，锁已回收。 |
 | 2026-10-10 | `2c9081b` | docs/40 §9、STATUS | 用户新配置两源200；ARM32/AArch64 C0、accel22和宏一致性PASS；GBS导出成功后代理SHA断言误拒VCS元数据，停止且未进入LLVM prep/configure/编译；缓存保留，锁/采样器/挂载回收。 |
-| 2026-10-10 | 本提交（`git log -1 -- docs/40_arm_archive_conversion_stage1.md`） | docs/40 §10、STATUS | 导出spec/tar身份PASS；新ARM32 prep与宏参数PASS，代理configure准备宏查询修正后exit28，按第二次失败停止；LLVM编译0，缓存/现场保留。 |
+| 2026-10-10 | `256d759` | docs/40 §10、STATUS | 导出spec/tar身份PASS；新ARM32 prep与宏参数PASS，代理configure准备宏查询修正后exit28，按第二次失败停止；LLVM编译0，缓存/现场保留。 |
+| 2026-10-10 | 本提交（`git log -1 -- docs/40_arm_archive_conversion_stage1.md`） | docs/40 §11、STATUS | ARM32标准-bc全7147任务PASS，scope峰15.335GiB；210档普查/参数PASS，转换遇TLS_GD32按门禁停止；消费者及A64未运行，原件/cache保留。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -307,6 +308,17 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 新R10仅-bp成功，116.850637s、18GiB/swap0内峰7,616,188,416B、OOM0；宏完整argv/optflags对docs39相同。新cache123RPM保留。 | docs/40 §10.2–§10.3；E10/c1-armv7l-prep-rerun/、macro-precheck/、cache-final-inventory.json | 硬证据；未运行实际CMake/LLVM编译 |
 | CMake驱动准备首次未展开宏断言失败；一次辅助修正后独立rpmspec查询exit28，按规则停止；stdout非空不豁免退出码。 | docs/40 §10.4；E10/initial-build-pre.*、build-pre.*、helper-configure-fix.diff | 硬证据（代理辅助错误）；ARM能力仍UNKNOWN |
 
+
+本轮新增证据（docs/40 §11）；E11=`temp/arm-archive-standard-build-20261010`：
+
+| 结论 | 证据 | 强度与边界 |
+| --- | --- | --- |
+| 标准ARM32-bc完整7147任务成功，62项Cache对docs39一致；wall1998.953884s、scope峰16465817600B、memory.events无OOM。 | docs/40 §11.1–§11.3；E11/c1-armv7l-build-rerun、armv7l-cmake-comparison.json | 硬证据；功能/容量记录，不是性能对照；未install/打包 |
+| 编译实际执行/emul的x86_64 clang22；自产三个tblgen的执行捕获到qemu-arm。 | docs/40 §11.3；execution-observations.jsonl、build-phase-evidence.json、process-memory.jsonl | 硬证据；短进程采样不穷尽 |
+| CMake安装规则对应210档、3690成员：3683 BC+7机器码；所有BC为thumbv7/PIC2/PIE0/末项Os，命令未分类0。 | docs/40 §11.4、§11.6；E11/armv7l-ir-census、armv7l-native-census | 硬证据；命令普查不等于整库转换/PIC/ABI认证 |
+| 转换只完成2档；第3档ARMAsmPrinter.cpp.o有3处R_ARM_TLS_GD32，候选按未认证类型拒绝；无OOM/超时。ABI/lld定义为GOT-PC相对TLS路径。 | docs/40 §11.5；E11/conversion-stop-diagnosis、armv7l-conversion/summary.json；ARM.def:111、ARM.cpp:147–148、AAELF32:1974/2595 | 硬证据（停止及静态语义）；允许策略与消费者仍待PM/实测，未修改Source |
+| 210构建树原归档与独立副本收尾SHA一致，123缓存RPM未变，保护文件未改；scope/采样器/挂载回收。 | E11/originals-and-copies-final.json、cache-retention-check.json、protected-final.json、final-cleanup.json | 硬证据；BUILD/cache保留，锁释放 |
+
 ## 4. 人工裁决前提
 
 下列为用户决策及其记录依据，区别于上一节的实测事实。后续 Session 不能擅自反转。
@@ -389,6 +401,9 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 本轮人工裁决（docs/40 §10）：导出身份取代整spec SHA断言——唯一VCS行须指向cb679968，去掉后原spec逐字节相同，tar内容同git archive，满足即复用E9不重导出。辅助脚本缺陷可在只读证明门禁不放宽后修正并重跑该步骤一次，同一步骤再次失败即停止；产品失败无此例外。本轮缓存准备、prep参数修正后PASS，CMake驱动准备第二次失败后不再尝试。仅W配置SHA28f1caf9…，候选Source变更仍须全测试/x86回归，宿主初始化授权与缓存保留不变。
 
+
+本轮人工裁决（docs/40 §11）：取消手写%build/CMake驱动；允许标准build后端--stage=-bc执行原样完整%prep/%build，复用R10 --noinit，6/6/2与18GiB/swap0/16GiB准入不变。两架构BUILD与cache都保留，不install/打包、不清磁盘。辅助门禁同inode别名错误获一次修正重跑（未改实质配置门禁）；实际未知重定位仍按既有规则停止交PM，不以该例外自动扩大Source认证。宿主mmap0/已有binfmt保持，恢复命令保留。
+
 ## 5. 挂账
 
 - 历史清理挂账：analysis/05E_worktree共享Git元数据尚需处理；用户已解除它对B/C的阻塞，清理不在当前范围；三个Chromium目录未删，第三个小文本备份PARTIAL。四旧根日志已保全，temp/deleted-roots-logs/sudo-delete.sh留用户自行执行，本代理未运行。A1第6–8组1,485候选缺旧逐文件记录，仍保留；其他项目/swap无清理授权。
@@ -412,7 +427,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 评审中/待目标流水线 | 归档修复v2与356627 PS2 | docs/35+36门禁闭合；docs/38已fetch核验PS2提交67619ec8bbba及父cb679968。docs/37确认同宏环境参数策略覆盖；目标配方仍需流水线正常构建，新选项须重新核查。 | docs/36 §3–§4；docs/37 §4；docs/38 §6 |
 | 评审中/待目标流水线 | 356639：x86_64 LLVM包切换llvm-strip | 用户已确认上传、依赖356627；本机要求PASS，目标流水线另验。ARM条件需在转换认证后更新同change并rebase，不能借x86 PASS直接扩大范围。 | docs/38 §3–§6；docs/39 §8–§9；用户本轮确认 |
 | 已闭合（保留记录） | 修正后的续跑验收 | 新RPM第1–4项PASS后独立buildroot真实-bi重新转换225档并验收，通过后对同树Source SKIP，225档SHA不变；这两项不再挂账。 | docs/35 §4；C/independent-archives-result.json、independent-skip-verification.json |
-| 待恢复执行/真实输入 | ARM/AArch64转换C阶段 | 新配置/C0与导出身份已PASS，新ARM32根prep已完成；须先解决代理CMake驱动的独立宏查询，当前第二次失败停止，实际configure尚未运行。不得跳过退出码/参数/未知relocation门禁；Source变更仍须测试与x86回归。 | docs/40 §5、§9–§10；docs/39 §1–§9 |
+| 待PM认证/后续实测 | ARM/AArch64转换C阶段 | ARM32标准完整build成功，参数普查通过；未认证TLS_GD32触发停止，需先裁决该类型策略与夹具。若Source改动，全部测试+225档/3864成员x86回归不可省；之后才可续全量转换/PIC/ABI/消费者/strip与AArch64。保留R10 BUILD以备后续原根增量，不再修手写CMake。 | docs/40 §11；docs/39 §4、§7 |
 | 已隔离/暂缓 | 旧混合构建根与profile适用性；设计v4 | docs/24旧根不再读写；外来docs/23与重链脚本改动在备份SHA匹配后已按新授权恢复HEAD，不再是脏工作树。设计v4及BOLT后续等归档任务完成。 | docs/24；docs/25 §0 |
 
 已关闭、不再作为待办：本机校准重试、用新门禁回判历史 FAIL、为补漂亮数字追加轮次。
@@ -424,4 +439,4 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 
 前次执行备案（e44fb63，初始化政策随后已解除）：用户明确清理任务不再阻塞B/C，四个待sudo删除旧根不读写；B已PASS；C0在GBS启动前停止，证据`temp/arm-archive-stage1-20261010`。x86不变性为硬证据，ARM能力仍未认证。无磁盘清理/宿主配置修改/补丁更新/Gerrit推送。
 
-当前挂账（docs/40 §10，取代§9当前阻塞）：导出VCS/spec/tar身份、R10新根prep、宏参数对照均PASS。代理prepare_configure的只读宏查询一次修正后exit28，遵守第二次失败停止；无实际CMake/静态库编译/ARM转换/消费者结果。不是ARM源码、GBS或硬件失败。候选Source仍6a36f173…，x86既有PASS保持；E10/V10源码、模型、123缓存RPM和日志保留。宿主mmap为0，恢复命令sudo sysctl -w vm.mmap_min_addr=65536；结束锁已释放，无scope/采样器/挂载残留。
+当前挂账（docs/40 §11，取代§10当前阻塞）：标准ARM32 %build/CMake门禁已闭合；阻塞转为真实R_ARM_TLS_GD32认证。ABI与lld说明104是TLS GD的GOT相对路径，当前Source有意未认证，不能自放行；已列归档、成员、节、符号及建议，等待PM决定。全库转换/消费者/strip/AArch64仍未完成。候选SHA仍6a36f173，x86既有PASS保持；R10/B10、E11、全部123缓存RPM保留。宿主mmap为0，用户恢复命令sudo sysctl -w vm.mmap_min_addr=65536；本任务锁/采样器/scope/挂载已回收。
