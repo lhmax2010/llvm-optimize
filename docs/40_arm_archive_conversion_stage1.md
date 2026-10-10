@@ -1,8 +1,8 @@
 # 40 ARM 静态库转换第一段：历史记录与 C 阶段续接
 
-> **最新状态（2026-10-10，§9）：两架构 C0 PASS；C1 在源码导出后的代理校验器处 STOP。** 新配置两源均 200，accel clang 22.1.8、两架构编译/guest 运行通过，宏展开与 docs/39 一致。GBS 导出成功，但代理错误地用 Git 原 spec 的整文件 SHA 校验自动插入 `VCS:` 的导出 spec，断言失败；未进入 LLVM `%prep`/CMake/静态库编译，按约定不重试。不是 ARM 编译失败或参数漂移。
+> **最新状态（2026-10-10，§10）：导出身份、armv7l 新根 `%prep`、宏参数对照 PASS；C1 在代理的 CMake 驱动准备脚本第二次失败后 STOP。** tarball 的 184,836 个条目与目标 git archive 一致。实际 CMake 尚未启动，静态库编译、C2–C4 均未执行；不是 LLVM 构建失败。辅助脚本的三处缺陷、修正及重跑边界在 §10.4 完整登记。
 >
-> **用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`。** 本轮 GBS 按授权已将原值 65536 写为 0；结束不代为恢复。重启也会重新加载系统配置、恢复该非持久化修改。GBS 注册的 qemu binfmt 条目保留，代理未手工注册。以下 §1–§8 保留历史状态，当前结论见 §9。
+> **用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`。** 宿主开场和结束均为 0，本轮允许 GBS 标准初始化保持此值；结束不代恢复。重启也会重新加载系统配置、恢复该非持久化修改。GBS 注册条目保留，代理未手工注册。以下 §1–§9 保留历史状态，当前结论见 §10。
 
 日期：2026-10-10（Asia/Shanghai）。本报告与[docs/42](42_disk_cleanup.md)、STATUS同commit发布。
 
@@ -856,3 +856,228 @@ Filesystem      Size  Used Avail Use% Mounted on
 ```
 
 推送后提交号与原始输出保存在 E9 的 `commit.txt`、`git-push.log`、`remote-head.txt`。
+
+## 10. 2026-10-10 C1 续接：导出核验与 prep 通过，辅助驱动第二次失败停止
+
+本节承接 `2c9081b5195bc2162d05e1a256a131b665bc4d56`，不改判 §9 的历史停止，也不重跑已通过的 C0/B。
+用户替换导出身份判据，并授权每个辅助检查/驱动步骤在证明门禁不放宽后修正一次；同一步骤第二次失败必须停止。
+**本轮结果：STOP_C1_CONFIGURE_HELPER_SECOND_FAILURE。** 错误发生在代理实现的独立宏查询与驱动准备，责任属于执行辅助脚本；没有 LLVM/GBS 配方编译失败证据。
+虽然第二次宏查询输出了完整前导文本，但退出码非零，未忽略退出码、未执行其文本、未进行第三次尝试。
+
+### 10.1 现场、身份与导出复用
+
+```text
+W   = /home/linhao/Toolchain/development/llvm-optimize
+E10 = W/temp/arm-archive-stage1-c1-20261010
+E9  = W/temp/arm-archive-stage1-c-newrepo-20261010
+V10 = /var/tmp/llvm-optimize-arm-c1-20261010
+R10 = V10/gbs-libraries-armv7l/local/BUILD-ROOTS/scratch.armv7l.0
+T   = cb67996861d070d68fec2b4c623eed7d20ba2e23
+```
+
+原始数据和辅助脚本均保留在 E10，仅本机；本轮没有修改或发布新转换 Source。
+开场主仓库只有用户的 ` M gbs_llvm.conf`；配置 SHA 精确为
+`28f1caf93cd39738a7da1e0da8d5f945f7372963bb9823a507f9157294272169`，前后相同，未暂存。
+候选 Source SHA 仍为 `6a36f173c3efb05c7011aa7029aeb2ae3119e1f77a32536fcc791938bf20c4b7`。
+/home 可用 585.286831 GiB，/var/tmp 可用 344.850224 GiB；未发现竞争构建进程。
+项目与 Rnew 两锁由 PID 779218 持有至收尾，见 `precheck.json`、`lock-acquired.json`。
+W/llvm/spec、生产 Source 与两份上传补丁摘要均未变，见 `protected-{start,final}.json`。
+
+导出校验使用 `E10/check_export.py`，没有重新运行 GBS export，也没有修改 E9 的导出：
+
+| 项 | 实测结果 |
+| --- | --- |
+| 额外 VCS 行数 | 恰好 1；`home/linhao/Toolchain/development/llvm-optimize/llvm#cb67996861d070d68fec2b4c623eed7d20ba2e23` |
+| 导出 spec SHA | `390ac8fce01a807f23d1c3f5906c68e05e71a4747449f2fe01a317343ef9c5dd` |
+| 内存中仅删除这一行后的 SHA | `9ee73e37f1297a261b835bcd9c7fa2fbff72e271816950991cbe95be0945edda`，与 T 的 spec 逐字节相同 |
+| 源码 tarball SHA | `4ec43e91d8fa7b340acec9b1c3b292eb4983b718e119ed894add5a3f3b480ab1`；344,932,497 B |
+| tarball / git archive 条目数 | 184,836 / 184,836；路径、类型、mode、大小、链接目标、常规文件内容 SHA 全部一致，差异 0 |
+| 校验器文本夹具 | 1 正例 + 4 负例通过（缺 VCS、错误提交、重复 VCS、额外内容均拒绝） |
+| 所有导出文件 | 大小和 SHA 全部匹配 E9/c1-export-inventory.json，含三架构模型 tarball |
+
+比较基准命令为 `git -C E9/c1-export-repository archive --format=tar --prefix=llvm-22.1.8/ T`；流式读 tar，不解压/重写历史导出。
+内容比较不比较 gzip 压缩字节、tar 的时间戳/uid 等容器元数据；实际导出压缩文件另与历史 SHA 完全相同。
+证据：`export-identity.json`、`export-tar-manifest.jsonl`、`git-tar-manifest.jsonl`、`export-files-recheck.json`。
+
+### 10.2 新根仅执行 prep：PASS
+
+为避免普通 `gbs build` 进入全部 Ninja 目标和 `%install`，本轮使用其已安装的标准 `/usr/bin/build` 后端的 stage 选项，限定实际 rpmbuild 为 `-bp`。
+依据：`/usr/lib/build/build-recipe:49–53` 接收 stage，`build-recipe-spec:113,151–155` 只在未指定时默认 `-ba`，否则传给 rpmbuild。
+没有修改宿主 GBS/build 脚本，也没有改 spec。仓库 URL 从 W/gbs_llvm.conf 读取并逐项断言一致；buildconfig 复用 §9 由该配置取得的原件，SHA
+`1e7610b6a922d27b80eb59c1c78bdf716f7de2e8e24700e0ee7c62522739ed52`。
+本轮没有再次调用 GBS CLI（export/C0 均复用），没有使用另一份 GBS 配置。
+
+成功入口完整命令如下（外层 time/scope/nice/ionice 见 `c1-armv7l-prep-rerun/launch.json`）：
+
+```sh
+sudo -n /usr/bin/build --uid 1000:1000 --target armv7l-tizen-linux   --jobs 6 --cachedir "$V10/gbs-libraries-armv7l/local/cache"   --dist "$E9/buildconfig-from-W.conf"   --arch armv7l:armv7el:armv6l:armv5tejl:armv5tel:armv5l:armv4tl:armv4l:armv3l:noarch   "$E9/c1-export/llvm.spec"   --repository https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261001.092726/repos/standard/packages/   --repository https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260814.092727/repos/standard/packages/   --debug --root "$R10" --define '_smp_mflags -j4' --stage=-bp
+```
+
+先把 §9 ARM32 cache 中 106 个可读 RPM 复制至新 cache，逐个 SHA 一致；历史 cache 未改。
+GBS 后端追加下载 17 个依赖，结束保留 123 个缓存 RPM，逐文件大小/SHA 见 `cache-final-inventory.json`。
+实际根内已装 122 个包，NEVRA 全清单 `root-installed.stdout`，查询退出 0；缓存数不等于已安装包数。
+本轮未切仓库、清理缓存或改宿主软件。
+
+`c1-armv7l-prep-rerun/build.log` 原文摘录：
+
+```text
+[  107s] Building for target armv7l-tizen-linux
+[  107s] Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.lM1NxU
+[  107s] + /bin/gzip -dc /home/abuild/rpmbuild/SOURCES/llvm-22.1.8.tar.gz
+[  107s] + /bin/tar -xof -
+[  116s] + tar -C mlgo_verify_assets -xzf /home/abuild/rpmbuild/SOURCES/mlgo_arm_model.tar.gz
+[  116s] + exit 0
+[  116s] linhao-linux finished "build llvm.spec" at Sat Oct 10 05:20:25 UTC 2026.
+```
+
+这里的 finished 仅表示授权的 `-bp` 完成，不是 LLVM 构建成功。
+初始化正常运行 binfmt/mmap 步骤；开场和结束 mmap 均 0，最终注册列表为 arm/armeb/aarch64/riscv64/jar/python3.12，保留原文于 `precheck.json` 和 `final-cleanup-before-unlock.json`。
+未执行手工注册、其他 sysctl 修改、软件安装到宿主或脚本修改；没有把新根内部安装依赖描述成修改宿主包。
+
+### 10.3 宏参数对照 PASS；实际 CMake NOT RUN
+
+`compare_macros.py` 用 R10 原生 rpmspec、abuild 的 rpmrc/rpmmacros、同样的 define 展开 T：
+完整 CMake argv、`%optflags` 与 docs/39 **逐字相同**，参数差异字典为空。
+日志见 `macro-precheck/armv7l-{comparison.json,cmake.json,build.txt,parsed.stdout}`。
+展开值仍为 MinSizeRel、Thin、C/CXX/ASM 公共 -Os、LLVM/CLANG dylib=ON、compile=6/link=2、MLGO jobs=6。
+这些是宏展开值，**没有 CMakeCache 关键行可贴**：R10 的 `BUILD/llvm-22.1.8/build/` 尚未创建。
+C1 的实际编译器 exec、CMake 默认 flags、静态目标清单/大小、编译耗时与内存均为 NOT RUN/UNKNOWN。
+未用宏预检替代真实 CMake 门禁，也未用 §9 小包的 exec trace 冒充本轮 LLVM 编译证据。
+
+### 10.4 辅助脚本缺陷条款：逐项记录
+
+三个辅助动作按顺序列出；前两个修正后通过，第三个同一步骤第二次失败触发本轮停止。
+没有把脚本错误包装成 LLVM/GBS 产品不兼容，也没有在失败后放宽编译参数、容量或退出码门禁。
+
+| 辅助步骤 | 首次失败与只读诊断 | 修正与一次重跑 |
+| --- | --- | --- |
+| 缓存准备 | `os.link` 对 root:0644 的 RPM 报 EPERM；同文件系统、文件可读不可写，`/proc/sys/fs/protected_hardlinks=1`。尚未启动 build | 改为复制到新 cache 并逐个 SHA 校验，106/106 PASS；不改权限、不改历史 cache。原随后启动 driver 因计划未生成也在读取计划时退出，未创建 scope/root |
+| prep 驱动 argv | `--stage -bp` 报 `--stage needs an agrument`；`build:800–811` 把以 `-` 开头的独立 ARG 清空，尚未初始化根 | 改成 `--stage=-bp`，纯 shell 解析正负例分别 exit0/1；语义仍严格 `-bp`。一次实际重跑成功，不进入 build/install |
+| CMake 驱动前导查询 | standalone `rpmspec --eval '%{__spec_build_pre}'` 用小写 name/version/release，输出还含大写 `%{NAME}` 等和 `%{_docdir}`；辅助脚本断言失败，未执行输出 | 依据根宏 `usr/lib/rpm/macros:237,286,829–844` 改成精确大写包身份、`_docdir=%{_defaultdocdir}` 并加 verbose 查询；**第二次 root rpmspec exit28**，stdout 已展开，但 stderr 输出版本/usage。保留失败，不再修正或执行该前导 |
+
+第二次查询的 stderr 开头：
+
+```text
+RPM version 4.14.1
+Copyright (C) 1998-2002 - Red Hat, Inc.
+This program may be freely redistributed under the terms of the GNU GPL
+
+Usage: rpmspec [OPTION...]
+```
+
+完整 argv 与原始 stdout/stderr：`initial-build-pre.*`、`build-pre.*`；第二次 `build-pre.command.json` 明确 `rc: 28`。
+`prepare_configure.py` 因 rc 断言向外 exit1。未进一步尝试变更参数组合，不推断 exit28 的全部内部原因，也不声称输出非空就算成功。
+本轮**第三次尝试为 0**，C2/C3/C4 均停止；后续恢复需要新的任务授权，并先解决驱动的纯文本宏查询，不能直接跳过其错误。
+
+修正 diff 原件：`helper-cache-fix.diff`（从首次内联命令整理）、`helper-stage-fix.diff`、`helper-configure-fix.diff`；诊断分别为 `helper-*-diagnosis.json`。
+下面保存实际改变的逻辑（完整 diff 附于本节末尾）：
+
+`E10/helper-cache-fix.diff`：
+
+```diff
+--- prepare_c1.before
++++ prepare_c1.fixed
+@@ -1,7 +1,7 @@
+ from pathlib import Path
+ import json,hashlib,os,configparser,shutil
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize'); E=Path(__file__).resolve().parent;old=W/'temp/arm-archive-stage1-c-newrepo-20261010';V=Path('/var/tmp/llvm-optimize-arm-c1-20261010');root=V/'gbs-libraries-armv7l'
+-V.mkdir(exist_ok=False);root.mkdir()
++assert V.is_dir() and root.is_dir() and not (root/'local/BUILD-ROOTS').exists()
+ for row in json.loads((old/'c1-export-inventory.json').read_text()):
+  p=Path(row['path']);assert p.stat().st_size==row['bytes'];assert hashlib.sha256(p.read_bytes()).hexdigest()==row['sha256'],str(p)
+ (E/'export-files-recheck.json').write_text((old/'c1-export-inventory.json').read_text())
+@@ -11,7 +11,9 @@
+ source=Path('/var/tmp/llvm-optimize-arm-stage1-20261010/gbs-c0-armv7l/local/cache');copied=[]
+ for f in source.rglob('*.rpm'):
+  dest=root/'local/cache'/f.relative_to(source);dest.parent.mkdir(parents=True,exist_ok=True)
+- os.link(f,dest)
++ assert not dest.exists()
++ shutil.copyfile(f,dest)
+  digest=hashlib.sha256(f.read_bytes()).hexdigest()
++ assert hashlib.sha256(dest.read_bytes()).hexdigest()==digest
+  copied.append({'source':str(f),'dest':str(dest),'bytes':f.stat().st_size,'sha256':digest})
+ (E/'cache-seed.json').write_text(json.dumps(copied,indent=2));(E/'c1-prep-plan.json').write_text(json.dumps(p,indent=2));print('verified export files; copied cached RPMs:',len(copied));print(json.dumps(p,indent=2))
+```
+
+`E10/helper-stage-fix.diff`：
+
+```diff
+--- c1-prep-plan
++++ c1-prep-plan-fixed
+@@ -1,5 +1,5 @@
+ {
+-  "label": "c1-armv7l-prep",
++  "label": "c1-armv7l-prep-rerun",
+   "operation": "standard GBS build backend restricted to rpmbuild -bp; no LLVM compile/install/package",
+   "admission_gib": 16,
+   "memory_max_gib": 18,
+@@ -30,8 +30,7 @@
+     "/var/tmp/llvm-optimize-arm-c1-20261010/gbs-libraries-armv7l/local/BUILD-ROOTS/scratch.armv7l.0",
+     "--define",
+     "_smp_mflags -j4",
+-    "--stage",
+-    "-bp"
++    "--stage=-bp"
+   ],
+   "jobs": 6,
+   "cmake_compile_jobs": 6,
+```
+
+`E10/helper-configure-fix.diff`：
+
+```diff
+--- prepare_configure.before
++++ prepare_configure.fixed
+@@ -10,7 +10,7 @@
+ (E/'macro-precheck-driver.log').write_text(r.stdout+r.stderr);assert r.returncode==0,r.stderr
+ c=json.loads((E/'macro-precheck/armv7l-comparison.json').read_text());assert c['status']=='PASS',c
+ parsed=json.loads((E/'macro-precheck/armv7l-parsed.command.json').read_text())['argv']
+-query=parsed[:parsed.index('--parse')]+['--define','name llvm','--define','version 22.1.8','--define','release 1','--define','buildsubdir llvm-22.1.8','--eval','%{__spec_build_pre}']
++query=parsed[:parsed.index('--parse')]+['-v','--define','NAME llvm','--define','VERSION 22.1.8','--define','RELEASE 1','--define','_docdir %{_defaultdocdir}','--define','buildsubdir llvm-22.1.8','--eval','%{__spec_build_pre}']
+ r=subprocess.run(query,capture_output=True,text=True);(E/'build-pre.command.json').write_text(json.dumps(dict(argv=query,rc=r.returncode),indent=2));(E/'build-pre.stdout').write_text(r.stdout);(E/'build-pre.stderr').write_text(r.stderr);assert r.returncode==0,r.stderr
+ assert '%{' not in r.stdout,'unexpanded build preamble'
+ build=(E/'macro-precheck/armv7l-build.txt').read_text();end=build.index('    ../llvm\n')+len('    ../llvm\n');prefix=build[:end]
+```
+
+### 10.5 资源实测与剩余阶段
+
+全部实际 prep 调用均 16 GiB 准入、18 GiB cap、MemorySwapMax=0、nice15/ionice3；6/6/2 记录值未变，尚未运行编译池。
+每 30 秒记录 free/loadavg/RSS/disk，宿主 <2 GiB 中止保护沿用；完整原始输出位于两个 prep scope 目录。
+
+| 项 | 错误 argv 的入口 | 修正后仅 prep |
+| --- | ---: | ---: |
+| 外层 exit | 1 | 0 |
+| wall 秒 | 2.116660 | 116.850637 |
+| 启动 MemAvailable B | 21,972,795,392 | 22,025,969,664 |
+| scope MemoryPeak B | 12,496,896 | 7,616,188,416（7.093128 GiB） |
+| 采样最低宿主 MemAvailable B | 21,970,931,712 | 21,977,894,912 |
+| memory.events max/oom/oom_kill | 0/0/0 | 0/0/0 |
+| sampler/log reader 回收 | true/true | true/true |
+
+峰值含包安装与源码解压的页缓存，不是 ARM 编译/链接或转换内存需求；没有性能结论。
+证据：两个 `outcome.json`、`scope-after-rpm.{json,log}`、`samples.jsonl`、`process-memory.jsonl`、`time-v.txt`。
+资源摘要 `final-cleanup-before-unlock.json`。宏查询在 scope 外仅执行只读秒级解析，没有运行编译任务。
+
+| 工作项 | armv7l | aarch64 |
+| --- | --- | --- |
+| C0/B | 沿用 §9/§5 PASS，未重跑 | 沿用 §9 C0 PASS |
+| 导出 spec/tarball 身份 | PASS，复用 E9 | 共用输入核验 PASS，不代表 C4 开始 |
+| C1 新根初始化、prep | PASS | NOT RUN |
+| C1 宏 argv 对 docs/39 | PASS | 沿用 §9，只读旧证据 |
+| C1 实际 configure、Cache、静态库目标构建 | NOT RUN：准备脚本第二次失败 | NOT RUN：依赖 ARM32 |
+| C2 普查与参数/重定位认证 | NOT RUN | NOT RUN |
+| C3 转换、PIC、消费者、两种 strip | NOT RUN | NOT RUN |
+| C4 后续流程 | 不适用 | NOT RUN |
+
+候选 Source 未改，没有新参数表/重定位 diff，没有要求触发的新 SHA/x86 全量回归；§5 的既有 PASS 不作为本轮新执行。
+ARM 真实归档能力仍未认证；本轮没有产生可用于新 patchset 的 ARM 产物。
+
+### 10.6 收尾
+
+两个 scope 均 inactive/dead，监控/日志线程已回收；V10 下挂载 0，本任务残留构建进程 0。
+项目/Rnew 锁在结束释放，证据 `final-cleanup-before-unlock.json`、`lock-released.json`、`final-cleanup.json`。
+123 个 GBS 缓存 RPM、完整新根、已展开源码/模型、E9 导出与全部 E10 日志均保留；没有磁盘清理。
+收尾 /home 可用 628,360,404,992 B，/var/tmp 可用 362,176,614,400 B。
+本轮无 LLVM 静态库编译/完整构建/安装/打包，无 BOLT、性能校准、Chromium 或 Gerrit 推送；仅真实 LLVM prep 一次成功。
+只提交 docs/40 与 STATUS，用户的配置修改仍未暂存。§1–§9 原文保留，仅刷新报告开头的当前状态与恢复说明。
+提交与 push 原始输出保存 `E10/commit.txt`、`git-push.log`、`remote-head.txt`。
