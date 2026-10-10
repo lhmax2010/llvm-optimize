@@ -1,6 +1,6 @@
 # 40 ARM 静态库转换第一段：历史记录与 C 阶段续接
 
-> **最新状态（2026-10-10，§12）：TLS/Thumb候选Source修订、67测试与最终SHA的x86全量回归PASS（225档/3864成员/完整索引/后端flags均相同）。** 已先发布本阶段；ARM32全量转换与消费者、AArch64仍待后续执行，不能据此更新ARM生产patchset。
+> **最新状态（2026-10-10，§12）：最终Source的x86全量不变性PASS；ARM32 210档全量转换、26缺属性成员Thumb、重定位全集、三套归档消费者与两种strip均PASS。** 已先发布Source阶段`cb899cd`，本阶段完成后继续AArch64；AArch64尚未认证。
 >
 > **用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`。** 宿主开场和结束均为 0，本轮允许 GBS 标准初始化保持此值；结束不代恢复。重启也会重新加载系统配置、恢复该非持久化修改。GBS 注册条目保留，代理未手工注册。以下 §1–§11 保留历史状态，当前结论见 §12。
 
@@ -2032,3 +2032,148 @@ Source修订与x86不变性阶段PASS，先提交推送；此时armv7l全量转�
 +                if arch == 'armv7l':
 +                    record['arm_thumb_gate'] = arm_thumb_gate(compiler, source, target, settings, command)
 ```
+
+### 12.4 ARM32 全量转换、Thumb 与重定位全集：PASS
+
+本节沿用§12.1的E12、B10与E11路径。Source仍为`1620a8da778062216bea61f6ac43eb6b64df9963b2d5778058be6ca7b31a7607`，没有在ARM消费者阶段再次修改。从`E11/armv7l-input`转换到`E12/armv7l-conversion`；**没有重建ARM32，也没有修改B10原件**。
+
+| 项目 | 本轮结果 | 证据（E12下） |
+|---|---|---|
+| 归档/成员 | 210 / 3690 | `armv7l-conversion-result.json` |
+| bitcode转机器码/原机器码保留 | 3683 / 7；转换后全部ELF32 ARM ET_REL，bitcode=0 | `armv7l-conversion/summary.json；armv7l-full-census/summary.json` |
+| 完整索引 | 454301项；每档外部定义符号多重集合与索引一致，保留序号+名称+同名序号 | `armv7l-conversion/members/**/{before,after}.json；armv7l-full-census/members.jsonl` |
+| 强符号缺失 | 0；允许缺失的弱符号W=2953，按既有策略单列 | `armv7l-conversion/summary.json及各成员symbols*.json` |
+| Thumb门禁 | 3683/3683 PASS；其中缺函数属性26个逐项如下 | `armv7l-conversion/members/**/thumb-gate.json` |
+| 全部ARM attributes | 3683份actual/reference完整Tag_*列表相同；softfp VFP参数默认0 | `armv7l-full-attributes.json` |
+| 三元组覆盖警告 | 0 | `armv7l-metrics.json；members/**/convert.log` |
+| 归档体积 | 4,652,224,292 → 3,981,756,412 B；3679成员仍有调试节 | `armv7l-metrics.json` |
+| 转换wall | 1800.448876 s（包括逐成员参考对象）；外层scope见下表 | `armv7l-conversion-result.json` |
+| 单命令峰值RSS | 转换1145892 KiB；参考对象1147192 KiB | `armv7l-metrics.json；members/**/{convert,thumb-reference}.json` |
+
+本批3683个bitcode成员没有可执行的文件级module-asm节（`module_asm_checked=0`）；该项不能写成批量汇编代码模式实测。Source对出现该节的输入比较`$a/$t/$d`映射符号模式；含文件级汇编的正负夹具已在§12.2通过。7个原机器码成员的字节保持不变。所有26个缺函数属性成员均为`Tag_ARM_ISA_use=Yes`、`Tag_THUMB_ISA_use=Thumb-2`、`Tag_ABI_VFP_args=default(0)`，与原参数参考对象一致：
+
+| 归档 | 序号（从0起） | 成员名/同名序号 | 对照 |
+|---|---:|---|---|
+| `libLLVMABI.a` | 0 | `Types.cpp.o` / 1 | PASS |
+| `libLLVMAnalysis.a` | 37 | `DevelopmentModeInlineAdvisor.cpp.o` / 1 | PASS |
+| `libLLVMAnalysis.a` | 88 | `ModelUnderTrainingRunner.cpp.o` / 1 | PASS |
+| `libLLVMAnalysis.a` | 117 | `TFLiteUtils.cpp.o` / 1 | PASS |
+| `libLLVMDWARFLinker.a` | 1 | `Utils.cpp.o` / 1 | PASS |
+| `libLLVMDWP.a` | 1 | `DWPError.cpp.o` / 1 | PASS |
+| `libLLVMFrontendHLSL.a` | 2 | `HLSLResource.cpp.o` / 1 | PASS |
+| `libLLVMMC.a` | 13 | `MCAsmMacro.cpp.o` / 1 | PASS |
+| `libLLVMOrcShared.a` | 4 | `OrcRTBridge.cpp.o` / 1 | PASS |
+| `libLLVMPasses.a` | 0 | `CodeGenPassBuilder.cpp.o` / 1 | PASS |
+| `libLLVMPasses.a` | 1 | `OptimizationLevel.cpp.o` / 1 | PASS |
+| `libLLVMSandboxIR.a` | 0 | `Argument.cpp.o` / 1 | PASS |
+| `libLLVMSandboxIR.a` | 7 | `Pass.cpp.o` / 1 | PASS |
+| `libLLVMSupport.a` | 3 | `blake3_neon.c.o` / 1 | PASS |
+| `libLLVMSupport.a` | 4 | `ABIBreak.cpp.o` / 1 | PASS |
+| `libLLVMSupport.a` | 17 | `AutoConvert.cpp.o` / 1 | PASS |
+| `libLLVMSupport.a` | 84 | `MathExtras.cpp.o` / 1 | PASS |
+| `libLLVMSupport.a` | 139 | `UnicodeNameToCodepointGenerated.cpp.o` / 1 | PASS |
+| `libLLVMSupport.a` | 169 | `RWMutex.cpp.o` / 1 | PASS |
+| `libLLVMSupport.a` | 174 | `zOSLibFunctions.cpp.o` / 1 | PASS |
+| `libLLVMVectorize.a` | 5 | `InstrMaps.cpp.o` / 1 | PASS |
+| `libclangBasic.a` | 4 | `CharInfo.cpp.o` / 1 | PASS |
+| `libclangRewriteFrontend.a` | 5 | `RewriteModernObjC.cpp.o` / 1 | PASS |
+| `libclangRewriteFrontend.a` | 6 | `RewriteObjC.cpp.o` / 1 | PASS |
+| `libclangStaticAnalyzerCore.a` | 15 | `CommonBugCategories.cpp.o` / 1 | PASS |
+| `liblldMachO.a` | 27 | `Target.cpp.o` / 1 | PASS |
+
+重定位按全部转换输出与7个原机器码成员统计，覆盖可加载与非可加载节；未列类型0。`R_ARM_ABS32`只在可写可加载节和调试等非可加载节出现。TLS GD32在只读代码中合法，LDO32的本批出现位置为调试节；不将此计成生产对象使用LD代码序列的证据。LD105/106另有§12.2真实汇编夹具。
+
+| 编号/名称 | 目标节访问 | 可加载 | 数量 |
+|---|---|---|---:|
+| 0 / `R_ARM_NONE` | readonly | alloc | 457370 |
+| 2 / `R_ARM_ABS32` | readonly | nonalloc | 77584415 |
+| 2 / `R_ARM_ABS32` | writable | alloc | 395313 |
+| 3 / `R_ARM_REL32` | readonly | alloc | 233146 |
+| 10 / `R_ARM_THM_CALL` | readonly | alloc | 1778253 |
+| 28 / `R_ARM_CALL` | readonly | alloc | 36 |
+| 30 / `R_ARM_THM_JUMP24` | readonly | alloc | 104665 |
+| 38 / `R_ARM_TARGET1` | writable | alloc | 580 |
+| 42 / `R_ARM_PREL31` | readonly | alloc | 461250 |
+| 96 / `R_ARM_GOT_PREL` | readonly | alloc | 144469 |
+| 104 / `R_ARM_TLS_GD32` | readonly | alloc | 1193 |
+| 106 / `R_ARM_TLS_LDO32` | readonly | nonalloc | 25 |
+
+完整归档清单沿用§11.6，逐档输出SHA及索引结果见`E12/armv7l-conversion/summary.json`与`armv7l-full-census/summary.json`；每个重定位类型的位置、节、符号示例见后者`examples`。
+
+### 12.5 ARM32消费者与两种strip：三套全部PASS
+
+环境：全部编译器、C++标准库头文件、glibc、libxml2、链接器和运行库取自R10；LLVM头文件取B10及其源码目录，静态库取E12转换结果的独立副本。`llvm-config --link-static`返回的组件与系统库参数保留。编译和链接分开；编译AS=4GiB，链接无AS上限、由18GiB/swap0 scope保护。GNU ld命令的`-###`输出逐条拒绝LTO/plugin/cc1作业。完整argv、stderr/stdout、50ms进程资源采样见`E12/consumers-{native-rerun,gnu,llvm}/`。
+
+进程证据直接记录`/proc/<pid>/exe`：clang-22、ld.bfd、lld、readelf进入R10的`/emul/usr/bin/`；目标程序进入R10的`/usr/bin/qemu-arm`。不是仅凭命令名推定accel。汇总见`armv7l-consumer-summary.json`，原始每条命令见`*.memory.jsonl`。
+
+| 检查 | 未strip | GNU strip后 | llvm-strip后 |
+|---|---|---|---|
+| A：GNU ld，IR解析+O2，输出等于B10 opt | PASS | PASS | PASS |
+| A：lld，同一输出 | PASS | PASS | PASS |
+| B：GNU ld，进程内lld链接，生成物exit37 | PASS | PASS | PASS |
+| B：lld，同一运行门禁 | PASS | PASS | PASS |
+| GNU ld shared -z defs -z text，无TEXTREL、dlopen输出 | PASS | PASS | PASS |
+| GNU ld --gc-sections，运行输出不变 | PASS | PASS | PASS |
+| 原bitcode + GNU ld无插件负对照 | 预期失败PASS | 预期失败PASS | 预期失败PASS |
+
+每套共享库的`readelf -dWr`均含10个`R_ARM_TLS_DTPMOD32`、3个`R_ARM_TLS_DTPOFF32`。A显式调用`llvm::initializeCore`触发LLVM Pass注册，以链接包装器计数真实`pthread_once`调用，A-bfd、A-lld、共享库及GC运行均输出`LLVM_CALL_ONCE_COUNT=6`。源码调用链见`llvm/include/llvm/PassSupport.h:52`与`llvm/include/llvm/Support/Threading.h:26–38,86–90`；原始证据为`shared-dynamic-relocations.stdout`、`run-*.log`及消费者a.cpp。
+
+负对照原文（实际B10 bitcode归档，未改）为：
+
+```text
+/usr/bin/ld.bfd: /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib/libLLVMPasses.a: error adding symbols: file format not recognized
+clang-22: error: linker command failed with exit code 1 (use -v to see invocation)
+```
+
+两种strip分别复制210档，逐档调用R10 `/usr/bin/{strip,llvm-strip} -g`，均exit0、stderr为空；成员数/顺序/名称/同名身份、完整索引映射保持一致，bitcode=0、调试节=0。构建树和未strip输入不改。GNU strip副本在`R10/home/abuild/arm-tls-strip-gnu-20261010`，LLVM副本同路径`-llvm-`。证据：`E12/strip-{gnu,llvm}/{progress,result}.json`及逐档命令/日志。
+
+| 产物 | 210档总字节 | A-bfd字节 | A-bfd + GC字节 |
+|---|---:|---:|---:|
+| 未strip | 3981756412 | 515792876 | 460534620 |
+| GNU strip | 501071652 | 33549712 | 19990784 |
+| llvm-strip | 442022188 | 33549712 | 19990784 |
+
+链接wall与峰值RSS仅为本次功能实验资源记录，不作性能结论：
+
+| 输入 | A-bfd wall/RSS KiB | A-lld wall/RSS KiB | B-bfd wall/RSS KiB | B-lld wall/RSS KiB |
+|---|---|---|---|---|
+| native-rerun | 10.49s / 1254452 | 0.68s / 1942812 | 12.65s / 1592920 | 0.81s / 2492748 |
+| gnu | 6.53s / 650220 | 0.24s / 345372 | 8.28s / 818220 | 0.32s / 429872 |
+| llvm | 6.22s / 634180 | 0.25s / 328728 | 7.89s / 797912 | 0.33s / 414100 |
+
+### 12.6 辅助消费者驱动的一次修正（授权条款）
+
+首次消费者步骤在编译a.cpp时失败，尚未链接。辅助脚本主动使用`--no-default-config`，却遗漏正常R10 `usr/bin/clang{,++}.cfg`中的`-resource-dir /usr/lib/clang/22`。实际accel clang因此使用其x86默认`/usr/bin/../lib64/clang/22`，日志明确“ignoring nonexistent directory”，最终`stddef.h file not found`；正确路径的头文件存在。这是本轮辅助入口问题，未触及转换Source、归档、GBS、配方或LLVM行为。
+
+只读诊断：`E12/consumers-native/compile-a.log`；`consumer-helper-defect.json`保存两份cfg与stddef.h摘要。修正只增加原cfg中的资源路径，目标、浮点ABI、Thumb、输入、全部输出检查与资源上限均不变。用新的`native-rerun`目录重跑本步骤一次，七项全部PASS；旧失败目录完整保留。后续GNU/LLVM strip是预定的新输入复验，不是失败重试。
+
+```diff
+--- before/arm_consumers.py
++++ after/arm_consumers.py
+@@ -41,7 +41,7 @@
+  for p in sorted(archives.glob('*.a')):shutil.copyfile(p,host/'lib'/p.name);assert sha(p)==sha(host/'lib'/p.name)
+  def query(name,args):return shlex.split(capture([B/'bin/llvm-config','--link-static',*args],'query-'+name)[0])
+  cxx=query('cxxflags',['--cxxflags']);libsA=query('libsA',['--libs','asmparser','passes','core','support']);libsB=query('libsB',['--libs','all']);system=query('system',['--system-libs','all'])
+- clang=['/usr/bin/clang-22','--driver-mode=g++','--no-default-config','--target=armv7l-tizen-linux-gnueabi','-O2','-fPIC','-mthumb','-march=armv7-a','-mfloat-abi=softfp','-mfpu=neon','-ffunction-sections','-fdata-sections']
++ clang=['/usr/bin/clang-22','--driver-mode=g++','--no-default-config','--target=armv7l-tizen-linux-gnueabi','-resource-dir','/usr/lib/clang/22','-O2','-fPIC','-mthumb','-march=armv7-a','-mfloat-abi=softfp','-mfpu=neon','-ffunction-sections','-fdata-sections']
+  # Force and count a real LLVM pass-registration call_once path.
+  A=PROGRAM_A.replace('#include <llvm/AsmParser/Parser.h>','#include <llvm/AsmParser/Parser.h>\n#include <llvm/InitializePasses.h>\n#include <llvm/PassRegistry.h>\n#include <pthread.h>\n#include <cstdio>\nstatic unsigned once_calls;\nextern "C" int __real_pthread_once(pthread_once_t *, void (*)());\nextern "C" int __wrap_pthread_once(pthread_once_t *p, void (*f)()) { ++once_calls; return __real_pthread_once(p,f); }')
+  A=A.replace('llvm::LLVMContext context;','llvm::initializeCore(*llvm::PassRegistry::getPassRegistry());\n  llvm::LLVMContext context;')
+```
+
+### 12.7 ARM32阶段资源、保全与发布
+
+| 阶段 | scope wall s | scope MemoryPeak GiB | exit | sampler/log reader回收 |
+|---|---:|---:|---:|---|
+| `armv7l-conversion-scope` | 1840.142586 | 10.280182 | 0 | True/True |
+| `armv7l-census-scope` | 147.051951 | 0.464455 | 0 | True/True |
+| `armv7l-consumers-native-scope` | 26.328988 | 4.215454 | 1 | True/True |
+| `armv7l-consumers-native-rerun-scope` | 78.640625 | 8.720917 | 0 | True/True |
+| `armv7l-strip-gnu-scope` | 68.488156 | 0.887566 | 0 | True/True |
+| `armv7l-consumers-gnu-scope` | 36.377750 | 1.336071 | 0 | True/True |
+| `armv7l-strip-llvm-scope` | 16.220123 | 0.704769 | 0 | True/True |
+| `armv7l-consumers-llvm-scope` | 34.327585 | 1.258663 | 0 | True/True |
+
+全部scope MemoryMax=18GiB、MemorySwapMax=0，nice15/ionice3；编译AS4GiB，原始30秒宿主采样与memory.events见各scope目录，OOM=0。初次辅助驱动失败的exit1不写成产品失败；授权一次修正后通过。ARM32转换实际并发4，未启动任何ARM32构建。
+
+`E12/armv7l-retention-after-consumers.json`复核：B10的CMakeCache/build.ninja/.ninja_log与关键ELF、210原件及210输入副本、123缓存RPM全部与§11相同。所有输出、缓存、BUILD均保留。项目锁继续持有至后续AArch64结束；本阶段未做磁盘清理、未install/打包、未改W/llvm/spec/生产Source/两补丁、未推Gerrit。先提交本报告与STATUS，再开始AArch64；本阶段PASS不等于AArch64已认证。
