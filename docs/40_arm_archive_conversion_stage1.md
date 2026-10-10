@@ -1,5 +1,9 @@
 # 40 ARM 静态库转换第一段：A2安全停止，B/C未执行
 
+> **最新状态（2026-10-10，§8）：C0 仓库预检 STOP。** GBS 标准 binfmt/mmap 初始化已获授权；指定 Base 快照返回 HTTP 404，本轮没有启动 GBS，C1–C4 未执行。前次 B 的 x86 全量回归 PASS 保持有效。
+>
+> **用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`。** 这是本次实测原值；若以后 GBS 临时写为 0，可用此命令恢复，重启也会重新加载系统配置、恢复这类非持久化修改。本轮前后均为 65536，**本轮无需执行恢复**；代理没有执行此命令，也没有手工注册 binfmt。以下 §1–§7 保留各次历史状态，当前结论见 §8。
+
 日期：2026-10-10（Asia/Shanghai）。本报告与[docs/42](42_disk_cleanup.md)、STATUS同commit发布。
 
 **STOPPED_BEFORE_B。** 夜间任务先清理再执行x86回归与ARM第一段。A1完成，但A2发现保留范围的`plan_evaluation/analysis/05E_worktree`依赖待删`chromium-efl/.git`；未得到关于这份额外依赖的处置规则，依无人值守“规定之外停止”要求结束全部后续步骤。三个Chromium目录均未删除；A3只备份日志并生成脚本。不能把本轮停止归因于x86回归或ARM能力。
@@ -503,3 +507,108 @@ B进度与本次停止各一提交并推GitHub；没有Gerrit推送。本报告�
 | `E/x86-regression-scope/` | 完整scope命令、日志、time、内存/进程采样及回收状态 |
 | `E/c0-preflight/` | 未启动C0的真实环境与源码证据；root命令仅文本 |
 | `E/b-commit.txt`、`b-push.log` | B阶段已发布的提交与push输出 |
+
+## 8. 2026-10-10 C 续接：初始化政策已解除，固定 Base 仓库门禁停止
+
+### 8.1 授权、现场及输入身份
+
+本轮起点 `e44fb6317811f063de566c012c36ea7b11ed79a8`，主仓库 status 为空。
+用户明确允许 GBS 自身的 init_buildsystem/initvm 注册 qemu binfmt，并临时把宿主 vm.mmap_min_addr 写为 0；
+§6 的旧政策停止不再作为本轮阻塞。仍不手工注册、不修改其他宿主配置、GBS/build 脚本或仓库。
+用户同时明确：配置中的固定 Base/Unified 不可用时立即停止，不自行换源。
+本轮 **E_C=`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-20261010`**，下列原始输出均位于该新目录；未覆盖 E 的前次证据。
+
+| 核查 | 本轮实际值 / 结果 | 证据 |
+| --- | --- | --- |
+| /home 可用 | 638,375,489,536 B（594.533 GiB），大于原 120 GiB 空间门槛 | precheck-verified.json |
+| /var/tmp 所在文件系统可用 | 380,068,466,688 B | 同上 |
+| MemAvailable（只记录；未走构建准入） | 22,380,081,152 B | c0-preflight/host-before.json：21,855,548 kB × 1024 |
+| 本项目竞争构建进程 | 0；项目/Rnew 两锁取得，PID 749085 | precheck-verified.json、lock-acquired.json |
+| 候选 Source | tools/llvm_static_archives_arm_trial.py，SHA `6a36f173c3efb05c7011aa7029aeb2ae3119e1f77a32536fcc791938bf20c4b7`，与 §5.1 一致 | protected-start.json、protected-final.json |
+| ARM GBS 配置 | `/home/linhao/Toolchain/gbs_llvm.conf`，SHA `436fd7d66db9262e1b680f63ef15894de1a43578208fc4394b2b73293565011b` | c0-preflight/config.json |
+| 宿主 mmap_min_addr | 启动前核查 65536；停止后 65536 | c0-preflight/host-{before,after}.json |
+| binfmt 注册 | 两次均为 jar、python3.12，另有 status/register；未新增 ARM/AArch64 | 同上，保存每个注册条目原文 |
+
+进程扫描首次宽泛匹配到了本会话自身 bash here-document，并非竞争构建；改为排除本会话祖先进程且按可执行名识别后，竞争进程为 0。
+两个检查的原始记录分别保存在 precheck.json 和 precheck-verified.json；没有因此终止他人进程或重跑构建。
+
+已安装初始化脚本只读副本、SHA 和宿主写入检索保存在 c0-preflight/init-source-sha.json、*.source.txt、init-host-write-search.txt。
+`/usr/lib/build/init_buildsystem:769–775` 的 initvm 与 mmap_min_addr 操作现在属于获批范围。
+本轮在仓库可用性检查即停止，初始化程序没有执行，不能把静态检索写成已验证整个初始化没有额外副作用；
+后续真正启动时仍须检查授权外宿主配置写入。未触及四个旧根、未创建 /var/tmp 新根。
+
+### 8.2 固定仓库 HTTP 原始结果：Base 404，Unified 200
+
+从上述配置逐节读取唯一 url，追加 `repodata/repomd.xml`；两个独立只读请求于 11:38:47 +08:00 发起，各请求一次，无重试。
+使用配置原有 **HTTP** URL，`curl --location` 的最终 URL 与原 URL 相同，没有替换为其他快照、reference、缓存仓库或镜像。
+
+| 仓库 | 配置固定快照 | HTTP | 正文大小 | 正文 SHA256 |
+| --- | --- | ---: | ---: | --- |
+| Base | tizen-base-toolchain_20260813.050338 | **404** | 146 B，HTML 错误页 | `55f7d9e99b8e2d4e0e193b2f0275501e6d9c1ebd29cadbea6a0da48a8587e3e0` |
+| Unified | tizen-unified-toolchain_20260814.092727 | 200 | 4,476 B，repomd.xml | `e7af3f222f0ce958678d964589f2d156e8b47ba463ac0b3b0b96c74663382200` |
+
+实际查询模板（完整展开 argv 分别在 base-http.json / unified-http.json）：
+
+```sh
+curl --silent --show-error --location --connect-timeout 15 --max-time 45   --dump-header "$E_C/c0-preflight/NAME-headers.txt"   --output "$E_C/c0-preflight/NAME-body.xml"   --write-out '%{http_code} %{url_effective}\n' "$URL"
+```
+
+stdout 原文：
+
+```text
+404 http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20260813.050338/repos/standard/packages/repodata/repomd.xml
+200 http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260814.092727/repos/standard/packages/repodata/repomd.xml
+```
+
+Base 响应头原文：
+
+```text
+HTTP/1.1 404 Not Found
+Server: nginx
+Date: Sat, 10 Oct 2026 03:39:03 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 146
+Connection: keep-alive
+```
+
+两个 curl 传输退出码均为 0、stderr 均为空：命令没有使用 --fail，**退出 0 只证明收到 HTTP 响应，不表示仓库可用**；门禁依据是 HTTP 404。
+服务器 Date 与本机发起时间分别原样保留，不用服务器时间替代本机计时。
+证据：c0-preflight/{base,unified}-{http.json,headers.txt,body.xml,curl.stdout,curl.stderr}。
+这证明该固定 Base 元数据端点在本次请求时不可用，不推测服务器为何返回 404。
+
+### 8.3 停止结果及后续依赖
+
+结果码：**STOP_BEFORE_C0_GBS_FIXED_BASE_404**。按本轮仓库规则停止，不发起一个已缺固定包源的 GBS 构建。
+这不是 ARM 编译失败、不是 binfmt/accel 实测失败，也不是内存或磁盘不足。
+
+| 要求 | armv7l | aarch64 |
+| --- | --- | --- |
+| C0 仓库前置检查 | STOP：Base repomd HTTP 404 | 使用同配置；不再进入构建 |
+| C0 极小测试包、自动 binfmt、accel exec、guest 程序 | NOT RUN；GBS 0 次 | NOT RUN；GBS 0 次 |
+| C1 prep / CMake / 仅静态库目标 | NOT RUN | NOT RUN |
+| C2 真实归档、命令/IR/ABI/重定位全集普查 | NOT RUN | NOT RUN |
+| C3 转换、索引/符号/PIC、消费者与 GNU/LLVM strip | NOT RUN | NOT RUN |
+| C4 aarch64 后续流程 | 不适用 | NOT RUN：armv7l 未完成 |
+
+候选 Source 没有修改，因此没有新 diff / SHA，也未重复 x86 全量回归或单元测试。
+§5 的 225 档、3864 成员与 60 测试 PASS 仍是该同 SHA 候选的既有硬证据；不冒充本轮新执行，亦不替代 ARM 认证。
+未知 ARM relocation（包括 TARGET2）必须交 PM 的新规则已登记，本轮没有真实 ARM 输入，未触发分类或自行放行。
+继续需要指定固定 Base 恢复可用，或另行授权经过身份核对的来源；本轮没有启用 docs/36 本地仓库或改任何配置。
+
+### 8.4 收尾与自检
+
+- GBS、LLVM/Chromium 构建、BOLT、性能校准、归档转换均为 0；未安装软件、未修改宿主配置、未执行清理。
+- W/llvm/spec、两个 GBS 配置、原转换 Source、候选 Source、两份已上传补丁的摘要前后相同，见 protected-final.json。
+- 没有启动 scope、采样器或构建子进程，没有新挂载；项目锁在收尾释放，见 final-cleanup.json、lock-released.json。
+- 原 §1–§7、docs/25–39、41、42 保留不动；仅新增报告开头的当前状态/恢复说明与本 §8，并在同一提交更新 STATUS。
+- 本次停止报告提交并推送 GitHub；不推 Gerrit。提交号用 `git log -1 -- docs/40_arm_archive_conversion_stage1.md` 定位，推送输出保留 E_C/git-push.log。
+
+收尾 `df -h` 原始输出：
+
+```text
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sda1       1.8T  1.2T  595G  66% /home
+/dev/nvme0n1p1  468G   90G  354G  21% /
+```
+
+全部证据留 E_C，日志/元数据仅本机；本次没有需提交的新 Source 或脚本。

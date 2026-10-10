@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前执行（docs/40 §5–7）**：清理已与B/C解耦；x86全量回归PASS（225档、3864成员、60测试）；ARM真实归档尚未认证，C0因正常GBS入口写宿主sysctl而在启动前停止；两ARM未构建。
+**当前执行（docs/40 §8）**：GBS 标准 binfmt/mmap 初始化已获准；固定 ARM 配置的 Base 20260813.050338 返回 HTTP404、Unified200，按仓库门禁在 GBS 启动前停止。候选 Source 未改，§5 的 x86 全量回归PASS（225档、3864成员、60测试）保持；两ARM未构建、尚未认证。
 
 历史状态核对到 `4d80d94`；完整设计以 [docs/21](21_spec_integration_v3.md) 为准，混合构建见 [docs/22](22_hybrid_link_trial.md)，
 归档根因与前次失败记录见 [docs/23](23_archive_fix_and_profile_rebind.md)；
@@ -51,7 +51,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | BOLT 筛选 | 容量、插桩/profile、重写、正确性、训练/留出、中间对照、双目标 | 本机工作已结束；最终 ARM 校准 FAIL，AArch64 PASS 并完成正式轮 |
 | 静态库兼容性修复 | bitcode→机器码、保持原brp宏、GNU ld无LTO/插件消费者、完整构建及新RPM验收 | **v2新RPM/归档/非归档、独立-bi/SKIP、七宿主消费者与两Tizen包均PASS；基于cb679968的v2补丁已生成并验apply，用户确认356627 PS2已上传、评审中；本轮未重建新目标配方** |
 | LLVM包x86_64切换llvm-strip | 叠在356627之后，新增compiler-rt真实运行库消费者及包内验收 | **docs/38全部PASS；用户确认已上传356639，依赖356627；目标流水线待验，代理未推Gerrit** |
-| ARM静态库转换 | 参数/工具/路由/PIC与x86不变性设计 | **docs/40 §5：隔离ARM草案Source的x86全量回归PASS；C0因宿主sysctl约束在启动前停止；真实ARM归档/消费者未执行，两个change未改** |
+| ARM静态库转换 | 参数/工具/路由/PIC与x86不变性设计 | **docs/40 §5 x86回归PASS；§8旧sysctl政策已解除，固定Base HTTP404阻塞C0；真实ARM归档/消费者未执行，两个change未改** |
 | 集成设计与评审 | docs/21 完整 v3、混合链接拟议补丁、身份/活性脚本与协议检查 | 历史混合构建/30 TU结果保留；设计 v4 与 BOLT 实施暂缓，待归档修复完成 |
 | OBS 试包与服务器验收 | LLVM RPM → qemu-accel → 新 Base 快照 → Quickbuild | 未执行；项目/验证快照待用户提供，试包与收益验收均未完成 |
 | 后续工具/PGO | 依全平台调用占比和服务器容量决定 | 挂账；没有自动启动授权 |
@@ -117,7 +117,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `f6a0499` | docs/41、STATUS | 只读盘点102项目录/子范围，567条会话元数据；明确保留输入及权限/归属缺口，量化6.646GiB可删建议与173.887GiB仅载荷建议，未清理。 |
 | 2026-10-10 | `26da4ac` | docs/42、docs/40、STATUS | A1回收180.533333GiB；A2因保留05E工作树的共享Git依赖在rm前停止；A3日志与sudo脚本已准备未执行；B/C未执行。 |
 | 2026-10-10 | `e66396a` | docs/40、STATUS、新ARM试验Source及夹具 | 225原档身份一致；225整档/3864成员/完整索引/后端flags与docs/35完全一致；60测试PASS，ARM仍为待认证草案。 |
-| 2026-10-10 | 本次C停止提交（`git log -1 -- docs/40_arm_archive_conversion_stage1.md`） | docs/40、STATUS | B全量x86回归PASS已发布；C0查明正常GBS会写宿主mmap_min_addr，遵守禁止sysctl变更而不启动，ARM两阶段NOT RUN；锁/scope/采样器回收。 |
+| 2026-10-10 | `e44fb63` | docs/40、STATUS | B全量x86回归PASS已发布；C0查明正常GBS会写宿主mmap_min_addr，遵守禁止sysctl变更而不启动，ARM两阶段NOT RUN；锁/scope/采样器回收。 |
+| 2026-10-10 | 本提交（`git log -1 -- docs/40_arm_archive_conversion_stage1.md`） | docs/40 §8、STATUS | 标准GBS初始化获授权后只读预检：指定Base404、Unified200，GBS零次，C1–C4未执行；Source/配置/宿主状态不变，锁已回收。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -131,6 +132,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 | 结论与边界 | 证据 | 强度 |
 | --- | --- | --- |
+| 指定ARM配置Base 20260813.050338的repomd返回HTTP404（146B、SHA55f7d9e9…），Unified200；未启动GBS，mmap_min_addr前后65536、binfmt未变。该时点仓库不可用，不是ARM代码生成失败。 | docs/40 §8；temp/arm-archive-stage1-c-20261010/c0-preflight/、result.json | 硬证据（HTTP/身份/未执行边界） |
 | 隔离ARM草案Source选择x86时，225原始归档身份一致；转换后225整档、3864有序成员及完整索引与docs/35完全相同，3853条后端flags顺序一致，60相关测试PASS。仅认证x86路径，不认证真实ARM归档。 | docs/40 §5；temp/arm-archive-stage1-20261010/x86-regression-result.json | 硬证据 |
 | 工作区 spec 配方未启用 PGO/BOLT；不能据此断言旧发布/accel 二进制也未使用，后者仍有 UNKNOWN。 | [docs/10 §1、§2.3](10_tizen_llvm_build_config.md) | 硬证据（配方）；发布身份缺口不填空 |
 | 静态 RPM 基线已产出 22 个二进制 RPM；clang/clang++/ld.lld/llvm-ar/llvm-ranlib 均无 libLLVM/libclang-cpp NEEDED。“静态”只指 LLVM 库，不指 libc。 | [docs/13 §7](13_baseline_build.md)；`temp/baseline-resume-20260917/rpm-inventory.json`；docs/20 §1.1 | 硬证据 |
@@ -360,7 +362,9 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 本轮夜间人工规则（2026-10-10）：用户授权A指定清理→B x86全量SHA回归→C两ARM静态库第一段；规定之外停止，失败停止全部后续，每阶段/停止均提交推送；A2 Git报错可保留可得备份后删除，但未授权处理保留路径的共享Git依赖。A3四根仅生成sudo脚本；A1逐文件须匹配docs/41。最终停在A2依赖，不重新要求夜间确认。
 
-本次用户裁决：仅执行B/C；清理与Chromium不在范围，也不再阻塞本任务。四个待用户sudo删除的旧根不读写。B失败不进C，ARM32失败不进AArch64；禁止宿主binfmt/sysctl/包变更，规定之外停止报告。
+前次用户裁决（已由下一条更新初始化范围）：仅执行B/C；清理与Chromium不在范围，也不再阻塞本任务。四个待用户sudo删除的旧根不读写。B失败不进C，ARM32失败不进AArch64；禁止宿主binfmt/sysctl/包变更，规定之外停止报告。
+
+本次人工裁决（docs/40 §8）：允许正常 GBS/init_buildsystem/initvm 注册 qemu binfmt，以及临时写宿主 vm.mmap_min_addr=0；不手工注册、不改其他配置/脚本/宿主包。结束不替用户恢复，报告提供原值恢复命令。固定 ARM 配置的 Base/Unified 不可用即停止，不自行换源；未知真实 ARM relocation（如 TARGET2）只列证据/建议后停交 PM。候选 Source 只有 C2 实证才能定稿，任何改动必须重跑全部测试与 225档/3864成员 x86回归。此次固定Base404，未触发任何宿主写入或Source修改。
 
 ## 5. 挂账
 
@@ -385,7 +389,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 评审中/待目标流水线 | 归档修复v2与356627 PS2 | docs/35+36门禁闭合；docs/38已fetch核验PS2提交67619ec8bbba及父cb679968。docs/37确认同宏环境参数策略覆盖；目标配方仍需流水线正常构建，新选项须重新核查。 | docs/36 §3–§4；docs/37 §4；docs/38 §6 |
 | 评审中/待目标流水线 | 356639：x86_64 LLVM包切换llvm-strip | 用户已确认上传、依赖356627；本机要求PASS，目标流水线另验。ARM条件需在转换认证后更新同change并rebase，不能借x86 PASS直接扩大范围。 | docs/38 §3–§6；docs/39 §8–§9；用户本轮确认 |
 | 已闭合（保留记录） | 修正后的续跑验收 | 新RPM第1–4项PASS后独立buildroot真实-bi重新转换225档并验收，通过后对同树Source SKIP，225档SHA不变；这两项不再挂账。 | docs/35 §4；C/independent-archives-result.json、independent-skip-verification.json |
-| 待PM批准/真实输入 | ARM/AArch64转换实施及完整认证 | docs/39参数/工具/显式路由与小bitcode读取已证；需目标原归档/全argv、自动binfmt、服务器容量与CMake确认，完成PIC/ABI/消费者矩阵和x86全225档SHA回归后更新同两个review。当前40.93GiB不准入完整本机构建。 | docs/39 §1–§9 |
+| 待固定包源恢复/真实输入 | ARM/AArch64转换C阶段 | §5新Source的x86 225档/3864成员回归已PASS，GBS初始化已获批；指定Base 20260813.050338本次404，不能自行换源。包源恢复后才可C0→C1–C3，ARM32失败不进AArch64，未知relocation交PM；Source改动重跑x86门禁。 | docs/40 §5、§8；docs/39 §1–§9 |
 | 已隔离/暂缓 | 旧混合构建根与profile适用性；设计v4 | docs/24旧根不再读写；外来docs/23与重链脚本改动在备份SHA匹配后已按新授权恢复HEAD，不再是脏工作树。设计v4及BOLT后续等归档任务完成。 | docs/24；docs/25 §0 |
 
 已关闭、不再作为待办：本机校准重试、用新门禁回判历史 FAIL、为补漂亮数字追加轮次。
@@ -395,6 +399,6 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 原宏关闭方案继续作废；转换只在x86_64安装根进行，W/llvm/spec不动；代理未推Gerrit，用户已确认上传356627 PS2。
 归档修复v2提交材料及两Tizen包验收已在docs/36完成；固定Base缓存复原解除此消费者环境的依赖阻塞，不代表远端404消失。docs/37已闭合相同环境下编译参数策略覆盖；当前归档修复评审中，待目标流水线完整验证；x86 llvm-strip已完成并由用户上传356639。docs/39 ARM可行性调查已完成，实施与完整试包待PM决定；不自动构建新配方或上传Gerrit。设计v4/BOLT没有自动启动授权。
 
-本次执行备案：用户明确清理任务不再阻塞B/C，四个待sudo删除旧根不读写；B已PASS；C0在GBS启动前停止，证据`temp/arm-archive-stage1-20261010`。x86不变性为硬证据，ARM能力仍未认证。无磁盘清理/宿主配置修改/补丁更新/Gerrit推送。
+前次执行备案（e44fb63，初始化政策随后已解除）：用户明确清理任务不再阻塞B/C，四个待sudo删除旧根不读写；B已PASS；C0在GBS启动前停止，证据`temp/arm-archive-stage1-20261010`。x86不变性为硬证据，ARM能力仍未认证。无磁盘清理/宿主配置修改/补丁更新/Gerrit推送。
 
-当前挂账：正常GBS跨架构初始化在`init_buildsystem:773`写宿主`vm.mmap_min_addr`；本轮授权禁止该变更，故C0未启动。用户需先确定不冲突的执行政策/环境；仅提供binfmt注册命令、未执行。B的新Source x86不变性为硬证据，ARM真实归档资格仍UNKNOWN。
+当前挂账（取代旧sysctl政策阻塞）：标准GBS初始化已经获准。指定ARM配置的固定Base repomd本次HTTP404，C0未启动；不得自行换仓库。候选Source SHA仍6a36f173…、B的x86不变性硬证据保持；ARM真实归档资格仍UNKNOWN。最新证据为temp/arm-archive-stage1-c-20261010，报告§8；宿主值65536、binfmt未变、锁已释放。
