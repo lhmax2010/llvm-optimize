@@ -200,13 +200,17 @@ class CancellationTests(unittest.TestCase):
 
     def test_g_success_and_timeout_reaped(self):
         with tempfile.TemporaryDirectory() as tmp:
-            p=Path(tmp);command=source.Commands(timeout=.15)
+            p=Path(tmp);ready=p/'ready';timeout=5
+            command=source.Commands(timeout=timeout)
+            child=("import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); "
+                   "open("+repr(str(ready))+",'w').write('ready'); time.sleep(30)")
             with self.assertRaisesRegex(RuntimeError,'timeout'):
-                command.run([sys.executable,'-c','import signal,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); time.sleep(30)'],p/'hang')
+                command.run([sys.executable,'-c',child],p/'hang')
+            self.assertTrue(ready.is_file(), '环境未建立测试前提: SIGTERM ignore handler not ready')
             self.assertFalse(command.children)
             row=json.loads((p/'hang.json').read_text())
             self.assertEqual(row['exit'],-signal.SIGKILL)
-            self.assertGreaterEqual(row['wall'],3)
+            self.assertGreaterEqual(row['wall'],timeout+3)
 
     def test_g_failed_leader_descendants_are_killed(self):
         with tempfile.TemporaryDirectory() as tmp:

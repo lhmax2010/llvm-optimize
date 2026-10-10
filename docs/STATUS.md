@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/44续三）事实核查PASS**：ARM32启动20/20>0.15s（159.558–170.290ms）；R32/R64两档AS均unlimited、nofile256生效，/emul无原生prlimit。按PM将AS作为ARM集成开放问题，离线宿主复验继续；准备仅修timeout测试为就绪标记+5s，Source/Commands不改。临时proc已卸载，项目锁继续持有。首次宿主mount入口无免密权限，按辅助条款改走已授权root chroot、相同挂载语义后一次通过；详见docs/44 §18–§19及E4。
+**当前任务（docs/44续三）测试修正完成**：根内启动/AS事实核查PASS；仅改timeout测试为5秒与ready前提，宿主99/99 PASS。Source仍e2c2ebfa，Commands不改。接下来根内挂proc跑99项，按PM将3项辅助环境不适用与1项AS已知发现单列；其余必须PASS。详见docs/44 §18–§20。
 
 **历史文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
 
@@ -138,7 +138,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `9093af2` | docs/44 §13、STATUS | 600例诊断PASS，8次R均挂起SIGKILL；原Commands不改，进入后续门禁。 |
 | 2026-10-10 | `b547f98` | docs/44 §14–§17、diff、候选及两测试、STATUS | 宿主99 PASS；ARM根94 PASS/2 FAIL/3 ERROR；停止未复验，生产代码不改。 |
 | 2026-10-10 | `4662598` | docs/45、STATUS | 钉docs/44最终内容到b547f98，披露Commands异步后代边界及根内测试STOP，x86符号核查仍UNKNOWN。 |
-| 2026-10-10 | 本次事实核查提交 | docs/44 §18–§19、STATUS | 启动时延20/20>0.15s；两根AS不生效、nofile正常，原生prlimit缺席；允许继续宿主离线验证。 |
+| 2026-10-10 | `c4c635c` | docs/44 §18–§19、STATUS | 启动时延20/20>0.15s；两根AS不生效、nofile正常，原生prlimit缺席；允许继续宿主离线验证。 |
+| 2026-10-10 | 本次测试修正提交 | docs/44 §20、timeout测试、STATUS | 仅改5秒/就绪前提；宿主99/99 PASS，准备根内分类验收。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。

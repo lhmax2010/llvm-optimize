@@ -481,3 +481,10 @@ ARM32根内已启动的python runner逐次Popen另一个python3，子进程`impo
 事实限于上述两根/QEMU9.2.3：目标prlimit设置AS后，目标cat观察到unlimited；其他nofile限制可施加。生产Commands默认4GiB AS在这条模拟执行路径不能按既有测试证明生效。这是ARM生产集成的开放问题，不能把cgroup的整体限额称为逐编译进程AS限制。（证据：§18.2；生产Source Commands.run；PM本轮裁决3。）
 
 x86路径不变的依据：本轮生产/候选Source及Commands均无修改，宿主上轮99测试中同一4GiB读回断言PASS（§15）；本轮将再跑宿主测试与全量不变性。后续离线ARM转换仍从宿主启动原生x86 accel工具，不经目标prlimit，因此用户允许继续该离线验证；这不认证未来ARM根内%install限流。可选方向供外部评审：在/emul提供/认证原生prlimit（当前没有）；明确记录目标AS未生效并另设计整体/单进程保护；评估QEMU路径或其他限制机制。各方向尚未选择/实施，不在本轮改Commands/安装包/放宽限额。（证据：§18；docs/40 §12工具路由；本轮约束。）
+
+
+## 20. 续三：仅修超时测试，宿主99项通过
+
+事实阶段已先提交`c4c635c`。仅改`test_g_success_and_timeout_reaped`：子进程安装SIGTERM忽略后写ready标记，再sleep30；timeout固定5秒（§18 p100=0.170290s）；异常后必须ready存在，否则报“环境未建立测试前提”，exit=-SIGKILL、wall≥8秒、children为空均保留。没有接受SIGTERM或修改Commands/Source。（证据：本提交测试diff。）
+
+宿主一次99/99 PASS，wall 18.269634s；候选Source仍e2c2ebfa，生产6bd不变。测试文件SHA `13af0bed62f9ceb1972c6f4878e6488e8a20b6544daa4c6d632339b69b8722d9`。随后才开始临时proc环境下的根内分类验收。（证据：E4/unit-tests-host.log、unit-tests-final-result.json、run_tests.py。）
