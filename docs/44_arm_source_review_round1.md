@@ -2,7 +2,7 @@
 
 日期：2026-10-10。起点 `ddc73105dbd46348c650414e7e48bfd95c5309e9`。
 
-**本轮停在只读普查之后、Source 修订之前。** 51个“无函数属性”成员都没有函数定义，第一步第1项通过；全量函数属性也符合预期。但AArch64真实输入有 **3条 module asm**，均为 `.globl _ZSt21ios_base_library_initv`。它们直接触及本轮第二步第8项“aarch64出现任何module asm即失败”的新规则。未把符号声明自行豁免，未修改Source后再用已知不满足策略的输入长时间转换；第二至第四步未执行。**这是只读查明的新策略与输入冲突，不是已运行新Source后的转换失败，也不是重判旧消费者结果。** 第五步的独立Gerrit评审材料仍须完成，见docs/45。（证据：E/census-result.json、module-asm-all.json、policy-stop.json；用户本轮第二步第8项及运行方式。）
+**本轮停在只读普查之后、Source 修订之前。** 51个“无函数属性”成员都没有函数定义，第一步第1项通过；全量函数属性也符合预期。但AArch64真实输入有 **3条 module asm**，均为 `.globl _ZSt21ios_base_library_initv`。它们直接触及本轮第二步第8项“aarch64出现任何module asm即失败”的新规则。未把符号声明自行豁免，未修改Source后再用已知不满足策略的输入长时间转换；第二至第四步未执行。**这是只读查明的新策略与输入冲突，不是已运行新Source后的转换失败，也不是重判旧消费者结果。** 第五步的独立Gerrit评审材料已完成，见docs/45。（证据：E/census-result.json、module-asm-all.json、policy-stop.json；用户本轮第二步第8项及运行方式。）
 
 需要PM后续决定的是：是否允许这条特定的AArch64全局符号声明，以及对应认证边界/测试。当前未修改输入、未增加例外、未请求无人值守确认。旧1620候选的既有PASS只适用旧规则，不能证明新规则全量可通过。（出处：docs/40 §12、docs/43 §5；本轮policy-stop.json。）
 
@@ -195,4 +195,4 @@ AArch64三项的输入与本次llvm-dis输出摘要如下，均经输入成员SH
 | census-result.json、module-asm-all.json、policy-stop.json | 全量计数、5条asm定位、新规则冲突停止判断 |
 | census-scope/ | 时间、资源、命令日志、原始stdout/stderr与回收；通用包装器文件名build.log不表示执行了构建 |
 
-未改候选Source、测试、x86共用函数、spec、两份Gerrit补丁、W/llvm或配置；不构建、转换、打包、清盘、推Gerrit。只发布报告与STATUS。第五步完成后的保护文件核对、锁与进程收尾记录追加至本节。
+未改候选Source、测试、x86共用函数、spec、两份Gerrit补丁、W/llvm或配置；不构建、转换、打包、清盘、推Gerrit。只发布报告与STATUS。第五步已完成，docs/45独立汇集既有两补丁证据。收尾final-integrity.json确认上述受保护文件摘要全相同；census scope已inactive，sampler/log-reader回收，lock-released.json记录两项目锁已释放，final-processes.json确认本任务进程与挂载残留0。本轮没有创建GBS根或挂载。

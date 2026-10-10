@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-10。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/44第一阶段）停止于Source修改前**：只读普查完成，51个无属性成员均无define；7,382个bitcode成员共813,881个define必需目标属性齐备。但AArch64真实输入有3条`.globl _ZSt21ios_base_library_initv` module asm，与本轮PM“任何A64 module asm拒绝”规则冲突；未自行豁免。候选仍1620a8da，Source/测试/补丁未改，新测试/x86与两ARM复验均NOT RUN。按任务独立完成docs/45评审材料包后收尾。证据：docs/44 §1–§5、temp/arm-source-review-round1-20261010。
+**当前任务（docs/44第一阶段）停止于Source修改前**：只读普查完成，51个无属性成员均无define；7,382个bitcode成员共813,881个define必需目标属性齐备。但AArch64真实输入有3条`.globl _ZSt21ios_base_library_initv` module asm，与本轮PM“任何A64 module asm拒绝”规则冲突；未自行豁免。候选仍1620a8da，Source/测试/补丁未改，新测试/x86与两ARM复验均NOT RUN。docs/45已独立完成（两patch身份、spec全文、验证与边界、固定raw链接）；项目锁/scope/进程已回收。证据：docs/44 §1–§5、temp/arm-source-review-round1-20261010。
 
 **历史文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
 
@@ -37,7 +37,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：外部评审首轮只读普查已完成；AArch64真实module asm与拟实施新门禁冲突，Source修订/复验停止，待PM明确该声明的处理范围。并行任务docs/45仅整理已上传x86两补丁的既有证据，不改变生产代码。
+当前阶段：外部评审首轮只读普查已完成；AArch64真实module asm与拟实施新门禁冲突，Source修订/复验停止，待PM明确该声明的处理范围。docs/45已整理已上传x86两补丁的既有证据供外部复审，未改变生产代码。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -131,7 +131,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `256267b` | docs/40 §12.4–12.7、STATUS | ARM32 210档/3690成员转换与Thumb/重定位PASS；未strip、GNU/LLVM strip三套消费者PASS；辅助资源目录遗漏修正一次。 |
 | 2026-10-10 | `2058761` | docs/40 §12.8–12.13、STATUS | AArch64-bc 7545任务PASS；212档/3706成员、3699 bitcode转换、全集重定位与三套消费者/两种strip全PASS；原件/cache保全，锁/进程/挂载回收，第一段结束。 |
 | 2026-10-10 | `ddc7310` | docs/43、Source差异文档附件、docs/40入口、STATUS | 整理候选1620a8da外部评审包（≤50KB）：固定版本链接、策略/实测边界、67项测试；仅文档，既有认证结果不改判。 |
-| 2026-10-10 | 本提交（`git log -1 -- docs/44_arm_source_review_round1.md`） | docs/44、STATUS | 51无属性成员/全部函数属性普查通过；A64三条真实module asm与新禁止规则冲突，修改前STOP；无Source/测试/转换修改或复验。 |
+| 2026-10-10 | `835ebef` | docs/44、STATUS | 51无属性成员/全部函数属性普查通过；A64三条真实module asm与新禁止规则冲突，修改前STOP；无Source/测试/转换修改或复验。 |
+| 2026-10-10 | 本提交（`git log -1 -- docs/45_gerrit_patches_review_package.md`） | docs/45、docs/44收尾、STATUS | 两待评审Gerrit补丁材料包完成，仅既有证据；保持ARM策略冲突STOP，Source/测试/patch未改，scope/锁/进程回收。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
@@ -439,6 +440,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 待用户提供 | OBS 项目、工作区自研 spec 的实际来源、最终验证 Base 快照 | 明确 source/spec/patch/MLGO 身份，之后钉元数据与 RPM；现公开旧快照不能冒充静态 BOLT 验证快照。 | docs/20 §1.1、§8 |
 | 待用户提供 | Quickbuild 全平台日志 | 统计实际链接+归档占比；>10% 启动第二阶段真实链接基准/lld profile/BOLT lld/逐字节门禁；<5% 搁置；5%–10%（含边界）默认搁置。占比用链接/归档边累计时间除全部边累计时间，与总wall另列；不以Chromium 0.2%或小夹具代替。 | docs/21 §8 |
 | 待用户提供 | qemu-accel 完整源码、armv7l 生成 spec、baselibs_body、对应 OBS 宏与构建日志 | 已取 SRPM 仅含 aarch64 spec；原 VCS `e01aa7250a1a73aa8f88ba9ac4a05cbc954d1c9f` 的公共获取受凭据/403/TLS 阻碍。补齐分支和隐式后处理，不能把通用主体当完整 armv7l 执行日志。 | docs/19 §2.1–2.2；docs/20 §1.2 |
+| 待外部复审 | 356627 PS2与356639 PS1 | 已交付docs/45固定版本材料；上传身份与本地封套区别、生产Source/spec、证据边界齐备。材料准备不是评审通过，代理未推Gerrit。 | docs/45 §1–§6 |
 | 待PM裁决/后续修订 | ARM候选1620a8da与测试 | 首轮两家意见已由PM合并；普查发现3条真实A64 module asm与新规则冲突，未改Source。需先明确该声明的处理范围，之后才实施评审项和全部回归，不能把旧67测试当成新规则PASS。 | docs/44 §3–§5；docs/43 §5–§6 |
 | 待评审 | docs/21完整v3与V01–V36落实、七文件混合提案、脚本/strip实验 | docs/20保持历史原文；已采纳/实现不等于评审通过，不再安排本机校准。 | docs/21附录D/E |
 | 待评审/修订 | 五个额外静态工具未符合混合范围 | llvm-config、llvm-exegesis与三tblgen实测仍静态；修订方案或由用户确认明确例外，不能自动豁免/重建。保留static-devel及runtime。 | docs/22 §5.1；docs/21 §0.1 |
