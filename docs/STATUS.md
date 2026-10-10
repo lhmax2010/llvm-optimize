@@ -136,7 +136,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 | 2026-10-10 | `c8898cd` | docs/44 §7–§12、完整diff、候选Source/测试、STATUS | 13项修订已写入；唯一辅助修正后94/95 PASS，既有取消测试FAIL；全量复验NOT RUN。 |
 | 2026-10-10 | `270f3ec` | docs/45、STATUS | 只读补全356639 PS1完整号，链接本轮最终docs/44；披露x86 module asm符号核查未执行，维持测试STOP。 |
 | 2026-10-10 | `9093af2` | docs/44 §13、STATUS | 600例诊断PASS，8次R均挂起SIGKILL；原Commands不改，进入后续门禁。 |
-| 2026-10-10 | 本次小修/测试停止提交 | docs/44 §14–§17、diff、候选及两测试、STATUS | 宿主99 PASS；ARM根94 PASS/2 FAIL/3 ERROR；停止未复验，生产代码不改。 |
+| 2026-10-10 | `b547f98` | docs/44 §14–§17、diff、候选及两测试、STATUS | 宿主99 PASS；ARM根94 PASS/2 FAIL/3 ERROR；停止未复验，生产代码不改。 |
+| 2026-10-10 | 本次文档收尾提交（git log -- docs/45） | docs/45、STATUS | 钉docs/44最终内容到b547f98，披露Commands异步后代边界及根内测试STOP，x86符号核查仍UNKNOWN。 |
 
 本文件建立提交：`git log --diff-filter=A --format='%h %ad %s' --date=iso-strict -- docs/STATUS.md`。
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
