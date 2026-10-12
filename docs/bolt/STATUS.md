@@ -16,8 +16,8 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；B=`/home/linhao/Toolchain
 
 | 任务 | 状态/提交 | 产出 |
 |---|---|---|
-| 建立分支与状态 | 完成；本条所在提交（git log -- docs/bolt/STATUS.md可追溯） | STATUS.md；inventory/opening-inputs.json与只读输入快照 |
-| 资料盘点 | 待执行 | — |
+| 建立分支与状态 | 完成；ba825d65（完整号见git log） | STATUS.md；inventory/opening-inputs.json与只读输入快照 |
+| 资料盘点 | 完成；本条所在提交 | 02_inventory.md；E/inventory产物/SHA/spec/宏/锁快照 |
 | strip实验 | 待执行 | — |
 | 设计v4 | 待执行 | — |
 | 收尾 | 待执行 | — |
@@ -47,3 +47,5 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；B=`/home/linhao/Toolchain
 - 盘点、strip及完整RPM后处理结果尚未知；不提前承诺profile适配cb679968。
 - 规定外情况停止并记录；产品材料丢失/不可读继续其余授权工作。
 - 锁机制待只读查明；今晚不获取、不等待、不干扰项目锁，不进入构建根执行。
+
+盘点闭合：全部关键历史产物仍在，SHA与历史一致；工具是docs/15实验增量构建而非spec默认产物。cb679968 profile适配UNKNOWN；续跑新树路径UNKNOWN。锁：双O_EXCL锁（项目temp及archivefix-v2根顶层），今晚不获取/不等待/不干扰。详见02_inventory.md。
