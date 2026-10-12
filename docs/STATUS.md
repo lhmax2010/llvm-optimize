@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-12。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/46续）第零步完整性核查PASS**：主HEAD/origin/远端均cb1e34a，范围内61文件与HEAD一致；647输入归档及工具/保护文件共671项SHA一致；find修改记录186条均已归因，未知0；W/llvm仅原三处并发差异。轻阶段6GiB/转换10GiB新准入，统一18GiB/swap0；只修一次find字符串辅助缺陷。尚未修改Source/测试/补丁，进入七项只读普查，B3/B5未决定。证据temp/review-round3-continue-20261012；项目锁继续持有。
+**当前任务（docs/46续）第零步与第一步PASS**：647输入及671项保护SHA全同、未知修改0；x86全集3853 bitcode仅3条白名单asm；ARM32 922209个REL、AArch64 325692个RELA，因此B3实施；两架构记录target均2次，B5不实施。宏/解释器/cat前置核查完成。尚未修改Source/测试/补丁，接续A–D；轻阶段6GiB、转换10GiB准入，18GiB/swap0。项目锁继续持有，证据temp/review-round3-continue-20261012。
 
 **历史任务（docs/44续三）完成**：宿主99PASS；根内95PASS+3指定环境不适用+1已实证AS发现。x86225档/3864成员/索引/3853 flags完全一致；ARM32 210档、AArch64 212档after SHA与§12全同，沿用三套消费者/两种strip。5个ARM asm符号GLOBAL/UND；105/106的bfd/lld共享链接与dlopen均PASS；x86三个bitcode同asm成员最终符号保留。Source仍e2c2ebfa，无代码改动；只修timeout测试。两处辅助脚本各授权修一次；锁、采样器、proc回收。ARM生产AS限制问题待评审，未打包/推Gerrit。见docs/44 §18–§27与docs/45。
 
@@ -514,3 +514,5 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 - 本轮16GiB入口来源为代理复制旧辅助驱动，不是用户本次对只读普查另定的资源裁决；实际资源需求未测。证据强度：入口退出为硬证据，Source/输入行为为未测；见docs/46 §1–§2、E/stop-result.json。
 
 2026-10-12 本提交：docs/46 第零步完整性核查通过，输入/工具/代码未变；后续修订与离线复验进行中。
+
+2026-10-12 本提交：docs/46七项只读普查完成；B3条件成立、B5条件不成立；待Source修订与离线复验。

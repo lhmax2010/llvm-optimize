@@ -2,7 +2,7 @@
 
 日期：2026-10-12（Asia/Shanghai）。开场 HEAD 与 origin/main 均为 `cb1e34af0958de17155459f7406869a91cadbe00`。
 
-**当前完成第零步：完整性核查 PASS。后续只读普查、Source 修订、测试、全量复验与新补丁尚未执行。本页会随阶段更新，当前不能作为新候选已通过的材料。**
+**当前完成第零步完整性核查和第一步只读普查，均 PASS。B3 实施条件成立，B5 条件不成立、按规定不实施。Source 修订、测试、全量复验与新补丁尚未执行，当前不能作为新候选已通过的材料。**
 
 ## 0. 范围与上次停止记录
 
@@ -30,7 +30,53 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-r
 
 ## 2. 只读普查与后续修订状态
 
-第一步七项尚未运行。A1–A5、B1–B7、C/D 均尚未实施；B3/B5 须依据完整普查决定。Commands、W/llvm、spec、两份旧补丁没有改动；新候选补丁尚未生成。后续测试与两次 x86、两 ARM 全量复验尚未执行，不引用历史 PASS 代替。（证据：本轮 integrity-result.json。）
+| 核查 | 实测结果 | 证据（相对 E） |
+|---|---|---|
+| x86 module asm 全集 | 225档全部3,853 bitcode；仅3个成员含语句，全部 `.globl _ZSt21ios_base_library_initv`，其他0 | x86-asm-census-result.json；x86-asm-census/逐成员 |
+| ARM32 target | 3,683条全部出现2次；均 `--target=armv7l-tizen-linux-gnueabi`，共7,366次 | armv7l-target-census.json |
+| AArch64 target | 3,699条全部出现2次；均 `--target=aarch64-tizen-linux-gnu`，共7,398次 | aarch64-target-census.json |
+| ARM32转换归档重定位节 | 210档SHA与E4相同；SHT_REL=922,209，SHT_RELA=0 | armv7l-relocation-section-census.json |
+| AArch64转换归档重定位节 | 212档SHA与E4相同；SHT_RELA=325,692，SHT_REL=0 | aarch64-relocation-section-census.json |
+| 两根 /emul 解释器 | 都有原生x86_64 bash/dash/sh（bin与usr/bin路径）；未找到busybox/python/perl。仅只读识别，不作为AS方案已可用的证明 | readonly-census-result.json 的 emul_interpreters |
+| `/usr/bin/cat` | 宿主、R32、R64均存在且可执行 | readonly-census-result.json 的 cat |
+
+**B3实施；B5不实施**：两种ELF节格式完全符合收窄前提；target次数全部为2，不能改成“恰好1次”，也不自行换成“恰好2次”。其余A–D尚未修订。（出处：本轮条件裁决；以上全集。）
+
+x86三个module asm位置（均IR第6行）：`libLLVMAnalysis.a/MLInlineAdvisor.cpp.o` ordinal80、`libLLVMCodeGen.a/MLRegAllocEvictAdvisor.cpp.o` ordinal137、`libarcher_static.a/ompt-tsan.cpp.o` ordinal0。同名 occurrence 均1。根内 `usr/lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/iostream:82` 实际声明匹配，文件SHA `405900b25b2ecfda0e3ff3fd52c44b89df95d3fb89987235291abaec4a522d00`。（证据：x86-asm-census-result.json、readonly-census-result.json。）
+
+目标spec直接取 `cb67996861d070d68fec2b4c623eed7d20ba2e23:packaging/llvm.spec`，完整原文 `target-spec.txt`。debug相关条件原文：
+
+```spec
+# 11–16
+%if %{defined _toolchain}
+%define _toolchain_override clang
+%define llvm_release_build 0
+%else
+%define llvm_release_build 1
+%endif
+# 24–30
+%if 0%{llvm_release_build}
+# Disable debug packages building
+%define debug_package %{nil}
+%define __debug_install_post %{_rpmconfigdir}/find-debuginfo.sh %{?_find_debuginfo_opts} %{?_find_debuginfo_strip_opts} %{?_find_debuginfo_ko_strip_opts} "%{_builddir}/%{?buildsubdir}"\
+    rm -rf "%{buildroot}/usr/lib/debug"\
+    rm -rf "%{buildroot}/usr/src/debug"
+%endif
+```
+
+同条件还控制spec57–59的sed依赖及178–182的编译参数处理；420行删除安装根libdir/debug残留。实际文件带tab的逐字原文以target-spec.txt为准，未改spec。（证据：target-spec.txt、readonly-census-result.json/debug_matches。）
+
+宏取docs/38同一x86根 `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`，包 `rpm-build-4.14.1.1-1.4.x86_64`，`usr/lib/rpm/tizen_macros:34–38`：
+
+```rpm
+%__strip_install_post    \
+    %{!?__debug_package:%{_rpmconfigdir}/brp-strip %{__strip}} \
+    %{_rpmconfigdir}/brp-strip-static-archive %{__strip} \
+#    %{_rpmconfigdir}/brp-strip-comment-note %{__strip} %{__objdump} \
+%{nil}
+```
+
+文件SHA `f0f991bd97f44b7bf906ac4a7a45cd34b7444c1acce2358261e4a95b3e68ebc8`；根内直接rpm --eval读到默认strip为`/bin/strip`。本轮尚未加入新的宏覆盖，后续会分别验证debug开启/关闭。（证据：tizen_macros.txt、rpm-build-version.json、strip-macro.json、strip-default.json。）
 
 ## 3. 本轮资源记录
 
@@ -39,6 +85,10 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-r
 | integrity-scope | 6 | 16.121895 | 2.951160 | exit 1；采样器已回收 |
 | integrity-retry-scope | 6 | 15.857098 | 4.945427 | exit 0；采样器已回收 |
 | integrity-inputs-scope | 6 | 15.716362 | 1.474655 | exit 0；采样器已回收 |
+
+| x86-census-scope | 6 | 14.778671 | 3.315685 | PASS；采样器已回收 |
+
+| readonly-census-scope | 6 | 14.689720 | 1.802883 | PASS；采样器已回收 |
 
 全部阶段 MemoryMax=19,327,352,832 B、MemorySwapMax=0，未触发 OOM 或2 GiB宿主保护线。Git/find 的 scope 峰值包含文件缓存和内核 slab，不等于应用匿名内存。（证据：各 scope/plan.json、memory-summary.json。）
 
