@@ -1,0 +1,383 @@
+--- before/llvm_static_archives_arm_trial.py
++++ after/llvm_static_archives_arm_trial.py
+@@ -169,6 +169,8 @@
+                     machine_symbol_entries=len(native_map))
+ 
+ 
++# x86_64 pins the major version: it certifies no literal target-feature strings.
++# Only the ARM policy pins a complete LLVM version for its literal feature census.
+ CERTIFIED_LLVM_MAJOR = 22
+ CERTIFIED_OPTIMIZATION = {'x86_64': '-O3'}
+ CERTIFIED_TRIPLES = {'x86_64': {'x86_64-tizen-linux-gnu'}}
+@@ -239,8 +241,8 @@
+             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
+         elif token == '-flto=thin':
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+-        elif token.startswith('-Wa,'):
+-            raise ValueError('unclassified original assembler option: '+token)
++        elif token.startswith('-Wa,') or token == '-Xassembler':
++            raise ValueError('unclassified original assembler option: -Wa, / -Xassembler')
+         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
+                                '-fdiagnostics-color=')) or token in
+               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+@@ -348,27 +350,46 @@
+     PC-relative relocations are not all forbidden: e.g. hidden symbols and
+     .eh_frame legitimately use them. A consumer GNU ld -shared check follows.
+     """
+-    if member_kind(data) != 'machine' or data[4:6] != b'\x02\x01' or struct.unpack_from('<H', data, 18)[0] != 62:
++    if (len(data) < 64 or member_kind(data) != 'machine' or data[4:6] != b'\x02\x01'
++            or struct.unpack_from('<H', data, 18)[0] != 62):
+         raise ValueError('not x86_64 ELF64 little-endian ET_REL')
+     off = struct.unpack_from('<Q', data, 40)[0]
+     stride, count = struct.unpack_from('<HH', data, 58)
++    if stride < 64:
++        raise ValueError('x86_64 invalid section header stride')
++    if off < 64 or off > len(data) or stride > len(data)-off:
++        raise ValueError('x86_64 section zero outside member')
+     if not count:
+         count = struct.unpack_from('<IIQQQQIIQQ', data, off)[5]
++    if not count or count > (len(data)-off)//stride:
++        raise ValueError('x86_64 section table outside member')
+     sections = [struct.unpack_from('<IIQQQQIIQQ', data, off+i*stride) for i in range(count)]
+     checked, forbidden = 0, []
+     for section in sections:
+         if section[1] not in (4, 9):
+             continue
++        if section[6] >= count:
++            raise ValueError('x86_64 relocation sh_link outside section table')
++        if section[7] >= count:
++            raise ValueError('x86_64 relocation sh_info outside section table')
++        if section[9] < (24 if section[1] == 4 else 16) or section[5] % section[9]:
++            raise ValueError('x86_64 invalid relocation table entsize')
++        if section[4] > len(data) or section[5] > len(data)-section[4]:
++            raise ValueError('x86_64 relocation table outside member')
++        symbols = sections[section[6]]
++        if symbols[9] < 24 or symbols[5] % symbols[9]:
++            raise ValueError('x86_64 invalid symbol table entsize')
++        if symbols[4] > len(data) or symbols[5] > len(data)-symbols[4]:
++            raise ValueError('x86_64 symbol table outside member')
++        symbol_count = symbols[5] // symbols[9]
+         target = sections[section[7]]
+         if not target[2] & 2:  # SHF_ALLOC; excludes all debug sections
+             continue
+-        symbols = sections[section[6]]
+         for pos in range(section[4], section[4]+section[5], section[9]):
+             _, info = struct.unpack_from('<QQ', data, pos)
+             kind, symbol_index = info & 0xffffffff, info >> 32
+-            if (symbols[9] < 24 or symbols[5] % symbols[9] or
+-                    symbol_index >= symbols[5] // symbols[9]):
+-                raise ValueError('relocation symbol outside table')
++            if symbol_index >= symbol_count:
++                raise ValueError('x86_64 relocation symbol outside table')
+             symbol = struct.unpack_from('<IBBHQQ', data, symbols[4]+symbol_index*symbols[9])
+             checked += 1
+             # SHN_ABS references do not need runtime relocation.
+@@ -414,6 +435,7 @@
+     if arch not in ARM_OPTIMIZATION:
+         raise ValueError('uncertified architecture: '+arch)
+     rows, optimizations, dwarfs, contractions = [], [], [], []
++    targets = []
+     switches = {key: [] for key in ('function-sections', 'data-sections',
+                                   'unique-section-names', 'addrsig')}
+     operand_options = {'-D', '-I', '-isystem', '-resource-dir', '-o', '-MT', '-MF', '-x'}
+@@ -432,6 +454,7 @@
+         elif token in ARM_EXACT_TOKENS[arch]:
+             category, reason = ARM_EXACT_TOKENS[arch][token]
+         elif token.startswith('--target='):
++            targets.append(token.split('=', 1)[1])
+             if token.split('=', 1)[1] not in ARM_DRIVER_TRIPLES[arch]:
+                 raise ValueError('uncertified ARM driver target: '+token)
+             category, reason = 'irrelevant', 'target cross-checked against architecture policy'
+@@ -478,6 +501,8 @@
+             raise ValueError('unclassified original command token: '+token)
+         rows.append(dict(index=index, token=token, category=category, reason=reason))
+         index += 1
++    if not targets or len(set(targets)) != 1:
++        raise ValueError('ARM command requires identical certified --target= values')
+     if not optimizations or optimizations[-1] != ARM_OPTIMIZATION[arch]:
+         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
+     if not dwarfs or dwarfs[-1] != '-gdwarf-4':
+@@ -693,57 +718,133 @@
+ 
+ # Full producer/tool census: docs/44 section 2. A version change needs recensus.
+ ARM_CERTIFIED_LLVM_FULL = '22.1.8'
+-ARM_INSTALL_CONTEXT = threading.local()
+-
+-
+-def arm_address_space_probe(command, output, allow_unenforced=False):
++def arm_tool_identity(tool, allow_wrapper=False):
++    tool = Path(tool)
++    if not tool.is_file() or not os.access(tool, os.X_OK):
++        raise ValueError('missing or non-executable ARM tool: '+str(tool))
++    with tool.open('rb') as stream:
++        prefix = stream.read(4096)
++    record = dict(path=str(tool), sha256=sha(tool))
++    if prefix[:4] == b'\x7fELF':
++        if len(prefix) < 20 or prefix[4:6] != b'\x02\x01' or int.from_bytes(prefix[18:20], 'little') != 62:
++            raise ValueError('ARM tool requires native x86_64 ELF64 little-endian machine 62: '+str(tool))
++        return dict(record, kind='native-elf', machine=62)
++    if not allow_wrapper:
++        raise ValueError('non-ELF ARM tool requires --allow-wrapper-tools: '+str(tool))
++    return dict(record, kind='explicit-wrapper', first_4k=prefix.decode('utf-8', 'replace'),
++                first_4k_hex=prefix.hex())
++
++
++ARM_NATIVE_LIMIT_SETUP = '''limit=$1
++shift
++ulimit -S -v "$limit" || exit 125
++ulimit -H -v "$limit" || exit 125
++ulimit -S -c 0 || exit 125
++ulimit -H -c 0 || exit 125
++soft=$(ulimit -S -v) || exit 125
++hard=$(ulimit -H -v) || exit 125
++[ "$soft" = "$limit" ] && [ "$hard" = "$limit" ] || exit 125
++'''
++ARM_NATIVE_LIMIT_EXEC = ARM_NATIVE_LIMIT_SETUP + 'exec -- "$@"\n'
++ARM_NATIVE_LIMIT_PROBE = ARM_NATIVE_LIMIT_SETUP + '''while IFS= read -r line; do
++    printf '%s\\n' "$line"
++done < /proc/self/limits
++'''
++
++
++class ARMNativeLimitCommands:
++    """ARM-only composition: keep Commands accounting/cancellation unchanged."""
++    def __init__(self, command, bash, tools):
++        if command.address_space_bytes < 1 or command.address_space_bytes % 1024:
++            raise ValueError('ARM native limit requires address-space bytes to be a positive multiple of 1024')
++        self.command = command
++        self.bash = Path(bash).resolve()
++        self.bash_identity = arm_tool_identity(self.bash)
++        self.tools = frozenset(str(Path(tool).resolve()) for tool in tools)
++        for tool in self.tools:
++            arm_tool_identity(tool)  # Native launcher never accepts a wrapper.
++
++    def __getattr__(self, name):
++        return getattr(self.command, name)
++
++    def _native_run(self, argv, prefix, stdout, probe):
++        payload = list(map(str, argv))
++        script = ARM_NATIVE_LIMIT_PROBE if probe else ARM_NATIVE_LIMIT_EXEC
++        wrapped = [str(self.bash), '--noprofile', '--norc', '-p', '-c', script,
++                   'arm-native-limit', str(self.address_space_bytes // 1024), *payload]
++        details = dict(payload_argv=payload, native_limit_bash_sha256=self.bash_identity['sha256'],
++                       native_limit_bash=str(self.bash), native_limit_probe=probe)
++        try:
++            record = self.command.run(wrapped, prefix, stdout=stdout)
++        except BaseException:
++            path = Path(prefix).with_suffix('.json')
++            if path.is_file():
++                record = json.loads(path.read_text())
++                record.update(details)
++                atomic_json(path, record)
++            raise
++        record.update(details)
++        atomic_json(Path(prefix).with_suffix('.json'), record)
++        return record
++
++    def run(self, argv, prefix, stdout=None):
++        if argv and str(Path(argv[0]).resolve()) in self.tools:
++            return self._native_run(argv, prefix, stdout, False)
++        return self.command.run(argv, prefix, stdout=stdout)
++
++    def probe(self, prefix, stdout):
++        return self._native_run(['/usr/bin/cat', '/proc/self/limits'], prefix, stdout, True)
++
++
++def arm_address_space_probe(command, output):
+     path = output/'address-space-limits.txt'
+     with path.open('wb') as stream:
+-        command.run(['/usr/bin/cat', '/proc/self/limits'], output/'address-space-probe-command', stdout=stream)
++        if isinstance(command, ARMNativeLimitCommands):
++            command.probe(output/'address-space-probe-command', stdout=stream)
++        else:
++            command.run(['/usr/bin/cat', '/proc/self/limits'], output/'address-space-probe-command', stdout=stream)
+     raw = path.read_text()
+     matches = re.findall(r'^Max address space\s+(\S+)\s+(\S+)\s+bytes\s*$', raw, re.M)
+     if len(matches) != 1:
+         raise ValueError('cannot parse Max address space from /proc/self/limits')
+     soft, hard = matches[0]
+-    if any(value != 'unlimited' and not value.isdecimal() for value in (soft, hard)):
+-        raise ValueError('invalid Max address space values: '+repr(matches))
+     enforced = soft == hard == str(command.address_space_bytes)
+     result = dict(address_space_enforced=enforced, soft=soft, hard=hard, raw=raw,
+                   requested_bytes=command.address_space_bytes,
+-                  explicitly_allowed_unenforced=bool(allow_unenforced))
++                  native_limit_launcher=isinstance(command, ARMNativeLimitCommands))
+     atomic_json(output/'address-space-probe.json', result)
+-    if not enforced and not allow_unenforced:
+-        raise ValueError('ARM address space limit not enforced; explicit --allow-unenforced-address-space required')
++    if not soft.isdecimal() or not hard.isdecimal():
++        raise ValueError('ARM address space limit not enforced: non-decimal Max address space values '+repr(matches))
++    if not enforced:
++        raise ValueError('ARM address space limit not enforced: soft and hard must equal requested bytes')
+     return result
+ 
+ 
+-def arm_install(allow_unenforced, *args):
+-    previous = getattr(ARM_INSTALL_CONTEXT, 'allow_unenforced', False)
+-    ARM_INSTALL_CONTEXT.allow_unenforced = allow_unenforced
+-    try:
+-        return install(*args)
+-    finally:
+-        ARM_INSTALL_CONTEXT.allow_unenforced = previous
+-
+-
+ def validate_arm_tools(build, compiler, disassembler, nm, command, output, arch,
+-                       allow_unenforced=False):
+-    for tool in (compiler, disassembler, nm):
+-        if not tool.is_file() or not os.access(tool, os.X_OK):
+-            raise ValueError('missing or non-executable ARM tool: '+str(tool))
+-        with tool.open('rb') as stream:
+-            header = stream.read(20)
+-        if len(header) >= 20 and header[:4] == b'\x7fELF' and header[5] in (1, 2):
+-            machine = int.from_bytes(header[18:20], 'little' if header[5] == 1 else 'big')
+-            if machine in (40, 183):
+-                raise ValueError('ARM ELF tool rejected; native converter required: '+str(tool))
++                       allow_wrapper=False):
++    identities = {}
++    for label, tool in [('compiler', compiler), ('disassembler', disassembler), ('nm', nm)]:
++        # Let validate_tools retain its specific missing-tool error; identity-check
++        # every executable that could be invoked, including diagnostic queries.
++        if tool.is_file() and os.access(tool, os.X_OK):
++            identities[label] = arm_tool_identity(tool, allow_wrapper)
+     try:
+         result = validate_tools(build, compiler, disassembler, nm, command, output)
+-    except ValueError:
++    except ValueError as error:
+         version_file = output/'compiler-version.txt'
++        diagnostic_error = None
++        if not version_file.is_file() and 'compiler' in identities:
++            try:
++                with version_file.open('wb') as stream:
++                    command.run([compiler, '--version'], output/'compiler-diagnostic-command', stdout=stream)
++            except (RuntimeError, OSError) as diagnostic:
++                diagnostic_error = str(diagnostic)
+         match = re.search(r'clang version (\d+\.\d+\.\d+)\b', version_file.read_text()) if version_file.is_file() else None
+         if match and match[1] != ARM_CERTIFIED_LLVM_FULL:
+-            raise ValueError('uncertified ARM clang full version '+match[1]+'; redo docs/44 section 2 census')
++            raise ValueError(str(error)+'; uncertified ARM clang full version '+match[1]+
++                             '; redo docs/44 section 2 census') from error
++        if diagnostic_error:
++            raise ValueError(str(error)+'; compiler diagnostic failed: '+diagnostic_error) from error
+         raise
+     full = result['tool_versions']['compiler']['version']
+     if full != ARM_CERTIFIED_LLVM_FULL:
+@@ -762,7 +863,10 @@
+         versions['readelf'] = dict(path='/usr/bin/readelf', sha256=sha('/usr/bin/readelf'), raw=raw,
+                                    env_sha256=sha('/usr/bin/env'))
+     result['arm_full_version'] = full; result['arm_tool_versions'] = versions
+-    result['address_space_probe'] = arm_address_space_probe(command, output, allow_unenforced)
++    result['arm_tool_identities'] = identities
++    if isinstance(command, ARMNativeLimitCommands):
++        result['native_limit_bash'] = command.bash_identity
++    result['address_space_probe'] = arm_address_space_probe(command, output)
+     return result
+ 
+ 
+@@ -1188,6 +1292,8 @@
+     return result
+ 
+ 
++# x86_64 keeps the certified llvm-nm U-name check; ARM uses strict ELF fields
++# because its GLOBAL/NOTYPE/DEFAULT/UND declaration has a separate certification.
+ def check_module_asm_symbol(nm, target, statements, command):
+     if not statements:
+         return dict(required=False)
+@@ -1277,7 +1383,12 @@
+             path.unlink()
+ 
+ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3, command=None):
++            address_space_bytes=4*1024**3, command=None, *,
++            arm_native_limit_bash=None, arm_allow_wrapper_tools=False):
++    if arch == 'x86_64' and (arm_native_limit_bash is not None or arm_allow_wrapper_tools):
++        raise ValueError('ARM tool options are only valid for ARM')
++    if arm_native_limit_bash is not None and arm_allow_wrapper_tools:
++        raise ValueError('native-limit-bash and allow-wrapper-tools are mutually exclusive')
+     root, output, build = Path(root).resolve(), Path(output).resolve(), Path(build).resolve()
+     policy = policy_for_arch(arch)
+     if jobs < 1 or address_space_bytes < 1:
+@@ -1295,8 +1406,10 @@
+         if arch == 'x86_64':
+             summary['tools'] = validate_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output)
+         else:
++            if arm_native_limit_bash is not None:
++                command = ARMNativeLimitCommands(command, arm_native_limit_bash, (compiler, disassembler, nm))
+             summary['tools'] = validate_arm_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output, arch,
+-                allow_unenforced=getattr(ARM_INSTALL_CONTEXT, 'allow_unenforced', False))
++                                                 allow_wrapper=arm_allow_wrapper_tools)
+         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+         summary['scanned_archives'] = len(archives)
+         summary['native_archives_skipped'] = sum(not data['bitcode'] for archive, data in archives)
+@@ -1360,10 +1473,13 @@
+                 if settings['pic_level'] and relocs['forbidden']:
+                     raise ValueError('non-PIC relocation in '+str(target))
+                 if arch == 'x86_64':
+-                    record['module_asm_symbol'] = check_module_asm_symbol(nm, target, settings['module_asm'], command)
++                    module_asm_symbol = check_module_asm_symbol(nm, target, settings['module_asm'], command)
+                 symbols = check_symbols(nm, source, target, command)
+-                return dict(ordinal=member['ordinal'], name=member['name'], preserved=False,
+-                            settings=settings, conversion=record, symbols=symbols, sha256=sha(target))
++                member_result = dict(ordinal=member['ordinal'], name=member['name'], preserved=False,
++                                     settings=settings, conversion=record, symbols=symbols, sha256=sha(target))
++                if arch == 'x86_64':
++                    member_result['module_asm_symbol'] = module_asm_symbol
++                return member_result
+             results = []
+             iterator = iter(paths)
+             with ThreadPoolExecutor(max_workers=jobs) as pool:
+@@ -1438,14 +1554,24 @@
+ 
+ 
+ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3):
++            address_space_bytes=4*1024**3, *,
++            arm_native_limit_bash=None, arm_allow_wrapper_tools=False):
++    if arch == 'x86_64' and (arm_native_limit_bash is not None or arm_allow_wrapper_tools):
++        raise ValueError('ARM tool options are only valid for ARM')
++    if arm_native_limit_bash is not None and arm_allow_wrapper_tools:
++        raise ValueError('native-limit-bash and allow-wrapper-tools are mutually exclusive')
+     root, output = Path(root).resolve(), Path(output).resolve()
+     command = Commands(address_space_bytes)
+     old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
+     result = None
+     try:
+         print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
+-        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command)
++        if arch == 'x86_64':
++            result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command)
++        else:
++            result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command,
++                             arm_native_limit_bash=arm_native_limit_bash,
++                             arm_allow_wrapper_tools=arm_allow_wrapper_tools)
+         command.check()
+         result['status'] = 'INSTALLING'
+         atomic_json(output/'summary.json', result)
+@@ -1489,17 +1615,22 @@
+     parser.add_argument('--nm', type=Path, required=True)
+     parser.add_argument('--jobs', type=int, default=4)
+     parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
+-    parser.add_argument('--allow-unenforced-address-space', action='store_true',
+-                        help='ARM only: explicitly acknowledge a failed address-space limit probe')
++    parser.add_argument('--native-limit-bash', type=Path,
++                        help='ARM only: native x86_64 bash enforcing limits before exec')
++    parser.add_argument('--allow-wrapper-tools', action='store_true',
++                        help='ARM only: permit recorded host-side tool wrappers; limits must still work')
+     args = parser.parse_args()
+-    if args.arch == 'x86_64' and args.allow_unenforced_address_space:
+-        parser.error('--allow-unenforced-address-space is only valid for ARM')
++    if args.arch == 'x86_64' and (args.native_limit_bash is not None or args.allow_wrapper_tools):
++        parser.error('native-limit-bash and allow-wrapper-tools are only valid for ARM')
++    if args.native_limit_bash is not None and args.allow_wrapper_tools:
++        parser.error('native-limit-bash and allow-wrapper-tools are mutually exclusive')
+     values = (args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+               args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes)
+     if args.arch == 'x86_64':
+         install(*values)
+     else:
+-        arm_install(args.allow_unenforced_address_space, *values)
++        install(*values, arm_native_limit_bash=args.native_limit_bash,
++                arm_allow_wrapper_tools=args.allow_wrapper_tools)
+ 
+ 
+ if __name__ == '__main__':

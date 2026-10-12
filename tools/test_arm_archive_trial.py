@@ -96,7 +96,7 @@ class DispatchTests(unittest.TestCase):
         def defs(path):return {n.name:ast.dump(n,include_attributes=False) for n in ast.parse(path.read_text()).body if isinstance(n,(ast.FunctionDef,ast.ClassDef))}
         old=defs(Path(trial.__file__).with_name('llvm_static_archives_source.py'));new=defs(Path(trial.__file__))
         for name in old:
-            if name not in ('convert','install_main'):
+            if name not in ('convert','install','install_main'):
                 self.assertEqual(old[name],new[name],name)
 
     def test_x86_never_reaches_arm(self):
@@ -110,14 +110,14 @@ class DispatchTests(unittest.TestCase):
     def test_arm_exact_options_and_cross_target_rejection(self):
         common=['clang','-gdwarf-4','-ffunction-sections','-fdata-sections','-flto=thin','-fstack-protector']
         for arch,opt in trial.ARM_OPTIMIZATION.items():
-            argv=common+[opt]+sorted(trial.ARM_EXACT_TOKENS[arch])
+            argv=common+[opt]+[*sorted(trial.ARM_EXACT_TOKENS[arch]), '--target='+{'armv7l':'armv7l-tizen-linux-gnueabi','aarch64':'aarch64-tizen-linux-gnu'}[arch]]
             self.assertEqual(trial.arm_classify_options(argv,arch)['optimization'],opt)
             for bad in ('-mcpu=cortex-a9','-marm','-mfloat-abi=hard','--target=x86_64-tizen-linux-gnu','-fno-unroll-loops'):
                 with self.subTest(arch=arch,bad=bad),self.assertRaises(ValueError):trial.arm_classify_options(argv+[bad],arch)
 
     def test_arm_ir_and_explicit_abi(self):
         for arch,opt in trial.ARM_OPTIMIZATION.items():
-            flags=['clang',opt,'-gdwarf-4','-ffunction-sections','-fdata-sections']+sorted(trial.ARM_EXACT_TOKENS[arch])
+            flags=['clang',opt,'-gdwarf-4','-ffunction-sections','-fdata-sections']+[*sorted(trial.ARM_EXACT_TOKENS[arch]), '--target='+{'armv7l':'armv7l-tizen-linux-gnueabi','aarch64':'aarch64-tizen-linux-gnu'}[arch]]
             text='target triple = "'+next(iter(trial.ARM_IR_TRIPLES[arch]))+'"\n!llvm.commandline = !{!0}\n!0 = !{!"'+' '.join(flags)+'"}\n!1 = !{i32 8, !"PIC Level", i32 2}\n'
             r=trial.policy_for_arch(arch)['settings'](text.splitlines(True))
             self.assertEqual(r['pic_level'],2);self.assertIn(opt,r['flags']);self.assertNotIn('-flto=thin',r['flags'])
@@ -163,7 +163,7 @@ class TLSThumbTests(unittest.TestCase):
                 trial.arm_pic_relocations(reloc_elf(arch,[kind]),arch)
 
     def test_thumb_restore_and_reference_arguments(self):
-        argv=['clang','-Os','-gdwarf-4','-ffunction-sections','-fdata-sections',*sorted(trial.ARM_EXACT_TOKENS['armv7l']),'-flto=thin','-D','NAME.cpp','-I','path','-MT','target','-MF','deps','-MD','-o','a.o','-c','a.cpp']
+        argv=['clang','-Os','-gdwarf-4','-ffunction-sections','-fdata-sections',*sorted(trial.ARM_EXACT_TOKENS['armv7l']), '--target=armv7l-tizen-linux-gnueabi','-flto=thin','-D','NAME.cpp','-I','path','-MT','target','-MF','deps','-MD','-o','a.o','-c','a.cpp']
         policy=trial.arm_classify_options(argv,'armv7l')
         self.assertEqual(next(x['category'] for x in policy['tokens'] if x['token']=='-mthumb'),'restore')
         ref=trial.arm_reference_flags({'recorded_command':argv})
@@ -378,8 +378,8 @@ class TargetModuleTests(unittest.TestCase):
                 with self.assertRaises(ValueError):trial.arm_function_targets(text,arch)
 
     def test_real_command_literals_and_assembler_escape(self):
-        commands={'armv7l':['clang++','-Os','-gdwarf-4','-ffunction-sections','-fdata-sections','-mthumb','-march=armv7-a','-mfpu=neon','-mfloat-abi=softfp','-mlittle-endian','-mtune=cortex-a8'],
-                  'aarch64':['clang++','-O3','-gdwarf-4','-ffunction-sections','-fdata-sections','-march=armv8-a+fp+simd+crc+crypto','-mtune=cortex-a53']}
+        commands={'armv7l':['clang++','--target=armv7l-tizen-linux-gnueabi','-Os','-gdwarf-4','-ffunction-sections','-fdata-sections','-mthumb','-march=armv7-a','-mfpu=neon','-mfloat-abi=softfp','-mlittle-endian','-mtune=cortex-a8'],
+                  'aarch64':['clang++','--target=aarch64-tizen-linux-gnu','-O3','-gdwarf-4','-ffunction-sections','-fdata-sections','-march=armv8-a+fp+simd+crc+crypto','-mtune=cortex-a53']}
         for arch,argv in commands.items():
             self.assertEqual(len(trial.arm_classify_options(argv,arch)['tokens']),len(argv))
             for suffix in (['-Wa,-defsym'],['-march','armv7-a']):
@@ -415,7 +415,7 @@ class ToolIsolationTests(unittest.TestCase):
                 if name=='cat':raw='Max address space         4294967296           4294967296           bytes\n'
                 stdout.write(raw.encode())
             command.run.side_effect=run
-            return trial.validate_arm_tools(p,cc,di,nn,command,p,arch)
+            return trial.validate_arm_tools(p,cc,di,nn,command,p,arch,allow_wrapper=True)
 
     def test_matching_full_versions_and_gnu_reader(self):
         for arch in ('armv7l','aarch64'):self.assertEqual(self.run_tools(arch)['arm_full_version'],'22.1.8')

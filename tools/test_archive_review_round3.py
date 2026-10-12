@@ -99,7 +99,7 @@ class CommonReviewTests(unittest.TestCase):
         defs=lambda s:{n.name:n for n in ast.parse(s).body if isinstance(n,(ast.FunctionDef,ast.ClassDef))}
         p,a=defs(production),defs(candidate)
         for name,node in p.items():
-            if name not in ('convert','install_main'):
+            if name not in ('convert','install','install_main'):
                 with self.subTest(name=name):
                     self.assertEqual(ast.dump(node,include_attributes=False),ast.dump(a[name],include_attributes=False))
                     self.assertEqual(ast.get_source_segment(production,node),ast.get_source_segment(candidate,a[name]))
@@ -131,13 +131,13 @@ class ARMReviewTests(unittest.TestCase):
             def run(argv,prefix,stdout):
                 stdout.write(b'clang version 22.1.9\n' if argv[0]==tools[0] else b'LLVM version 22.1.8\n')
             with self.assertRaisesRegex(ValueError,'redo docs/44 section 2 census'):
-                trial.validate_arm_tools(p,*tools,mock.Mock(run=run),p,'aarch64')
+                trial.validate_arm_tools(p,*tools,mock.Mock(run=run),p,'aarch64',allow_wrapper=True)
             for tool in tools:
                 for machine,bits in ((40,1),(183,2)):
                     blob=bytearray(20);blob[:4]=b'\x7fELF';blob[4:7]=bytes([bits,1,1]);struct.pack_into('<H',blob,18,machine);tool.write_bytes(blob)
                     command=mock.Mock()
-                    with self.subTest(tool=tool.name,machine=machine),self.assertRaisesRegex(ValueError,'ARM ELF tool rejected'):
-                        trial.validate_arm_tools(p,*tools,command,p,'aarch64')
+                    with self.subTest(tool=tool.name,machine=machine),self.assertRaisesRegex(ValueError,'requires native x86_64 ELF64'):
+                        trial.validate_arm_tools(p,*tools,command,p,'aarch64',allow_wrapper=True)
                     command.run.assert_not_called()
                 tool.write_text('fixture')
 
@@ -159,14 +159,14 @@ class ARMReviewTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'uncertified'):
                 trial.arm_pic_relocations(reloc_elf(arch,[kind],debug=True),arch)
 
-    def test_b7_unlimited_requires_explicit_confirmation(self):
+    def test_b7_unlimited_rejected_without_bypass(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp);cmd=mock.Mock();cmd.address_space_bytes=4294967296
             cmd.run.side_effect=lambda argv,prefix,stdout:stdout.write(b'Max address space         unlimited            unlimited            bytes\n')
-            with self.assertRaisesRegex(ValueError,'explicit --allow-unenforced-address-space'):
+            with self.assertRaisesRegex(ValueError,'not enforced'):
                 trial.arm_address_space_probe(cmd,p)
-            r=trial.arm_address_space_probe(cmd,p,True)
-            self.assertFalse(r['address_space_enforced']);self.assertTrue(r['explicitly_allowed_unenforced'])
+            r=json.loads((p/'address-space-probe.json').read_text())
+            self.assertFalse(r['address_space_enforced']);self.assertNotIn('explicitly_allowed_unenforced',r)
             self.assertEqual((r['soft'],r['hard']),('unlimited','unlimited'))
             self.assertEqual(cmd.run.call_args.args[0],['/usr/bin/cat','/proc/self/limits'])
 
@@ -175,24 +175,24 @@ class ARMReviewTests(unittest.TestCase):
             p=Path(tmp);cmd=mock.Mock();cmd.address_space_bytes=4294967296
             cmd.run.side_effect=lambda argv,prefix,stdout:stdout.write(b'Max address space         4294967296           4294967296           bytes\n')
             r=trial.arm_address_space_probe(cmd,p)
-            self.assertTrue(r['address_space_enforced']);self.assertFalse(r['explicitly_allowed_unenforced'])
+            self.assertTrue(r['address_space_enforced']);self.assertNotIn('explicitly_allowed_unenforced',r)
 
-    def test_b7_x86_confirmation_flag_rejected(self):
-        args=['source','--root','/unused/root','--build','/unused/build','--evidence','/unused/out','--arch','x86_64','--compiler','/unused/cc','--disassembler','/unused/dis','--nm','/unused/nm','--allow-unenforced-address-space']
+    def test_b7_x86_wrapper_flag_rejected(self):
+        args=['source','--root','/unused/root','--build','/unused/build','--evidence','/unused/out','--arch','x86_64','--compiler','/unused/cc','--disassembler','/unused/dis','--nm','/unused/nm','--allow-wrapper-tools']
         with mock.patch.object(sys,'argv',args),mock.patch.object(trial,'install') as install,contextlib.redirect_stderr(io.StringIO()) as log:
             with self.assertRaises(SystemExit) as error:trial.install_main()
         self.assertEqual(error.exception.code,2);self.assertIn('only valid for ARM',log.getvalue());install.assert_not_called()
 
     def test_b7_real_limits_host_and_known_emulated_environment(self):
         # Native host must enforce. In the explicitly studied ARM Python/QEMU
-        # environment, test the acknowledged failure; do not weaken the old AS test.
+        # environment, test the enforced rejection; do not weaken the old AS test.
         with Path(sys.executable).open('rb') as f:header=f.read(20)
         machine=int.from_bytes(header[18:20],'little')
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp);cmd=trial.Commands()
             if machine in (40,183):
                 with self.assertRaisesRegex(ValueError,'not enforced'):trial.arm_address_space_probe(cmd,p)
-                r=trial.arm_address_space_probe(cmd,p,True)
+                r=json.loads((p/'address-space-probe.json').read_text())
                 self.assertFalse(r['address_space_enforced']);self.assertEqual((r['soft'],r['hard']),('unlimited','unlimited'))
             else:
                 self.assertEqual(machine,62)
@@ -214,6 +214,9 @@ class ARMReviewTests(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()):r=trial.convert(root,p/'output',*tools,build)
             self.assertEqual((r['status'],r['archives'][0]['converted']),('CONVERTED',1))
             self.assertEqual(trial.inspect(p/'output/archives/input.a')['bitcode'],0)
+            member=r['archives'][0]['results'][0]
+            self.assertEqual(member['module_asm_symbol'],{'required':False})
+            self.assertNotIn('module_asm_symbol',member['conversion'])
 
 
 if __name__=='__main__':

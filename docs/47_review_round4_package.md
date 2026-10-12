@@ -2,13 +2,13 @@
 
 日期：2026-10-12（Asia/Shanghai）。开场提交 `bda33ec60e694aeb92e71ac0444901350567a8ba`。
 
-**当前完成第零步及第一步事实核查。Source 修订、测试、四次全量转换、根内小试与新补丁尚未执行，不用历史通过代替本轮认证。**
+**当前完成第零步、第一步及Source/测试修订。尚未运行单元测试与全量复验；小型spec实验进行中。修订不等于认证通过。**
 
 ## 0. 范围、证据与资源规则
 
 W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-round4-20261012`，下述 temp 证据仅在本机。依用户裁决：轻量阶段准入6 GiB，全量转换10 GiB；不足每5分钟复查、最多60分钟。运行中scope 18 GiB、swap0、nice15/ionice3、30秒采样，宿主可用低于2 GiB即中止。Commands、356627 spec、W/llvm与配置不改；不做完整RPM构建、不推Gerrit。后续仅授权四个小spec实验。
 
-宿主 `mmap_min_addr` 沿用先前GBS设置；需要恢复时用户执行 `sudo sysctl -w vm.mmap_min_addr=65536`，重启也会恢复。本轮尚未挂载/proc。
+宿主 `mmap_min_addr` 沿用先前GBS设置；需要恢复时用户执行 `sudo sysctl -w vm.mmap_min_addr=65536`，重启也会恢复。本轮仅按各阶段需要临时挂载/proc，并在finally卸载。
 
 ## 1. 第零步完整性
 
@@ -68,6 +68,15 @@ exit均0。这证实此路径的4GiB限制没有传到原生bash，不能把旧�
 
 两根`home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/CMakeCache.txt`均存在；第六步根内小试不因缺构建目录而跳过。R32/R64沿用docs/46§0路径；完整绝对路径/Cache SHA在facts-result.json。/proc分别临时挂载并finally卸载，前/中/后mountinfo全部保存。（证据：*-facts-mount-*.txt，*-bash-{file,elf-header,elf-program,owner}.stdout，facts-result.json。）
 
-## 4. 后续状态
+## 4. Source与测试修订（待运行验证）
 
-Source仍014fd32f…/c3edada0…，两候选补丁仍1293f698…/aab2cfd1…。代码/测试/小型spec/转换/根内小试/新补丁尚未执行；第四轮评审、x86完整构建、ARM第二段待完成。
+X1合并汇编选项拒绝消息；X2/X4补主版本与module asm检查注释；X3将ELF表级边界检查移出条目循环。ARM A1–A7增加组合式原生bash限制启动器、严格读回探针、关键字专用传参、原生工具machine62验证/显式包装脚本许可、保留多重错误原因、统一x86成员结果结构、要求target存在且一致。Commands两份与开场逐字相同，语法兼容Python3.9；尚未以运行结果确认正确性。（E/source-revision-static.json。）
+
+- `llvm_static_archives_source.py` SHA `7c83e822c333f05ddfce998918e79c542926203d26cf58750291f492d6e9dcaf`；完整diff：[docs/47_x86_source_round4.diff](47_x86_source_round4.diff)。
+- `llvm_static_archives_arm_trial.py` SHA `3cdaecebf45ab213d92d212a874ef978a825bfc3f171183963599fe9bd4f5bb3`；完整diff：[docs/47_arm_source_round4.diff](47_arm_source_round4.diff)。
+
+新增`tools/test_archive_review_round4.py`覆盖本轮X1/X3/A1–A7；旧ARM测试只更新被新政策取代的预期（旧AS放行删除、wrapper显式许可、target强制、install签名AST排除与实际调用补验）。原测试保留；尚未运行，不报PASS。
+
+小spec首次发现夹具未显式展开`%debug_package`，标为on的组合实际未启用debug；根内宏`usr/lib/rpm/macros:229–235`与`home/abuild/.rpmmacros:124–129`说明启用需要宏展开/后端注入。只在临时spec增加`%debug_package`，off组合仍定义nil；原实际命令判据完全不变。本步骤动用一次辅助脚本修正重跑授权；原三组合日志与失败保留，修正全文E/small-spec-helper-fix.diff、诊断E/small-spec-helper-diagnosis.json。重跑四组合全部exit0；删除行版本debug开启不执行brp-strip、关闭执行/bin/strip，归档均以/usr/bin/llvm-strip单独命令执行，两个判据PASS。保留行版本实际行为同样符合此分派，仅作为观察结果。证据E/small-spec-retry/small-spec-results.json与四份stdout/stderr；没有推断保留行必然失败。
+
+后续：测试、四次全量转换、两根小试/负例、候选补丁再生成均待执行。
