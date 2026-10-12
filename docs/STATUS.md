@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
-更新日期：2026-10-11。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/44续三）完成**：宿主99PASS；根内95PASS+3指定环境不适用+1已实证AS发现。x86225档/3864成员/索引/3853 flags完全一致；ARM32 210档、AArch64 212档after SHA与§12全同，沿用三套消费者/两种strip。5个ARM asm符号GLOBAL/UND；105/106的bfd/lld共享链接与dlopen均PASS；x86三个bitcode同asm成员最终符号保留。Source仍e2c2ebfa，无代码改动；只修timeout测试。两处辅助脚本各授权修一次；锁、采样器、proc回收。ARM生产AS限制问题待评审，未打包/推Gerrit。见docs/44 §18–§27与docs/45。
+更新日期：2026-10-12。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
+**当前任务（docs/46）停止于只读普查入口，尚未修订 Source**：代理复用上轮辅助驱动的16GiB准入断言，读到15,255,969,792B（14.208229GiB）后退出，scope/llvm-dis/测试/转换均未启动。本轮任务未另定只读普查准入线；不将该阈值写成PM新裁决，也不将停止写成产品失败。未降低门槛或重试，依无人值守停止规则完成文档。B3/B5未实施，PS3/PS2未生成；生产仍6bd、ARM仍e2。锁已释放，无临时挂载/采样器。见docs/46及temp/review-round3-20261012/stop-result.json。
+
+**历史任务（docs/44续三）完成**：宿主99PASS；根内95PASS+3指定环境不适用+1已实证AS发现。x86225档/3864成员/索引/3853 flags完全一致；ARM32 210档、AArch64 212档after SHA与§12全同，沿用三套消费者/两种strip。5个ARM asm符号GLOBAL/UND；105/106的bfd/lld共享链接与dlopen均PASS；x86三个bitcode同asm成员最终符号保留。Source仍e2c2ebfa，无代码改动；只修timeout测试。两处辅助脚本各授权修一次；锁、采样器、proc回收。ARM生产AS限制问题待评审，未打包/推Gerrit。见docs/44 §18–§27与docs/45。
 
 **历史文档任务（docs/43）已完成**：已将ARM候选1620a8da的设计、逐token分类、TLS/PIC集合、两ARM实测摘要、限制和67项测试清单整理为不超过50KB的外部评审材料包；生产6bd0546a到候选的完整三行上下文diff单列文档附件。仅整理已有证据，未运行测试/构建/转换、未改Source/spec/补丁，候选仍待外部评审；ARM打包验收尚未执行。
 
@@ -37,7 +39,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：ARM候选e2c2ebfa固定输入离线复验完成，进入外部评审；ARM根内AS限制与生产集成/RPM验收尚未闭合。
+当前阶段：第二轮评审修订因复制的辅助驱动准入而尚未开始（docs/46）。下一待办为七项普查、x86 PS3/归档strip PS2候选与ARM加固及离线复验；旧ARM候选e2固定输入复验已完成，但生产AS与RPM集成尚未闭合。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -76,6 +78,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 | 日期 | 提交号 | 产出文件 | 一句话结论 |
 | --- | --- | --- | --- |
+| 2026-10-12 | 本提交（`git log -- docs/46_review_round3_package.md`） | docs/46、STATUS | 只读普查入口因复制的历史16GiB断言停止（14.208229GiB）；未启动产品操作/修订/测试/转换，PS3/PS2未生成；完成停止报告并回收项目锁。 |
 | 2026-09-16 | `2c6e496` | `.gitignore`、`docs/README.md`、`gbs_llvm.conf` | 初始化仓库与产出规范，排除 LLVM 源码和中间产物。 |
 | 2026-09-16 | `b1ac328` | `docs/00_workspace_setup.md` | 归档初始化、忽略检查与首次推送证据。 |
 | 2026-09-16 | `c31b44e` | `docs/10_tizen_llvm_build_config.md`、`tools/collect_llvm_inventory.py` | 完成配置/工具调查，区分配方能力与实际发布二进制的 UNKNOWN。 |
@@ -502,3 +505,10 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 本轮新增挂账：ARM32/AArch64 QEMU9.2.3路径下AS 1/4GiB均读回unlimited，nofile256有效；/emul无原生prlimit候选。如何保证ARM生产逐进程限制交外部评审，未选择方案；x86原生AS测试PASS。证据docs/44 §18–§19、docs/45 §5。
 
 2026-10-11材料封存：docs/44最终报告内容提交`c1ebb6866f91bab3a027737f80e8952e2aab0a24`；docs/45已钉该提交并补当前候选、diff、测试与表格链接（本次材料包提交可由git log追溯）。docs/44正文49440字节，历史内容完整保留于正文/表格附件。
+
+### 2026-10-12 docs/46 挂账补充
+
+- 第三轮材料尚未齐备：第一步七项普查、A1–A5/B1–B7/C/D修订及全部离线验证未执行，B3/B5须由新普查决定；不使用历史PASS替代新候选证据。
+- 下一轮评审后待做x86完整构建：cb679968叠两个新候选，包含扩大样本的原编译/转换结构对照；本轮没有RPM构建。
+- ARM第二段待验证根内readelf、GNU ar、32位Python峰值、命令超时余量、proc、磁盘、按架构依赖、原生工具选择与显式AS确认、并发及最终RPM；原生地址空间限制器长期方案仍开放。
+- 本轮16GiB入口来源为代理复制旧辅助驱动，不是用户本次对只读普查另定的资源裁决；实际资源需求未测。证据强度：入口退出为硬证据，Source/输入行为为未测；见docs/46 §1–§2、E/stop-result.json。
