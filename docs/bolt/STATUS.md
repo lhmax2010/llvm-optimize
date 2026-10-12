@@ -18,8 +18,8 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；B=`/home/linhao/Toolchain
 |---|---|---|
 | 建立分支与状态 | 完成；ba825d62dff5f7c683c65e0f23fd87de90e8a7f3 | STATUS.md；inventory/opening-inputs.json与只读输入快照 |
 | 资料盘点 | 完成；51d534f（完整号见git log） | 02_inventory.md；E/inventory产物/SHA/spec/宏/锁快照 |
-| strip实验 | 已完成可执行项；本条所在提交；e因2GiB预剥离OOM跳过 | 03_strip_experiments.md；E/strip副本/三目标证据 |
-| 设计v4 | 待执行 | — |
+| strip实验 | 已完成可执行项；7ceaf2b（完整号见git log）；e因2GiB预剥离OOM跳过 | 03_strip_experiments.md；E/strip副本/三目标证据 |
+| 设计v4 | 完成；本条所在提交 | 01_bolt_v4_design.md（≤50KB），九项裁决/集成/门禁/周三周四计划 |
 | 收尾 | 待执行 | — |
 
 同一提交无法包含自己的SHA：每条以所在提交为准，下一里程碑补已完成提交号。
@@ -51,3 +51,5 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；B=`/home/linhao/Toolchain
 盘点闭合：全部关键历史产物仍在，SHA与历史一致；工具是docs/15实验增量构建而非spec默认产物。cb679968 profile适配UNKNOWN；续跑新树路径UNKNOWN。锁：双O_EXCL锁（项目temp及archivefix-v2根顶层），今晚不获取/不等待/不干扰。详见02_inventory.md。
 
 strip闭合（实测）：v2 GNU strip默认/debug及GNU objcopy失活；eu-strip LOAD0；LLVM debug/all三目标PASS，debug保留note。实际find-debuginfo在无debug路径跳过、专用LLVM brp组合PASS。动态inode识别硬alias失败；冻结路径组处理并重建硬链接的修正试验PASS。relocs LLVM两strip与eu-strip在2GiB OOM；e及其七项后处理未运行，新BOLT重写0次。详见03_strip_experiments.md。
+
+收尾复核：E/original-preservation.json的15项历史ELF/profile/工具SHA全部与开场相同；10个新写shell通过dash -n。原供应商find-debuginfo脚本原文保留（既有Bash），新脚本无Bash依赖。未进入/挂载/写入归档根；没有LLVM构建、插桩、采profile或Gerrit动作。
