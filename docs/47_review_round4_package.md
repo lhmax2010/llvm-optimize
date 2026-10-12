@@ -27,6 +27,7 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-r
 
 | 阶段 | 准入GiB | 启动可用GiB | scope峰GiB | 结果 |
 |---|---:|---:|---:|---|
+| armv7l-scope | 10 | 14.282635 | 7.209900 | exit 0，采样回收 |
 | facts-scope | 6 | 14.179691 | 0.664886 | exit 0，采样回收 |
 | host-tests-scope | 6 | 14.063240 | 0.517220 | exit 0，采样回收 |
 | input-integrity-scope | 6 | 13.937710 | 1.200821 | exit 0，采样回收 |
@@ -144,7 +145,7 @@ on两例均实际产出debuginfo/debugsource RPM，均执行find-debuginfo；不
 |---|---|---|---:|
 | x86-production | PASS | 225档/3864有序成员/完整索引/3853组flags全部与docs/35一致；3处module asm检查通过 | 1783.727 |
 | x86-candidate | PASS | 225档/3864有序成员/完整索引/3853组flags全部与docs/35一致；3处module asm检查通过 | 1734.587 |
-| armv7l | 未完成 | 不以历史PASS替代 | — |
+| armv7l | PASS | 210档/3683转换成员；after SHA差异0；强符号门禁通过；消费者/strip沿用=True | 1799.965 |
 | aarch64 | 未完成 | 不以历史PASS替代 | — |
 
 证据：E内对应*-result.json、*-conversion/summary.json、逐档after.json及*-scope采样。x86输入E5/x86-input对docs/35；两ARM输入对docs/40§12。转换与消费者沿用严格以本轮结果为准。
@@ -178,7 +179,7 @@ on两例均实际产出debuginfo/debugsource RPM，均执行find-debuginfo；不
 ### 9.2 ARM第二段打包
 
 1. spec三工具必须指向/emul原生ELF，启用原生限制启动器；根内bash身份、完整工具版本与探针PASS是实施前置。Source目前为评审候选，本轮不改ARM spec、不打包。
-2. 两架构都执行真实打包入口，尤其AArch64不得用离线转换代替%install。当前候选预期ARM32 210档、AArch64 212档；按实际安装清单核对差异及libarcher归属，不能直接套x86225档。
+2. 两架构都执行真实打包入口，尤其AArch64不得用离线转换代替%install。当前候选预期ARM32 210档、AArch64 212档；共同204档；ARM32另有LLVMARM的AsmParser/CodeGen/Desc/Disassembler/Info/Utils六档，AArch64对应六档再加LLVMExegesisAArch64与libarcher_static.a（E/arm-expected-inventory-difference.json，取自§12原始summary）。仍须按实际安装清单核对及libarcher归属，不能直接套x86225档。
 3. 根内GNU ar/readelf、32位Python、临时/proc、超时、磁盘、宏后处理和标准strip均记录；本轮根内小试结果作为下一阶段预算基线。
 4. 若readelf开销不可接受，可另行设计Python解析.ARM.attributes；须逐成员与GNU readelf做A/B属性/Thumb门禁对照，含缺省、畸形、重复属性及正负夹具，认证后才能替换，不能本轮跳过。
 5. 根据本轮每类命令均值/最大值、总wall与Python峰值估算全库qemu编排预算，给总量与余量；小样本推算只能用于计划，完整%install实测才闭合。
