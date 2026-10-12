@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-12。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/46续）Source修订与宿主测试完成**：完整性及七项只读普查PASS；A1–A5、B1–B4/B6/B7实施，B5因target均2次不实施；共用函数逐字一致，Commands/spec/旧补丁不动。宿主最终116/116 PASS（新增17项）；生产Source 014fd32f309b、ARM候选 c3edada01a07。尚待根内测试/探针、x86两遍、两ARM全量转换、新宏与新补丁；不得视为已完成新候选认证。轻阶段6GiB/转换10GiB、cap18GiB/swap0，项目锁继续持有。
+**当前任务（docs/46续）测试与探针阶段完成**：Source加固宿主116PASS；R32 Python3.14.2根内112PASS+3指定环境不适用+1已知AS发现，无额外失败。R32/R64探针默认拒绝unlimited，显式ARM确认后通过且enforced=false；宿主enforced=true。两/proc均已卸载，采样器回收。生产Source014fd32f…、ARM候选c3edada0…；Commands/spec/旧补丁未动，B3实施、B5不实施。下一步x86两遍和两ARM全量回归，随后宏与候选补丁；锁继续持有。
 
 **历史任务（docs/44续三）完成**：宿主99PASS；根内95PASS+3指定环境不适用+1已实证AS发现。x86225档/3864成员/索引/3853 flags完全一致；ARM32 210档、AArch64 212档after SHA与§12全同，沿用三套消费者/两种strip。5个ARM asm符号GLOBAL/UND；105/106的bfd/lld共享链接与dlopen均PASS；x86三个bitcode同asm成员最终符号保留。Source仍e2c2ebfa，无代码改动；只修timeout测试。两处辅助脚本各授权修一次；锁、采样器、proc回收。ARM生产AS限制问题待评审，未打包/推Gerrit。见docs/44 §18–§27与docs/45。
 
@@ -518,3 +518,5 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 2026-10-12 本提交：docs/46七项只读普查完成；B3条件成立、B5条件不成立；待Source修订与离线复验。
 
 2026-10-12 本提交：docs/46 Source加固及116宿主测试通过；新增两份完整diff与第三轮测试脚本，待后续全量复验。
+
+2026-10-12 本提交：docs/46 根内测试分类与B7两根探针完成，无新增失败；接续离线全量回归。

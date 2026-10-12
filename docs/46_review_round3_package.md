@@ -2,7 +2,7 @@
 
 日期：2026-10-12（Asia/Shanghai）。开场 HEAD 与 origin/main 均为 `cb1e34af0958de17155459f7406869a91cadbe00`。
 
-**当前完成完整性核查、只读普查、A/B Source修订及宿主116项测试。B3实施，B5按条件不实施；Commands和356627 spec不改。根内测试、全量复验及新补丁尚未完成，不是可提交候选的最终认证。**
+**当前完成完整性、只读普查、Source加固、宿主和根内测试及两ARM探针。宿主116PASS；根内112PASS+3指定环境不适用+1已知AS发现，无新增失败。全量离线复验与新补丁尚未完成，不是最终认证。**
 
 ## 0. 范围与上次停止记录
 
@@ -94,7 +94,7 @@ x86三个module asm位置（均IR第6行）：`libLLVMAnalysis.a/MLInlineAdvisor
 | B4 | PIC直接读layout合并后的symbol记录 | 原重定位夹具通过 |
 | B5 | **不实施**：真实命令均为2次target，不擅改条件 | §2全集 |
 | B6 | 节名表索引0拒绝 | 正负例通过 |
-| B7 | 不改Commands，经相同prlimit调用cat读AS软硬值；默认拒绝失效，仅ARM CLI显式确认才允许 | mock正负例、x86参数拒绝、宿主真实enforced=true通过；两ARM根探针待测 |
+| B7 | 不改Commands，经相同prlimit调用cat读AS软硬值；默认拒绝失效，仅ARM CLI显式确认才允许 | mock正负例、x86参数拒绝、宿主真实enforced=true通过；两ARM根探针见§2.2 |
 | D | 就绪后退出的后代取消夹具、第二归档原子替换失败、真实x86 bitcode转换屏蔽全部ARM函数、逐字+AST共用函数对照 | 全部通过 |
 
 B7的显式确认只存在ARM分派路径：ARM install包装器用线程局部上下文限定一次调用，finally恢复；共用install/Commands不改。失败读回值保存在address-space-probe.json及summary；确认不代表AS已经生效。（出处：本次Source差异。）
@@ -109,7 +109,30 @@ B7的显式确认只存在ARM分派路径：ARM install包装器用线程局部�
 | `tools/test_arm_archive_trial.py` | `6b5d2cf7a17fb2bd2b97ecaaea6b4a10d24d7e05141f7555cbebc8b9bf6e8ed4` |
 | `tools/test_archive_review_round3.py` | `21d55d0504262358d979699aeb607dfd310f7f1e27b33961b51a59a1bd754805` |
 
-完整diff：[x86相对6bd](46_x86_source_round3.diff)、[ARM相对e2](46_arm_source_round3.diff)。这两份是本轮代码差异，不是Gerrit format-patch。旧上传补丁与其随附Source保留不动；PS3/PS2目录尚未生成。根内与全量离线结果仍为NOT RUN，历史after SHA不能给本轮新Source背书。
+完整diff：[x86相对6bd](46_x86_source_round3.diff)、[ARM相对e2](46_arm_source_round3.diff)。这两份是本轮代码差异，不是Gerrit format-patch。旧上传补丁与其随附Source保留不动；PS3/PS2目录尚未生成。根内结果见§2.2；全量离线结果仍为NOT RUN，历史after SHA不能给本轮新Source背书。
+
+### 2.2 根内测试与地址空间探针
+
+R32的Python为`3.14.2 (main, Oct 1 2026, 21:46:23) [Clang 22.1.8]`。完整116项执行一次，按预注册规则分类：112 PASS、3环境不适用、1已知AS发现；原始unittest仍报告1 FAIL+3 ERROR，没有篡改成116 PASS。
+
+| 原测试 | 分类及实际原因 |
+|---|---|
+| test_actual_limits_and_monitor_cleanup | 环境不适用：FileNotFoundError /usr/bin/time |
+| test_failure_stops_following_commands | 环境不适用：FileNotFoundError /usr/bin/time |
+| test_sections_symbols_visibility_and_relocations | 环境不适用：as --64 返回1（x86汇编夹具） |
+| test_limits_accounting_and_no_external_time | 已知AS发现：读回[-1,-1]，预期[4294967296,4294967296]；core仍[0,0] |
+| 其余112项（含17项新增） | 全部PASS，无额外跳过 |
+
+证据：root-suite-raw.json、root-suite-classified.json、armv7l-tests.stdout/stderr。没有改上述四个测试或安装工具；新真实B7测试在宿主要求enforced=true，在已识别的ARM解释器环境验证拒绝/确认行为，不替代原AS测试。
+
+| B7直接探针 | 未确认 | ARM显式确认 | AS软/硬读回 | enforced |
+|---|---|---|---|---|
+| R32 | 拒绝，错误要求显式参数 | 通过并记录确认true | unlimited / unlimited | false |
+| R64 | 拒绝，错误要求显式参数 | 通过并记录确认true | unlimited / unlimited | false |
+
+宿主真实探针读取4294967296/4294967296、enforced=true。这里“确认后通过”只允许用户知情接续，不声称qemu的AS限制已生效。原生限制器仍挂账。（证据：armv7l-b7-result.json、aarch64-b7-result.json、host-tests-result.json。）
+
+两个根的/proc分别临时挂载，finally均卸载；挂载前/期间/后mountinfo、全部chroot命令与退出码存`*-mount-*.txt`、root-commands.json。没有运行GBS或构建LLVM。（证据：root-stage-result.json。）
 
 ## 3. 本轮资源记录
 
@@ -126,6 +149,8 @@ B7的显式确认只存在ARM分派路径：ARM install包装器用线程局部�
 | host-tests-scope | 6 | 14.172653 | 1.136986 | PASS；采样器已回收 |
 
 | host-tests-final-scope | 6 | 14.067207 | 0.873978 | PASS；采样器已回收 |
+
+| root-tests-probes-scope | 6 | 14.211998 | 0.310577 | PASS（预注册分类）；采样器已回收 |
 
 全部阶段 MemoryMax=19,327,352,832 B、MemorySwapMax=0，未触发 OOM 或2 GiB宿主保护线。Git/find 的 scope 峰值包含文件缓存和内核 slab，不等于应用匿名内存。（证据：各 scope/plan.json、memory-summary.json。）
 
