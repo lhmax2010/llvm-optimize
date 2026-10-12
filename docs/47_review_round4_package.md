@@ -10,6 +10,14 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-r
 
 宿主 `mmap_min_addr` 沿用先前GBS设置；需要恢复时用户执行 `sudo sysctl -w vm.mmap_min_addr=65536`，重启也会恢复。本轮仅按各阶段需要临时挂载/proc，并在finally卸载。
 
+本报告路径定义：
+
+- R32=`/var/tmp/llvm-optimize-arm-c1-20261010/gbs-libraries-armv7l/local/BUILD-ROOTS/scratch.armv7l.0`。
+- R64=`/var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/BUILD-ROOTS/scratch.aarch64.0`。
+- Rnew=`W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`；各根B=`R/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`。
+- E5=`W/temp/arm-archive-stage1-20261010`，x86输入在`E5/x86-input`；ARM32输入为`W/temp/arm-archive-standard-build-20261010/armv7l-input`，AArch64输入为`W/temp/arm-archive-tls-thumb-20261010/aarch64-input`。
+- 宿主ARM转换使用对应输入证据目录中的已登记`*-tool-wrappers/{clang-22,llvm-dis,llvm-nm}`；根内小试使用`/emul/usr/bin/{clang-22,llvm-dis,llvm-nm}`及`/emul/usr/bin/bash`，不经包装脚本。
+
 ## 1. 第零步完整性
 
 | 项目 | 结果 | E内证据 |
@@ -27,6 +35,8 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-r
 
 | 阶段 | 准入GiB | 启动可用GiB | scope峰GiB | 结果 |
 |---|---:|---:|---:|---|
+| armv7l-scope | 10 | 14.282635 | 7.209900 | exit 0，采样回收 |
+| aarch64-scope | 10 | 14.278065 | 10.016487 | exit 0，采样回收 |
 | armv7l-scope | 10 | 14.282635 | 7.209900 | exit 0，采样回收 |
 | facts-scope | 6 | 14.179691 | 0.664886 | exit 0，采样回收 |
 | host-tests-scope | 6 | 14.063240 | 0.517220 | exit 0，采样回收 |
@@ -146,7 +156,7 @@ on两例均实际产出debuginfo/debugsource RPM，均执行find-debuginfo；不
 | x86-production | PASS | 225档/3864有序成员/完整索引/3853组flags全部与docs/35一致；3处module asm检查通过 | 1783.727 |
 | x86-candidate | PASS | 225档/3864有序成员/完整索引/3853组flags全部与docs/35一致；3处module asm检查通过 | 1734.587 |
 | armv7l | PASS | 210档/3683转换成员；after SHA差异0；强符号门禁通过；消费者/strip沿用=True | 1799.965 |
-| aarch64 | 未完成 | 不以历史PASS替代 | — |
+| aarch64 | PASS | 212档/3699转换成员；after SHA差异0；强符号门禁通过；消费者/strip沿用=True | 1598.51 |
 
 证据：E内对应*-result.json、*-conversion/summary.json、逐档after.json及*-scope采样。x86输入E5/x86-input对docs/35；两ARM输入对docs/40§12。转换与消费者沿用严格以本轮结果为准。
 
