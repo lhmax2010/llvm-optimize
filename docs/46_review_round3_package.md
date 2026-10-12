@@ -2,11 +2,11 @@
 
 日期：2026-10-12（Asia/Shanghai）。开场 HEAD 与 origin/main 均为 `cb1e34af0958de17155459f7406869a91cadbe00`。
 
-**当前完成完整性、只读普查、Source加固、宿主和根内测试及两ARM探针。宿主116PASS；根内112PASS+3指定环境不适用+1已知AS发现，无新增失败。全量离线复验与新补丁尚未完成，不是最终认证。**
+**当前完成：生产Source的x86全量回归PASS：225档/3864成员/完整索引/3853 flags与docs/35全同，3处asm检查通过；ARM候选x86路径第二遍正在运行。**
 
 ## 0. 范围与上次停止记录
 
-W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-round3-continue-20261012`。temp 证据只留本机。生产 Source 为 `6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557`，ARM 候选为 `e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`，尚无新 SHA。
+W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-round3-continue-20261012`。temp 证据只留本机。开场生产 Source 为 `6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557`，ARM 候选为 `e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`；新 SHA 见§2.1。
 
 上次 cb1e34a 停于代理复制的历史 16 GiB 准入断言：MemAvailable=15,255,969,792 B（14.208229 GiB）；scope、llvm-dis、测试和转换均未启动，代码未改。这不是产品失败。本轮用户明确改为轻量阶段 ≥6 GiB、全量转换 ≥10 GiB；不足时每5分钟读一次，最长60分钟；运行中18 GiB cap、swap0、nice15/ionice3、30秒采样、宿主可用低于2 GiB中止。上一停止原始输出保留在 `temp/review-round3-20261012`，旧报告完整内容可读 cb1e34a 版本。（证据：旧 E/stop-result.json；本轮任务资源准入；E/run_stage.py。）
 
@@ -109,7 +109,7 @@ B7的显式确认只存在ARM分派路径：ARM install包装器用线程局部�
 | `tools/test_arm_archive_trial.py` | `6b5d2cf7a17fb2bd2b97ecaaea6b4a10d24d7e05141f7555cbebc8b9bf6e8ed4` |
 | `tools/test_archive_review_round3.py` | `21d55d0504262358d979699aeb607dfd310f7f1e27b33961b51a59a1bd754805` |
 
-完整diff：[x86相对6bd](46_x86_source_round3.diff)、[ARM相对e2](46_arm_source_round3.diff)。这两份是本轮代码差异，不是Gerrit format-patch。旧上传补丁与其随附Source保留不动；PS3/PS2目录尚未生成。根内结果见§2.2；全量离线结果仍为NOT RUN，历史after SHA不能给本轮新Source背书。
+完整diff：[x86相对6bd](46_x86_source_round3.diff)、[ARM相对e2](46_arm_source_round3.diff)。这两份是本轮代码差异，不是Gerrit format-patch。旧上传补丁与其随附Source保留不动；PS3/PS2目录尚未生成。根内结果见§2.2；本轮新Source的独立全量离线结果见§2.3。
 
 ### 2.2 根内测试与地址空间探针
 
@@ -134,6 +134,18 @@ R32的Python为`3.14.2 (main, Oct 1 2026, 21:46:23) [Clang 22.1.8]`。完整116�
 
 两个根的/proc分别临时挂载，finally均卸载；挂载前/期间/后mountinfo、全部chroot命令与退出码存`*-mount-*.txt`、root-commands.json。没有运行GBS或构建LLVM。（证据：root-stage-result.json。）
 
+### 2.3 新 Source 全量离线复验
+
+所有输入均先复核SHA；使用独立新输出目录，不回写构建树原件。x86两条路径分别执行，不以一条路径的成功替代另一条。
+
+| 路径 | 归档 / 有序成员 | 完整索引条目 | 与历史整档SHA | 后端flags / Thumb | 转换wall秒 | 证据（E内） |
+|---|---|---:|---|---|---:|---|
+| x86-production | 225 / 3864 | 318543 | 225/225全同（docs/35） | 3853 flags逐项全同 | 2792.146 | x86-production-result.json；x86-production-conversion/summary.json |
+
+- x86-production：module asm 3个全部通过；强符号缺失0；允许缺失按类型`{'W': 1920}`。
+
+x86判据覆盖整档after SHA、每个成员的序号/名称/同名序号/SHA、完整符号→成员映射与3853套后端flags。ARM判据覆盖格式、完整索引、原机器码保留、强符号、PIC/TLS、ARM32参考Thumb与全部属性；两ARM在宿主使用原生转换器，探针软/硬均4294967296、enforced=true，未使用忽略AS确认。
+
 ## 3. 本轮资源记录
 
 | 阶段 | 准入 GiB | 启动可用 GiB | scope 峰值 GiB | 结果 |
@@ -141,16 +153,12 @@ R32的Python为`3.14.2 (main, Oct 1 2026, 21:46:23) [Clang 22.1.8]`。完整116�
 | integrity-scope | 6 | 16.121895 | 2.951160 | exit 1；采样器已回收 |
 | integrity-retry-scope | 6 | 15.857098 | 4.945427 | exit 0；采样器已回收 |
 | integrity-inputs-scope | 6 | 15.716362 | 1.474655 | exit 0；采样器已回收 |
-
-| x86-census-scope | 6 | 14.778671 | 3.315685 | PASS；采样器已回收 |
-
-| readonly-census-scope | 6 | 14.689720 | 1.802883 | PASS；采样器已回收 |
-
-| host-tests-scope | 6 | 14.172653 | 1.136986 | PASS；采样器已回收 |
-
-| host-tests-final-scope | 6 | 14.067207 | 0.873978 | PASS；采样器已回收 |
-
-| root-tests-probes-scope | 6 | 14.211998 | 0.310577 | PASS（预注册分类）；采样器已回收 |
+| x86-census-scope | 6 | 14.778671 | 3.315685 | exit 0；采样器已回收 |
+| readonly-census-scope | 6 | 14.689720 | 1.802883 | exit 0；采样器已回收 |
+| host-tests-scope | 6 | 14.172653 | 1.136986 | exit 0；采样器已回收 |
+| host-tests-final-scope | 6 | 14.067207 | 0.873978 | exit 0；采样器已回收 |
+| root-tests-probes-scope | 6 | 14.211998 | 0.310577 | exit 0；采样器已回收 |
+| x86-production-scope | 10 | 14.185158 | 6.883991 | exit 0；采样器已回收 |
 
 全部阶段 MemoryMax=19,327,352,832 B、MemorySwapMax=0，未触发 OOM 或2 GiB宿主保护线。Git/find 的 scope 峰值包含文件缓存和内核 slab，不等于应用匿名内存。（证据：各 scope/plan.json、memory-summary.json。）
 
