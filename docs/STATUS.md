@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-12。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/46）停止于只读普查入口，尚未修订 Source**：代理复用上轮辅助驱动的16GiB准入断言，读到15,255,969,792B（14.208229GiB）后退出，scope/llvm-dis/测试/转换均未启动。本轮任务未另定只读普查准入线；不将该阈值写成PM新裁决，也不将停止写成产品失败。未降低门槛或重试，依无人值守停止规则完成文档。B3/B5未实施，PS3/PS2未生成；生产仍6bd、ARM仍e2。锁已释放，无临时挂载/采样器。见docs/46及temp/review-round3-20261012/stop-result.json。
+**当前任务（docs/46续）第零步完整性核查PASS**：主HEAD/origin/远端均cb1e34a，范围内61文件与HEAD一致；647输入归档及工具/保护文件共671项SHA一致；find修改记录186条均已归因，未知0；W/llvm仅原三处并发差异。轻阶段6GiB/转换10GiB新准入，统一18GiB/swap0；只修一次find字符串辅助缺陷。尚未修改Source/测试/补丁，进入七项只读普查，B3/B5未决定。证据temp/review-round3-continue-20261012；项目锁继续持有。
 
 **历史任务（docs/44续三）完成**：宿主99PASS；根内95PASS+3指定环境不适用+1已实证AS发现。x86225档/3864成员/索引/3853 flags完全一致；ARM32 210档、AArch64 212档after SHA与§12全同，沿用三套消费者/两种strip。5个ARM asm符号GLOBAL/UND；105/106的bfd/lld共享链接与dlopen均PASS；x86三个bitcode同asm成员最终符号保留。Source仍e2c2ebfa，无代码改动；只修timeout测试。两处辅助脚本各授权修一次；锁、采样器、proc回收。ARM生产AS限制问题待评审，未打包/推Gerrit。见docs/44 §18–§27与docs/45。
 
@@ -39,7 +39,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：第二轮评审修订因复制的辅助驱动准入而尚未开始（docs/46）。下一待办为七项普查、x86 PS3/归档strip PS2候选与ARM加固及离线复验；旧ARM候选e2固定输入复验已完成，但生产AS与RPM集成尚未闭合。
+当前阶段：第二轮评审续任务已通过本地完整性核查，接续只读普查与加固（docs/46）。下一待办为七项普查、x86 PS3/归档strip PS2候选与ARM加固及离线复验；旧ARM候选e2固定输入复验已完成，但生产AS与RPM集成尚未闭合。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -512,3 +512,5 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 - 下一轮评审后待做x86完整构建：cb679968叠两个新候选，包含扩大样本的原编译/转换结构对照；本轮没有RPM构建。
 - ARM第二段待验证根内readelf、GNU ar、32位Python峰值、命令超时余量、proc、磁盘、按架构依赖、原生工具选择与显式AS确认、并发及最终RPM；原生地址空间限制器长期方案仍开放。
 - 本轮16GiB入口来源为代理复制旧辅助驱动，不是用户本次对只读普查另定的资源裁决；实际资源需求未测。证据强度：入口退出为硬证据，Source/输入行为为未测；见docs/46 §1–§2、E/stop-result.json。
+
+2026-10-12 本提交：docs/46 第零步完整性核查通过，输入/工具/代码未变；后续修订与离线复验进行中。
