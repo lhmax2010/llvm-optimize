@@ -2,7 +2,7 @@
 
 日期：2026-10-12（Asia/Shanghai）。开场提交 `bda33ec60e694aeb92e71ac0444901350567a8ba`。
 
-**当前完成第零步、第一步及Source/测试修订。尚未运行单元测试与全量复验；小型spec实验进行中。修订不等于认证通过。**
+**已完成完整性/事实核查、Source修订、四种小spec实验与两环境测试；全量复验及根内小试尚未执行。**
 
 ## 0. 范围、证据与资源规则
 
@@ -75,8 +75,30 @@ X1合并汇编选项拒绝消息；X2/X4补主版本与module asm检查注释；
 - `llvm_static_archives_source.py` SHA `7c83e822c333f05ddfce998918e79c542926203d26cf58750291f492d6e9dcaf`；完整diff：[docs/47_x86_source_round4.diff](47_x86_source_round4.diff)。
 - `llvm_static_archives_arm_trial.py` SHA `3cdaecebf45ab213d92d212a874ef978a825bfc3f171183963599fe9bd4f5bb3`；完整diff：[docs/47_arm_source_round4.diff](47_arm_source_round4.diff)。
 
-新增`tools/test_archive_review_round4.py`覆盖本轮X1/X3/A1–A7；旧ARM测试只更新被新政策取代的预期（旧AS放行删除、wrapper显式许可、target强制、install签名AST排除与实际调用补验）。原测试保留；尚未运行，不报PASS。
+新增`tools/test_archive_review_round4.py`覆盖本轮X1/X3/A1–A7；旧ARM测试只更新被新政策取代的预期（旧AS放行删除、wrapper显式许可、target强制、install签名AST排除与实际调用补验）。原测试保留；宿主134/134 PASS（55.282秒）；ARM32根内134项中130 PASS、3项环境不适用、1项已知QEMU AS发现，无新增失败。
 
 小spec首次发现夹具未显式展开`%debug_package`，标为on的组合实际未启用debug；根内宏`usr/lib/rpm/macros:229–235`与`home/abuild/.rpmmacros:124–129`说明启用需要宏展开/后端注入。只在临时spec增加`%debug_package`，off组合仍定义nil；原实际命令判据完全不变。本步骤动用一次辅助脚本修正重跑授权；原三组合日志与失败保留，修正全文E/small-spec-helper-fix.diff、诊断E/small-spec-helper-diagnosis.json。重跑四组合全部exit0；删除行版本debug开启不执行brp-strip、关闭执行/bin/strip，归档均以/usr/bin/llvm-strip单独命令执行，两个判据PASS。保留行版本实际行为同样符合此分派，仅作为观察结果。证据E/small-spec-retry/small-spec-results.json与四份stdout/stderr；没有推断保留行必然失败。
 
 后续：测试、四次全量转换、两根小试/负例、候选补丁再生成均待执行。
+
+## 5. 本轮测试与小spec实测
+
+宿主测试134项全部PASS，相对上一轮116项增加18项；0失败/错误/跳过。ARM32根内同样134项：130 PASS，以下4项按PM原裁决单列，其他均通过：
+
+| 测试 | 根内分类 | 原因 |
+|---|---|---|
+| test_actual_limits_and_monitor_cleanup | 环境不适用 | 实验辅助模块需要/usr/bin/time |
+| test_failure_stops_following_commands | 环境不适用 | 同上 |
+| test_sections_symbols_visibility_and_relocations | 环境不适用 | x86 as --64夹具 |
+| test_limits_accounting_and_no_external_time | 已知环境发现 | 未修改的Commands经QEMU设置AS后读回unlimited |
+
+新启动器自身的读回/失败125/超时SIGKILL回收测试在两环境都PASS；没有把原Commands的已知限制问题改成PASS。根内解释器：`3.14.2 (main, Oct  1 2026, 21:46:23) [Clang 22.1.8 ]`。证据E/host-tests-result.json、root-suite-raw.json、root-suite-classified.json及root-commands.json；/proc已卸载。
+
+| 小spec | debug | exit | 归档strip参数 | 普通brp-strip | 判定 |
+|---|---|---:|---|---|---|
+| 保留宏内注释 | on | 0 | /usr/bin/llvm-strip | 未执行 | 仅观察 |
+| 保留宏内注释 | off | 0 | /usr/bin/llvm-strip | /bin/strip | 仅观察 |
+| 删除宏内注释 | on | 0 | /usr/bin/llvm-strip | 未执行 | PASS |
+| 删除宏内注释 | off | 0 | /usr/bin/llvm-strip | /bin/strip | PASS |
+
+on两例均实际产出debuginfo/debugsource RPM，均执行find-debuginfo；不是仅设置一个测试布尔值。完整临时spec和set-x原文在E/small-spec-retry；本轮没有LLVM完整RPM构建。首次辅助夹具漏启debug及唯一一次修正见§4，不覆盖失败原始记录。
