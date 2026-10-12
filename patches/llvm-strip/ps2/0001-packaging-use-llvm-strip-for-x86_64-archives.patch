@@ -1,0 +1,64 @@
+From db23b26079776684d09c620ae614a59cd40007a0 Mon Sep 17 00:00:00 2001
+From: FatTank <hao.lin@samsung.com>
+Date: Mon, 12 Oct 2026 19:33:12 +0800
+Subject: [PATCH] packaging: use llvm-strip for x86_64 archives
+
+The platform builds with LLVM. Use llvm-strip for the LLVM package's
+x86_64 static archive post-processing while keeping executable stripping
+on the platform default. Copy the current __strip_install_post macro and
+change only the brp-strip-static-archive argument. Do not override
+__strip. Check that llvm-strip is available after native archive conversion.
+
+This change must land after change 356627. Archive bitcode must first be
+converted to native objects; llvm-strip is not a replacement for that
+conversion. Keep find-debuginfo and the rest of RPM post-processing intact.
+
+The previously validated llvm-strip packaging run changed only the 270
+static archives. Differences in all 45 compiler-rt archives come solely
+from the strip tool: ELF structure differs, but allocated section content
+and symbol-to-member index mappings remain unchanged. Host and Tizen
+GNU ld and lld consumers, including sanitizer, profile and builtins
+runtime tests, passed; non-archive files were byte-identical.
+
+For this revision, macro expansion was checked with debug packages both
+enabled and disabled. Enabled: only archive stripping uses llvm-strip.
+Disabled: brp-strip keeps /bin/strip, while archive stripping uses
+llvm-strip. A new RPM build of this macro override remains to be run.
+
+Limit the override to x86_64; ARM follows after archive conversion and
+packaging validation on those targets.
+
+Change-Id: Iac085555112855d60cc7591931e91466691db6b2
+Signed-off-by: FatTank <hao.lin@samsung.com>
+---
+ packaging/llvm.spec | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 8240282641a3..1ec2ee5ef734 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -1,3 +1,12 @@
++%ifarch x86_64
++# From /usr/lib/rpm/tizen_macros:34-38, rpm-build-4.14.1.1-1.4.x86_64.
++# Replace only archive stripping; executable strip keeps the platform default.
++%define __strip_install_post    \
++    %{!?__debug_package:%{_rpmconfigdir}/brp-strip %{__strip}} \
++    %{_rpmconfigdir}/brp-strip-static-archive %{_bindir}/llvm-strip \
++#    %{_rpmconfigdir}/brp-strip-comment-note %{__strip} %{__objdump} \
++%{nil}
++%endif
+ %define keepstatic 1
+ 
+ # MLGO AOT support for LLVM MLGO (Ahead-of-Time compilation)
+@@ -438,6 +447,7 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+     --jobs 4 --address-space-bytes 4294967296 || exit 1
++%{_bindir}/llvm-strip --version || exit 1
+ %endif
+ 
+ %post -n clang -p /sbin/ldconfig
+-- 
+2.43.0
+

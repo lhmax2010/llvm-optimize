@@ -2,13 +2,28 @@
 
 日期：2026-10-12（Asia/Shanghai）。开场 HEAD 与 origin/main 均为 `cb1e34af0958de17155459f7406869a91cadbe00`。
 
-**当前完成：两条x86全量PASS；ARM32 210档/AArch64 212档after SHA均与§12全同，探针enforced=true，沿用消费者/strip；待宏展开与候选补丁。**
+**本轮离线验证全部完成：完整性/普查PASS；宿主116PASS，根内112PASS+3环境不适用+1已知AS发现；两条x86全量回归与两ARM全量转换PASS，所有after SHA与认证基线全同。PS3/PS2候选顺序apply与完整tree验证PASS。没有新RPM构建或Gerrit推送，完整构建仍待下一轮。**
 
 ## 0. 范围与上次停止记录
 
-W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-round3-continue-20261012`。temp 证据只留本机。开场开场开场开场生产 Source 为 `6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557`，ARM 候选为 `e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`；新 SHA 见§2.1。
+W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-round3-continue-20261012`。temp 证据只留本机。开场生产 Source 为 `6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557`，ARM 候选为 `e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`；新 SHA 见§2.1。
 
 上次 cb1e34a 停于代理复制的历史 16 GiB 准入断言：MemAvailable=15,255,969,792 B（14.208229 GiB）；scope、llvm-dis、测试和转换均未启动，代码未改。这不是产品失败。本轮用户明确改为轻量阶段 ≥6 GiB、全量转换 ≥10 GiB；不足时每5分钟读一次，最长60分钟；运行中18 GiB cap、swap0、nice15/ionice3、30秒采样、宿主可用低于2 GiB中止。上一停止原始输出保留在 `temp/review-round3-20261012`，旧报告完整内容可读 cb1e34a 版本。（证据：旧 E/stop-result.json；本轮任务资源准入；E/run_stage.py。）
+
+本材料中路径缩写如下，全部为已有输入或只读执行环境：
+
+| 缩写 / 用途 | 绝对路径或相对W路径 |
+|---|---|
+| R32 | `/var/tmp/llvm-optimize-arm-c1-20261010/gbs-libraries-armv7l/local/BUILD-ROOTS/scratch.armv7l.0` |
+| R64 | `/var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/BUILD-ROOTS/scratch.aarch64.0` |
+| E4（前轮证据） | `W/temp/arm-source-root-probes-20261010` |
+| x86输入 E5/x86-input | `W/temp/arm-archive-stage1-20261010/x86-input` |
+| ARM32输入 | `W/temp/arm-archive-standard-build-20261010/armv7l-input` |
+| AArch64输入 | `W/temp/arm-archive-tls-thumb-20261010/aarch64-input` |
+| x86工具 | `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/{clang-22,llvm-dis,llvm-nm}` |
+| ARM工具 | 各根`/emul`的原生x86_64 ELF，经输入目录同级的`armv7l-tool-wrappers/`或`aarch64-tool-wrappers/`调用；ELF与wrapper分别核SHA |
+
+所有转换工具完整版本均为22.1.8，成员级完整argv、工具版本与SHA保留在各转换目录的summary和命令JSON。上表输入未回写。（证据：input-integrity.jsonl、四个*-conversion/summary.json。）
 
 ## 1. 本地完整性核查
 
@@ -40,7 +55,7 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-r
 | 两根 /emul 解释器 | 都有原生x86_64 bash/dash/sh（bin与usr/bin路径）；未找到busybox/python/perl。仅只读识别，不作为AS方案已可用的证明 | readonly-census-result.json 的 emul_interpreters |
 | `/usr/bin/cat` | 宿主、R32、R64均存在且可执行 | readonly-census-result.json 的 cat |
 
-**B3实施；B5不实施**：两种ELF节格式完全符合收窄前提；target次数全部为2，不能改成“恰好1次”，也不自行换成“恰好2次”。A/B及D的实现与宿主验证见§2.1；C宏覆盖候选在后续补丁阶段生成。（出处：本轮条件裁决；以上全集。）
+**B3实施；B5不实施**：两种ELF节格式完全符合收窄前提；target次数全部为2，不能改成“恰好1次”，也不自行换成“恰好2次”。A/B及D的实现与宿主验证见§2.1；C宏覆盖候选及实测结果见§2.4。（出处：本轮条件裁决；以上全集。）
 
 x86三个module asm位置（均IR第6行）：`libLLVMAnalysis.a/MLInlineAdvisor.cpp.o` ordinal80、`libLLVMCodeGen.a/MLRegAllocEvictAdvisor.cpp.o` ordinal137、`libarcher_static.a/ompt-tsan.cpp.o` ordinal0。同名 occurrence 均1。根内 `usr/lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/iostream:82` 实际声明匹配，文件SHA `405900b25b2ecfda0e3ff3fd52c44b89df95d3fb89987235291abaec4a522d00`。（证据：x86-asm-census-result.json、readonly-census-result.json。）
 
@@ -64,7 +79,25 @@ x86三个module asm位置（均IR第6行）：`libLLVMAnalysis.a/MLInlineAdvisor
 %endif
 ```
 
-同条件还控制spec57–59的sed依赖及178–182的编译参数处理；420行删除安装根libdir/debug残留。实际文件带tab的逐字原文以target-spec.txt为准，未改spec。（证据：target-spec.txt、readonly-census-result.json/debug_matches。）
+同条件还控制57–59的sed依赖与178–186的debug编译参数移除。其逐字原文如下；420行删除安装根libdir/debug残留。没有改356627的spec。
+
+```spec
+%if 0%{llvm_release_build}
+BuildRequires: sed
+%endif
+%if 0%{llvm_release_build}
+# Not to build debug info
+RELCFLAGS=$(echo $CFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+export CFLAGS=${RELCFLAGS}
+RELCXXFLAGS=$(echo $CXXFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+export CXXFLAGS=${RELCXXFLAGS}
+RELFFLAGS=$(echo $FFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\)|dwarf-[[:digit:]]\\?* *g')
+export FFLAGS=${RELFFLAGS}
+%endif
+rm -rf %{buildroot}%{_libdir}/debug/*
+```
+
+实际文件及精确行号以target-spec.txt为准。（证据：target-spec.txt、readonly-census-result.json/debug_matches。）
 
 宏取docs/38同一x86根 `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`，包 `rpm-build-4.14.1.1-1.4.x86_64`，`usr/lib/rpm/tizen_macros:34–38`：
 
@@ -76,7 +109,7 @@ x86三个module asm位置（均IR第6行）：`libLLVMAnalysis.a/MLInlineAdvisor
 %{nil}
 ```
 
-文件SHA `f0f991bd97f44b7bf906ac4a7a45cd34b7444c1acce2358261e4a95b3e68ebc8`；根内直接rpm --eval读到默认strip为`/bin/strip`。本轮尚未加入新的宏覆盖，后续会分别验证debug开启/关闭。（证据：tizen_macros.txt、rpm-build-version.json、strip-macro.json、strip-default.json。）
+文件SHA `f0f991bd97f44b7bf906ac4a7a45cd34b7444c1acce2358261e4a95b3e68ebc8`；根内直接rpm --eval读到默认strip为`/bin/strip`。宏覆盖与两种debug展开均已验证，结果见§2.4。（证据：tizen_macros.txt、rpm-build-version.json、strip-macro.json、strip-default.json。）
 
 ### 2.1 本轮 Source 与测试修订
 
@@ -109,7 +142,7 @@ B7的显式确认只存在ARM分派路径：ARM install包装器用线程局部�
 | `tools/test_arm_archive_trial.py` | `6b5d2cf7a17fb2bd2b97ecaaea6b4a10d24d7e05141f7555cbebc8b9bf6e8ed4` |
 | `tools/test_archive_review_round3.py` | `21d55d0504262358d979699aeb607dfd310f7f1e27b33961b51a59a1bd754805` |
 
-完整diff：[x86相对6bd](46_x86_source_round3.diff)、[ARM相对e2](46_arm_source_round3.diff)。这两份是本轮代码差异，不是Gerrit format-patch。旧上传补丁与其随附Source保留不动；PS3/PS2目录尚未生成。根内结果见§2.2；本轮新Source的独立全量离线结果见§2.3。
+完整diff：[x86相对6bd](46_x86_source_round3.diff)、[ARM相对e2](46_arm_source_round3.diff)。这两份是本轮代码差异，不是Gerrit format-patch。旧上传补丁与其随附Source保留不动；PS3/PS2候选状态见§2.4。根内结果见§2.2；本轮新Source的独立全量离线结果见§2.3。
 
 ### 2.2 根内测试与地址空间探针
 
@@ -156,24 +189,82 @@ armv7l逐档after SHA全部与§12相同，按本轮预注册规则**沿用**doc
 
 aarch64逐档after SHA全部与§12相同，按本轮预注册规则**沿用**docs/40 §12和docs/44的未strip/GNU strip/LLVM strip三套消费者与两种strip证据，本轮不重复执行消费者或strip；这不是新RPM验收。详见`aarch64-result.json`的逐档SHA和module_asm_symbols。
 
+#### module asm与历史证据沿用
+
+本轮五个ARM白名单成员均恰好一个`_ZSt21ios_base_library_initv`：`info=16`（GLOBAL/NOTYPE）、`other=0`、`raw_section=section_index=0`（UND）、`value=size=0`、`is_absolute=false`。逐成员结果如下（序号从0开始）：
+
+| 架构 | 归档 | 成员序号与名称 | 检查 |
+|---|---|---|---|
+| armv7l | usr/lib/libLLVMAnalysis.a | 80 / MLInlineAdvisor.cpp.o | PASS |
+| armv7l | usr/lib/libLLVMCodeGen.a | 137 / MLRegAllocEvictAdvisor.cpp.o | PASS |
+| aarch64 | usr/lib64/libLLVMAnalysis.a | 80 / MLInlineAdvisor.cpp.o | PASS |
+| aarch64 | usr/lib64/libLLVMCodeGen.a | 137 / MLRegAllocEvictAdvisor.cpp.o | PASS |
+| aarch64 | usr/lib64/libarcher_static.a | 0 / ompt-tsan.cpp.o | PASS |
+
+Thumb门禁实际使用宿主`/usr/bin/readelf`，版本`GNU readelf (GNU Binutils for Ubuntu) 2.42`，SHA `64c58e15274bbbb5153f31078e455e9e77ee5f51489e709bba5bb788ce9df2b0`。宿主完整属性对照3683次、差异0；不是根内readelf开销或格式认证。（证据：armv7l-result.json、armv7l-conversion/summary.json与成员thumb-gate.json。）
+
+历史沿用的证据目录均在`temp/arm-archive-tls-thumb-20261010/`：ARM32为`consumers-native-rerun/`、`consumers-gnu/`、`consumers-llvm/`、`strip-gnu/`、`strip-llvm/`；AArch64为`aarch64-consumers-native/`、`aarch64-consumers-gnu/`、`aarch64-consumers-llvm/`、`aarch64-strip-gnu/`、`aarch64-strip-llvm/`。本轮仅依据所有整档after SHA全同沿用这些记录，未重新运行消费者或strip，不增加历史运行次数。（出处：docs/40 §12、docs/44；本轮两个*-result.json comparisons全表。）
+
+### 2.4 宏覆盖、候选补丁与执行边界
+
+356639不再定义`%__strip`。在x86_64条件中复制`/usr/lib/rpm/tizen_macros:34–38`宏体，仅替换归档命令的工具参数；可执行文件strip仍采用平台默认。转换调用之后增加`%{_bindir}/llvm-strip --version || exit 1`。注释保留来源文件、行号与rpm-build版本。宏原文、改后原文与完整argv分别在`strip-original.macro`、`strip-candidate.macro`、`macro-expansion-records.json`。
+
+在原x86根直接`rpm --eval`，两项均PASS（保留的注释行不作为可执行命令）：
+
+| debug包 | 实际执行命令展开 |
+|---|---|
+| 开启（`--define '__debug_package 1'`） | `/usr/lib/rpm/brp-strip-static-archive /usr/bin/llvm-strip` |
+| 关闭（`--undefine __debug_package`） | `/usr/lib/rpm/brp-strip /bin/strip`；`/usr/lib/rpm/brp-strip-static-archive /usr/bin/llvm-strip` |
+
+证据：macro-result.json及两条完整stdout/stderr。这里验证的是宏展开，未把宏测试说成新RPM构建。
+
+两候选基于干净`cb67996861d070d68fec2b4c623eed7d20ba2e23`生成：356627 PS3提交`f0e9777011a6ff5dbdd416899848d69edb70db27`，356639 PS2以它为父提交，提交`db23b26079776684d09c620ae614a59cd40007a0`。作者均FatTank <hao.lin@samsung.com>；356627沿用原标题，两者沿用原Change-Id；356627 spec与已上传67619ec8逐字节相同，只有Source更新。356639必须在356627之后合入。旧版两份补丁及旧Source保留，未覆盖。
+
+| 新文件 | 字节 | SHA256 |
+|---|---:|---|
+| [patches/archive-index-fix/ps3/0001-packaging-fix-llvm-static-devel-with-ThinLTO.patch](../patches/archive-index-fix/ps3/0001-packaging-fix-llvm-static-devel-with-ThinLTO.patch) | 50284 | `1293f6982c87cfbeefe91aa08e92a7d1b72a129f716417f8c8cee61693c463c6` |
+| [patches/archive-index-fix/ps3/llvm-static-archives-native.py](../patches/archive-index-fix/ps3/llvm-static-archives-native.py) | 43799 | `014fd32f309bc0be80471eebf8a4a3cf50a5656ce3a2584e4bbdfb9a05a9affd` |
+| [patches/llvm-strip/ps2/0001-packaging-use-llvm-strip-for-x86_64-archives.patch](../patches/llvm-strip/ps2/0001-packaging-use-llvm-strip-for-x86_64-archives.patch) | 2803 | `aab2cfd1ad3fb58bfe44cdbdda50bbe67d5343b29a6a6d598408d3bb96620e88` |
+| [docs/46_356627_ps3.diff](46_356627_ps3.diff) | 50284 | `1293f6982c87cfbeefe91aa08e92a7d1b72a129f716417f8c8cee61693c463c6` |
+| [docs/46_356639_ps2.diff](46_356639_ps2.diff) | 2803 | `aab2cfd1ad3fb58bfe44cdbdda50bbe67d5343b29a6a6d598408d3bb96620e88` |
+
+两个完整format-patch外置为[356627 PS3全文](46_356627_ps3.diff)、[356639 PS2全文](46_356639_ps2.diff)，与patches目录文件逐字相同，避免正文超过50KB。提交说明保留先前完整构建证据，并明确本轮仅离线验证；PS3补充Wa拒绝、三工具版本一致、asm检查、符号索引边界以及强符号仅比较名称的限制；PS2补充只替换归档strip、顺序依赖和45运行库差异来源。
+
+在另一干净cb679968工作树中，先PS3 `git apply --check`→apply→完整tree比对，再PS2同样操作，两次均PASS。原始命令及输出：patch-commands.json；spec差异：ps3-spec.diff、ps2-spec.diff；提交说明全文：ps3-message.txt、ps2-message.txt；汇总：patch-result.json。所有操作只在E内隔离仓库执行，没有改W/llvm或上传Gerrit。
+
 ## 3. 本轮资源记录
 
 | 阶段 | 准入 GiB | 启动可用 GiB | scope 峰值 GiB | 结果 |
 |---|---:|---:|---:|---|
-| integrity-scope | 6 | 16.121895 | 2.951160 | exit 1；采样器已回收 |
-| integrity-retry-scope | 6 | 15.857098 | 4.945427 | exit 0；采样器已回收 |
-| integrity-inputs-scope | 6 | 15.716362 | 1.474655 | exit 0；采样器已回收 |
-| x86-census-scope | 6 | 14.778671 | 3.315685 | exit 0；采样器已回收 |
-| readonly-census-scope | 6 | 14.689720 | 1.802883 | exit 0；采样器已回收 |
-| host-tests-scope | 6 | 14.172653 | 1.136986 | exit 0；采样器已回收 |
-| host-tests-final-scope | 6 | 14.067207 | 0.873978 | exit 0；采样器已回收 |
-| root-tests-probes-scope | 6 | 14.211998 | 0.310577 | exit 0；采样器已回收 |
-| x86-production-scope | 10 | 14.185158 | 6.883991 | exit 0；采样器已回收 |
-| x86-candidate-scope | 10 | 14.023224 | 7.113110 | exit 0；采样器已回收 |
-| armv7l-conversion-scope | 10 | 11.670086 | 4.743874 | exit 0；采样器已回收 |
-| aarch64-conversion-scope | 10 | 12.614876 | 5.370186 | exit 0；采样器已回收 |
+| integrity-scope | 6 | 16.121895 | 2.951160 | exit 1；采样器回收 |
+| integrity-retry-scope | 6 | 15.857098 | 4.945427 | exit 0；采样器回收 |
+| integrity-inputs-scope | 6 | 15.716362 | 1.474655 | exit 0；采样器回收 |
+| x86-census-scope | 6 | 14.778671 | 3.315685 | exit 0；采样器回收 |
+| readonly-census-scope | 6 | 14.689720 | 1.802883 | exit 0；采样器回收 |
+| host-tests-scope | 6 | 14.172653 | 1.136986 | exit 0；采样器回收 |
+| host-tests-final-scope | 6 | 14.067207 | 0.873978 | exit 0；采样器回收 |
+| root-tests-probes-scope | 6 | 14.211998 | 0.310577 | exit 0；采样器回收 |
+| x86-production-scope | 10 | 14.185158 | 6.883991 | exit 0；采样器回收 |
+| x86-candidate-scope | 10 | 14.023224 | 7.113110 | exit 0；采样器回收 |
+| armv7l-conversion-scope | 10 | 11.670086 | 4.743874 | exit 0；采样器回收 |
+| aarch64-conversion-scope | 10 | 12.614876 | 5.370186 | exit 0；采样器回收 |
+| macro-scope | 6 | 11.908630 | 0.024406 | exit 0；采样器回收 |
+| patch-generation-scope | 6 | 11.917816 | 0.558952 | exit 0；采样器回收 |
+| final-integrity-scope | 6 | 11.874542 | 0.022671 | exit 0；采样器回收 |
 
-全部阶段 MemoryMax=19,327,352,832 B、MemorySwapMax=0，未触发 OOM 或2 GiB宿主保护线。Git/find 的 scope 峰值包含文件缓存和内核 slab，不等于应用匿名内存。（证据：各 scope/plan.json、memory-summary.json。）
+所有已启动scope均为 MemoryMax=19,327,352,832 B、MemorySwapMax=0，未触发 OOM 或2 GiB宿主保护线。Git/find 的 scope 峰值包含文件缓存和内核 slab，不等于应用匿名内存。（证据：各 scope/plan.json、memory-summary.json。）
+
+### 准入等待与执行纪律
+
+armv7l全量转换唯一一次准入等待为10分钟。完整读数如下；未改门槛、未处理其他进程。aarch64首次读数即满足10GiB。运行耗时受本机并存负载影响，仅记录，不用于性能结论。
+
+| 时间 | MemAvailable B | GiB | 本轮门槛 GiB |
+|---|---:|---:|---:|
+| 2026-10-12T18:01:00+08:00 | 8564801536 | 7.976593 | 10 |
+| 2026-10-12T18:06:00+08:00 | 8704143360 | 8.106365 | 10 |
+| 2026-10-12T18:11:00+08:00 | 12530659328 | 11.670086 | 10 |
+
+证据：armv7l-conversion-scope/admission.json及两ARM scope下的samples.jsonl、memory-summary.json。
 
 ## 4. 不采纳项及理由（PM 已裁决）
 
@@ -194,10 +285,12 @@ aarch64逐档after SHA全部与§12相同，按本轮预注册规则**沿用**do
 
 ## 5. 第三轮与生产集成挂账
 
-1. 完成七项只读普查，实施 A–D，宿主/根内测试与 B7 探针；依序完成 x86 两次和两 ARM 全量离线复验。
-2. 生成第三轮评审的 PS3/PS2 候选与全量 diff；当前未生成。
-3. 下一轮评审后做 x86 完整构建：cb679968 叠两个新补丁，扩大原编译与转换产物结构对照样本。本轮不做 RPM 构建。
-4. ARM 第二段：根内 readelf 版本/输出/耗时、GNU ar 根内与宿主一致性、32位Python峰值、每命令600秒余量、/proc、磁盘、架构BuildRequires、/emul原生工具及显式AS确认、并发、最终RPM索引/符号/PIC/消费者验收。
-5. 地址空间长期方案：原生限制器及交付边界；显式确认不等于限制已生效。
+1. 第三轮外部评审：本材料、两Source差异与测试；新PS3/PS2已生成，见§2.4，不能把离线认证等同RPM发货认证。
+2. 评审后x86完整构建：cb679968叠两候选，扩大“原编译vs转换产物”的结构对照样本，完成RPM后处理、消费者与重复安装验收。本轮未做RPM构建。
+3. ARM第二段：根内readelf版本/输出/耗时、GNU ar根内与宿主一致性、32位Python峰值、每命令600秒余量、/proc、磁盘、架构BuildRequires、/emul原生工具与显式AS确认、并发、最终RPM索引/符号/PIC/消费者验收。
+4. 地址空间长期方案：原生限制器及交付边界。两根存在原生shell只是一条调查事实；当前尚无已认证的限制器方案，显式确认不等于AS限制生效。
+5. 强符号仍只比较名称包含关系，不能作为所有符号绑定/可见性/类型/大小均等价的证明；B1的严格字段要求仅针对白名单module asm声明。
 
-历史证据入口：[docs/44](44_arm_source_review_round1.md)、[docs/45](45_gerrit_patches_review_package.md)。不推 Gerrit、不清理磁盘；项目锁在后续阶段继续持有。
+本轮没有改Commands、356627 spec、W/llvm、用户gbs配置、历史docs/25–45或两份旧补丁；没有RPM构建、磁盘清理、Gerrit推送。最终保护文件核查与回收见E内最终记录；/proc仅在探针/测试时临时挂载并已卸载。原始输出、驱动与全部命令保留在E，temp不上传GitHub。
+
+收尾实测：两个项目锁均释放；15个scope的采样器与日志读取线程已回收，scope内残留PID为0；本任务驱动进程0；R32/R64临时/proc挂载0。保护文件与Commands逐字终检PASS。（证据：final-integrity.json、cleanup-final.json、lock-released.json。）

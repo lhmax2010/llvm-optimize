@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-12。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/46续）**：两条x86全量PASS；ARM32 210档/AArch64 212档after SHA均与§12全同，探针enforced=true，沿用消费者/strip；待宏展开与候选补丁。生产Source014fd32f…、ARM候选c3edada0…；Commands/spec/旧补丁不改。每阶段6/10GiB准入、18GiB cap/swap0，锁持有。
+**当前任务（docs/46续）收尾**：第三轮离线评审材料完成：116宿主PASS；根内112PASS+3环境不适用+1已知AS发现；两x86回归225档/3864成员/索引/flags全同，两ARM210/212档after SHA全同；宏debug开/关PASS，PS3/PS2候选顺序apply与tree PASS。 Source为014fd32f…/c3edada0…；B3实施，B5不实施。无RPM构建/无Gerrit推送。后续为第三轮评审、x86完整构建、ARM第二段及原生AS限制器方案。
 
 **历史任务（docs/44续三）完成**：宿主99PASS；根内95PASS+3指定环境不适用+1已实证AS发现。x86225档/3864成员/索引/3853 flags完全一致；ARM32 210档、AArch64 212档after SHA与§12全同，沿用三套消费者/两种strip。5个ARM asm符号GLOBAL/UND；105/106的bfd/lld共享链接与dlopen均PASS；x86三个bitcode同asm成员最终符号保留。Source仍e2c2ebfa，无代码改动；只修timeout测试。两处辅助脚本各授权修一次；锁、采样器、proc回收。ARM生产AS限制问题待评审，未打包/推Gerrit。见docs/44 §18–§27与docs/45。
 
@@ -39,7 +39,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：第二轮评审续任务已通过本地完整性核查，接续只读普查与加固（docs/46）。下一待办为七项普查、x86 PS3/归档strip PS2候选与ARM加固及离线复验；旧ARM候选e2固定输入复验已完成，但生产AS与RPM集成尚未闭合。
+当前阶段：docs/46本轮收尾，第三轮离线评审材料完成：116宿主PASS；根内112PASS+3环境不适用+1已知AS发现；两x86回归225档/3864成员/索引/flags全同，两ARM210/212档after SHA全同；宏debug开/关PASS，PS3/PS2候选顺序apply与tree PASS。后续依评审结果启动新任务，不自动重试。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -78,7 +78,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 | 日期 | 提交号 | 产出文件 | 一句话结论 |
 | --- | --- | --- | --- |
-| 2026-10-12 | 本提交（`git log -- docs/46_review_round3_package.md`） | docs/46、STATUS | 只读普查入口因复制的历史16GiB断言停止（14.208229GiB）；未启动产品操作/修订/测试/转换，PS3/PS2未生成；完成停止报告并回收项目锁。 |
+| 2026-10-12 | `cb1e34a` | docs/46、STATUS | 只读普查入口因复制的历史16GiB断言停止（14.208229GiB）；未启动产品操作/修订/测试/转换，PS3/PS2未生成；完成停止报告并回收项目锁。 |
 | 2026-09-16 | `2c6e496` | `.gitignore`、`docs/README.md`、`gbs_llvm.conf` | 初始化仓库与产出规范，排除 LLVM 源码和中间产物。 |
 | 2026-09-16 | `b1ac328` | `docs/00_workspace_setup.md` | 归档初始化、忽略检查与首次推送证据。 |
 | 2026-09-16 | `c31b44e` | `docs/10_tizen_llvm_build_config.md`、`tools/collect_llvm_inventory.py` | 完成配置/工具调查，区分配方能力与实际发布二进制的 UNKNOWN。 |
@@ -528,3 +528,7 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 2026-10-12 本提交（docs/46 armv7l里程碑）：两条x86全量PASS；ARM32 210档after SHA与§12全同、3683 Thumb通过，沿用消费者/strip；待AArch64与宏/补丁。
 
 2026-10-12 本提交（docs/46 aarch64里程碑）：两条x86全量PASS；ARM32 210档/AArch64 212档after SHA均与§12全同，探针enforced=true，沿用消费者/strip；待宏展开与候选补丁。
+
+2026-10-12 本提交（docs/46最终收尾）：第三轮离线评审材料完成：116宿主PASS；根内112PASS+3环境不适用+1已知AS发现；两x86回归225档/3864成员/索引/flags全同，两ARM210/212档after SHA全同；宏debug开/关PASS，PS3/PS2候选顺序apply与tree PASS。
+
+本轮最终回收：两个锁释放、15个scope均回收、任务进程与临时/proc挂载为0；见docs/46及E/cleanup-final.json。
