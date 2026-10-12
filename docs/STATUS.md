@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-12。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/46续）**：x86生产与ARM候选x86路径的两次全量回归均PASS（各225档/3864成员/完整索引/3853 flags全同）；待两ARM全量转换与宏/补丁。生产Source014fd32f…、ARM候选c3edada0…；Commands/spec/旧补丁不改。每阶段6/10GiB准入、18GiB cap/swap0，锁持有。
+**当前任务（docs/46续）**：两条x86全量PASS；ARM32 210档after SHA与§12全同、3683 Thumb通过，沿用消费者/strip；待AArch64与宏/补丁。生产Source014fd32f…、ARM候选c3edada0…；Commands/spec/旧补丁不改。每阶段6/10GiB准入、18GiB cap/swap0，锁持有。
 
 **历史任务（docs/44续三）完成**：宿主99PASS；根内95PASS+3指定环境不适用+1已实证AS发现。x86225档/3864成员/索引/3853 flags完全一致；ARM32 210档、AArch64 212档after SHA与§12全同，沿用三套消费者/两种strip。5个ARM asm符号GLOBAL/UND；105/106的bfd/lld共享链接与dlopen均PASS；x86三个bitcode同asm成员最终符号保留。Source仍e2c2ebfa，无代码改动；只修timeout测试。两处辅助脚本各授权修一次；锁、采样器、proc回收。ARM生产AS限制问题待评审，未打包/推Gerrit。见docs/44 §18–§27与docs/45。
 
@@ -524,3 +524,5 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 2026-10-12 本提交（docs/46 production里程碑）：生产Source的x86全量回归PASS：225档/3864成员/完整索引/3853 flags与docs/35全同，3处asm检查通过；ARM候选x86路径第二遍正在运行。
 
 2026-10-12 本提交（docs/46 x86里程碑）：x86生产与ARM候选x86路径的两次全量回归均PASS（各225档/3864成员/完整索引/3853 flags全同）；待两ARM全量转换与宏/补丁。
+
+2026-10-12 本提交（docs/46 armv7l里程碑）：两条x86全量PASS；ARM32 210档after SHA与§12全同、3683 Thumb通过，沿用消费者/strip；待AArch64与宏/补丁。

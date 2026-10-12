@@ -2,11 +2,11 @@
 
 日期：2026-10-12（Asia/Shanghai）。开场 HEAD 与 origin/main 均为 `cb1e34af0958de17155459f7406869a91cadbe00`。
 
-**当前完成：x86生产与ARM候选x86路径的两次全量回归均PASS（各225档/3864成员/完整索引/3853 flags全同）；待两ARM全量转换与宏/补丁。**
+**当前完成：两条x86全量PASS；ARM32 210档after SHA与§12全同、3683 Thumb通过，沿用消费者/strip；待AArch64与宏/补丁。**
 
 ## 0. 范围与上次停止记录
 
-W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-round3-continue-20261012`。temp 证据只留本机。开场开场生产 Source 为 `6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557`，ARM 候选为 `e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`；新 SHA 见§2.1。
+W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-round3-continue-20261012`。temp 证据只留本机。开场开场开场生产 Source 为 `6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557`，ARM 候选为 `e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`；新 SHA 见§2.1。
 
 上次 cb1e34a 停于代理复制的历史 16 GiB 准入断言：MemAvailable=15,255,969,792 B（14.208229 GiB）；scope、llvm-dis、测试和转换均未启动，代码未改。这不是产品失败。本轮用户明确改为轻量阶段 ≥6 GiB、全量转换 ≥10 GiB；不足时每5分钟读一次，最长60分钟；运行中18 GiB cap、swap0、nice15/ionice3、30秒采样、宿主可用低于2 GiB中止。上一停止原始输出保留在 `temp/review-round3-20261012`，旧报告完整内容可读 cb1e34a 版本。（证据：旧 E/stop-result.json；本轮任务资源准入；E/run_stage.py。）
 
@@ -142,11 +142,15 @@ R32的Python为`3.14.2 (main, Oct 1 2026, 21:46:23) [Clang 22.1.8]`。完整116�
 |---|---|---:|---|---|---:|---|
 | x86-production | 225 / 3864 | 318543 | 225/225全同（docs/35） | 3853 flags逐项全同 | 2792.146 | x86-production-result.json；x86-production-conversion/summary.json |
 | x86-candidate | 225 / 3864 | 318543 | 225/225全同（docs/35） | 3853 flags逐项全同 | 4673.640 | x86-candidate-result.json；x86-candidate-conversion/summary.json |
+| armv7l | 210 / 3690 | 454301 | 210/210全同（docs/40 §12） | Thumb 3683；AS enforced=true | 2293.172 | armv7l-result.json；armv7l-conversion/summary.json |
 
 - x86-production：module asm 3个全部通过；强符号缺失0；允许缺失按类型`{'W': 1920}`。
 - x86-candidate：module asm 3个全部通过；强符号缺失0；允许缺失按类型`{'W': 1920}`。
+- armv7l：module asm 2个全部通过；强符号缺失0；允许缺失按类型`{'W': 2953}`。
 
 x86判据覆盖整档after SHA、每个成员的序号/名称/同名序号/SHA、完整符号→成员映射与3853套后端flags。ARM判据覆盖格式、完整索引、原机器码保留、强符号、PIC/TLS、ARM32参考Thumb与全部属性；两ARM在宿主使用原生转换器，探针软/硬均4294967296、enforced=true，未使用忽略AS确认。
+
+armv7l逐档after SHA全部与§12相同，按本轮预注册规则**沿用**docs/40 §12和docs/44的未strip/GNU strip/LLVM strip三套消费者与两种strip证据，本轮不重复执行消费者或strip；这不是新RPM验收。详见`armv7l-result.json`的逐档SHA和module_asm_symbols。
 
 ## 3. 本轮资源记录
 
@@ -162,6 +166,7 @@ x86判据覆盖整档after SHA、每个成员的序号/名称/同名序号/SHA�
 | root-tests-probes-scope | 6 | 14.211998 | 0.310577 | exit 0；采样器已回收 |
 | x86-production-scope | 10 | 14.185158 | 6.883991 | exit 0；采样器已回收 |
 | x86-candidate-scope | 10 | 14.023224 | 7.113110 | exit 0；采样器已回收 |
+| armv7l-conversion-scope | 10 | 11.670086 | 4.743874 | exit 0；采样器已回收 |
 
 全部阶段 MemoryMax=19,327,352,832 B、MemorySwapMax=0，未触发 OOM 或2 GiB宿主保护线。Git/find 的 scope 峰值包含文件缓存和内核 slab，不等于应用匿名内存。（证据：各 scope/plan.json、memory-summary.json。）
 
