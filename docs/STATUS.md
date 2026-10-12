@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-12。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/47）事实核查完成**：完整性PASS；发布模式sed模拟x86 3853/ARM32 3683/A64 3699全部因缺少末项DWARF选项拒绝，当前策略未覆盖发布模式，待PM；三根_toolchain均clang、历史实际走非release分支。两ARM目标prlimit→原生bash均读回unlimited/unlimited，原生启动器修订尚未实施。两构建目录存在，proc已卸载；后续修订与复验继续。
+**当前任务（docs/47）停止并收尾**：Source修订与四次全量回归通过；宿主134PASS、ARM32根内130PASS+3环境不适用+1既有AS发现；小spec四组合完成。ARM32根内小试辅助检查第二次失败（先漏掉线程子进程，唯一重跑又因limits行尾空格被正则误拒绝），按规则STOP，不再重跑。实际捕获两个原生clang软/硬4GiB，三档after SHA与离线一致，仅作为诊断；AArch64根内小试、两根64MiB负例、两个候选补丁再生成未执行。tools生产/ARM Source为7c83e822/3cdaeceb；patches中候选仍docs/46版本。发布模式模拟全部缺DWARF拒绝，待PM。详见docs/47 §3、§5、§7、§10。
 
 **历史任务（docs/44续三）完成**：宿主99PASS；根内95PASS+3指定环境不适用+1已实证AS发现。x86225档/3864成员/索引/3853 flags完全一致；ARM32 210档、AArch64 212档after SHA与§12全同，沿用三套消费者/两种strip。5个ARM asm符号GLOBAL/UND；105/106的bfd/lld共享链接与dlopen均PASS；x86三个bitcode同asm成员最终符号保留。Source仍e2c2ebfa，无代码改动；只修timeout测试。两处辅助脚本各授权修一次；锁、采样器、proc回收。ARM生产AS限制问题待评审，未打包/推Gerrit。见docs/44 §18–§27与docs/45。
 
@@ -39,7 +39,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：docs/46本轮收尾，第三轮离线评审材料完成：116宿主PASS；根内112PASS+3环境不适用+1已知AS发现；两x86回归225档/3864成员/索引/flags全同，两ARM210/212档after SHA全同；宏debug开/关PASS，PS3/PS2候选顺序apply与tree PASS。后续依评审结果启动新任务，不自动重试。
+当前阶段：docs/47第四轮材料与停止报告收尾；两环境测试、x86两次与两ARM离线全量PASS，但根内辅助检查重试耗尽。剩余根内验收、新候选补丁、发布模式裁决及完整打包均挂账，不自动重试。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -78,6 +78,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 | 日期 | 提交号 | 产出文件 | 一句话结论 |
 | --- | --- | --- | --- |
+| 2026-10-12 | 本提交（git log -- docs/47_review_round4_package.md） | docs/47、Source与测试、diff、STATUS | 四次全量与两环境测试PASS；ARM32根内辅助检查第二次失败后STOP，64MiB负例/AArch64小试/新补丁未执行；停止材料齐备。 |
 | 2026-10-12 | `cb1e34a` | docs/46、STATUS | 只读普查入口因复制的历史16GiB断言停止（14.208229GiB）；未启动产品操作/修订/测试/转换，PS3/PS2未生成；完成停止报告并回收项目锁。 |
 | 2026-09-16 | `2c6e496` | `.gitignore`、`docs/README.md`、`gbs_llvm.conf` | 初始化仓库与产出规范，排除 LLVM 源码和中间产物。 |
 | 2026-09-16 | `b1ac328` | `docs/00_workspace_setup.md` | 归档初始化、忽略检查与首次推送证据。 |
@@ -158,6 +159,10 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
 
 ## 3. 已闭合结论
+
+- **docs/47硬证据**：生产7c83e822与ARM候选3cdaeceb两条x86路径各225档/3864有序成员/完整索引/3853后端flags与docs/35全同；ARM32 210档/AArch64 212档after SHA与docs/40 §12全同，允许沿用消费者/strip。宿主134PASS；根内130PASS+3环境不适用+1既有AS发现。证据docs/47 §5、§7.1及temp/review-round4-20261012各result/summary。
+- **docs/47硬证据（文本模拟边界）**：发布模式删调试参数后x86 3853、ARM32 3683、A64 3699条全部因missing DWARF拒绝；不是实际发布构建结果，不能声称发布模式覆盖。证据docs/47 §3.1及各release-simulation.json。
+- **docs/47诊断、未闭合根内整体验收**：目标prlimit→原生bash两根均unlimited；新启动器在ARM32小试探针与两个原生clang读回4GiB软/硬值，3档after SHA相同。辅助检查第二次失败后停止，64MiB负例及AArch64小试未跑。证据docs/47 §7.2、E/stop-diagnosis.json。
 
 - 硬证据（限定场景）：取消诊断600例全通过，8次首读R均带SIGKILL，最长5.430ms；支持时序假设问题，不能推断Commands同步等待后代。新候选共用函数AST未改；99宿主测试PASS但根内全套FAIL，产物认证尚未完成。证据docs/44 §13–§17与E3。
 
@@ -369,6 +374,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 4. 人工裁决前提
 
+本轮docs/47裁决：轻量阶段6GiB准入、四次全量10GiB，18GiB/swap0与2GiB宿主保护；启动器替代AS显式放行，Commands不改；发布模式仅事实模拟不修策略；每个辅助步骤最多修正重跑一次，同一步第二次失败停止但仍交文档。本轮根内监测已耗尽这一次授权，不继续执行或生成候选补丁。依据为用户第三轮修订任务及docs/47 §0、§7.2。
+
 本轮用户决定：只整理ARM Source与测试评审材料，单文件≤50KB，完整diff超限可外置文档附件；docs/40只加开头入口，其余不动。不改代码/spec/补丁、不运行测试/构建/转换；三家外部评审尚未执行。
 
 下列为用户决策及其记录依据，区别于上一节的实测事实。后续 Session 不能擅自反转。
@@ -461,6 +468,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 5. 挂账
 
+**最新docs/47挂账优先于下列历史记录**：ARM32根内辅助门禁未闭合、AArch64根内小试和两根64MiB负例NOT RUN；PS3/PS2未再生成，仍为docs/46候选。新Source第四轮评审、发布模式认证策略PM裁决、最终候选叠加的x86完整构建、ARM第二段实际打包待后续任务。根内部分成功数据不能替代这些门禁。证据docs/47 §7.2–§10。
+
 - 历史清理挂账：analysis/05E_worktree共享Git元数据尚需处理；用户已解除它对B/C的阻塞，清理不在当前范围；三个Chromium目录未删，第三个小文本备份PARTIAL。四旧根日志已保全，temp/deleted-roots-logs/sudo-delete.sh留用户自行执行，本代理未运行。A1第6–8组1,485候选缺旧逐文件记录，仍保留；其他项目/swap无清理授权。
 
 | 分类 | 未闭合项 | 所需材料/下一步与验收边界 | 依据 |
@@ -490,7 +499,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 已关闭、不再作为待办：本机校准重试、用新门禁回判历史 FAIL、为补漂亮数字追加轮次。
 历史混合试构建/根因/隔离记录保留，docs/25、docs/26不改；旧图SHA门禁与libarcher范围待决已由用户更正/解除。
 docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交补丁保留；docs/25–31不改。
-当前tools/llvm_static_archives_source.py与patches/archive-index-fix/中的v2 Source同SHA6bd0546a…；提交patch已更新为ddef2221…。v1保留在Git历史及E36/v1-backup，不能混用两个版本身份。
+历史docs/36时tools与patches/archive-index-fix/中的v2 Source同SHA6bd0546a…、提交patch为ddef2221…；本轮tools已改为7c83e822，原上传附件不改，不能再将两者当作同一版本。v1保留在Git历史及E36/v1-backup，不能混用两个版本身份。
 原宏关闭方案继续作废；转换只在x86_64安装根进行，W/llvm/spec不动；代理未推Gerrit，用户已确认上传356627 PS2。
 归档修复v2提交材料及两Tizen包验收已在docs/36完成；固定Base缓存复原解除此消费者环境的依赖阻塞，不代表远端404消失。docs/37已闭合相同环境下编译参数策略覆盖；当前归档修复评审中，待目标流水线完整验证；x86 llvm-strip已完成并由用户上传356639。docs/39 ARM可行性调查已完成，实施与完整试包待PM决定；不自动构建新配方或上传Gerrit。设计v4/BOLT没有自动启动授权。
 
@@ -533,18 +542,20 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 
 本轮最终回收：两个锁释放、15个scope均回收、任务进程与临时/proc挂载为0；见docs/46及E/cleanup-final.json。
 
-2026-10-12 本提交（docs/47完整性里程碑）：第零步PASS，事实核查与修订待执行；项目锁继续持有。
+2026-10-12 `4186e94`（docs/47完整性里程碑，历史阶段状态）：第零步PASS，事实核查与修订待执行；项目锁继续持有。
 
-2026-10-12 本提交（docs/47事实里程碑）：发布模式与两ARM原生读回实测完成；不因模拟FAIL修改策略。
+2026-10-12 `5aa1416`（docs/47事实里程碑，历史阶段状态）：发布模式与两ARM原生读回实测完成；不因模拟FAIL修改策略。
 
-2026-10-12 本提交（docs/47修订里程碑）：X1–X4/A1–A7与对应测试已编写，Commands逐字未变；运行验证待执行。小spec夹具漏启debug已只读定因，按授权修正一次，判据不变。
+2026-10-12 `3cfb2bc`（docs/47修订里程碑，历史阶段状态）：X1–X4/A1–A7与对应测试已编写，Commands逐字未变；运行验证待执行。小spec夹具漏启debug已只读定因，按授权修正一次，判据不变。
 
-2026-10-12 本提交（docs/47测试里程碑）：宿主134/134 PASS；根内130 PASS+3环境不适用+1既有AS发现。小spec四组合完成，删除行版本debug开/关门禁PASS；待四次全量复验和根内小试。
+2026-10-12 `8a7c8ad`（docs/47测试里程碑，历史阶段状态）：宿主134/134 PASS；根内130 PASS+3环境不适用+1既有AS发现。小spec四组合完成，删除行版本debug开/关门禁PASS；待四次全量复验和根内小试。
 
-2026-10-12 本提交（docs/47 x86-production里程碑）：结果见docs/47 §7；已完成阶段的scope采样与日志线程回收，后续阶段仍需本轮实测。
+2026-10-12 `07c058d`（docs/47 x86-production里程碑，历史阶段状态）：结果见docs/47 §7；已完成阶段的scope采样与日志线程回收，后续阶段仍需本轮实测。
 
-2026-10-12 本提交（docs/47 x86-both里程碑）：结果见docs/47 §7；已完成阶段的scope采样与日志线程回收，后续阶段仍需本轮实测。
+2026-10-12 `074ef62`（docs/47 x86-both里程碑，历史阶段状态）：结果见docs/47 §7；已完成阶段的scope采样与日志线程回收，后续阶段仍需本轮实测。
 
-2026-10-12 本提交（docs/47 armv7l里程碑）：结果见docs/47 §7；已完成阶段的scope采样与日志线程回收，后续阶段仍需本轮实测。
+2026-10-12 `fb833a4`（docs/47 armv7l里程碑，历史阶段状态）：结果见docs/47 §7；已完成阶段的scope采样与日志线程回收，后续阶段仍需本轮实测。
 
-2026-10-12 本提交（docs/47 arm-both里程碑）：结果见docs/47 §7；已完成阶段的scope采样与日志线程回收，后续阶段仍需本轮实测。
+2026-10-12 `1ddb25a`（docs/47 arm-both里程碑，历史阶段状态）：结果见docs/47 §7；已完成阶段的scope采样与日志线程回收，后续阶段仍需本轮实测。
+
+2026-10-12 本提交（docs/47最终停止收尾）：两份Source修订与134宿主/130+3+1根内测试、四次全量回归完成；ARM32根内监测辅助脚本一次修正后再次因行尾空格正则误判，按规则STOP。只读诊断证实两个原生clang软硬4GiB与三档字节一致，但整步门禁未PASS；AArch64根内/两根64MiB负例/新PS3PS2未执行。两份Source为7c83e822/3cdaeceb，候选补丁仍docs/46旧版；发布模式待PM。15scope全部回收、任务进程/挂载/锁为0；保护文件及历史报告未变。证据docs/47 §7、§10–§11与E/cleanup-final.json。

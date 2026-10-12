@@ -1,0 +1,70 @@
+--- small_specs.py
++++ small_specs_retry.py
+@@ -1,8 +1,9 @@
+ from pathlib import Path
+ import subprocess,json,time,hashlib,shutil
+-E=Path(__file__).resolve().parent;W=E.parent.parent
++TASK=Path(__file__).resolve().parent;W=TASK.parent.parent
++E=TASK/'small-spec-retry';E.mkdir(exist_ok=False)
+ R=W/'temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0'
+-G=Path('/home/abuild/review-round4-spec-20261012');D=R/G.relative_to('/');assert not D.exists();D.mkdir()
++G=Path('/home/abuild/review-round4-spec-retry-20261012');D=R/G.relative_to('/');assert not D.exists();D.mkdir()
+ commands=[];results=[]
+ def call(label,argv,timeout=600):
+  start=time.monotonic();r=subprocess.run(list(map(str,argv)),text=True,capture_output=True,timeout=timeout)
+@@ -22,6 +23,7 @@
+ Release: 1
+ Summary: Isolated RPM postprocessing fixture
+ License: Apache-2.0
++%debug_package
+ %description
+ Small ELF and native archive fixture.
+ %prep
+
+--- run_root_small.py
++++ run_root_small_retry.py
+@@ -1,14 +1,15 @@
+ from pathlib import Path
+ import sys,os,json,time,subprocess,shutil,signal,hashlib,collections,statistics,re
+-E=Path(__file__).resolve().parent;W=E.parent.parent;sys.dont_write_bytecode=True;sys.path.insert(0,str(W/'tools'))
++TASK=Path(__file__).resolve().parent;W=TASK.parent.parent
++E=TASK/'root-small-retry';E.mkdir(exist_ok=True);sys.dont_write_bytecode=True;sys.path.insert(0,str(W/'tools'))
+ import llvm_static_archives_arm_trial as source
+ arch=sys.argv[1];assert arch in ('armv7l','aarch64')
+-assert json.loads((E/'aarch64-result.json').read_text())['status']=='PASS'
+-assert source.sha(Path(source.__file__))==json.loads((E/'source-tested-shas.json').read_text())['tools/llvm_static_archives_arm_trial.py']
++assert json.loads((TASK/'aarch64-result.json').read_text())['status']=='PASS'
++assert source.sha(Path(source.__file__))==json.loads((TASK/'source-tested-shas.json').read_text())['tools/llvm_static_archives_arm_trial.py']
+ R=Path('/var/tmp/llvm-optimize-arm-c1-20261010/gbs-libraries-armv7l/local/BUILD-ROOTS/scratch.armv7l.0' if arch=='armv7l' else '/var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/BUILD-ROOTS/scratch.aarch64.0')
+-B=Path('/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build');G=Path('/home/abuild/review-round4-small-20261012');D=R/G.relative_to('/');assert not D.exists();D.mkdir()
++B=Path('/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build');G=Path('/home/abuild/review-round4-small-retry-20261012');D=R/G.relative_to('/');assert not D.exists();D.mkdir()
+ base=W/'temp'/('arm-archive-standard-build-20261010' if arch=='armv7l' else 'arm-archive-tls-thumb-20261010');input_root=base/(arch+'-input')
+-offline=json.loads((E/(arch+'-conversion/summary.json')).read_text());expected={r['path']:r for r in offline['archives']}
++offline=json.loads((TASK/(arch+'-conversion/summary.json')).read_text());expected={r['path']:r for r in offline['archives']}
+ selected=sorted(expected,key=lambda rel:((input_root/rel).stat().st_size,rel))[:3]
+ if arch=='aarch64':
+  archer=[r for r in expected if Path(r).name=='libarcher_static.a'];assert len(archer)==1
+@@ -37,13 +38,20 @@
+  commands.append(dict(label=label,argv=list(map(str,argv)),exit=r.returncode,wall=time.monotonic()-start));(E/(arch+'-root-commands.json')).write_text(json.dumps(commands,indent=2));return r
+ 
+ def descendants(pid):
++ # Worker-thread children have the process leader's PPid, but are absent from
++ # /proc/<leader>/task/<leader>/children. Snapshot process PPid instead.
++ children=collections.defaultdict(list)
++ for entry in Path('/proc').iterdir():
++  if not entry.name.isdigit():continue
++  try:
++   line=next(l for l in (entry/'status').read_text().splitlines() if l.startswith('PPid:'))
++   children[int(line.split()[1])].append(int(entry.name))
++  except (FileNotFoundError,PermissionError,ProcessLookupError,StopIteration):continue
+  result=set();todo=[pid]
+  while todo:
+   item=todo.pop()
+   if item in result:continue
+-  result.add(item)
+-  try:todo.extend(map(int,Path('/proc',str(item),'task',str(item),'children').read_text().split()))
+-  except (FileNotFoundError,PermissionError,ProcessLookupError):pass
++  result.add(item);todo.extend(children.get(item,[]))
+  return result
+ 
+ def monitor(pid):
