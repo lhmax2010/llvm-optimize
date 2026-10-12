@@ -2,7 +2,7 @@
 
 日期：2026-10-12（Asia/Shanghai）。开场提交 `bda33ec60e694aeb92e71ac0444901350567a8ba`。
 
-**已完成完整性/事实核查、Source修订、四种小spec实验与两环境测试；全量复验及根内小试尚未执行。**
+**已完成完整性/事实核查、Source修订、四种小spec实验与两环境测试；各条全量复验及根内小试的当前状态见§7。未完成项不视为PASS。**
 
 ## 0. 范围、证据与资源规则
 
@@ -35,6 +35,7 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-r
 | root-tests-scope | 6 | 14.068626 | 0.306477 | exit 0，采样回收 |
 | small-spec-retry-scope | 6 | 14.059113 | 0.040215 | exit 0，采样回收 |
 | small-spec-scope | 6 | 14.133301 | 0.135212 | exit 1，采样回收 |
+| x86-candidate-scope | 10 | 14.267361 | 3.712425 | exit 0，采样回收 |
 | x86-production-scope | 10 | 14.097652 | 2.642155 | exit 0，采样回收 |
 
 均未触发OOM或宿主2GiB保护；scope峰包含文件缓存。原始命令、日志、采样与退出状态见各scope目录。
@@ -142,11 +143,11 @@ on两例均实际产出debuginfo/debugsource RPM，均执行find-debuginfo；不
 | 本轮路径 | 状态 | 逐项结果 | 转换wall秒 |
 |---|---|---|---:|
 | x86-production | PASS | 225档/3864有序成员/完整索引/3853组flags全部与docs/35一致；3处module asm检查通过 | 1783.727 |
-| x86-candidate | 未完成 | 不以历史PASS替代 | — |
+| x86-candidate | PASS | 225档/3864有序成员/完整索引/3853组flags全部与docs/35一致；3处module asm检查通过 | 1734.587 |
 | armv7l | 未完成 | 不以历史PASS替代 | — |
 | aarch64 | 未完成 | 不以历史PASS替代 | — |
 
-证据：E内对应*-result.json、*-conversion/summary.json、逐档after.json及*-scope采样。x86输入E5/x86-input对docs/35；两ARM输入对docs/40§12。转换与消费者沿用严格以本輪结果为准。
+证据：E内对应*-result.json、*-conversion/summary.json、逐档after.json及*-scope采样。x86输入E5/x86-input对docs/35；两ARM输入对docs/40§12。转换与消费者沿用严格以本轮结果为准。
 
 两根小试/64MiB负例：待执行；每架构两小时上限，超时单列发现。选择含bitcode且体积最小3档，AArch64另加libarcher_static.a，真实CLI在独立副本上运行。
 
