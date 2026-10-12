@@ -6,7 +6,7 @@
 
 ## 0. 范围、证据与资源规则
 
-W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-round4-20261012`，下述 temp 证据仅在本机。依用户裁决：轻量阶段准入6 GiB，全量转换10 GiB；不足每5分钟复查、最多60分钟。运行中scope 18 GiB、swap0、nice15/ionice3、30秒采样，宿主可用低于2 GiB即中止。Commands、356627 spec、W/llvm与配置不改；不做完整RPM构建、不推Gerrit。后续仅授权四个小spec实验。
+W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-round4-20261012`，下述 temp 证据仅在本机。依用户裁决：轻量阶段准入6 GiB，全量转换10 GiB；不足每5分钟复查、最多60分钟。运行中scope 18 GiB、swap0、nice15/ionice3、30秒采样，宿主可用低于2 GiB即中止。Commands、356627 spec、W/llvm与配置不改；不做完整RPM构建、不推Gerrit。本轮只做四种小spec组合；另依辅助脚本条款对夹具修正重跑一次，实际调用数见§5。
 
 宿主 `mmap_min_addr` 沿用先前GBS设置；需要恢复时用户执行 `sudo sysctl -w vm.mmap_min_addr=65536`，重启也会恢复。本轮仅按各阶段需要临时挂载/proc，并在finally卸载。
 
@@ -27,9 +27,15 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-r
 
 | 阶段 | 准入GiB | 启动可用GiB | scope峰GiB | 结果 |
 |---|---:|---:|---:|---|
+| facts-scope | 6 | 14.179691 | 0.664886 | exit 0，采样回收 |
+| host-tests-scope | 6 | 14.063240 | 0.517220 | exit 0，采样回收 |
 | input-integrity-scope | 6 | 13.937710 | 1.200821 | exit 0，采样回收 |
 | integrity-scope | 6 | 9.839542 | 5.730644 | exit 0，采样回收 |
 | metadata-completion-scope | 6 | 10.701515 | 0.016010 | exit 0，采样回收 |
+| root-tests-scope | 6 | 14.068626 | 0.306477 | exit 0，采样回收 |
+| small-spec-retry-scope | 6 | 14.059113 | 0.040215 | exit 0，采样回收 |
+| small-spec-scope | 6 | 14.133301 | 0.135212 | exit 1，采样回收 |
+| x86-production-scope | 10 | 14.097652 | 2.642155 | exit 0，采样回收 |
 
 均未触发OOM或宿主2GiB保护；scope峰包含文件缓存。原始命令、日志、采样与退出状态见各scope目录。
 
@@ -101,4 +107,84 @@ X1合并汇编选项拒绝消息；X2/X4补主版本与module asm检查注释；
 | 删除宏内注释 | on | 0 | /usr/bin/llvm-strip | 未执行 | PASS |
 | 删除宏内注释 | off | 0 | /usr/bin/llvm-strip | /bin/strip | PASS |
 
-on两例均实际产出debuginfo/debugsource RPM，均执行find-debuginfo；不是仅设置一个测试布尔值。完整临时spec和set-x原文在E/small-spec-retry；本轮没有LLVM完整RPM构建。首次辅助夹具漏启debug及唯一一次修正见§4，不覆盖失败原始记录。
+on两例均实际产出debuginfo/debugsource RPM，均执行find-debuginfo；不是仅设置一个测试布尔值。完整临时spec和set-x原文在E/small-spec-retry；本轮没有LLVM完整RPM构建。首次辅助夹具漏启debug及唯一一次修正见§4，不覆盖失败原始记录。总计7次小spec rpmbuild调用：首次3次后停止，修正后4次；没有LLVM构建。
+
+## 6. 修订理由、来源与不采纳项
+
+来源统一为本任务PM对Claude Code、Codex、Kimi Code第三轮意见的合并裁决；任务未提供每条意见与单一评审方的映射，本报告不补造该映射。下表的编号对应原裁决；实现全文见§4两份diff，行为证据见134项测试逐项结果。
+
+| 编号 | 处理与理由 |
+|---|---|
+| X1 | `-Wa,`/`-Xassembler`同分支、同一固定拒绝消息；不增加可接受选项 |
+| X2 | 注明x86只锁LLVM主版本；ARM有字面量特征串才锁完整版本 |
+| X3 | 节表/stride/link/info/entsize在遍历条目前一次验证，错误带x86_64；循环内保留符号索引越界检查；合法输入不改PIC策略 |
+| X4 | 明示x86 nm名称检查与ARM严格ELF符号检查的不同认证范围，不声称x86已获得ARM强度 |
+| A1 | 组合包装Commands，仅三工具与探针经原生bash；软/硬AS、core及读回均失败关闭；记录payload与bash SHA |
+| A2 | 两种探针均要求soft=hard=requested；无确认放行参数、无unlimited旁路 |
+| A3 | 删除全局安装上下文；install/convert关键字专用参数逐层传递；x86拒绝ARM选项且内部不传ARM关键字 |
+| A4 | 原生ELF须ELF64小端machine62；包装脚本仅显式许可并记录SHA/前4KiB；与启动器互斥 |
+| A5 | 工具缺失等原始原因保留，再附完整版本不符说明，避免错误被覆盖 |
+| A6 | x86结果的module_asm_symbol置于成员层，与生产Source一致 |
+| A7 | --target必须存在、所有值相同且已认证；不新增目标 |
+| C | 小spec已验证；候选补丁再生成阶段将移除宏体停用注释、在定义上方解释来源，并补同步维护及全部静态子包范围 |
+
+未采纳项及依据：
+
+1. “原生clang本已受限，旧探针读错路径”：本轮目标prlimit→原生bash也读回unlimited（§3.2），与既有QEMU9.2.3实现/实测一致；不接受该推断。
+2. 双链交叉验证探针：由启动器内原生读取代替，设置、读取与exec工具发生在同一原生进程路径；另要求宿主读取运行中clang限制，待§7实测。
+3. 把上一提交说明116宿主测试改成112+3+1：不采纳；前者是宿主116全PASS，后者是另一次ARM根内分类。新轮为宿主134全PASS、根内130+3+1（§5）。
+4. 新增`BuildRequires: /usr/bin/llvm-strip`：不采纳；LLVM自身依赖可能形成依赖环或提供方选择问题。保留安装期工具检查，验证时记录提供包；本轮不改356627 spec。
+5. spec加入`rpm -qf`：只在证据中记录，不进入提交配方。
+6. 启动器默认关闭并保留确认放行：不采纳；探针始终强制，删除旁路。宿主明确允许包装脚本仍须限制读回正确，不是允许未受限运行。
+
+## 7. 全量与根内复验
+
+| 本轮路径 | 状态 | 逐项结果 | 转换wall秒 |
+|---|---|---|---:|
+| x86-production | PASS | 225档/3864有序成员/完整索引/3853组flags全部与docs/35一致；3处module asm检查通过 | 1783.727 |
+| x86-candidate | 未完成 | 不以历史PASS替代 | — |
+| armv7l | 未完成 | 不以历史PASS替代 | — |
+| aarch64 | 未完成 | 不以历史PASS替代 | — |
+
+证据：E内对应*-result.json、*-conversion/summary.json、逐档after.json及*-scope采样。x86输入E5/x86-input对docs/35；两ARM输入对docs/40§12。转换与消费者沿用严格以本輪结果为准。
+
+两根小试/64MiB负例：待执行；每架构两小时上限，超时单列发现。选择含bitcode且体积最小3档，AArch64另加libarcher_static.a，真实CLI在独立副本上运行。
+
+## 8. docs/46两条x86路径耗时差异的可证范围
+
+来源：`temp/review-round3-continue-20261012/{x86-production,x86-candidate}-scope/{admission.json,samples.jsonl,memory-summary.json}`；本轮只读汇总E/previous-x86-timing-evidence.json。
+
+| 上轮路径 | 转换wall秒 | 含前置核对总wall秒 | load1最小/中位/最大 | load1>10样本 | 最低宿主可用GiB | cgroup CPU秒 |
+|---|---:|---:|---|---:|---:|---:|
+| 生产Source | 2792.146 | 3035.233 | 3.90 / 5.865 / 25.50 | 21/100 | 12.139492 | 2766.600333 |
+| ARM候选x86路径 | 4673.640 | 5164.360 | 3.39 / 9.13 / 49.98 | 80/169 | 7.212654 | 2772.715127 |
+
+两次准入均一次满足10GiB，无等待；分别于15:42:36、16:33:33启动，采样窗口不同。第二次更长wall伴随更高宿主负载和更低可用内存，cgroup CPU累计接近；这些是观测，不足以把差异定量归因到负载、I/O或Source开销。本轮没有受控性能实验，不据此声称候选路径变慢，也不把准入等待算作转换耗时。
+
+## 9. 后续完整构建验收清单（本轮未执行）
+
+### 9.1 x86完整构建
+
+1. 干净cb679968顺序应用本轮最终PS3/PS2，钉Source/工具/补丁SHA；确认util-linux依赖解析与llvm-strip版本、RPM归属。
+2. 确认%install实际转换而非SKIP。从**完整spec**生成install-post并保存execve追踪：转换在前；每档brp归档strip实用llvm-strip且exit0；debug开启时brp-strip不执行；find-debuginfo与其余后处理照常。
+3. 225开发档全检：成员身份/次序、无bitcode、无DWARF、完整符号→成员索引与强符号；45 compiler-rt档逐成员核对可加载节内容、符号属性、重定位和索引。libarcher在llvm-static-devel/libomp-devel双归属内容一致。
+4. 非归档文件与**同配方无补丁**基线比较，不用不同配方历史SHA自动豁免；工具二进制不变逐个核查。
+5. 宿主七项消费者与Tizen bfd/lld两测试包、ASan/UBSan/profile/builtins运行库探针重跑；GNU ld组无LTO/插件。
+6. 独立安装根真实%install重新转换成功；同树再次直接调用Source为SKIP，分开证明，不混淆两种续跑。
+7. 至少10个跨子系统成员，用原参数去LTO的直接编译与转换产物比较节区结构、符号绑定/可见性、重定位；不能仅以归档SHA或少量消费者替代。
+8. 发布模式模拟缺DWARF已FAIL（§3.1）；PM须先决定认证范围/策略，不能将本轮带调试分支离线结果宣称为发布模式PASS。
+
+### 9.2 ARM第二段打包
+
+1. spec三工具必须指向/emul原生ELF，启用原生限制启动器；根内bash身份、完整工具版本与探针PASS是实施前置。Source目前为评审候选，本轮不改ARM spec、不打包。
+2. 两架构都执行真实打包入口，尤其AArch64不得用离线转换代替%install。当前候选预期ARM32 210档、AArch64 212档；按实际安装清单核对差异及libarcher归属，不能直接套x86225档。
+3. 根内GNU ar/readelf、32位Python、临时/proc、超时、磁盘、宏后处理和标准strip均记录；本轮根内小试结果作为下一阶段预算基线。
+4. 若readelf开销不可接受，可另行设计Python解析.ARM.attributes；须逐成员与GNU readelf做A/B属性/Thumb门禁对照，含缺省、畸形、重复属性及正负夹具，认证后才能替换，不能本轮跳过。
+5. 根据本轮每类命令均值/最大值、总wall与Python峰值估算全库qemu编排预算，给总量与余量；小样本推算只能用于计划，完整%install实测才闭合。
+6. 根内GCC/libstdc++变化时重核module asm白名单、符号状态和生产者选项；不得仅见clang主版本相同就沿用。
+7. 两种strip后各自重做索引与消费者，检查TLS动态重定位/运行路径；新RPM上GNU ld无LTO、lld、共享库无TEXTREL、dlopen及GC全部验证。
+8. ARM扩展不能改变x86已认证路径；最终Source新SHA须再次全量x86不变性及测试通过。发布模式问题独立待裁决。
+
+## 10. 当前挂账
+
+第四轮外部评审、发布模式PM裁决、最终两个候选叠加的x86完整构建、ARM第二段实际打包均未完成；本轮不推Gerrit，不把小spec或离线测试称为完整LLVM构建验收。
