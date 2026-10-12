@@ -285,7 +285,12 @@ class LayoutTests(unittest.TestCase):
     def test_rel_rela_architecture_matrix(self):
         for arch,kind in [('armv7l',104),('aarch64',562)]:
             for rela in (False,True):
-                with self.subTest(arch=arch,rela=rela):self.assertEqual(trial.arm_pic_relocations(reloc_elf(arch,[kind],rela=rela),arch)['checked'],1)
+                with self.subTest(arch=arch,rela=rela):
+                    if rela == (arch=='aarch64'):
+                        self.assertEqual(trial.arm_pic_relocations(reloc_elf(arch,[kind],rela=rela),arch)['checked'],1)
+                    else:
+                        with self.assertRaisesRegex(ValueError,'relocation section format'):
+                            trial.arm_elf_layout(reloc_elf(arch,[kind],rela=rela),arch)
 
     def test_extended_count_names_and_symbol_index(self):
         for arch,kind in [('armv7l',2),('aarch64',257)]:
@@ -381,19 +386,19 @@ class TargetModuleTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,'unclassified'):trial.arm_classify_options(argv+suffix,arch)
 
     def test_module_asm_exact_and_whitespace_only(self):
-        self.assertEqual(trial.ARM_CERTIFIED_MODULE_ASM,{'.globl _ZSt21ios_base_library_initv'})
+        self.assertEqual(trial.CERTIFIED_MODULE_ASM,{'.globl _ZSt21ios_base_library_initv'})
         for value in ('.globl _ZSt21ios_base_library_initv','  .globl _ZSt21ios_base_library_initv  ','\\09.globl _ZSt21ios_base_library_initv\\0A'):
-            self.assertEqual(trial.arm_module_asm_whitelist(['module asm "'+value+'"']),['.globl _ZSt21ios_base_library_initv'])
+            self.assertEqual(trial.module_asm_whitelist(['module asm "'+value+'"']),['.globl _ZSt21ios_base_library_initv'])
         for arch in ('armv7l','aarch64'):
-            self.assertTrue(trial.arm_check_module_asm_symbol(reloc_elf(arch,[],symbol_name='_ZSt21ios_base_library_initv'),arch,['.globl _ZSt21ios_base_library_initv'])['required'])
+            self.assertTrue(trial.arm_check_module_asm_symbol(change_symbol_section(reloc_elf(arch,[],symbol_name='_ZSt21ios_base_library_initv'),1,0),arch,['.globl _ZSt21ios_base_library_initv'])['required'])
 
     def test_module_asm_all_other_statements_rejected(self):
         for value in ('.globl other','.global _ZSt21ios_base_library_initv','.globl _ZSt21ios_base_library_initv;', '.globl _ZSt21ios_base_library_initv; nop','.globl _ZSt21ios_base_library_initv #comment','.text','.section .text','.globl  _ZSt21ios_base_library_initv',''):
-            with self.subTest(value=value),self.assertRaisesRegex(ValueError,'module asm'):trial.arm_module_asm_whitelist(['module asm "'+value+'"'])
+            with self.subTest(value=value),self.assertRaisesRegex(ValueError,'module asm'):trial.module_asm_whitelist(['module asm "'+value+'"'])
 
     def test_module_asm_output_global_symbol_required(self):
         for arch in ('armv7l','aarch64'):
-            with self.assertRaisesRegex(ValueError,'global symbol missing'):trial.arm_check_module_asm_symbol(reloc_elf(arch,[]),arch,['.globl _ZSt21ios_base_library_initv'])
+            with self.assertRaisesRegex(ValueError,'GLOBAL/NOTYPE/DEFAULT/UND'):trial.arm_check_module_asm_symbol(reloc_elf(arch,[]),arch,['.globl _ZSt21ios_base_library_initv'])
             self.assertEqual(trial.arm_check_module_asm_symbol(b'',arch,[]),{'required':False})
 
 class ToolIsolationTests(unittest.TestCase):
@@ -403,10 +408,11 @@ class ToolIsolationTests(unittest.TestCase):
             p=Path(tmp);(p/'CMakeCache.txt').touch()
             cc=p/'clang';di=p/'llvm-dis';nn=p/'llvm-nm'
             for tool in (cc,di,nn):tool.write_text('fixture');tool.chmod(0o755)
-            command=mock.Mock()
+            command=mock.Mock();command.address_space_bytes=4294967296
             def run(argv,prefix,stdout):
                 name=Path(argv[0]).name
                 raw='clang version 22.1.8\n' if name=='clang' else 'LLVM version '+(dis if name=='llvm-dis' else nm)+'\n' if name in ('llvm-dis','llvm-nm') else reader
+                if name=='cat':raw='Max address space         4294967296           4294967296           bytes\n'
                 stdout.write(raw.encode())
             command.run.side_effect=run
             return trial.validate_arm_tools(p,cc,di,nn,command,p,arch)
@@ -445,7 +451,7 @@ class ToolIsolationTests(unittest.TestCase):
                 obj=p/'x.o';obj.write_bytes(native());import subprocess
                 subprocess.run(['ar','qcD',str(root/'native.a'),str(obj)],check=True,capture_output=True)
                 command=mock.Mock();command.signal_received=None
-                command.run.side_effect=lambda argv,prefix,stdout:stdout.write(b'clang version 22.1.8\n')
+                command.run.side_effect=lambda argv,prefix,stdout:stdout.write(b'clang version 22.1.8\n' if Path(argv[0]).name=='cc' else b'LLVM (http://llvm.org/):\n  LLVM version 22.1.8\n')
                 result=trial.convert(root,p/'out',p/'cc',p/'dis',p/'nm',build,command=command)
                 self.assertEqual(result['status'],'CONVERTED');self.assertNotIn('native_archives_skipped_inventory',result)
                 (root/'bad.a').write_bytes(b'!<thin>\n')

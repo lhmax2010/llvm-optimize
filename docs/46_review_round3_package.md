@@ -2,7 +2,7 @@
 
 日期：2026-10-12（Asia/Shanghai）。开场 HEAD 与 origin/main 均为 `cb1e34af0958de17155459f7406869a91cadbe00`。
 
-**当前完成第零步完整性核查和第一步只读普查，均 PASS。B3 实施条件成立，B5 条件不成立、按规定不实施。Source 修订、测试、全量复验与新补丁尚未执行，当前不能作为新候选已通过的材料。**
+**当前完成完整性核查、只读普查、A/B Source修订及宿主116项测试。B3实施，B5按条件不实施；Commands和356627 spec不改。根内测试、全量复验及新补丁尚未完成，不是可提交候选的最终认证。**
 
 ## 0. 范围与上次停止记录
 
@@ -40,7 +40,7 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-r
 | 两根 /emul 解释器 | 都有原生x86_64 bash/dash/sh（bin与usr/bin路径）；未找到busybox/python/perl。仅只读识别，不作为AS方案已可用的证明 | readonly-census-result.json 的 emul_interpreters |
 | `/usr/bin/cat` | 宿主、R32、R64均存在且可执行 | readonly-census-result.json 的 cat |
 
-**B3实施；B5不实施**：两种ELF节格式完全符合收窄前提；target次数全部为2，不能改成“恰好1次”，也不自行换成“恰好2次”。其余A–D尚未修订。（出处：本轮条件裁决；以上全集。）
+**B3实施；B5不实施**：两种ELF节格式完全符合收窄前提；target次数全部为2，不能改成“恰好1次”，也不自行换成“恰好2次”。A/B及D的实现与宿主验证见§2.1；C宏覆盖候选在后续补丁阶段生成。（出处：本轮条件裁决；以上全集。）
 
 x86三个module asm位置（均IR第6行）：`libLLVMAnalysis.a/MLInlineAdvisor.cpp.o` ordinal80、`libLLVMCodeGen.a/MLRegAllocEvictAdvisor.cpp.o` ordinal137、`libarcher_static.a/ompt-tsan.cpp.o` ordinal0。同名 occurrence 均1。根内 `usr/lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/iostream:82` 实际声明匹配，文件SHA `405900b25b2ecfda0e3ff3fd52c44b89df95d3fb89987235291abaec4a522d00`。（证据：x86-asm-census-result.json、readonly-census-result.json。）
 
@@ -78,6 +78,39 @@ x86三个module asm位置（均IR第6行）：`libLLVMAnalysis.a/MLInlineAdvisor
 
 文件SHA `f0f991bd97f44b7bf906ac4a7a45cd34b7444c1acce2358261e4a95b3e68ebc8`；根内直接rpm --eval读到默认strip为`/bin/strip`。本轮尚未加入新的宏覆盖，后续会分别验证debug开启/关闭。（证据：tizen_macros.txt、rpm-build-version.json、strip-macro.json、strip-default.json。）
 
+### 2.1 本轮 Source 与测试修订
+
+评审来源：用户给定 Kimi、Codex、Claude 第二轮合并意见和PM裁决；未给逐条原文归属，不自行分配到某一家。
+
+| 编号 | 处理 | 当前证据 |
+|---|---|---|
+| A1 | 通用-W前拒绝-Wa,，保留Wall/Wp诊断 | 新负例通过 |
+| A2 | clang主版本22；dis/nm完整版本与clang一致，summary记三工具版本/原文/SHA | 21.1.0、22.1.9错配负例通过 |
+| A3/A4 | 共用单条module asm白名单；x86输出同名符号恰好一个U | 全集前置通过；缺失/T/w/重复负例通过 |
+| A5 | 读取x86重定位符号前检查表内边界 | 越界负例通过 |
+| B1 | ARM声明唯一且info=0x10、other/raw_section/section_index/value/size均0 | UND正例；定义/ABS/COMMON/WEAK/HIDDEN/FUNC/重复/非零值/大小负例通过 |
+| B2 | ARM clang固定22.1.8，变化要求重做docs/44§2普查；三个工具拒绝machine40/183；版本一致性复用A2 | 版本及三工具双架构ELF负例通过 |
+| B3 | ARM32仅REL、AArch64仅RELA | 全集满足前置；格式正负例通过 |
+| B4 | PIC直接读layout合并后的symbol记录 | 原重定位夹具通过 |
+| B5 | **不实施**：真实命令均为2次target，不擅改条件 | §2全集 |
+| B6 | 节名表索引0拒绝 | 正负例通过 |
+| B7 | 不改Commands，经相同prlimit调用cat读AS软硬值；默认拒绝失效，仅ARM CLI显式确认才允许 | mock正负例、x86参数拒绝、宿主真实enforced=true通过；两ARM根探针待测 |
+| D | 就绪后退出的后代取消夹具、第二归档原子替换失败、真实x86 bitcode转换屏蔽全部ARM函数、逐字+AST共用函数对照 | 全部通过 |
+
+B7的显式确认只存在ARM分派路径：ARM install包装器用线程局部上下文限定一次调用，finally恢复；共用install/Commands不改。失败读回值保存在address-space-probe.json及summary；确认不代表AS已经生效。（出处：本次Source差异。）
+
+宿主原99项+新增17项，共116/116 PASS。初轮129.708s通过；静态复核后，把新增READY/退出码断言移到立即/proc快照之后，避免推迟取样，所有断言保留；最终全套再次116/116，87.567s。不是失败后重试。仍保留已知的强符号“仅名称包含”边界，没有扩大成绑定/大小完全等价。（证据：host-tests-initial-result.json、host-tests-result.json、test-authoring-order-note.json；Source compare_symbols未变。）
+
+| 文件 | 当前 SHA256 |
+|---|---|
+| `tools/llvm_static_archives_source.py` | `014fd32f309bc0be80471eebf8a4a3cf50a5656ce3a2584e4bbdfb9a05a9affd` |
+| `tools/llvm_static_archives_arm_trial.py` | `c3edada01a077496f797ce766906008ae95d9a0430a389db8972b055c73191c8` |
+| `tools/test_static_archives_source_v2.py` | `e1468a933a3acf82c0bceda8c44bf2710459da52859d647782097037144570b9` |
+| `tools/test_arm_archive_trial.py` | `6b5d2cf7a17fb2bd2b97ecaaea6b4a10d24d7e05141f7555cbebc8b9bf6e8ed4` |
+| `tools/test_archive_review_round3.py` | `21d55d0504262358d979699aeb607dfd310f7f1e27b33961b51a59a1bd754805` |
+
+完整diff：[x86相对6bd](46_x86_source_round3.diff)、[ARM相对e2](46_arm_source_round3.diff)。这两份是本轮代码差异，不是Gerrit format-patch。旧上传补丁与其随附Source保留不动；PS3/PS2目录尚未生成。根内与全量离线结果仍为NOT RUN，历史after SHA不能给本轮新Source背书。
+
 ## 3. 本轮资源记录
 
 | 阶段 | 准入 GiB | 启动可用 GiB | scope 峰值 GiB | 结果 |
@@ -89,6 +122,10 @@ x86三个module asm位置（均IR第6行）：`libLLVMAnalysis.a/MLInlineAdvisor
 | x86-census-scope | 6 | 14.778671 | 3.315685 | PASS；采样器已回收 |
 
 | readonly-census-scope | 6 | 14.689720 | 1.802883 | PASS；采样器已回收 |
+
+| host-tests-scope | 6 | 14.172653 | 1.136986 | PASS；采样器已回收 |
+
+| host-tests-final-scope | 6 | 14.067207 | 0.873978 | PASS；采样器已回收 |
 
 全部阶段 MemoryMax=19,327,352,832 B、MemorySwapMax=0，未触发 OOM 或2 GiB宿主保护线。Git/find 的 scope 峰值包含文件缓存和内核 slab，不等于应用匿名内存。（证据：各 scope/plan.json、memory-summary.json。）
 

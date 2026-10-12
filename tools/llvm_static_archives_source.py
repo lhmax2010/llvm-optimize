@@ -239,6 +239,8 @@ def classify_options(argv, arch='x86_64'):
             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
         elif token == '-flto=thin':
             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+        elif token.startswith('-Wa,'):
+            raise ValueError('unclassified original assembler option: '+token)
         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
                                '-fdiagnostics-color=')) or token in
               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
@@ -267,12 +269,39 @@ def classify_options(argv, arch='x86_64'):
                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
 
 
+# GCC 14.2.0 iostream:82 in the certified roots, including x86_64 at
+# /usr/lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/iostream.
+# This declaration requests library-side iostream initialization; preserve it.
+CERTIFIED_MODULE_ASM = {'.globl _ZSt21ios_base_library_initv'}
+
+
+def module_asm_whitelist(lines):
+    statements = []
+    for line in lines:
+        if not line.startswith('module asm '):
+            continue
+        match = re.fullmatch(r'module asm "(.*)"\s*', line)
+        if not match:
+            raise ValueError('unrecognized module asm encoding')
+        encoded = match[1]
+        if re.search(r'\\(?![0-9A-Fa-f]{2})', encoded):
+            raise ValueError('invalid module asm escape')
+        statement = re.sub(r'\\([0-9A-Fa-f]{2})', lambda m: chr(int(m[1], 16)), encoded).strip()
+        if statement not in CERTIFIED_MODULE_ASM:
+            raise ValueError('uncertified module asm: '+repr(statement))
+        statements.append(statement)
+    return statements
+
+
 def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
     """Read LLVM 22 textual metadata/attributes without modifying input IR."""
     retained, metadata = [], {}
+    module_asm_lines = []
     triple, command_id = None, None
     levels, cpus, features = {}, set(), set()
     for line in lines:
+        if line.startswith('module asm '):
+            module_asm_lines.append(line)
         # Intrinsic references, not string literals in LLVM's own implementation.
         for intrinsic in ('llvm.type.test', 'llvm.public.type.test'):
             if re.search(r'@'+re.escape(intrinsic)+r'(?:\.|\s*\()', line):
@@ -307,6 +336,7 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
             if key in levels and levels[key] != int(value):
                 raise ValueError('conflicting relocation flags')
             levels[key] = int(value)
+    module_asm = module_asm_whitelist(module_asm_lines)
     if triple not in CERTIFIED_TRIPLES.get(arch, set()):
         raise ValueError('uncertified '+arch+' IR triple: '+str(triple))
     pic, pie = levels.get('PIC Level', 0), levels.get('PIE Level', 0)
@@ -325,7 +355,7 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
                 target_features=sorted(features), flags=flags, evidence=retained,
-                recorded_command=recorded_command, policy=policy)
+                recorded_command=recorded_command, policy=policy, module_asm=module_asm)
 
 
 def pic_relocations(data):
@@ -354,6 +384,9 @@ def pic_relocations(data):
         for pos in range(section[4], section[4]+section[5], section[9]):
             _, info = struct.unpack_from('<QQ', data, pos)
             kind, symbol_index = info & 0xffffffff, info >> 32
+            if (symbols[9] < 24 or symbols[5] % symbols[9] or
+                    symbol_index >= symbols[5] // symbols[9]):
+                raise ValueError('relocation symbol outside table')
             symbol = struct.unpack_from('<IBBHQQ', data, symbols[4]+symbol_index*symbols[9])
             checked += 1
             # SHN_ABS references do not need runtime relocation.
@@ -521,6 +554,21 @@ def check_symbols(nm, source, target, command):
     return result
 
 
+def check_module_asm_symbol(nm, target, statements, command):
+    if not statements:
+        return dict(required=False)
+    output = target.parent/'module-asm-symbols.txt'
+    with output.open('wb') as stream:
+        command.run([nm, str(target)], target.parent/'module-asm-nm', stdout=stream)
+    matches = [(kind, name) for kind, name in parse_nm(output.read_text())
+               if name == '_ZSt21ios_base_library_initv']
+    result = dict(required=True, symbol='_ZSt21ios_base_library_initv', matches=matches)
+    atomic_json(target.parent/'module-asm-symbol.json', result)
+    if matches != [('U', '_ZSt21ios_base_library_initv')]:
+        raise ValueError('module asm requires exactly one U symbol: '+repr(matches))
+    return result
+
+
 def validate_archive(archive):
     if archive.is_symlink():
         raise ValueError('archive symlink not certified: '+str(archive))
@@ -538,15 +586,23 @@ def validate_tools(build, compiler, disassembler, nm, command, output):
     for label, tool in [('compiler', compiler), ('disassembler', disassembler), ('nm', nm)]:
         if not tool.is_file() or not os.access(tool, os.X_OK):
             raise ValueError('missing or non-executable --'+label+': '+str(tool))
-    version = output/'compiler-version.txt'
-    with version.open('wb') as stream:
-        command.run([compiler, '--version'], output/'compiler-version-command', stdout=stream)
-    text = version.read_text()
-    match = re.search(r'clang version (\d+)\.', text)
-    if not match or int(match[1]) != CERTIFIED_LLVM_MAJOR:
-        raise ValueError('uncertified compiler major (required 22): '+text.strip())
-    return dict(compiler=str(compiler), version=text, compiler_sha256=sha(compiler),
-                disassembler=str(disassembler), nm=str(nm))
+    versions = {}
+    for label, tool in [('compiler', compiler), ('disassembler', disassembler), ('nm', nm)]:
+        path = output/(label+'-version.txt')
+        with path.open('wb') as stream:
+            command.run([tool, '--version'], output/(label+'-version-command'), stdout=stream)
+        text = path.read_text()
+        pattern = r'clang version (\d+\.\d+\.\d+)\b' if label == 'compiler' else r'LLVM version (\d+\.\d+\.\d+)\b'
+        match = re.search(pattern, text)
+        if label == 'compiler':
+            if not match or int(match[1].split('.')[0]) != CERTIFIED_LLVM_MAJOR:
+                raise ValueError('uncertified compiler major/full version (required 22): '+text.strip())
+        elif not match or match[1] != versions['compiler']['version']:
+            raise ValueError(label+' version differs from clang '+versions['compiler']['version']+': '+text.strip())
+        versions[label] = dict(path=str(tool), sha256=sha(tool), version=match[1], raw=text)
+    return dict(compiler=str(compiler), version=versions['compiler']['raw'],
+                compiler_sha256=versions['compiler']['sha256'], disassembler=str(disassembler),
+                nm=str(nm), tool_versions=versions)
 
 
 def reset_evidence(root, output, build):
@@ -653,9 +709,11 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
                 atomic_json(source.parent/'relocations.json', relocs)
                 if settings['pic_level'] and relocs['forbidden']:
                     raise ValueError('non-PIC relocation in '+str(target))
+                module_asm = check_module_asm_symbol(nm, target, settings['module_asm'], command)
                 symbols = check_symbols(nm, source, target, command)
                 return dict(ordinal=member['ordinal'], name=member['name'], preserved=False,
-                            settings=settings, conversion=record, symbols=symbols, sha256=sha(target))
+                            settings=settings, conversion=record, symbols=symbols,
+                            module_asm_symbol=module_asm, sha256=sha(target))
             results = []
             iterator = iter(paths)
             with ThreadPoolExecutor(max_workers=jobs) as pool:

@@ -1,0 +1,341 @@
+diff --git a/tools/llvm_static_archives_arm_trial.py b/tools/llvm_static_archives_arm_trial.py
+index 5400433..ea90a44 100644
+--- a/tools/llvm_static_archives_arm_trial.py
++++ b/tools/llvm_static_archives_arm_trial.py
+@@ -239,6 +239,8 @@ def classify_options(argv, arch='x86_64'):
+             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
+         elif token == '-flto=thin':
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
++        elif token.startswith('-Wa,'):
++            raise ValueError('unclassified original assembler option: '+token)
+         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
+                                '-fdiagnostics-color=')) or token in
+               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+@@ -267,12 +269,21 @@ def classify_options(argv, arch='x86_64'):
+                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
+ 
+ 
++# GCC 14.2.0 iostream:82 in the certified roots, including x86_64 at
++# /usr/lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/iostream.
++# This declaration requests library-side iostream initialization; preserve it.
++CERTIFIED_MODULE_ASM = {'.globl _ZSt21ios_base_library_initv'}
++
++
+ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+     """Read LLVM 22 textual metadata/attributes without modifying input IR."""
+     retained, metadata = [], {}
++    module_asm_lines = []
+     triple, command_id = None, None
+     levels, cpus, features = {}, set(), set()
+     for line in lines:
++        if line.startswith('module asm '):
++            module_asm_lines.append(line)
+         # Intrinsic references, not string literals in LLVM's own implementation.
+         for intrinsic in ('llvm.type.test', 'llvm.public.type.test'):
+             if re.search(r'@'+re.escape(intrinsic)+r'(?:\.|\s*\()', line):
+@@ -307,6 +318,7 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+             if key in levels and levels[key] != int(value):
+                 raise ValueError('conflicting relocation flags')
+             levels[key] = int(value)
++    module_asm = module_asm_whitelist(module_asm_lines)
+     if triple not in CERTIFIED_TRIPLES.get(arch, set()):
+         raise ValueError('uncertified '+arch+' IR triple: '+str(triple))
+     pic, pie = levels.get('PIC Level', 0), levels.get('PIE Level', 0)
+@@ -325,7 +337,7 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
+                 target_features=sorted(features), flags=flags, evidence=retained,
+-                recorded_command=recorded_command, policy=policy)
++                recorded_command=recorded_command, policy=policy, module_asm=module_asm)
+ 
+ 
+ def pic_relocations(data):
+@@ -354,6 +366,9 @@ def pic_relocations(data):
+         for pos in range(section[4], section[4]+section[5], section[9]):
+             _, info = struct.unpack_from('<QQ', data, pos)
+             kind, symbol_index = info & 0xffffffff, info >> 32
++            if (symbols[9] < 24 or symbols[5] % symbols[9] or
++                    symbol_index >= symbols[5] // symbols[9]):
++                raise ValueError('relocation symbol outside table')
+             symbol = struct.unpack_from('<IBBHQQ', data, symbols[4]+symbol_index*symbols[9])
+             checked += 1
+             # SHN_ABS references do not need runtime relocation.
+@@ -489,11 +504,7 @@ ARM_CERTIFIED_FUNCTION_TARGET = {
+     'armv7l': ('generic', '+armv7-a,+d32,+dsp,+fp64,+neon,+read-tp-tpidruro,+thumb-mode,+vfp2,+vfp2sp,+vfp3,+vfp3d16,+vfp3d16sp,+vfp3sp,-aes,-fp-armv8,-fp-armv8d16,-fp-armv8d16sp,-fp-armv8sp,-fp16,-fp16fml,-fullfp16,-sha2,-vfp4,-vfp4d16,-vfp4d16sp,-vfp4sp', None),
+     'aarch64': ('generic', '+aes,+crc,+crypto,+fp-armv8,+neon,+outline-atomics,+sha2,+v8a,-fmv', 'cortex-a53'),
+ }
+-# GCC 14.2.0 in both recorded roots: R32/usr/lib/gcc/armv7l-tizen-linux-gnueabi/
+-# 14.2.0/include/c++/iostream:75-82; R64/usr/lib64/gcc/aarch64-tizen-linux-gnu/
+-# 14.2.0/include/c++/iostream:75-82. Library-side iostream initialization
+-# needs this global reference. Preserve the IR, and verify its output symbol.
+-ARM_CERTIFIED_MODULE_ASM = {'.globl _ZSt21ios_base_library_initv'}
++
+ 
+ 
+ def arm_function_targets(lines, arch):
+@@ -523,20 +534,20 @@ def arm_function_targets(lines, arch):
+     return dict(definitions=len(definitions), certified=True)
+ 
+ 
+-def arm_module_asm_whitelist(lines):
++def module_asm_whitelist(lines):
+     statements = []
+     for line in lines:
+         if not line.startswith('module asm '):
+             continue
+         match = re.fullmatch(r'module asm "(.*)"\s*', line)
+         if not match:
+-            raise ValueError('unrecognized ARM module asm encoding')
++            raise ValueError('unrecognized module asm encoding')
+         encoded = match[1]
+         if re.search(r'\\(?![0-9A-Fa-f]{2})', encoded):
+-            raise ValueError('invalid ARM module asm escape')
++            raise ValueError('invalid module asm escape')
+         statement = re.sub(r'\\([0-9A-Fa-f]{2})', lambda m: chr(int(m[1], 16)), encoded).strip()
+-        if statement not in ARM_CERTIFIED_MODULE_ASM:
+-            raise ValueError('uncertified ARM module asm: '+repr(statement))
++        if statement not in CERTIFIED_MODULE_ASM:
++            raise ValueError('uncertified module asm: '+repr(statement))
+         statements.append(statement)
+     return statements
+ 
+@@ -569,7 +580,7 @@ def arm_elf_layout(data, arch):
+         raise ValueError('ARM ELF section table outside member')
+     sections = [struct.unpack_from(sfmt, data, off+i*stride) for i in range(count)]
+     names = zero[6] if names == 0xffff else names
+-    if names >= count or names and sections[names][1] != 3:
++    if not names or names >= count or sections[names][1] != 3:
+         raise ValueError('invalid ARM ELF section name table')
+     for index, section in enumerate(sections):
+         if index and section[1] not in (0, 8):
+@@ -615,6 +626,8 @@ def arm_elf_layout(data, arch):
+     for index, section in enumerate(sections):
+         if section[1] not in (4, 9):
+             continue
++        if section[1] != (9 if arch == 'armv7l' else 4):
++            raise ValueError('uncertified '+arch+' relocation section format')
+         link, target, step = section[6], section[7], section[9]
+         if link not in symbols or not 0 < target < count:
+             raise ValueError('invalid ARM relocation sh_link/sh_info')
+@@ -656,9 +669,10 @@ def arm_check_module_asm_symbol(data, arch, statements):
+         return dict(required=False)
+     layout = arm_elf_layout(data, arch)
+     matches = [s for records in layout['symbols'].values() for s in records
+-               if s['name'] == '_ZSt21ios_base_library_initv' and s['info'] >> 4 == 1]
+-    if not matches:
+-        raise ValueError('ARM module asm global symbol missing: _ZSt21ios_base_library_initv')
++               if s['name'] == '_ZSt21ios_base_library_initv']
++    expected = dict(info=0x10, other=0, raw_section=0, section_index=0, value=0, size=0)
++    if len(matches) != 1 or any(matches[0][key] != value for key, value in expected.items()):
++        raise ValueError('ARM module asm requires exactly one GLOBAL/NOTYPE/DEFAULT/UND symbol: '+repr(matches))
+     return dict(required=True, symbol='_ZSt21ios_base_library_initv', matches=matches)
+ 
+ 
+@@ -677,20 +691,64 @@ def arm_attributes(text):
+     return result
+ 
+ 
+-def validate_arm_tools(build, compiler, disassembler, nm, command, output, arch):
+-    result = validate_tools(build, compiler, disassembler, nm, command, output)
+-    compiler_match = re.search(r'clang version (\d+\.\d+\.\d+)\b', result['version'])
+-    if not compiler_match:
+-        raise ValueError('missing full ARM clang version')
+-    full = compiler_match[1]; versions = {}
+-    for label, tool in [('disassembler', disassembler), ('nm', nm)]:
+-        path = output/(label+'-version.txt')
+-        with path.open('wb') as stream:
+-            command.run([tool, '--version'], output/(label+'-version-command'), stdout=stream)
+-        text = path.read_text(); match = re.search(r'LLVM version (\d+\.\d+\.\d+)\b', text)
+-        if not match or match[1] != full:
+-            raise ValueError('ARM '+label+' version differs from clang '+full+': '+text.strip())
+-        versions[label] = dict(path=str(tool), sha256=sha(tool), version=match[1], raw=text)
++# Full producer/tool census: docs/44 section 2. A version change needs recensus.
++ARM_CERTIFIED_LLVM_FULL = '22.1.8'
++ARM_INSTALL_CONTEXT = threading.local()
++
++
++def arm_address_space_probe(command, output, allow_unenforced=False):
++    path = output/'address-space-limits.txt'
++    with path.open('wb') as stream:
++        command.run(['/usr/bin/cat', '/proc/self/limits'], output/'address-space-probe-command', stdout=stream)
++    raw = path.read_text()
++    matches = re.findall(r'^Max address space\s+(\S+)\s+(\S+)\s+bytes\s*$', raw, re.M)
++    if len(matches) != 1:
++        raise ValueError('cannot parse Max address space from /proc/self/limits')
++    soft, hard = matches[0]
++    if any(value != 'unlimited' and not value.isdecimal() for value in (soft, hard)):
++        raise ValueError('invalid Max address space values: '+repr(matches))
++    enforced = soft == hard == str(command.address_space_bytes)
++    result = dict(address_space_enforced=enforced, soft=soft, hard=hard, raw=raw,
++                  requested_bytes=command.address_space_bytes,
++                  explicitly_allowed_unenforced=bool(allow_unenforced))
++    atomic_json(output/'address-space-probe.json', result)
++    if not enforced and not allow_unenforced:
++        raise ValueError('ARM address space limit not enforced; explicit --allow-unenforced-address-space required')
++    return result
++
++
++def arm_install(allow_unenforced, *args):
++    previous = getattr(ARM_INSTALL_CONTEXT, 'allow_unenforced', False)
++    ARM_INSTALL_CONTEXT.allow_unenforced = allow_unenforced
++    try:
++        return install(*args)
++    finally:
++        ARM_INSTALL_CONTEXT.allow_unenforced = previous
++
++
++def validate_arm_tools(build, compiler, disassembler, nm, command, output, arch,
++                       allow_unenforced=False):
++    for tool in (compiler, disassembler, nm):
++        if not tool.is_file() or not os.access(tool, os.X_OK):
++            raise ValueError('missing or non-executable ARM tool: '+str(tool))
++        with tool.open('rb') as stream:
++            header = stream.read(20)
++        if len(header) >= 20 and header[:4] == b'\x7fELF' and header[5] in (1, 2):
++            machine = int.from_bytes(header[18:20], 'little' if header[5] == 1 else 'big')
++            if machine in (40, 183):
++                raise ValueError('ARM ELF tool rejected; native converter required: '+str(tool))
++    try:
++        result = validate_tools(build, compiler, disassembler, nm, command, output)
++    except ValueError:
++        version_file = output/'compiler-version.txt'
++        match = re.search(r'clang version (\d+\.\d+\.\d+)\b', version_file.read_text()) if version_file.is_file() else None
++        if match and match[1] != ARM_CERTIFIED_LLVM_FULL:
++            raise ValueError('uncertified ARM clang full version '+match[1]+'; redo docs/44 section 2 census')
++        raise
++    full = result['tool_versions']['compiler']['version']
++    if full != ARM_CERTIFIED_LLVM_FULL:
++        raise ValueError('uncertified ARM clang full version '+full+'; redo docs/44 section 2 census')
++    versions = {label: result['tool_versions'][label] for label in ('disassembler', 'nm')}
+     if arch == 'armv7l':
+         for tool in (Path('/usr/bin/env'), Path('/usr/bin/readelf')):
+             if not tool.is_file() or not os.access(tool, os.X_OK):
+@@ -704,6 +762,7 @@ def validate_arm_tools(build, compiler, disassembler, nm, command, output, arch)
+         versions['readelf'] = dict(path='/usr/bin/readelf', sha256=sha('/usr/bin/readelf'), raw=raw,
+                                    env_sha256=sha('/usr/bin/env'))
+     result['arm_full_version'] = full; result['arm_tool_versions'] = versions
++    result['address_space_probe'] = arm_address_space_probe(command, output, allow_unenforced)
+     return result
+ 
+ 
+@@ -711,7 +770,7 @@ def arm_ir_settings(lines, arch):
+     """Read LLVM 22 textual metadata/attributes without modifying input IR."""
+     lines = list(lines)
+     function_targets = arm_function_targets(lines, arch)
+-    module_asm = arm_module_asm_whitelist(lines)
++    module_asm = module_asm_whitelist(lines)
+     retained, metadata = [], {}
+     triple, command_id = None, None
+     levels, cpus, features = {}, set(), set()
+@@ -953,7 +1012,7 @@ def arm_pic_relocations(data, arch):
+         if not target[2] & 2:
+             continue
+         checked += 1; types[kind] += 1
+-        symbol = arm_symbol_section(layout, rel['symbol_table'], si)
++        symbol = layout['symbols'][rel['symbol_table']][si]
+         # ABS/COMMON have no section to match; only genuine ABS is exempt.
+         if not symbol['is_absolute'] and (kind in narrow or kind in absolute and
+                 not (kind in writable_pointers and target[2] & 1)):
+@@ -1129,6 +1188,21 @@ def check_symbols(nm, source, target, command):
+     return result
+ 
+ 
++def check_module_asm_symbol(nm, target, statements, command):
++    if not statements:
++        return dict(required=False)
++    output = target.parent/'module-asm-symbols.txt'
++    with output.open('wb') as stream:
++        command.run([nm, str(target)], target.parent/'module-asm-nm', stdout=stream)
++    matches = [(kind, name) for kind, name in parse_nm(output.read_text())
++               if name == '_ZSt21ios_base_library_initv']
++    result = dict(required=True, symbol='_ZSt21ios_base_library_initv', matches=matches)
++    atomic_json(target.parent/'module-asm-symbol.json', result)
++    if matches != [('U', '_ZSt21ios_base_library_initv')]:
++        raise ValueError('module asm requires exactly one U symbol: '+repr(matches))
++    return result
++
++
+ def validate_archive(archive):
+     if archive.is_symlink():
+         raise ValueError('archive symlink not certified: '+str(archive))
+@@ -1146,15 +1220,23 @@ def validate_tools(build, compiler, disassembler, nm, command, output):
+     for label, tool in [('compiler', compiler), ('disassembler', disassembler), ('nm', nm)]:
+         if not tool.is_file() or not os.access(tool, os.X_OK):
+             raise ValueError('missing or non-executable --'+label+': '+str(tool))
+-    version = output/'compiler-version.txt'
+-    with version.open('wb') as stream:
+-        command.run([compiler, '--version'], output/'compiler-version-command', stdout=stream)
+-    text = version.read_text()
+-    match = re.search(r'clang version (\d+)\.', text)
+-    if not match or int(match[1]) != CERTIFIED_LLVM_MAJOR:
+-        raise ValueError('uncertified compiler major (required 22): '+text.strip())
+-    return dict(compiler=str(compiler), version=text, compiler_sha256=sha(compiler),
+-                disassembler=str(disassembler), nm=str(nm))
++    versions = {}
++    for label, tool in [('compiler', compiler), ('disassembler', disassembler), ('nm', nm)]:
++        path = output/(label+'-version.txt')
++        with path.open('wb') as stream:
++            command.run([tool, '--version'], output/(label+'-version-command'), stdout=stream)
++        text = path.read_text()
++        pattern = r'clang version (\d+\.\d+\.\d+)\b' if label == 'compiler' else r'LLVM version (\d+\.\d+\.\d+)\b'
++        match = re.search(pattern, text)
++        if label == 'compiler':
++            if not match or int(match[1].split('.')[0]) != CERTIFIED_LLVM_MAJOR:
++                raise ValueError('uncertified compiler major/full version (required 22): '+text.strip())
++        elif not match or match[1] != versions['compiler']['version']:
++            raise ValueError(label+' version differs from clang '+versions['compiler']['version']+': '+text.strip())
++        versions[label] = dict(path=str(tool), sha256=sha(tool), version=match[1], raw=text)
++    return dict(compiler=str(compiler), version=versions['compiler']['raw'],
++                compiler_sha256=versions['compiler']['sha256'], disassembler=str(disassembler),
++                nm=str(nm), tool_versions=versions)
+ 
+ 
+ def reset_evidence(root, output, build):
+@@ -1213,7 +1295,8 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+         if arch == 'x86_64':
+             summary['tools'] = validate_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output)
+         else:
+-            summary['tools'] = validate_arm_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output, arch)
++            summary['tools'] = validate_arm_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output, arch,
++                allow_unenforced=getattr(ARM_INSTALL_CONTEXT, 'allow_unenforced', False))
+         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+         summary['scanned_archives'] = len(archives)
+         summary['native_archives_skipped'] = sum(not data['bitcode'] for archive, data in archives)
+@@ -1276,6 +1359,8 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                 atomic_json(source.parent/'relocations.json', relocs)
+                 if settings['pic_level'] and relocs['forbidden']:
+                     raise ValueError('non-PIC relocation in '+str(target))
++                if arch == 'x86_64':
++                    record['module_asm_symbol'] = check_module_asm_symbol(nm, target, settings['module_asm'], command)
+                 symbols = check_symbols(nm, source, target, command)
+                 return dict(ordinal=member['ordinal'], name=member['name'], preserved=False,
+                             settings=settings, conversion=record, symbols=symbols, sha256=sha(target))
+@@ -1337,6 +1422,8 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+         raise
+     finally:
+         try:
++            if arch != 'x86_64' and (output/'address-space-probe.json').is_file():
++                summary['address_space_probe'] = json.loads((output/'address-space-probe.json').read_text())
+             summary['elapsed_seconds'] = time.time()-summary['started']
+             cancelled = summary['status'] == 'CONVERTED' and command.signal_received is not None
+             if cancelled:
+@@ -1402,9 +1489,17 @@ def install_main():
+     parser.add_argument('--nm', type=Path, required=True)
+     parser.add_argument('--jobs', type=int, default=4)
+     parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
++    parser.add_argument('--allow-unenforced-address-space', action='store_true',
++                        help='ARM only: explicitly acknowledge a failed address-space limit probe')
+     args = parser.parse_args()
+-    install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+-            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes)
++    if args.arch == 'x86_64' and args.allow_unenforced_address_space:
++        parser.error('--allow-unenforced-address-space is only valid for ARM')
++    values = (args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
++              args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes)
++    if args.arch == 'x86_64':
++        install(*values)
++    else:
++        arm_install(args.allow_unenforced_address_space, *values)
+ 
+ 
+ if __name__ == '__main__':

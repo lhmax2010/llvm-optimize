@@ -165,19 +165,20 @@ class FilesystemTests(unittest.TestCase):
 
     def test_h_tools_version_and_cache(self):
         with tempfile.TemporaryDirectory() as tmp:
-            p=Path(tmp);(p/'CMakeCache.txt').touch();tool=p/'cc';tool.write_text('fake');tool.chmod(0o755)
+            p=Path(tmp);(p/'CMakeCache.txt').touch();tool=p/'clang-22';di=p/'llvm-dis';nm=p/'llvm-nm'
+            for item in (tool,di,nm):item.write_text('fake');item.chmod(0o755)
             command=mock.Mock()
-            command.run.side_effect=lambda argv,prefix,stdout:stdout.write(b'clang version 22.1.8\n')
-            source.validate_tools(p,tool,tool,tool,command,p)
+            command.run.side_effect=lambda argv,prefix,stdout:stdout.write(b'clang version 22.1.8\n' if argv[0]==tool else b'LLVM (http://llvm.org/):\n  LLVM version 22.1.8\n')
+            source.validate_tools(p,tool,di,nm,command,p)
             command.run.side_effect=lambda argv,prefix,stdout:stdout.write(b'clang version 23.0.0\n')
             with self.assertRaisesRegex(ValueError,'compiler major'):
-                source.validate_tools(p,tool,tool,tool,command,p)
+                source.validate_tools(p,tool,di,nm,command,p)
             tool.chmod(0o644)
             with self.assertRaisesRegex(ValueError,'non-executable'):
-                source.validate_tools(p,tool,tool,tool,command,p)
+                source.validate_tools(p,tool,di,nm,command,p)
             (p/'CMakeCache.txt').unlink()
             with self.assertRaisesRegex(ValueError,'CMakeCache'):
-                source.validate_tools(p,tool,tool,tool,command,p)
+                source.validate_tools(p,tool,di,nm,command,p)
 
     def test_l_cleanup_keeps_json_only(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -214,11 +215,16 @@ class CancellationTests(unittest.TestCase):
 
     def test_g_failed_leader_descendants_are_killed(self):
         with tempfile.TemporaryDirectory() as tmp:
-            p=Path(tmp);pidfile=p/'descendant.pid'
-            child="import signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);time.sleep(30)"
-            script=("import subprocess,sys,pathlib,time; "
-                    "p=subprocess.Popen([sys.executable,'-c',"+repr(child)+"]); "
-                    "pathlib.Path("+repr(str(pidfile))+").write_text(str(p.pid));time.sleep(.1);sys.exit(7)")
+            self.assertTrue(Path('/proc/self/status').is_file(), '/proc/self/status must be visible')
+            p=Path(tmp);pidfile=p/'descendant.pid';ready=p/'ready'
+            child=("import signal,time,pathlib;signal.signal(signal.SIGTERM,signal.SIG_IGN);"
+                   "pathlib.Path("+repr(str(ready))+").write_text('ready');time.sleep(30)")
+            script=("import subprocess,sys,pathlib,time\n"
+                    "p=subprocess.Popen([sys.executable,'-c',"+repr(child)+"])\n"
+                    "pathlib.Path("+repr(str(pidfile))+").write_text(str(p.pid))\n"
+                    "ready=pathlib.Path("+repr(str(ready))+"); deadline=time.monotonic()+5\n"
+                    "while not ready.exists() and time.monotonic()<deadline:time.sleep(.005)\n"
+                    "sys.exit(7 if ready.exists() else 9)\n")
             with self.assertRaisesRegex(RuntimeError,'command failed'):
                 source.Commands().run([sys.executable,'-c',script],p/'failed-leader')
             returned = time.monotonic()
@@ -230,6 +236,8 @@ class CancellationTests(unittest.TestCase):
                     return None
                 return {key: fields[key].strip() for key in ('State', 'SigPnd', 'ShdPnd')}
             first = snapshot()
+            self.assertTrue(ready.is_file(), 'descendant did not establish SIGTERM-ignore prerequisite')
+            self.assertEqual(json.loads((p/'failed-leader.json').read_text())['exit'],7)
             self.assertTrue(first is None or 'Z' in first['State'] or
                             (int(first['SigPnd'], 16) | int(first['ShdPnd'], 16)) & 0x100,
                             'live descendant without pending SIGKILL: '+repr(first))
