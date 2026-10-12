@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-12。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/47）第零步PASS**：以bda33ec reflog为界，104条修改记录全部归因；647输入及工具/Source/补丁共672项SHA一致，69个HEAD blob一致。主仓库仅用户配置，W/llvm仅原并发差异。尚未改代码或运行转换；接续发布模式与原生限制事实核查。轻阶段6GiB、全量10GiB，统一18GiB/swap0；证据temp/review-round4-20261012。
+**当前任务（docs/47）事实核查完成**：完整性PASS；发布模式sed模拟x86 3853/ARM32 3683/A64 3699全部因缺少末项DWARF选项拒绝，当前策略未覆盖发布模式，待PM；三根_toolchain均clang、历史实际走非release分支。两ARM目标prlimit→原生bash均读回unlimited/unlimited，原生启动器修订尚未实施。两构建目录存在，proc已卸载；后续修订与复验继续。
 
 **历史任务（docs/44续三）完成**：宿主99PASS；根内95PASS+3指定环境不适用+1已实证AS发现。x86225档/3864成员/索引/3853 flags完全一致；ARM32 210档、AArch64 212档after SHA与§12全同，沿用三套消费者/两种strip。5个ARM asm符号GLOBAL/UND；105/106的bfd/lld共享链接与dlopen均PASS；x86三个bitcode同asm成员最终符号保留。Source仍e2c2ebfa，无代码改动；只修timeout测试。两处辅助脚本各授权修一次；锁、采样器、proc回收。ARM生产AS限制问题待评审，未打包/推Gerrit。见docs/44 §18–§27与docs/45。
 
@@ -534,3 +534,5 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 本轮最终回收：两个锁释放、15个scope均回收、任务进程与临时/proc挂载为0；见docs/46及E/cleanup-final.json。
 
 2026-10-12 本提交（docs/47完整性里程碑）：第零步PASS，事实核查与修订待执行；项目锁继续持有。
+
+2026-10-12 本提交（docs/47事实里程碑）：发布模式与两ARM原生读回实测完成；不因模拟FAIL修改策略。
