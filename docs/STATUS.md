@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续四）STOP_DISK_ADMISSION并收尾**：独立辅助16测试PASS；60/60参数PASS（仅差-g/-gdwarf-4），53对相同、7对20函数全部经(b)归因PASS。两Source/Commands/十项比较器不变；两条x86路径各225档/3864有序成员/完整索引/3853flags与docs/35相同。PS3/PS2候选已重生成且顺序apply/tree PASS。历史无清理空间预算×1.2=263.758319GiB；/home73.925907、/var/tmp246.889961均不足，完整构建0次。验收1–7、ARM全量/根内/64MiB、bash清单、LLVM23未执行，无BOLT新树交接；项目锁/进程/采样器/挂载回收。详见docs/49_release_attribution.md及temp/release-attribution-20261013。
+**当前任务（docs/49续四）STOP_DISK_ADMISSION；补充复查SKIP_FULL_BUILD_DISK_FLOOR**：独立辅助16测试PASS；60/60参数PASS（仅差-g/-gdwarf-4），53对相同、7对20函数全部经(b)归因PASS。两Source/Commands/十项比较器不变；两条x86路径各225档/3864有序成员/完整索引/3853flags与docs/35相同。PS3/PS2候选已重生成且顺序apply/tree PASS。历史无清理空间预算×1.2=263.758319GiB；/home73.925907、/var/tmp246.889961均不足，完整构建0次。验收1–7、ARM全量/根内/64MiB、bash清单、LLVM23未执行，无BOLT新树交接；项目锁/进程/采样器/挂载回收。详见docs/49_release_attribution.md及temp/release-attribution-20261013。
+
+**2026-10-13补充裁决已登记（docs/49_release_attribution.md §9）**：超过10GiB写入完成后须保留30GiB，不满足跳过、不清理。新完整构建计划根为`/var/tmp/llvm-optimize-x86-archivefix-20261013`（尚未创建）；只按/var/tmp准入。18:33:59复查可用246.877117GiB，减历史无清理预算219.798599后预计27.078518GiB，低于30；原263.758319GiB准入也未满足。完整构建继续跳过，无新树交接；既有认证与回归PASS保留。证据temp/release-attribution-20261013/disk-supplement-20261013。
 
 **历史任务（docs/49续三）STOP_ARM32_ALLOC_CONTENT并收尾**：最终十项比较器41测试PASS（78e58f5）；已有80对象SHA核对PASS，x8620/20 PASS，ARM32前12对PASS、第13对Serialize.cpp同身份函数节720→716字节、重定位/符号不符，立即停止；剩余7对/AArch6420对NOT RUN。ChangeNamespace本轮PASS，输入IR已有18个定义换序。两Source未改，未重编/转换/重试门禁；后续全量回归、补丁再生成、完整构建验收1–7与BOLT交接NOT RUN。只读readelf辅助筛选修一次不改门禁；全部锁/进程/采样器/挂载回收。详见docs/49_release_contract_final.md §20–§25，证据temp/release-contract-final-20261013。
 
@@ -83,7 +85,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 ## 2. 进度
 
-本轮阶段：c5b7e41（辅助16测试）、70117de（33对与Serialize）、aeea5f8（60对认证）、0b6f5d8（生产x86回归/手册）、d1ccc5d（双回归）、a454bbc（两候选apply/tree）均已推送。2026-10-13 **本提交**新增docs/49_release_attribution.md最终停止记录并更新STATUS：磁盘准入不足，无完整构建/交接；用`git log -1 -- docs/49_release_attribution.md`定位收尾提交。
+- 2026-10-13：本提交（`git log -1 -- docs/49_release_attribution.md`定位）。docs/49_release_attribution.md §9、STATUS：登记30GiB大写入底线与/var/tmp新根；补充复查仍不满足，跳过完整构建，未清理/启动构建。
+
+本轮阶段：c5b7e41（辅助16测试）、70117de（33对与Serialize）、aeea5f8（60对认证）、0b6f5d8（生产x86回归/手册）、d1ccc5d（双回归）、a454bbc（两候选apply/tree）均已推送。2026-10-13 **183eb207**新增docs/49_release_attribution.md最终停止记录并更新STATUS：磁盘准入不足，无完整构建/交接；用`git log -1 -- docs/49_release_attribution.md`定位收尾提交。
 
 - 2026-10-13：本提交。docs/49_release_attribution.md、独立参数/归因辅助与16测试：PASS，冻结新判据；两Source与比较器未改。
 
@@ -410,6 +414,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 4. 人工裁决前提
 
+- **2026-10-13续四补充裁决**：任何单次写入超过10GiB，完成后所在文件系统可用须≥30GiB，否则跳过并报告，不清理；新x86完整构建根放`/var/tmp/llvm-optimize-x86-archivefix-20261013`，准入按/var/tmp计算，交接记录完整路径。原1.2倍准入未被取消；本次两项均未满足。用户告知BOLT缓存复制曾使工作区只剩约5.6GB，本会话不访问其资产验证该说法。证据docs/49_release_attribution.md §9、D/admission.json。
+
 - **2026-10-13 续四PM裁决**：Serialize.cpp的4字节差异判断为编译器debug/nondebug代码生成差异；需按opt --strip-debug/llvm-diff或后端重放归因实测。发布认证硬门禁改参数一致，仅允许-g/-gdwarf-4差异；产物仍用十项工具比较，函数外差异不可豁免。发布认证FAIL只停止该线，不阻塞debug主线；若FAIL，PS3说明标明发布模式尚未完成认证。docs/49_release_attribution.md §1。
 
 - **2026-10-13 用户确认**：Quickbuild当前Tizen-Base-Toolchain定义`_toolchain`走debug分支；未来进入Tizen-Base不定义该宏走发布分支。调试无关性认证是未来交付前提；发布模式完整构建优先级提高，仍待PM安排。最终比较规则见docs/49_release_contract_final.md §20.1；旧停止判定保留。
@@ -507,6 +513,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 续接PM已将其替换为两架构精确白名单`.globl _ZSt21ios_base_library_initv`且须保留输出GLOBAL符号；其余未知声明仍失败。辅助修正仅一次，本轮用于测试期望遗漏-g；第二次宿主套件再次失败后停止，不改共用取消代码或继续复验。生产Source与两patch不改。
 
 ## 5. 挂账
+
+- 新x86完整构建仍未启动；计划根`/var/tmp/llvm-optimize-x86-archivefix-20261013`尚未创建，实际build/cache路径与完成时间不存在。BOLT交接NOT_READY；大写入30GiB剩余底线与原磁盘准入须共同满足，不得把计划路径当已验收产物。
 
 **最新docs/47挂账优先于下列历史记录**：ARM32根内辅助门禁未闭合、AArch64根内小试和两根64MiB负例NOT RUN；PS3/PS2未再生成，仍为docs/46候选。新Source第四轮评审、发布模式认证策略PM裁决、最终候选叠加的x86完整构建、ARM第二段实际打包待后续任务。根内部分成功数据不能替代这些门禁。证据docs/47 §7.2–§10。
 
