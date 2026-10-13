@@ -1,7 +1,7 @@
 # 49 归档修复第四轮修订与 x86 完整构建
 
 日期：2026-10-13。开场基准 `89ad784b10fb033aff4820dd9bb94d9e2fbe1f3d`。
-**续三进行中：最终十项判据比较器41测试PASS；旧§0–§19保持历史，续三完整记录见[§20](49_release_contract_final.md)。**
+**续三最终状态：STOP_ARM32_ALLOC_CONTENT。41测试PASS；x8620对、ARM32前12对PASS，第13对Serialize.cpp内容720→716字节不符；后续NOT RUN。旧§0–§19保留，详见[§20续三完整记录](49_release_contract_final.md)。**
 
 历史状态（8f184dec）：**STOP_RELEASE_STRUCTURE_MISMATCH：第零步与第一步 PASS；第二步的三架构静态分类全部 PASS，但 x86 发布模式实物对照在第2个 TU 出现真实结构差异，按用户规则停止。ARM 实物夹具、全量回归、补丁再生成与完整构建均未执行。第九步停止材料及升级手册已完成；没有重试或失败后改 Source。**
 
