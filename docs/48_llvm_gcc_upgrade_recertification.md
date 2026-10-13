@@ -1,6 +1,6 @@
 # 48 LLVM / GCC 升级后的归档转换重新认证
 
-日期：2026-10-13。本手册是执行顺序与停止条件，不代表新版本已通过认证。当前实测进度见 [docs/49](49_round4_revision_and_x86_build.md)；现有输入来自 LLVM 22.1.8。生产入口为 `tools/llvm_static_archives_source.py`，ARM 评审候选为 `tools/llvm_static_archives_arm_trial.py`，ARM RPM 集成仍未完成。
+日期：2026-10-13。本手册是执行顺序与停止条件，不代表新版本已通过认证。当前实测进度见 [docs/49续四](49_release_attribution.md)；现有输入来自 LLVM 22.1.8。生产入口为 `tools/llvm_static_archives_source.py`，ARM 评审候选为 `tools/llvm_static_archives_arm_trial.py`，ARM RPM 集成仍未完成。
 
 ## 1. 哪些变化会触发检查
 
@@ -8,7 +8,7 @@
 |---|---|---|
 | LLVM 主版本改变 | `validate_tools` 要求 `CERTIFIED_LLVM_MAJOR=22`；clang/llvm-dis/llvm-nm 的完整版本必须一致 | 新版本三工具路径、实际 ELF、版本、SHA；生产者/读取器兼容试验；完整重新认证 |
 | LLVM 22 小版本改变 | 不再把 ARM 固定为 22.1.8；三工具仍须同版，ARM 每个函数的 target-cpu/target-features/tune-cpu 仍精确匹配 | docs/44 §2 同口径函数属性与命令全集普查；差异出现即停止，不因主版本相同放行 |
-| 编译选项或 CMake 配方改变 | 未分类 token、未认证末项优化、关闭分段/符号选项、未认证 DWARF/FP contraction、错误 triple 都拒绝 | 实际 bitcode 内 llvm.commandline 全集；clang 源码依据；debug/发布转换产物调试无关性门禁，直接非LTO对照只诊断 |
+| 编译选项或 CMake 配方改变 | 未分类 token、未认证末项优化、关闭分段/符号选项、未认证 DWARF/FP contraction、错误 triple 都拒绝 | 实际 bitcode 内 llvm.commandline 全集；clang 源码依据；debug/发布参数一致与产物差异归因门禁，直接非LTO对照只诊断 |
 | 调试/发布模式切换 | 无调试参数分支禁止 IR 的 `!llvm.dbg.cu`；有调试参数分支仍要求末项 `-gdwarf-4` | 三架构静态分类和真实源文件夹具；完整发布模式构建仍独立挂账 |
 | IR 文本格式变化 | 依赖 LLVM 22 文本 IR 的单行定义、属性组、命令元数据与模块标志语法；重复、缺失或不识别的记录拒绝 | 新 llvm-dis 输出与现解析函数逐项比对，不能只看反汇编退出码 |
 | GCC / libstdc++ 头文件改变 | module asm 白名单目前只有 `.globl _ZSt21ios_base_library_initv`；输出符号状态必须满足各架构门禁 | 新头文件路径/包版本/SHA、全部 module asm 普查、逐成员符号与消费者证据 |
@@ -24,7 +24,7 @@
 3. **写逐项差异依据。** 为新增/变更 token 查 clang 源码中的 frontend/IR 属性或后端选项处理；为重定位查目标 ABI 与实际 lld 实现。库头文件变化另查新的 module asm 意图与输出符号。未确定的项目保留 STOP，禁止扩大通配符绕过。
 4. **先写固定字面量正负测试，再更新策略。** 依次更新版本门槛与文本解析假设、每架构 triple/优化策略及 token 分类、需补回的后端选项、ARM 函数属性认证表、module asm 白名单/输出门禁、重定位集合。只有实证变化的表才修改；不修改 Commands 来掩盖策略问题。
 5. **验证旧行为与新行为两条线。** 用旧工具和旧输入运行新 Source，确认仍在承诺范围内的旧 x86 路线逐档/逐成员 SHA、完整索引和后端 flags 不变。再用新工具与新输入做全量转换、完整索引/强符号/PIC/Thumb 检查。新编译器可能改变代码生成；有差异须分析并建立经批准的新锚点，不能把新工具输出直接宣称为旧 SHA 不变。
-6. **运行两种模式实物夹具与根内限制。** 每架构至少20个跨子系统源文件，以原记录debug命令和spec精确sed后的发布命令各产bitcode，再交同一Source转换。2026-10-13 PM续三最终十项判据见[docs/49续三 §20.1](49_release_contract_final.md)：ELF头相同；SHF_ALLOC按名称/类型/COMDAT签名/link-order目标递归身份分组比较属性与全部内容，保留同身份重复节内部顺序；有序语义节（init/fini/preinit数组、ctors/dtors及点后缀、C标识符节名）按节名保留身份序列；只比较每目标节内部重定位顺序，规范SECTION/LOCAL引用；符号多重集合排除明确限定的debug专用符号；COMDAT比较有序成员身份并排除debug成员；addrsig比较规范符号身份集合；发布对象无.debug*。REL隐式addend由目标字节覆盖。节顺序变化时反汇编两路原bitcode、去掉debug信息记录定义顺序，仅诊断。比较器先通过正负夹具；任何规则以外的差异停止，禁止自行豁免。直接非LTO对照只记录“预期差异：转换对已做链接前优化的bitcode再次完整优化”。旧停止记录不回判。根内Python使用实际`/emul`工具与sh、临时`/proc`，监测clang软硬AS并做64MiB失败且不产`.o`负例，退出卸载。
+6. **运行两种模式实物夹具与根内限制。** 每架构至少20个跨子系统源文件，以原记录debug命令和spec精确sed后的发布命令各产bitcode，再交同一Source转换。2026-10-13 PM续三最终十项判据见[docs/49续三 §20.1](49_release_contract_final.md)：ELF头相同；SHF_ALLOC按名称/类型/COMDAT签名/link-order目标递归身份分组比较属性与全部内容，保留同身份重复节内部顺序；有序语义节（init/fini/preinit数组、ctors/dtors及点后缀、C标识符节名）按节名保留身份序列；只比较每目标节内部重定位顺序，规范SECTION/LOCAL引用；符号多重集合排除明确限定的debug专用符号；COMDAT比较有序成员身份并排除debug成员；addrsig比较规范符号身份集合；发布对象无.debug*。REL隐式addend由目标字节覆盖。节顺序变化时反汇编两路原bitcode、去掉debug信息记录定义顺序，仅诊断。比较器先通过正负夹具。2026-10-13续四裁决保留它作为比较工具，认证改为参数一致与差异归因：规范化输入/输出路径后只可缺少Source实际debug集合（当前固定为-g、-gdwarf-4），其他参数及顺序、clang实体SHA、cwd与环境集合相同；产物不同必须用同版opt --strip-debug和llvm-diff证明相关函数IR差异已存在于输入，或将去debug后的debug输入按原发布命令再转换，相关函数节/重定位/函数及映射符号与发布产物相同。差异只限被归因函数的节、重定位、映射符号、函数size；其余仍满足十项规则。未归因差异或参数失败使发布认证FAIL，不阻塞debug主线自身的独立验证，不允许自行扩充归因范围。每个差异函数保留反汇编原文，见独立辅助tools/check_release_attribution.py与[续四报告](49_release_attribution.md)。直接非LTO对照只记录“预期差异：转换对已做链接前优化的bitcode再次完整优化”。旧停止记录不回判。根内Python使用实际`/emul`工具与sh、临时`/proc`，监测clang软硬AS并做64MiB失败且不产`.o`负例，退出卸载。
 7. **完整打包与消费。** 运行真实 `%install` 和标准后处理，归档成员/索引/调试节全检，compiler-rt、libarcher 归属、非归档文件、七项宿主消费者、Tizen GNU ld 无 LTO/无插件及 lld 消费者、运行库探针、独立安装与同树 SKIP 均重新验收。ARM 根内 AS 和 accel 路由不能用宿主离线结果替代。
 8. **冻结最终版本后生成补丁。** 候选 Source SHA、补丁顺序、完整构建指纹与日志保持一致；提交说明只写实际通过项。新大版本、小版本或新配方若未完成上述验证，标为候选而非已发布认证。
 
@@ -44,8 +44,8 @@ ARM 的候选转换器选用构建环境中 `/emul` 的原生 x86_64 三工具�
 
 ## 5. 当前挂账
 
-- 最新实物停止：docs/49续三 §22–§23中x86 20/20 PASS；ARM32前12项PASS，第13项Serialize.cpp同身份函数节720→716字节，节内重定位与符号也不同，按最终判据STOP；剩余7项及AArch64未执行。原ChangeNamespace节序项通过，定义先后差异在输入bitcode中已存在。不得将新内容差异豁免为排序或调试簿记。
-- 比较器跨目标节重定位展平造成的额外顺序约束本轮已修正；新增16项与原25项共41测试PASS。两份Source/Commands不变，未重试实物门禁。
+- 续四三架构60对参数门禁全部PASS；53对产物相同、7个文件/架构组合的20个函数实例由后端路径(b)归因PASS（指定函数llvm-diff均exit0，去debug后再转换对应函数相同），发布夹具认证完成。Source/Commands及原十项比较器不变。此结论不是任意输入debug/nondebug代码一致性的证明，也不代替完整发布构建（docs/49_release_attribution.md §3–§4）。
+- 原续三Serialize.cpp停止结论按当时判据成立并保留；本轮依据新裁决重新归因，而非改写历史记录。当前独立辅助16测试PASS；十项比较器此前41测试PASS。
 
 - LLVM 23 官方工具的样本探测结果以 docs/49 为准；未完成时写 NOT RUN/SKIP，不宣称兼容。
 - 发布模式完整构建尚需独立执行；静态分类和局部夹具不能替代它。用户确认当前Quickbuild Tizen-Base-Toolchain定义`_toolchain`走debug，未来Tizen-Base未定义该宏走发布；此项优先级提高，待PM安排。

@@ -1,6 +1,6 @@
 # 49 续四：发布模式参数认证与差异归因
 
-日期：2026-10-13；开场HEAD `df729697426dff67a3871bfa850754ee8be7d376`。**进行中：60对参数PASS；发布模式参数与归因认证PASS；debug主线全量回归待执行。** 旧docs/49及续三保留，十项ELF比较器和两份Source/Commands不修改。本页不超过50KB。
+日期：2026-10-13；开场HEAD `df729697426dff67a3871bfa850754ee8be7d376`。**进行中：60对参数PASS；发布模式参数与归因认证PASS；生产Source的x86全量回归PASS，ARM候选的x86回归待执行。** 旧docs/49及续三保留，十项ELF比较器和两份Source/Commands不修改。本页不超过50KB。
 
 ## 1. 用户裁决、完整性与执行边界
 
@@ -47,10 +47,6 @@ Serialize.cpp去调试信息后的指定函数llvm-diff exit=0、输出为空，
 
 第一处指令差异周围原文（两路合计36行；完整反汇编与diff在同目录）：
 
-
-## 4. debug主线与挂账
-
-待执行：x86两次全量回归→PS3/PS2候选重生成与顺序apply/tree→新根完整构建/验收1–7→冻结BOLT交接→ARM全量/根内小试/64MiB负例→bash债务/LLVM23探测。主线自身失败仍停止；没有新交接树。发布模式完整构建仍挂账，未来Tizen-Base未定义_toolchain的实际交付提高其优先级，待PM安排。
 
 debug：
 ```text
@@ -100,10 +96,10 @@ release：
 
 首次实物驱动在opt执行前失败：引用了Source完成转换后已删除的临时`members/fixture.a/00012/input.bc`。只读核查发现原始输入副本仍在`physical-armv7l/{debug,release}-input/members/12.o`，SHA与before.json完全一致（debug `e3f1f129fa94f8d9ed8cbed5d1cf1b1618ebf0075a16d09aa3efda83a267bfac`，release `160f7682ca2dd05f402c51a1ce4e7a875837e3901fa39668a1d12559adf4bc81`）。按授权只修输入定位，门禁与参数不改；本步骤唯一一次重跑PASS。证据E/input-path-fix-proof.json、input-path-helper-fix.diff；首次和重跑日志均保留。第一次共享锁等待约752s，重跑scope峰662,466,560B，swap0/18GiB上限，无OOM（E/first33-scope、first33-retry-scope）。
 
-ARM32余7对全部相同PASS；AArch64结果见§5。
+ARM32余7对全部相同PASS；AArch64结果见§4。
 
 
-## 5. 三架构60对发布模式认证
+## 4. 三架构60对发布模式认证
 
 本轮发布认证 **PASS**：参数60/60 PASS；状态计数`{'PASS_ATTRIBUTED': 7, 'PASS_IDENTICAL': 53}`。该结论只覆盖选定60成员的参数及差异归因，不等于发布模式完整构建认证。Source与Commands不变（E/release-status.json）。
 
@@ -132,7 +128,7 @@ ARM32余7对全部相同PASS；AArch64结果见§5。
 
 所有参数仅去掉固定集合`-g`、`-gdwarf-4`，其余参数顺序保持不变。x86与ARM32历史两路在同一父进程循环中继承cwd/环境（代码与SHA证据，未声称持有历史环境原始快照）；新AArch64两次转换另记录cwd与完整环境键值集合的SHA，未把敏感环境值写入报告（E/physical-aarch64/conversion-contexts.json）。
 
-### 5.1 工具身份
+### 4.1 工具身份
 
 以下工具全部22.1.8；仅用于opt去debug、llvm-diff及反汇编，未替换原架构转换编译器（E/diagnostic-tools-retry/identity.json）。
 |工具|绝对路径|SHA256|
@@ -141,13 +137,13 @@ ARM32余7对全部相同PASS；AArch64结果见§5。
 |llvm-diff|`/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-diff`|`227c137b0ae007eb4be57c5a788f0e7ad34ea6f6a3415af4cf9cc164460bda05`|
 |llvm-objdump|`/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-objdump`|`a9448cb80dd2464ee55762f2d741459f39138c84a4b68d5f328ae71df2568daa`|
 
-### 5.2 AArch64过程与顺序诊断
+### 4.2 AArch64过程与顺序诊断
 
 R64以原编译命令分别生成debug/release/native共60对象；两路bitcode均保持ThinLTO，native仅去掉ThinLTO、只作诊断。两路各20成员转换与完整索引PASS，发布路无debug节；临时proc挂载及卸载均exit0（E/physical-aarch64/commands.json，根内generation.json，archive-inspections.json）。
 节顺序变化清单（不据此豁免内容差异）：
 - armv7l `clang-tools-extra/clang-change-namespace/ChangeNamespace.cpp`；沿用同SHA输入的H/physical-armv7l/02-comparison/ir-order-diagnostic.json：853定义、584函数、269全局，18个定义位置变化，变化已存在于转换前（docs/49_release_contract_final.md §22.1）。
 
-### 5.3 直接非LTO对照（仅诊断）
+### 4.3 直接非LTO对照（仅诊断）
 
 “预期差异：转换对已做链接前优化的bitcode再次完整优化”。以下统计使用既有同一describe/differences方法；不要求字节相同、不作通过门禁。
 |架构|结构记录相同|有结构差异|证据|
@@ -157,7 +153,7 @@ R64以原编译命令分别生成debug/release/native共60对象；两路bitcode
 |aarch64|9|11|`temp/release-attribution-20261013/physical-aarch64/direct-diagnostic.json`|
 
 
-### 5.4 AArch64差异逐函数归因与反汇编
+### 4.4 AArch64差异逐函数归因与反汇编
 
 AArch64有6文件、19函数出现内容差异。19次指定函数llvm-diff均exit0、输出为空；各文件去debug后的debug bitcode用原发布命令再转换，对应函数十项规则全部相同，均由后端路径(b)归因。所有函数外差异门禁PASS。以下每函数两路合计不超过16行；原文完整命令、stderr、反汇编、差异和重转对象在E/aarch64-evaluation/NN/。没有据经验放行任何额外差异。
 
@@ -635,3 +631,7 @@ release：
      140: a9454ff4     	ldp	x20, x19, [sp, #0x50]
      144: a94457f6     	ldp	x22, x21, [sp, #0x40]
 ```
+
+## 5. debug主线：x86回归进度
+
+生产Source第一轮PASS：225档after SHA、3864有序成员、完整索引、3853组后端flags与docs/35完全一致；三份同asm成员U符号门禁PASS，强符号缺失0，允许缺失W=1920。转换1787.577秒，总1882.794秒，scope峰3,984,707,584B，无OOM。第二轮ARM候选x86路径随后执行（E/x86-production-result.json、x86-production-scope/memory-summary.json）。
