@@ -625,3 +625,8 @@ rpmbuild --define '_smp_mflags -j4' --define '_srcdefattr (-,root,root)' \
 2026-10-14T00:40:48+08:00的最新采样：已完成729/902，libLLVM.so、LLVMgold.so、llvm-lto已链接成功，正在lld链接。scope MemoryPeak=MemoryMax=19,327,352,832B（18GiB），memory.events中max=5066，oom/oom_kill=0；memory.stat原文保存在E11/interim-0040-resource.json，当前file约18.07GB、anon约0.82GB。这是受限scope的含文件缓存峰值，不是进程自然峰值或OOM证据；不放宽资源，不据本机wall作性能结论。宿主/磁盘两秒底线未触发，安装/打包和验收仍NOT RUN。
 
 只读进度显示脚本曾在00:14查询已退出的yaml-bench链接器PID41520，ps返回1被check_output误抛异常。日志已明确该链接成功，/proc/41520不存在；实际构建及独立守护未受影响。唯一修正只接受“ps=1且PID已消失”的显示情况，其余错误继续抛出；修后显示正常。没有重做任何构建任务或放宽门禁。证据E11/poll-helper-race-diagnosis.json、poll_build.before.py.txt、poll-helper-fix.diff。
+
+
+### 16.4 01:39进度（仍未完成）
+
+截至2026-10-14T01:39:30.843166+08:00，最新完成行为`2026-10-14T01:36:40+08:00 [748/902] Linking CXX executable bin/clang-scan-deps`，正在串行链接`bin/clang-sycl-linker`。单次rpmbuild从22:43:03持续运行；CPU时间持续增长，未按暂时没有Ninja完成行判定卡死。最近宿主MemAvailable=26347003904B，/var/tmp可用=214706065408B；未出现宿主/磁盘保护中止。%install、打包、续跑后8项对照、验收1–7与BOLT交接仍NOT RUN。证据E11/interim-0139-progress.json；共享锁和项目锁仍持有。
