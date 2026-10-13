@@ -1,6 +1,6 @@
 # 49 续九、续十：第二轮部分构建树续跑前核查
 
-**续十一进度：8/8定向重建输出逐字节PASS，见§15；尚未调用rpmbuild，随后复查准入。**
+**续十一进行中：8/8定向重建逐字节PASS；22:43:03已启动唯一一次-ba --noprep，实际Ninja-j1，见§15–§16。尚无本轮RPM验收结论。**
 
 **续十历史：STOP_RECONFIGURE_PENDING_OUTPUTS；实际配置成功、命令不变，干跑新增8个已完成输出越界；rpmbuild调用0次。见§8–§14。**
 
@@ -551,3 +551,45 @@ ninja -j 1 <8输出>
 快照辅助脚本在复制前曾把静态归档规则的dummy.c.o输入误当作占位源文件，relative_to检查失败，尚未复制或重建；修正为只选择.c/.cpp源文件后重做快照，精确得到6个占位源+1个BuildVariables.inc。仅证据选择修正，不改变任何产品门禁；旧脚本和snapshot-helper.diff保留。定向重建只执行一次，无失败后重试。
 
 本阶段提交时rpmbuild调用0次；续跑后8项对照、RPM及后续验收尚未执行，不提前标PASS。
+
+
+## 16. 续十一唯一一次正常RPM续跑：启动记录
+
+定向PASS提交`a9b6acc`已推送。启动前再次执行全量`ninja -n -v`：894项，每项按完整命令映射到唯一输出，全部属于§15允许集合（902个输出），无越界；完整compdb与E10重配置后版本同字节。再次核对31条保护身份，除允许变化的构建日志之外不变。待链接历史L=11.344585GiB，门槛13.344585GiB；22:43:03实读22,770,294,784B，第一次即通过，无等待。磁盘可用266,068,668,416B，高于30GiB底线。（resume-dry-gate.json、resume-compdb.json、resume-memory-admission.jsonl、resume-invocation.json。）
+
+|启动字段|字节|
+|---|---:|
+|MemTotal|33,072,922,624|
+|MemAvailable|22,770,294,784|
+|SwapTotal|4,294,963,200|
+|SwapFree|4,294,963,200|
+
+前10进程只读RSS记录（单位KiB，无进程处置）：
+
+```text
+    PID    PPID COMMAND           RSS
+   4631    4315 code            3234584
+   4839    4318 code            794000
+   5625    4094 chrome          494724
+   4573    4094 chrome          428456
+   4075    2563 chrome          413644
+   2438       1 epp-client-daem 396604
+   4837    4763 codex           310660
+   4838    4764 codex           306336
+   2978    2563 gnome-shell     300436
+   4481    4318 code            298052
+
+```
+
+原第二轮RPM实际argv见E8/actual-rpmbuild-argv.json，本次仅加`--noprep`与串行宏覆盖：
+
+```sh
+rpmbuild --define '_smp_mflags -j4' --define '_srcdefattr (-,root,root)' \
+  --nosignature --target=x86_64 --define '_build_create_debug 1' \
+  -ba --noprep --define 'mlgo_build_jobs 1' \
+  /home/abuild/rpmbuild/SOURCES/llvm.spec
+```
+
+在同一chroot中以abuild运行，专用GBS配置不变；根内spec未改。唯一调用标记resume-invocation.json以exclusive-create写入。scope为`llvm-baseline-74fc0eeb9a30488e9fdae3dcb67067be.scope`，18GiB/swap0、nice15/ionice3、6/6/2 CMake池配置仍在；实际执行`ninja -j 1`。CMake门禁PASS；30秒聚合与2秒宿主/磁盘保护、逐进程采样持续。额外2秒空间/可用内存原始读数在resume-host-disk-2s.jsonl。共享flock在本阶段持有。
+
+已将只读exec/exit追踪附着到本次rpmbuild，以记录后续转换与brp执行。构建结束前，本节仅为启动记录：不把现有中间产物或旧RPM标作验收PASS；续跑后8项对照、各阶段资源、打包清单与验收见后续章节。

@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续十一）定向重建PASS，待启动续跑**：31条身份/当前检查点核对PASS；8产物及7生成输入快照完成，生成输入与docs/35 Rnew对应文件7/7一致；定向干跑精确8项，ninja-j1一次执行成功，8/8产物（含llvm-config.cpp.o）与快照逐字节相同。随后按新允许集合复查，并以13.344585GiB准入执行唯一一次-ba --noprep，仅加mlgo_build_jobs=1。当前rpmbuild0次、无新RPM、未BOLT交接，项目锁仍持有，定向阶段共享锁已释放。见docs/49_x86_build_resume.md §15，证据temp/release-x86-full-build-20261013/round2-eight-output-proof。
+**当前任务（docs/49续十一）续跑中**：8/8定向重建逐字节PASS（a9b6acc）；全量干跑894项全部落在允许902输出内，compdb不变。22:43:03内存22,770,294,784B通过13.344585GiB准入，唯一一次正常-ba --noprep已启动，只加mlgo_build_jobs=1，实际ninja-j1；18GiB/swap0与2秒宿主2GiB/磁盘30GiB保护继续。RPM与后续验收尚无结论、未BOLT交接；项目锁与共享重阶段锁持有。见docs/49_x86_build_resume.md §15–§16，证据temp/release-x86-full-build-20261013/round2-eight-output-proof。
 
 **历史任务（docs/49续十）STOP_RECONFIGURE_PENDING_OUTPUTS，已收尾**：唯一一次原%build环境CMake重配成功，21,987条compdb与完整命令同字节，串行宏mlgo_build_jobs=1已验证。干跑894→902；新增7编译+1归档的8个输出均在原.ninja_log有完成记录，不属允许集合，按规则停止；rpmbuild调用0次、0新RPM、无BOLT交接。待链接历史L=11.344585GiB，参考可用23.085735GiB已足，停止不归因内存。CMake生成的新Cache/build.ninja保留，.ninja_log未改；Source/spec/配置/补丁不变。22:22:56两项目锁/共享锁、进程、scope/采样器和挂载已回收。详见[续十报告](49_x86_build_resume.md#8-续十新裁决输入与唯一配置预检)，证据temp/release-x86-full-build-20261013/round2-resume-serial。
 
