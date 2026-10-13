@@ -1,7 +1,9 @@
-# 49 续五：ARM缓存清理、x86完整构建准入与停止记录
+# 49 续五至续六：x86完整构建环境、准入与验证记录
 
 日期：2026-10-13；开场提交 `6e874fdbd0149a33167c9b83f8938d17df7c7ceb`。
-**最终状态：STOP_BASE_REPOSITORY_404。授权两处缓存清理完成，磁盘两项准入PASS；配置中的Base快照repomd返回404，GBS未启动、完整构建0次、验收1–7未执行，无BOLT交接。**
+**当前状态（续六）：新固定Base仓库预检PASS；磁盘两项准入PASS，正在准备唯一一次x86完整构建。尚无新RPM验收或BOLT交接。**
+
+历史续五状态：STOP_BASE_REPOSITORY_404；下文§1–§6保留原记录。
 
 本页承接[发布模式认证与续四](49_release_attribution.md)，保留旧停止判定。发布模式60对认证、两条x86全量回归与PS3/PS2顺序apply/tree PASS沿用同SHA证据，不冒称新RPM认证。原始输出位于 E=`/home/linhao/Toolchain/development/llvm-optimize/temp/release-x86-full-build-20261013`，只存本机。
 
@@ -172,3 +174,83 @@ RuntimeError: preflight blocked: repo.base-standard: HTTP Error 404: Not Found
 本轮仅指定缓存删除及只读预检，未执行LLVM/Chromium构建、BOLT、性能校准或Gerrit推送，没有修改GBS配置、Source/Commands、比较器或W/llvm。临时/proc挂载0、构建scope/采样器0；项目锁释放与本任务进程回收见E/lock-released.json、cleanup-final.json。后续任何ARM重链均按冷缓存估算，本轮原件与既有转换/消费者证据仍保留。
 
 报告与STATUS同提交推送GitHub main；旧docs/49及续四原文保留，新增链接指向本页。报告小于50KB。原始JSON/日志/临时辅助脚本在E，不上传大文件；仓库产出只有本页、续四入口链接与STATUS更新。
+
+## 7. 续六：具体Base快照选择与环境预检
+
+开场main为`fe48ba0913c5a48938c8665b1cf3ac5d56118a43`；新证据E6=`temp/release-x86-full-build-20261013/latest-base`。14项冻结身份一致；只存在用户既有gbs_llvm.conf修改，两项目锁取得。用户授权新Base具体快照，原因是更接近周四Quickbuild的Toolchain环境；不复原旧缓存仓库、不改W配置、不改Source/Commands/比较器/候选补丁；失败不另换快照。
+
+### 7.1 目录索引与固定选择
+
+2026-10-13 19:14:13+08读取[Base目录索引](https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/)，HTTP200，874字节，SHA `1a6f2b43da23a55380bbceaa6f48b059dffcedcecbe47b3251f250a5557bef16`。实际href包含以下三个具体目录，按日期时间排序选最大值，没有使用reference/latest：
+
+- `tizen-base-toolchain_20260914.073422`
+- `tizen-base-toolchain_20260924.094908`
+- `tizen-base-toolchain_20261010.120615`
+
+选中`tizen-base-toolchain_20261010.120615`。原文E6/base-index.html、请求与排序证据snapshot-selection.json。
+
+### 7.2 两仓库与配置
+
+调用已有`tools/build_llvm_x86_64.py.repositories(Audit, E6/gbs-build.conf)`，19:14:23–19:14:31完成只读预检PASS；下载的primary/build.conf均验证repomd checksum，宏求值`1|clang`。
+
+|仓库|repomd HTTP|repomd SHA256|
+|---|---|---|
+|Base 20261010.120615|200|`2a99108e748092148d1161f4ef5e50fbaa57d98132460db6ad02852fea4a39a5`|
+|Unified 20260814.092727|200|`e7af3f222f0ce958678d964589f2d156e8b47ba463ac0b3b0b96c74663382200`|
+
+原配置SHA `28f1caf93cd39738a7da1e0da8d5f945f7372963bb9823a507f9157294272169`；专用配置SHA `d1ff39acbaffd03f3c626e9fa8c4a397ea902066e722fd305539cb298de7ab34`。完整diff（只有一处Base URL替换）：
+
+```diff
+--- W/gbs_llvm.conf
++++ E/gbs-build.conf
+@@ -6,7 +6,7 @@
+ repos = repo.base-standard, repo.unified-standard
+ 
+ [repo.base-standard]
+-url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261001.092726/repos/standard/packages/
++url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261010.120615/repos/standard/packages/
+ 
+ [repo.unified-standard]
+ url=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260814.092727/repos/standard/packages/
+```
+
+仓库原始元数据、完整命令、宏和结果见E6/repository-preflight。此处是仓库预检，尚非GBS完整依赖解析或CMake验收。
+
+### 7.3 环境包版本对照（参考，不作门禁）
+
+Rnew为§1历史x86根；只读`rpm --root Rnew --dbpath /var/lib/rpm -qa`，全部列表E6/rnew-rpm-qa.tsv。首次未显式dbpath的宿主rpm查询尝试了/home/linhao/.rpmdb并失败；只读诊断后指定Tizen实际/var/lib/rpm成功。无构建重试、无根内容修改。新版本取Base primary，不能混称尚未创建的新根实际安装版本。版本格式version-release.arch，epoch均0。
+
+|包|Rnew已装|新Base提供|
+|---|---|---|
+|bash|3.2.57-1.8.x86_64|3.2.57-1.4.x86_64|
+|binutils|2.43-1.9.x86_64|2.43-1.6.x86_64|
+|binutils-devel|2.43-1.9.x86_64|2.43-1.6.x86_64|
+|build|20120927-1.1.noarch|20120927-1.1.noarch|
+|clang|22.1.8-1.6.x86_64|22.1.8-1.6.x86_64|
+|cmake|3.31.2-1.2.x86_64|3.31.2-1.6.x86_64|
+|coreutils|6.9-14.2.x86_64|6.9-14.1.x86_64|
+|elfutils|0.189-1.10.x86_64|0.189-1.6.x86_64|
+|gcc|14.2.0-1.10.x86_64|14.2.0-1.6.x86_64|
+|gcc-c++|14.2.0-1.10.x86_64|14.2.0-1.6.x86_64|
+|glibc|2.40-1.10.x86_64|2.40-1.7.x86_64|
+|glibc-devel|2.40-1.10.x86_64|2.40-1.7.x86_64|
+|libgcc|14.2.0-1.10.x86_64|14.2.0-1.6.x86_64|
+|libllvm|22.1.8-1.6.x86_64|22.1.8-1.6.x86_64|
+|libstdc++|14.2.0-1.10.x86_64|14.2.0-1.6.x86_64|
+|llvm|22.1.8-1.6.x86_64|22.1.8-1.6.x86_64|
+|ninja|1.13.1-1.9.x86_64|1.13.1-1.5.x86_64|
+|patchelf|0.16.1-1.8.x86_64|0.16.1-1.5.x86_64|
+|python3|3.14.2-1.6.x86_64|3.14.2-1.6.x86_64|
+|python3-devel|3.14.2-1.6.x86_64|3.14.2-1.6.x86_64|
+|qemu-accel|未安装|0.4-1.1.x86_64|
+|rpm|4.14.1.1-1.4.x86_64|4.14.1.1-1.6.x86_64|
+|rpm-build|4.14.1.1-1.4.x86_64|4.14.1.1-1.6.x86_64|
+|util-linux|2.41.2-1.4.x86_64|2.41.2-1.6.x86_64|
+
+primary中没有名为lld的独立x86_64/noarch包；不得据此声称lld工具不存在，工具归属以新根实际文件/RPM查询确认。gbs由宿主运行，未作为根内同名包提供。Unified提供strace-6.6-0.x86_64，但Rnew未装；本轮不为记录工具改spec依赖。完整列表E6/package-comparison.json。
+
+### 7.4 磁盘与验收4边界
+
+19:15复查/var/tmp可用286,023,012,352B（266.379688GiB）；≥263.758319GiB且减219.798599GiB后≥30GiB，两项PASS。后续启动前再次核查、构建运行中持续监测30GiB底线；本轮未清理任何文件。
+
+旧docs/13/35/38基线来自原固定Base环境，glibc/binutils/gcc/rpm-build等发行号与本次新Base不同。它们不能直接充当“同环境未打补丁”基线；验收4按用户新规则列待PM裁决，不自动把差异豁免为通过。具体同环境替代方案及预算待构建完成后的实测安装段给出；其余验收继续。

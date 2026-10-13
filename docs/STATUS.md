@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续五）STOP_BASE_REPOSITORY_404并收尾**：仅删除用户批准的B32/B64 lto.cache内容，9132+8726文件、释放19.513615GiB，目录/BUILD原件/GBS缓存保留。/var/tmp可用266.389824GiB、按预算剩余46.591225GiB，1.2倍准入与30GiB底线均PASS。后续标准仓库预检Base 20261001.092726 repomd HTTP404，Unified HTTP200；未换源/重试，GBS未启动，新x86根未创建。验收1–7/BOLT交接/ARM复验/bash/LLVM23未执行。两Source/Commands/比较器/补丁/配置未改。详见docs/49_x86_build_continuation.md；证据temp/release-x86-full-build-20261013。
+**当前任务（docs/49续六）环境预检PASS，准备完整构建**：Base按目录索引最新具体快照钉到20261010.120615，repomd HTTP200/SHA2a99108e；Unified不变且HTTP200。只在E6建立构建专用配置，W配置未改。/var/tmp两项磁盘准入PASS；尚未启动GBS、未产生新RPM/交接。环境与旧基线版本不同，验收4待PM裁决不阻塞其余项目。详见docs/49_x86_build_continuation.md §7。
+
+**历史任务（docs/49续五）STOP_BASE_REPOSITORY_404并收尾**：仅删除用户批准的B32/B64 lto.cache内容，9132+8726文件、释放19.513615GiB，目录/BUILD原件/GBS缓存保留。/var/tmp可用266.389824GiB、按预算剩余46.591225GiB，1.2倍准入与30GiB底线均PASS。后续标准仓库预检Base 20261001.092726 repomd HTTP404，Unified HTTP200；未换源/重试，GBS未启动，新x86根未创建。验收1–7/BOLT交接/ARM复验/bash/LLVM23未执行。两Source/Commands/比较器/补丁/配置未改。详见docs/49_x86_build_continuation.md；证据temp/release-x86-full-build-20261013。
 
 **历史任务（docs/49续四）STOP_DISK_ADMISSION；补充复查SKIP_FULL_BUILD_DISK_FLOOR**：独立辅助16测试PASS；60/60参数PASS（仅差-g/-gdwarf-4），53对相同、7对20函数全部经(b)归因PASS。两Source/Commands/十项比较器不变；两条x86路径各225档/3864有序成员/完整索引/3853flags与docs/35相同。PS3/PS2候选已重生成且顺序apply/tree PASS。历史无清理空间预算×1.2=263.758319GiB；/home73.925907、/var/tmp246.889961均不足，完整构建0次。验收1–7、ARM全量/根内/64MiB、bash清单、LLVM23未执行，无BOLT新树交接；项目锁/进程/采样器/挂载回收。详见docs/49_release_attribution.md及temp/release-attribution-20261013。
 
@@ -53,7 +55,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：发布夹具认证、两条x86全量回归和PS3/PS2候选apply/tree均PASS；续五授权清理后磁盘准入PASS，新x86完整构建改因Base仓库404停止。候选仍待完整RPM验收，未认证构建不得发货。发布模式完整构建仍挂账，没有BOLT新树交接。
+当前阶段：发布夹具认证、两条x86全量回归和PS3/PS2候选apply/tree均PASS；续六新Base仓库与磁盘准入PASS，准备完整构建。候选仍待完整RPM验收，未认证构建不得发货。发布模式完整构建仍挂账，没有BOLT新树交接。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -641,3 +643,9 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 - 完整构建待满足磁盘准入后由PM安排；18GiB/swap0等资源规则未更改，不清理、不重试。263.758319GiB是历史文件系统高水位加回缓存回收后的1.2倍预算，非独立根精确du峰值；详见新报告§7.1。若另定义更精确口径，需要单独证据与裁决，不能擅自缩减。
 - **BOLT交接NOT READY**：本轮没有新构建根/build目录、ThinLTO缓存目录、构建完成时间或经RPM验收的配置指纹；不提供旧树冒充新树。补丁候选身份只用于评审。未进入或修改BOLT工作树/分支/证据。
 - 后续顺序仍为新x86完整构建/验收1–7→冻结交接→两ARM全量/根内小试/64MiB负例→bash依赖清单与LLVM23。发布模式完整构建独立挂账，因未来Tizen-Base实际使用发布路径而提高优先级。
+
+### 2026-10-13 续六事前裁决
+
+用户批准仅构建专用配置改用Base目录最新具体快照（本次20261010.120615），Unified不变；W/gbs_llvm.conf不改，环境失败不再换源。旧快照基线不可比时验收4待PM裁决，不阻塞其余验收/BOLT交接；全构建和重任务仍按docs/49 §1与1.2倍/30GiB双门槛。证据docs/49_x86_build_continuation.md §7、E6/snapshot-selection.json。
+
+进度：2026-10-13｜本提交｜docs/49_x86_build_continuation.md §7｜新具体Base/Unified仓库和磁盘预检PASS，完整构建尚未启动。
