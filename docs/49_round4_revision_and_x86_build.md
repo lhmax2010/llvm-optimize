@@ -1,7 +1,7 @@
 # 49 归档修复第四轮修订与 x86 完整构建
 
 日期：2026-10-13。开场基准 `89ad784b10fb033aff4820dd9bb94d9e2fbe1f3d`。
-**本轮状态：IN_PROGRESS_RELEASE_DEBUG_INDEPENDENCE。以8f184dec为基准的完整性核查PASS；按PM新判据从第二步第2项继续。下方§0–§8保留上一轮停止历史，新结果从§9起。**
+**本轮最终状态：STOP_DEBUG_INDEPENDENCE。新判据下x86第1–2项PASS，第3项ChangeNamespace.cpp因debug产物多一个指向非调试节.rodata.str1.1的SECTION符号而FAIL；该项SHF_ALLOC及重定位相同。按规则停止，未继续两ARM、全量回归、新补丁或完整构建。原§0–§8停止记录保留为历史，本轮续接见§9–§13。**
 
 历史状态（8f184dec）：**STOP_RELEASE_STRUCTURE_MISMATCH：第零步与第一步 PASS；第二步的三架构静态分类全部 PASS，但 x86 发布模式实物对照在第2个 TU 出现真实结构差异，按用户规则停止。ARM 实物夹具、全量回归、补丁再生成与完整构建均未执行。第九步停止材料及升级手册已完成；没有重试或失败后改 Source。**
 
@@ -205,3 +205,178 @@ Rnew=`W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`�
 本轮事前冻结判据（用户指令）：每架构20源，debug原命令和精确sed后的发布命令均保留ThinLTO，各自产出bitcode后交同一新Source转换。逐项要求SHF_ALLOC节名称/标志/大小/内容相同、作用于这些节的重定位偏移/类型/符号名/addend相同，以及排除FILE和调试节的SECTION符号后，符号名称/类型/绑定/可见性/所在节名/值/大小相同；发布对象不得含.debug。任何差异停止。
 
 直接非LTO结构比较只记录，不作门禁；统一标注“预期差异：转换对已做链接前优化的 bitcode 再次完整优化”。原第四步第3项的跨子系统直接编译比较亦同。x86严格沿用§4.2的20源选择，debug路新编；两ARM按相同选样规则。资源、锁、退出回收以及后续步骤顺序沿用§1和用户原任务，未授权新判据以外的放行。
+
+## 10. 新判据实物执行方法与辅助检查
+
+Source无改动，生产c43523c0、ARM候选1bac8db6，完整SHA见§13。x86使用§4.2同一20源，逐个重核源SHA；旧G中20份发布bitcode按旧转换before.json成员SHA核对后复制到新目录，未重新生成发布输入。旧G中的直接非LTO对象只读复制用于诊断，路径/本次SHA登记于D/physical-x86_64/reused-inputs.json。debug路使用保存的original_argv，保留所有调试和ThinLTO选项，新编20次；只把-o/-MT/-MF指向独立目录，并设置CLANG_NO_DEFAULT_CONFIG=1，避免重复注入已经记录的默认参数。
+
+新根内产物G2=`Rnew/home/abuild/review49-independence-x86_64`。完整命令、版本与逐次wait4数据：G2/generation.json、identity.json；驱动D/release_physical.py；/proc挂载前/中/后记录在D/physical-x86_64/mount-*.txt。实验结束已卸载，没有改B中的原对象、spec、配置或BOLT目录。
+
+debug和发布各按序以00.o–19.o作为成员名重新组成fixture.a，再用当前生产Source、B/bin三工具各转换一次，jobs4、单命令4GiB AS。两路各20个bitcode全部转成ELF；成员身份/次序及完整索引各2849项通过；强符号缺失0，两路允许缺失W均41。debug输出20成员有调试节，发布输出0成员有调试节。归档封装成员名与旧实验不同，整档SHA不可与旧release-fixture.a直接当不变性判据。（D/physical-summary.json、physical-x86_64/{debug,release}-conversion/summary.json、archive-inspections.json。）
+
+| 路线 | bitcode归档字节 | 转换后归档字节 | 转换wall（秒） | after SHA256 |
+|---|---:|---:|---:|---|
+| debug | 43446384 | 56223576 | 36.806 | `e92f28b63515e1c43559784af3f7bd20600ab6ad2c84b1a0d91b46e2cbbc0ca3` |
+| release | 5587040 | 6483328 | 27.737 | `7efe646e21d97a0b5b0e54db26acbf2ecc94076015ba7fa4aa15b1f8ae1ec4b5` |
+
+新编debug路20命令均exit0，wall相加76.536s，单命令最高RSS 794,440KiB。该相加值不等于阶段wall，也不作性能结论。（G2/generation.json。）
+
+### 10.1 比较器边界与一次辅助夹具修正
+
+新增[只读ELF比较器](../tools/check_release_debug_independence.py)与[测试](../tools/test_release_debug_independence.py)。比较使用实际payload字节；JSON仅以SHA表示内容。NOBITS比较语义类型和大小，无文件payload。用节名及同名出现序号识别节；保留符号/重定位顺序，不把不同节号或字符串表偏移误当差异。只排除FILE和调试节的SECTION符号；绝不排除指向普通.rodata的SECTION符号。RELA直接比较addend；ARM REL无独立addend字段，记录implicit并由整个目标节字节相等保证编码的addend相同。本轮仅x86实际进入门禁，ARM REL支持仅经辅助正负例，不冒充ARM实物认证。
+
+首次辅助测试12项中10PASS、2FAIL：测试误将GNU as有/无-g产物视为正例，但前者多一个.text SECTION符号，后者没有。这是夹具前提错误，检查器按既定符号判据拒绝正确。独立诊断保存两个ELF与解析差异，alloc/relocation均相同，唯普通.text SECTION符号不同。（D/helper-fixture-diagnosis.json、helper-original-*.o。）
+
+只在夹具汇编末尾加`.long .text`，使双方均真实引用.text并包含该SECTION符号；比较器、Source和门禁未改。修正diff为D/helper-test-fix.diff，完整改动：
+
+```diff
+- '.size test_entry,.-test_entry\n.data\n.long 17\n'
++ '.size test_entry,.-test_entry\n.data\n.long 17\n.long .text\n'
+```
+
+使用辅助脚本缺陷条款的一次修正重跑，12/12 PASS；覆盖ELF32 REL/ELF64 RELA、调试符号排除、每类alloc/relocation/symbol字段差异、发布对象含debug拒绝、截断ELF拒绝。特别保留“额外非调试SECTION符号拒绝”的负例。错误正例的诊断复制没有运行产品Source，真实20源夹具没有换样或重试。（D/comparison-helper-tests{,-retry}-scope/build.log。）
+
+## 11. 调试无关性门禁与直接编译诊断
+
+### 11.1 逐文件状态
+
+20源的两路转换均已批量完成。逐文件门禁在第3项首次FAIL时立即停止，后17项不再判定；两ARM未启动、没有选择或转换其20源，不能记为PASS。（D/physical-x86_64/result.json、comparisons.json。）
+
+| 序号（从0） | 源文件（相对llvm-22.1.8） | SHF_ALLOC | 重定位 | 符号表 | 发布无debug | 判定 |
+|---|---|---|---|---|---|---|
+| 0 | `build/tools/clang/tools/extra/clangd/CompletionModel.cpp` | 一致 | 一致 | 一致 | 是 | PASS |
+| 1 | `clang-tools-extra/clang-apply-replacements/lib/Tooling/ApplyReplacements.cpp` | 一致 | 一致 | 一致 | 是 | PASS |
+| 2 | `clang-tools-extra/clang-change-namespace/ChangeNamespace.cpp` | 一致 | 一致 | 不一致 | 是 | FAIL |
+| 3 | `clang-tools-extra/clang-doc/BitcodeReader.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 4 | `clang-tools-extra/clang-doc/BitcodeWriter.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 5 | `clang-tools-extra/clang-doc/ClangDoc.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 6 | `clang-tools-extra/clang-doc/Generators.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 7 | `clang-tools-extra/clang-doc/HTMLGenerator.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 8 | `clang-tools-extra/clang-doc/JSONGenerator.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 9 | `clang-tools-extra/clang-doc/MDGenerator.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 10 | `clang-tools-extra/clang-doc/Mapper.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 11 | `clang-tools-extra/clang-doc/Representation.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 12 | `clang-tools-extra/clang-doc/Serialize.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 13 | `clang-tools-extra/clang-doc/YAMLGenerator.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 14 | `clang-tools-extra/clang-doc/support/File.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 15 | `clang-tools-extra/clang-include-fixer/FuzzySymbolIndex.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 16 | `clang-tools-extra/clang-include-fixer/InMemorySymbolIndex.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 17 | `clang-tools-extra/clang-include-fixer/IncludeFixer.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 18 | `clang-tools-extra/clang-include-fixer/IncludeFixerContext.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+| 19 | `clang-tools-extra/clang-include-fixer/SymbolIndexManager.cpp` | 未判定 | 未判定 | 未判定 | 是（转换检查） | NOT RUN（已停止） |
+
+| 架构 | 实物门禁总体结果 |
+|---|---|
+| x86_64 | 2 PASS、1 FAIL、17未判定，整体STOP |
+| armv7l | NOT RUN，依赖x86门禁通过 |
+| aarch64 | NOT RUN，依赖前置门禁通过 |
+
+### 11.2 第3项差异原文与只读复核
+
+`clang-tools-extra/clang-change-namespace/ChangeNamespace.cpp`：614个SHF_ALLOC节，共153529字节，名称/flags/size/payload完全相同；3102条相关重定位逐条相同；release无debug。按允许的过滤规则后，debug符号1182条，release1181条，唯一多项为：name空串、type=3/SECTION、binding=0/LOCAL、visibility=0/DEFAULT、section=.rodata.str1.1、value=0、size=0。没有release独有符号。（D/failure-readonly-proof.json。）
+
+独立GNU readelf 2.42原始行（D/physical-x86_64/02-comparison）：
+
+```text
+# debug-symbols.txt:438；release-symbols.txt没有对应行
+   434: 0000000000000000     0 SECTION LOCAL  DEFAULT 1109 .rodata.str1.1
+# debug-sections.txt:1114 与 release-sections.txt:1114 相同
+  [1109] .rodata.str1.1    PROGBITS        0000000000000000 01e8a8 0002da 01 AMS  0   0  1
+```
+
+完整统一差异见[49_debug_independence_failure.diff](49_debug_independence_failure.diff)，原始JSON diff如下：
+
+```diff
+--- debug/symbols
++++ release/symbols
+@@ -5190,18 +5190,6 @@
+     "visibility": 0,
+     "section": [
+       ".text._ZN5clang6format11FormatStyle15RawStringFormatD2Ev",
+-      0
+-    ],
+-    "value": 0,
+-    "size": 0
+-  },
+-  {
+-    "name": "",
+-    "type": 3,
+-    "binding": 0,
+-    "visibility": 0,
+-    "section": [
+-      ".rodata.str1.1",
+       0
+     ],
+     "value": 0,
+
+```
+
+`.rodata.str1.1`有ALLOC标志，不是获准排除的调试节；故按用户新符号判据仍为FAIL。**不把可加载内容相同解释为整项通过，不排除该符号，不修改Source，不再次编译/转换。** 第2项ApplyReplacements在新门禁中PASS；上一轮直接编译的PLT32/局部字符串差异不再承担门禁职责。（D/physical-x86_64/result.json与02-comparison原文。）
+
+### 11.3 直接非LTO对照：只记录
+
+以下20项诊断在门禁检查之前一次性汇总，方法与旧§4相同；不用于PASS/FAIL。节数含非ALLOC元数据节；relocation为类型多重集合，定义符号为名称/类型/绑定/可见性多重集合。“直有/转有”表示多重集合相减条数，并非代码行数或不同类型数。所有差异标注：**预期差异：转换对已做链接前优化的 bitcode 再次完整优化**；不是这些条目的逐项根因新实测。（D/physical-x86_64/direct-diagnostic.json及NN-comparison的readelf输出。）
+
+| 序号（文件对应§11.1） | 直接/转换节数 | 节名直有/转有 | 重定位直有/转有 | 定义符号直有/转有 |
+|---|---:|---:|---:|---:|
+| 0 | 616/616 | 0/0 | 0/0 | 0/0 |
+| 1 | 353/353 | 0/0 | 3/0 | 1/0 |
+| 2 | 1702/1702 | 0/0 | 2/0 | 0/0 |
+| 3 | 2200/2024 | 176/0 | 270/0 | 71/0 |
+| 4 | 255/255 | 0/0 | 0/0 | 0/0 |
+| 5 | 80/80 | 0/0 | 0/0 | 0/0 |
+| 6 | 251/251 | 0/0 | 0/0 | 0/0 |
+| 7 | 116/113 | 3/0 | 6/0 | 3/0 |
+| 8 | 252/249 | 3/0 | 5/0 | 4/1 |
+| 9 | 168/165 | 5/2 | 4/0 | 3/1 |
+| 10 | 1668/1668 | 0/0 | 0/0 | 0/0 |
+| 11 | 708/708 | 2/2 | 0/2 | 0/0 |
+| 12 | 504/504 | 0/0 | 0/0 | 0/0 |
+| 13 | 533/527 | 6/0 | 17/0 | 3/0 |
+| 14 | 16/16 | 0/0 | 0/0 | 0/0 |
+| 15 | 71/71 | 0/0 | 0/0 | 0/0 |
+| 16 | 61/61 | 0/0 | 0/0 | 0/0 |
+| 17 | 237/237 | 0/0 | 1/0 | 0/0 |
+| 18 | 34/34 | 0/0 | 0/1 | 0/0 |
+| 19 | 62/62 | 0/0 | 0/0 | 0/0 |
+
+10项在这组直接编译诊断指标上相同，10项有差异；无一因此拒绝新门禁。对比第1项PLT32仍记录直接681、转换678；新debug/发布转换门禁中它已通过。
+
+## 12. 资源、回收与未执行步骤
+
+全部scope沿用18GiB cap、swap0、nice15/ionice3及宿主2GiB保护。阶段实际数据如下；单位GiB=2^30B，辅助测试wall含scope管理，非测试内核执行时间。（D/resources.json与各scope原始样本。）
+
+| 阶段 | 准入线GiB | 实际入场GiB | wall秒 | scope peak GiB | 宿主最低可用GiB | exit |
+|---|---:|---:|---:|---:|---:|---:|
+| comparison-helper-tests-retry-scope | 6 | 12.987717 | 2.166 | 0.017517 | 12.987717 | 0 |
+| comparison-helper-tests-scope | 6 | 13.457012 | 2.117 | 0.018833 | 13.457066 | 1 |
+| integrity-input-scope | 6 | 13.518318 | 126.962 | 0.900295 | 13.052597 | 0 |
+| integrity-scope | 6 | 13.143818 | 249.811 | 2.341866 | 12.251553 | 0 |
+| physical-x86_64-scope | 10 | 13.072792 | 151.169 | 1.166035 | 12.990803 | 1 |
+
+所有memory.events的max/oom/oom_kill均0；x86实物stage失败来自门禁返回1。共享锁14:35:27取得、14:37:58释放，无等待；两个项目锁14:40:19释放。14:40:35只读终检：任务进程0、挂载0、项目锁0，所有采样/日志线程已回收。（D/physical-x86_64-scope/heavy-lock-*.json、cleanup-final.json。）
+
+| 原任务后续步骤 | 本轮结果 |
+|---|---|
+| 第三步，两次x86 225档全量回归 | NOT RUN，不能引用旧回归作为本轮通过 |
+| PS3/PS2候选再生成、apply/tree | NOT RUN，patches仍docs/46旧候选 |
+| 第四步，磁盘1.2倍门禁/新x86完整构建 | NOT RUN；没有进入构建准入、没有清理 |
+| 完整构建验收1身份/依赖、2安装后处理次序、3归档/运行库、4非归档、5消费者、6幂等 | 全部NOT RUN |
+| 验收7直接编译比较 | 本轮20夹具的诊断已保存；完整构建产物的该项NOT RUN，判据已事前改为只记录 |
+| BOLT新树交接及最终提交说明 | 无新树/无交接，不得复用本轮为已认证构建结论 |
+| 第五步两ARM全量/根内小试/64MiB负例 | 全部NOT RUN |
+| 第六步bash依赖全集/LLVM23探测 | NOT RUN，按产品门禁失败停止，不启动新的实验 |
+| 第七步升级手册、第九步报告 | docs/48修正为调试无关性硬门禁、直接编译只诊断；docs/49保留旧停止并追加本轮结果 |
+
+Source的147项宿主、根内143PASS+3环境不适用+1既有AS发现沿用§3：它们是在相同Source SHA上先前执行的测试，本轮没有重跑。新增辅助比较器测试是12项，不混记为生产Source测试159项。发布模式完整构建、ARM打包与实际原生限制/负例、LLVM源码bash检查及LLVM23读取兼容性仍挂账。
+
+## 13. 冻结身份与交付
+
+| 文件 | SHA256 | 本轮变化 |
+|---|---|---|
+| tools/llvm_static_archives_source.py | `c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e` | 未改 |
+| tools/llvm_static_archives_arm_trial.py | `1bac8db608554b35d16482711bf0667f1fbee8d60c6fc52f0f448d240ffaa9e4` | 未改 |
+| patches/archive-index-fix/ps3/0001-packaging-fix-llvm-static-devel-with-ThinLTO.patch | `1293f6982c87cfbeefe91aa08e92a7d1b72a129f716417f8c8cee61693c463c6` | 未再生成 |
+| patches/llvm-strip/ps2/0001-packaging-use-llvm-strip-for-x86_64-archives.patch | `aab2cfd1ad3fb58bfe44cdbdda50bbe67d5343b29a6a6d598408d3bb96620e88` | 未再生成 |
+
+证据D/final-source-identity.json；补丁仍§6登记值。Commands、spec、已上传的两份补丁、W/llvm和gbs配置均未改；未运行完整构建、BOLT、性能校准、Chromium或Gerrit推送。比较器与辅助测试是新增可审阅工具，其余驱动/原始输出保存在D。完整性阶段提交`15556e7`已推送，本停止材料与STATUS同提交推送；最终提交号见仓库Git记录，避免文档自引用哈希循环。
