@@ -1,7 +1,7 @@
 # 49 归档修复第四轮修订与 x86 完整构建
 
 日期：2026-10-13。开场基准 `89ad784b10fb033aff4820dd9bb94d9e2fbe1f3d`。
-**本轮最终状态：STOP_ARM32_ALLOC_ORDER。25项比较器测试PASS，x86全部20对PASS；ARM32前2对PASS，第3个ChangeNamespace.cpp有36个SHF_ALLOC节顺序变化，按第1项硬门禁停止。其余17对未判定、AArch6420项及后续全量/构建NOT RUN。原§0–§13保留为历史，续二见§14–§19。**
+**续三进行中：最终十项判据比较器41测试PASS；旧§0–§19保持历史，续三完整记录见[§20](49_release_contract_final.md)。**
 
 历史状态（8f184dec）：**STOP_RELEASE_STRUCTURE_MISMATCH：第零步与第一步 PASS；第二步的三架构静态分类全部 PASS，但 x86 发布模式实物对照在第2个 TU 出现真实结构差异，按用户规则停止。ARM 实物夹具、全量回归、补丁再生成与完整构建均未执行。第九步停止材料及升级手册已完成；没有重试或失败后改 Source。**
 
@@ -506,3 +506,7 @@ Source/旧候选的完整SHA仍见§13，本轮F/final-source-identity.json逐�
 | `tools/test_release_debug_independence.py` | `5ea59c760fb6cc41752f4628f458ddaa264964f4749bb9e0c391bc0e86e2dd09` |
 
 完整性提交`b0fd1a7`、比较器与25测试`4307873`、x86全部20对PASS`10fb5c4`均已推送GitHub；当前停止报告、完整差异与STATUS同提交推送。最终钉提交号链接随回复给出，避免文档自引用哈希循环。原始日志/对象保留在F和G，没有清理磁盘。
+
+## 20. 续三：最终判据、重判与后续执行
+
+详见[续三完整记录](49_release_contract_final.md)。旧停止记录保留，不能按新规则回填旧判定。

@@ -3,6 +3,7 @@
 import copy
 from pathlib import Path
 import subprocess
+import struct
 import tempfile
 import unittest
 import check_release_debug_independence as gate
@@ -72,7 +73,8 @@ class ReleaseGate(unittest.TestCase):
                 self.rejected(lambda b:b['alloc'][0].update({field:value}), 'alloc')
 
     def test_alloc_order(self):
-        self.rejected(lambda b:b['alloc'].reverse(), 'alloc')
+        a,b=copy.deepcopy(self.pairs[64]);b['alloc'].reverse()
+        self.assertEqual(gate.compare(a,b)['status'],'PASS')
 
     def test_relocation_fields(self):
         for field, value in [('offset',3),('type',2),('symbol','other'),('addend',-8)]:
@@ -128,10 +130,10 @@ class ReleaseGate(unittest.TestCase):
     def test_section_relocation_target_canonical_name(self):
         for bits in (32,64):
             a=self.assemble(bits=bits)
-            r=next(r for r in a['relocations'] if r['target'][0]=='.data')
-            self.assertEqual(r['symbol'],'.text')
+            r=next(r for r in a['relocations'] if r['target'][0][0]=='.data')
+            self.assertEqual(r['symbol'],['SECTION',['.text',1,'',None]])
             b=copy.deepcopy(a)
-            next(r for r in b['relocations'] if r['target'][0]=='.data')['symbol']='.bss'
+            next(r for r in b['relocations'] if r['target'][0][0]=='.data')['symbol']='.bss'
             self.assertFalse(gate.compare(a,b)['checks']['relocations'])
 
     def group_pair(self):
@@ -144,7 +146,7 @@ class ReleaseGate(unittest.TestCase):
 
     def test_comdat_debug_only_member_difference_passes(self):
         a,b=self.group_pair()
-        self.assertEqual(a['groups'],[dict(signature='group_signature',flags=1,members=['.text.group'])])
+        self.assertEqual(a['groups'],[dict(signature='group_signature',flags=1,members=[['.text.group',1,'group_signature',None]])])
         self.assertEqual(gate.compare(a,b)['status'],'PASS')
 
     def test_comdat_member_difference_fails(self):
@@ -181,6 +183,123 @@ class ReleaseGate(unittest.TestCase):
     def test_truncated_elf_rejected(self):
         with self.assertRaises(ValueError): gate.parse(b'\x7fELF')
 
+
+
+# A small ELF writer provides fixed, independently specified section identities;
+# unlike GNU as it can represent duplicate section names in any desired order.
+def fixture(secs, syms=(), relocs=(), groups=(), addrsig=None, flags=0):
+    secs=copy.deepcopy(secs);syms=copy.deepcopy(list(syms))
+    rows=[dict(id='null',name='',type=0,flags=0,data=b'')]+secs
+    for i,(target,entries) in enumerate(relocs):
+        rows.append(dict(id='rel'+str(i),name='.rela'+next(s['name'] for s in secs if s['id']==target),type=4,flags=0,
+                         data=b'',target=target,entries=entries,alignment=8,entsize=24))
+    for i,(signature,members) in enumerate(groups):
+        rows.append(dict(id='group'+str(i),name='.group',type=17,flags=0,data=b'',signature=signature,members=members,alignment=4,entsize=4))
+    if addrsig is not None:rows.append(dict(id='addrsig',name='.llvm_addrsig',type=0x6fff4c03,flags=0,data=b'',entsize=0))
+    rows+= [dict(id='symtab',name='.symtab',type=2,flags=0,data=b'',alignment=8,entsize=24),
+            dict(id='strtab',name='.strtab',type=3,flags=0,data=b''),dict(id='shstrtab',name='.shstrtab',type=3,flags=0,data=b'')]
+    ids={r['id']:i for i,r in enumerate(rows)};symbolids={s['id']:i+1 for i,s in enumerate(syms)}
+    names=bytearray(b'\0');strings=bytearray(b'\0');symdata=bytearray(b'\0'*24)
+    for s in syms:
+        offset=len(strings);strings.extend(s.get('name',s['id']).encode()+b'\0')
+        idx=ids[s['section']] if s.get('section') else 0
+        symdata.extend(struct.pack('<IBBHQQ',offset,s.get('binding',1)*16+s.get('type',0),s.get('visibility',0),idx,s.get('value',0),s.get('size',0)))
+    def uleb(n):
+        r=bytearray()
+        while n>=128:r.append((n&127)|128);n>>=7
+        r.append(n);return r
+    for r in rows:
+        r['nameoff']=len(names);names.extend(r['name'].encode()+b'\0')
+        if 'entries' in r:
+            r['link']=ids['symtab'];r['info']=ids[r['target']]
+            r['data']=b''.join(struct.pack('<QQq',off,(symbolids[sym]<<32)|kind,add) for off,kind,sym,add in r['entries'])
+        if 'members' in r:
+            r['link']=ids['symtab'];r['info']=symbolids[r['signature']]
+            r['data']=struct.pack('<'+'I'*(1+len(r['members'])),1,*[ids[x] for x in r['members']])
+        if r['id']=='symtab':r['data']=bytes(symdata);r['link']=ids['strtab'];r['info']=1
+        if r['id']=='strtab':r['data']=bytes(strings)
+        if r['id']=='addrsig':r['data']=b''.join(uleb(symbolids[x]) for x in addrsig);r['link']=ids['symtab']
+        if r.get('link_order'):r['link']=ids[r['link_order']]
+    rows[-1]['data']=bytes(names);blob=bytearray(b'\0'*64);headers=[]
+    for r in rows:
+        off=len(blob);blob.extend(r['data'])
+        headers.append(struct.pack('<IIQQQQIIQQ',r['nameoff'],r.get('type',1),r.get('flags',2),0,off,len(r['data']),r.get('link',0),r.get('info',0),r.get('alignment',1),r.get('entsize',0)))
+    shoff=len(blob);blob.extend(b''.join(headers));blob[:16]=b'\x7fELF'+bytes([2,1,1])+b'\0'*9
+    struct.pack_into('<HHIQQQIHHHHHH',blob,16,1,62,1,0,0,shoff,flags,64,0,0,64,len(rows),ids['shstrtab'])
+    return gate.parse(bytes(blob))
+
+
+def section(ident,name=None,data=b'abcd',flags=2,**kwargs):
+    return dict(id=ident,name=name or '.'+ident,type=1,flags=flags,data=data,**kwargs)
+
+
+class FinalContractFixtures(unittest.TestCase):
+    def status(self,a,b,want,check=None):
+        result=gate.compare(a,b);self.assertEqual(result['status'],want,result['differences'])
+        if check:self.assertFalse(result['checks'][check])
+
+    def test_comdat_section_reorder_pass(self):
+        secs=[section('a',flags=0x202),section('b',flags=0x202)]
+        syms=[dict(id='sa'),dict(id='sb')];groups=[('sa',['a']),('sb',['b'])]
+        self.status(fixture(secs,syms,groups=groups),fixture(secs[::-1],syms,groups=groups),'PASS')
+
+    def test_ordinary_section_reorder_pass(self):
+        secs=[section('a'),section('b')];self.status(fixture(secs),fixture(secs[::-1]),'PASS')
+
+    def ordered(self,name):
+        secs=[section('a',name,flags=0x202),section('b',name,flags=0x202)]
+        syms=[dict(id='sa'),dict(id='sb')];groups=[('sa',['a']),('sb',['b'])]
+        self.status(fixture(secs,syms,groups=groups),fixture(secs[::-1],syms,groups=groups),'FAIL','ordered_sections')
+
+    def test_init_array_reorder_fail(self):self.ordered('.init_array')
+    def test_c_identifier_section_reorder_fail(self):self.ordered('runtime_registry')
+
+    def test_duplicate_identity_reorder_fail(self):
+        secs=[section('a','.duplicate',b'A'),section('b','.duplicate',b'B')]
+        self.status(fixture(secs),fixture(secs[::-1]),'FAIL','alloc')
+
+    def test_cross_target_relocation_reorder_pass(self):
+        secs=[section('a'),section('b')];syms=[dict(id='external')]
+        rels=[('a',[(0,1,'external',0)]),('b',[(1,2,'external',1)])]
+        self.status(fixture(secs,syms,rels),fixture(secs[::-1],syms,rels[::-1]),'PASS')
+
+    def test_same_target_relocation_reorder_fail(self):
+        secs=[section('a')];syms=[dict(id='external')];entries=[(0,1,'external',0),(1,2,'external',1)]
+        self.status(fixture(secs,syms,[('a',entries)]),fixture(secs,syms,[('a',entries[::-1])]),'FAIL','relocations')
+
+    def test_link_order_target_fail(self):
+        a=[section('a'),section('b'),section('order',flags=0x82,link_order='a')];b=copy.deepcopy(a);b[-1]['link_order']='b'
+        self.status(fixture(a),fixture(b),'FAIL','alloc')
+
+    def test_e_flags_fail(self):self.status(fixture([section('a')]),fixture([section('a')],flags=0x5000000),'FAIL','header')
+
+    def test_debug_local_mapping_pass(self):
+        secs=[section('a'),section('d','.debug_info',flags=0)]
+        self.status(fixture(secs,[dict(id='map',name='$d',binding=0,section='d')]),fixture(secs[:1]),'PASS')
+
+    def test_alloc_mapping_symbol_fail(self):
+        secs=[section('a')];a=[dict(id='map',name='$d',binding=0,section='a')];b=[{**a[0],'name':'$t'}]
+        self.status(fixture(secs,a),fixture(secs,b),'FAIL','symbols')
+
+    def test_debug_only_undefined_pass(self):
+        secs=[section('a'),section('d','.debug_info',flags=0)]
+        self.status(fixture(secs,[dict(id='debugref')],[('d',[(0,1,'debugref',0)])],addrsig=['debugref']),fixture(secs[:1],addrsig=[]),'PASS')
+
+    def test_alloc_undefined_difference_fail(self):
+        secs=[section('a')];a=fixture(secs,[dict(id='x')],[('a',[(0,1,'x',0)])]);b=fixture(secs,[dict(id='y')],[('a',[(0,1,'y',0)])])
+        self.status(a,b,'FAIL','relocations')
+
+    def test_addrsig_set_fail(self):
+        secs=[section('a')];syms=[dict(id='x'),dict(id='y')]
+        self.status(fixture(secs,syms,addrsig=['x']),fixture(secs,syms,addrsig=['y']),'FAIL','addrsig')
+
+    def test_addrsig_symbol_index_only_pass(self):
+        secs=[section('a')];syms=[dict(id='x'),dict(id='y')]
+        self.status(fixture(secs,syms,addrsig=['x','y']),fixture(secs,syms[::-1],addrsig=['y','x']),'PASS')
+
+    def test_local_relocation_value_fail(self):
+        secs=[section('a')];a=[dict(id='local',name='.Lhere',binding=0,section='a',value=0)];b=[{**a[0],'value':1}]
+        self.status(fixture(secs,a,[('a',[(0,1,'local',0)])]),fixture(secs,b,[('a',[(0,1,'local',0)])]),'FAIL','relocations')
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

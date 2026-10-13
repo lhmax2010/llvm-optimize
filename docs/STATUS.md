@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续二）STOP_ARM32_ALLOC_ORDER并收尾**：800798e完整性135条归因/669 SHA PASS；比较器25测试PASS；x8620对全部PASS。ARM32 60次编译、两路各20成员转换/完整索引PASS；前2对调试无关性PASS，第3个ChangeNamespace.cpp的36个可加载节顺序变化FAIL。按节名内容、按目标节4066重定位、1865符号/780组相同不豁免顺序；其余17对未判定，AArch64及后续全量回归/新补丁/完整构建/交接NOT RUN。Source不改。辅助比较器跨目标重定位展平额外约束已如实登记，未以它认定语义差异；产品门禁失败后不修不重试。项目锁/进程/采样器/proc全部回收；证据temp/release-contract-v2-20261013。
+**当前任务（docs/49续三）进行中**：最终十项比较器41/41夹具PASS（原25+新增16），两份Source不变；40对对象重判待执行。完整记录见docs/49_release_contract_final.md §20–§22；证据temp/release-contract-final-20261013。
+
+**历史任务（docs/49续二）STOP_ARM32_ALLOC_ORDER并收尾**：800798e完整性135条归因/669 SHA PASS；比较器25测试PASS；x8620对全部PASS。ARM32 60次编译、两路各20成员转换/完整索引PASS；前2对调试无关性PASS，第3个ChangeNamespace.cpp的36个可加载节顺序变化FAIL。按节名内容、按目标节4066重定位、1865符号/780组相同不豁免顺序；其余17对未判定，AArch64及后续全量回归/新补丁/完整构建/交接NOT RUN。Source不改。辅助比较器跨目标重定位展平额外约束已如实登记，未以它认定语义差异；产品门禁失败后不修不重试。项目锁/进程/采样器/proc全部回收；证据temp/release-contract-v2-20261013。
 
 **历史任务（docs/49续）STOP_DEBUG_INDEPENDENCE并收尾**：基准8f184dec完整性PASS（290条变化归因、669 SHA）；新判据下x86第1–2源PASS，第3源ChangeNamespace.cpp的614可加载节/3102相关重定位相同，但debug多一个指向.rodata.str1.1的SECTION符号，按符号逐项判据FAIL并停止。两路各20成员转换与完整索引PASS；余17源未判定、两ARM未启动；直接非LTO20项仅诊断。Source仍c43523c0/1bac8db6未改；新增比较器12测试PASS（修一次错误正例，未改门禁）。后续全量回归、补丁再生成、完整构建/验收/交接均NOT RUN；锁/采样器/proc已回收。docs/48与49已更新，证据temp/release-debug-independence-20261013/stop.json、cleanup-final.json。
 
@@ -393,6 +395,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 - **续三固定输入复验闭合（硬证据）**：新Source e2c2ebfa的x86225档/3864成员/完整索引/3853 flags与docs/35完全相同；ARM32 210档/A64 212档与docs/40 §12逐档after SHA相同；5个ARM及3个x86 bitcode asm成员保留GLOBAL/UND；TLS105/106两链接器共享链接与dlopen PASS。证据docs/44 §22–§26、E4各result；旧消费者/strip按相同SHA授权沿用，未重跑。
 
 ## 4. 人工裁决前提
+
+- **2026-10-13 用户确认**：Quickbuild当前Tizen-Base-Toolchain定义`_toolchain`走debug分支；未来进入Tizen-Base不定义该宏走发布分支。调试无关性认证是未来交付前提；发布模式完整构建优先级提高，仍待PM安排。最终比较规则见docs/49_release_contract_final.md §20.1；旧停止判定保留。
 
 本轮docs/47裁决：轻量阶段6GiB准入、四次全量10GiB，18GiB/swap0与2GiB宿主保护；启动器替代AS显式放行，Commands不改；发布模式仅事实模拟不修策略；每个辅助步骤最多修正重跑一次，同一步第二次失败停止但仍交文档。本轮根内监测已耗尽这一次授权，不继续执行或生成候选补丁。依据为用户第三轮修订任务及docs/47 §0、§7.2。
 
