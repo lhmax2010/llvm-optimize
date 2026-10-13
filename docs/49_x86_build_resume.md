@@ -593,3 +593,21 @@ rpmbuild --define '_smp_mflags -j4' --define '_srcdefattr (-,root,root)' \
 在同一chroot中以abuild运行，专用GBS配置不变；根内spec未改。唯一调用标记resume-invocation.json以exclusive-create写入。scope为`llvm-baseline-74fc0eeb9a30488e9fdae3dcb67067be.scope`，18GiB/swap0、nice15/ionice3、6/6/2 CMake池配置仍在；实际执行`ninja -j 1`。CMake门禁PASS；30秒聚合与2秒宿主/磁盘保护、逐进程采样持续。额外2秒空间/可用内存原始读数在resume-host-disk-2s.jsonl。共享flock在本阶段持有。
 
 已将只读exec/exit追踪附着到本次rpmbuild，以记录后续转换与brp执行。构建结束前，本节仅为启动记录：不把现有中间产物或旧RPM标作验收PASS；续跑后8项对照、各阶段资源、打包清单与验收见后续章节。
+
+
+### 16.1 中途链接进度（不是完整构建结论）
+
+截至2026-10-13T23:36:04.865180+08:00，单次续跑仍在执行。Ninja已输出132/902完成行；clang-22于23:16:06链接成功，正在libclang-cpp链接。尚未开始%install/打包，无新RPM验收或BOLT交接。
+
+|链接目标|采样观察区间|观测VmHWM GiB（采样下界）|
+|---|---|---:|
+|`lib64/libomp.so`|22:43:09–22:43:13|0.104382|
+|`bin/bugpoint`|22:43:15–22:44:40|1.389946|
+|`lib64/libLTO.so.22.1`|22:44:42–22:54:58|2.352242|
+|`bin/llvm-ar`|22:55:00–22:56:00|0.517048|
+|`bin/clang-22`|22:56:18–23:16:06|10.268433|
+|`lib64/libclang-cpp.so.22.1`|23:16:50–23:36:04|3.966824|
+
+当前scope采样峰值19,327,352,832B；2秒记录宿主最低可用21,062,975,488B，/var/tmp最低可用251,333,292,032B。未触发宿主2GiB、磁盘30GiB保护；采样中OOM为0，最终计数待阶段结束。CPU时间持续增长，没有据日志暂时无完成行判死锁。若日志出现`Can't read /proc/cpuinfo`，原文保留；本轮没有为此改变chroot环境或重试，不能从耗时作性能推断。
+
+证据：E11/interim-link-progress.json及持续追加的resume-scope采样/日志。开始只读保存本次RPM生成的完整阶段脚本至generated-rpm-scripts/，以留存完整install-post展开；root-space-samples.jsonl从23:06后开始观察根占用，三个无读取权限目录明确保留stderr，属于下界。后续RPM解包计划在/home的新目录temp/toolchain-release-x86-20261013；届时依据实际RPM展开预算重新准入并监测30GiB底线，没有执行清理。

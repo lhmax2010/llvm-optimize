@@ -3,6 +3,8 @@
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
 **当前任务（docs/49续十一）续跑中**：8/8定向重建逐字节PASS（a9b6acc）；全量干跑894项全部落在允许902输出内，compdb不变。22:43:03内存22,770,294,784B通过13.344585GiB准入，唯一一次正常-ba --noprep已启动，只加mlgo_build_jobs=1，实际ninja-j1；18GiB/swap0与2秒宿主2GiB/磁盘30GiB保护继续。RPM与后续验收尚无结论、未BOLT交接；项目锁与共享重阶段锁持有。见docs/49_x86_build_resume.md §15–§16，证据temp/release-x86-full-build-20261013/round2-eight-output-proof。
 
+**续十一中途观察（23:35，非最终结论）**：Ninja132/902；clang-22于23:16:06链接成功，仍在串行链接后续工具。资源保护未触发，无新RPM/验收/交接；详见docs/49_x86_build_resume.md §16.1。
+
 **历史任务（docs/49续十）STOP_RECONFIGURE_PENDING_OUTPUTS，已收尾**：唯一一次原%build环境CMake重配成功，21,987条compdb与完整命令同字节，串行宏mlgo_build_jobs=1已验证。干跑894→902；新增7编译+1归档的8个输出均在原.ninja_log有完成记录，不属允许集合，按规则停止；rpmbuild调用0次、0新RPM、无BOLT交接。待链接历史L=11.344585GiB，参考可用23.085735GiB已足，停止不归因内存。CMake生成的新Cache/build.ninja保留，.ninja_log未改；Source/spec/配置/补丁不变。22:22:56两项目锁/共享锁、进程、scope/采样器和挂载已回收。详见[续十报告](49_x86_build_resume.md#8-续十新裁决输入与唯一配置预检)，证据temp/release-x86-full-build-20261013/round2-resume-serial。
 
 **历史任务（docs/49续九）STOP_RESUME_PREFLIGHT，已收尾**：续跑调用0次。根内同宏环境展开证明_smp_mflags=-j1与-j4的%build完全相同，均为`ninja -j6`，不满足本轮串行要求；控制该命令的是mlgo_build_jobs，未擅自另加覆盖。唯一干跑894项>805+6=811；其中89项与旧操作重合，均为LLDB头暂存，Cache/build.ninja/.ninja_log SHA未变，不能据此宣称大面积重配。docs/34历史最大单链接13.028732GiB、clang-22 10.654884GiB，均高于门禁实读MemAvailable11.025112减2=9.025112GiB。未编译/安装/打包、无新RPM、无BOLT交接，后续ARM/bash/LLVM23未执行。26项冻结身份与检查点核查一致；项目锁/进程/挂载回收，未取得共享重任务锁。见[续跑前核查报告](49_x86_build_resume.md)，证据temp/release-x86-full-build-20261013/round2-resume。
