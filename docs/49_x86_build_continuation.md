@@ -530,3 +530,5 @@ CMAKE_{C,CXX,ASM}_FLAGS_RELEASE=-O3 -DNDEBUG
 |/var/tmp/gbp_4zwc13b9|2607136768|
 
 同一采样点合计峰值3039793152B（约2.831GiB）；四目录导出结束后由GBS自行删除，本会话未增加清理。观察器已回收，原始export-temp-samples.jsonl、汇总export-temp-summary.json与回收记录保留。构建监测继续运行，验收1–7、BOLT交接及后续ARM步骤尚未完成。
+
+20:23进度检查：Ninja至少4812/7634，尚未完成；scope已观测峰值5.350548GiB，/var/tmp可用252.968220GiB，max/oom/oom_kill=0。该读数不代表最终峰值。原始E8/mid-build-progress.json；构建与采样持续运行，未启动下一阶段。
