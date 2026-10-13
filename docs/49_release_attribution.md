@@ -1,6 +1,6 @@
 # 49 续四：发布模式参数认证与差异归因
 
-日期：2026-10-13；开场HEAD `df729697426dff67a3871bfa850754ee8be7d376`。**进行中：60对参数PASS；发布模式参数与归因认证PASS；生产Source的x86全量回归PASS，ARM候选的x86回归待执行。** 旧docs/49及续三保留，十项ELF比较器和两份Source/Commands不修改。本页不超过50KB。
+日期：2026-10-13；开场HEAD `df729697426dff67a3871bfa850754ee8be7d376`。**进行中：60对参数PASS；发布模式参数与归因认证PASS；debug主线两次x86全量回归PASS，候选补丁待重生成。** 旧docs/49及续三保留，十项ELF比较器和两份Source/Commands不修改。本页不超过50KB。
 
 ## 1. 用户裁决、完整性与执行边界
 
@@ -632,6 +632,21 @@ release：
      144: a94457f6     	ldp	x22, x21, [sp, #0x40]
 ```
 
-## 5. debug主线：x86回归进度
 
-生产Source第一轮PASS：225档after SHA、3864有序成员、完整索引、3853组后端flags与docs/35完全一致；三份同asm成员U符号门禁PASS，强符号缺失0，允许缺失W=1920。转换1787.577秒，总1882.794秒，scope峰3,984,707,584B，无OOM。第二轮ARM候选x86路径随后执行（E/x86-production-result.json、x86-production-scope/memory-summary.json）。
+
+## 5. debug主线：两次x86全量不变性回归
+
+输入E5/x86-input的225档全部before SHA先核对docs/35锚点；各工具SHA先核对。新生产Source与ARM候选的x86路径分别独立全量转换，未覆盖输入或历史输出。完整比较归档after SHA、成员ordinal/name/occurrence/SHA、完整符号→成员索引与3853后端flags；三份同asm成员的`_ZSt21ios_base_library_initv`均保持唯一U。结果如下（E/x86-*-result.json与progress.json）：
+|路径|Source SHA256|归档/成员/flags|结果|转换wall秒|scope峰GiB|
+|---|---|---|---|---:|---:|
+|production|`c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e`|225 / 3864 / 3853|全部逐字节/完整映射相同 PASS|1787.577|3.711048|
+|candidate|`1bac8db608554b35d16482711bf0667f1fbee8d60c6fc52f0f448d240ffaa9e4`|225 / 3864 / 3853|全部逐字节/完整映射相同 PASS|1733.075|5.264145|
+
+production允许缺失符号（按原策略）：`{'W': 1920}`；强符号缺失0。
+candidate允许缺失符号（按原策略）：`{'W': 1920}`；强符号缺失0。
+
+本轮两Source未修改，因此Source本体147宿主测试/ARM根143PASS+3环境不适用+1AS既有发现沿用docs/49 §3的同SHA证据；本轮新增辅助16测试独立执行。上述全量转换是本轮新实测，不以旧回归代替。
+
+`build/bin/clang`为软链接`clang-22`，samefile=true且可执行，clang实体SHA `d25e99607c9ea23bf2e50da5075c21f0145f6da24a39a4228d2fd8026ead70cf`。候选spec可按已裁决使用无版本号别名（E/clang-alias.json）。
+
+下一步：重生成PS3/PS2候选、顺序apply与完整tree核对；之后才进入新根完整构建的磁盘门禁。当前没有新构建树交接给BOLT。

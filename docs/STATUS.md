@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续四）进行中**：独立参数/归因辅助16测试PASS；60/60参数PASS，发布认证PASS，Serialize按(b)归因。两Source/Commands/十项比较器不变；发布认证独立于debug主线，生产Source的x86全量回归225档/3864成员/完整索引/3853flags全部一致；接下来ARM候选x86回归、候选补丁再生成。完整构建/验收与BOLT交接尚未执行。见docs/49_release_attribution.md，证据temp/release-attribution-20261013。
+**当前任务（docs/49续四）进行中**：独立参数/归因辅助16测试PASS；60/60参数PASS，发布认证PASS，Serialize按(b)归因。两Source/Commands/十项比较器不变；发布认证独立于debug主线，两次x86全量回归各225档/3864成员/完整索引/3853flags全部一致；下一步候选补丁再生成。完整构建/验收与BOLT交接尚未执行。见docs/49_release_attribution.md，证据temp/release-attribution-20261013。
 
 **历史任务（docs/49续三）STOP_ARM32_ALLOC_CONTENT并收尾**：最终十项比较器41测试PASS（78e58f5）；已有80对象SHA核对PASS，x8620/20 PASS，ARM32前12对PASS、第13对Serialize.cpp同身份函数节720→716字节、重定位/符号不符，立即停止；剩余7对/AArch6420对NOT RUN。ChangeNamespace本轮PASS，输入IR已有18个定义换序。两Source未改，未重编/转换/重试门禁；后续全量回归、补丁再生成、完整构建验收1–7与BOLT交接NOT RUN。只读readelf辅助筛选修一次不改门禁；全部锁/进程/采样器/挂载回收。详见docs/49_release_contract_final.md §20–§25，证据temp/release-contract-final-20261013。
 
