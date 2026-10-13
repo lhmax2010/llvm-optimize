@@ -26,6 +26,14 @@ reference scope 峰6.039 GiB，ld.lld 最大采样 VmHWM5,277,208kB；BOLT scope
 
 ## R1 副本清理与周三计划
 
-仅删已核对旧 cache-copy.json 来源的 /home/abuild/bolt-work/bolt-v4-20261014/lto-cache；原cache与其他证据未变，设计附录在步骤3更新。
+仅删已核对旧 cache-copy.json 来源的 /home/abuild/bolt-work/bolt-v4-20261014/lto-cache；原cache与其他证据未变；设计01附录现已按步骤3更新。
 
 步骤2清理完成：仅删除授权副本 lto-cache 残余目录；前2,365文件/4,671,566,600B（实际占块4,676,378,624B），后0文件/0B/目录不存在；同文件系统free从79,338,237,952B（73.89GiB）到84,019,998,720B（78.25GiB），观测增4,681,760,768B。共享磁盘并发写入会影响free差量，不将其等同精确释放字节。原cache47,770文件/98,248,402,280B完整清单mtime/34跨度SHA前后及上轮基线一致，其他459条BOLT证据元数据清单一致。4GiB轻scope16.063s（工作15.095s），没有flock/chroot/mount；r1-cache-cleanup.json记录路径来源和审计哈希。步骤1 GitHub提交55a2e06已推送。
+
+## 周三计划更新完成
+
+设计01附录V4.1-6/7给完整条件和命令：origin/main正式READY交接（具体/var/tmp路径只取STATUS）+共享锁/内存/磁盘准入→先新树匹配→原cache原地单路径重链/同树工具/strip/SHA/post终检→同一实体路径30/90完整对象→本地debug同模式普通RPM逐包SHA及每项DWARF证明→外审及配方一致性核查后才可推sandbox。发布Tizen-Base完整普通/BOLT构建仍挂账。只读同步main6e874fdb…仍写BOLT交接NOT READY，今夜未进入新根，也未取共享锁。步骤2 GitHub提交7ecdcf7已推送；最新政策替代历史新树cache复制/冻结与双路比较。
+
+## 收尾
+
+授权三步全部完成，未因异常停止；今夜无重锁/重阶段/chroot/mount/归档根进入/Gerrit BOLT push。95fixture、完整和公开封套apply/tree、Python3.9、8段POSIX shell、helper镜像、文件大小及scope回收检查均PASS，light-task-validation.json记录轻资源准入/峰值。新树仍NOT READY，完整新树/生产工具/post/RPM/DWARF/90对象以及发布完整构建继续挂账。全部raw分支/钉提交索引见10。

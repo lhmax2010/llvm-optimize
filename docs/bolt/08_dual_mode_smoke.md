@@ -21,7 +21,7 @@ R1普通chroot，1000:1000、4GiB/swap0/nice19/ionice3；临时/proc每段finall
 /home/abuild/bolt-work/bolt-v4-20261014/clang.smoke-fallback.candidate: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, stripped
 ```
 
-完整execve正负证据、两spec和dual-mode-smoke.json已公开tools/bolt/results。debug小包还产出debuginfo和空debugsource包（平台允许，日志warning Empty %files），不将此当完整LLVM debugsource清单证明。主包RPM SHA分别为debug ec4a6bb3a694ada9395ab2f318b7808fc239a76b5cd54609f5f05e719789f236，release 61ae8813cfbe8be5a8569c3118b462b3fc06af8b72f8e7db3b8ceb2fa35f0311.
+完整execve正负原日志留E；两spec和dual-mode-smoke.json（含实际成功strip execve调用及两模式判据）已公开tools/bolt/results。debug小包还产出debuginfo和空debugsource包（平台允许，日志warning Empty %files），不将此当完整LLVM debugsource清单证明。主包RPM SHA分别为debug ec4a6bb3a694ada9395ab2f318b7808fc239a76b5cd54609f5f05e719789f236，release 61ae8813cfbe8be5a8569c3118b462b3fc06af8b72f8e7db3b8ceb2fa35f0311.
 
 ## 测量脚本错误、资源与证据边界
 

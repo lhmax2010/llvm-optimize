@@ -159,3 +159,18 @@ PM八项新裁决按01附录修订执行：fully strip、前note/前后SHA/最�
 步骤1完成：95/95 fixtures PASS（0.408s；4GiB轻scope1.528s），完整patch及公开封套静态apply/整树PASS；本地源码 d6ddbff5ba74bfb420b357b5b6ba9ed300971bb4（父cb679968），文本patch/profile/manifest更新，无Gerrit推送。Quickbuild单一路径估12–15分钟、kernel峰约6.04GiB（R1温缓存依据；新llvm-bolt构建/正常post另计），详情11与single-path-estimate.json。今晚不取共享锁、不跑重阶段、不进入归档根。步骤2副本清理、步骤3周三计划更新待执行。
 
 步骤2清理完成：仅删除授权副本 lto-cache 残余目录；前2,365文件/4,671,566,600B（实际占块4,676,378,624B），后0文件/0B/目录不存在；同文件系统free从79,338,237,952B（73.89GiB）到84,019,998,720B（78.25GiB），观测增4,681,760,768B。共享磁盘并发写入会影响free差量，不将其等同精确释放字节。原cache47,770文件/98,248,402,280B完整清单mtime/34跨度SHA前后及上轮基线一致，其他459条BOLT证据元数据清单一致。4GiB轻scope16.063s（工作15.095s），没有flock/chroot/mount；r1-cache-cleanup.json记录路径来源和审计哈希。步骤1 GitHub提交55a2e06已推送。
+
+步骤3周三计划更新完成：01最新附录覆盖原v4/旧v4.1；正式READY交接（/var/tmp具体路径由STATUS给出）、共享锁与磁盘/内存准入→先匹配→新树原地cache、只构建同树BOLT且普通任务0、唯一重链/strip/BOLT/三目标/SHA链/单次原post尾检→30与90同一实体路径完整对象→本地debug同模式普通cb RPM逐包字节清单与逐缺失普通DWARF/全部其他debug证明→满足资格/评审/源recipe一致性/Source传输条件才可未来sandbox推送。发布分支完整普通/BOLT构建继续挂账。今夜只读同步origin/main=6e874fdbd0149a33167c9b83f8938d17df7c7ceb，其STATUS明确BOLT交接NOT READY，没有新根/cache/完成指纹；没有进入归档根，不凭目录存在开跑。旧段落的复制新树cache/原cache冻结/双路严格比较均已被最新人工裁决覆盖。
+
+## 今晚轻任务最终状态（2026-10-13）
+
+授权三步全部完成，未遇规定外情况而停止；新树续跑条件仍未满足，留周三，不在今晚启动。步骤1 55a2e06（唯一重链/磁盘预检/95fixture/static apply-tree）；步骤2 7ecdcf7（仅自建R1 cache残余清理/原cache与其他证据审计）；步骤3设计/周三计划与本收尾提交均推GitHub bolt-v4。
+
+- 本地LLVM源码 d6ddbff5ba74bfb420b357b5b6ba9ed300971bb4，父cb67996861d070d68fec2b4c623eed7d20ba2e23，tree3f0fec567a7adcca0ffd405469fe5f08a3e35857；完整patch、文本+Source封套apply/tree均PASS，未推Gerrit。profile原SHA不变。它与GitHub文档提交身份不同。
+- 最终95/95fixture PASS；旧fast/compare/fallback已删除，默认cache字串保留，optional第三项仍可用；匹配、前后tiny、strip身份、post/aliases、本地双模式清单门禁保留。Python3.9 parse、helper镜像一致、8段POSIX shell片段、文档≤50KB/提交文件≤10MB检查PASS。设计46,354B。
+- 仅4GiB/swap0/nice19/ionice3轻scope，入口≥6GiB、运行≥3GiB；fixture峰0.049GiB、freeze峰0.198GiB、清理峰0.306GiB，scope均回收。无共享锁、重阶段、chroot/mount、归档根进入、standalone或完整LLVM构建；W tracked只保留其他会话既有gbs_llvm.conf变更，W/llvm未写。
+- 清理前2,365文件4,671,566,600B，后0/0；free79,338,237,952B→84,019,998,720B。原cache完整清单mtime/34SHA与上一轮及清理前后一致，其他459条证据元数据一致；原数据/候选/大.ii/日志保留。磁盘险情原因与原地cache/30GiB底线对策在07和本文。
+- Quickbuild pipeline仅温cacheR1依据，估12–15分钟、峰约6.04GiB，新同树llvm-bolt构建/正常post不含；详细采样跨度及边界在11/single-path-estimate.json。
+- origin/main6e874fdb…仍NOT READY；正式交接后才读准确/var/tmp根，先匹配，原cache单路径，30/90同一实体路径完整对象，本地debug RPM与普通DWARF逐项证明；发布完整构建/完整同树工具与post/RPM/消费者仍挂账。今晚不声称这些通过。
+
+新原始E=/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261014-simplify；公开11、single-path-estimate、r1-cache-cleanup、light-task-validation及补丁manifest；全raw分支/钉提交索引10随最终提交更新。
