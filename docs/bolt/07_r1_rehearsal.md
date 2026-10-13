@@ -46,3 +46,9 @@ E=/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261014；R1新
 **预演可闭合的路径为reference重链→LLVM strip-debug→BOLT→LLVM strip-all**。dual-flags严格符号表一致性仍FAIL，2,344个STT_FILE不豁免。新cb树重新认证；本轮不能称dual-flags快路径PASS或Gerrit/Quickbuild已就绪。
 
 最终独立缓存审核在公平重测后再次PASS；原47,770文件/98,248,402,280B的文件清单、mtime与34抽样SHA全部不变。最终审计确认R1无proc/root绑定残留、各已结束scope消失、源草案干净/公开helper与源内helper相同、Python3.9语法及设计50KB限制PASS。公开resource-metrics.json记录每个scope、所有失败、锁及挂载info摘要，不隐藏测量代码错误。
+
+## 磁盘险情备案（2026-10-13，最新 PM 裁决）
+
+今天复制 98,248,402,280B 后，工作区可用空间一度只有约5.6GB（入场 free 103,902,519,296B 减复制量，约5,654,117,016B / 5.27GiB）；直到 LLD 正常 cache pruning 自动删除副本的大部分内容才恢复。这是磁盘险情：此前只留4GiB重链 reserve，没有30GiB安全底线；checksum/count审核PASS不代表空间安全，不能依赖自动清理救场。
+
+对策已裁决：周三正式交接新树后原地使用原cache，允许LLD写入/prune，不再复制；任何预计单次写入>10GiB，写完仍须≥30GiB free（reserve另计），不足跳过并报告。原大cache复制在新helper准入中会被拒绝。新完整x86树放/var/tmp，准确路径仅从归档会话 origin/main STATUS 正式交接取得，交接前不碰。快路径因2344 STT_FILE被永久删除，新草案只留reference+LLVM strip-debug，不在新树重复双路比较。完全strip SHA575fc9db…与历史v2完全strip一致。今晚仅轻任务，无共享锁/重实验；本会话副本残余将单独按授权删除并记录前后空间，其他原始证据保留。

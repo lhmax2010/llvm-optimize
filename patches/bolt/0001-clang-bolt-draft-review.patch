@@ -1,33 +1,35 @@
-From a3c31d2c40809adbfacfd8cb6c12f3e87476a058 Mon Sep 17 00:00:00 2001
+From d6ddbff5ba74bfb420b357b5b6ba9ed300971bb4 Mon Sep 17 00:00:00 2001
 From: FatTank <hao.lin@samsung.com>
 Date: Tue, 13 Oct 2026 14:09:46 +0800
-Subject: [PATCH] =?UTF-8?q?=E5=AE=9E=E7=8E=B0=E5=AE=8C=E5=85=A8=20strip=20?=
- =?UTF-8?q?=E7=9A=84=20x86=5F64=20clang=20BOLT=20=E5=8F=8C=E6=A8=A1?=
- =?UTF-8?q?=E5=BC=8F=E8=8D=89=E6=A1=88?=
+Subject: [PATCH] =?UTF-8?q?=E5=AE=9E=E7=8E=B0=E5=8D=95=E4=B8=80=E9=87=8D?=
+ =?UTF-8?q?=E9=93=BE=E4=B8=8E=E5=AE=8C=E5=85=A8=20strip=20=E7=9A=84=20x86?=
+ =?UTF-8?q?=5F64=20clang=20BOLT=20=E5=8F=8C=E6=A8=A1=E5=BC=8F=E8=8D=89?=
+ =?UTF-8?q?=E6=A1=88?=
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-基于 cb679968；不叠归档补丁，不推 Gerrit。取消 debug 专用限制。
-BOLT 门禁通过后用同树 llvm-strip --strip-all；记录 strip 前 BOLT note
-与前后 SHA，安装实体必须等于最终候选。原平台后处理仅一次，末尾终检。
-唯一链接边只改 output、depfile、完整副本 ThinLTO cache；其余逐字保留。
-本地 RPM 清单支持严格 debug/release 例外，禁止新增与非 clang 内容变化。
+基于 cb679968；不叠归档补丁，不推 Gerrit。只加 emit-relocs 重链，
+再 LLVM strip-debug；删除双路比较及回退。BOLT 匹配、前后微型门禁、
+strip 前 note 与前后 SHA、单次原后处理末尾终检均保留。
+交接树原地使用 ThinLTO cache；受保护旧树可显式改写缓存路径。
+超过 10 GiB 的声明写入预算须在写完后保留至少 30 GiB。
+本地 RPM 清单严格区分 debug/release 例外，不新增或改变非 clang 文件。
 
-84 个 helper 夹具通过，含完整 pipeline 正例与 PM 回退例；静态应用及
-整树一致性另见公开 manifest。完整构建、真实宏/RPM和新树认证仍待完成。
+95 个 helper 夹具通过；静态完整 patch 与公开封套整树校验另见 manifest。
+完整构建、同树工具图及新树/RPM 认证仍待完成。
 ---
- packaging/clang-bolt-helper.py | 560 +++++++++++++++++++++++++++++++++
- packaging/llvm.spec            |  73 +++++
- 2 files changed, 633 insertions(+)
+ packaging/clang-bolt-helper.py | 554 +++++++++++++++++++++++++++++++++
+ packaging/llvm.spec            |  78 +++++
+ 2 files changed, 632 insertions(+)
  create mode 100644 packaging/clang-bolt-helper.py
 
 diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
 new file mode 100644
-index 000000000000..6d657813d13b
+index 000000000000..f673947d23a8
 --- /dev/null
 +++ b/packaging/clang-bolt-helper.py
-@@ -0,0 +1,560 @@
+@@ -0,0 +1,554 @@
 +#!/usr/bin/env python3
 +"""Tizen clang BOLT draft. Every command fails closed; Python >= 3.9, POSIX sh."""
 +import argparse
@@ -108,7 +110,7 @@ index 000000000000..6d657813d13b
 +def quote(value):
 +    return "'" + str(value).replace("'", "'\\''") + "'"
 +
-+def replay_script(original, output, dependency, cache, strip_debug=True):
++def replay_script(original, output, dependency, cache=None):
 +    original = original.strip()
 +    require('\n' not in original and original.startswith(': && ') and original.endswith(' && :'),
 +            'unexpected link edge framing')
@@ -124,11 +126,12 @@ index 000000000000..6d657813d13b
 +            'unregistered additional linker output')
 +    caches = re.findall(r'--thinlto-cache-dir=([^\s]+)', body)
 +    require(len(caches) == 1 and caches[0].startswith('/') and not any(c in caches[0] for c in '\"\'`$'), 'non-unique or unsupported ThinLTO cache')
-+    require(str(cache) != caches[0], 'ThinLTO cache must be isolated')
-+    body = body.replace('--thinlto-cache-dir='+caches[0], '--thinlto-cache-dir='+quote(cache), 1)
++    if cache is not None:
++        require(str(cache) != caches[0], 'explicit cache override must be isolated')
++        body = body.replace('--thinlto-cache-dir='+caches[0], '--thinlto-cache-dir='+quote(cache), 1)
 +    body = body.replace(old_out, '-o ' + quote(output) + ' ', 1)
 +    body = body.replace(old_dep, '--dependency-file=' + quote(dependency), 1)
-+    flags = ' -Wl,--emit-relocs' + (' -Wl,--strip-debug' if strip_debug else '')
++    flags = ' -Wl,--emit-relocs'
 +    return '#!/bin/sh\nset -eu\n' + body + flags + '\n'
 +
 +def match_counts(text, argv, successful, trusted_tool):
@@ -207,43 +210,6 @@ index 000000000000..6d657813d13b
 +        else:
 +            require('.note.bolt_info' in self.by_name, 'missing BOLT note')
 +        return {'entry': self.entry, 'loads': self.loads, 'bolt_sections': [n for n in self.names if '.bolt' in n]}
-+
-+def compare_elf(left, right):
-+    a, b = ELF(left), ELF(right)
-+    try:
-+        def alloc(e):
-+            result = {}
-+            for n, s in zip(e.names, e.sections):
-+                if s[2] & 2 and 'debug' not in n.lower():
-+                    payload = b'' if s[1] == 8 else e.mm[s[4]:s[4]+s[5]]
-+                    result[n] = (s[1], s[2], s[3], s[5], s[8], hashlib.sha256(payload).hexdigest())
-+            return result
-+        def tables(e):
-+            symbols = {i: e.symbols(i) for i, s in enumerate(e.sections) if s[1] in (2, 11)}
-+            relocations = {}
-+            for i, s in enumerate(e.sections):
-+                if s[1] not in (4, 9) or 'debug' in e.names[i].lower():
-+                    continue
-+                require(s[6] in symbols and s[7] < len(e.sections), 'bad relocation target/link')
-+                size = 24 if s[1] == 4 else 16
-+                require(s[9] == size and s[5] % size == 0, 'bad relocation entry size')
-+                records = []
-+                for off in range(s[4], s[4]+s[5], size):
-+                    r = e.unpack('<QQq' if size == 24 else '<QQ', off)
-+                    symidx = r[1] >> 32; require(symidx < len(symbols[s[6]]), 'bad relocation symbol')
-+                    records.append((r[0], r[1] & 0xffffffff, symbols[s[6]][symidx], r[2] if size == 24 else None))
-+                relocations[e.names[i]] = (e.names[s[7]], records)
-+            return {e.names[i]: v for i, v in symbols.items()}, relocations
-+        aa, bb = alloc(a), alloc(b); sa, ra = tables(a); sb, rb = tables(b)
-+        result = {'allocated_equal': aa == bb, 'symbols_equal': sa == sb, 'relocations_equal': ra == rb,
-+                  'left_sha256': digest(left), 'right_sha256': digest(right),
-+                  'alloc_differing_names': sorted(n for n in aa.keys() | bb.keys() if aa.get(n) != bb.get(n)),
-+                  'symbol_table_counts': [sum(map(len, sa.values())), sum(map(len, sb.values()))],
-+                  'relocation_counts': [sum(len(v[1]) for v in ra.values()), sum(len(v[1]) for v in rb.values())]}
-+        result['equal'] = all(result[k] for k in ['allocated_equal', 'symbols_equal', 'relocations_equal'])
-+        return result
-+    finally:
-+        a.close(); b.close()
 +
 +def tiny_gate(ordinary, candidate, work, resource_dir=None):
 +    work = Path(work); work.mkdir(parents=True, exist_ok=True)
@@ -345,6 +311,7 @@ index 000000000000..6d657813d13b
 +        changed.append({'path': p.relative_to(root).as_posix(), 'old_type': 'symlink' if p.is_symlink() else 'file',
 +                        'old_target': os.readlink(p) if p.is_symlink() else None})
 +    st = entity.stat(); tmp = entity.with_name('.clang-bolt.new')
++    disk_preflight(tmp.parent,Path(candidate).stat().st_size)
 +    shutil.copyfile(candidate, tmp); tmp.chmod(stat.S_IMODE(st.st_mode)); os.replace(tmp, entity)
 +    for p in aliases:
 +        tmp = p.with_name('.'+p.name+'.bolt-link'); require(not tmp.exists(), 'temporary alias exists')
@@ -375,6 +342,7 @@ index 000000000000..6d657813d13b
 +    require(digest(profile) == PROFILE_SHA, 'profile SHA mismatch')
 +    version = call([bolt, '--version'], work/'bolt-version.log')
 +    require('LLVM version 22.1.8' in version, 'uncertified BOLT tool version')
++    disk_preflight(Path(output).parent,4*Path(input_elf).stat().st_size)
 +    argv = [bolt, input_elf, '-o', output, '-data='+str(profile)] + OPTIONS
 +    text = call(argv, work/'bolt.log', timeout=1800)
 +    counters = match_counts(text, argv, True, True)
@@ -398,30 +366,58 @@ index 000000000000..6d657813d13b
 +    require(bool(rows) or 'no work to do' in text, 'unrecognized ninja dry-run format')
 +    return {'tasks': len(rows), 'ordinary_compile_link_tasks': 0}
 +
-+def pipeline(build, work, bolt):
++GIB = 1024**3
++LARGE_WRITE = 10 * GIB
++DISK_FLOOR = 30 * GIB
++STAGE_WRITE_BUDGET = 16 * GIB
++
++def disk_preflight(destination, planned_bytes, reserve_bytes=0):
++    """Admission against a declared write upper bound on the destination filesystem.
++
++    Include temporary outputs/cache growth in the caller's budget. Large writes
++    must leave >=30 GiB after BOTH the write and any separately reserved space.
++    The 16 GiB stage default is a conservative R1 estimate, not a cold-cache bound.
++    """
++    require(planned_bytes >= 0 and reserve_bytes >= 0, 'negative disk budget')
++    destination = Path(destination).absolute()
++    parent = destination
++    while not parent.exists():
++        parent = parent.parent
++    require(parent.is_dir(), 'disk preflight requires a destination directory')
++    free = shutil.disk_usage(parent).free
++    floor = DISK_FLOOR if planned_bytes > LARGE_WRITE else 0
++    value = {'destination':str(destination), 'filesystem_device':parent.stat().st_dev,
++             'planned_write_bytes':planned_bytes, 'reserve_bytes':reserve_bytes,
++             'free_before_bytes':free, 'projected_free_bytes':free-planned_bytes-reserve_bytes,
++             'required_free_after_bytes':floor}
++    require(value['projected_free_bytes'] >= floor,
++            'SKIP_DISK: write/reserve would leave %d bytes; require %d bytes (planned %d)' %
++            (value['projected_free_bytes'], floor, planned_bytes))
++    return value
++
++def pipeline(build, work, bolt, cache=None, planned_write_bytes=STAGE_WRITE_BUDGET):
 +    build, work = Path(build).absolute(), Path(work).absolute()
 +    edge = (work/'link.original').read_text()
-+    cache = cache_copy(edge, work/'lto-cache', work/'cache-copy.json')
-+    try:
-+        for label, strip_debug in [('dual-flags',True),('reference-relocs',False)]:
-+            script = work/(label+'.sh')
-+            script.write_text(replay_script(edge,work/(label+'-clang-22'),work/(label+'.d'),cache['copy'],strip_debug))
-+            call(['/bin/sh',str(script)],work/(label+'.log'),cwd=build,timeout=1800)
-+        reference=work/'reference-relocs-clang-22'
-+        call([str(build/'bin/llvm-strip'),'--strip-debug',str(reference)],work/'reference-strip.log',timeout=600)
-+        comparison=compare_elf(work/'dual-flags-clang-22',reference);save(work/'strip-equivalence.json',comparison)
-+        # PM-authorized fallback; preserve both inputs and never ignore a difference.
-+        selected=work/'dual-flags-clang-22' if comparison['equal'] else reference
-+        result=rewrite(str(bolt),str(work/'profile.fdata'),str(selected),str(work/'clang.bolt'),work/'rewrite')
-+        identity = strip_all(str(build/'bin/llvm-strip'), work/'clang.bolt', work/'clang.candidate', work/'identity.json')
-+        print(json.dumps({'BOLT_STRIP_IDENTITY': identity}), flush=True)
-+        tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.candidate'),work/'preinstall-gate',str(build/'lib64/clang/22'))
-+        cache_unchanged(cache)
-+        result['identity'] = identity
-+        result['link_strip_equivalence']=comparison;result['input_policy']='link-strip-debug' if comparison['equal'] else 'prestrip-fallback'
-+        save(work/'pipeline-result.json',result);return result
-+    finally:
-+        cache_unchanged(cache)
++    # Handed-off trees own their original cache; no copy, audit or path rewrite.
++    # Protected trees must prepare a verified copy separately and pass --cache-dir.
++    admission = disk_preflight(work, max(planned_write_bytes,
++                                        4*(work/'ordinary-clang-22').stat().st_size))
++    save(work/'disk-admission.json',admission)
++    reference = work/'reference-relocs-clang-22'
++    require(not reference.exists(), 'relink output must be new')
++    script = work/'reference-relocs.sh'
++    script.write_text(replay_script(edge,reference,work/'reference-relocs.d',cache))
++    call(['/bin/sh',str(script)],work/'reference-relocs.log',cwd=build,timeout=1800)
++    call([str(build/'bin/llvm-strip'),'--strip-debug',str(reference)],work/'reference-strip.log',timeout=600)
++    result = rewrite(str(bolt),str(work/'profile.fdata'),str(reference),str(work/'clang.bolt'),work/'rewrite')
++    tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.bolt'),work/'prestrip-gate',str(build/'lib64/clang/22'))
++    identity = strip_all(str(build/'bin/llvm-strip'),work/'clang.bolt',work/'clang.candidate',work/'identity.json')
++    tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.candidate'),work/'preinstall-gate',str(build/'lib64/clang/22'))
++    result.update(identity=identity, input_policy='emit-relocs-then-strip-debug',
++                  cache_policy='original-in-place' if cache is None else 'explicit-copy',
++                  disk_admission=admission)
++    save(work/'pipeline-result.json',result)
++    return result
 +
 +def cache_manifest(root):
 +    root = Path(root)
@@ -447,12 +443,12 @@ index 000000000000..6d657813d13b
 +    require(source.is_absolute() and source != destination and not destination.exists(), 'unsafe cache destination')
 +    before = cache_manifest(source)
 +    destination.parent.mkdir(parents=True, exist_ok=True)
-+    require(shutil.disk_usage(destination.parent).free >= before['bytes'] + 4*1024**3, 'insufficient cache copy space including 4 GiB measured relink peak reserve')
++    admission = disk_preflight(destination.parent,before['bytes'],4*GIB)
 +    shutil.copytree(source, destination, copy_function=shutil.copy2)
 +    copied = cache_manifest(destination)
 +    require(before == copied, 'cache copy file count/size/mtime/sample SHA differs')
 +    require(cache_manifest(source) == before, 'original cache changed during copy')
-+    value = {'source': str(source), 'copy': str(destination), 'before': before, 'copied': copied}
++    value = {'source': str(source), 'copy': str(destination), 'before': before, 'copied': copied, 'disk_admission':admission}
 +    save(result, value)
 +    print(json.dumps({'cache_copy': {'count': before['count'], 'bytes': before['bytes'], 'copy': str(destination)}}), flush=True)
 +    return value
@@ -485,6 +481,7 @@ index 000000000000..6d657813d13b
 +    finally:
 +        e.close()
 +    before_sha = digest(before)
++    disk_preflight(after.parent,before.stat().st_size)
 +    shutil.copy2(before, after)
 +    call([str(tool), '--strip-all', str(after)], Path(result).with_suffix('.strip.log'), timeout=600)
 +    identity = {'before_path': str(before), 'before_sha256': before_sha, 'bolt_note_before': True,
@@ -546,13 +543,13 @@ index 000000000000..6d657813d13b
 +def main():
 +    p = argparse.ArgumentParser(description=__doc__); sub = p.add_subparsers(dest='cmd',required=True)
 +    s=sub.add_parser('tool-plan');s.add_argument('input')
-+    s=sub.add_parser('pipeline');s.add_argument('build');s.add_argument('work');s.add_argument('tool')
++    s=sub.add_parser('pipeline');s.add_argument('build');s.add_argument('work');s.add_argument('tool');s.add_argument('--cache-dir');s.add_argument('--planned-write-bytes',type=int,default=STAGE_WRITE_BUDGET)
++    s=sub.add_parser('disk-preflight');s.add_argument('destination');s.add_argument('planned_bytes',type=int);s.add_argument('--reserve-bytes',type=int,default=0)
 +    s=sub.add_parser('strip-all');s.add_argument('tool');s.add_argument('before');s.add_argument('after');s.add_argument('identity')
 +    s=sub.add_parser('cache-copy');s.add_argument('edge');s.add_argument('destination');s.add_argument('result')
 +    s=sub.add_parser('package-compare');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('mode',choices=['debug','release']);s.add_argument('proof');s.add_argument('result')
 +    s=sub.add_parser('unpack');s.add_argument('source');s.add_argument('output')
-+    s=sub.add_parser('replay');s.add_argument('edge');s.add_argument('output');s.add_argument('dependency');s.add_argument('script');s.add_argument('cache');s.add_argument('--keep-debug',action='store_true')
-+    s=sub.add_parser('compare-elf');s.add_argument('left');s.add_argument('right');s.add_argument('result')
++    s=sub.add_parser('replay');s.add_argument('edge');s.add_argument('output');s.add_argument('dependency');s.add_argument('script');s.add_argument('--cache-dir')
 +    s=sub.add_parser('rewrite');s.add_argument('tool');s.add_argument('profile');s.add_argument('input');s.add_argument('output');s.add_argument('work')
 +    s=sub.add_parser('tiny');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('work');s.add_argument('--resource-dir')
 +    s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
@@ -561,17 +558,16 @@ index 000000000000..6d657813d13b
 +    s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
 +    a=p.parse_args()
 +    if a.cmd=='tool-plan':result=tool_plan(Path(a.input).read_text())
-+    elif a.cmd=='pipeline':result=pipeline(a.build,a.work,a.tool)
++    elif a.cmd=='pipeline':result=pipeline(a.build,a.work,a.tool,a.cache_dir,a.planned_write_bytes)
++    elif a.cmd=='disk-preflight':result=disk_preflight(a.destination,a.planned_bytes,a.reserve_bytes)
 +    elif a.cmd=='strip-all':result=strip_all(a.tool,a.before,a.after,a.identity)
 +    elif a.cmd=='cache-copy':result=cache_copy(Path(a.edge).read_text(),a.destination,a.result)
 +    elif a.cmd=='package-compare':
 +        result=package_compare(json.loads(Path(a.ordinary).read_text()),json.loads(Path(a.candidate).read_text()),a.mode,json.loads(Path(a.proof).read_text()));save(a.result,result)
 +    elif a.cmd=='unpack':result=profile_unpack(a.source,a.output)
 +    elif a.cmd=='replay':
-+        script=replay_script(Path(a.edge).read_text(),a.output,a.dependency,a.cache,not a.keep_debug)
++        script=replay_script(Path(a.edge).read_text(),a.output,a.dependency,a.cache_dir)
 +        Path(a.script).write_text(script);Path(a.script).chmod(0o755);result={'script':a.script}
-+    elif a.cmd=='compare-elf':
-+        result=compare_elf(a.left,a.right);save(a.result,result);require(result['equal'],'link strip equivalence failed')
 +    elif a.cmd=='rewrite':result=rewrite(a.tool,a.profile,a.input,a.output,a.work)
 +    elif a.cmd=='tiny':result=tiny_gate(a.ordinary,a.candidate,a.work,a.resource_dir)
 +    elif a.cmd=='snapshot':result=inventory(a.root);save(a.output,result)
@@ -589,7 +585,7 @@ index 000000000000..6d657813d13b
 +    except (GateError, OSError, ValueError, lzma.LZMAError) as e:
 +        print('BOLT_GATE_FAILED: '+str(e),file=sys.stderr);sys.exit(1)
 diff --git a/packaging/llvm.spec b/packaging/llvm.spec
-index 64705188b67c..009e1a837a97 100644
+index 64705188b67c..c53b4ea55e20 100644
 --- a/packaging/llvm.spec
 +++ b/packaging/llvm.spec
 @@ -1,3 +1,10 @@
@@ -629,7 +625,7 @@ index 64705188b67c..009e1a837a97 100644
  
  %if %{undefined _toolchain}
  %ifarch x86_64
-@@ -385,11 +404,48 @@ cmake \
+@@ -385,11 +404,53 @@ cmake \
  %endif
  
  # Full build using ninja (already in build/ directory after cd build)
@@ -649,9 +645,12 @@ index 64705188b67c..009e1a837a97 100644
 +
 +%ifarch x86_64
 +%if %{with clang_bolt}
-+# The same fully stripped candidate supports debug and release post-processing.
++# One relink: emit-relocs, then LLVM strip-debug, BOLT and full strip.
++# The handed-off build owns its original ThinLTO cache; do not duplicate it.
++# Default 16 GiB BOLT-stage write budget must leave 30 GiB on this filesystem.
 +BOLT_WORK="$PWD/clang-bolt"
 +mkdir -p "$BOLT_WORK/ordinary-exports" || exit 1
++python3 %{SOURCE1201} disk-preflight "$BOLT_WORK" 17179869184 || exit 1
 +# File-list baseline is the actual ordinary CMake install, not a name whitelist.
 +python3 %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
 +cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt" || exit 1
@@ -666,8 +665,10 @@ index 64705188b67c..009e1a837a97 100644
 +# Reject rebuilds of ordinary LLVM. Only BOLT objects/linking may be added.
 +ninja -n llvm-bolt > "$BOLT_WORK/tool-dry-run.txt" || exit 1
 +python3 %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" || exit 1
++python3 %{SOURCE1201} disk-preflight "$PWD" 17179869184 || exit 1
 +ninja -j 1 llvm-bolt || exit 1
 +python3 %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
++python3 %{SOURCE1201} disk-preflight "%{buildroot}" 17179869184 || exit 1
 +cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake || exit 1
 +# Restore ordinary LLVM export metadata; BOLT libraries must not leak to consumers.
 +cp -a "$BOLT_WORK/ordinary-exports/." "%{buildroot}%{_libdir}/cmake/llvm/" || exit 1
@@ -678,7 +679,7 @@ index 64705188b67c..009e1a837a97 100644
  ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
  
  ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
-@@ -421,6 +477,14 @@ rm -rf %{buildroot}%{_libdir}/debug/*
+@@ -421,6 +482,14 @@ rm -rf %{buildroot}%{_libdir}/debug/*
  rm -rf %{buildroot}/usr/lib/libear/*
  rm -rf %{buildroot}/usr/lib/libscanbuild/*
  
@@ -693,7 +694,7 @@ index 64705188b67c..009e1a837a97 100644
  %post -n clang -p /sbin/ldconfig
  %postun -n clang -p /sbin/ldconfig
  
-@@ -652,3 +716,12 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+@@ -652,3 +721,12 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
  
  %files -n python-clang
  %{python3_sitelib}/clang

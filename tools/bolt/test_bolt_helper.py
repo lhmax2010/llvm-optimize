@@ -51,11 +51,11 @@ class Base(unittest.TestCase):
         return {'before_path':str(before), 'before_sha256':h.digest(before), 'bolt_note_before':True, 'after_sha256':h.digest(self.d/'candidate')}
 
 class ReplayTests(Base):
-    def test_two_flags_and_literal_origin(self):
+    def test_emit_relocs_and_literal_origin(self):
         s=h.replay_script(EDGE,self.d/'out with space',self.d/'dep',self.d/'cache');self.assertIn('\\$ORIGIN',s)
-        self.assertTrue(s.endswith('-Wl,--emit-relocs -Wl,--strip-debug\n'))
+        self.assertTrue(s.endswith('-Wl,--emit-relocs\n'))
         self.assertEqual(subprocess.run(['/bin/dash','-n'],input=s,text=True).returncode,0)
-    def test_reference_no_strip(self):self.assertNotIn('--strip-debug',h.replay_script(EDGE,'out','dep','cache',False))
+    def test_reference_no_strip(self):self.assertNotIn('--strip-debug',h.replay_script(EDGE,'out','dep'))
     def test_missing_output(self):
         with self.assertRaises(h.GateError):h.replay_script(EDGE.replace('-o bin/clang-22 ','-o other '),'out','dep','cache')
     def test_multiline(self):
@@ -120,13 +120,6 @@ class ProfileTests(Base):
         self.assertEqual(p.read_bytes(),b'keep')
 
 class ElfTests(Base):
-    def test_identical_records(self):
-        elf(self.d/'a',reloc=True);elf(self.d/'b',reloc=True);self.assertTrue(h.compare_elf(self.d/'a',self.d/'b')['equal'])
-    def test_code_difference(self):
-        elf(self.d/'a');elf(self.d/'b',payload=b'\x90\xc3');self.assertFalse(h.compare_elf(self.d/'a',self.d/'b')['allocated_equal'])
-    def test_symbol_difference(self):
-        elf(self.d/'a');elf(self.d/'b',symbols=[(0,0,0,0,0,0),(1,0x12,0,2,0x400101,1)])
-        self.assertFalse(h.compare_elf(self.d/'a',self.d/'b')['symbols_equal'])
     def test_debug_rejected(self):
         elf(self.d/'a',debug=True);e=h.ELF(self.d/'a')
         try:
@@ -223,8 +216,19 @@ class ToolPlanTests(unittest.TestCase):
 class CacheTests(Base):
     def test_only_three_paths_and_flags_change(self):
         got=h.replay_script(EDGE,'out','dep','cache').splitlines()[-1]
-        expected=EDGE[5:-5].replace('-o bin/clang-22 ',"-o 'out' ").replace('--dependency-file=tools/clang/tools/driver/CMakeFiles/clang.dir/link.d',"--dependency-file='dep'").replace('--thinlto-cache-dir=/original/cache',"--thinlto-cache-dir='cache'")+' -Wl,--emit-relocs -Wl,--strip-debug'
+        expected=EDGE[5:-5].replace('-o bin/clang-22 ',"-o 'out' ").replace('--dependency-file=tools/clang/tools/driver/CMakeFiles/clang.dir/link.d',"--dependency-file='dep'").replace('--thinlto-cache-dir=/original/cache',"--thinlto-cache-dir='cache'")+' -Wl,--emit-relocs'
         self.assertEqual(got,expected)
+    def test_handed_off_cache_is_literal_and_only_two_paths_change(self):
+        got=h.replay_script(EDGE,'out','dep').splitlines()[-1]
+        expected=EDGE[5:-5].replace('-o bin/clang-22 ',"-o 'out' ").replace('--dependency-file=tools/clang/tools/driver/CMakeFiles/clang.dir/link.d',"--dependency-file='dep'")+' -Wl,--emit-relocs'
+        self.assertEqual(got,expected)
+    def test_large_cache_copy_rejected_before_any_copy(self):
+        cache=self.d/'cache';cache.mkdir()
+        fake={'files':[], 'count':47770, 'bytes':98248402280, 'samples':{}}
+        with patch.object(h,'cache_manifest',return_value=fake),patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':103902519296})()),patch.object(h.shutil,'copytree') as copy:
+            with self.assertRaisesRegex(h.GateError,'SKIP_DISK'):h.cache_copy('--thinlto-cache-dir='+str(cache),self.d/'copy',self.d/'state.json')
+            copy.assert_not_called()
+        self.assertFalse((self.d/'copy').exists())
     def test_no_cache(self):
         with self.assertRaises(h.GateError):h.replay_script(EDGE.replace('--thinlto-cache-dir=/original/cache',''),'out','dep','cache')
     def test_duplicate_cache(self):
@@ -304,24 +308,75 @@ class PackageTests(unittest.TestCase):
         self.setup_payload();k='main/usr/bin/clang++';v=dict(self.old['files']['main/usr/bin/clang-22']);self.old['files'][k]=v;self.new['files'][k]={'type':'symlink','target':'clang-22'};self.proof={'aliases':[k],'alias_baseline':{k:v}}
         self.assertTrue(self.parse('release')['pass'])
 
+class DiskTests(Base):
+    def test_large_exact_floor(self):
+        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':41*h.GIB})()):
+            self.assertEqual(h.disk_preflight(self.d,11*h.GIB)['projected_free_bytes'],30*h.GIB)
+    def test_large_one_byte_short(self):
+        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':41*h.GIB-1})()):
+            with self.assertRaisesRegex(h.GateError,'SKIP_DISK'):h.disk_preflight(self.d,11*h.GIB)
+    def test_reserve_counts_against_floor(self):
+        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':41*h.GIB})()):
+            with self.assertRaises(h.GateError):h.disk_preflight(self.d,11*h.GIB,1)
+    def test_exact_ten_gib_is_not_large(self):
+        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':10*h.GIB})()):
+            self.assertEqual(h.disk_preflight(self.d,10*h.GIB)['required_free_after_bytes'],0)
+    def test_over_ten_gib_activates_floor(self):
+        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':40*h.GIB})()):
+            with self.assertRaises(h.GateError):h.disk_preflight(self.d,10*h.GIB+1)
+    def test_small_write_still_needs_space(self):
+        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':1})()):
+            with self.assertRaises(h.GateError):h.disk_preflight(self.d,2)
+    def test_negative_budget(self):
+        with self.assertRaises(h.GateError):h.disk_preflight(self.d,-1)
+    def test_nonexistent_destination_uses_existing_parent(self):
+        self.assertGreaterEqual(h.disk_preflight(self.d/'new'/'dir',1)['free_before_bytes'],1)
+
 class PipelineTests(Base):
-    def run_pipeline(self, equal):
+    def run_pipeline(self, failure=None, override=False):
         build=self.d/'build';(build/'bin').mkdir(parents=True)
         (build/'bin/llvm-strip').write_bytes(b'tool');work=self.d/'work';work.mkdir()
-        cache=self.d/'cache';cache.mkdir();(cache/'a').write_bytes(b'cache')
-        (work/'link.original').write_text(EDGE.replace('/original/cache',str(cache)))
+        (work/'link.original').write_text(EDGE)
         (work/'profile.fdata').write_bytes(b'profile');(work/'ordinary-clang-22').write_bytes(b'ordinary')
+        events=[]
         def command(argv,log,**kw):
-            if argv[0]=='/bin/sh':elf(work/('dual-flags-clang-22' if 'dual-flags' in argv[1] else 'reference-relocs-clang-22'),payload=b'X' if not equal and 'dual-flags' in argv[1] else b'Y')
-            elif '--strip-all' in argv:elf(argv[-1],stripped=True)
+            if argv[0]=='/bin/sh':
+                events.append('relink');script=Path(argv[1]).read_text()
+                self.assertNotIn('--strip-debug',script);self.assertIn('--emit-relocs',script)
+                self.assertIn("--thinlto-cache-dir='copied/cache'" if override else '--thinlto-cache-dir=/original/cache',script)
+                elf(work/'reference-relocs-clang-22')
+            elif '--strip-debug' in argv:events.append('strip-debug')
+            elif '--strip-all' in argv:events.append('strip-all');elf(argv[-1],stripped=True)
             return ''
-        def rewrite(tool,profile,input_elf,output,run):elf(output);return {'counts':{'N':100}}
-        with patch.object(h,'call',side_effect=command),patch.object(h,'rewrite',side_effect=rewrite),patch.object(h,'tiny_gate',return_value=[{'byte_equal':True}]*3):
-            result=h.pipeline(build,work,'fixture-bolt')
-        self.assertEqual(result['link_strip_equivalence']['equal'],equal)
+        def rewrite(tool,profile,input_elf,output,run):
+            events.append('rewrite');self.assertEqual(events[:3],['relink','strip-debug','rewrite'])
+            if failure=='rewrite':raise h.GateError('matching gate failed')
+            elf(output);return {'counts':{'N':100}}
+        def tiny(ordinary,candidate,gate,resource):
+            label='prestrip' if Path(candidate).name=='clang.bolt' else 'final'
+            events.append(label)
+            if failure==label:raise h.GateError('tiny gate failed')
+            return [{'byte_equal':True}]*3
+        with patch.object(h,'call',side_effect=command),patch.object(h,'rewrite',side_effect=rewrite),patch.object(h,'tiny_gate',side_effect=tiny),patch.object(h,'cache_copy',side_effect=AssertionError('no automatic cache copy')):
+            if failure:
+                with self.assertRaises(h.GateError):h.pipeline(build,work,'fixture-bolt','copied/cache' if override else None)
+                if failure in ('rewrite','prestrip'):self.assertNotIn('strip-all',events)
+                self.assertFalse((work/'pipeline-result.json').exists());return
+            result=h.pipeline(build,work,'fixture-bolt','copied/cache' if override else None)
+        self.assertEqual(events,['relink','strip-debug','rewrite','prestrip','strip-all','final'])
         self.assertEqual(result['identity']['after_sha256'],h.digest(work/'clang.candidate'))
+        self.assertFalse((work/'lto-cache').exists());self.assertFalse((work/'strip-equivalence.json').exists())
         return result
-    def test_complete_fast_path(self):self.assertEqual(self.run_pipeline(True)['input_policy'],'link-strip-debug')
-    def test_complete_pm_fallback(self):self.assertEqual(self.run_pipeline(False)['input_policy'],'prestrip-fallback')
+    def test_pipeline_disk_failure_stops_before_link(self):
+        build=self.d/'build';build.mkdir();work=self.d/'work';work.mkdir()
+        (work/'link.original').write_text(EDGE);(work/'ordinary-clang-22').write_bytes(b'ordinary')
+        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':45*h.GIB})()),patch.object(h,'call') as command:
+            with self.assertRaisesRegex(h.GateError,'SKIP_DISK'):h.pipeline(build,work,'bolt')
+            command.assert_not_called()
+    def test_single_route_original_cache(self):self.assertEqual(self.run_pipeline()['cache_policy'],'original-in-place')
+    def test_explicit_copy_override(self):self.assertEqual(self.run_pipeline(override=True)['cache_policy'],'explicit-copy')
+    def test_matching_failure_stops(self):self.run_pipeline('rewrite')
+    def test_prestrip_tiny_failure_stops(self):self.run_pipeline('prestrip')
+    def test_final_tiny_failure_stops(self):self.run_pipeline('final')
 
 if __name__=='__main__':unittest.main(verbosity=2)

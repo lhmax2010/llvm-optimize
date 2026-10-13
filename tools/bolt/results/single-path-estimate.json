@@ -1,0 +1,80 @@
+{
+  "reference": {
+    "source_sha256": "ffd60bbd654486b9e44af5e824e7424bd56d4e8dcecc14fb884a4bfd6e42905c",
+    "processes": [
+      {
+        "pid": 1912082,
+        "name": "Name:\tld.lld",
+        "first": 1791880687.1286445,
+        "last": 1791881299.7739887,
+        "samples": 1206,
+        "VmHWM_kB": 5277208,
+        "observed_span_s": 612.6453442573547
+      },
+      {
+        "pid": 1913459,
+        "name": "Name:\tllvm-strip",
+        "first": 1791881301.7782505,
+        "last": 1791881320.0547245,
+        "samples": 37,
+        "VmHWM_kB": 3679612,
+        "observed_span_s": 18.276473999023438
+      }
+    ],
+    "kernel_peak_bytes": 6483955712,
+    "scope_wall_s": 676.9445571419783
+  },
+  "bolt": {
+    "source_sha256": "5f6c2f735c27af2cda9f3b92f8b99b699460a37299c9e2472437ca9838a11ff7",
+    "processes": [
+      {
+        "pid": 1913621,
+        "name": "Name:\tllvm-bolt",
+        "first": 1791881370.8962033,
+        "last": 1791881371.3973663,
+        "samples": 2,
+        "VmHWM_kB": 14600,
+        "observed_span_s": 0.5011630058288574
+      },
+      {
+        "pid": 1913625,
+        "name": "Name:\tllvm-bolt",
+        "first": 1791881371.898429,
+        "last": 1791881403.6154323,
+        "samples": 63,
+        "VmHWM_kB": 3855356,
+        "observed_span_s": 31.717003345489502
+      },
+      {
+        "pid": 1913798,
+        "name": "Name:\tllvm-strip",
+        "first": 1791881424.155688,
+        "last": 1791881424.6566813,
+        "samples": 2,
+        "VmHWM_kB": 457164,
+        "observed_span_s": 0.5009932518005371
+      }
+    ],
+    "kernel_peak_bytes": 4252286976,
+    "scope_wall_s": 66.33280996000394
+  },
+  "estimate": {
+    "quickbuild_pipeline_minutes": [
+      12,
+      15
+    ],
+    "peak_GiB": 6.038654327392578,
+    "conservative_existing_scope_sum_s": 743.2773671019822,
+    "sampling_interval_s": 0.5,
+    "excluded": [
+      "cache copy",
+      "dual-flags link",
+      "strict comparison",
+      "in-tree llvm-bolt build",
+      "ordinary full build",
+      "install and RPM post",
+      "30/90 object experiments"
+    ],
+    "limitations": "Reference scope includes old comparison and cache audit. Process spans are sampled estimates, not precise command wall times. In-place/new-tree/Quickbuild cache, hardware and tool build may differ. New prestrip tiny gate adds a small unmeasured cost."
+  }
+}

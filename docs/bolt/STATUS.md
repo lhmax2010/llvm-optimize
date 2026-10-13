@@ -146,3 +146,14 @@ PM八项新裁决按01附录修订执行：fully strip、前note/前后SHA/最�
 当前origin/main aeea5f83f35d9e957c329830fa61eb3ec0aa7e88的STATUS仍未正式交接cb新树，周三不能据目录存在开始。完整in-tree新llvm-bolt图/其cache隔离/install差集、cb匹配与实际完整spec后处理尾挂接、同模式普通cbRPM本地文件清单/DWARF逐项证明、发布完整构建/其他包/消费者/90真实对象/性能均仍待认证。小spec与R1资格不代替这些门禁；草案不可据本次直接推送发货。
 
 原始E=/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261014；R1专用/home/abuild/bolt-work/bolt-v4-20261014。大cache/ELF/.ii/完整patch/原日志均留新工作目录；Git只提交可评审文档、helper/fixtures、文本patch+压缩Source+manifest、小spec及JSON摘要。全部raw分支版/钉提交版索引随本次10发布；最终GitHub提交由git log与收尾回复给出。
+
+## 2026-10-13 晚轻任务：最新人工裁决（覆盖此前相关方案）
+
+1. spec/helper唯一生产路径为 emit-relocs 重链→LLVM strip-debug→BOLT→匹配/三目标→LLVM strip-all→安装与单次原post终检；删除双flags快路径、双路比较和回退。R1仅差2344 STT_FILE：LLVM strip-debug删除STT_FILE，LLD链接时strip-debug不删；final SHA575fc9db…与历史v2完全strip一致。
+2. 周三新树在origin/main STATUS正式交接后归本会话使用；原地引用原ThinLTO cache，LLD写入/prune可接受，不复制、不要求原cache冻结。cache路径改写仅保留为可选能力，R1等受保护非交接树才用。交接前不触碰根。
+3. 预计单次写入>10GiB的操作，所在文件系统写完必须仍有≥30GiB free，reserve另计；不足跳过报告。设计/helper预检按实际文件系统核算，预算必须含临时产物及新增cache。
+4. 今天复制98,248,402,280B导致工作区一度仅约5.6GB可用，LLD自动prune副本才恢复。原因是复制巨大cache而仅留4GiB重链reserve、未守30GiB底线。07正式备案；对策为第2、3项，不把审核PASS解释成安全。
+5. 归档完整x86树在/var/tmp，具体路径以正式交接STATUS为准；周三不得写死W/temp路径。
+6. .GCC.command.line记录实际编译器路径，30与90完整对象验证均必须用同一专用实体路径、两批复制来源SHA、相同argv/cwd/input/output，不改参数或过滤节，argv0伪装不足。
+
+步骤1完成：95/95 fixtures PASS（0.408s；4GiB轻scope1.528s），完整patch及公开封套静态apply/整树PASS；本地源码 d6ddbff5ba74bfb420b357b5b6ba9ed300971bb4（父cb679968），文本patch/profile/manifest更新，无Gerrit推送。Quickbuild单一路径估12–15分钟、kernel峰约6.04GiB（R1温缓存依据；新llvm-bolt构建/正常post另计），详情11与single-path-estimate.json。今晚不取共享锁、不跑重阶段、不进入归档根。步骤2副本清理、步骤3周三计划更新待执行。
