@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续六）STOP_DISK_ADMISSION_AFTER_EXPORT_HELPER_ABORT并收尾**：Base最新具体快照20261010.120615与Unified20260814.092727仓库预检PASS；专用配置只换Base、W配置未改。一次GBS启动在源码导出时因入口漏选llvm.spec枚举libcxx-runtimes而主动中止（57.530秒）；未创建chroot、无CMake/编译/RPM。辅助入口已补显式--spec，15+2测试PASS；重跑前/var/tmp可用263.725967GiB<263.758319GiB，差33.128MiB，按规则停止，无重跑/清理/放宽。验收1–7未完成，验收4旧环境基线待PM；无BOLT交接，后续ARM/bash/LLVM23未执行。Source/Commands/比较器/补丁不变，锁/进程/采样/挂载已回收。详见docs/49_x86_build_continuation.md §7–§12。
+**当前任务（docs/49续七）STOP_DISK_ADMISSION_AFTER_APPROVED_EMPTY_ROOT_DELETE并收尾**：获批/var/tmp/llvm-optimize-x86-archivefix-20261013实际仅15空目录/0文件，清单存证后删除，释放60KiB；可用263.726074GiB<263.758319GiB，仍差33.018750MiB，停止。第二轮GBS0次、新调用标记未创建；未删其他目录、未放宽预算。验收1–7未执行；验收4同环境独立-bi已获有条件批准但未到执行时点。无BOLT交接，ARM/bash/LLVM23未执行。两项目锁/进程/挂载已回收，无新采样器；文件和第一轮证据未改。见docs/49_x86_build_continuation.md §13–§15。
+
+**历史任务（docs/49续六）STOP_DISK_ADMISSION_AFTER_EXPORT_HELPER_ABORT并收尾**：Base最新具体快照20261010.120615与Unified20260814.092727仓库预检PASS；专用配置只换Base、W配置未改。一次GBS启动在源码导出时因入口漏选llvm.spec枚举libcxx-runtimes而主动中止（57.530秒）；未创建chroot、无CMake/编译/RPM。辅助入口已补显式--spec，15+2测试PASS；重跑前/var/tmp可用263.725967GiB<263.758319GiB，差33.128MiB，按规则停止，无重跑/清理/放宽。验收1–7未完成，验收4旧环境基线待PM；无BOLT交接，后续ARM/bash/LLVM23未执行。Source/Commands/比较器/补丁不变，锁/进程/采样/挂载已回收。详见docs/49_x86_build_continuation.md §7–§12。
 
 **历史任务（docs/49续五）STOP_BASE_REPOSITORY_404并收尾**：仅删除用户批准的B32/B64 lto.cache内容，9132+8726文件、释放19.513615GiB，目录/BUILD原件/GBS缓存保留。/var/tmp可用266.389824GiB、按预算剩余46.591225GiB，1.2倍准入与30GiB底线均PASS。后续标准仓库预检Base 20261001.092726 repomd HTTP404，Unified HTTP200；未换源/重试，GBS未启动，新x86根未创建。验收1–7/BOLT交接/ARM复验/bash/LLVM23未执行。两Source/Commands/比较器/补丁/配置未改。详见docs/49_x86_build_continuation.md；证据temp/release-x86-full-build-20261013。
 
@@ -55,7 +57,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：发布夹具认证、两条x86全量回归和PS3/PS2候选apply/tree均PASS；续六新Base预检PASS，导出入口缺陷已修正但新的磁盘准入FAIL，完整编译未开始。候选仍待完整RPM验收，未认证构建不得发货。发布模式完整构建仍挂账，没有BOLT新树交接。
+当前阶段：发布夹具认证、两条x86全量回归和PS3/PS2候选apply/tree均PASS；续七获批空准备根已删、只释放60KiB，磁盘准入仍FAIL，第二轮完整编译未开始。候选仍待完整RPM验收，未认证构建不得发货。发布模式完整构建仍挂账，没有BOLT新树交接。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -88,6 +90,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 - 原始日志、大文件仍放 `temp/`；提交推送遵守 [docs/README.md](README.md)。
 
 ## 2. 进度
+
+- 2026-10-13：本提交；docs/49_x86_build_continuation.md §13–§15、STATUS。获批中止导出根实际0文件/15空目录，删除释放60KiB后仍缺33.018750MiB；第二轮构建0次，按规则STOP。
 
 - 2026-10-13：本提交（git log -- docs/49_x86_build_continuation.md）。两ARM缓存盘点/限域删除、磁盘准入PASS；Base repomd404停止，构建0次。报告、续四入口链接与STATUS同提交。
 
@@ -420,6 +424,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 4. 人工裁决前提
 
+- **2026-10-13续七**：批准仅删除19:21中止导出创建的新根，经清单/mtime/产物/使用检查后执行；不扩展到其他目录。通过双磁盘门槛才允许第二轮GBS一次，独立标记/证据，首轮不动。同环境验收4批准独立buildroot真实-bi（cb679968无补丁spec），其余验收通过后、交接前执行；≥85.5792GiB、ninja-n无编译链接待办且运行中禁止编译链接，记录比较后删除独立buildroot。验收4结果不阻塞BOLT。依据用户续七；实测与停止见docs/49_x86_build_continuation.md §13–§15。
+
 - **2026-10-13续五用户批准**：只删除R32/R64各自经CMakeCache与链接原文确认的ThinLTO缓存目录内容；先盘点、预计同时满足1.2倍与30GiB门槛才删除，删除后复查。剩余ARM离线转换/根内小试/负例不重新链接；以后在两树重链按冷缓存处理。此授权不含GBS缓存、其他目录或BOLT资产。新x86根仍在/var/tmp；完整构建/验收通过才交接BOLT。依据docs/49_x86_build_continuation.md §1–§4；本轮已按范围删除。
 
 - **2026-10-13续四补充裁决**：任何单次写入超过10GiB，完成后所在文件系统可用须≥30GiB，否则跳过并报告，不清理；新x86完整构建根放`/var/tmp/llvm-optimize-x86-archivefix-20261013`，准入按/var/tmp计算，交接记录完整路径。原1.2倍准入未被取消；本次两项均未满足。用户告知BOLT缓存复制曾使工作区只剩约5.6GB，本会话不访问其资产验证该说法。证据docs/49_release_attribution.md §9、D/admission.json。
@@ -521,6 +527,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 续接PM已将其替换为两架构精确白名单`.globl _ZSt21ios_base_library_initv`且须保留输出GLOBAL符号；其余未知声明仍失败。辅助修正仅一次，本轮用于测试期望遗漏-g；第二次宿主套件再次失败后停止，不改共用取消代码或继续复验。生产Source与两patch不改。
 
 ## 5. 挂账
+
+- **续七当前停止**：获批根只释放60KiB，双门槛仍缺33.018750MiB；第二轮未启动，不能交接。新一轮恢复需先满足磁盘准入并使用独立一次性调用标记。验收4同环境方案已有条件授权，但尚未到执行时点；发布模式完整构建与后续ARM/bash/LLVM23仍挂账。证据E7/delete-result.json、stop.json，E7为temp/release-x86-full-build-20261013/round2。
 
 - **续五当前阻塞取代旧磁盘阻塞**：授权清理后已达到两条磁盘门槛，但W配置的Base 20261001.092726 repomd返回404。未擅自更换/复原仓库；新x86完整构建、验收1–7与BOLT交接仍未发生，后续步骤按序挂账。R32/R64的ThinLTO缓存已清空，BUILD和GBS缓存保留，未来重链冷缓存。证据docs/49_x86_build_continuation.md。
 

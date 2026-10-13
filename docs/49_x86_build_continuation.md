@@ -1,7 +1,9 @@
 # 49 续五至续六：x86完整构建环境、准入与验证记录
 
 日期：2026-10-13；开场提交 `6e874fdbd0149a33167c9b83f8938d17df7c7ceb`。
-**最终状态（续六）：STOP_DISK_ADMISSION_AFTER_EXPORT_HELPER_ABORT。新Base/Unified仓库预检PASS；GBS首次启动在源码导出阶段因入口漏选spec而主动中止，未创建chroot、未编译。入口已修正，但重跑前可用263.725967GiB低于263.758319GiB，按规则停止；没有重跑、清理或放宽门槛，没有新RPM/BOLT交接。**
+**最终状态（续七）：STOP_DISK_ADMISSION_AFTER_APPROVED_EMPTY_ROOT_DELETE。获批中止导出目录已删除，实际为15个空目录/0文件，释放61,440B（60KiB）；删除后/var/tmp可用263.726074GiB，仍低于263.758319GiB，差33.018750MiB。第二轮GBS调用0次，未清理其他目录、未重试；验收1–7未执行，无BOLT交接。**
+
+**历史状态（续六）：STOP_DISK_ADMISSION_AFTER_EXPORT_HELPER_ABORT。新Base/Unified仓库预检PASS；GBS首次启动在源码导出阶段因入口漏选spec而主动中止，未创建chroot、未编译。入口已修正，但重跑前可用263.725967GiB低于263.758319GiB，按规则停止；没有重跑、清理或放宽门槛，没有新RPM/BOLT交接。**
 
 历史续五状态：STOP_BASE_REPOSITORY_404；下文§1–§6保留原记录。
 
@@ -381,3 +383,83 @@ BOLT为**NOT_READY**：没有新BUILD、ThinLTO缓存、构建完成时间或新
 19:22:00共享重任务锁释放；19:26:04终检本任务构建进程0、采样器已回收、临时挂载0、两项目锁0，共享锁可获取。14项保护文件SHA全部与开场一致（含两Source/Commands所在文件、比较器、配置、W spec、已上传及新候选补丁）。未访问/修改BOLT资产，未清理磁盘，未推Gerrit。证据E6/lock-released.json、cleanup-final.json、final-integrity.json、stop.json。此处“回收”仅进程/锁/线程，不删除证据目录。
 
 本轮交付：本页、STATUS、build_llvm_x86_64.py及测试、专用run_certified_x86_release_build.py及测试；原始数据/专用配置/diff保存在E6。仓库变更不含用户的gbs_llvm.conf修改。报告小于50KB；全部结果以本节最终停止为准，§8是启动前登记。
+
+## 13. 续七：授权范围、开场与删除前盘点
+
+2026-10-13开场main=`9e7448d4a8f88331b730075cf78fbc21add8cf4e`。新证据E7=`temp/release-x86-full-build-20261013/round2`，第一轮E6原文、调用标记与结果全部保留。项目锁19:33:38取得；主仓库仅用户既有gbs_llvm.conf修改；冻结Source/Commands所在文件、比较器、W spec、候选/已上传补丁及E6专用配置/构建输入SHA全部一致。MemAvailable=13,744,197,632B，超过轻任务6GiB准入。原始核查E7/initial-integrity.json；本轮未修改任何代码或配置。
+
+### 13.1 本轮人工裁决（运行前）
+
+1. 仅批准删除`/var/tmp/llvm-optimize-x86-archivefix-20261013`整目录；须先登记清单/占用并核查没有BUILD-ROOTS、rpmbuild产物、19:21:00之前的文件和使用进程。授权不包括GBS可能使用的目录外临时文件或任何其他目录。
+2. 通过磁盘双准入才用原修正入口显式`--spec llvm.spec`执行第二轮；第二轮独立证据与独立一次性调用标记，第一轮记录不动；第二轮失败不重试。
+3. 验收4同环境基线已获有条件批准：其余验收通过后、BOLT交接前，cb679968原样spec独立buildroot执行真实`-bi --short-circuit --noclean`，不打RPM。执行前ninja-n无编译/链接待办、运行中出现clang/lld编译链接即中止；可用须≥1.2×46.316+30=85.5792GiB，不足则保持待PM并交接。逐文件记录差异，不自动放行；完成比较并存清单/SHA后删除该独立buildroot。验收4结果不阻塞BOLT交接。
+4. 其余资源与保护沿用；本轮没有扩展删除范围、调整预算或修改Source。
+
+### 13.2 实际目录内容
+
+**实际没有大体积导出载荷：普通文件0、软链接/特殊文件0，只有包括根本身的15个空准备目录。** `du -sx -B1`为61,440B，逐inode的st_blocks×512合计同值；逻辑文件载荷0。完整绝对路径、mode/dev/inode/size/blocks/mtime_ns/mtime/type已保存在E7/aborted-root-full-inventory.json；不存在未登记的普通文件。
+
+|相对批准根的路径|目录占用B|mtime（+08:00）|
+|---|---:|---|
+|`.`|4096|2026-10-13T19:21:06.983871+08:00|
+|`local`|4096|2026-10-13T19:21:06.984270+08:00|
+|`local/order`|4096|2026-10-13T19:21:06.983871+08:00|
+|`local/repos`|4096|2026-10-13T19:21:06.984203+08:00|
+|`local/repos/tizen_unified_standard`|4096|2026-10-13T19:21:06.984203+08:00|
+|`local/repos/tizen_unified_standard/x86_64`|4096|2026-10-13T19:21:06.984346+08:00|
+|`local/repos/tizen_unified_standard/x86_64/RPMS`|4096|2026-10-13T19:21:06.984270+08:00|
+|`local/repos/tizen_unified_standard/x86_64/SRPMS`|4096|2026-10-13T19:21:06.984270+08:00|
+|`local/repos/tizen_unified_standard/x86_64/logs`|4096|2026-10-13T19:21:06.984270+08:00|
+|`local/repos/tizen_unified_standard/x86_64/logs/fail`|4096|2026-10-13T19:21:06.984203+08:00|
+|`local/repos/tizen_unified_standard/x86_64/logs/success`|4096|2026-10-13T19:21:06.984203+08:00|
+|`local/sources`|4096|2026-10-13T19:21:06.984270+08:00|
+|`local/sources/tizen_unified_standard`|4096|2026-10-13T19:21:07.577871+08:00|
+|`local/sources/tizen_unified_standard/cache`|4096|2026-10-13T19:21:06.984270+08:00|
+|`local/sources/tizen_unified_standard/libcxx-runtimes-22.1.8-1`|4096|2026-10-13T19:21:07.576871+08:00|
+
+没有BUILD-ROOTS或任何rpmbuild产物；最早mtime也晚于19:21:00。mountinfo没有根内挂载。对可见/proc进程的cwd/root/exe/fd及相关构建命令检查，没有发现本项目竞争进程或指向该根的引用。**可见性限制必须保留：其他身份进程有299组cwd/root/exe、298组fd字段无法读取，未提权；本轮不能声称对这些字段完成了全宿主无盲区验证。** 实际删除只用空目录rmdir，不递归删除载荷；目录若新出现内容即失败，不会把未登记文件一并删掉。证据E7/aborted-root-delete-precheck.json、mountinfo-before.txt、aborted-root-du.txt。
+
+### 13.3 删除执行与空间复查
+
+删除前再次核对完整清单及inode/dev；确认本次清单全是空目录后，按深度倒序`Path.rmdir()`，删除范围精确止于批准根。没有使用扩大的rm范围，未删任何其他目录或文件。
+
+19:34:37完成，根已不存在：
+
+|项|实际字节|GiB/结果|
+|---|---:|---|
+|删除前/var/tmp可用|283,173,654,528|263.726017|
+|删除后/var/tmp可用|283,173,715,968|263.726074|
+|实际变化|61,440|60KiB|
+|已删除|0文件、15目录|仅获批根|
+|1.2倍准入|283,208,338,637|263.758319|
+|准入缺口|34,622,669|33.018750MiB，FAIL|
+|减历史写入预算236,006,948,864B后|47,166,767,104|43.927475GiB，30GiB底线PASS|
+
+获批根不含上一轮导出阶段观察到的大载荷，因此删除该根只释放60KiB，不能把整个文件系统此前约数GiB变化当作本次删除收益。本轮未追查、未删除目录外载荷，也没有把剩余缺口从冻结准入值中扣除。两条门槛须同时满足；1.2倍失败即停止，没有等待自然波动后再判。证据E7/delete-result.json、check_and_remove_aborted_root.py。
+
+## 14. 续七停止、验收和后续状态
+
+最终状态`STOP_DISK_ADMISSION_AFTER_APPROVED_EMPTY_ROOT_DELETE`。第二轮GBS没有启动，也没有创建新的调用标记；E7仅盘点/删除/完整性/停止证据，没有full-build-scope。第一轮E6/gbs-invoked.json仍保持19:21:02的记录，SHA/bytes/mtime随final-integrity.json留证，未修改或清空。修正后的原入口/候选/两仓库身份均未改；今后启动仍需独立注册第二轮调用标记与目录，不能复用第一轮标记绕过一次性限制。
+
+|要求|本轮结果|
+|---|---|
+|第二轮完整构建|NOT RUN，调用0次，根在批准删除后不存在|
+|CMake/编译/链接/%install转换/打包耗时|N/A，未启动|
+|构建cgroup峰值/进程VmHWM/构建磁盘峰值|N/A，无构建scope；上述磁盘是盘点时读数|
+|验收1 身份/安装依赖|冻结候选身份复核一致；新根安装/工具归属NOT RUN，整项未完成|
+|验收2 完整install-post/逐档strip|NOT RUN|
+|验收3 开发归档/运行库/libarcher|NOT RUN|
+|验收4 同环境未打补丁安装基线|已获有条件批准，但未到其余验收通过的执行时点，NOT RUN；不是新基线比较失败|
+|验收5 宿主/Tizen/运行库消费者|NOT RUN|
+|验收6 独立真实安装与同树SKIP|NOT RUN|
+|验收7 跨子系统直接编译结构诊断|本轮NOT RUN|
+|BOLT交接|NOT_READY，无新BUILD/ThinLTO缓存/完成时间，未交接|
+|两ARM全量、根内小试与64MiB负例|NOT RUN|
+|bash依赖、LLVM23探测|NOT RUN|
+|发布模式完整构建|仍挂账；既有60对发布认证PASS不变|
+
+## 15. 续七回收与交付
+
+项目锁已释放，19:35:53终检本任务进程0、临时挂载0、项目锁0；未取得共享重任务锁、未启动采样器，未干扰BOLT。完整性核对保留全部冻结文件和第一轮证据；新证据目录位于W/temp，未提交载荷。E7/{lock-acquired.json,lock-released.json,cleanup-final.json,final-integrity.json,stop.json}记录回收与边界。
+
+本轮只提交本页与STATUS，没有修改Source、Commands、比较器、spec、配置、候选补丁或构建入口；未做编译/打包、未推Gerrit。报告与STATUS同提交推送GitHub main，报告不超过50KB。历史§1–§12保持原结果，当前结论以§13–§15为准。
