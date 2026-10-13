@@ -254,3 +254,25 @@ primary中没有名为lld的独立x86_64/noarch包；不得据此声称lld工具
 19:15复查/var/tmp可用286,023,012,352B（266.379688GiB）；≥263.758319GiB且减219.798599GiB后≥30GiB，两项PASS。后续启动前再次核查、构建运行中持续监测30GiB底线；本轮未清理任何文件。
 
 旧docs/13/35/38基线来自原固定Base环境，glibc/binutils/gcc/rpm-build等发行号与本次新Base不同。它们不能直接充当“同环境未打补丁”基线；验收4按用户新规则列待PM裁决，不自动把差异豁免为通过。具体同环境替代方案及预算待构建完成后的实测安装段给出；其余验收继续。
+
+## 8. 续六构建入口与预注册保护
+
+环境阶段提交`2b6bde9`已推送main。独立完整源码checkout位于E6/source，HEAD为候选PS2 `4c36e899dffee2869af9afd174346e3eb9a7d7ca`，git状态为空；spec SHA `e88ef4cb4cfc4010bceb62a94389f517aedff0b2c2df819ba64dd988d9910426`，Source为冻结`c43523c0…`。未改W/llvm或原候选树。
+
+新增[专用入口](../tools/run_certified_x86_release_build.py)，逐个钉Source/spec/两个patch、两配置、repomd/buildconfig SHA、HEAD、干净状态、项目锁、新根路径；默认只核验，`--run`才允许唯一一次GBS。与普通完整构建的历史指纹/16GiB准入无关，本轮使用docs/49 §1明确的重阶段10GiB准入、最多60分钟每5分钟一次；共享flock最长2h。18GiB/swap0、6/6/2、debuginfo-j4、nice15/ionice3保持。
+
+复用build_llvm_x86_64.py的CMake/2GiB主机保护/30s采样/线程回收，新增可选disk_floor_bytes：每2秒检查新根父文件系统、低于30GiB即沿原stop_build停止scope，不删除文件。默认调用不带此项，原容量门禁不变；30GiB恰好允许。CMake仍要求15分钟内通过静态Release/Thin/O3/lld/断言OFF等，另逐项核对目标、projects、编译器、RTTI、6/2并发。
+
+门禁测试：原构建测试加磁盘正负例共15项PASS；专用入口2项PASS（精确身份、错误身份/脏状态/复用根拒绝、双磁盘边界）。证据E6/build-guard-tests.log、certified-driver-tests.log、certified-input-preflight.json。
+
+构建命令将在E6/full-build-scope/commands.log执行前完整echo，核心为：
+
+```sh
+python3 tools/run_certified_x86_release_build.py --run
+# 内层：gbs -c E6/gbs-build.conf build -A x86_64 \
+#   -B /var/tmp/llvm-optimize-x86-archivefix-20261013 --threads 1 \
+#   --include-all --define '_smp_mflags -j4' \
+#   -D E6/repository-preflight/buildconfig.conf E6/source
+```
+
+本节为启动前登记；不等于构建或新RPM验收通过。

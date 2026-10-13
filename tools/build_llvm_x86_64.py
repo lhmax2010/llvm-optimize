@@ -433,6 +433,14 @@ def linker_output(argv, parent_argv):
     return None, 'UNKNOWN'
 
 
+def check_disk_floor(path, floor_bytes, *, usage=shutil.disk_usage):
+    """Optional stage-specific filesystem floor; never deletes or changes admission."""
+    free = usage(path).free
+    if floor_bytes is not None and free < floor_bytes:
+        raise RuntimeError(f"disk free {free} < floor {floor_bytes} at {path}: emergency stop")
+    return free
+
+
 def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None,
           completion_file=None, release_file=None, cache_check=True):
     if not cache_check and command is None:
@@ -487,6 +495,7 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
                 while not stop.is_set():
                     now = time.monotonic()
                     available = mem_available()
+                    disk_free = check_disk_floor(args.buildroot.parent, plan.get('disk_floor_bytes'))
                     if available < 2 * GIB:
                         raise RuntimeError(f"MemAvailable {available} < 2 GiB: emergency stop")
                     tree = process_tree(child.pid)
@@ -534,7 +543,7 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
                                       loadavg=Path("/proc/loadavg").read_text().strip(),
                                       process_tree_rss_bytes=sum(tree.values()), processes=tree,
                                       cgroup=cgroup_stats(unit),
-                                      disk_free_bytes=shutil.disk_usage(args.buildroot.parent).free,
+                                      disk_free_bytes=disk_free,
                                       free_m=sp.check_output(["free", "-m"], text=True))
                         samples.write(json.dumps(sample) + "\n")
                         next_sample = now + 30

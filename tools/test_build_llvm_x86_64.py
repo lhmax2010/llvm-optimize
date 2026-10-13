@@ -14,6 +14,17 @@ import build_llvm_x86_64 as b
 
 
 class BuildGates(unittest.TestCase):
+    def test_optional_disk_floor_is_inclusive_and_stops_below(self):
+        for free, floor, fails in ((30*b.GIB,30*b.GIB,False),
+                                  (30*b.GIB-1,30*b.GIB,True),
+                                  (1,None,False)):
+            usage=lambda path: SimpleNamespace(free=free)
+            if fails:
+                with self.assertRaisesRegex(RuntimeError, 'disk free.*emergency stop'):
+                    b.check_disk_floor('/var/tmp',floor,usage=usage)
+            else:
+                self.assertEqual(b.check_disk_floor('/var/tmp',floor,usage=usage),free)
+
     def test_linker_output_direct_response_and_unknown(self):
         self.assertEqual(b.linker_output(['ld.lld','-o','bin/clang-22'], []),
                          ('bin/clang-22', 'linker_argv'))

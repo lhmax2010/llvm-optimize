@@ -649,3 +649,5 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 用户批准仅构建专用配置改用Base目录最新具体快照（本次20261010.120615），Unified不变；W/gbs_llvm.conf不改，环境失败不再换源。旧快照基线不可比时验收4待PM裁决，不阻塞其余验收/BOLT交接；全构建和重任务仍按docs/49 §1与1.2倍/30GiB双门槛。证据docs/49_x86_build_continuation.md §7、E6/snapshot-selection.json。
 
 进度：2026-10-13｜本提交｜docs/49_x86_build_continuation.md §7｜新具体Base/Unified仓库和磁盘预检PASS，完整构建尚未启动。
+
+进度：2026-10-13｜本提交｜docs/49_x86_build_continuation.md §8及专用构建入口｜冻结输入预检、15+2门禁测试PASS；新增运行期30GiB中止检查，准备启动唯一一次完整构建。
