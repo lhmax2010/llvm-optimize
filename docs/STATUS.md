@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续八）STOP_HOST_MEMORY_FLOOR_ROUND2，已收尾**：授权删除3处导出残留2.645752GiB，正常磁盘准入PASS、未动用PM放宽；第二轮唯一一次GBS于19:52:09启动。CMake门禁425.899秒PASS；20:33:26宿主MemAvailable=2140217344B<2GiB，按规则中止，Ninja6829/7634，总wall2506.666s，scope最终峰11.197765GiB、swap0；采样最大lld VmHWM8.711487GiB，磁盘周期采样最低242.740303GiB。未执行%install、0 RPM，验收2–7未执行，BOLT NOT_READY；两ARM/根内/64MiB/bash/LLVM23未执行。没有重试或改资源，部分BUILD/cache保留。两项目锁/共享锁、任务进程/采样器/挂载已回收，14项保护身份一致；W/gbs_llvm.conf用户改动保留。详见[第二轮停止报告](49_x86_build_round2_result.md)，证据temp/release-x86-full-build-20261013/round2-launch。
+**当前任务（docs/49续九）STOP_RESUME_PREFLIGHT，已收尾**：续跑调用0次。根内同宏环境展开证明_smp_mflags=-j1与-j4的%build完全相同，均为`ninja -j6`，不满足本轮串行要求；控制该命令的是mlgo_build_jobs，未擅自另加覆盖。唯一干跑894项>805+6=811；其中89项与旧操作重合，均为LLDB头暂存，Cache/build.ninja/.ninja_log SHA未变，不能据此宣称大面积重配。docs/34历史最大单链接13.028732GiB、clang-22 10.654884GiB，均高于门禁实读MemAvailable11.025112减2=9.025112GiB。未编译/安装/打包、无新RPM、无BOLT交接，后续ARM/bash/LLVM23未执行。26项冻结身份与检查点核查一致；项目锁/进程/挂载回收，未取得共享重任务锁。见[续跑前核查报告](49_x86_build_resume.md)，证据temp/release-x86-full-build-20261013/round2-resume。
+
+**历史任务（docs/49续八）STOP_HOST_MEMORY_FLOOR_ROUND2，已收尾**：授权删除3处导出残留2.645752GiB，正常磁盘准入PASS、未动用PM放宽；第二轮唯一一次GBS于19:52:09启动。CMake门禁425.899秒PASS；20:33:26宿主MemAvailable=2140217344B<2GiB，按规则中止，Ninja6829/7634，总wall2506.666s，scope最终峰11.197765GiB、swap0；采样最大lld VmHWM8.711487GiB，磁盘周期采样最低242.740303GiB。未执行%install、0 RPM，验收2–7未执行，BOLT NOT_READY；两ARM/根内/64MiB/bash/LLVM23未执行。没有重试或改资源，部分BUILD/cache保留。两项目锁/共享锁、任务进程/采样器/挂载已回收，14项保护身份一致；W/gbs_llvm.conf用户改动保留。详见[第二轮停止报告](49_x86_build_round2_result.md)，证据temp/release-x86-full-build-20261013/round2-launch。
 
 **历史任务（docs/49续七）STOP_DISK_ADMISSION_AFTER_APPROVED_EMPTY_ROOT_DELETE并收尾**：获批/var/tmp/llvm-optimize-x86-archivefix-20261013实际仅15空目录/0文件，清单存证后删除，释放60KiB；可用263.726074GiB<263.758319GiB，仍差33.018750MiB，停止。第二轮GBS0次、新调用标记未创建；未删其他目录、未放宽预算。验收1–7未执行；验收4同环境独立-bi已获有条件批准但未到执行时点。无BOLT交接，ARM/bash/LLVM23未执行。两项目锁/进程/挂载已回收，无新采样器；文件和第一轮证据未改。见docs/49_x86_build_continuation.md §13–§15。
 
@@ -59,7 +61,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：发布夹具认证、两条x86全量回归和PS3/PS2候选apply/tree均PASS；续八第二轮完整构建已启动但在6829/7634项触发宿主内存保护，唯一调用已用完，按规则停止。候选仍缺完整RPM验收，未认证构建不得发货；保留/var/tmp下部分BUILD/cache，无BOLT交接。发布模式完整构建及后续ARM根内验收继续挂账。
+当前阶段：发布夹具认证、两条x86全量回归和PS3/PS2候选apply/tree均PASS；续八部分构建在6829/7634项停止，续九虽获一次串行续跑授权，但干跑数量/串行宏/历史单链接预算三项前置门禁不通过，续跑未启动。候选仍缺完整RPM验收，部分BUILD/cache保留，无BOLT交接；发布模式完整构建和后续ARM根内验收继续挂账。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -93,7 +95,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 ## 2. 进度
 
-- 2026-10-13｜本收尾提交（git log -1 -- docs/49_x86_build_round2_result.md）｜第二轮停止报告、STATUS｜磁盘准入通过；GBS唯一调用在宿主可用内存<2GiB中止，6829/7634项、0 RPM；无重试/交接，锁及进程挂载回收。
+- 2026-10-13｜本提交（git log -1 -- docs/49_x86_build_resume.md）｜docs/49_x86_build_resume.md、STATUS｜续跑前门禁FAIL：干跑894>811、指定_smp_mflags不控制ninja、历史单链接超宿主预算；0次续跑，现场保留并回收锁。
+
+- 2026-10-13｜aa1da3578640db812030a6792f5d703d21322b70｜第二轮停止报告、STATUS｜磁盘准入通过；GBS唯一调用在宿主可用内存<2GiB中止，6829/7634项、0 RPM；无重试/交接，锁及进程挂载回收。
 
 - 2026-10-13｜485b870｜docs/49_x86_build_continuation.md §17｜构建中途检查（非完成）：20:23进度检查：Ninja至少4812/7634，尚未完成；scope已观测峰值5.350548GiB，/var/tmp可用252.968220GiB，max/oom/oom_kill=0。该读数不代表最终峰值。
 
@@ -213,6 +217,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
 
 ## 3. 已闭合结论
+
+- **续九硬证据**：根内spec:63/403用mlgo_build_jobs控制ninja；_smp_mflags=-j1/-j4展开%build逐字节相同，仍-j6。894项干跑含89项旧LLDB暂存操作，构建三检查点SHA相同；不能等同大面积重编，但原数值门禁未豁免。docs/34两段原采样共77064行的最大单链接为13.028732GiB，当前单链接预算9.025112GiB；按本轮门禁停止。证据docs/49_x86_build_resume.md §3–§5、E9/{preflight-summary,historical-link-peaks,stop}.json；未证明任何新的构建或产物性质。
 
 - **续八硬证据**：获批3处导出残留释放2.645752GiB，正常准入通过无需放宽；第二轮在宿主MemAvailable=1.993233GiB主动中止，最终scope峰11.197765GiB（systemd journal）、6829/7634项，未到%install，不能形成RPM/交接认证。不是18GiB cap失败的证据。进程HWM与磁盘最小值是采样口径，不是精确自然峰值。见docs/49_x86_build_round2_result.md §1–§5、E8/final-results.json及scope-final-journal-counters.json。
 
@@ -436,6 +442,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 4. 人工裁决前提
 
+- **2026-10-13续九**：用户将续八停止归因为两个大链接与编译并发撞峰，与补丁/环境/磁盘无关；批准仅在同一部分树续跑一次，-bc --short-circuit指定_smp_mflags=-j1，随后-bi恢复-j4再打包。先满足干跑≤805+中止活跃任务、原CMake参数一致、历史单链接≤MemAvailable−2GiB；重阶段10GiB、scope18GiB/swap0、宿主2GiB及磁盘30GiB保护不变。验收4条件和不阻塞交接沿用。实测该宏不控制本spec的ninja，三前置门禁FAIL，因此未启动；没有把用户意图自行扩展为覆盖mlgo_build_jobs或更换打包路径。依据用户续九；docs/49_x86_build_resume.md。
+
 - **2026-10-13续八**：批准删除/var/tmp顶层19:21:00–19:22:10且属linhao、归属第一轮导出有原文证据的临时条目；其他一律不删。第二轮正常1.2倍准入不满足时，一次性允许缺口≤1GiB且预算后≥40GiB，两条件同时满足；运行中30GiB每2秒保护保持。本轮清理后正常准入已通过，未放宽；第二轮仍只一次调用。
 
 - **2026-10-13续七**：批准仅删除19:21中止导出创建的新根，经清单/mtime/产物/使用检查后执行；不扩展到其他目录。通过双磁盘门槛才允许第二轮GBS一次，独立标记/证据，首轮不动。同环境验收4批准独立buildroot真实-bi（cb679968无补丁spec），其余验收通过后、交接前执行；≥85.5792GiB、ninja-n无编译链接待办且运行中禁止编译链接，记录比较后删除独立buildroot。验收4结果不阻塞BOLT。依据用户续七；实测与停止见docs/49_x86_build_continuation.md §13–§15。
@@ -542,7 +550,9 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 5. 挂账
 
-- **续八当前停止，优先于以下历史条目**：第二轮唯一GBS调用已用完，宿主内存保护中止；未改资源重试。部分树`/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`及其`lto.cache`保留，尚非可交接产物，构建成功时间不存在。验收2–7、BOLT交接和后续两ARM/根内/64MiB/bash/LLVM23均未完成，验收4的有条件授权未到执行时点。下一步由PM重新安排；本轮不续跑。Source/PS3/PS2身份见docs/49_x86_build_round2_result.md §2，回收完成见§4。
+- **续九当前停止，优先于历史条目**：原部分树未续跑，唯一授权未实际调用；串行方式需要PM重新裁决实际控制ninja的mlgo_build_jobs，894项中的89项LLDB暂存是否计入805+活跃上限也需明确，历史单链接内存预算尚不满足。当前根rpmbuild help对short-circuit标c/i；最终正式打包路径未实测，不自行回退-ba或使用带ShortCircuited依赖的拼包路径。验收、BOLT交接及ARM/bash/LLVM23仍挂账。证据docs/49_x86_build_resume.md §3–§7。
+
+- **续八历史停止（续九获续跑授权，但前置门禁未通过）**：第二轮唯一GBS调用已用完，宿主内存保护中止；未改资源重试。部分树`/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`及其`lto.cache`保留，尚非可交接产物，构建成功时间不存在。验收2–7、BOLT交接和后续两ARM/根内/64MiB/bash/LLVM23均未完成，验收4的有条件授权未到执行时点。下一步由PM重新安排；本轮不续跑。Source/PS3/PS2身份见docs/49_x86_build_round2_result.md §2，回收完成见§4。
 
 - **续七历史停止（续八授权清理后磁盘准入已解除）**：获批根只释放60KiB，双门槛仍缺33.018750MiB；第二轮未启动，不能交接。新一轮恢复需先满足磁盘准入并使用独立一次性调用标记。验收4同环境方案已有条件授权，但尚未到执行时点；发布模式完整构建与后续ARM/bash/LLVM23仍挂账。证据E7/delete-result.json、stop.json，E7为temp/release-x86-full-build-20261013/round2。
 
