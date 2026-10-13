@@ -656,3 +656,8 @@ rpmbuild --define '_smp_mflags -j4' --define '_srcdefattr (-,root,root)' \
 ### 16.8 05:38进度（仍未完成）
 
 截至2026-10-14T05:38:24.734274+08:00，最近完成行为`2026-10-14T05:36:32+08:00 [893/902] Linking CXX executable bin/obj2yaml`，正在opt链接。最近MemAvailable=26736549888B，/var/tmp可用=125816889344B，保护未中止。04:49只读scope复查：MemoryPeak=MemoryMax=18GiB，max=30885，oom/oom_kill/oom_group_kill均0；原始值在E11/interim-0449-scope.json。后续最终计数待结束，不能把受限scope峰值当作进程自然峰值。%install/打包、续跑后8项对照、验收1–7与BOLT交接仍NOT RUN。证据E11/interim-0538-progress.json。
+
+
+### 16.9 编译链接完成、进入真实转换（05:56，整包仍未完成）
+
+Ninja于2026-10-14 05:48:16完成902/902；%build从2026-10-13 22:43:03到该时刻，共25,513秒（日志秒级界限），未另启rpmbuild。同秒进入%install，05:52:53出现NATIVE_ARCHIVES_BEGIN；05:56已输出32档实际转换记录，不是SKIP。安装/后处理/打包仍在进行，尚未执行最终8项对照或RPM验收。证据E11/percent-build-complete.json、after-percent-build.ninja_log及resume-scope/build.log；磁盘复制后可用约62GiB，2秒底线守护继续。
