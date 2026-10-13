@@ -113,7 +113,7 @@ def main():
         audit.json('registered-plan.json',plan)
         with (E/'gbs-invoked.json').open('x') as f:
             json.dump(dict(time=guard.stamp(),root=str(ROOT),head=HEAD),f)
-        guard.build(audit,SimpleNamespace(buildroot=ROOT,source=SOURCE,config=E/'gbs-build.conf'),
+        guard.build(audit,SimpleNamespace(buildroot=ROOT,source=SOURCE,config=E/'gbs-build.conf',spec='llvm.spec'),
                     plan,E/'repository-preflight/buildconfig.conf','systemd')
     except BaseException as error:
         audit.json('stopped.json',dict(time=guard.stamp(),error=repr(error))); raise

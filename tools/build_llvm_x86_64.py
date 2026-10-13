@@ -450,6 +450,8 @@ def build(audit, args, plan, chosen, mechanism, *, command=None, input_text=None
         command = ["gbs", "-c", str(args.config), "build", "-A", "x86_64", "-B", str(args.buildroot),
                    "--threads", "1", "--include-all", "--define", "_smp_mflags -j4",
                    "-D", str(chosen), str(args.source)]
+        if getattr(args, 'spec', None):
+            command += ['--spec', args.spec]
         if plan.get('certify_fingerprint'):
             completion_file = audit.directory/'gbs.exit'
             release_file = audit.directory/'gbs.release'

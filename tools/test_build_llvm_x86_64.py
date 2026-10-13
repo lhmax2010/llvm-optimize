@@ -173,13 +173,14 @@ class BuildGates(unittest.TestCase):
         """Exercise actual threads/processes; replace GBS BEFORE subprocess launch."""
         real_popen = subprocess.Popen
         for scenario in ('pass', 'bad_cache', 'low_memory', 'child_failure', 'deadline', 'interrupted',
-                         'masked_failure', 'missing_status', 'rewritten_cache', 'held_completion'):
+                         'masked_failure', 'missing_status', 'rewritten_cache', 'held_completion', 'selected_spec', 'low_disk'):
             with self.subTest(scenario=scenario), tempfile.TemporaryDirectory(
                     prefix='build-guard-test-', dir=b.WORKSPACE/'temp') as tmp:
                 directory = Path(tmp)
                 args = SimpleNamespace(config=directory/'unused.conf', source=directory/'unused-source',
                                        buildroot=directory/'root')
                 cache = args.buildroot/'local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/CMakeCache.txt'
+                if scenario == 'selected_spec': args.spec = 'llvm.spec'
                 contents = self.cache() + 'LLVM_PARALLEL_COMPILE_JOBS:STRING=1\nLLVM_PARALLEL_LINK_JOBS:STRING=1\n'
                 if scenario == 'bad_cache':
                     contents = contents.replace('Release', 'MinSizeRel')
@@ -208,6 +209,10 @@ class BuildGates(unittest.TestCase):
                     if command[0] != '/usr/bin/time':
                         return real_popen(command, **kwargs)
                     self.assertIn('gbs', command)
+                    if scenario == 'selected_spec':
+                        self.assertEqual(command[command.index('--spec')+1], 'llvm.spec')
+                    else:
+                        self.assertNotIn('--spec', command)
                     # The real executable is Python, never GBS (and no compiler).
                     command = [sys.executable, '-c', code]
                     launched.append(command)
@@ -229,11 +234,12 @@ class BuildGates(unittest.TestCase):
 
                 audit = b.Audit(directory/'audit')
                 plan = dict(memory_max_gib=1, compile_jobs=1, link_jobs=1)
+                if scenario == 'low_disk': plan['disk_floor_bytes'] = 10**20
                 try:
                     with patch.object(b.sp, 'Popen', harmless_popen), patch.object(
                             b, 'mem_available', return_value=(1 if scenario == 'low_memory' else 20)*b.GIB), patch.object(
                             b, 'CONFIG_GATE_SECONDS', 0 if scenario == 'deadline' else 900):
-                        if scenario in ('pass','held_completion'):
+                        if scenario in ('pass','held_completion','selected_spec'):
                             b.build(audit, args, plan, directory/'unused-buildconf', 'prlimit',
                                     completion_file=completion if scenario == 'held_completion' else None,
                                     release_file=release if scenario == 'held_completion' else None)

@@ -1,7 +1,7 @@
 # 49 续五至续六：x86完整构建环境、准入与验证记录
 
 日期：2026-10-13；开场提交 `6e874fdbd0149a33167c9b83f8938d17df7c7ceb`。
-**当前状态（续六）：新固定Base仓库预检PASS；磁盘两项准入PASS，正在准备唯一一次x86完整构建。尚无新RPM验收或BOLT交接。**
+**最终状态（续六）：STOP_DISK_ADMISSION_AFTER_EXPORT_HELPER_ABORT。新Base/Unified仓库预检PASS；GBS首次启动在源码导出阶段因入口漏选spec而主动中止，未创建chroot、未编译。入口已修正，但重跑前可用263.725967GiB低于263.758319GiB，按规则停止；没有重跑、清理或放宽门槛，没有新RPM/BOLT交接。**
 
 历史续五状态：STOP_BASE_REPOSITORY_404；下文§1–§6保留原记录。
 
@@ -247,7 +247,7 @@ Rnew为§1历史x86根；只读`rpm --root Rnew --dbpath /var/lib/rpm -qa`，全
 |rpm-build|4.14.1.1-1.4.x86_64|4.14.1.1-1.6.x86_64|
 |util-linux|2.41.2-1.4.x86_64|2.41.2-1.6.x86_64|
 
-primary中没有名为lld的独立x86_64/noarch包；不得据此声称lld工具不存在，工具归属以新根实际文件/RPM查询确认。gbs由宿主运行，未作为根内同名包提供。Unified提供strace-6.6-0.x86_64，但Rnew未装；本轮不为记录工具改spec依赖。完整列表E6/package-comparison.json。
+primary中没有名为lld的独立x86_64/noarch包。Rnew的/usr/bin/ld.lld由llvm-22.1.8-1.6.x86_64提供（E6/rnew-lld-owner.txt），新Base的llvm同NEVRA；新根实际文件/版本因未初始化未测。gbs由宿主运行，未作为根内同名包提供。Unified提供strace-6.6-0.x86_64，但Rnew未装；本轮不为记录工具改spec依赖。完整列表E6/package-comparison.json。
 
 ### 7.4 磁盘与验收4边界
 
@@ -276,3 +276,108 @@ python3 tools/run_certified_x86_release_build.py --run
 ```
 
 本节为启动前登记；不等于构建或新RPM验收通过。
+
+## 9. 续六实际入口、辅助脚本缺陷与停止
+
+### 9.1 一次GBS启动：尚未编译
+
+19:21:02取得共享锁后以§8注册命令启动，启动准入10GiB和磁盘双门槛通过。GBS2.1.0于19:21:07进入export。新的tizen_base源码同时有`packaging/llvm.spec`和`packaging/libcxx-runtimes.spec`；专用入口漏传`--spec llvm.spec`，复用的GBS默认枚举了两个spec。进程原文（来自scope/process-memory.jsonl）：
+
+```text
+gbs export .../latest-base/source -o /var/tmp/llvm-optimize-x86-archivefix-20261013/local/sources/tizen_unified_standard/libcxx-runtimes-22.1.8-1 --outdir-directly --spec libcxx-runtimes.spec --include-all --packaging-dir=packaging
+```
+
+这是本任务构建辅助入口的范围选择缺陷，责任在入口，不是新快照、LLVM配方或Source失败。发现后向本任务驱动发送SIGINT，原stop_build停止该scope，19:22:00退出。只读诊断：`local/BUILD-ROOTS`不存在；全部2秒进程记录中rpmbuild、ninja、clang、lld/build进程观察数0；GBS日志只有准备/导出。没有用额外包的产物充当LLVM结果。证据E6/driver-spec-selection-stop.json、driver-spec-selection-diagnosis.json及full-build-scope原始日志。
+
+本任务仅GBS入口1次；LLVM完整rpmbuild启动0次、CMake0次、RPM0个。新路径只留下GBS的sources/order/repos准备目录，不能称为完整LLVM构建树。
+
+### 9.2 限定修正与重跑前磁盘失败
+
+按辅助脚本条款，只补显式spec选择；不改Source/spec/config、优化参数、cap或门禁，第一次修正后尚未重跑：
+
+```diff
+--- a/tools/build_llvm_x86_64.py
++++ b/tools/build_llvm_x86_64.py
+@@ -450,6 +450,8 @@
+         command = ["gbs", "-c", str(args.config), "build", "-A", "x86_64", "-B", str(args.buildroot),
+                    "--threads", "1", "--include-all", "--define", "_smp_mflags -j4",
+                    "-D", str(chosen), str(args.source)]
++        if getattr(args, 'spec', None):
++            command += ['--spec', args.spec]
+         if plan.get('certify_fingerprint'):
+             completion_file = audit.directory/'gbs.exit'
+             release_file = audit.directory/'gbs.release'
+--- a/tools/run_certified_x86_release_build.py
++++ b/tools/run_certified_x86_release_build.py
+@@ -113,7 +113,7 @@
+         audit.json('registered-plan.json',plan)
+         with (E/'gbs-invoked.json').open('x') as f:
+             json.dump(dict(time=guard.stamp(),root=str(ROOT),head=HEAD),f)
+-        guard.build(audit,SimpleNamespace(buildroot=ROOT,source=SOURCE,config=E/'gbs-build.conf'),
++        guard.build(audit,SimpleNamespace(buildroot=ROOT,source=SOURCE,config=E/'gbs-build.conf',spec='llvm.spec'),
+                     plan,E/'repository-preflight/buildconfig.conf','systemd')
+     except BaseException as error:
+         audit.json('stopped.json',dict(time=guard.stamp(),error=repr(error))); raise
+```
+
+构建guard测试仍15项全部PASS，实际线程/进程模拟从10种扩为12种，新增显式llvm.spec命令检查与低磁盘自动中止/采样回收。专用入口2项全部PASS。完整输出E6/build-guard-tests-final.log、certified-driver-tests-final.log。这些只执行无害模拟，不启动GBS或编译；不是构建重试。
+
+19:22:36重跑前再次检查/var/tmp：
+
+|项|实际字节|GiB/结果|
+|---|---:|---|
+|可用|283,173,601,280|263.725967|
+|1.2倍准入|283,208,338,637|263.758319|
+|缺口|34,737,357|33.128125MiB，FAIL|
+|可用减219.798599GiB预算|47,166,652,416|43.927368GiB，30GiB底线PASS|
+
+两条规则必须同时满足，不能以只差约33MiB为由放宽1.2倍门槛，也没有把已导出载荷从冻结预算中自行扣除。导出阶段的临时磁盘写入已发生，现有目录全部保留；未删除任何内容，没有等待空间波动重判，没有执行第二次GBS。最终状态为`STOP_DISK_ADMISSION_AFTER_EXPORT_HELPER_ABORT`，不是LLVM编译失败或OOM。未来恢复需明确新一轮入口/新根策略，当前专用入口仍保留“根已存在/调用标记已存在即拒绝”，未开放任意重试。
+
+### 9.3 实测资源的适用范围
+
+以下仅是这次57.529877秒的导出入口；不代表完整LLVM构建时间/峰值：
+
+|项|结果|
+|---|---|
+|scope配置|MemoryMax18GiB、MemorySwapMax0；nice15/ionice3|
+|采样|30秒资源采样2条、2秒进程观察；运行中每2秒检查30GiB底线|
+|采样到的cgroup MemoryPeak最大值|1,887,956,992B（1.758297GiB），仅采样下界|
+|完整scope最终峰值|UNKNOWN：主动中止后scope已卸载；未伪造最终累计峰值|
+|宿主采样最低MemAvailable|13,766,848,512B（12.821377GiB）|
+|采样最低/var/tmp可用|283,112,337,408B（263.668911GiB）|
+|进程VmHWM最高观察|git762,588KiB（源码导出），非clang/lld|
+|memory.events|两次样本max/oom/oom_kill均0；无OOM报错，不能替代缺失的最终计数|
+|GNU time -v|随主动中止未写出完整记录；不用空文件宣称已取得峰值|
+|编译/链接/%install转换/打包耗时与峰值|N/A，全部未进入|
+
+证据full-build-scope/{launch.json,outcome.json,samples.jsonl,process-memory.jsonl,memory-summary.json,stopped.json}。磁盘最低采样是全文件系统观察，不宣称所有变化都由本任务独占产生。启动后原初始准入线不是运行中止线；当时未低于30GiB，主动中止原因是spec选择错误，之后新的准入检查才失败。
+
+## 10. 验收1–7、基线边界与替代方案
+
+|验收项|本轮结果|
+|---|---|
+|1 身份/依赖、实际转换|候选spec/Source/补丁/HEAD及仓库宏PASS；新根未初始化，安装包归属/实际转换NOT RUN，整项未通过|
+|2 install-post/execve、逐档llvm-strip、其他brp|NOT RUN|
+|3 225开发档、45 compiler-rt、libarcher双归属|NOT RUN|
+|4 同配方无补丁非归档基线|待PM裁决；新环境与历史基线不可比，未执行比较|
+|5 宿主/Tizen消费者及运行库探针|NOT RUN|
+|6 独立真实%install与同树SKIP|NOT RUN|
+|7 ≥10成员直接非LTO结构诊断|本次新构建NOT RUN；此前60对认证证据不冒充本次结果|
+
+验收4来源核查：docs/35的N、docs/38的N38及docs/13历史产物属于旧配方/旧Base环境；docs/36复原的是20260912.061113缓存。Rnew已装gcc14.2.0-1.10、binutils2.43-1.9、glibc2.40-1.10、rpm-build4.14.1.1-1.4，本次Base提供相同主版本但不同release（见§7.3）。当前目标又是cb679968叠加新PS3/PS2，不是原f111162e配方。即便个别工具NEVRA相同，也不能预先认定整套构建环境相同。此项不阻塞其他验收或交接，但本轮其他验收因未构建同样未完成。
+
+供PM裁决的方案（**未授权执行、未运行**）：新构建成功后、BOLT交接前，保存完整构建证据；在同一根/同一已装依赖和BUILD中，用cb679968无两补丁的spec副本执行独立buildroot的真实`rpmbuild -bi --short-circuit --noclean`，不重编，比较其非归档安装文件与候选结果；如要求RPM层面，再另行批准经该RPM版本支持机制仅打包该树。不能把任意RPM拼装树代替真实%install，也不预先承诺`-bb --short-circuit`受该版本支持。含bitcode归档的原缺陷不作本项比较对象；所有非归档差异仍需解释，不自动放行。
+
+预算仅供审批，不是本轮实测：docs/35 §4独立-bi曾耗时2,925.713秒，其中转换BEGIN–END1,939.927秒；当前无转换基线预计较少工作，但新环境/负载未知，建议预留30–90分钟，不作性能结论。历史独立安装父目录46.316360GiB（本页§2.2）；历史22 RPM合计8,857,390,396B（8.249088GiB）。若同时保留独立安装与一套RPM，可按1.2×两者之和预留约65.479GiB新增空间，并在其外保留30GiB；这只是历史载荷预算，正式执行前须按新树重算，不能作为降低完整构建准入的理由。
+
+## 11. 交接与后续状态
+
+BOLT为**NOT_READY**：没有新BUILD、ThinLTO缓存、构建完成时间或新RPM验收；不得使用本次仅导出的目录冒充交接树。原定完整根仍为`/var/tmp/llvm-optimize-x86-archivefix-20261013`；快照/repomd与spec/Source/候选身份已在§7–§8登记，只有完整构建和验收1–3、5–7通过后才可交接并承诺不再写树。
+
+两ARM全量/根内小试/64MiB负例、bash依赖清单、LLVM23探测均未执行；遵循先完成debug主线构建验收的顺序。发布模式60对认证PASS沿用；发布模式完整构建继续挂账。
+
+## 12. 回收、保护与交付
+
+19:22:00共享重任务锁释放；19:26:04终检本任务构建进程0、采样器已回收、临时挂载0、两项目锁0，共享锁可获取。14项保护文件SHA全部与开场一致（含两Source/Commands所在文件、比较器、配置、W spec、已上传及新候选补丁）。未访问/修改BOLT资产，未清理磁盘，未推Gerrit。证据E6/lock-released.json、cleanup-final.json、final-integrity.json、stop.json。此处“回收”仅进程/锁/线程，不删除证据目录。
+
+本轮交付：本页、STATUS、build_llvm_x86_64.py及测试、专用run_certified_x86_release_build.py及测试；原始数据/专用配置/diff保存在E6。仓库变更不含用户的gbs_llvm.conf修改。报告小于50KB；全部结果以本节最终停止为准，§8是启动前登记。
