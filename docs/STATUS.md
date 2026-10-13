@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49）进行中**：第四轮续接第零步 PASS（82 条新增元数据全部归因、647 档及工具等 669 SHA 检查一致）；尚未修改 Source 或运行转换/构建。新增发布模式、POSIX sh、主版本策略按用户裁决执行；重阶段共享 flock，BOLT 兄弟工作树不动。证据：docs/49 §0、temp/review-round4-continue-20261013/integrity-result.json。
+**当前任务（docs/49）进行中**：完整性与 Source 修订/测试 PASS；宿主147/147、ARM32根143PASS+3环境不适用+1已知AS发现。无调试策略、POSIX sh 启动器、LLVM主版本策略已修订；Commands原文不变。发布模式全命令/实物认证、全量回归、新候选补丁、完整构建及其后步骤尚未执行。证据：docs/49 §0–§3、temp/review-round4-continue-20261013。
 
 **历史任务（docs/47）停止并收尾**：Source修订与四次全量回归通过；宿主134PASS、ARM32根内130PASS+3环境不适用+1既有AS发现；小spec四组合完成。ARM32根内小试辅助检查第二次失败（先漏掉线程子进程，唯一重跑又因limits行尾空格被正则误拒绝），按规则STOP，不再重跑。实际捕获两个原生clang软/硬4GiB，三档after SHA与离线一致，仅作为诊断；AArch64根内小试、两根64MiB负例、两个候选补丁再生成未执行。tools生产/ARM Source为7c83e822/3cdaeceb；patches中候选仍docs/46版本。发布模式模拟全部缺DWARF拒绝，待PM。详见docs/47 §3、§5、§7、§10。
 

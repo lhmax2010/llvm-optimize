@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fourth-review literal gates; real native bash fixtures, no LLVM/RPM build."""
+"""Fourth-review literal gates; real native POSIX sh fixtures, no LLVM/RPM build."""
 import contextlib
 import inspect
 import io
@@ -19,9 +19,9 @@ from test_static_archives_source_v2 import FLAGS
 from test_arm_archive_trial import reloc_elf, change_section
 
 
-def native_bash():
+def native_shell():
     # The same tests run under ARM Python/QEMU with the root's accel bash.
-    return Path('/emul/usr/bin/bash' if Path('/emul/usr/bin/bash').exists() else '/bin/bash').resolve()
+    return Path('/emul/usr/bin/sh' if Path('/emul/usr/bin/sh').exists() else '/bin/sh').resolve()
 
 
 def native_header(machine=62):
@@ -61,7 +61,7 @@ class X86TableTests(unittest.TestCase):
 
 class NativeLauncherTests(unittest.TestCase):
     def adapter(self,timeout=600):
-        bash=native_bash();command=trial.Commands(address_space_bytes=4294967296,timeout=timeout)
+        bash=native_shell();command=trial.Commands(address_space_bytes=4294967296,timeout=timeout)
         return trial.ARMNativeLimitCommands(command,bash,[bash]),bash
 
     def test_native_soft_hard_and_core_limits(self):
@@ -73,8 +73,8 @@ class NativeLauncherTests(unittest.TestCase):
             self.assertRegex(result['raw'],r'Max core file size\s+0\s+0\s+bytes')
             row=json.loads((p/'address-space-probe-command.json').read_text())
             self.assertEqual(row['payload_argv'],['/usr/bin/cat','/proc/self/limits'])
-            self.assertEqual(row['native_limit_bash_sha256'],production.sha(bash))
-            self.assertEqual(row['argv'][1:4],['--noprofile','--norc','-p'])
+            self.assertEqual(row['native_limit_shell_sha256'],production.sha(bash))
+            self.assertEqual(row['argv'][:5],['/usr/bin/env','-u','BASH_ENV','-u','ENV']);self.assertEqual(row['argv'][6],'-c')
 
     def test_ulimit_failure_is_exit_125(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -117,18 +117,18 @@ class NativeLauncherTests(unittest.TestCase):
             p=Path(tmp);tools=[p/name for name in ('cc','dis','nm')]
             for t in tools:t.write_bytes(native_header());t.chmod(0o755)
             base=mock.Mock();base.address_space_bytes=4294967296;base.run.return_value={'exit':0}
-            command=trial.ARMNativeLimitCommands(base,native_bash(),tools)
+            command=trial.ARMNativeLimitCommands(base,native_shell(),tools)
             for i,t in enumerate(tools):
                 command.run([t,'--version'],p/str(i));argv=base.run.call_args.args[0]
-                self.assertEqual(argv[-2:],[str(t),'--version']);self.assertEqual(argv[6],'arm-native-limit')
+                self.assertEqual(argv[-2:],[str(t),'--version']);self.assertEqual(argv[8],'arm-native-limit')
             for i,argv in enumerate((['ar','t','x.a'],['readelf','-h','x.o'],['/usr/bin/cat','/proc/self/limits'])):
                 command.run(argv,p/('plain'+str(i)));self.assertEqual(base.run.call_args.args[0],argv)
-            command.probe(p/'probe',io.BytesIO());self.assertEqual(base.run.call_args.args[0][5],trial.ARM_NATIVE_LIMIT_PROBE)
+            command.probe(p/'probe',io.BytesIO());self.assertEqual(base.run.call_args.args[0][7],trial.ARM_NATIVE_LIMIT_PROBE)
 
     def test_non_kib_address_space_rejected(self):
         base=mock.Mock();base.address_space_bytes=4294967297
         with self.assertRaisesRegex(ValueError,'multiple of 1024'):
-            trial.ARMNativeLimitCommands(base,native_bash(),[native_bash()])
+            trial.ARMNativeLimitCommands(base,native_shell(),[native_shell()])
 
 
 class ARMPolicyTests(unittest.TestCase):
@@ -152,8 +152,8 @@ class ARMPolicyTests(unittest.TestCase):
     def test_signatures_are_keyword_only(self):
         for function in (trial.install,trial.convert):
             params=inspect.signature(function).parameters
-            self.assertEqual(params['arm_native_limit_bash'].kind,inspect.Parameter.KEYWORD_ONLY)
-            self.assertIsNone(params['arm_native_limit_bash'].default)
+            self.assertEqual(params['arm_native_limit_shell'].kind,inspect.Parameter.KEYWORD_ONLY)
+            self.assertIsNone(params['arm_native_limit_shell'].default)
             self.assertEqual(params['arm_allow_wrapper_tools'].kind,inspect.Parameter.KEYWORD_ONLY)
             self.assertIs(params['arm_allow_wrapper_tools'].default,False)
         self.assertFalse(hasattr(trial,'ARM_INSTALL_CONTEXT'));self.assertFalse(hasattr(trial,'arm_install'))
@@ -167,7 +167,7 @@ class ARMPolicyTests(unittest.TestCase):
 
     def test_cli_arm_options_are_exclusive_and_x86_rejected(self):
         base=['source','--root','/unused/root','--build','/unused/build','--evidence','/unused/out','--compiler','/unused/cc','--disassembler','/unused/dis','--nm','/unused/nm']
-        for arch,options,reason in [('x86_64',['--native-limit-bash','/bin/bash'],'only valid for ARM'),('x86_64',['--allow-wrapper-tools'],'only valid for ARM'),('armv7l',['--native-limit-bash','/bin/bash','--allow-wrapper-tools'],'mutually exclusive')]:
+        for arch,options,reason in [('x86_64',['--native-limit-shell','/bin/bash'],'only valid for ARM'),('x86_64',['--allow-wrapper-tools'],'only valid for ARM'),('armv7l',['--native-limit-shell','/bin/bash','--allow-wrapper-tools'],'mutually exclusive')]:
             with mock.patch.object(sys,'argv',base+['--arch',arch]+options),mock.patch.object(trial,'install') as install,contextlib.redirect_stderr(io.StringIO()) as err:
                 with self.assertRaises(SystemExit) as status:trial.install_main()
             self.assertEqual(status.exception.code,2);self.assertIn(reason,err.getvalue());install.assert_not_called()
@@ -189,17 +189,17 @@ class ARMPolicyTests(unittest.TestCase):
             r=trial.arm_tool_identity(p,True);self.assertEqual(r['sha256'],production.sha(p));self.assertEqual(r['first_4k'],p.read_text())
             self.assertEqual(r['first_4k_hex'],p.read_bytes().hex())
             with self.assertRaisesRegex(ValueError,'non-ELF'):
-                trial.ARMNativeLimitCommands(trial.Commands(),native_bash(),[p])
+                trial.ARMNativeLimitCommands(trial.Commands(),native_shell(),[p])
             with self.assertRaisesRegex(ValueError,'non-ELF'):
-                trial.ARMNativeLimitCommands(trial.Commands(),p,[native_bash()])
+                trial.ARMNativeLimitCommands(trial.Commands(),p,[native_shell()])
 
-    def test_missing_nm_and_wrong_full_version_preserve_both_reasons(self):
+    def test_missing_nm_and_wrong_major_preserve_both_reasons(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp);(p/'CMakeCache.txt').touch();cc=p/'cc';di=p/'dis';nm=p/'absent-nm'
             for t in (cc,di):t.write_bytes(native_header());t.chmod(0o755)
-            cmd=mock.Mock();cmd.run.side_effect=lambda argv,prefix,stdout:stdout.write(b'clang version 22.1.9\n')
+            cmd=mock.Mock();cmd.run.side_effect=lambda argv,prefix,stdout:stdout.write(b'clang version 23.0.0\n')
             with self.assertRaises(ValueError) as err:trial.validate_arm_tools(p,cc,di,nm,cmd,p,'aarch64')
-            self.assertIn('missing or non-executable --nm',str(err.exception));self.assertIn('uncertified ARM clang full version 22.1.9',str(err.exception))
+            self.assertIn('missing or non-executable --nm',str(err.exception));self.assertIn('uncertified ARM clang major version 23.0.0',str(err.exception))
 
     def test_targets_must_be_present_identical_and_certified(self):
         for arch,target in [('armv7l','armv7l-tizen-linux-gnueabi'),('aarch64','aarch64-tizen-linux-gnu')]:

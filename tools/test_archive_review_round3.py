@@ -124,13 +124,13 @@ class ARMReviewTests(unittest.TestCase):
                 with self.subTest(arch=arch,label=label),self.assertRaisesRegex(ValueError,'GLOBAL/NOTYPE/DEFAULT/UND'):
                     trial.arm_check_module_asm_symbol(blob,arch,statements)
 
-    def test_b2_certified_full_version_and_arm_elf_tools_rejected(self):
+    def test_b2_tool_versions_must_match_and_arm_elf_tools_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp);(p/'CMakeCache.txt').touch();tools=[p/name for name in ('clang-22','llvm-dis','llvm-nm')]
             for t in tools:t.write_text('fixture');t.chmod(0o755)
             def run(argv,prefix,stdout):
                 stdout.write(b'clang version 22.1.9\n' if argv[0]==tools[0] else b'LLVM version 22.1.8\n')
-            with self.assertRaisesRegex(ValueError,'redo docs/44 section 2 census'):
+            with self.assertRaisesRegex(ValueError,'disassembler version differs from clang 22.1.9'):
                 trial.validate_arm_tools(p,*tools,mock.Mock(run=run),p,'aarch64',allow_wrapper=True)
             for tool in tools:
                 for machine,bits in ((40,1),(183,2)):

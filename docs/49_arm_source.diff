@@ -1,0 +1,293 @@
+--- a/tools/llvm_static_archives_arm_trial.py
++++ b/tools/llvm_static_archives_arm_trial.py
+@@ -169,8 +169,7 @@
+                     machine_symbol_entries=len(native_map))
+ 
+ 
+-# x86_64 pins the major version: it certifies no literal target-feature strings.
+-# Only the ARM policy pins a complete LLVM version for its literal feature census.
++# Certify the LLVM major; ARM separately checks literal function attributes.
+ CERTIFIED_LLVM_MAJOR = 22
+ CERTIFIED_OPTIMIZATION = {'x86_64': '-O3'}
+ CERTIFIED_TRIPLES = {'x86_64': {'x86_64-tizen-linux-gnu'}}
+@@ -256,7 +255,9 @@
+         index += 1
+     if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
+         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
+-    if not dwarfs or dwarfs[-1] != '-gdwarf-4':
++    has_debug_options = any(row['token'].startswith('-g') and
++                            row['category'] != 'irrelevant' for row in rows)
++    if has_debug_options and (not dwarfs or dwarfs[-1] != '-gdwarf-4'):
+         raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
+     effective = {}
+     for key, values in switches.items():
+@@ -266,7 +267,7 @@
+     contraction = contractions[-1] if contractions else DEFAULTS['fp-contract']
+     if contraction not in ('on', 'off', 'fast'):
+         raise ValueError('uncertified FP contraction value: '+contraction)
+-    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1],
++    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1] if dwarfs else None,
+                 switches=effective, fp_contract=contraction,
+                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
+ 
+@@ -283,7 +284,10 @@
+     module_asm_lines = []
+     triple, command_id = None, None
+     levels, cpus, features = {}, set(), set()
++    has_debug_cu = False
+     for line in lines:
++        if line.startswith('!llvm.dbg.cu ='):
++            has_debug_cu = True
+         if line.startswith('module asm '):
+             module_asm_lines.append(line)
+         # Intrinsic references, not string literals in LLVM's own implementation.
+@@ -333,8 +337,12 @@
+     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+         lambda match: chr(int(match[1], 16)), metadata[command_id]))
+     policy = classify_options(recorded_command, arch)
++    if policy['dwarf'] is None and has_debug_cu:
++        raise ValueError('no-debug command has !llvm.dbg.cu')
++    backend_flags = (BACKEND_FLAGS if policy['dwarf'] is not None else
++                     [flag for flag in BACKEND_FLAGS if flag not in ('-g', '-gdwarf-4')])
+     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+-             *BACKEND_FLAGS, '-ffp-contract='+policy['fp_contract'], '-c']
++             *backend_flags, '-ffp-contract='+policy['fp_contract'], '-c']
+     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
+               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
+@@ -505,7 +513,9 @@
+         raise ValueError('ARM command requires identical certified --target= values')
+     if not optimizations or optimizations[-1] != ARM_OPTIMIZATION[arch]:
+         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
+-    if not dwarfs or dwarfs[-1] != '-gdwarf-4':
++    has_debug_options = any(row['token'].startswith('-g') and
++                            row['category'] != 'irrelevant' for row in rows)
++    if has_debug_options and (not dwarfs or dwarfs[-1] != '-gdwarf-4'):
+         raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
+     effective = {}
+     for key, values in switches.items():
+@@ -518,7 +528,7 @@
+     missing = set(ARM_REQUIRED_TOKENS[arch]) - set(argv)
+     if missing:
+         raise ValueError('uncertified ARM command missing: '+repr(sorted(missing)))
+-    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1],
++    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1] if dwarfs else None,
+                 switches=effective, fp_contract=contraction,
+                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
+ 
+@@ -555,7 +565,7 @@
+                 raise ValueError('duplicate ARM function target attribute: '+key)
+             values.append(found[0] if found else None)
+         if tuple(values) != ARM_CERTIFIED_FUNCTION_TARGET[arch]:
+-            raise ValueError('uncertified ARM function target attributes: '+repr(values))
++            raise ValueError('uncertified ARM function target attributes: '+repr(values)+'; 需按升级手册重做 docs/44 §2 普查')
+     return dict(definitions=len(definitions), certified=True)
+ 
+ 
+@@ -717,7 +727,6 @@
+ 
+ 
+ # Full producer/tool census: docs/44 section 2. A version change needs recensus.
+-ARM_CERTIFIED_LLVM_FULL = '22.1.8'
+ def arm_tool_identity(tool, allow_wrapper=False):
+     tool = Path(tool)
+     if not tool.is_file() or not os.access(tool, os.X_OK):
+@@ -737,15 +746,16 @@
+ 
+ ARM_NATIVE_LIMIT_SETUP = '''limit=$1
+ shift
+-ulimit -S -v "$limit" || exit 125
+-ulimit -H -v "$limit" || exit 125
+-ulimit -S -c 0 || exit 125
+-ulimit -H -c 0 || exit 125
++ulimit -v "$limit" || exit 125
++ulimit -c 0 || exit 125
+ soft=$(ulimit -S -v) || exit 125
+ hard=$(ulimit -H -v) || exit 125
+ [ "$soft" = "$limit" ] && [ "$hard" = "$limit" ] || exit 125
++core_soft=$(ulimit -S -c) || exit 125
++core_hard=$(ulimit -H -c) || exit 125
++[ "$core_soft" = 0 ] && [ "$core_hard" = 0 ] || exit 125
+ '''
+-ARM_NATIVE_LIMIT_EXEC = ARM_NATIVE_LIMIT_SETUP + 'exec -- "$@"\n'
++ARM_NATIVE_LIMIT_EXEC = ARM_NATIVE_LIMIT_SETUP + 'exec "$@"\n'
+ ARM_NATIVE_LIMIT_PROBE = ARM_NATIVE_LIMIT_SETUP + '''while IFS= read -r line; do
+     printf '%s\\n' "$line"
+ done < /proc/self/limits
+@@ -754,12 +764,15 @@
+ 
+ class ARMNativeLimitCommands:
+     """ARM-only composition: keep Commands accounting/cancellation unchanged."""
+-    def __init__(self, command, bash, tools):
++    def __init__(self, command, shell, tools):
+         if command.address_space_bytes < 1 or command.address_space_bytes % 1024:
+             raise ValueError('ARM native limit requires address-space bytes to be a positive multiple of 1024')
+         self.command = command
+-        self.bash = Path(bash).resolve()
+-        self.bash_identity = arm_tool_identity(self.bash)
++        self.shell = Path(shell).resolve()
++        self.shell_identity = dict(arm_tool_identity(self.shell),
++                                   requested_path=str(shell), program=self.shell.name)
++        if not os.access('/usr/bin/env', os.X_OK):
++            raise ValueError('missing executable /usr/bin/env for native shell environment isolation')
+         self.tools = frozenset(str(Path(tool).resolve()) for tool in tools)
+         for tool in self.tools:
+             arm_tool_identity(tool)  # Native launcher never accepts a wrapper.
+@@ -770,10 +783,11 @@
+     def _native_run(self, argv, prefix, stdout, probe):
+         payload = list(map(str, argv))
+         script = ARM_NATIVE_LIMIT_PROBE if probe else ARM_NATIVE_LIMIT_EXEC
+-        wrapped = [str(self.bash), '--noprofile', '--norc', '-p', '-c', script,
++        wrapped = ['/usr/bin/env', '-u', 'BASH_ENV', '-u', 'ENV',
++                   str(self.shell), '-c', script,
+                    'arm-native-limit', str(self.address_space_bytes // 1024), *payload]
+-        details = dict(payload_argv=payload, native_limit_bash_sha256=self.bash_identity['sha256'],
+-                       native_limit_bash=str(self.bash), native_limit_probe=probe)
++        details = dict(payload_argv=payload, native_limit_shell_sha256=self.shell_identity['sha256'],
++                       native_limit_shell=str(self.shell), native_limit_probe=probe)
+         try:
+             record = self.command.run(wrapped, prefix, stdout=stdout)
+         except BaseException:
+@@ -840,15 +854,13 @@
+             except (RuntimeError, OSError) as diagnostic:
+                 diagnostic_error = str(diagnostic)
+         match = re.search(r'clang version (\d+\.\d+\.\d+)\b', version_file.read_text()) if version_file.is_file() else None
+-        if match and match[1] != ARM_CERTIFIED_LLVM_FULL:
+-            raise ValueError(str(error)+'; uncertified ARM clang full version '+match[1]+
+-                             '; redo docs/44 section 2 census') from error
++        if match and int(match[1].split('.')[0]) != CERTIFIED_LLVM_MAJOR:
++            raise ValueError(str(error)+'; uncertified ARM clang major version '+match[1]+
++                             '; 需按升级手册重做 docs/44 §2 普查') from error
+         if diagnostic_error:
+             raise ValueError(str(error)+'; compiler diagnostic failed: '+diagnostic_error) from error
+         raise
+     full = result['tool_versions']['compiler']['version']
+-    if full != ARM_CERTIFIED_LLVM_FULL:
+-        raise ValueError('uncertified ARM clang full version '+full+'; redo docs/44 section 2 census')
+     versions = {label: result['tool_versions'][label] for label in ('disassembler', 'nm')}
+     if arch == 'armv7l':
+         for tool in (Path('/usr/bin/env'), Path('/usr/bin/readelf')):
+@@ -865,7 +877,7 @@
+     result['arm_full_version'] = full; result['arm_tool_versions'] = versions
+     result['arm_tool_identities'] = identities
+     if isinstance(command, ARMNativeLimitCommands):
+-        result['native_limit_bash'] = command.bash_identity
++        result['native_limit_shell'] = command.shell_identity
+     result['address_space_probe'] = arm_address_space_probe(command, output)
+     return result
+ 
+@@ -878,7 +890,10 @@
+     retained, metadata = [], {}
+     triple, command_id = None, None
+     levels, cpus, features = {}, set(), set()
++    has_debug_cu = False
+     for line in lines:
++        if line.startswith('!llvm.dbg.cu ='):
++            has_debug_cu = True
+         # Intrinsic references, not string literals in LLVM's own implementation.
+         for intrinsic in ('llvm.type.test', 'llvm.public.type.test'):
+             if re.search(r'@'+re.escape(intrinsic)+r'(?:\.|\s*\()', line):
+@@ -925,8 +940,12 @@
+     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+         lambda match: chr(int(match[1], 16)), metadata[command_id]))
+     policy = arm_classify_options(recorded_command, arch)
++    if policy['dwarf'] is None and has_debug_cu:
++        raise ValueError('no-debug command has !llvm.dbg.cu')
++    backend_flags = (BACKEND_FLAGS if policy['dwarf'] is not None else
++                     [flag for flag in BACKEND_FLAGS if flag not in ('-g', '-gdwarf-4')])
+     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+-             *BACKEND_FLAGS, '-ffp-contract='+policy['fp_contract'], '-c']
++             *backend_flags, '-ffp-contract='+policy['fp_contract'], '-c']
+     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
+               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+     if arch == 'armv7l':
+@@ -1339,7 +1358,7 @@
+                 raise ValueError('uncertified compiler major/full version (required 22): '+text.strip())
+         elif not match or match[1] != versions['compiler']['version']:
+             raise ValueError(label+' version differs from clang '+versions['compiler']['version']+': '+text.strip())
+-        versions[label] = dict(path=str(tool), sha256=sha(tool), version=match[1], raw=text)
++        versions[label] = dict(path=str(tool), resolved_path=str(tool.resolve()), sha256=sha(tool), version=match[1], raw=text)
+     return dict(compiler=str(compiler), version=versions['compiler']['raw'],
+                 compiler_sha256=versions['compiler']['sha256'], disassembler=str(disassembler),
+                 nm=str(nm), tool_versions=versions)
+@@ -1384,11 +1403,11 @@
+ 
+ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+             address_space_bytes=4*1024**3, command=None, *,
+-            arm_native_limit_bash=None, arm_allow_wrapper_tools=False):
+-    if arch == 'x86_64' and (arm_native_limit_bash is not None or arm_allow_wrapper_tools):
++            arm_native_limit_shell=None, arm_allow_wrapper_tools=False):
++    if arch == 'x86_64' and (arm_native_limit_shell is not None or arm_allow_wrapper_tools):
+         raise ValueError('ARM tool options are only valid for ARM')
+-    if arm_native_limit_bash is not None and arm_allow_wrapper_tools:
+-        raise ValueError('native-limit-bash and allow-wrapper-tools are mutually exclusive')
++    if arm_native_limit_shell is not None and arm_allow_wrapper_tools:
++        raise ValueError('native-limit-shell and allow-wrapper-tools are mutually exclusive')
+     root, output, build = Path(root).resolve(), Path(output).resolve(), Path(build).resolve()
+     policy = policy_for_arch(arch)
+     if jobs < 1 or address_space_bytes < 1:
+@@ -1406,8 +1425,8 @@
+         if arch == 'x86_64':
+             summary['tools'] = validate_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output)
+         else:
+-            if arm_native_limit_bash is not None:
+-                command = ARMNativeLimitCommands(command, arm_native_limit_bash, (compiler, disassembler, nm))
++            if arm_native_limit_shell is not None:
++                command = ARMNativeLimitCommands(command, arm_native_limit_shell, (compiler, disassembler, nm))
+             summary['tools'] = validate_arm_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output, arch,
+                                                  allow_wrapper=arm_allow_wrapper_tools)
+         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+@@ -1555,11 +1574,11 @@
+ 
+ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+             address_space_bytes=4*1024**3, *,
+-            arm_native_limit_bash=None, arm_allow_wrapper_tools=False):
+-    if arch == 'x86_64' and (arm_native_limit_bash is not None or arm_allow_wrapper_tools):
++            arm_native_limit_shell=None, arm_allow_wrapper_tools=False):
++    if arch == 'x86_64' and (arm_native_limit_shell is not None or arm_allow_wrapper_tools):
+         raise ValueError('ARM tool options are only valid for ARM')
+-    if arm_native_limit_bash is not None and arm_allow_wrapper_tools:
+-        raise ValueError('native-limit-bash and allow-wrapper-tools are mutually exclusive')
++    if arm_native_limit_shell is not None and arm_allow_wrapper_tools:
++        raise ValueError('native-limit-shell and allow-wrapper-tools are mutually exclusive')
+     root, output = Path(root).resolve(), Path(output).resolve()
+     command = Commands(address_space_bytes)
+     old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
+@@ -1570,7 +1589,7 @@
+             result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command)
+         else:
+             result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command,
+-                             arm_native_limit_bash=arm_native_limit_bash,
++                             arm_native_limit_shell=arm_native_limit_shell,
+                              arm_allow_wrapper_tools=arm_allow_wrapper_tools)
+         command.check()
+         result['status'] = 'INSTALLING'
+@@ -1615,21 +1634,21 @@
+     parser.add_argument('--nm', type=Path, required=True)
+     parser.add_argument('--jobs', type=int, default=4)
+     parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
+-    parser.add_argument('--native-limit-bash', type=Path,
+-                        help='ARM only: native x86_64 bash enforcing limits before exec')
++    parser.add_argument('--native-limit-shell', type=Path,
++                        help='ARM only: native x86_64 POSIX sh enforcing limits before exec')
+     parser.add_argument('--allow-wrapper-tools', action='store_true',
+                         help='ARM only: permit recorded host-side tool wrappers; limits must still work')
+     args = parser.parse_args()
+-    if args.arch == 'x86_64' and (args.native_limit_bash is not None or args.allow_wrapper_tools):
+-        parser.error('native-limit-bash and allow-wrapper-tools are only valid for ARM')
+-    if args.native_limit_bash is not None and args.allow_wrapper_tools:
+-        parser.error('native-limit-bash and allow-wrapper-tools are mutually exclusive')
++    if args.arch == 'x86_64' and (args.native_limit_shell is not None or args.allow_wrapper_tools):
++        parser.error('native-limit-shell and allow-wrapper-tools are only valid for ARM')
++    if args.native_limit_shell is not None and args.allow_wrapper_tools:
++        parser.error('native-limit-shell and allow-wrapper-tools are mutually exclusive')
+     values = (args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+               args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes)
+     if args.arch == 'x86_64':
+         install(*values)
+     else:
+-        install(*values, arm_native_limit_bash=args.native_limit_bash,
++        install(*values, arm_native_limit_shell=args.native_limit_shell,
+                 arm_allow_wrapper_tools=args.allow_wrapper_tools)
+ 
+ 

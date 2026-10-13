@@ -169,8 +169,7 @@ def inspect(path):
                     machine_symbol_entries=len(native_map))
 
 
-# x86_64 pins the major version: it certifies no literal target-feature strings.
-# Only the ARM policy pins a complete LLVM version for its literal feature census.
+# Certify the LLVM major; ARM separately checks literal function attributes.
 CERTIFIED_LLVM_MAJOR = 22
 CERTIFIED_OPTIMIZATION = {'x86_64': '-O3'}
 CERTIFIED_TRIPLES = {'x86_64': {'x86_64-tizen-linux-gnu'}}
@@ -256,7 +255,9 @@ def classify_options(argv, arch='x86_64'):
         index += 1
     if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
-    if not dwarfs or dwarfs[-1] != '-gdwarf-4':
+    has_debug_options = any(row['token'].startswith('-g') and
+                            row['category'] != 'irrelevant' for row in rows)
+    if has_debug_options and (not dwarfs or dwarfs[-1] != '-gdwarf-4'):
         raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
     effective = {}
     for key, values in switches.items():
@@ -266,7 +267,7 @@ def classify_options(argv, arch='x86_64'):
     contraction = contractions[-1] if contractions else DEFAULTS['fp-contract']
     if contraction not in ('on', 'off', 'fast'):
         raise ValueError('uncertified FP contraction value: '+contraction)
-    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1],
+    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1] if dwarfs else None,
                 switches=effective, fp_contract=contraction,
                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
 
@@ -301,7 +302,10 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
     module_asm_lines = []
     triple, command_id = None, None
     levels, cpus, features = {}, set(), set()
+    has_debug_cu = False
     for line in lines:
+        if line.startswith('!llvm.dbg.cu ='):
+            has_debug_cu = True
         if line.startswith('module asm '):
             module_asm_lines.append(line)
         # Intrinsic references, not string literals in LLVM's own implementation.
@@ -351,8 +355,12 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
         lambda match: chr(int(match[1], 16)), metadata[command_id]))
     policy = classify_options(recorded_command, arch)
+    if policy['dwarf'] is None and has_debug_cu:
+        raise ValueError('no-debug command has !llvm.dbg.cu')
+    backend_flags = (BACKEND_FLAGS if policy['dwarf'] is not None else
+                     [flag for flag in BACKEND_FLAGS if flag not in ('-g', '-gdwarf-4')])
     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
-             *BACKEND_FLAGS, '-ffp-contract='+policy['fp_contract'], '-c']
+             *backend_flags, '-ffp-contract='+policy['fp_contract'], '-c']
     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
@@ -622,7 +630,7 @@ def validate_tools(build, compiler, disassembler, nm, command, output):
                 raise ValueError('uncertified compiler major/full version (required 22): '+text.strip())
         elif not match or match[1] != versions['compiler']['version']:
             raise ValueError(label+' version differs from clang '+versions['compiler']['version']+': '+text.strip())
-        versions[label] = dict(path=str(tool), sha256=sha(tool), version=match[1], raw=text)
+        versions[label] = dict(path=str(tool), resolved_path=str(tool.resolve()), sha256=sha(tool), version=match[1], raw=text)
     return dict(compiler=str(compiler), version=versions['compiler']['raw'],
                 compiler_sha256=versions['compiler']['sha256'], disassembler=str(disassembler),
                 nm=str(nm), tool_versions=versions)

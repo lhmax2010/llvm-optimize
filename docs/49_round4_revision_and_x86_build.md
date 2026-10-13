@@ -1,7 +1,7 @@
 # 49 归档修复第四轮修订与 x86 完整构建
 
 日期：2026-10-13。开场基准 `89ad784b10fb033aff4820dd9bb94d9e2fbe1f3d`。
-**进行中：第零步完整性 PASS；其余步骤尚未执行。** 此文件随阶段完成更新，不把计划记为实测。
+**进行中：第零步与第一步 PASS；发布模式实物认证、全量回归及构建尚未执行。** 此文件随阶段完成更新，不把计划记为实测。
 
 宿主沿用 GBS 初始化后的 mmap_min_addr；用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`，重启也会恢复。本轮仅临时挂载 /proc 并在退出时卸载，不推 Gerrit、不清理磁盘。
 
@@ -27,4 +27,22 @@ BOLT 兄弟工作树与分支按用户授权独立保留，本轮未修改。没
 
 ## 2. 后续阶段登记
 
-Source/测试修订、发布模式认证、两次 x86 回归、候选补丁、完整构建与验收、ARM 复验/根内负例、bash 检查、LLVM 23 探测及升级手册均待执行。
+第一步已完成；第二至第七步待执行。
+
+## 3. Source 修订与测试
+
+按用户裁决新增无调试分支：原命令完全没有调试选项时，不补 `-g/-gdwarf-4`，IR 有 `!llvm.dbg.cu` 即拒绝；有调试选项仍要求末项 DWARF4，未分类/部分选项拒绝。旧带调试后端列表保持原文，是否全库字节不变仍待下一阶段回归。（证据：tools/test_archive_review_round4_continue.py 的固定字面量测试；[生产 diff](49_x86_source.diff)、[ARM diff](49_arm_source.diff)。）
+
+ARM 原生入口改 `--native-limit-shell /emul/usr/bin/sh`，解析实际 ELF、名称、SHA；不带 H/S 设置 AS/core 软硬值，再分别读回；错误 exit125。用 `/usr/bin/env -u BASH_ENV -u ENV` 在启动 shell 前清除环境脚本入口，`exec "$@"` 保留参数边界。只包装三工具与 limits 探针。LLVM 主版本仍为22；取消 ARM 22.1.8 精确钉死，三工具完整版本仍须一致，函数特征串仍逐字核验，差异要求按升级手册重做 docs/44 §2 普查。两份 Commands 类与开场原文逐字一致。Source 记录工具 resolved_path；Rnew 的 clang 别名核查通过，spec 别名修改待第三步生成候选时执行。
+
+| 测试环境 | 结果 | 证据 |
+|---|---|---|
+| 宿主 | 147/147 PASS；原134项随接口裁决调整，新增13项；bash/dash/sh 三种实际执行 | E/host-tests-result.json |
+| ARM32 根 | 143 PASS + 3 环境不适用 + 1 既有 QEMU AS 发现；无新增失败 | E/root-suite-classified.json、root-suite-raw.json |
+| 根内解释器 | Python 3.14.2；临时 /proc 已卸载 | E/root-stage-result.json、armv7l-mount-{before,during,after}.txt |
+
+3项环境不适用仍是缺 GNU time 的两个实验辅助测试与 x86 as --64 夹具；AS已知发现仍是 `test_limits_accounting_and_no_external_time`。没有放宽 Source 门禁。
+根内小试辅助检查保留 PPid 树采样，修正 limits 行尾空白匹配；入口改 sh、新证据目录，尚未运行其实际小试。本次是事前授权修改，未使用失败后的辅助重试额度。完整 diff：[根内辅助驱动](49_root_helper.diff)。
+
+- `tools/llvm_static_archives_source.py` SHA256 `c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e`。
+- `tools/llvm_static_archives_arm_trial.py` SHA256 `1bac8db608554b35d16482711bf0667f1fbee8d60c6fc52f0f448d240ffaa9e4`。

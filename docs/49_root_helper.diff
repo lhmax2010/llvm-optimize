@@ -1,0 +1,45 @@
+--- a/run_root_small_retry.py
++++ b/run_root_small.py
+@@ -1,13 +1,13 @@
+ from pathlib import Path
+ import sys,os,json,time,subprocess,shutil,signal,hashlib,collections,statistics,re
+ TASK=Path(__file__).resolve().parent;W=TASK.parent.parent
+-E=TASK/'root-small-retry';E.mkdir(exist_ok=True);sys.dont_write_bytecode=True;sys.path.insert(0,str(W/'tools'))
++E=TASK/'root-small';E.mkdir(exist_ok=True);sys.dont_write_bytecode=True;sys.path.insert(0,str(W/'tools'))
+ import llvm_static_archives_arm_trial as source
+ arch=sys.argv[1];assert arch in ('armv7l','aarch64')
+ assert json.loads((TASK/'aarch64-result.json').read_text())['status']=='PASS'
+ assert source.sha(Path(source.__file__))==json.loads((TASK/'source-tested-shas.json').read_text())['tools/llvm_static_archives_arm_trial.py']
+ R=Path('/var/tmp/llvm-optimize-arm-c1-20261010/gbs-libraries-armv7l/local/BUILD-ROOTS/scratch.armv7l.0' if arch=='armv7l' else '/var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/BUILD-ROOTS/scratch.aarch64.0')
+-B=Path('/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build');G=Path('/home/abuild/review-round4-small-retry-20261012');D=R/G.relative_to('/');assert not D.exists();D.mkdir()
++B=Path('/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build');G=Path('/home/abuild/review-round4-small-20261013');D=R/G.relative_to('/');assert not D.exists();D.mkdir()
+ base=W/'temp'/('arm-archive-standard-build-20261010' if arch=='armv7l' else 'arm-archive-tls-thumb-20261010');input_root=base/(arch+'-input')
+ offline=json.loads((TASK/(arch+'-conversion/summary.json')).read_text());expected={r['path']:r for r in offline['archives']}
+ selected=sorted(expected,key=lambda rel:((input_root/rel).stat().st_size,rel))[:3]
+@@ -24,7 +24,7 @@
+ import source,sys,json,time,resource
+ root=Path.cwd();start=time.monotonic()
+ arch=sys.argv[1]
+-sys.argv=['source.py','--root',str(root/'input'),'--evidence',str(root/'output'),'--build','/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build','--arch',arch,'--compiler','/emul/usr/bin/clang-22','--disassembler','/emul/usr/bin/llvm-dis','--nm','/emul/usr/bin/llvm-nm','--native-limit-bash','/emul/usr/bin/bash','--jobs','4','--address-space-bytes','4294967296']
++sys.argv=['source.py','--root',str(root/'input'),'--evidence',str(root/'output'),'--build','/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build','--arch',arch,'--compiler','/emul/usr/bin/clang-22','--disassembler','/emul/usr/bin/llvm-dis','--nm','/emul/usr/bin/llvm-nm','--native-limit-shell','/emul/usr/bin/sh','--jobs','4','--address-space-bytes','4294967296']
+ Path('source-cli-argv.json').write_text(json.dumps(sys.argv,indent=2))
+ source.install_main()
+ result=json.loads((root/'output/summary.json').read_text())
+@@ -107,7 +107,7 @@
+   assert proc.returncode==0,'root conversion failed; see '+str(E/(arch+'-small.stderr'))
+   inner=json.loads((D/'run-result.json').read_text());assert inner['probe']['soft']==inner['probe']['hard']=='4294967296'
+   assert observations,'no running native clang limit observation'
+-  for row in observations:assert re.match(r'^Max address space\s+4294967296\s+4294967296\s+bytes$',row['max_address_space'])
++  for row in observations:assert re.match(r'^Max address space\s+4294967296\s+4294967296\s+bytes\s*$',row['max_address_space'])
+   comparisons=[]
+   for rel in selected:
+    actual=source.sha(D/'input'/rel);want=expected[rel]['after_sha256'];comparisons.append(dict(path=rel,actual=actual,expected=want,equal=actual==want));assert actual==want,rel
+@@ -132,7 +132,7 @@
+  (D/'negative-flags.json').write_text(json.dumps(flags))
+  (D/'negative.py').write_text('''from pathlib import Path
+ import source,json
+-p=Path.cwd();base=source.Commands(address_space_bytes=67108864);cc=Path('/emul/usr/bin/clang-22');command=source.ARMNativeLimitCommands(base,Path('/emul/usr/bin/bash'),[cc]);target=p/'negative-output.o';assert not target.exists()
++p=Path.cwd();base=source.Commands(address_space_bytes=67108864);cc=Path('/emul/usr/bin/clang-22');command=source.ARMNativeLimitCommands(base,Path('/emul/usr/bin/sh'),[cc]);target=p/'negative-output.o';assert not target.exists()
+ argv=[cc,*json.loads((p/'negative-flags.json').read_text()),p/'negative-input.bc','-o',target]
+ try:command.run(argv,p/'negative-command')
+ except RuntimeError as error:
