@@ -635,3 +635,10 @@ rpmbuild --define '_smp_mflags -j4' --define '_srcdefattr (-,root,root)' \
 ### 16.5 02:40进度（仍未完成）
 
 截至2026-10-14T02:40:08.873551+08:00，最新完成行为`2026-10-14T02:37:07+08:00 [790/902] Linking CXX executable bin/modularize`，正在`bin/clang-tidy`链接。clang-repl、clang-check、clang-extdef-mapping及部分clang-tools已成功链接；这不代替完整构建/RPM验收。最近MemAvailable=26148614144B，/var/tmp可用=194892177408B；守护未中止，%install/打包仍未开始。证据E11/interim-0240-progress.json。只在E11准备了同环境非归档比较辅助脚本，尚未执行独立基线安装或比较；受保护Source/spec/配置/候选补丁未改。
+
+
+### 16.6 03:40进度与依赖事实（仍未完成）
+
+截至2026-10-14T03:40:38.231642+08:00，最新完成行为`2026-10-14T03:36:17+08:00 [812/902] Creating library symlink lib64/liblldbIntelFeatures.so`，正在`bin/lldb-instr`链接。clang-tidy、clangd-fuzzer、clangd、clangd-indexer等已链接成功；单次rpmbuild继续，未进入%install/打包。最近MemAvailable=26203971584B，/var/tmp可用=169793449984B；无保护中止。证据E11/interim-0340-progress.json。
+
+同根只读rpm查询记录120个已安装包：clang/llvm=22.1.8-1.6、glibc=2.40-1.7、python3=3.14.2-1.6、rpm-build=4.14.1.1-1.6、util-linux=2.41.2-1.6。/usr/bin/prlimit归util-linux，python3归python3-base，sh归bash3.2.57-1.4，llvm-strip归llvm22.1.8-1.6。四条子命令退出均为0，原始argv/stdout/stderr在E11/root-dependency-facts.json与.log。没有安装或更改依赖；这是验收1的依赖事实，不是归档转换/RPM验收通过。
