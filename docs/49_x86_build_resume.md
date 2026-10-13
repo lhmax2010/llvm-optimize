@@ -630,3 +630,8 @@ rpmbuild --define '_smp_mflags -j4' --define '_srcdefattr (-,root,root)' \
 ### 16.4 01:39进度（仍未完成）
 
 截至2026-10-14T01:39:30.843166+08:00，最新完成行为`2026-10-14T01:36:40+08:00 [748/902] Linking CXX executable bin/clang-scan-deps`，正在串行链接`bin/clang-sycl-linker`。单次rpmbuild从22:43:03持续运行；CPU时间持续增长，未按暂时没有Ninja完成行判定卡死。最近宿主MemAvailable=26347003904B，/var/tmp可用=214706065408B；未出现宿主/磁盘保护中止。%install、打包、续跑后8项对照、验收1–7与BOLT交接仍NOT RUN。证据E11/interim-0139-progress.json；共享锁和项目锁仍持有。
+
+
+### 16.5 02:40进度（仍未完成）
+
+截至2026-10-14T02:40:08.873551+08:00，最新完成行为`2026-10-14T02:37:07+08:00 [790/902] Linking CXX executable bin/modularize`，正在`bin/clang-tidy`链接。clang-repl、clang-check、clang-extdef-mapping及部分clang-tools已成功链接；这不代替完整构建/RPM验收。最近MemAvailable=26148614144B，/var/tmp可用=194892177408B；守护未中止，%install/打包仍未开始。证据E11/interim-0240-progress.json。只在E11准备了同环境非归档比较辅助脚本，尚未执行独立基线安装或比较；受保护Source/spec/配置/候选补丁未改。
