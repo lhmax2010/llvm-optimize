@@ -157,3 +157,5 @@ PM八项新裁决按01附录修订执行：fully strip、前note/前后SHA/最�
 6. .GCC.command.line记录实际编译器路径，30与90完整对象验证均必须用同一专用实体路径、两批复制来源SHA、相同argv/cwd/input/output，不改参数或过滤节，argv0伪装不足。
 
 步骤1完成：95/95 fixtures PASS（0.408s；4GiB轻scope1.528s），完整patch及公开封套静态apply/整树PASS；本地源码 d6ddbff5ba74bfb420b357b5b6ba9ed300971bb4（父cb679968），文本patch/profile/manifest更新，无Gerrit推送。Quickbuild单一路径估12–15分钟、kernel峰约6.04GiB（R1温缓存依据；新llvm-bolt构建/正常post另计），详情11与single-path-estimate.json。今晚不取共享锁、不跑重阶段、不进入归档根。步骤2副本清理、步骤3周三计划更新待执行。
+
+步骤2清理完成：仅删除授权副本 lto-cache 残余目录；前2,365文件/4,671,566,600B（实际占块4,676,378,624B），后0文件/0B/目录不存在；同文件系统free从79,338,237,952B（73.89GiB）到84,019,998,720B（78.25GiB），观测增4,681,760,768B。共享磁盘并发写入会影响free差量，不将其等同精确释放字节。原cache47,770文件/98,248,402,280B完整清单mtime/34跨度SHA前后及上轮基线一致，其他459条BOLT证据元数据清单一致。4GiB轻scope16.063s（工作15.095s），没有flock/chroot/mount；r1-cache-cleanup.json记录路径来源和审计哈希。步骤1 GitHub提交55a2e06已推送。

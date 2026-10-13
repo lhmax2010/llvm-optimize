@@ -52,3 +52,5 @@ E=/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261014；R1新
 今天复制 98,248,402,280B 后，工作区可用空间一度只有约5.6GB（入场 free 103,902,519,296B 减复制量，约5,654,117,016B / 5.27GiB）；直到 LLD 正常 cache pruning 自动删除副本的大部分内容才恢复。这是磁盘险情：此前只留4GiB重链 reserve，没有30GiB安全底线；checksum/count审核PASS不代表空间安全，不能依赖自动清理救场。
 
 对策已裁决：周三正式交接新树后原地使用原cache，允许LLD写入/prune，不再复制；任何预计单次写入>10GiB，写完仍须≥30GiB free（reserve另计），不足跳过并报告。原大cache复制在新helper准入中会被拒绝。新完整x86树放/var/tmp，准确路径仅从归档会话 origin/main STATUS 正式交接取得，交接前不碰。快路径因2344 STT_FILE被永久删除，新草案只留reference+LLVM strip-debug，不在新树重复双路比较。完全strip SHA575fc9db…与历史v2完全strip一致。今晚仅轻任务，无共享锁/重实验；本会话副本残余将单独按授权删除并记录前后空间，其他原始证据保留。
+
+本次残余清理完成：仅删除授权副本 lto-cache 残余目录；前2,365文件/4,671,566,600B（实际占块4,676,378,624B），后0文件/0B/目录不存在；同文件系统free从79,338,237,952B（73.89GiB）到84,019,998,720B（78.25GiB），观测增4,681,760,768B。共享磁盘并发写入会影响free差量，不将其等同精确释放字节。原cache47,770文件/98,248,402,280B完整清单mtime/34跨度SHA前后及上轮基线一致，其他459条BOLT证据元数据清单一致。4GiB轻scope16.063s（工作15.095s），没有flock/chroot/mount；r1-cache-cleanup.json记录路径来源和审计哈希。步骤1 GitHub提交55a2e06已推送。

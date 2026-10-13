@@ -26,4 +26,6 @@ reference scope 峰6.039 GiB，ld.lld 最大采样 VmHWM5,277,208kB；BOLT scope
 
 ## R1 副本清理与周三计划
 
-清理记录和设计附录在后续大步骤提交补齐；只删本会话创建的 /home/abuild/bolt-work/bolt-v4-20261014/lto-cache，普通原cache和其他证据保留。
+仅删已核对旧 cache-copy.json 来源的 /home/abuild/bolt-work/bolt-v4-20261014/lto-cache；原cache与其他证据未变，设计附录在步骤3更新。
+
+步骤2清理完成：仅删除授权副本 lto-cache 残余目录；前2,365文件/4,671,566,600B（实际占块4,676,378,624B），后0文件/0B/目录不存在；同文件系统free从79,338,237,952B（73.89GiB）到84,019,998,720B（78.25GiB），观测增4,681,760,768B。共享磁盘并发写入会影响free差量，不将其等同精确释放字节。原cache47,770文件/98,248,402,280B完整清单mtime/34跨度SHA前后及上轮基线一致，其他459条BOLT证据元数据清单一致。4GiB轻scope16.063s（工作15.095s），没有flock/chroot/mount；r1-cache-cleanup.json记录路径来源和审计哈希。步骤1 GitHub提交55a2e06已推送。
