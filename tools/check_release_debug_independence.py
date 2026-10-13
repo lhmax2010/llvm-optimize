@@ -4,8 +4,9 @@
 Read-only ELF ET_REL inspection, no compiler/Source invocation. REL has an
 implicit addend: exact equality of the entire target-section payload covers
 its encoded addend; RELA addends are compared explicitly. Section numbers and
-string-table offsets are not semantic identities. Repeated section names are
-disambiguated by occurrence. Retained symbol and relocation order is checked.
+string-table offsets are not semantic identities. Allocated section order and
+relocation order within each target are checked. Symbols and COMDAT groups are
+multisets under the PM's six-part contract; no code-generation exemptions.
 """
 import argparse
 import collections
@@ -70,22 +71,23 @@ def parse(data):
                 idx = extensions[i][n]
                 if not 0 < idx < count:
                     raise ValueError('invalid extended symbol section')
-                section = identities[idx]
+                section = section_names[idx]
             elif idx in (0, 0xfff1, 0xfff2):
-                section = {0: ['UND', 0], 0xfff1: ['ABS', 0], 0xfff2: ['COMMON', 0]}[idx]
+                section = idx
             elif idx >= 0xff00 or idx >= count:
                 raise ValueError('uncertified symbol section index')
             else:
-                section = identities[idx]
+                section = section_names[idx]
             rows.append(dict(name=string(strings, name), type=info & 15, binding=info >> 4,
                              visibility=other & 3, section=section, value=value, size=size))
         symbols[i] = rows
     alloc = []
     for i, s in enumerate(sections):
         if s[2] & 2:
-            alloc.append(dict(section=identities[i], flags=s[2], size=s[5],
+            alloc.append(dict(section=section_names[i], type=s[1], flags=s[2], size=s[5],
+                              alignment=s[8], entsize=s[9],
                               nobits=s[1] == 8, content=payload(i)))
-    relocs = []
+    relocs_by_target = collections.defaultdict(list)
     for i, s in enumerate(sections):
         if s[1] not in (4, 9):
             continue
@@ -101,22 +103,45 @@ def parse(data):
             f = struct.unpack_from(fmt, table, pos)
             kind, si = (f[1] & 255, f[1] >> 8) if bits == 1 else (f[1] & 0xffffffff, f[1] >> 32)
             symbol = symbols[s[6]][si]
-            relocs.append(dict(target=identities[s[7]], offset=f[0], type=kind,
-                               symbol=symbol['name'],
-                               section_symbol=symbol['section'] if symbol['type'] == 3 else None,
+            relocs_by_target[s[7]].append(dict(target=identities[s[7]], offset=f[0], type=kind,
+                               symbol=symbol['section'] if symbol['type'] == 3 else symbol['name'],
                                addend=f[2] if s[1] == 4 else 'implicit: target bytes checked',
                                format='RELA' if s[1] == 4 else 'REL'))
     def is_debug(name):
-        return name.startswith(('.debug', '.zdebug', '.rel.debug', '.rela.debug'))
+        return name.startswith(('.debug', '.rel.debug', '.rela.debug'))
+    groups = []
+    for i, s in enumerate(sections):
+        if s[1] != 17:
+            continue
+        if s[9] != 4 or s[5] < 4 or s[5] % 4 or s[6] not in symbols:
+            raise ValueError('invalid section group')
+        if s[7] >= len(symbols[s[6]]):
+            raise ValueError('invalid section group signature')
+        words = struct.unpack('<'+'I'*(s[5]//4), payload(i))
+        if any(not 0 < n < count for n in words[1:]):
+            raise ValueError('invalid section group member')
+        groups.append(dict(signature=symbols[s[6]][s[7]]['name'], flags=words[0],
+                           members=[section_names[n] for n in words[1:]
+                                    if not is_debug(section_names[n])]))
     kept = []; excluded = []
     for i, rows in symbols.items():
         for row in rows:
-            if row['type'] == 4 or (row['type'] == 3 and is_debug(row['section'][0])):
+            if (row['type'] in (3, 4) or
+                    (row['binding'] == 0 and (not row['name'] or row['name'].startswith('.L')))):
                 excluded.append(row)
             else:
                 kept.append(row)
-    return dict(alloc=alloc, relocations=relocs, symbols=kept, excluded_symbols=excluded,
-                debug_sections=[n for n in section_names if is_debug(n)])
+    # Stable per-target order, independent of relocation-section ordering.
+    relocs = [r for i in sorted(relocs_by_target) for r in relocs_by_target[i]]
+    return dict(alloc=alloc, relocations=relocs, symbols=kept, groups=groups,
+                excluded_symbols=excluded,
+                debug_sections=[n for n in section_names if n.startswith('.debug')])
+
+
+def canonical(obj):
+    # Sorting retains duplicates: this is multiset, not set, comparison.
+    return {**obj, **{k: sorted(obj[k], key=lambda r: json.dumps(r, sort_keys=True))
+                     for k in ('symbols', 'groups')}}
 
 
 def serializable(obj):
@@ -125,8 +150,9 @@ def serializable(obj):
 
 
 def compare(debug, release):
+    debug, release = canonical(debug), canonical(release)
     # Equality uses actual bytes, not their serialized digests.
-    result = {k: debug[k] == release[k] for k in ('alloc', 'relocations', 'symbols')}
+    result = {k: debug[k] == release[k] for k in ('alloc', 'relocations', 'symbols', 'groups')}
     result['release_no_debug'] = not release['debug_sections']
     delta = {}
     left, right = serializable(debug), serializable(release)

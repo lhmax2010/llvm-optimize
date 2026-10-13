@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续二）进行中**：800798e完整性135条归因、669 SHA PASS。PM补全六项调试无关性规则，比较器待修订并测试；先重判已有x86 20对，再继续两ARM和后续流程。证据temp/release-contract-v2-20261013；Source、Commands、候选补丁未改。
+**当前任务（docs/49续二）进行中**：800798e完整性135条归因、669 SHA PASS。PM补全六项调试无关性规则，比较器已按完整六项规则修订，25项正负测试PASS；接着重判已有x86 20对，再继续两ARM和后续流程。证据temp/release-contract-v2-20261013；Source、Commands、候选补丁未改。
 
 **历史任务（docs/49续）STOP_DEBUG_INDEPENDENCE并收尾**：基准8f184dec完整性PASS（290条变化归因、669 SHA）；新判据下x86第1–2源PASS，第3源ChangeNamespace.cpp的614可加载节/3102相关重定位相同，但debug多一个指向.rodata.str1.1的SECTION符号，按符号逐项判据FAIL并停止。两路各20成员转换与完整索引PASS；余17源未判定、两ARM未启动；直接非LTO20项仅诊断。Source仍c43523c0/1bac8db6未改；新增比较器12测试PASS（修一次错误正例，未改门禁）。后续全量回归、补丁再生成、完整构建/验收/交接均NOT RUN；锁/采样器/proc已回收。docs/48与49已更新，证据temp/release-debug-independence-20261013/stop.json、cleanup-final.json。
 
@@ -78,6 +78,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 - 原始日志、大文件仍放 `temp/`；提交推送遵守 [docs/README.md](README.md)。
 
 ## 2. 进度
+
+- 2026-10-13：本提交。docs/48–49、比较器与25项测试：PM六项合同落实，25/25 PASS；Source不改，实物重判待执行。
 
 - 2026-10-13：本提交（git log）。docs/49 §14与STATUS：800798e续二完整性PASS，冻结补全的六项调试无关性判据。
 

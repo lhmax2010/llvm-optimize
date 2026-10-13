@@ -386,3 +386,9 @@ Source的147项宿主、根内143PASS+3环境不适用+1既有AS发现沿用§3�
 2026-10-13，以`800798e51fd2b6885f09dbb94e23642e50b1272e`为基准，reflog截止14:44:14+08。本轮证据F=`W/temp/release-contract-v2-20261013`。完整性135条新增元数据全部归因、未知0；主库完整status 5,308,096行，仅用户既有gbs配置修改；W/llvm仍仅三处并发设置。647档输入加工具/Source/候选补丁等669项SHA全部PASS。两个上轮交付JSON逐项与800798e的Git blob一致；BOLT的210f82b/4c79280及其工作树/证据归于授权会话，不修改。权限盲区免密只读补扫新增0。（F/metadata-gate.json、prior-delivery-attribution.json、bolt-session-attribution.json、input-integrity-result.json。）
 
 PM事前补全判据：①SHF_ALLOC节按顺序比较名称/类型/标志/大小/对齐/entsize/内容；②按目标节逐条比较重定位，STT_SECTION目标规范为所指节名；③非LOCAL及非空且非`.L`开头的LOCAL符号按名称/类型/绑定/可见性/所在节名或特殊号/值/大小的多重集合比较；④排除SECTION、FILE、空名LOCAL和`.L`LOCAL；⑤COMDAT按签名/组标志/有序成员名多重集合比较，仅从成员中去掉`.debug*`及其`.rel.debug*`/`.rela.debug*`；⑥发布产物无`.debug*`。不另增豁免。REL隐式addend由目标节完整字节一致覆盖，RELA直接比较显式addend。直接非LTO比较只诊断。新比较器须先通过正负夹具，再重判上一轮全部20对x86对象；两ARM夹具和其后各阶段尚未执行。
+
+## 15. 完整六项比较器与夹具
+
+`tools/check_release_debug_independence.py`增加可加载节type/alignment/entsize、STT_SECTION重定位目标节名规范化、按目标节保存重定位顺序、符号多重集合与SHT_GROUP解析。符号索引与字符串表偏移不作身份，重复符号/组不去重；组内成员顺序仍必须一致。比较时使用实际payload bytes，JSON仅以SHA展示原文差异。两份Source与Commands不改。
+
+2026-10-13 15:03宿主25项辅助测试一次全PASS（0.107s；F/comparison-tests-scope/build.log）。七个指定边界均覆盖：额外SECTION PASS、未引用`.L`LOCAL PASS、有名LOCAL差异FAIL、可加载节重定位目标差异FAIL、COMDAT成员差异FAIL、组内仅debug成员差异PASS、发布debug节FAIL。另覆盖ELF32 REL/ELF64 RELA、可加载节内容/顺序/类型/对齐/entsize、符号全部字段与重复计数、非LOCAL的`.L`名字仍比较、COMDAT签名/标志/顺序/重复计数、截断ELF拒绝。未动用本轮辅助缺陷重跑条款。Source测试仍为§3已执行的147项，不与25项比较器测试混计。
