@@ -169,6 +169,7 @@ def inspect(path):
                     machine_symbol_entries=len(native_map))
 
 
+# Certify the LLVM major; ARM separately checks literal function attributes.
 CERTIFIED_LLVM_MAJOR = 22
 CERTIFIED_OPTIMIZATION = {'x86_64': '-O3'}
 CERTIFIED_TRIPLES = {'x86_64': {'x86_64-tizen-linux-gnu'}}
@@ -239,8 +240,8 @@ def classify_options(argv, arch='x86_64'):
             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
         elif token == '-flto=thin':
             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
-        elif token.startswith('-Wa,'):
-            raise ValueError('unclassified original assembler option: '+token)
+        elif token.startswith('-Wa,') or token == '-Xassembler':
+            raise ValueError('unclassified original assembler option: -Wa, / -Xassembler')
         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
                                '-fdiagnostics-color=')) or token in
               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
@@ -254,7 +255,9 @@ def classify_options(argv, arch='x86_64'):
         index += 1
     if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
-    if not dwarfs or dwarfs[-1] != '-gdwarf-4':
+    has_debug_options = any(row['token'].startswith('-g') and
+                            row['category'] != 'irrelevant' for row in rows)
+    if has_debug_options and (not dwarfs or dwarfs[-1] != '-gdwarf-4'):
         raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
     effective = {}
     for key, values in switches.items():
@@ -264,7 +267,7 @@ def classify_options(argv, arch='x86_64'):
     contraction = contractions[-1] if contractions else DEFAULTS['fp-contract']
     if contraction not in ('on', 'off', 'fast'):
         raise ValueError('uncertified FP contraction value: '+contraction)
-    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1],
+    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1] if dwarfs else None,
                 switches=effective, fp_contract=contraction,
                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
 
@@ -299,7 +302,10 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
     module_asm_lines = []
     triple, command_id = None, None
     levels, cpus, features = {}, set(), set()
+    has_debug_cu = False
     for line in lines:
+        if line.startswith('!llvm.dbg.cu ='):
+            has_debug_cu = True
         if line.startswith('module asm '):
             module_asm_lines.append(line)
         # Intrinsic references, not string literals in LLVM's own implementation.
@@ -349,8 +355,12 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
         lambda match: chr(int(match[1], 16)), metadata[command_id]))
     policy = classify_options(recorded_command, arch)
+    if policy['dwarf'] is None and has_debug_cu:
+        raise ValueError('no-debug command has !llvm.dbg.cu')
+    backend_flags = (BACKEND_FLAGS if policy['dwarf'] is not None else
+                     [flag for flag in BACKEND_FLAGS if flag not in ('-g', '-gdwarf-4')])
     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
-             *BACKEND_FLAGS, '-ffp-contract='+policy['fp_contract'], '-c']
+             *backend_flags, '-ffp-contract='+policy['fp_contract'], '-c']
     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
@@ -366,27 +376,46 @@ def pic_relocations(data):
     PC-relative relocations are not all forbidden: e.g. hidden symbols and
     .eh_frame legitimately use them. A consumer GNU ld -shared check follows.
     """
-    if member_kind(data) != 'machine' or data[4:6] != b'\x02\x01' or struct.unpack_from('<H', data, 18)[0] != 62:
+    if (len(data) < 64 or member_kind(data) != 'machine' or data[4:6] != b'\x02\x01'
+            or struct.unpack_from('<H', data, 18)[0] != 62):
         raise ValueError('not x86_64 ELF64 little-endian ET_REL')
     off = struct.unpack_from('<Q', data, 40)[0]
     stride, count = struct.unpack_from('<HH', data, 58)
+    if stride < 64:
+        raise ValueError('x86_64 invalid section header stride')
+    if off < 64 or off > len(data) or stride > len(data)-off:
+        raise ValueError('x86_64 section zero outside member')
     if not count:
         count = struct.unpack_from('<IIQQQQIIQQ', data, off)[5]
+    if not count or count > (len(data)-off)//stride:
+        raise ValueError('x86_64 section table outside member')
     sections = [struct.unpack_from('<IIQQQQIIQQ', data, off+i*stride) for i in range(count)]
     checked, forbidden = 0, []
     for section in sections:
         if section[1] not in (4, 9):
             continue
+        if section[6] >= count:
+            raise ValueError('x86_64 relocation sh_link outside section table')
+        if section[7] >= count:
+            raise ValueError('x86_64 relocation sh_info outside section table')
+        if section[9] < (24 if section[1] == 4 else 16) or section[5] % section[9]:
+            raise ValueError('x86_64 invalid relocation table entsize')
+        if section[4] > len(data) or section[5] > len(data)-section[4]:
+            raise ValueError('x86_64 relocation table outside member')
+        symbols = sections[section[6]]
+        if symbols[9] < 24 or symbols[5] % symbols[9]:
+            raise ValueError('x86_64 invalid symbol table entsize')
+        if symbols[4] > len(data) or symbols[5] > len(data)-symbols[4]:
+            raise ValueError('x86_64 symbol table outside member')
+        symbol_count = symbols[5] // symbols[9]
         target = sections[section[7]]
         if not target[2] & 2:  # SHF_ALLOC; excludes all debug sections
             continue
-        symbols = sections[section[6]]
         for pos in range(section[4], section[4]+section[5], section[9]):
             _, info = struct.unpack_from('<QQ', data, pos)
             kind, symbol_index = info & 0xffffffff, info >> 32
-            if (symbols[9] < 24 or symbols[5] % symbols[9] or
-                    symbol_index >= symbols[5] // symbols[9]):
-                raise ValueError('relocation symbol outside table')
+            if symbol_index >= symbol_count:
+                raise ValueError('x86_64 relocation symbol outside table')
             symbol = struct.unpack_from('<IBBHQQ', data, symbols[4]+symbol_index*symbols[9])
             checked += 1
             # SHN_ABS references do not need runtime relocation.
@@ -554,6 +583,8 @@ def check_symbols(nm, source, target, command):
     return result
 
 
+# x86_64 keeps the certified llvm-nm U-name check; ARM uses strict ELF fields
+# because its GLOBAL/NOTYPE/DEFAULT/UND declaration has a separate certification.
 def check_module_asm_symbol(nm, target, statements, command):
     if not statements:
         return dict(required=False)
@@ -599,7 +630,7 @@ def validate_tools(build, compiler, disassembler, nm, command, output):
                 raise ValueError('uncertified compiler major/full version (required 22): '+text.strip())
         elif not match or match[1] != versions['compiler']['version']:
             raise ValueError(label+' version differs from clang '+versions['compiler']['version']+': '+text.strip())
-        versions[label] = dict(path=str(tool), sha256=sha(tool), version=match[1], raw=text)
+        versions[label] = dict(path=str(tool), resolved_path=str(tool.resolve()), sha256=sha(tool), version=match[1], raw=text)
     return dict(compiler=str(compiler), version=versions['compiler']['raw'],
                 compiler_sha256=versions['compiler']['sha256'], disassembler=str(disassembler),
                 nm=str(nm), tool_versions=versions)

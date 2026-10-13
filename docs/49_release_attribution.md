@@ -1,6 +1,6 @@
 # 49 续四：发布模式参数认证与差异归因
 
-日期：2026-10-13；开场HEAD `df729697426dff67a3871bfa850754ee8be7d376`。**进行中：60对参数PASS；发布模式参数与归因认证PASS；debug主线两次x86全量回归PASS，候选补丁待重生成。** 旧docs/49及续三保留，十项ELF比较器和两份Source/Commands不修改。本页不超过50KB。
+日期：2026-10-13；开场HEAD `df729697426dff67a3871bfa850754ee8be7d376`。**进行中：60对参数PASS；发布模式参数与归因认证PASS；debug主线两次x86全量回归PASS，PS3/PS2候选顺序apply与整树核对PASS，完整构建准入待检查。** 旧docs/49及续三保留，十项ELF比较器和两份Source/Commands不修改。本页不超过50KB。
 
 ## 1. 用户裁决、完整性与执行边界
 
@@ -650,3 +650,20 @@ candidate允许缺失符号（按原策略）：`{'W': 1920}`；强符号缺失0
 `build/bin/clang`为软链接`clang-22`，samefile=true且可执行，clang实体SHA `d25e99607c9ea23bf2e50da5075c21f0145f6da24a39a4228d2fd8026ead70cf`。候选spec可按已裁决使用无版本号别名（E/clang-alias.json）。
 
 下一步：重生成PS3/PS2候选、顺序apply与完整tree核对；之后才进入新根完整构建的磁盘门禁。当前没有新构建树交接给BOLT。
+
+
+## 6. PS3 / PS2候选重生成与整树核对
+
+基准`cb67996861d070d68fec2b4c623eed7d20ba2e23`。本地候选PS3提交`3731eda7e1b81bd313849a61d60fbac4970a99b1`；PS2提交`4c36e899dffee2869af9afd174346e3eb9a7d7ca`，父子顺序正确。作者FatTank <hao.lin@samsung.com>；Change-Id分别保持Id4eb147e7ec4764d58a81110cf7bf57d21b64ac8与Iac085555112855d60cc7591931e91466691db6b2。干净基准上逐个apply --check/实际apply均PASS，两个阶段git write-tree均与提交tree相同（E/patch-result.json、patch-commands.json）。
+
+PS3 spec相对已上传PS2只将转换器入口由build/bin/clang-22改成clang；Source换成已测试生产版c43523c0…，原W/llvm及其spec未改。PS2删除宏体中的停用注释行，改在宏上方标出tizen_macros:37停用状态，并保留平台宏来源34–38/rpm-build-4.14.1.1-1.4与未来同步要求；只替换archive strip，普通brp-strip仍用平台__strip，不全局覆盖__strip。提交说明明确覆盖本buildroot全部静态归档（含compiler-rt）；完整构建待补、发布模式完整打包尚未认证。未推Gerrit。
+
+|产物|字节|SHA256|
+|---|---:|---|
+|[patches/archive-index-fix/ps3/0001-packaging-fix-llvm-static-devel-with-ThinLTO.patch](../patches/archive-index-fix/ps3/0001-packaging-fix-llvm-static-devel-with-ThinLTO.patch)|52698|`0d777afbf7b1a7b86afc5c1da5f7bef6b622315efc1316be0cac2b6e782d94e7`|
+|[patches/archive-index-fix/ps3/llvm-static-archives-native.py](../patches/archive-index-fix/ps3/llvm-static-archives-native.py)|45786|`c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e`|
+|[patches/llvm-strip/ps2/0001-packaging-use-llvm-strip-for-x86_64-archives.patch](../patches/llvm-strip/ps2/0001-packaging-use-llvm-strip-for-x86_64-archives.patch)|3147|`c679f342a72d52de92914cd2d0007c981e0d6d22a6b378f811ca8ee8e12da9ff`|
+|[docs/49_356627_ps3.diff](../docs/49_356627_ps3.diff)|52698|`0d777afbf7b1a7b86afc5c1da5f7bef6b622315efc1316be0cac2b6e782d94e7`|
+|[docs/49_356639_ps2.diff](../docs/49_356639_ps2.diff)|3147|`c679f342a72d52de92914cd2d0007c981e0d6d22a6b378f811ca8ee8e12da9ff`|
+
+本轮替换的是ps3/ps2候选子目录，不是两份已上传补丁。旧候选摘要保留：PS3 patch `1293f6982c87cfbeefe91aa08e92a7d1b72a129f716417f8c8cee61693c463c6`；PS3 Source `014fd32f309bc0be80471eebf8a4a3cf50a5656ce3a2584e4bbdfb9a05a9affd`；PS2 patch `aab2cfd1ad3fb58bfe44cdbdda50bbe67d5343b29a6a6d598408d3bb96620e88`（E/initial-integrity.json；旧版本仍在Git历史）。

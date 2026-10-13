@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续四）进行中**：独立参数/归因辅助16测试PASS；60/60参数PASS，发布认证PASS，Serialize按(b)归因。两Source/Commands/十项比较器不变；发布认证独立于debug主线，两次x86全量回归各225档/3864成员/完整索引/3853flags全部一致；下一步候选补丁再生成。完整构建/验收与BOLT交接尚未执行。见docs/49_release_attribution.md，证据temp/release-attribution-20261013。
+**当前任务（docs/49续四）进行中**：独立参数/归因辅助16测试PASS；60/60参数PASS，发布认证PASS，Serialize按(b)归因。两Source/Commands/十项比较器不变；发布认证独立于debug主线，两次x86全量回归各225档/3864成员/完整索引/3853flags全部一致；PS3/PS2候选已重生成，顺序apply与完整tree一致；下一步完整构建磁盘准入。完整构建/验收与BOLT交接尚未执行。见docs/49_release_attribution.md，证据temp/release-attribution-20261013。
 
 **历史任务（docs/49续三）STOP_ARM32_ALLOC_CONTENT并收尾**：最终十项比较器41测试PASS（78e58f5）；已有80对象SHA核对PASS，x8620/20 PASS，ARM32前12对PASS、第13对Serialize.cpp同身份函数节720→716字节、重定位/符号不符，立即停止；剩余7对/AArch6420对NOT RUN。ChangeNamespace本轮PASS，输入IR已有18个定义换序。两Source未改，未重编/转换/重试门禁；后续全量回归、补丁再生成、完整构建验收1–7与BOLT交接NOT RUN。只读readelf辅助筛选修一次不改门禁；全部锁/进程/采样器/挂载回收。详见docs/49_release_contract_final.md §20–§25，证据temp/release-contract-final-20261013。
 
@@ -49,7 +49,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：docs/49续三最终判据下ARM32第13文件因可加载函数节内容/重定位/符号不一致STOP；x8620对通过但不代替全量。发布模式认证未完成，未认证构建不得发货，没有BOLT新树交接。
+当前阶段：docs/49续四的60对参数/差异归因认证PASS；两条x86路径各225档全量不变性PASS；PS3/PS2候选已重生成并验顺序apply/tree。下一步新x86完整构建的磁盘准入；发布模式完整构建仍挂账，没有BOLT新树交接。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
