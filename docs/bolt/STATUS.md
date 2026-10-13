@@ -121,3 +121,5 @@ PM八项新裁决按01附录修订执行：fully strip、前note/前后SHA/最�
 步骤2实测：缓存完整复制及原缓存终审PASS；dual/reference严格符号表不一致（2344个STT_FILE），按已裁决fallback到reference；BOLT匹配R0.004238545%、S/N0%，note/strip-all/三目标PASS。30输入初轮首个.o因.GCC.command.line编译器路径差异FAIL，剩余29未执行；公平argv0重测遇到入口内存不足及共享锁占用，待继续等锁。07与r1-rehearsal.json给全部实测，不把该30门禁记PASS。
 
 步骤3双模式小spec判据PASS：历史v2 strip-all副本，两模式clang均被选择器跳过、控制正例FD/eu-strip与GNU strip -g实际执行；RPM SHA保持575fc9db…及三目标PASS。Debug一次post、release一次；测量脚本.gnu_debuglink错误与已有输出保护失败日志保留，修正后用同一debugRPM及新releaseRPM。08/dual-mode-smoke给证据。两模式真实草案rpmspec解析亦PASS，不冒充完整安装宏认证。
+
+步骤4：90/90新预处理资产PASS（30历史selection/20独立路径×3目标），缺源/缺头0，完整argv/源SHA/.ii SHA/逐头SHA已保存，.ii合计677747108B留E。净42.576s/scope43.598s；09与assets90-manifest公开，小spec与资产不冒充90对象或完整包认证。
