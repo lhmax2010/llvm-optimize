@@ -90,11 +90,11 @@ PM裁决：
 | 步骤 | 进度/提交 | 产出 |
 |---|---|---|
 | 1 新分支/环境调查 | 完成；16030e7（完整号见git log） | 04_baseline_and_quickbuild.md；sandbox已原样创建指向cb679968，无新提交 |
-| 2 v4.1/补丁草案/fixtures | 草案封存；59fixture PASS、静态apply/整树PASS；宏/pipeline未认证 | 01 v4.1、05、tools/bolt、patches/bolt；LLVM本地b3ec4f0 |
+| 2 v4.1/补丁草案/fixtures | b6b5624封存；59fixture PASS、静态apply/整树PASS；宏/pipeline未认证 | 01 v4.1、05、tools/bolt、patches/bolt；LLVM本地b3ec4f0 |
 | 3 旧树流水线预演 | 未执行；准备异常后依用户规则停止 | 无新重链/BOLT/三目标/30对数据；E/stop-and-recovery.json |
 | 4 standalone配置/干跑 | 未执行（停止后不继续产品实验） | 仅LLVMConfig文件现存，兼容性/任务数UNKNOWN |
 | 5 90对资产 | 未执行，0/90新文件 | 不是确认材料缺失；未将历史30对冒充90对 |
-| 6 profile压缩 | 完成，解压SHA PASS | Source9735212B/SHA52fd8522…；uncompressed171232190B/SHA d9b132f9… |
+| 6 profile压缩 | 完成，解压SHA PASS；本条所在提交 | Source9735212B/SHA52fd8522…；uncompressed171232190B/SHA d9b132f9… |
 | 7 周三预注册 | 文档完成；未执行 | 01附录V4.1-6；新树正式交接/共享锁/匹配优先/普通任务0门禁 |
 | 8 收尾 | 临时R1绑定/所有scope已回收，正在封存推送 | 本文与05；源提交未推Gerrit |
 
