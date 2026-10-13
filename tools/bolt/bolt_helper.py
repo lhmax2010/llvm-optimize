@@ -78,7 +78,7 @@ def profile_unpack(source, output):
 def quote(value):
     return "'" + str(value).replace("'", "'\\''") + "'"
 
-def replay_script(original, output, dependency, strip_debug=True):
+def replay_script(original, output, dependency, cache, strip_debug=True):
     original = original.strip()
     require('\n' not in original and original.startswith(': && ') and original.endswith(' && :'),
             'unexpected link edge framing')
@@ -92,6 +92,10 @@ def replay_script(original, output, dependency, strip_debug=True):
     require(body.count(old_out) == 1 and body.count(old_dep) == 1, 'non-unique clang output/depfile')
     require(not any(x in body for x in ['--Map', '-Map', '--save-temps', '--time-trace']),
             'unregistered additional linker output')
+    caches = re.findall(r'--thinlto-cache-dir=([^\s]+)', body)
+    require(len(caches) == 1 and caches[0].startswith('/') and not any(c in caches[0] for c in '\"\'`$'), 'non-unique or unsupported ThinLTO cache')
+    require(str(cache) != caches[0], 'ThinLTO cache must be isolated')
+    body = body.replace('--thinlto-cache-dir='+caches[0], '--thinlto-cache-dir='+quote(cache), 1)
     body = body.replace(old_out, '-o ' + quote(output) + ' ', 1)
     body = body.replace(old_dep, '--dependency-file=' + quote(dependency), 1)
     flags = ' -Wl,--emit-relocs' + (' -Wl,--strip-debug' if strip_debug else '')
@@ -162,12 +166,16 @@ class ELF:
             target = self.names[shndx] if shndx < len(self.names) else 'RESERVED:%d' % shndx
             result.append((self.string(strings[4], strings[5], name), info, other, target, value, size))
         return result
-    def audit(self):
+    def audit(self, final=False):
         require(self.machine == 62 and self.loads, 'not executable native x86_64 ELF')
         require(any(p[1] & 1 and p[3] <= self.entry < p[3] + p[6] for p in self.loads),
                 'entry not inside executable LOAD')
         require(not any('debug' in n.lower() for n in self.names), 'BOLT clang contains a debug section')
-        require('.note.bolt_info' in self.by_name, 'missing BOLT note')
+        require('.gdb_index' not in self.by_name, 'BOLT clang contains a debug index')
+        if final:
+            require('.symtab' not in self.by_name and '.note.bolt_info' not in self.by_name, 'candidate is not fully stripped')
+        else:
+            require('.note.bolt_info' in self.by_name, 'missing BOLT note')
         return {'entry': self.entry, 'loads': self.loads, 'bolt_sections': [n for n in self.names if '.bolt' in n]}
 
 def compare_elf(left, right):
@@ -235,7 +243,7 @@ def inventory(root):
             if stat.S_ISLNK(st.st_mode):
                 files[key] = {'type': 'symlink', 'target': os.readlink(p)}
             elif stat.S_ISREG(st.st_mode):
-                files[key] = {'type': 'file', 'mode': stat.S_IMODE(st.st_mode), 'bytes': st.st_size}
+                files[key] = {'type': 'file', 'mode': stat.S_IMODE(st.st_mode), 'bytes': st.st_size, 'sha256': digest(p)}
             elif stat.S_ISDIR(st.st_mode):
                 files[key] = {'type': 'dir'}
             else:
@@ -294,13 +302,14 @@ def alias_group(root):
             raise GateError('clang family alias points to different content: '+str(p))
     return entity, aliases
 
-def install_candidate(root, candidate, state):
+def install_candidate(root, candidate, state, identity):
     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
     e = ELF(candidate)
     try:
-        elf = e.audit()
+        elf = e.audit(final=True)
     finally:
         e.close()
+    validate_identity(identity, candidate)
     entity, aliases = alias_group(root); changed = []
     for p in aliases:
         changed.append({'path': p.relative_to(root).as_posix(), 'old_type': 'symlink' if p.is_symlink() else 'file',
@@ -310,11 +319,11 @@ def install_candidate(root, candidate, state):
     for p in aliases:
         tmp = p.with_name('.'+p.name+'.bolt-link'); require(not tmp.exists(), 'temporary alias exists')
         tmp.symlink_to('clang-22'); os.replace(tmp, p)
-    result = {'installed_sha256': digest(entity), 'alias_changes': changed,
+    result = {'installed_sha256': digest(entity), 'identity': identity, 'alias_changes': changed,
               'allowed_paths': ['usr/bin/clang-22'] + [p.relative_to(root).as_posix() for p in aliases], 'elf': elf}
     save(state, result); return result
 
-def post_gate(root, state, ordinary, candidate_work, baseline_manifest=None, resource_dir=None):
+def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
     entity = root/'usr/bin/clang-22'; require(digest(entity) == state['installed_sha256'], 'clang changed during RPM post-processing')
     for change in state['alias_changes']:
@@ -323,17 +332,13 @@ def post_gate(root, state, ordinary, candidate_work, baseline_manifest=None, res
                 'alias stale or not normalized: '+str(p))
     e = ELF(entity)
     try:
-        elf = e.audit()
+        elf = e.audit(final=True)
     finally:
         e.close()
-    if baseline_manifest is not None:
-        actual = inventory(root)['files']; expected = baseline_manifest['files']; excluded = set(state['allowed_paths'])
-        require({k:v for k,v in actual.items() if k not in excluded} ==
-                {k:v for k,v in expected.items() if k not in excluded},
-                'final buildroot file list differs from ordinary reference (no debug-tree exemption)')
+    require(digest(entity) == state['identity']['after_sha256'], 'final installed SHA differs from stripped candidate')
     rows = tiny_gate(ordinary, str(entity), candidate_work, resource_dir)
     return {'sha_unchanged': True, 'aliases_pass': True, 'elf': elf, 'tiny': rows,
-            'ordinary_manifest_checked': baseline_manifest is not None}
+            'strip_identity_pass': True}
 
 def rewrite(bolt, profile, input_elf, output, work):
     work = Path(work); work.mkdir(parents=True, exist_ok=True)
@@ -366,59 +371,174 @@ def tool_plan(text):
 def pipeline(build, work, bolt):
     build, work = Path(build).absolute(), Path(work).absolute()
     edge = (work/'link.original').read_text()
-    for label, strip_debug in [('dual-flags',True),('reference-relocs',False)]:
-        script = work/(label+'.sh')
-        script.write_text(replay_script(edge,work/(label+'-clang-22'),work/(label+'.d'),strip_debug))
-        call(['/bin/sh',str(script)],work/(label+'.log'),cwd=build,timeout=1800)
-    reference=work/'reference-relocs-clang-22'
-    call([str(build/'bin/llvm-strip'),'--strip-debug',str(reference)],work/'reference-strip.log',timeout=600)
-    comparison=compare_elf(work/'dual-flags-clang-22',reference);save(work/'strip-equivalence.json',comparison)
-    # PM-authorized fallback; preserve both inputs and never ignore a difference.
-    selected=work/'dual-flags-clang-22' if comparison['equal'] else reference
-    result=rewrite(str(bolt),str(work/'profile.fdata'),str(selected),str(work/'clang.candidate'),work/'rewrite')
-    tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.candidate'),work/'preinstall-gate',str(build/'lib64/clang/22'))
-    result['link_strip_equivalence']=comparison;result['input_policy']='link-strip-debug' if comparison['equal'] else 'prestrip-fallback'
-    save(work/'pipeline-result.json',result);return result
+    cache = cache_copy(edge, work/'lto-cache', work/'cache-copy.json')
+    try:
+        for label, strip_debug in [('dual-flags',True),('reference-relocs',False)]:
+            script = work/(label+'.sh')
+            script.write_text(replay_script(edge,work/(label+'-clang-22'),work/(label+'.d'),cache['copy'],strip_debug))
+            call(['/bin/sh',str(script)],work/(label+'.log'),cwd=build,timeout=1800)
+        reference=work/'reference-relocs-clang-22'
+        call([str(build/'bin/llvm-strip'),'--strip-debug',str(reference)],work/'reference-strip.log',timeout=600)
+        comparison=compare_elf(work/'dual-flags-clang-22',reference);save(work/'strip-equivalence.json',comparison)
+        # PM-authorized fallback; preserve both inputs and never ignore a difference.
+        selected=work/'dual-flags-clang-22' if comparison['equal'] else reference
+        result=rewrite(str(bolt),str(work/'profile.fdata'),str(selected),str(work/'clang.bolt'),work/'rewrite')
+        identity = strip_all(str(build/'bin/llvm-strip'), work/'clang.bolt', work/'clang.candidate', work/'identity.json')
+        print(json.dumps({'BOLT_STRIP_IDENTITY': identity}), flush=True)
+        tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.candidate'),work/'preinstall-gate',str(build/'lib64/clang/22'))
+        cache_unchanged(cache)
+        result['identity'] = identity
+        result['link_strip_equivalence']=comparison;result['input_policy']='link-strip-debug' if comparison['equal'] else 'prestrip-fallback'
+        save(work/'pipeline-result.json',result);return result
+    finally:
+        cache_unchanged(cache)
 
-def remove_clang_debug(root, state):
-    root=Path(root).absolute(); names=[Path(p).name for p in state['allowed_paths']]
-    debugroot=root/'usr/lib/debug'; removal=[]
-    if debugroot.exists():
-        for folder, dirs, files in os.walk(debugroot,followlinks=False):
-            for n in dirs+files:
-                p=Path(folder)/n
-                if not (p.is_file() or p.is_symlink()):continue
-                if any(n==name+'.debug' or (n.startswith(name+'-') and n.endswith('.debug')) for name in names):
-                    removal.append(p)
-        targets=set(removal)
-        for folder,dirs,files in os.walk(debugroot,followlinks=False):
-            for n in dirs+files:
-                p=Path(folder)/n
-                if p.is_symlink() and rooted_resolve(root,p) in targets:removal.append(p)
-    for p in dict.fromkeys(removal):p.unlink()
-    return {'removed_old_clang_debug':[p.relative_to(root).as_posix() for p in dict.fromkeys(removal)]}
+def cache_manifest(root):
+    root = Path(root)
+    require(root.is_dir(), 'ThinLTO cache directory missing')
+    rows = []
+    for p in sorted(root.rglob('*')):
+        require(not p.is_symlink(), 'cache symlink is unsupported')
+        if p.is_file():
+            st = p.stat()
+            rows.append({'path': p.relative_to(root).as_posix(), 'bytes': st.st_size,
+                         'mtime_ns': st.st_mtime_ns})
+        else:
+            require(p.is_dir(), 'cache contains a special file')
+    # Deterministic samples spanning the full sorted file list; timestamps are also frozen.
+    indices = sorted(set([0, len(rows)-1] + list(range(0, len(rows), max(1,len(rows)//32))))) if rows else []
+    samples = {rows[i]['path']: digest(root/rows[i]['path']) for i in indices}
+    return {'files': rows, 'count': len(rows), 'bytes': sum(r['bytes'] for r in rows), 'samples': samples}
+
+def cache_copy(edge, destination, result):
+    matches = re.findall(r'--thinlto-cache-dir=([^\s]+)', edge)
+    require(len(matches) == 1, 'cache path is not unique')
+    source, destination = Path(matches[0]), Path(destination).absolute()
+    require(source.is_absolute() and source != destination and not destination.exists(), 'unsafe cache destination')
+    before = cache_manifest(source)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    require(shutil.disk_usage(destination.parent).free >= before['bytes'] + 4*1024**3, 'insufficient cache copy space including 4 GiB measured relink peak reserve')
+    shutil.copytree(source, destination, copy_function=shutil.copy2)
+    copied = cache_manifest(destination)
+    require(before == copied, 'cache copy file count/size/mtime/sample SHA differs')
+    require(cache_manifest(source) == before, 'original cache changed during copy')
+    value = {'source': str(source), 'copy': str(destination), 'before': before, 'copied': copied}
+    save(result, value)
+    print(json.dumps({'cache_copy': {'count': before['count'], 'bytes': before['bytes'], 'copy': str(destination)}}), flush=True)
+    return value
+
+def cache_unchanged(state):
+    require(cache_manifest(state['source']) == state['before'], 'original ThinLTO cache changed')
+    return True
+
+def validate_identity(identity, candidate):
+    require(identity.get('bolt_note_before') is True, 'unproven pre-strip BOLT identity')
+    require(identity.get('before_sha256') == digest(identity['before_path']), 'pre-strip SHA changed')
+    before = ELF(identity['before_path'])
+    try:
+        before.audit()
+    finally:
+        before.close()
+    require(digest(candidate) == identity.get('after_sha256'), 'stripped candidate SHA mismatch')
+    final = ELF(candidate)
+    try:
+        final.audit(final=True)
+    finally:
+        final.close()
+
+def strip_all(tool, before, after, result):
+    before, after = Path(before).absolute(), Path(after).absolute()
+    require(not after.exists() and before != after, 'strip-all output must be new')
+    e = ELF(before)
+    try:
+        audit = e.audit()
+    finally:
+        e.close()
+    before_sha = digest(before)
+    shutil.copy2(before, after)
+    call([str(tool), '--strip-all', str(after)], Path(result).with_suffix('.strip.log'), timeout=600)
+    identity = {'before_path': str(before), 'before_sha256': before_sha, 'bolt_note_before': True,
+                'bolt_sections_before': audit['bolt_sections'], 'after_path': str(after),
+                'after_sha256': digest(after), 'strip_tool_sha256': digest(tool)}
+    validate_identity(identity, after)
+    save(result, identity)
+    print(json.dumps({'BOLT_STRIP_IDENTITY': identity}), flush=True)
+    return identity
+
+def package_compare(ordinary, candidate, mode, proof):
+    """Local RPM payload comparison. Proof binds per-path DWARF provenance to baseline.
+
+    The proof must be generated/reviewed from ordinary DWARF and ALL other debuginfo
+    (see design). Missing evidence fails; a path pattern alone is never proof.
+    Root entries are package-qualified: main/, debuginfo/, debugsource/.
+    """
+    require(mode in ('debug','release'), 'unknown package mode')
+    old, new = ordinary['files'], candidate['files']
+    require(new.keys() <= old.keys(), 'RPM added a file')
+    entity = 'main/usr/bin/clang-22'
+    require(entity in old and entity in new, 'RPM lost clang-22')
+    require(old[entity]['type'] == new[entity]['type'] == 'file' and
+            old[entity]['mode'] == new[entity]['mode'], 'clang entity type/mode changed')
+    aliases = set(proof.get('aliases', []))
+    for key in aliases:
+        require(key.startswith('main/usr/bin/') and key != entity and key in old,
+                'invalid baseline alias')
+        # Alias evidence is produced by alias_group on the ordinary extraction root.
+        require(proof.get('alias_baseline', {}).get(key) == old[key], 'unproven clang alias')
+    removed = sorted(old.keys()-new.keys()); changed = []
+    for key in sorted(new):
+        if old[key] == new[key]:
+            continue
+        if key == entity:
+            changed.append(key);continue
+        if key in aliases:
+            require(new[key] == {'type':'symlink','target':'clang-22'}, 'alias is not normalized')
+            changed.append(key);continue
+        raise GateError('non-clang RPM file changed: '+key)
+    for key in removed:
+        require(mode == 'debug', 'release RPM lost a file: '+key)
+        item = proof.get('removed', {}).get(key)
+        require(item is not None and item.get('baseline') == old[key], 'missing or mismatched DWARF provenance: '+key)
+        evidence = item.get('evidence', {})
+        require(evidence.get('clang_debug_sha256') and evidence.get('dwarf_dump_sha256') and
+                evidence.get('all_other_debug_manifest_sha256'), 'incomplete DWARF evidence: '+key)
+        if key.startswith('debuginfo/'):
+            require(item.get('kind') in ('clang_debug','clang_build_id') and
+                    evidence.get('owner') == 'usr/bin/clang-22', 'debug file not owned by clang-22')
+        elif key.startswith('debugsource/'):
+            require(item.get('kind') == 'exclusive_source' and evidence.get('referenced_by') == ['usr/bin/clang-22'] and
+                    evidence.get('source_path'), 'source not proven exclusive to clang-22')
+        else:
+            raise GateError('unexpected missing file: '+key)
+    return {'mode':mode, 'pass':True, 'changed':changed, 'removed':removed,
+            'proof_sha256':hashlib.sha256(json.dumps(proof,sort_keys=True).encode()).hexdigest()}
 
 def main():
     p = argparse.ArgumentParser(description=__doc__); sub = p.add_subparsers(dest='cmd',required=True)
     s=sub.add_parser('tool-plan');s.add_argument('input')
     s=sub.add_parser('pipeline');s.add_argument('build');s.add_argument('work');s.add_argument('tool')
-    s=sub.add_parser('remove-clang-debug');s.add_argument('root');s.add_argument('state')
+    s=sub.add_parser('strip-all');s.add_argument('tool');s.add_argument('before');s.add_argument('after');s.add_argument('identity')
+    s=sub.add_parser('cache-copy');s.add_argument('edge');s.add_argument('destination');s.add_argument('result')
+    s=sub.add_parser('package-compare');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('mode',choices=['debug','release']);s.add_argument('proof');s.add_argument('result')
     s=sub.add_parser('unpack');s.add_argument('source');s.add_argument('output')
-    s=sub.add_parser('replay');s.add_argument('edge');s.add_argument('output');s.add_argument('dependency');s.add_argument('script');s.add_argument('--keep-debug',action='store_true')
+    s=sub.add_parser('replay');s.add_argument('edge');s.add_argument('output');s.add_argument('dependency');s.add_argument('script');s.add_argument('cache');s.add_argument('--keep-debug',action='store_true')
     s=sub.add_parser('compare-elf');s.add_argument('left');s.add_argument('right');s.add_argument('result')
     s=sub.add_parser('rewrite');s.add_argument('tool');s.add_argument('profile');s.add_argument('input');s.add_argument('output');s.add_argument('work')
     s=sub.add_parser('tiny');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('work');s.add_argument('--resource-dir')
     s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
     s=sub.add_parser('prune');s.add_argument('root');s.add_argument('before');s.add_argument('install_manifest');s.add_argument('result')
-    s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state')
-    s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--reference',required=True);s.add_argument('--resource-dir')
+    s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
+    s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
     a=p.parse_args()
     if a.cmd=='tool-plan':result=tool_plan(Path(a.input).read_text())
     elif a.cmd=='pipeline':result=pipeline(a.build,a.work,a.tool)
-    elif a.cmd=='remove-clang-debug':result=remove_clang_debug(a.root,json.loads(Path(a.state).read_text()))
+    elif a.cmd=='strip-all':result=strip_all(a.tool,a.before,a.after,a.identity)
+    elif a.cmd=='cache-copy':result=cache_copy(Path(a.edge).read_text(),a.destination,a.result)
+    elif a.cmd=='package-compare':
+        result=package_compare(json.loads(Path(a.ordinary).read_text()),json.loads(Path(a.candidate).read_text()),a.mode,json.loads(Path(a.proof).read_text()));save(a.result,result)
     elif a.cmd=='unpack':result=profile_unpack(a.source,a.output)
     elif a.cmd=='replay':
-        script=replay_script(Path(a.edge).read_text(),a.output,a.dependency,not a.keep_debug)
+        script=replay_script(Path(a.edge).read_text(),a.output,a.dependency,a.cache,not a.keep_debug)
         Path(a.script).write_text(script);Path(a.script).chmod(0o755);result={'script':a.script}
     elif a.cmd=='compare-elf':
         result=compare_elf(a.left,a.right);save(a.result,result);require(result['equal'],'link strip equivalence failed')
@@ -427,10 +547,10 @@ def main():
     elif a.cmd=='snapshot':result=inventory(a.root);save(a.output,result)
     elif a.cmd=='prune':
         result=prune_install(a.root,json.loads(Path(a.before).read_text()),Path(a.install_manifest).read_text().splitlines());save(a.result,result)
-    elif a.cmd=='install':result=install_candidate(a.root,a.candidate,a.state)
+    elif a.cmd=='install':result=install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()))
     elif a.cmd=='post':
         result=post_gate(a.root,json.loads(Path(a.state).read_text()),a.ordinary,a.work,
-                         json.loads(Path(a.reference).read_text()),a.resource_dir);save(Path(a.work)/'post-result.json',result)
+                         a.resource_dir);save(Path(a.work)/'post-result.json',result)
     print(json.dumps(result,ensure_ascii=False))
 
 if __name__=='__main__':

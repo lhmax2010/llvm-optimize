@@ -69,3 +69,7 @@ llvm/x86候选全集（据manifest与project_meta）：
 新基线R或S/N>5%时先失败停止试包，记录N/S/U/argv/输入/工具SHA。若用户另行批准重新训练：用新clang relocs输入单线程插桩→同ARM13+AArch6410冻结负载分别编译并留PID fdata→明确清单merge→同v2参数重写→重新正确性/压缩/Source/hash与补丁评审→Quickbuild重建。禁止复用旧插桩ELF训练新二进制。
 
 历史插桩cap22GiB，自身峰19.72GiB、66.72s；ARM13采集含基线/merge366.80s；新增A6410含审计/merge296.02s；热重链227.66s，重写26.32s。净步骤约16.4分钟仅为历史相加参考，**不含新预处理、90对验证、重新打包、排队及Quickbuild全构建**。实际端到端预计至少另留数小时且未知；周四一轮评审/周五交付会有明显延期风险。当前16GiB重阶段政策不能容纳历史插桩22GiB需求，必须另有资源裁决，今天不插桩/不采profile。
+
+## 2026-10-14 用户确认（覆盖此前实际 job UNKNOWN）
+
+当前 Quickbuild 在 Tizen-Base-Toolchain 项目构建 llvm，定义 _toolchain，spec 走 debug 分支；以后进入 Tizen-Base 时不定义 _toolchain，spec 走发布分支，不跑 find-debuginfo，由 GNU brp-strip 处理 not stripped 可执行文件。此为用户人工裁决前提，不再等待项目信息；完全 strip 的 BOLT 交付须支持两模式。

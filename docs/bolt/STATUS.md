@@ -109,3 +109,11 @@ PM裁决：
 - 旧树预演R、S/N、双flags对照、VMHWM、三目标/30对、standalone、90资产均UNKNOWN/未执行。没有因历史正例/fixture PASS把它们写成通过。共享flock未取未等；归档两锁/根与W tracked文件未动。
 
 最终GitHub封存：04环境16030e7；草案/59fixtures/05/设计v4.1 b6b5624；压缩Source210f82b；本状态收尾提交可由git log追溯。v4.1正文44782B≤50KB，POSIX片段dash -n及本地链接检查通过；Python3.9语法兼容性静态检查通过。E/final-publication.json在本次push后登记本地/远端和raw文件核对。**任务按停止规则收尾，未完成全部产品验证步骤；不自动恢复实验。**
+
+## 2026-10-14 续任务：完全 strip 双模式（最新裁决覆盖旧限制）
+
+人工前提：用户确认当前 Quickbuild 在 Tizen-Base-Toolchain 定义 _toolchain，走 debug；以后 Tizen-Base 无 _toolchain 走发布，不跑 FD，由 GNU brp-strip 处理 not stripped ELF。必须双模式。
+
+PM八项新裁决按01附录修订执行：fully strip、前note/前后SHA/最终SHA、普通包无symtab核实、指定普通chroot临时proc、完整缓存副本与三路径、原post只一次、本地严格双模式文件例外、周五前不做standalone。旧debug-only/两次post/note终检/私有挂载方案全部作废，05历史停止事实不改。
+
+步骤1已完成：84fixtures PASS，完整patch apply/tree 与公开封套 tree PASS；本地源提交 e5239cd50dce5e16cb43b99395388b6bb60829f1，无Gerrit推送。普通历史RPM原件SHA不变，clang无.symtab且file stripped。06给身份与证据。步骤2–4待执行，05的未执行不再作为禁止按本次明确授权恢复的依据。周三计划已按新裁决更新01附录，最终状态将随实测补齐。
