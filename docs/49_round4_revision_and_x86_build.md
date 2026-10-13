@@ -1,7 +1,9 @@
 # 49 归档修复第四轮修订与 x86 完整构建
 
 日期：2026-10-13。开场基准 `89ad784b10fb033aff4820dd9bb94d9e2fbe1f3d`。
-**STOP_RELEASE_STRUCTURE_MISMATCH：第零步与第一步 PASS；第二步的三架构静态分类全部 PASS，但 x86 发布模式实物对照在第2个 TU 出现真实结构差异，按用户规则停止。ARM 实物夹具、全量回归、补丁再生成与完整构建均未执行。第九步停止材料及升级手册已完成；没有重试或失败后改 Source。**
+**本轮状态：IN_PROGRESS_RELEASE_DEBUG_INDEPENDENCE。以8f184dec为基准的完整性核查PASS；按PM新判据从第二步第2项继续。下方§0–§8保留上一轮停止历史，新结果从§9起。**
+
+历史状态（8f184dec）：**STOP_RELEASE_STRUCTURE_MISMATCH：第零步与第一步 PASS；第二步的三架构静态分类全部 PASS，但 x86 发布模式实物对照在第2个 TU 出现真实结构差异，按用户规则停止。ARM 实物夹具、全量回归、补丁再生成与完整构建均未执行。第九步停止材料及升级手册已完成；没有重试或失败后改 Source。**
 
 宿主沿用 GBS 初始化后的 mmap_min_addr；用户恢复命令：`sudo sysctl -w vm.mmap_min_addr=65536`，重启也会恢复。本轮仅临时挂载 /proc 并在退出时卸载，不推 Gerrit、不清理磁盘。
 
@@ -192,3 +194,14 @@ Rnew=`W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`�
 | 收尾身份与清理核查（未清理磁盘） | final-identities.json、cleanup-final.json |
 
 当前优先挂账是发布模式实物差异的解释与判据裁决；后续顺序仍为两ARM实物夹具、两次x86全量回归、补丁再生成、x86完整构建和全部验收，再做ARM全量与根内小试/64MiB负例。另保留发布模式完整构建、ARM第二段打包、LLVM23前向探测、tools驱动bash清单、总部dash替换时的LLVM源码bash检查。没有把任何未执行项写成PASS或把旧输入结果当作新Source认证。
+
+
+## 9. 调试无关性门禁续接：完整性与事前判据
+
+本轮基准 `8f184decf532be6c83937427410ddc364a720c6e`；reflog时间2026-10-13 13:39:20+08。新证据目录 D=`W/temp/release-debug-independence-20261013`，旧E及G只读保留。用户裁决：上轮直接非LTO与转换路线优化次数不同，§4.3差异属于该旧判据问题；历史停止记录不改判为实测PASS。
+
+完整性结果：290条新元数据全部归因、未知0；其中195条属于BOLT会话，另2条旧根run/mount目录时间由该会话14:04的私有挂载调用记录核实。主库5306835行全量status只有既有gbs配置修改，LLVM树只有既有spec并发改动；80份HEAD blob一致。647输入归档与工具、Source、补丁等669次SHA核对全部PASS。没有恢复、回滚或修改BOLT文件。（D/integrity-result.json、metadata-attribution.json、bolt-session-attribution.json、input-integrity.jsonl。）
+
+本轮事前冻结判据（用户指令）：每架构20源，debug原命令和精确sed后的发布命令均保留ThinLTO，各自产出bitcode后交同一新Source转换。逐项要求SHF_ALLOC节名称/标志/大小/内容相同、作用于这些节的重定位偏移/类型/符号名/addend相同，以及排除FILE和调试节的SECTION符号后，符号名称/类型/绑定/可见性/所在节名/值/大小相同；发布对象不得含.debug。任何差异停止。
+
+直接非LTO结构比较只记录，不作门禁；统一标注“预期差异：转换对已做链接前优化的 bitcode 再次完整优化”。原第四步第3项的跨子系统直接编译比较亦同。x86严格沿用§4.2的20源选择，debug路新编；两ARM按相同选样规则。资源、锁、退出回收以及后续步骤顺序沿用§1和用户原任务，未授权新判据以外的放行。
