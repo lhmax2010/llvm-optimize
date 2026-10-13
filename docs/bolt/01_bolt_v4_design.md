@@ -1,6 +1,8 @@
-# 01 Tizen LLVM BOLT 集成设计 v4：Quickbuild 第一版
+# 01 Tizen LLVM BOLT 集成设计 v4.1：Quickbuild sandbox 第一版
 
-日期：2026-10-12（Asia/Shanghai）。目标周五2026-10-16前交付Quickbuild试验材料，周四只对补丁做一轮外部评审；本轮不构建LLVM、不打RPM、不上传Gerrit。本文为自包含实施与验收设计，尚无生产集成补丁或新RPM。今晚实测和未测项分别标明，不能以历史PASS替代新配方认证。
+修订：2026-10-13（Asia/Shanghai）。**v4.1的新增裁决与预注册在文末附录，冲突处以附录为准；原v4正文完整保留作为历史设计，不再将旧“不推Gerrit/opt-in/standalone生产来源/brp包装器”当本轮决定。** 本轮发生R1挂载准备异常，已停止产品实验；草案仅本地封存，未推Gerrit，不能发货。
+
+原v4日期：2026-10-12（Asia/Shanghai）。目标周五2026-10-16前交付Quickbuild试验材料，周四只对补丁做一轮外部评审；本轮不构建LLVM、不打RPM、不上传Gerrit。本文为自包含实施与验收设计，尚无生产集成补丁或新RPM。今晚实测和未测项分别标明，不能以历史PASS替代新配方认证。
 
 W=`/home/linhao/Toolchain/development/llvm-optimize`；B=`/home/linhao/Toolchain/development/llvm-optimize-bolt`，分支bolt-v4；E=`W/temp/bolt-v4-20261013`（目录名按用户指定，实际开场日期为10-12）。完整路径/SHA盘点见[02_inventory.md](02_inventory.md)，实验矩阵见[03_strip_experiments.md](03_strip_experiments.md)。这些链接为补充，本设计的关键决策、步骤、证据和门禁均在正文。
 
@@ -256,3 +258,97 @@ SPEC是新的BOLT集成spec：%build内的候选处理与%install替换/完整po
 待用户回答（按无人值守规则仅列出，不在本轮提问或等待）：选哪种Quickbuild交付路线及项目/仓库/输入接口？周三新cb完整树路径、准确候选SHA和锁移交何时提供？是否允许周三预剥离6GiB参考预算及工具限定子构建、实际父cgroup/并发是多少？何处上传171MB profile Source（压缩格式/限制）？完整qemu-accel armv7l生成材料/宏日志从何取得？三个目标的30真实源文件/sysroot与Quickbuild性能/运行内存协议由谁冻结？
 
 不再把“要不要混合链接、是否撤static-devel、是否单独profile RPM、是否要求首版完整DWARF”当待裁决问题，这些已由九项决策闭合。
+
+
+## 附录 v4.1：2026-10-13 裁决、草案与周三预注册
+
+本附录覆盖正文中相冲突的v4提案；历史实验事实仍保留原口径。环境与独立归档摘要见04，草案/59夹具/封套/停止证据见05。本轮授权不是完整LLVM重建、profile重采或推BOLT提交。
+
+### V4.1-1 最新用户决定与PM八项裁决
+
+用户确认：Quickbuild只能从Gerrit platform/upstream/llvm构建，目标先在x86_64成功构建BOLT clang；新sandbox/lhmax2025/bolt_pgo基于最新tizen_base，BOLT提交不叠356627/356639；x86默认开启，其他架构不变；磁盘/project_config由Codex调查。latest HEAD实查仍cb67996861d070d68fec2b4c623eed7d20ba2e23，sandbox已原样创建、复核同SHA；**只推这次建分支，BOLT草案b3ec4f03259e695bb2e6c64d7b61474380eaaa38未推。**
+
+PM冻结：
+
+1. 周五来源采用同树LLVM项目列表追加bolt，仅开启BOLT的x86_64，**只构建llvm-bolt**。install前后manifest差集删所有BOLT安装产物；最终buildroot清单必须等于不开BOLT同配方，clang实体/别名除外。standalone只做配置/ninja-n调查，不进入周五依赖。
+2. clang链接尾部同时加-Wl,--emit-relocs与-Wl,--strip-debug，取消默认独立预剥离；与仅emit-relocs后LLVM strip-debug严格比全部非debug ALLOC内容、重定位、符号表。不一致回退预剥离并测内存，不放宽对照。
+3. profile v2 xz Source；解压后SHA必须d9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326。
+4. 首版只支持debug包开启：请求BOLT但__debug_package未定义即明确失败；**brp-strip包装器不进入首版**。
+5. clang家族全为到clang-22的相对软链接，记录类型变化；旧内容残留即失败。
+6. R=(S+U)/(N+U)≤5%且S/N≤5%，整数判定，禁infer-stale。
+7. BOLT clang不得有调试节，真实绝对buildroot路径不得含debug；post核对没有被FD提取/修改。
+8. 任一门禁失败即失败，不自动降普通包。
+
+x86设置%bcond_without clang_bolt；ARM/A64等仍默认关闭并保持原配方。当前裸cb没有archive Source1005，草案使用Source1200（profile）/1201（helper），不把归档Source带入生产提交。
+
+### V4.1-2 草案的同树工具与安装差集
+
+草案先用原不含bolt的项目列表正常构建；ninja保存rsp，不改变原O3/ThinLTO/静态链接和MLGO。普通CMake安装实际manifest/完整路径清单作为before，然后在同一build配置追加bolt，BOLT_BUILD_TOOLS=OFF、BOLT_ENABLE_RUNTIME=OFF、BOLT_TARGETS_TO_BUILD=X86，只ninja llvm-bolt。该OFF不是声称库不安装，而是防止默认安装未构建的merge-fdata等工具；库/强制symlink仍可能安装，必须差集逐项处理。
+
+正常源码编译/链接新增任务必须0。tool-plan拒绝任何非tools/bolt对象或非bin/llvm-bolt链接；未知依赖如TF anchor再编不能偷偷放行。实际新树图未取得，若触发拒绝则报告，不能以“间接依赖”默认豁免。
+
+再次CMake install后，以**实际清单差集**删所有新增文件和新增空目录，并要求其来源在安装manifest；未知新增/普通文件消失或清理后清单不相同即失败，不只rm某两个BOLT名字。普通CMake exports先备份后恢复，避免metadata指向已删BOLT库。完整安装、symlink是否在manifest内及导出变化均未实际认证；59fixtures只是原子门禁逻辑，不是本机新工具构建。
+
+草案为取ordinary-final参考，暂先跑完整原post、保存普通final清单，再安装候选并移除旧clang专用debug，再跑原完整post及最终门禁。这一结构**没有评审/实机认证**，两次post成本UNKNOWN；普通clang.debug若产生而候选无DWARF，严格清单会拒绝其删除。不得配旧DWARF，不得默许debug树豁免；需要PM明确合法清单方案。当前不声称周五可用补丁已经闭合。
+
+### V4.1-3 链接、正确性与profile
+
+原Ninja唯一边与环境/rsp/输入SHA冻结，生成POSIX sh，仅改输出/depfile并尾加两个flags，不eval、不重构$ORIGIN引号。资格阶段对照符号条目采用name/type/bind/visibility/所属节名/value/size，保留顺序；重定位用类型/offset/addend/所引用符号完整记录，拒绝只比数量。ALLOC严格含类型/flags/address/size/payload。遇到对照差异记录具体项，按已裁决使用预剥离输入；今晚两条路径均未实际运行，因此不能声称fast-path已合格。
+
+BOLT参数仍v2 ext-tsp/cdsort/split-functions/split-all-cold/split-eh/dyno-stats，thread-count1、stale-threshold5，无instrument/infer-stale/update-debug。parser用完整成功/认证版本日志，零值缺行仅按已知格式，异常计数失败。R和S/N整数计算；三目标真实微型与30旧.ii对比均待预演，不引用旧N=23592/U=1为本轮验证。
+
+Source压缩最终9,735,212B、SHA52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f，xz-T1 -9e dict128MiB；解压171232190B及固定SHA已核对。Source随草案本地提交，未来Gerrit大小限制待确认。完整format-patch12.58MB/压缩件10.13MB均超本证据仓库10MB，完整文件留E；公开文本format-patch+profile Source+draft-manifest可重建同一完整tree d2f7657e1c9ae9691ffe9b81807ae796df15dcb9，已静态验证；不能git am评审文本当完整提交。
+
+### V4.1-4 共享资源、旧树停止与standalone
+
+共享/home/linhao/Toolchain/development/heavy-stage.lock用flock独占，文件当前已由协作方创建为空；本轮没取/没等。任何链接/BOLT/构建/超过3真实源编译为重阶段，单次持锁≤60min、等锁≤2h；超时跳项继续。重阶段16GiB、swap0、nice15/ionice3，入口available≥12GiB，30s采样并及时检测低于3GiB终止；轻任务4GiB/nice19/ionice3/入口≥6GiB、串行。旧两项目锁不获取。
+
+R1允许chroot、临时/proc，已有build文件不得改，输出只在B/E。原链接带旧cache绝对路径，cache会更新/prune；应使用安全snapshot映射或认证隔离执行器。R32/R64仅宿主只读--sysroot，不chroot/挂载。归档根、新x86树在origin/main交接前不进入。
+
+本轮R1私有mount准备两次失败（unshare propagation Invalid argument、mount Unknown error5005），第二次观察到本任务R1根绑定传播到宿主，已精确卸载，findmnt和mountinfo确认无残留；没有挂/proc/overlay、执行链接/BOLT或真实parser。按用户规定停止后续产品实验，不自行改cache参数或写旧cache。standalone配置/ninja-n也未执行；exports文件现存只证明路径，不证明兼容性。
+
+### V4.1-5 90对资产与失配应急
+
+资产计划：三个历史组各10条selection×armv7l/aarch64/x86_64，保留cohort/源路径/SHA；A64训练与ARM训练可能来自相同源，不把30条历史selection谎称30个独立不同源。每个selection按原宏/semantic flags，去旧target/march/依赖/输出参数，重定位include路径，使用对应R32/R64/R1只读sysroot与同源resource headers宿主-E；保存完整argv、源/头/flags/ii SHA。不能把旧ARM .ii改target字段当A64/x86预处理资产。缺源/头列缺失，不生成伪文件。本轮停止后未执行，0/90，不是确认90项全缺。
+
+新输入匹配超5%先停并报告。若另获批准重采：新输入插桩→ARM13+A6410→明确清单merge→重写/全部正确性→Source压缩/hash/补丁/Quickbuild重建。历史22GiB单线程插桩峰约19.72GiB/66.72s；ARM采集366.8s、A64追加296.0s，连热重链/重写净历史参考约16.4min，不含预处理/90对/打包/排队/Quickbuild全构建。当前16GiB不允许22GiB插桩，需要新资源裁决；端到端数小时及周五延期风险，不作完成时限保证，今天未采集。
+
+### V4.1-6 周三10-14续跑预注册（未执行）
+
+开始条件必须全部满足：origin/main docs/STATUS明确归档会话x86完整构建成功并交接cb679968树、给准确路径与源码/两archive候选/spec/cache/宏/普通ELF/RPM SHA；共享flock空闲；安全执行器已闭合；实时磁盘满足旧60GiB+新增BOLT量及inode；helper宏与严格最终清单方案已修订/验证。仅“目录有clang”不算交接，不在当前任务进入新根。
+
+**第一件资格工作：交接普通clang的匹配检查。** 单独持锁复制普通clang到资格目录，去debug但不改普通实体；使用同版本已钉SHA BOLT和v2检查R、S/N。普通输入无emit-relocs时，此次只证明profile匹配，不将其输出当发货candidate；任何计数解析/运行问题同样失败。超过5%立即停续跑、按V4.1-5报告应急，不自动重训。此调用虽称轻量，也按“任何llvm-bolt”持锁且计入重阶段16GiB。
+
+持锁模板为POSIX sh，执行器须包括真实门禁、采样和回收，不能只用timeout当内存保护：
+
+```sh
+: "${STAGE_ADAPTER:?}" "${STAGE:?}"
+(
+  flock -x -w 7200 9 || exit 75
+  timeout --signal=TERM --kill-after=10s 3500s     "$STAGE_ADAPTER" --stage "$STAGE" --memory-max-bytes 17179869184     --swap-max-bytes 0 --nice 15 --ionice 3 || exit 1
+) 9>>/home/linhao/Toolchain/development/heavy-stage.lock
+```
+
+这里STAGE_ADAPTER为恢复后须认证的执行器接口，**当前不存在已认证实现**；不得把未验证的R1私有mount脚本作为它。每段结束马上释放，time/MemoryPeak/memory.events/目标VmHWM/清理全部留证；锁75超时跳项，产品门禁失败停止依赖阶段。
+
+匹配合格后，以tizen_base HEAD+b3ec草案的最终修订版spec/Source执行正常rpmbuild -ba --noprep续跑；开始前对照旧普通cache/options/源码并ninja-n普通目标，新增普通LLVM编译和链接任务必须0，否则停止。只新增llvm-bolt相关任务和clang重链，不通过跳prep覆盖源码或手改Ninja规避。
+
+```sh
+: "${SPEC:?}"
+rpmbuild --define '_smp_mflags -j4' --define '_srcdefattr (-,root,root)'   --nosignature --target=x86_64 --define '_build_create_debug 1'   -ba --noprep "$SPEC" > rpm-resume.log 2>&1 || exit 1
+```
+
+在已移交根内abuild执行，上层仍是已认证的锁/cgroup执行器；当前未运行。普通构建→工具only→链接对照/允许fallback→BOLT→三目标→install差集/相对别名→完整原post→严格final门禁→打包→独立解包。解包最终clang与同配方普通A跑三个目标和90对完整.o；比最终包文件清单、别名、SHA/LOAD/节区、无旧DWARF，不用%check作为唯一门禁。90资产当前不存在、宏展开未验证、草案不可直接入这一步。
+
+**归档树差异处理**：交接树是cb+两归档修复，但生产BOLT提交为裸cb+BOLT。源码/编译设置若确实仅归档%install变化，可以复用编译树，须以diff/cache/干跑证明而非口头假定。裸BOLT spec不调用Source1005转换，也不继承PS2 archive-strip宏；原install会从build重新复制归档，已有native安装结果可能被bitcode重新覆盖。不能把归档修复RPM直接称为裸配方普通A，也不能手动保留转换掩盖生产差异。需要生成/固定**裸同配方普通A**的完整post清单作B对照，归档修复的static-devel消费者PASS不自动迁移；已知裸基线归档问题单独记录，不偷偷把修复塞回sandbox提交。若其他RPM不退化硬约束无法闭合，暂停交付并报用户，不擅自改变“不叠补丁”决定。
+
+预算沿用历史热重链约4min/10.45GiB scope、v2重写约25s/3.7GiB，工具曾126任务约9min/4.57GiB；新仅llvm-bolt/裸配方/双重链/预strip/两post成本UNKNOWN。父16GiB/headroom同时核验，不以重阶段cap提高完整构建授权。每段持锁<60min，可能两次链接应串行分段，以真实状态/普通实体SHA保证一致。
+
+只有补丁宏/安装清单/完整RPM/三目标/90对/资源门禁及周四一轮评审均通过，才可未来直接fast-forward推最终BOLT提交；本任务没有这项push授权：
+
+```sh
+: "${VERIFIED_BOLT_COMMIT:?}"
+git push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm   "$VERIFIED_BOLT_COMMIT:refs/heads/sandbox/lhmax2025/bolt_pgo"
+```
+
+不force，不refs/for；推前ls-remote复核分支仍在预期祖先，异常停。Gerrit Source/object大小、实际Quickbuild项目和job状态接口须确认；不得把提交请求成功算构建成功。

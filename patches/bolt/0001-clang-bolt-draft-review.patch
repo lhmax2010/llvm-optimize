@@ -1,0 +1,583 @@
+From b3ec4f03259e695bb2e6c64d7b61474380eaaa38 Mon Sep 17 00:00:00 2001
+From: FatTank <hao.lin@samsung.com>
+Date: Tue, 13 Oct 2026 14:09:46 +0800
+Subject: [PATCH] =?UTF-8?q?=E6=96=B0=E5=A2=9E=20x86=5F64=20=E9=BB=98?=
+ =?UTF-8?q?=E8=AE=A4=E5=BC=80=E5=90=AF=E7=9A=84=20clang=20BOLT=20sandbox?=
+ =?UTF-8?q?=20=E8=8D=89=E6=A1=88?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+目的：供 Quickbuild 首先构建 BOLT clang；基于 tizen_base cb679968，
+不叠加归档修复，只处理 x86_64 clang，保留静态链接和其他架构。
+采用压缩 profile Source、唯一链接边重放、R 与 S/N 整数 5% 门禁、
+三目标完整对象比较、BOLT 安装差集清理、相对软别名及完整后处理尾门禁。
+任何门禁失败即失败，不自动降级。
+
+本地 helper 夹具 59 项通过；完整 spec 宏展开、pipeline helper 集成、
+旧树重链/BOLT/RPM 后处理和最终文件清单认证待补。
+R1 私有挂载准备发生异常后按无人值守规则停止并封存，本提交不可发货。
+---
+ packaging/clang-bolt-helper.py | 440 +++++++++++++++++++++++++++++++++
+ packaging/llvm.spec            |  71 ++++++
+ 2 files changed, 511 insertions(+)
+ create mode 100644 packaging/clang-bolt-helper.py
+
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+new file mode 100644
+index 000000000000..02ff0c5c311d
+--- /dev/null
++++ b/packaging/clang-bolt-helper.py
+@@ -0,0 +1,440 @@
++#!/usr/bin/env python3
++"""Tizen clang BOLT draft. Every command fails closed; Python >= 3.9, POSIX sh."""
++import argparse
++import hashlib
++import json
++import lzma
++import mmap
++import os
++from pathlib import Path
++import re
++import shutil
++import stat
++import struct
++import subprocess
++import sys
++import tempfile
++
++PROFILE_SHA = 'd9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326'
++OPTIONS = ['-reorder-blocks=ext-tsp', '-reorder-functions=cdsort', '-split-functions',
++           '-split-all-cold', '-split-eh', '-dyno-stats', '--thread-count=1', '-stale-threshold=5']
++TRIPLES = ['armv7l-tizen-linux-gnueabi', 'aarch64-tizen-linux-gnu', 'x86_64-tizen-linux-gnu']
++TINY = ('unsigned bolt_probe(unsigned x, unsigned y) { return (x * 33u) ^ (y + (x >> 3)); }\n'
++        'int bolt_branch(int x) { return x < 0 ? -x : x * 7 + 1; }\n')
++
++class GateError(RuntimeError):
++    pass
++
++def require(ok, message):
++    if not ok:
++        raise GateError(message)
++
++def digest(path):
++    h = hashlib.sha256()
++    with open(path, 'rb') as f:
++        while True:
++            b = f.read(1024 * 1024)
++            if not b:
++                break
++            h.update(b)
++    return h.hexdigest()
++
++def save(path, value):
++    path = Path(path)
++    path.parent.mkdir(parents=True, exist_ok=True)
++    tmp = path.with_name(path.name + '.new')
++    tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n')
++    os.replace(tmp, path)
++
++def call(argv, log, cwd=None, timeout=300):
++    log = Path(log)
++    log.parent.mkdir(parents=True, exist_ok=True)
++    with log.with_suffix(log.suffix + '.argv.json').open('w') as f:
++        json.dump({'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None}, f)
++    with log.open('wb') as f:
++        try:
++            p = subprocess.run(list(map(str, argv)), cwd=cwd, stdout=f, stderr=subprocess.STDOUT,
++                               timeout=timeout)
++        except subprocess.TimeoutExpired as e:
++            raise GateError('TIMEOUT: ' + str(argv[0])) from e
++    require(p.returncode == 0, 'COMMAND_FAILED rc=%s: %s (see %s)' % (p.returncode, argv[0], log))
++    return log.read_text(errors='replace')
++
++def profile_unpack(source, output):
++    output = Path(output)
++    require(not output.exists(), 'profile output must be new')
++    output.parent.mkdir(parents=True, exist_ok=True)
++    try:
++        with lzma.open(source, 'rb') as src, output.open('xb') as dst:
++            shutil.copyfileobj(src, dst, 1024 * 1024)
++        require(digest(output) == PROFILE_SHA, 'profile uncompressed SHA mismatch')
++    except Exception:
++        if output.exists():
++            output.unlink()
++        raise
++    return {'sha256': PROFILE_SHA, 'bytes': output.stat().st_size,
++            'compressed_sha256': digest(source)}
++
++def quote(value):
++    return "'" + str(value).replace("'", "'\\''") + "'"
++
++def replay_script(original, output, dependency, strip_debug=True):
++    original = original.strip()
++    require('\n' not in original and original.startswith(': && ') and original.endswith(' && :'),
++            'unexpected link edge framing')
++    body = original[5:-5]
++    require('&&' not in body and ';' not in body and '`' not in body and '$(' not in body,
++            'unsupported shell syntax in link edge')
++    require(not re.search(r'(?<!\\)\$', body), 'unknown shell substitution')
++    require('--emit-relocs' not in body and '--strip-debug' not in body, 'edge already has BOLT flags')
++    old_out = '-o bin/clang-22 '
++    old_dep = '--dependency-file=tools/clang/tools/driver/CMakeFiles/clang.dir/link.d'
++    require(body.count(old_out) == 1 and body.count(old_dep) == 1, 'non-unique clang output/depfile')
++    require(not any(x in body for x in ['--Map', '-Map', '--save-temps', '--time-trace']),
++            'unregistered additional linker output')
++    body = body.replace(old_out, '-o ' + quote(output) + ' ', 1)
++    body = body.replace(old_dep, '--dependency-file=' + quote(dependency), 1)
++    flags = ' -Wl,--emit-relocs' + (' -Wl,--strip-debug' if strip_debug else '')
++    return '#!/bin/sh\nset -eu\n' + body + flags + '\n'
++
++def match_counts(text, argv, successful, trusted_tool):
++    require(successful and trusted_tool, 'untrusted tool or incomplete/failed rewrite log')
++    require(not any('infer-stale' in str(x) for x in argv), 'infer-stale forbidden')
++    nrows = re.findall(r'^BOLT-INFO: (\d+) out of (\d+) functions in the binary .*have non-empty execution profile$', text, re.M)
++    srows = re.findall(r'^BOLT-(?:WARNING|ERROR): (\d+) \([^\n]*\) functions? have invalid \(possibly stale\) profile\.', text, re.M)
++    urows = re.findall(r'^BOLT-INFO: profile for (\d+) objects was ignored$', text, re.M)
++    qrows = re.findall(r'^BOLT-INFO: (\d+) functions? with profile could not be optimized$', text, re.M)
++    require('invalid (possibly stale) profile' not in text or bool(srows), 'malformed stale counter')
++    require('objects was ignored' not in text or bool(urows), 'malformed unused counter')
++    require('with profile could not be optimized' not in text or bool(qrows), 'malformed non-simple counter')
++    require(len(nrows) == 1 and len(srows) <= 1 and len(urows) <= 1 and len(qrows) <= 1,
++            'missing/duplicate profile counters')
++    n, m = map(int, nrows[0]); s = int(srows[0]) if srows else 0
++    u = int(urows[0]) if urows else 0; q = int(qrows[0]) if qrows else 0
++    require(n > 0 and m >= n and s <= n, 'invalid N/M/S')
++    # Absent optional zero-counter lines are allowed only for this authenticated success format.
++    require(100 * (s + u) <= 5 * (n + u), 'profile R exceeds 5 percent')
++    require(100 * s <= 5 * n, 'profile S/N exceeds 5 percent')
++    return {'N': n, 'M': m, 'S': s, 'U': u, 'Q': q,
++            'R': (s + u) / (n + u), 'S_over_N': s / n}
++
++class ELF:
++    """ELF64 little-endian reader. No whole-file loads; semantic symbol/relocation records."""
++    def __init__(self, path):
++        self.path = Path(path); self.f = self.path.open('rb')
++        self.mm = mmap.mmap(self.f.fileno(), 0, access=mmap.ACCESS_READ)
++        try:
++            require(self.mm[:6] == b'\x7fELF\x02\x01', 'expected ELF64 little endian')
++            h = self.unpack('<16sHHIQQQIHHHHHH', 0)
++            self.machine = h[2]; self.entry = h[4]
++            phoff, shoff, phentsize, phnum, shentsize, shnum, stridx = h[5], h[6], h[9], h[10], h[11], h[12], h[13]
++            require(shentsize == 64 and shnum > 0 and stridx < shnum, 'unsupported section numbering')
++            self.sections = [self.unpack('<IIQQQQIIQQ', shoff + i * 64) for i in range(shnum)]
++            names = self.sections[stridx]
++            self.names = [self.string(names[4], names[5], s[0]) for s in self.sections]
++            self.by_name = dict(zip(self.names, self.sections))
++            require(len(self.by_name) == len(self.names), 'duplicate section name')
++            self.loads = []
++            for i in range(phnum):
++                require(phentsize == 56, 'unsupported program header')
++                p = self.unpack('<IIQQQQQQ', phoff + i * phentsize)
++                if p[0] == 1:
++                    self.loads.append(p)
++        except Exception:
++            self.close(); raise
++    def close(self):
++        self.mm.close(); self.f.close()
++    def unpack(self, fmt, pos):
++        require(pos >= 0 and pos + struct.calcsize(fmt) <= len(self.mm), 'ELF range error')
++        return struct.unpack_from(fmt, self.mm, pos)
++    def string(self, offset, size, start):
++        require(start < size, 'ELF string index error')
++        end = self.mm.find(b'\0', offset + start, offset + size)
++        require(end >= 0, 'unterminated ELF string')
++        return self.mm[offset + start:end].decode('utf-8', errors='surrogateescape')
++    def symbols(self, index):
++        sec = self.sections[index]; require(sec[1] in (2, 11), 'not a symbol table')
++        require(sec[9] == 24 and sec[5] % 24 == 0 and sec[6] < len(self.sections), 'bad symtab')
++        strings = self.sections[sec[6]]; result = []
++        for off in range(sec[4], sec[4] + sec[5], 24):
++            name, info, other, shndx, value, size = self.unpack('<IBBHQQ', off)
++            require(shndx != 65535, 'XINDEX not supported')
++            target = self.names[shndx] if shndx < len(self.names) else 'RESERVED:%d' % shndx
++            result.append((self.string(strings[4], strings[5], name), info, other, target, value, size))
++        return result
++    def audit(self):
++        require(self.machine == 62 and self.loads, 'not executable native x86_64 ELF')
++        require(any(p[1] & 1 and p[3] <= self.entry < p[3] + p[6] for p in self.loads),
++                'entry not inside executable LOAD')
++        require(not any('debug' in n.lower() for n in self.names), 'BOLT clang contains a debug section')
++        require('.note.bolt_info' in self.by_name, 'missing BOLT note')
++        return {'entry': self.entry, 'loads': self.loads, 'bolt_sections': [n for n in self.names if '.bolt' in n]}
++
++def compare_elf(left, right):
++    a, b = ELF(left), ELF(right)
++    try:
++        def alloc(e):
++            result = {}
++            for n, s in zip(e.names, e.sections):
++                if s[2] & 2 and 'debug' not in n.lower():
++                    payload = b'' if s[1] == 8 else e.mm[s[4]:s[4]+s[5]]
++                    result[n] = (s[1], s[2], s[3], s[5], s[8], hashlib.sha256(payload).hexdigest())
++            return result
++        def tables(e):
++            symbols = {i: e.symbols(i) for i, s in enumerate(e.sections) if s[1] in (2, 11)}
++            relocations = {}
++            for i, s in enumerate(e.sections):
++                if s[1] not in (4, 9) or 'debug' in e.names[i].lower():
++                    continue
++                require(s[6] in symbols and s[7] < len(e.sections), 'bad relocation target/link')
++                size = 24 if s[1] == 4 else 16
++                require(s[9] == size and s[5] % size == 0, 'bad relocation entry size')
++                records = []
++                for off in range(s[4], s[4]+s[5], size):
++                    r = e.unpack('<QQq' if size == 24 else '<QQ', off)
++                    symidx = r[1] >> 32; require(symidx < len(symbols[s[6]]), 'bad relocation symbol')
++                    records.append((r[0], r[1] & 0xffffffff, symbols[s[6]][symidx], r[2] if size == 24 else None))
++                relocations[e.names[i]] = (e.names[s[7]], records)
++            return {e.names[i]: v for i, v in symbols.items()}, relocations
++        aa, bb = alloc(a), alloc(b); sa, ra = tables(a); sb, rb = tables(b)
++        result = {'allocated_equal': aa == bb, 'symbols_equal': sa == sb, 'relocations_equal': ra == rb,
++                  'left_sha256': digest(left), 'right_sha256': digest(right),
++                  'alloc_differing_names': sorted(n for n in aa.keys() | bb.keys() if aa.get(n) != bb.get(n)),
++                  'symbol_table_counts': [sum(map(len, sa.values())), sum(map(len, sb.values()))],
++                  'relocation_counts': [sum(len(v[1]) for v in ra.values()), sum(len(v[1]) for v in rb.values())]}
++        result['equal'] = all(result[k] for k in ['allocated_equal', 'symbols_equal', 'relocations_equal'])
++        return result
++    finally:
++        a.close(); b.close()
++
++def tiny_gate(ordinary, candidate, work, resource_dir=None):
++    work = Path(work); work.mkdir(parents=True, exist_ok=True)
++    source = work/'tiny.c'; source.write_text(TINY); out = work/'same.o'; rows = []
++    for label, cc in [('ordinary', ordinary), ('candidate', candidate)]:
++        call([cc, '--version'], work/(label+'-version.log'), timeout=30)
++    for triple in TRIPLES:
++        row = {'target': triple, 'outputs': []}
++        for label, cc in [('ordinary', ordinary), ('candidate', candidate)]:
++            argv = [cc, '--target='+triple, '-c', '-O2', str(source), '-o', str(out)]
++            if resource_dir:
++                argv[1:1] = ['-resource-dir', resource_dir]
++            call(argv, work/(triple+'-'+label+'.log'), cwd=work, timeout=60)
++            dest = work/(triple+'.'+label+'.o'); shutil.copyfile(out, dest)
++            row['outputs'].append({'path': str(dest), 'sha256': digest(dest), 'bytes': dest.stat().st_size})
++        row['byte_equal'] = (work/(triple+'.ordinary.o')).read_bytes() == (work/(triple+'.candidate.o')).read_bytes()
++        rows.append(row); save(work/'result.json', rows)
++        require(row['byte_equal'], 'tiny object differs: '+triple)
++    return rows
++
++def inventory(root):
++    root = Path(root).absolute(); files = {}
++    for folder, dirs, names in os.walk(root, followlinks=False):
++        for name in sorted(dirs + names):
++            p = Path(folder)/name; key = p.relative_to(root).as_posix(); st = p.lstat()
++            require(not (stat.S_ISLNK(st.st_mode) and p in [root]), 'symlink root')
++            if stat.S_ISLNK(st.st_mode):
++                files[key] = {'type': 'symlink', 'target': os.readlink(p)}
++            elif stat.S_ISREG(st.st_mode):
++                files[key] = {'type': 'file', 'mode': stat.S_IMODE(st.st_mode), 'bytes': st.st_size}
++            elif stat.S_ISDIR(st.st_mode):
++                files[key] = {'type': 'dir'}
++            else:
++                raise GateError('special file in buildroot: '+key)
++    return {'root': str(root), 'files': files}
++
++def prune_install(root, baseline, installed_paths):
++    root = Path(root).absolute(); before = baseline['files']; after = inventory(root)['files']
++    require(before.keys() <= after.keys(), 'ordinary install file removed before BOLT cleanup')
++    added = set(after) - set(before)
++    allowed = {Path(p).relative_to(root).as_posix() for p in installed_paths}
++    for key in sorted(added, key=lambda x: (x.count('/'), x), reverse=True):
++        path = root/key
++        require(after[key]['type'] == 'dir' or key in allowed, 'unregistered install addition: '+key)
++        if after[key]['type'] == 'dir':
++            path.rmdir()
++        else:
++            path.unlink()
++    now = inventory(root)['files']; require(now == before, 'install file list/type/mode differs after cleanup')
++    return {'removed': sorted(added), 'file_list_equal': True}
++
++def rooted_resolve(root, path):
++    root = Path(root).absolute(); rel = Path(path).relative_to(root); todo = list(rel.parts)
++    done = []; seen = set()
++    while todo:
++        part = todo.pop(0)
++        if part in ('', '.'):
++            continue
++        if part == '..':
++            require(bool(done), 'alias escapes buildroot'); done.pop(); continue
++        probe = root.joinpath(*done, part)
++        if probe.is_symlink():
++            identity = probe.relative_to(root).as_posix()
++            require(identity not in seen, 'alias cycle'); seen.add(identity)
++            target = os.readlink(probe)
++            if target.startswith('/'):
++                done = []
++            todo = list(Path(target).parts[1:] if target.startswith('/') else Path(target).parts) + todo
++        else:
++            done.append(part)
++    return root.joinpath(*done)
++
++def alias_group(root):
++    root = Path(root).absolute(); entity = root/'usr/bin/clang-22'
++    require(entity.is_file() and not entity.is_symlink(), 'missing clang-22 installed entity')
++    base = entity.stat(); aliases = []
++    for p in sorted((root/'usr/bin').iterdir()):
++        if p == entity:
++            continue
++        resolved = rooted_resolve(root, p)
++        if resolved.exists() and (resolved.stat().st_dev, resolved.stat().st_ino) == (base.st_dev, base.st_ino):
++            aliases.append(p)
++        elif p.is_file() and not p.is_symlink() and p.stat().st_size == base.st_size and digest(p) == digest(entity):
++            aliases.append(p)
++        elif p.name in ['clang', 'clang++', 'clang++-22'] or p.name.endswith(('-clang','-clang++')):
++            raise GateError('clang family alias points to different content: '+str(p))
++    return entity, aliases
++
++def install_candidate(root, candidate, state):
++    root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
++    e = ELF(candidate)
++    try:
++        elf = e.audit()
++    finally:
++        e.close()
++    entity, aliases = alias_group(root); changed = []
++    for p in aliases:
++        changed.append({'path': p.relative_to(root).as_posix(), 'old_type': 'symlink' if p.is_symlink() else 'file',
++                        'old_target': os.readlink(p) if p.is_symlink() else None})
++    st = entity.stat(); tmp = entity.with_name('.clang-bolt.new')
++    shutil.copyfile(candidate, tmp); tmp.chmod(stat.S_IMODE(st.st_mode)); os.replace(tmp, entity)
++    for p in aliases:
++        tmp = p.with_name('.'+p.name+'.bolt-link'); require(not tmp.exists(), 'temporary alias exists')
++        tmp.symlink_to('clang-22'); os.replace(tmp, p)
++    result = {'installed_sha256': digest(entity), 'alias_changes': changed,
++              'allowed_paths': ['usr/bin/clang-22'] + [p.relative_to(root).as_posix() for p in aliases], 'elf': elf}
++    save(state, result); return result
++
++def post_gate(root, state, ordinary, candidate_work, baseline_manifest=None, resource_dir=None):
++    root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
++    entity = root/'usr/bin/clang-22'; require(digest(entity) == state['installed_sha256'], 'clang changed during RPM post-processing')
++    for change in state['alias_changes']:
++        p = root/change['path']
++        require(p.is_symlink() and os.readlink(p) == 'clang-22' and rooted_resolve(root,p) == entity,
++                'alias stale or not normalized: '+str(p))
++    e = ELF(entity)
++    try:
++        elf = e.audit()
++    finally:
++        e.close()
++    if baseline_manifest is not None:
++        actual = inventory(root)['files']; expected = baseline_manifest['files']; excluded = set(state['allowed_paths'])
++        require({k:v for k,v in actual.items() if k not in excluded} ==
++                {k:v for k,v in expected.items() if k not in excluded},
++                'final buildroot file list differs from ordinary reference (no debug-tree exemption)')
++    rows = tiny_gate(ordinary, str(entity), candidate_work, resource_dir)
++    return {'sha_unchanged': True, 'aliases_pass': True, 'elf': elf, 'tiny': rows,
++            'ordinary_manifest_checked': baseline_manifest is not None}
++
++def rewrite(bolt, profile, input_elf, output, work):
++    work = Path(work); work.mkdir(parents=True, exist_ok=True)
++    require(digest(profile) == PROFILE_SHA, 'profile SHA mismatch')
++    version = call([bolt, '--version'], work/'bolt-version.log')
++    require('LLVM version 22.1.8' in version, 'uncertified BOLT tool version')
++    argv = [bolt, input_elf, '-o', output, '-data='+str(profile)] + OPTIONS
++    text = call(argv, work/'bolt.log', timeout=1800)
++    counters = match_counts(text, argv, True, True)
++    e = ELF(output)
++    try:
++        elf = e.audit()
++    finally:
++        e.close()
++    result = {'tool_sha256': digest(bolt), 'profile_sha256': PROFILE_SHA,
++              'input_sha256': digest(input_elf), 'output_sha256': digest(output), 'argv': argv,
++              'counts': counters, 'elf': elf}
++    save(work/'rewrite-result.json', result); return result
++
++def tool_plan(text):
++    rows = [l.strip() for l in text.splitlines() if re.match(r"^\[\d+/\d+\]", l)]
++    for line in rows:
++        body = re.sub(r"^\[\d+/\d+\]\s*", "", line)
++        if any(x in body for x in ['Building ', 'Linking ']):
++            require('tools/bolt/' in body or 'bin/llvm-bolt' in body,
++                    'ordinary compile/link would run: '+body)
++    require(bool(rows) or 'no work to do' in text, 'unrecognized ninja dry-run format')
++    return {'tasks': len(rows), 'ordinary_compile_link_tasks': 0}
++
++def pipeline(build, work, bolt):
++    build, work = Path(build).absolute(), Path(work).absolute()
++    edge = (work/'link.original').read_text()
++    for label, strip_debug in [('dual-flags',True),('reference-relocs',False)]:
++        script = work/(label+'.sh')
++        script.write_text(replay_script(edge,work/(label+'-clang-22'),work/(label+'.d'),strip_debug))
++        call(['/bin/sh',str(script)],work/(label+'.log'),cwd=build,timeout=1800)
++    reference=work/'reference-relocs-clang-22'
++    call([str(build/'bin/llvm-strip'),'--strip-debug',str(reference)],work/'reference-strip.log',timeout=600)
++    comparison=compare_elf(work/'dual-flags-clang-22',reference);save(work/'strip-equivalence.json',comparison)
++    # PM-authorized fallback; preserve both inputs and never ignore a difference.
++    selected=work/'dual-flags-clang-22' if comparison['equal'] else reference
++    result=rewrite(str(bolt),str(work/'profile.fdata'),str(selected),str(work/'clang.candidate'),work/'rewrite')
++    tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.candidate'),work/'preinstall-gate',str(build/'lib64/clang/22'))
++    result['link_strip_equivalence']=comparison;result['input_policy']='link-strip-debug' if comparison['equal'] else 'prestrip-fallback'
++    save(work/'pipeline-result.json',result);return result
++
++def remove_clang_debug(root, state):
++    root=Path(root).absolute(); names=[Path(p).name for p in state['allowed_paths']]
++    debugroot=root/'usr/lib/debug'; removal=[]
++    if debugroot.exists():
++        for folder, dirs, files in os.walk(debugroot,followlinks=False):
++            for n in dirs+files:
++                p=Path(folder)/n
++                if not (p.is_file() or p.is_symlink()):continue
++                if any(n==name+'.debug' or (n.startswith(name+'-') and n.endswith('.debug')) for name in names):
++                    removal.append(p)
++        targets=set(removal)
++        for folder,dirs,files in os.walk(debugroot,followlinks=False):
++            for n in dirs+files:
++                p=Path(folder)/n
++                if p.is_symlink() and rooted_resolve(root,p) in targets:removal.append(p)
++    for p in dict.fromkeys(removal):p.unlink()
++    return {'removed_old_clang_debug':[p.relative_to(root).as_posix() for p in dict.fromkeys(removal)]}
++
++def main():
++    p = argparse.ArgumentParser(description=__doc__); sub = p.add_subparsers(dest='cmd',required=True)
++    s=sub.add_parser('tool-plan');s.add_argument('input')
++    s=sub.add_parser('pipeline');s.add_argument('build');s.add_argument('work');s.add_argument('tool')
++    s=sub.add_parser('remove-clang-debug');s.add_argument('root');s.add_argument('state')
++    s=sub.add_parser('unpack');s.add_argument('source');s.add_argument('output')
++    s=sub.add_parser('replay');s.add_argument('edge');s.add_argument('output');s.add_argument('dependency');s.add_argument('script');s.add_argument('--keep-debug',action='store_true')
++    s=sub.add_parser('compare-elf');s.add_argument('left');s.add_argument('right');s.add_argument('result')
++    s=sub.add_parser('rewrite');s.add_argument('tool');s.add_argument('profile');s.add_argument('input');s.add_argument('output');s.add_argument('work')
++    s=sub.add_parser('tiny');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('work');s.add_argument('--resource-dir')
++    s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
++    s=sub.add_parser('prune');s.add_argument('root');s.add_argument('before');s.add_argument('install_manifest');s.add_argument('result')
++    s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state')
++    s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--reference',required=True);s.add_argument('--resource-dir')
++    a=p.parse_args()
++    if a.cmd=='tool-plan':result=tool_plan(Path(a.input).read_text())
++    elif a.cmd=='pipeline':result=pipeline(a.build,a.work,a.tool)
++    elif a.cmd=='remove-clang-debug':result=remove_clang_debug(a.root,json.loads(Path(a.state).read_text()))
++    elif a.cmd=='unpack':result=profile_unpack(a.source,a.output)
++    elif a.cmd=='replay':
++        script=replay_script(Path(a.edge).read_text(),a.output,a.dependency,not a.keep_debug)
++        Path(a.script).write_text(script);Path(a.script).chmod(0o755);result={'script':a.script}
++    elif a.cmd=='compare-elf':
++        result=compare_elf(a.left,a.right);save(a.result,result);require(result['equal'],'link strip equivalence failed')
++    elif a.cmd=='rewrite':result=rewrite(a.tool,a.profile,a.input,a.output,a.work)
++    elif a.cmd=='tiny':result=tiny_gate(a.ordinary,a.candidate,a.work,a.resource_dir)
++    elif a.cmd=='snapshot':result=inventory(a.root);save(a.output,result)
++    elif a.cmd=='prune':
++        result=prune_install(a.root,json.loads(Path(a.before).read_text()),Path(a.install_manifest).read_text().splitlines());save(a.result,result)
++    elif a.cmd=='install':result=install_candidate(a.root,a.candidate,a.state)
++    elif a.cmd=='post':
++        result=post_gate(a.root,json.loads(Path(a.state).read_text()),a.ordinary,a.work,
++                         json.loads(Path(a.reference).read_text()),a.resource_dir);save(Path(a.work)/'post-result.json',result)
++    print(json.dumps(result,ensure_ascii=False))
++
++if __name__=='__main__':
++    try:
++        main()
++    except (GateError, OSError, ValueError, lzma.LZMAError) as e:
++        print('BOLT_GATE_FAILED: '+str(e),file=sys.stderr);sys.exit(1)
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 64705188b67c..9de1630fc3fd 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -1,3 +1,10 @@
++# Quickbuild sandbox: x86_64 BOLT is on by default; other architectures unchanged.
++%ifarch x86_64
++%bcond_without clang_bolt
++%else
++%bcond_with clang_bolt
++%endif
++
+ %define keepstatic 1
+ 
+ # MLGO AOT support for LLVM MLGO (Ahead-of-Time compilation)
+@@ -45,6 +52,13 @@ Source1002: mlgo_arm_model.tar.gz
+ Source1003: mlgo_aarch_model.tar.gz
+ Source1004: mlgo_x86_model.tar.gz
+ 
++%ifarch x86_64
++%if %{with clang_bolt}
++Source1200: clang-bolt-v2.fdata.xz
++Source1201: clang-bolt-helper.py
++%endif
++%endif
++
+ %{!?mlgo_build_jobs: %define mlgo_build_jobs 6}
+ %{!?mlgo_verify_configure_only: %define mlgo_verify_configure_only 0}
+ 
+@@ -58,6 +72,11 @@ BuildRequires: libxml2-devel
+ BuildRequires: sed
+ %endif
+ BuildRequires: ninja
++%ifarch x86_64
++%if %{with clang_bolt}
++BuildRequires: xz
++%endif
++%endif
+ 
+ %if %{undefined _toolchain}
+ %ifarch x86_64
+@@ -385,11 +404,49 @@ cmake \
+ %endif
+ 
+ # Full build using ninja (already in build/ directory after cd build)
++%ifarch x86_64
++%if %{with clang_bolt}
++ninja -d keeprsp -j %{mlgo_build_jobs} || exit 1
++%else
+ ninja -j %{mlgo_build_jobs}
++%endif
++%else
++ninja -j %{mlgo_build_jobs}
++%endif
+ 
+ %install
+ cd build
+ cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
++
++%ifarch x86_64
++%if %{with clang_bolt}
++# Check after the project's install macro has instantiated debug_package.
++%{!?__debug_package:echo "BOLT requires debug packages (__debug_package undefined); release mode is unsupported" >&2; exit 1}
++BOLT_WORK="$PWD/clang-bolt"
++mkdir -p "$BOLT_WORK/ordinary-exports" || exit 1
++# File-list baseline is the actual ordinary CMake install, not a name whitelist.
++python3 %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
++cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt" || exit 1
++cp -a "%{buildroot}%{_libdir}/cmake/llvm/." "$BOLT_WORK/ordinary-exports/" || exit 1
++cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22" || exit 1
++ninja -t commands -s bin/clang-22 > "$BOLT_WORK/link.original" || exit 1
++python3 %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || exit 1
++cmake -S ../llvm -B . \
++  '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' \
++  -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \
++  -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86 || exit 1
++# Reject rebuilds of ordinary LLVM. Only BOLT objects/linking may be added.
++ninja -n llvm-bolt > "$BOLT_WORK/tool-dry-run.txt" || exit 1
++python3 %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" || exit 1
++ninja -j 1 llvm-bolt || exit 1
++python3 %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
++cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake || exit 1
++# Restore ordinary LLVM export metadata; BOLT libraries must not leak to consumers.
++cp -a "$BOLT_WORK/ordinary-exports/." "%{buildroot}%{_libdir}/cmake/llvm/" || exit 1
++python3 %{SOURCE1201} prune "%{buildroot}" "$BOLT_WORK/install-before.json" \
++  install_manifest.txt "$BOLT_WORK/install-cleanup.json" || exit 1
++%endif
++%endif
+ ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
+ 
+ ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
+@@ -652,3 +709,17 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ 
+ %files -n python-clang
+ %{python3_sitelib}/clang
++
++%ifarch x86_64
++%if %{with clang_bolt}
++%global __bolt_original_spec_install_post %{__spec_install_post}
++%define __spec_install_post \
++    %{__bolt_original_spec_install_post} \
++    python3 %{SOURCE1201} snapshot "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-final.json" || exit 1 \
++    cp -p "%{buildroot}/usr/bin/clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-ordinary-clang-22" || exit 1 \
++    python3 %{SOURCE1201} install "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/clang.candidate" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" || exit 1 \
++    python3 %{SOURCE1201} remove-clang-debug "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" || exit 1 \
++    %{__bolt_original_spec_install_post} \
++    python3 %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --reference "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-final.json" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1
++%endif
++%endif
+-- 
+2.43.0
+
