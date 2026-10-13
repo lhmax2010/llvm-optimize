@@ -119,3 +119,5 @@ PM八项新裁决按01附录修订执行：fully strip、前note/前后SHA/最�
 步骤1已完成：84fixtures PASS，完整patch apply/tree 与公开封套 tree PASS；本地源提交 e5239cd50dce5e16cb43b99395388b6bb60829f1，无Gerrit推送。普通历史RPM原件SHA不变，clang无.symtab且file stripped。06给身份与证据。步骤2–4待执行，05的未执行不再作为禁止按本次明确授权恢复的依据。周三计划已按新裁决更新01附录，最终状态将随实测补齐。
 
 步骤2实测：缓存完整复制及原缓存终审PASS；dual/reference严格符号表不一致（2344个STT_FILE），按已裁决fallback到reference；BOLT匹配R0.004238545%、S/N0%，note/strip-all/三目标PASS。30输入初轮首个.o因.GCC.command.line编译器路径差异FAIL，剩余29未执行；公平argv0重测遇到入口内存不足及共享锁占用，待继续等锁。07与r1-rehearsal.json给全部实测，不把该30门禁记PASS。
+
+步骤3双模式小spec判据PASS：历史v2 strip-all副本，两模式clang均被选择器跳过、控制正例FD/eu-strip与GNU strip -g实际执行；RPM SHA保持575fc9db…及三目标PASS。Debug一次post、release一次；测量脚本.gnu_debuglink错误与已有输出保护失败日志保留，修正后用同一debugRPM及新releaseRPM。08/dual-mode-smoke给证据。两模式真实草案rpmspec解析亦PASS，不冒充完整安装宏认证。
