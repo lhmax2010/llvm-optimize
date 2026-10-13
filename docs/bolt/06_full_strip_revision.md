@@ -11,7 +11,7 @@
 
 84/84 夹具 PASS（0.446s；4GiB/nice19/ionice3/swap0 scope wall1.543s），新增缓存正负例、逐字三路径、strip SHA/标识正负例、post SHA 正负例、两模式清单正负例，以及完整 pipeline fast-path/已裁决 fallback 夹具。全部为 fixture，不能代表真实完整 LLVM/RPM。
 
-本地源提交 `e5239cd50dce5e16cb43b99395388b6bb60829f1`，父 `cb67996861d070d68fec2b4c623eed7d20ba2e23`，tree `b16f061e63d7d4f8e0a86d0a1e844d167b9680ec`，作者 FatTank <hao.lin@samsung.com>。完整 format-patch 静态 apply 与整树 PASS，公开文本 patch + Source 重建整树也 PASS。未推 Gerrit。完整 patch 超10MB留 E；公开 manifest 给完整身份，不把文本评审 patch 单独 git am 当完整提交。
+本地源提交 `a3c31d2c40809adbfacfd8cb6c12f3e87476a058`，父 `cb67996861d070d68fec2b4c623eed7d20ba2e23`，tree `4ec0029fcb10baf632af6fc9e2bd58aad1eed224`，作者 FatTank <hao.lin@samsung.com>。完整 format-patch 静态 apply 与整树 PASS，公开文本 patch + Source 重建整树也 PASS。未推 Gerrit。完整 patch 超10MB留 E；公开 manifest 给完整身份，不把文本评审 patch 单独 git am 当完整提交。
 
 ## 普通包 strip 状态
 
@@ -30,3 +30,5 @@
 ## 证据位置与剩余边界
 
 E=/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261014。fixtures.log、fixtures-final-scope、ordinary-strip.json、ordinary-fixed-scope、draft-freeze.json、0001-clang-bolt-draft.patch 为本轮原始证据。R1真实预演、小 spec、90资产结果后续登记；同树生产工具图、真实完整宏、完整 cb RPM 清单认证仍不能由上述夹具替代。
+
+最终草案封套在修正一条已过时的debug专用注释后重新freeze：完整patch和文本+Source的静态apply/整树仍全部PASS；helper功能未变。最终本地源码提交 a3c31d2c40809adbfacfd8cb6c12f3e87476a058。完整LLVM宏/工具图/真实完整包仍待认证。

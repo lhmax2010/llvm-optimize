@@ -310,9 +310,19 @@ R1 资格预演只代表 f111162e 配方，不等于 cb679968 的匹配度/最�
 
 30 个历史 selection（ARM训练10、ARM留出10、A64训练10）分别对 armv7l/aarch64/x86_64 宿主预处理；组间可能重复源，保留 cohort 不假称30独立路径。三目标对应 R32/R64/R1；保持原宏与语义参数，按目标去旧 target/march/输出/依赖/ThinLTO 并重定位 include，保存完整实际 argv、源 SHA、.ii SHA、日志与头文件缺失。不能将旧 .ii 直接改 target 字段当新预处理结果。全部临时资产留 E，公开 manifest 不含大 .ii；缺项逐条报告。
 
+### V4.1-5a 本次资格实测与后续执行细节
+
+R1实际dual-flags严格比较失败：ALLOC及全部重定位一致，但2,344个STT_FILE使符号表不一致；不得豁免。因此此树采用reference重链+LLVM strip-debug。新cb树仍须重新严格比较，不把旧树FAIL/PASS移植过去。R1新rewrite的R=1/23593≈0.004238545%、S/N=0%，note→strip-all身份与三目标PASS；完整30对象首轮因.GCC.command.line记录两编译器不同实体路径而FAIL，公平重测等待共享锁，结果见07。
+
+90新资产全部PASS（缺源/缺头0），30selection/20不同源，每组10×三目标；所有原宏、实际命令、源/.ii/头SHA在09和公开manifest。双模式小spec使用历史v2 strip-all副本，两模式实际完整post各一次、clang未被strip工具调用、控制正例分别eu-strip/GNU strip -g、RPM clang SHA及三目标PASS；见08，不能据此省略完整Tizen-Base验证。
+
+完整对象公平验证不能只改argv[0]：源码clang/lib/Driver/ToolChains/CommonArgs.cpp的renderEscapedCommandLine使用D.getClangProgramPath；默认canonical-prefixes解析实际ELF路径。必须在新的专用工作目录同一常规文件路径分两批复制普通/候选，逐批验证复制SHA，用同一argv/cwd/input/output；记录实际来源与每批SHA。原文件不改，不删frecord参数，不过滤.GCC.command.line，不忽略任何字节。所有普通对象先编一次，再复制候选编全部对象，避免每对象复制巨大普通ELF。
+
+新树的缓存副本须在任何BOLT资格链接前准备；同树新建llvm-bolt目标的链接缓存隔离也须先核查，不可让工具链接偷偷prune交接原cache。当前草案的pipeline三路径重放只认证clang两路径；完整in-tree工具图、其cache隔离和install差集未实测，原cache前后不变及普通任务0仍是新树硬门禁，不以R1历史工具代替。
+
 ### V4.1-6 周三续跑与发布分支后续验证
 
-开始条件：归档会话在 origin/main docs/STATUS 正式交接 cb679968 完整 x86 构建树及普通 RPM、源码/spec/宏/工具/普通 ELF/cache SHA；共享锁空闲；资源和磁盘重新准入。只认 STATUS 交接，不因目录存在进入归档根。新树可能叠归档修复用于本地完整包对照；sandbox 生产草案保持裸 cb，不能悄悄并入归档提交。
+开始条件（当前尚未满足）：归档会话在 origin/main docs/STATUS 正式交接 cb679968 完整 x86 构建树及普通 RPM、源码/spec/宏/工具/普通 ELF/cache SHA；共享锁空闲；资源和磁盘重新准入。只认 STATUS 交接，不因目录存在进入归档根。新树可能叠归档修复用于本地完整包对照；sandbox 生产草案保持裸 cb，不能悄悄并入归档提交。
 
 首先持锁检查交接普通 clang 与 v2 的匹配 R/S/N；即使没有 emit-relocs，也只把该输出当资格检查。超过5%或格式失败立即停，不以旧 R1 值替代，不自动重训。再完整复制该树自己的 ThinLTO cache 并校验原缓存前后不变，重放只改三项。同树工具只构建 llvm-bolt 前先 dry-run 拒绝普通任务，验证全部 install 差集和 exports。随后重链、严格比较、BOLT、strip-all 身份链、三目标及90真实对象、单次完整原后处理、最终安装 SHA/别名，通过后正常打包。debug 分支用交接不开 BOLT RPM 做本地逐字节清单对照，按 V4.1-3 为每个允许缺失生成证据，其他差异失败。
 
@@ -326,3 +336,5 @@ git push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm AUDITED_C
 ```
 
 AUDITED_COMMIT 必须替换为经过全部门禁和评审的真实完整源提交，不是本证据仓库提交或文本评审 patch。直推是未来操作条件和命令，当前禁止推 BOLT 提交。
+
+本次只读同步origin/main=aeea5f83f35d9e957c329830fa61eb3ec0aa7e88：STATUS最新docs/49续三仍写未构建/交接新树；没有进入其任何构建根。周三开始条件保持待正式交接，不凭目录猜测。

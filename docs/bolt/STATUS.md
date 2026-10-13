@@ -123,3 +123,5 @@ PM八项新裁决按01附录修订执行：fully strip、前note/前后SHA/最�
 步骤3双模式小spec判据PASS：历史v2 strip-all副本，两模式clang均被选择器跳过、控制正例FD/eu-strip与GNU strip -g实际执行；RPM SHA保持575fc9db…及三目标PASS。Debug一次post、release一次；测量脚本.gnu_debuglink错误与已有输出保护失败日志保留，修正后用同一debugRPM及新releaseRPM。08/dual-mode-smoke给证据。两模式真实草案rpmspec解析亦PASS，不冒充完整安装宏认证。
 
 步骤4：90/90新预处理资产PASS（30历史selection/20独立路径×3目标），缺源/缺头0，完整argv/源SHA/.ii SHA/逐头SHA已保存，.ii合计677747108B留E。净42.576s/scope43.598s；09与assets90-manifest公开，小spec与资产不冒充90对象或完整包认证。
+
+步骤5计划与最终草案已修订：公平完整对象改为同一专用实体路径的两批验证；新树先匹配、复制缓存（工具链接也需隔离核查）、不豁免STT_FILE、debug本地逐包SHA/逐个缺失DWARF证明，发布完整构建不得由小spec代替。只读origin/main aeea5f8仍未正式交接新树，未进入归档根。最终源码草案 a3c31d2c40809adbfacfd8cb6c12f3e87476a058，完整与公开封套再次apply/tree PASS，无Gerrit推送；周五前standalone仍未做。
