@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续八）清理与准入PASS，第二轮构建运行中**：仅删除19:21导出残留三目录，共2.645752GiB；/var/tmp可用266.280331GiB，正常准入PASS、未动用一次性放宽。入口显式--spec llvm.spec、第二轮独立证据/调用标记；4项入口测试PASS。Source/补丁/配置未改。19:52:09唯一一次第二轮GBS已启动，显式--spec llvm.spec；构建运行中，验收待执行，BOLT NOT_READY。证据docs/49_x86_build_continuation.md §16与temp/release-x86-full-build-20261013/round2-launch。
+**当前任务（docs/49续八）清理与准入PASS，第二轮构建运行中**：仅删除19:21导出残留三目录，共2.645752GiB；/var/tmp可用266.280331GiB，正常准入PASS、未动用一次性放宽。入口显式--spec llvm.spec、第二轮独立证据/调用标记；4项入口测试PASS。Source/补丁/配置未改。19:52:09唯一一次第二轮GBS已启动，显式--spec llvm.spec；CMake门禁425.899秒PASS，Release/O3/Thin、静态工具开关、6/6/2符合注册；7634项Ninja编译运行中，验收待执行，BOLT NOT_READY。证据docs/49_x86_build_continuation.md §16与temp/release-x86-full-build-20261013/round2-launch。
 
 **历史任务（docs/49续七）STOP_DISK_ADMISSION_AFTER_APPROVED_EMPTY_ROOT_DELETE并收尾**：获批/var/tmp/llvm-optimize-x86-archivefix-20261013实际仅15空目录/0文件，清单存证后删除，释放60KiB；可用263.726074GiB<263.758319GiB，仍差33.018750MiB，停止。第二轮GBS0次、新调用标记未创建；未删其他目录、未放宽预算。验收1–7未执行；验收4同环境独立-bi已获有条件批准但未到执行时点。无BOLT交接，ARM/bash/LLVM23未执行。两项目锁/进程/挂载已回收，无新采样器；文件和第一轮证据未改。见docs/49_x86_build_continuation.md §13–§15。
 
@@ -92,6 +92,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 - 原始日志、大文件仍放 `temp/`；提交推送遵守 [docs/README.md](README.md)。
 
 ## 2. 进度
+
+- 2026-10-13｜本提交｜docs/49_x86_build_continuation.md §17｜第二轮导出身份、120包环境与CMake配置门禁PASS；开始7634项编译，完整构建与验收待完成。
 
 - 2026-10-13｜本提交｜docs/49_x86_build_continuation.md §16、入口/测试｜导出残留三目录归属核实后删除2.645752GiB；正常准入PASS，无需PM一次性放宽。
 

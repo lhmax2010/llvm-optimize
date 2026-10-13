@@ -497,3 +497,36 @@ BOLT为**NOT_READY**：没有新BUILD、ThinLTO缓存、构建完成时间或新
 资源继续18GiB/swap0、6/6/2、debuginfo-j4、nice15/ionice3、共享flock、每2秒30GiB磁盘底线、宿主可用<2GiB中止。重阶段内存准入按本系列§1的10GiB，5分钟检查/最多60分钟；并非更改普通完整构建入口。另以独立观察器每10秒登记本轮新建gbp/.gbs_export顶层临时目录路径/du，仅观察新条目，不改文件。验收4条件及不阻塞交接沿用§13.1；本节不宣称构建或验收已完成。
 
 19:52:09实际启动复查：可用285916323840B，正常准入余量2707985203B，预算后49909374976B（46.481727GiB）；pm_exception_used=false。scope为llvm-baseline-28ccc8d86131467ea52f1fa3d9cf983a.scope；第二轮调用标记已创建，不能再次调用。此刻处于GBS导出阶段，未完成构建。
+
+
+## 17. 第二轮标准构建：配置门禁与当前进度
+
+GBS实际导出llvm.spec（未再枚举libcxx-runtimes）；VCS唯一一行指向4c36e899…-dirty，去掉后与候选spec逐字节相同，Source亦同c43523c0…；导出文件全SHA见E8/round2-export-identity.json。19:53:28导出完成，19:53:35标准后端开始build llvm.spec。120个依赖从固定仓库下载安装，实际rpm-qa与工具归属分别保存installed-rpm-qa.tsv、installed-tool-ownership.txt：llvm-strip/ld.lld属于llvm22.1.8-1.6，clang属于clang22.1.8-1.6，prlimit属于util-linux2.41.2-1.6。
+
+CMake门禁在GBS启动后425.898847秒PASS（包含导出、依赖与初始化，不冒充纯CMake耗时），errors为空；完整Cache与门禁JSON保存在E8/full-build-scope，关键摘录如下：
+
+```text
+CMAKE_BUILD_TYPE=Release
+LLVM_ENABLE_LTO=Thin
+LLVM_LINK_LLVM_DYLIB=OFF
+CLANG_LINK_CLANG_DYLIB=OFF
+BUILD_SHARED_LIBS=OFF
+LLVM_BUILD_LLVM_DYLIB=ON
+LLVM_PARALLEL_COMPILE_JOBS=6
+LLVM_PARALLEL_LINK_JOBS=2
+LLVM_TARGETS_TO_BUILD=X86;ARM;AArch64;BPF
+CMAKE_{C,CXX,ASM}_FLAGS_RELEASE=-O3 -DNDEBUG
+```
+
+公共C/CXX/ASM flags均含`-g2 -gdwarf-4 … -g -O3 -flto=thin -fomit-frame-pointer`，完整逐字参数见E8/cmake-key-lines.json。Ninja总任务7634，19:59:51已到352项；此为进度，不代表构建完成。私有host strace及其依赖放在新根home/abuild/release-audit-20261013，19:59附加本次rpmbuild PID2057128，只采execve/exit_group以核对后处理；未改spec/Source/宏/安装包。其路径与SHA见tracer-identity.json。
+
+本轮GBS临时目录观察（10秒du采样，以下均是观察峰值下界）：
+
+|顶层路径|采样峰值B|
+|---|---:|
+|/var/tmp/.gbs_export_ygc31lrt|432660480|
+|/var/tmp/gbp_uhprvvu8|2607132672|
+|/var/tmp/.gbs_export_r59k2dhc|28672|
+|/var/tmp/gbp_4zwc13b9|2607136768|
+
+同一采样点合计峰值3039793152B（约2.831GiB）；四目录导出结束后由GBS自行删除，本会话未增加清理。观察器已回收，原始export-temp-samples.jsonl、汇总export-temp-summary.json与回收记录保留。构建监测继续运行，验收1–7、BOLT交接及后续ARM步骤尚未完成。
