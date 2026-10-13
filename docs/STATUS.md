@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续九）STOP_RESUME_PREFLIGHT，已收尾**：续跑调用0次。根内同宏环境展开证明_smp_mflags=-j1与-j4的%build完全相同，均为`ninja -j6`，不满足本轮串行要求；控制该命令的是mlgo_build_jobs，未擅自另加覆盖。唯一干跑894项>805+6=811；其中89项与旧操作重合，均为LLDB头暂存，Cache/build.ninja/.ninja_log SHA未变，不能据此宣称大面积重配。docs/34历史最大单链接13.028732GiB、clang-22 10.654884GiB，均高于门禁实读MemAvailable11.025112减2=9.025112GiB。未编译/安装/打包、无新RPM、无BOLT交接，后续ARM/bash/LLVM23未执行。26项冻结身份与检查点核查一致；项目锁/进程/挂载回收，未取得共享重任务锁。见[续跑前核查报告](49_x86_build_resume.md)，证据temp/release-x86-full-build-20261013/round2-resume。
+**当前任务（docs/49续十）STOP_RECONFIGURE_PENDING_OUTPUTS，已收尾**：唯一一次原%build环境CMake重配成功，21,987条compdb与完整命令同字节，串行宏mlgo_build_jobs=1已验证。干跑894→902；新增7编译+1归档的8个输出均在原.ninja_log有完成记录，不属允许集合，按规则停止；rpmbuild调用0次、0新RPM、无BOLT交接。待链接历史L=11.344585GiB，参考可用23.085735GiB已足，停止不归因内存。CMake生成的新Cache/build.ninja保留，.ninja_log未改；Source/spec/配置/补丁不变。22:22:56两项目锁/共享锁、进程、scope/采样器和挂载已回收。详见[续十报告](49_x86_build_resume.md#8-续十新裁决输入与唯一配置预检)，证据temp/release-x86-full-build-20261013/round2-resume-serial。
+
+**历史任务（docs/49续九）STOP_RESUME_PREFLIGHT，已收尾**：续跑调用0次。根内同宏环境展开证明_smp_mflags=-j1与-j4的%build完全相同，均为`ninja -j6`，不满足本轮串行要求；控制该命令的是mlgo_build_jobs，未擅自另加覆盖。唯一干跑894项>805+6=811；其中89项与旧操作重合，均为LLDB头暂存，Cache/build.ninja/.ninja_log SHA未变，不能据此宣称大面积重配。docs/34历史最大单链接13.028732GiB、clang-22 10.654884GiB，均高于门禁实读MemAvailable11.025112减2=9.025112GiB。未编译/安装/打包、无新RPM、无BOLT交接，后续ARM/bash/LLVM23未执行。26项冻结身份与检查点核查一致；项目锁/进程/挂载回收，未取得共享重任务锁。见[续跑前核查报告](49_x86_build_resume.md)，证据temp/release-x86-full-build-20261013/round2-resume。
 
 **历史任务（docs/49续八）STOP_HOST_MEMORY_FLOOR_ROUND2，已收尾**：授权删除3处导出残留2.645752GiB，正常磁盘准入PASS、未动用PM放宽；第二轮唯一一次GBS于19:52:09启动。CMake门禁425.899秒PASS；20:33:26宿主MemAvailable=2140217344B<2GiB，按规则中止，Ninja6829/7634，总wall2506.666s，scope最终峰11.197765GiB、swap0；采样最大lld VmHWM8.711487GiB，磁盘周期采样最低242.740303GiB。未执行%install、0 RPM，验收2–7未执行，BOLT NOT_READY；两ARM/根内/64MiB/bash/LLVM23未执行。没有重试或改资源，部分BUILD/cache保留。两项目锁/共享锁、任务进程/采样器/挂载已回收，14项保护身份一致；W/gbs_llvm.conf用户改动保留。详见[第二轮停止报告](49_x86_build_round2_result.md)，证据temp/release-x86-full-build-20261013/round2-launch。
 
@@ -61,7 +63,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：发布夹具认证、两条x86全量回归和PS3/PS2候选apply/tree均PASS；续八部分构建在6829/7634项停止，续九虽获一次串行续跑授权，但干跑数量/串行宏/历史单链接预算三项前置门禁不通过，续跑未启动。候选仍缺完整RPM验收，部分BUILD/cache保留，无BOLT交接；发布模式完整构建和后续ARM根内验收继续挂账。
+当前阶段：发布夹具、两条x86回归和PS3/PS2候选apply/tree均PASS；续八部分构建6829/7634后停止。续十已解除旧宏/数量裁决，实际重配命令不变，但新增8个已完成输出超出授权集合，仍在构建前停止、续跑0次。新CMake生成状态与旧对象/cache保留，完整RPM验收及BOLT交接未完成；发布模式完整构建和后续ARM验收继续挂账。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -136,6 +138,7 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 | 日期 | 提交号 | 产出文件 | 一句话结论 |
 | --- | --- | --- | --- |
+| 2026-10-13 | 本条所在提交（父5b61c58） | docs/49_x86_build_resume.md、STATUS | 续十重配命令同字节，干跑新增8个已完成输出越界；按规则停止、-ba调用0次、无RPM/交接。 |
 | 2026-10-12 | 本提交（git log -- docs/47_review_round4_package.md） | docs/47、Source与测试、diff、STATUS | 四次全量与两环境测试PASS；ARM32根内辅助检查第二次失败后STOP，64MiB负例/AArch64小试/新补丁未执行；停止材料齐备。 |
 | 2026-10-12 | `cb1e34a` | docs/46、STATUS | 只读普查入口因复制的历史16GiB断言停止（14.208229GiB）；未启动产品操作/修订/测试/转换，PS3/PS2未生成；完成停止报告并回收项目锁。 |
 | 2026-09-16 | `2c6e496` | `.gitignore`、`docs/README.md`、`gbs_llvm.conf` | 初始化仓库与产出规范，排除 LLVM 源码和中间产物。 |
@@ -217,6 +220,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 上述历史主报告可能后续原地更新，核查当时结论使用 `git show <提交号>:<文件路径>`。
 
 ## 3. 已闭合结论
+
+- **续十实际重配与待办集合（硬证据）**：21,987 compdb条目与完整命令前后字节一致；894→902干跑的8个新增输出均已在原.ninja_log完成且不在重配前待办。命令不变不能推出“只重做未完成输出”。实际-ba未调用，不能声称完成续跑或RPM验收。（docs/49_x86_build_resume.md §9–§10；E10/{compdb-differences,added-pending-outputs,stop}.json。）
 
 - **续九硬证据**：根内spec:63/403用mlgo_build_jobs控制ninja；_smp_mflags=-j1/-j4展开%build逐字节相同，仍-j6。894项干跑含89项旧LLDB暂存操作，构建三检查点SHA相同；不能等同大面积重编，但原数值门禁未豁免。docs/34两段原采样共77064行的最大单链接为13.028732GiB，当前单链接预算9.025112GiB；按本轮门禁停止。证据docs/49_x86_build_resume.md §3–§5、E9/{preflight-summary,historical-link-peaks,stop}.json；未证明任何新的构建或产物性质。
 
@@ -441,6 +446,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 - **续三固定输入复验闭合（硬证据）**：新Source e2c2ebfa的x86225档/3864成员/完整索引/3853 flags与docs/35完全相同；ARM32 210档/A64 212档与docs/40 §12逐档after SHA相同；5个ARM及3个x86 bitcode asm成员保留GLOBAL/UND；TLS105/106两链接器共享链接与dlopen PASS。证据docs/44 §22–§26、E4各result；旧消费者/strip按相同SHA授权沿用，未重跑。
 
 ## 4. 人工裁决前提
+
+- **2026-10-13 续十**：以docs/34的正常`rpmbuild -ba --noprep`替代short-circuit分段，仅追加`mlgo_build_jobs=1`串行Ninja，_smp_mflags保持-j4；重配必须实际执行且编译链接命令不变；干跑只允许原未完成/中止输出与两类LLDB暂存。内存L取待链接历史最大值，准入L+2GiB，不足每5分钟最多60分钟；同时保留10GiB重准入、宿主2GiB与磁盘30GiB实时底线。失败不启动/不重试。本轮新增8个旧已完成输出触发停止，没有由代理另增豁免。（docs/49_x86_build_resume.md §8–§12。）
 
 - **2026-10-13续九**：用户将续八停止归因为两个大链接与编译并发撞峰，与补丁/环境/磁盘无关；批准仅在同一部分树续跑一次，-bc --short-circuit指定_smp_mflags=-j1，随后-bi恢复-j4再打包。先满足干跑≤805+中止活跃任务、原CMake参数一致、历史单链接≤MemAvailable−2GiB；重阶段10GiB、scope18GiB/swap0、宿主2GiB及磁盘30GiB保护不变。验收4条件和不阻塞交接沿用。实测该宏不控制本spec的ninja，三前置门禁FAIL，因此未启动；没有把用户意图自行扩展为覆盖mlgo_build_jobs或更换打包路径。依据用户续九；docs/49_x86_build_resume.md。
 
