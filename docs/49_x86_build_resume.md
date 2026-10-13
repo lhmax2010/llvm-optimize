@@ -611,3 +611,10 @@ rpmbuild --define '_smp_mflags -j4' --define '_srcdefattr (-,root,root)' \
 当前scope采样峰值19,327,352,832B；2秒记录宿主最低可用21,062,975,488B，/var/tmp最低可用251,333,292,032B。未触发宿主2GiB、磁盘30GiB保护；采样中OOM为0，最终计数待阶段结束。CPU时间持续增长，没有据日志暂时无完成行判死锁。若日志出现`Can't read /proc/cpuinfo`，原文保留；本轮没有为此改变chroot环境或重试，不能从耗时作性能推断。
 
 证据：E11/interim-link-progress.json及持续追加的resume-scope采样/日志。开始只读保存本次RPM生成的完整阶段脚本至generated-rpm-scripts/，以留存完整install-post展开；root-space-samples.jsonl从23:06后开始观察根占用，三个无读取权限目录明确保留stderr，属于下界。后续RPM解包计划在/home的新目录temp/toolchain-release-x86-20261013；届时依据实际RPM展开预算重新准入并监测30GiB底线，没有执行清理。
+
+
+### 16.2 午夜后续跑观察（仍未完成）
+
+截至2026-10-14T00:10:30.208573+08:00，唯一rpmbuild仍存活，最近完成项为`2026-10-14T00:00:26+08:00 [431/902] Building CXX object tools/llvm-rust-demangle-fuzzer/CMakeFiles/llvm-rust-demangle-fuzzer.dir/llvm-rust-demangle-fuzzer.cpp.o`；正在串行链接`lib64/libLLVM.so.22.1`。clang-22、libclang-cpp、libclang、llvm-objcopy/objdump等已有成功完成行；这不代替最终RPM验收。最近宿主MemAvailable=25960615936B，/var/tmp可用=240869429248B，无保护中止记录。完整构建尚未结束，%install/打包、续跑后8项比较、验收1–7及BOLT交接未执行。证据E11/interim-midnight-progress.json与持续追加的原始采样。
+
+验收脚本仅在E11准备，尚未执行：新RPM解包固定在/home的temp/toolchain-release-x86-20261013，独立-bi与同环境基线各有独立buildroot；测试包仍使用已冻结专用配置和6GiB/8GiB规则。准备时已只读核实lld由llvm包提供，测试夹具的BR精确钉llvm=22.1.8-1，不新增不存在的独立lld依赖；没有执行过错误测试包。历史消费者根只读du记录六处权限盲区，sudo -n无授权，未输入密码或改权限。任何准备均不代表验收PASS。
