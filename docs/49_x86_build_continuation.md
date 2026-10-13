@@ -1,6 +1,6 @@
 # 49 续五至续六：x86完整构建环境、准入与验证记录
 
-**当前状态（续八）：授权的三处导出临时目录已清理，正常磁盘准入PASS，无需一次性放宽；第二轮GBS于19:52:09启动，结果待后续章节。**
+**当前状态（续八）：STOP_HOST_MEMORY_FLOOR_ROUND2。第二轮唯一一次GBS在6829/7634项时触发宿主可用<2GiB保护，未进入%install、无RPM、未交接BOLT。最终资源、验收状态与回收见[第二轮停止报告](49_x86_build_round2_result.md)。**
 
 日期：2026-10-13；开场提交 `6e874fdbd0149a33167c9b83f8938d17df7c7ceb`。
 **历史状态（续七）：STOP_DISK_ADMISSION_AFTER_APPROVED_EMPTY_ROOT_DELETE。获批中止导出目录已删除，实际为15个空目录/0文件，释放61,440B（60KiB）；删除后/var/tmp可用263.726074GiB，仍低于263.758319GiB，差33.018750MiB。第二轮GBS调用0次，未清理其他目录、未重试；验收1–7未执行，无BOLT交接。**
@@ -532,3 +532,8 @@ CMAKE_{C,CXX,ASM}_FLAGS_RELEASE=-O3 -DNDEBUG
 同一采样点合计峰值3039793152B（约2.831GiB）；四目录导出结束后由GBS自行删除，本会话未增加清理。观察器已回收，原始export-temp-samples.jsonl、汇总export-temp-summary.json与回收记录保留。构建监测继续运行，验收1–7、BOLT交接及后续ARM步骤尚未完成。
 
 20:23进度检查：Ninja至少4812/7634，尚未完成；scope已观测峰值5.350548GiB，/var/tmp可用252.968220GiB，max/oom/oom_kill=0。该读数不代表最终峰值。原始E8/mid-build-progress.json；构建与采样持续运行，未启动下一阶段。
+
+
+## 18. 续八最终结果
+
+20:33:26宿主MemAvailable=2140217344B触发中止，scope最终峰值11.197765GiB；总wall2506.665618s。未触发磁盘底线，未使用PM准入放宽。停止后无重试，验收及BOLT交接未执行。为保持本页不超过50KB，详细停止原因、阶段资源、验收1–7与回收记录续写至[第二轮停止报告](49_x86_build_round2_result.md)，本页历史记录不变。
