@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
-更新日期：2026-10-12。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/47）停止并收尾**：Source修订与四次全量回归通过；宿主134PASS、ARM32根内130PASS+3环境不适用+1既有AS发现；小spec四组合完成。ARM32根内小试辅助检查第二次失败（先漏掉线程子进程，唯一重跑又因limits行尾空格被正则误拒绝），按规则STOP，不再重跑。实际捕获两个原生clang软/硬4GiB，三档after SHA与离线一致，仅作为诊断；AArch64根内小试、两根64MiB负例、两个候选补丁再生成未执行。tools生产/ARM Source为7c83e822/3cdaeceb；patches中候选仍docs/46版本。发布模式模拟全部缺DWARF拒绝，待PM。详见docs/47 §3、§5、§7、§10。
+更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
+**当前任务（docs/49）进行中**：第四轮续接第零步 PASS（82 条新增元数据全部归因、647 档及工具等 669 SHA 检查一致）；尚未修改 Source 或运行转换/构建。新增发布模式、POSIX sh、主版本策略按用户裁决执行；重阶段共享 flock，BOLT 兄弟工作树不动。证据：docs/49 §0、temp/review-round4-continue-20261013/integrity-result.json。
+
+**历史任务（docs/47）停止并收尾**：Source修订与四次全量回归通过；宿主134PASS、ARM32根内130PASS+3环境不适用+1既有AS发现；小spec四组合完成。ARM32根内小试辅助检查第二次失败（先漏掉线程子进程，唯一重跑又因limits行尾空格被正则误拒绝），按规则STOP，不再重跑。实际捕获两个原生clang软/硬4GiB，三档after SHA与离线一致，仅作为诊断；AArch64根内小试、两根64MiB负例、两个候选补丁再生成未执行。tools生产/ARM Source为7c83e822/3cdaeceb；patches中候选仍docs/46版本。发布模式模拟全部缺DWARF拒绝，待PM。详见docs/47 §3、§5、§7、§10。
 
 **历史任务（docs/44续三）完成**：宿主99PASS；根内95PASS+3指定环境不适用+1已实证AS发现。x86225档/3864成员/索引/3853 flags完全一致；ARM32 210档、AArch64 212档after SHA与§12全同，沿用三套消费者/两种strip。5个ARM asm符号GLOBAL/UND；105/106的bfd/lld共享链接与dlopen均PASS；x86三个bitcode同asm成员最终符号保留。Source仍e2c2ebfa，无代码改动；只修timeout测试。两处辅助脚本各授权修一次；锁、采样器、proc回收。ARM生产AS限制问题待评审，未打包/推Gerrit。见docs/44 §18–§27与docs/45。
 
@@ -39,7 +41,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：docs/47第四轮材料与停止报告收尾；两环境测试、x86两次与两ARM离线全量PASS，但根内辅助检查重试耗尽。剩余根内验收、新候选补丁、发布模式裁决及完整打包均挂账，不自动重试。
+当前阶段：docs/49 第四轮续接；按新裁决修订发布模式、原生 sh 启动器及版本策略，随后依序认证、回归、生成补丁与 x86 完整构建。尚未完成的步骤不作通过结论。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
