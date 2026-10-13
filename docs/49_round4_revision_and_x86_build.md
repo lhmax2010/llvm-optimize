@@ -392,3 +392,9 @@ PM事前补全判据：①SHF_ALLOC节按顺序比较名称/类型/标志/大小
 `tools/check_release_debug_independence.py`增加可加载节type/alignment/entsize、STT_SECTION重定位目标节名规范化、按目标节保存重定位顺序、符号多重集合与SHT_GROUP解析。符号索引与字符串表偏移不作身份，重复符号/组不去重；组内成员顺序仍必须一致。比较时使用实际payload bytes，JSON仅以SHA展示原文差异。两份Source与Commands不改。
 
 2026-10-13 15:03宿主25项辅助测试一次全PASS（0.107s；F/comparison-tests-scope/build.log）。七个指定边界均覆盖：额外SECTION PASS、未引用`.L`LOCAL PASS、有名LOCAL差异FAIL、可加载节重定位目标差异FAIL、COMDAT成员差异FAIL、组内仅debug成员差异PASS、发布debug节FAIL。另覆盖ELF32 REL/ELF64 RELA、可加载节内容/顺序/类型/对齐/entsize、符号全部字段与重复计数、非LOCAL的`.L`名字仍比较、COMDAT签名/标志/顺序/重复计数、截断ELF拒绝。未动用本轮辅助缺陷重跑条款。Source测试仍为§3已执行的147项，不与25项比较器测试混计。
+
+## 16. x86已有20对产物重判
+
+15:05新比较器对上一轮D/physical-x86_64的全部20对对象重新判定，**20/20 PASS**，前两项也重判；40个对象先与旧archive-inspections的成员SHA/大小核对，全部一致，未编译或转换任何x86输入。每项可加载节（含顺序/type/alignment/entsize）、重定位、符号多重集合、COMDAT和发布无debug全部通过。ChangeNamespace.cpp本轮为614个可加载节、3102项相关重定位、754个保留符号、590个COMDAT组，两路相同；SECTION簿记差异按PM事前规则排除。完整逐文件结果F/physical-x86_64/comparisons.json与各NN-comparison/readelf输出；对象身份F/physical-x86_64/reused-identities.json。
+
+直接非LTO诊断沿用D/physical-x86_64/direct-diagnostic.json（同一20个发布对象SHA）：10项记录指标相同、10项不同，细目见历史§11.3；不计入本轮门禁。ARM32夹具已按相同选样算法启动，AArch64及后续阶段待执行。
