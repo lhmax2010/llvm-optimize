@@ -36,7 +36,7 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；B=`/home/linhao/Toolchain
 | 23个实验/核查scope全部回收，采样最低MemAvailable12474175488B，全部入口≥8GiB | scope-summary.json、scope argv/env/samples、最终scope-recovery.json；采样事实，非连续最低保证 |
 | 未改W跟踪文件/W llvm/构建根，未构建LLVM、采profile、插桩、挂载或干扰项目锁 | 命令日志/写入限定/原件SHA；操作边界；供应商原Bash脚本只读复制，新写shell全POSIX |
 
-## 人工裁决前提
+## 历史v4人工裁决（本轮变更由下方v4.1覆盖）
 
 1. 目标：本周五（2026-10-16）前交付一个 BOLT 补丁进 Quickbuild 试验验证。试验不是上 Gerrit
 2. 第一版范围：只做 x86_64 构建分支；只做 clang（lld、llvm-ar 以后）；保持现有全静态链接，混合链接不进第一版；llvm-static-devel 照常发布，不撤
@@ -64,3 +64,38 @@ W=`/home/linhao/Toolchain/development/llvm-optimize`；B=`/home/linhao/Toolchain
 | Quickbuild部署与下游资源 | 三种交付途径待用户选择；OBS项目/快照/仓库/CLI接口与性能协议由用户/内部团队提供；本轮不提问、不部署、不测性能 |
 
 未整体停止；三项2GiB strip OOM及依赖e链按资源约束跳过，完成其余授权工作。辅助相对路径失败和动态inode alias失败均原样保留，修正验证单独记录。完整debug/FDeu-strip破坏风险没有因工具rc0被隐藏。
+
+## 2026-10-13 v4.1 本轮计划与人工裁决
+
+1. Quickbuild 只能从 Gerrit 的 llvm 仓库构建。交付方式：把 BOLT 提交推到 Gerrit platform/upstream/llvm 的新 sandbox 分支 sandbox/lhmax2025/bolt_pgo，由 Quickbuild 在 x86_64 下构建。第一目标是"先在 Quickbuild 的 x86_64 上成功构建出 BOLT 版 clang"
+2. 新分支基于最新的 tizen_base HEAD 创建；BOLT 补丁直接做在它上面，不叠加 356627、356639
+3. 在该 sandbox 提交中，x86_64 的 BOLT 默认开启（Quickbuild 不会传 --with 参数），例如只在 x86_64 生效的 %bcond_without clang_bolt；其他架构不变
+4. 磁盘空间由 Codex 自行检查；project_config 由 Codex 自行查询，需要 Gerrit 路径时用户提供
+
+
+PM裁决：
+
+1. llvm-bolt 来源（周五版）：仅在开启 BOLT 的 x86_64 构建中，向 LLVM 项目列表追加 bolt，只构建 llvm-bolt 目标；install 之后按开启 BOLT 前后 install 清单的差集删除全部 BOLT 产物。硬门禁：最终 buildroot 文件清单与不开 BOLT 的同配方清单相同（clang 实体与别名除外）。standalone 私有子构建今天只做 cmake 配置加 ninja -n 干跑，不作为周五依赖
+2. 重链时在链接命令尾部同时追加 -Wl,--emit-relocs 与 -Wl,--strip-debug，取消单独的预剥离步骤。须验证：与"只加 --emit-relocs 重链、再 llvm-strip --strip-debug"相比，全部非调试 ALLOC 节内容、重定位记录、符号表一致；不一致则退回预剥离方案并给出实测内存
+3. profile v2 以 xz 压缩后作为 Source，spec 内解压并核对未压缩 SHA d9b132f9…；记录压缩后大小与 SHA
+4. 第一版 BOLT 只支持 debug 包开启的构建：请求 BOLT 但 __debug_package 未定义时直接失败，错误信息写明原因；brp-strip 包装器不进入第一版
+5. clang 家族别名统一规范为指向 clang-22 的相对软链接，记录链接类型变化；任何别名仍指向旧内容即失败
+6. 匹配度门禁：R=(S+U)/(N+U) ≤ 5% 且 S/N ≤ 5%，整数比较，禁用 infer-stale
+7. find-debuginfo：BOLT 版 clang 必须无任何调试节；对实际 buildroot 绝对路径做硬断言（不得含 debug 字样），后处理后核查 clang 未被提取或修改
+8. 任何门禁失败即构建失败，不自动降级为普通包
+
+
+新共享重任务锁：/home/linhao/Toolchain/development/heavy-stage.lock，空文件flock独占；持锁≤60min、等锁≤2h，超时跳过该项。重阶段16GiB/swap0/nice15/ionice3/入口MemAvailable≥12GiB/运行低于3GiB终止；轻任务4GiB/nice19/ionice3/入口≥6GiB/串行。不获取归档两锁。R1允许chroot但已有构建文件只读，输出只在BOLT目录；R32/R64只读sysroot。
+
+| 步骤 | 进度/提交 | 产出 |
+|---|---|---|
+| 1 新分支/环境调查 | 完成；本条所在提交 | 04_baseline_and_quickbuild.md；sandbox已原样创建指向cb679968，无新提交 |
+| 2 v4.1/补丁草案/fixtures | 进行中 | — |
+| 3 旧树流水线预演 | 待执行，须共享锁 | — |
+| 4 standalone配置/干跑 | 待执行，不编译 | — |
+| 5 90对资产 | 待执行，仅预处理 | — |
+| 6 profile压缩 | 进行中，单线程xz | — |
+| 7 周三预注册 | 待更新设计 | — |
+| 8 收尾 | 待执行 | — |
+
+本轮Quickbuild模式结论分项目，实际job项目UNKNOWN；独立归档摘要见04 §3。sandbox原样建分支已授权完成；本轮BOLT草案不推Gerrit。
