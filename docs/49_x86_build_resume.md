@@ -618,3 +618,10 @@ rpmbuild --define '_smp_mflags -j4' --define '_srcdefattr (-,root,root)' \
 截至2026-10-14T00:10:30.208573+08:00，唯一rpmbuild仍存活，最近完成项为`2026-10-14T00:00:26+08:00 [431/902] Building CXX object tools/llvm-rust-demangle-fuzzer/CMakeFiles/llvm-rust-demangle-fuzzer.dir/llvm-rust-demangle-fuzzer.cpp.o`；正在串行链接`lib64/libLLVM.so.22.1`。clang-22、libclang-cpp、libclang、llvm-objcopy/objdump等已有成功完成行；这不代替最终RPM验收。最近宿主MemAvailable=25960615936B，/var/tmp可用=240869429248B，无保护中止记录。完整构建尚未结束，%install/打包、续跑后8项比较、验收1–7及BOLT交接未执行。证据E11/interim-midnight-progress.json与持续追加的原始采样。
 
 验收脚本仅在E11准备，尚未执行：新RPM解包固定在/home的temp/toolchain-release-x86-20261013，独立-bi与同环境基线各有独立buildroot；测试包仍使用已冻结专用配置和6GiB/8GiB规则。准备时已只读核实lld由llvm包提供，测试夹具的BR精确钉llvm=22.1.8-1，不新增不存在的独立lld依赖；没有执行过错误测试包。历史消费者根只读du记录六处权限盲区，sudo -n无授权，未输入密码或改权限。任何准备均不代表验收PASS。
+
+
+### 16.3 00:40资源与进度（仍未完成）
+
+2026-10-14T00:40:48+08:00的最新采样：已完成729/902，libLLVM.so、LLVMgold.so、llvm-lto已链接成功，正在lld链接。scope MemoryPeak=MemoryMax=19,327,352,832B（18GiB），memory.events中max=5066，oom/oom_kill=0；memory.stat原文保存在E11/interim-0040-resource.json，当前file约18.07GB、anon约0.82GB。这是受限scope的含文件缓存峰值，不是进程自然峰值或OOM证据；不放宽资源，不据本机wall作性能结论。宿主/磁盘两秒底线未触发，安装/打包和验收仍NOT RUN。
+
+只读进度显示脚本曾在00:14查询已退出的yaml-bench链接器PID41520，ps返回1被check_output误抛异常。日志已明确该链接成功，/proc/41520不存在；实际构建及独立守护未受影响。唯一修正只接受“ps=1且PID已消失”的显示情况，其余错误继续抛出；修后显示正常。没有重做任何构建任务或放宽门禁。证据E11/poll-helper-race-diagnosis.json、poll_build.before.py.txt、poll-helper-fix.diff。
