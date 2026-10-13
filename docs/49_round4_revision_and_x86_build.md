@@ -1,7 +1,7 @@
 # 49 归档修复第四轮修订与 x86 完整构建
 
 日期：2026-10-13。开场基准 `89ad784b10fb033aff4820dd9bb94d9e2fbe1f3d`。
-**本轮状态：IN_PROGRESS，续二完整性PASS；按PM补全的六项调试无关性规则继续。§0–§13全部保留为历史，当前续接见§14起。**
+**本轮最终状态：STOP_ARM32_ALLOC_ORDER。25项比较器测试PASS，x86全部20对PASS；ARM32前2对PASS，第3个ChangeNamespace.cpp有36个SHF_ALLOC节顺序变化，按第1项硬门禁停止。其余17对未判定、AArch6420项及后续全量/构建NOT RUN。原§0–§13保留为历史，续二见§14–§19。**
 
 历史状态（8f184dec）：**STOP_RELEASE_STRUCTURE_MISMATCH：第零步与第一步 PASS；第二步的三架构静态分类全部 PASS，但 x86 发布模式实物对照在第2个 TU 出现真实结构差异，按用户规则停止。ARM 实物夹具、全量回归、补丁再生成与完整构建均未执行。第九步停止材料及升级手册已完成；没有重试或失败后改 Source。**
 
@@ -398,3 +398,111 @@ PM事前补全判据：①SHF_ALLOC节按顺序比较名称/类型/标志/大小
 15:05新比较器对上一轮D/physical-x86_64的全部20对对象重新判定，**20/20 PASS**，前两项也重判；40个对象先与旧archive-inspections的成员SHA/大小核对，全部一致，未编译或转换任何x86输入。每项可加载节（含顺序/type/alignment/entsize）、重定位、符号多重集合、COMDAT和发布无debug全部通过。ChangeNamespace.cpp本轮为614个可加载节、3102项相关重定位、754个保留符号、590个COMDAT组，两路相同；SECTION簿记差异按PM事前规则排除。完整逐文件结果F/physical-x86_64/comparisons.json与各NN-comparison/readelf输出；对象身份F/physical-x86_64/reused-identities.json。
 
 直接非LTO诊断沿用D/physical-x86_64/direct-diagnostic.json（同一20个发布对象SHA）：10项记录指标相同、10项不同，细目见历史§11.3；不计入本轮门禁。ARM32夹具已按相同选样算法启动，AArch64及后续阶段待执行。
+
+## 17. ARM32实物认证与正式停止
+
+### 17.1 执行、工具与归档
+
+选样沿用原规则：按源码相对路径前三层分组、排序取前20组、组内按源文件字节数/路径选最小者；本轮ARM32恰与x86同20文件（跨clangd、apply-replacements、change-namespace、clang-doc、include-fixer五个子系统，不写成20个不同子系统）。原始argv来自E/armv7l-release-classified.json；发布argv是cb679968:packaging/llvm.spec:180的sed原样结果。只替换-o/-MT/-MF到独立目录；直接编译另去掉-flto=thin，仅诊断。（F/release_physical.py、physical-armv7l/selection.json。）
+
+根R32=`/var/tmp/llvm-optimize-arm-c1-20261010/gbs-libraries-armv7l/local/BUILD-ROOTS/scratch.armv7l.0`，本轮G=`R32/home/abuild/review49-contract-v2-armv7l`。在原BUILD cwd编译，根内python3=3.14.2，实际compiler=/emul/usr/bin/clang-22，SHA `31cdc6d78f8dcd471c7519f0bfbc5d57f80e2914ff4ea290702931d2ab80a864`；候选Source仍`1bac8db6…`。入口/emul/usr/bin/sh解析为原生bash，通过Source原有POSIX启动器设置/读回4GiB AS与core=0；每条完整payload/bounded argv与wait4结果在G/generation.json和NN-{debug,release,native}.json，未改Commands。临时proc仅覆盖这段，随后umount exit0；转换在宿主用已核验R32三工具包装器，4 workers/4GiB AS。（G/identity.json、F/physical-armv7l/commands.json、mount-before/during/after.txt、两份conversion/summary.json。）
+
+60次编译全部exit0，wait4 wall相加 191.678616秒；未链接LLVM、未执行%install或打包。两路各20bitcode全部转为机器码、完整外部符号索引检查通过，强符号缺失0、允许W缺失各8。它们只证明转换自身门禁，不代表下面调试无关性通过。
+
+| 路线 | 转换wall秒 | 归档bytes前→后 | 索引条目 | 含debug成员 | after SHA256 |
+|---|---:|---:|---:|---:|---|
+| debug | 14.962381 | 39408084→35192192 | 4173 | 20 | `bfad4af264b36532df061318db865279296f0626394683d8f2c5951dcfc5f109` |
+| release | 7.206047 | 5487212→4730392 | 4173 | 0 | `33a40c0a6b185a28f4734562a55aa7d3cefdf0bc1f6026a3bf9cf00a814b6969` |
+
+### 17.2 六项门禁结果与差异原文
+
+**STOP_ARM32_ALLOC_ORDER**：按文件序号比较，00/01 PASS，02 ChangeNamespace.cpp因第1项的SHF_ALLOC顺序FAIL而停止；03–19虽已生成/转换但未再判定，AArch6420项全部NOT RUN。不能把只读诊断当成放行。
+
+| 02的检查 | debug / 发布 | 判定与证据 |
+|---|---|---|
+| SHF_ALLOC数量 / 合计size | 1381 / 1381；93,900 / 93,900 B | 数量相同不代表顺序相同 |
+| 节名多重集合、按节名的type/flags/size/alignment/entsize/内容 | 全同 | 只读定位差异，不豁免顺序 |
+| 可加载节顺序 | 36个节的位置变化；首次0-based序号452 | **FAIL**；F/moved-alloc-sections.json |
+| 相关重定位，按目标节分组逐条比对 | 4066 / 4066，全同 | F/stop-diagnosis.json；见下述数组展示限制 |
+| 保留符号多重集合 | 1865 / 1865，全同 | F/physical-armv7l/02-comparison/semantic-*.json |
+| COMDAT多重集合 | 780 / 780，全同 | 同上 |
+| 发布debug节 | 0 | PASS |
+
+独立readelf原文确认顺序变化：debug-sections.txt:1095与release-sections.txt:1100中，同一节从节号1090移到1095（文件偏移也改变）：
+
+```text
+debug:   [1090] .text._ZN5clang12ast_matchers8internal25makeDynCastAllOfCompositeINS_4DeclENS_9UsingDeclEEENS1_15BindableMatcherIT_EEN4llvm8ArrayRefIPKNS1_7MatcherIT0_EEEE PROGBITS        00000000 00abb0 00008a 00 AXG  0   0  2
+release:   [1095] .text._ZN5clang12ast_matchers8internal25makeDynCastAllOfCompositeINS_4DeclENS_9UsingDeclEEENS1_15BindableMatcherIT_EEN4llvm8ArrayRefIPKNS1_7MatcherIT0_EEEE PROGBITS        00000000 00ac10 00008a 00 AXG  0   0  2
+```
+
+完整可加载节统一差异见 [49_arm32_alloc_order_failure.diff](49_arm32_alloc_order_failure.diff)（524134 B、13861行，SHA `4f2e3f79b660719c281a55d6a83e6439d62648ccce7826dca82571094417ceaa`）；本机原文F/arm32-alloc-failure.diff。首次位置debug节的size=138、发布位置对应另一节size=88，完整名字/属性/content SHA在F/stop-diagnosis.json。各节按名字的内容相同并不能满足用户要求的**顺序**相同。本轮不解释为PASS、不修改Source、不重新编译或转换。
+
+辅助比较器有一处额外排序约束需明示：目前将各目标节的重定位按原节序展平，因此原始checks.relocations=false也随跨目标节顺序变化出现；PM第2项只要求同一目标节内部逐条一致。只读诊断按目标节重新分组，4066条全部相同；最终停止依据仅第1项真实顺序差异，不把数组展示差异写成重定位目标改变。该辅助实现的跨目标排序约束留待下一轮修正并补夹具；它不改变本次STOP，产品门禁失败后未动代码、未重试。25项已执行测试不涵盖跨目标节换序这一组合，不能据此声称比较器不存在其他缺陷。（F/diagnose_arm32_stop.py、stop-diagnosis.json、arm32-relocations-failure.diff。）
+
+### 17.3 三架构60项逐文件状态与直接编译记录
+
+以下文件名省略共同的`clang-tools-extra/`前缀（首项保留build路径）。x86和ARM32实际选样相同；AArch64未启动、未选定具体文件，各20名额均NOT RUN。未判定项不能沿用别的轮次写PASS。末列是直接非LTO与发布转换的**诊断指标**（节名计数、重定位类型多重集合、定义符号绑定/可见性），不是门禁或字节一致性。
+
+| 序号 | x86/ARM32实际源文件 | x86 | ARM32 | AArch64名额 | 直接编译诊断 x86 / ARM32 |
+|---:|---|---|---|---|---|
+| 00 | `build/tools/clang/tools/extra/clangd/CompletionModel.cpp` | PASS | PASS | NOT RUN | 相同 / 相同 |
+| 01 | `clang-apply-replacements/lib/Tooling/ApplyReplacements.cpp` | PASS | PASS | NOT RUN | 差异 / 差异 |
+| 02 | `clang-change-namespace/ChangeNamespace.cpp` | PASS | FAIL | NOT RUN | 差异 / 差异 |
+| 03 | `clang-doc/BitcodeReader.cpp` | PASS | 未判定 | NOT RUN | 差异 / 差异 |
+| 04 | `clang-doc/BitcodeWriter.cpp` | PASS | 未判定 | NOT RUN | 相同 / 相同 |
+| 05 | `clang-doc/ClangDoc.cpp` | PASS | 未判定 | NOT RUN | 相同 / 相同 |
+| 06 | `clang-doc/Generators.cpp` | PASS | 未判定 | NOT RUN | 相同 / 差异 |
+| 07 | `clang-doc/HTMLGenerator.cpp` | PASS | 未判定 | NOT RUN | 差异 / 差异 |
+| 08 | `clang-doc/JSONGenerator.cpp` | PASS | 未判定 | NOT RUN | 差异 / 差异 |
+| 09 | `clang-doc/MDGenerator.cpp` | PASS | 未判定 | NOT RUN | 差异 / 差异 |
+| 10 | `clang-doc/Mapper.cpp` | PASS | 未判定 | NOT RUN | 相同 / 相同 |
+| 11 | `clang-doc/Representation.cpp` | PASS | 未判定 | NOT RUN | 差异 / 差异 |
+| 12 | `clang-doc/Serialize.cpp` | PASS | 未判定 | NOT RUN | 相同 / 差异 |
+| 13 | `clang-doc/YAMLGenerator.cpp` | PASS | 未判定 | NOT RUN | 差异 / 差异 |
+| 14 | `clang-doc/support/File.cpp` | PASS | 未判定 | NOT RUN | 相同 / 相同 |
+| 15 | `clang-include-fixer/FuzzySymbolIndex.cpp` | PASS | 未判定 | NOT RUN | 相同 / 相同 |
+| 16 | `clang-include-fixer/InMemorySymbolIndex.cpp` | PASS | 未判定 | NOT RUN | 相同 / 相同 |
+| 17 | `clang-include-fixer/IncludeFixer.cpp` | PASS | 未判定 | NOT RUN | 差异 / 相同 |
+| 18 | `clang-include-fixer/IncludeFixerContext.cpp` | PASS | 未判定 | NOT RUN | 差异 / 相同 |
+| 19 | `clang-include-fixer/SymbolIndexManager.cpp` | PASS | 未判定 | NOT RUN | 相同 / 相同 |
+
+x86与ARM32各10项诊断指标相同、10项不同；不同项的集合并不相同。全量诊断在D/physical-x86_64/direct-diagnostic.json（上轮同SHA对象复用）与F/physical-armv7l/direct-diagnostic.json（本轮20项新生成）；每项完整readelf输出与分类差异均保留。标注统一为“预期差异：转换对已做链接前优化的 bitcode 再次完整优化”，未以该诊断阻止或放行任何门禁。
+
+## 18. 续二资源、回收和后续状态
+
+各scope保持18GiB cap、MemorySwapMax=0、nice15/ionice3、30秒采样、宿主可用<2GiB保护；重判与根内夹具持共享heavy-stage flock。下表GiB=2^30B，wall含scope管理，不作性能结论。（F/resources.json和各scope原始证据。）
+
+| 阶段 | 准入GiB | 实际入场GiB | wall秒 | scope peak GiB | 宿主最低可用GiB | exit |
+|---|---:|---:|---:|---:|---:|---:|
+| comparison-tests-scope | 6 | 13.445339 | 2.116 | 0.022354 | 13.445686 | 0 |
+| integrity-input-scope | 6 | 13.355259 | 145.217 | 0.904499 | 13.092682 | 0 |
+| integrity-scope | 6 | 13.019176 | 294.178 | 3.177731 | 12.353951 | 0 |
+| physical-armv7l-scope | 10 | 13.442959 | 226.112 | 1.150852 | 12.780457 | 1 |
+| rejudge-x86-scope | 10 | 13.443565 | 6.268 | 0.238731 | 13.443565 | 0 |
+
+所有scope的memory.events max/oom/oom_kill均0；ARM32 exit1来自比较门禁。root编译已结束才卸载proc并转换；最终2026-10-13T15:15:44.372363+08:00只读检查：本任务进程0、临时挂载0、项目锁0，5个scope及采样器/日志线程均已回收。两个项目锁2026-10-13T15:14:36.394922+08:00释放，共享锁逐阶段释放且最终可非阻塞获取。（F/cleanup-final.json、heavy-lock-final.json、各scope/heavy-lock-*.json。）
+
+| 原任务余项 | 本轮状态 |
+|---|---|
+| AArch6420文件调试无关性认证 | NOT RUN，ARM32失败后停止 |
+| 两次x86225档/3864成员/3853 flags全量回归 | NOT RUN；本轮20文件夹具不可代替全量回归 |
+| PS3/PS2再生成、apply/整树、最终提交说明 | NOT RUN；仍为docs/46旧候选 |
+| x86新完整构建、磁盘1.2倍准入 | NOT RUN，无清理；没有进入构建准入 |
+| 完整构建验收1–7、RPM/消费者/幂等 | 全部NOT RUN；直接非LTO结构对照仍只作诊断 |
+| BOLT交接 | 无新构建树/无交接，不得把历史树宣称为本轮认证产物 |
+| 两ARM全量转换、根内小试、64MiB负例 | 全部NOT RUN；本次仅ARM32发布认证20文件，不冒充第五步 |
+| bash依赖全集与LLVM23前向探测 | NOT RUN；不在失败后启动新的实验 |
+| docs/48/49/STATUS | 已更新判据与停止事实；旧§0–§13完整保留 |
+
+两份Source、Commands、W/llvm与spec、gbs配置、两份已上传补丁未改；BOLT分支/目录未动，未跑BOLT/性能校准/Chromium/Gerrit。本轮无辅助缺陷修正重跑。下一步须先由PM处理第1项节序差异，代理不自行调整判据；同时应修正辅助比较器跨目标重定位展平的额外排序约束，不能改称本轮通过。
+
+## 19. 续二冻结身份与交付
+
+Source/旧候选的完整SHA仍见§13，本轮F/final-source-identity.json逐项复核一致。新增比较器与测试SHA：
+
+| 文件 | SHA256 |
+|---|---|
+| `tools/check_release_debug_independence.py` | `bc5fa65eba7395b0aa41bdc9e983ebbadaa790ee9f673532f17ba245279909a0` |
+| `tools/test_release_debug_independence.py` | `5ea59c760fb6cc41752f4628f458ddaa264964f4749bb9e0c391bc0e86e2dd09` |
+
+完整性提交`b0fd1a7`、比较器与25测试`4307873`、x86全部20对PASS`10fb5c4`均已推送GitHub；当前停止报告、完整差异与STATUS同提交推送。最终钉提交号链接随回复给出，避免文档自引用哈希循环。原始日志/对象保留在F和G，没有清理磁盘。

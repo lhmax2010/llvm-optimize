@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续二）进行中**：800798e完整性135条归因、669 SHA PASS。PM补全六项调试无关性规则，比较器已按完整六项规则修订，25项正负测试PASS；已有x86 20对重判全部PASS（40对象身份一致），ARM32夹具进行中，随后两ARM和后续流程。证据temp/release-contract-v2-20261013；Source、Commands、候选补丁未改。
+**当前任务（docs/49续二）STOP_ARM32_ALLOC_ORDER并收尾**：800798e完整性135条归因/669 SHA PASS；比较器25测试PASS；x8620对全部PASS。ARM32 60次编译、两路各20成员转换/完整索引PASS；前2对调试无关性PASS，第3个ChangeNamespace.cpp的36个可加载节顺序变化FAIL。按节名内容、按目标节4066重定位、1865符号/780组相同不豁免顺序；其余17对未判定，AArch64及后续全量回归/新补丁/完整构建/交接NOT RUN。Source不改。辅助比较器跨目标重定位展平额外约束已如实登记，未以它认定语义差异；产品门禁失败后不修不重试。项目锁/进程/采样器/proc全部回收；证据temp/release-contract-v2-20261013。
 
 **历史任务（docs/49续）STOP_DEBUG_INDEPENDENCE并收尾**：基准8f184dec完整性PASS（290条变化归因、669 SHA）；新判据下x86第1–2源PASS，第3源ChangeNamespace.cpp的614可加载节/3102相关重定位相同，但debug多一个指向.rodata.str1.1的SECTION符号，按符号逐项判据FAIL并停止。两路各20成员转换与完整索引PASS；余17源未判定、两ARM未启动；直接非LTO20项仅诊断。Source仍c43523c0/1bac8db6未改；新增比较器12测试PASS（修一次错误正例，未改门禁）。后续全量回归、补丁再生成、完整构建/验收/交接均NOT RUN；锁/采样器/proc已回收。docs/48与49已更新，证据temp/release-debug-independence-20261013/stop.json、cleanup-final.json。
 
@@ -45,7 +45,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：docs/49续二按PM完整六项规则重判；完整性已通过，比较器/三架构实物认证及后续步骤逐项执行，未认证构建不得发货。
+当前阶段：docs/49续二ARM32第3文件因SHF_ALLOC顺序不一致STOP，等待PM；x8620对通过但不代替全量。未认证构建不得发货，没有BOLT新树交接。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -78,6 +78,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 - 原始日志、大文件仍放 `temp/`；提交推送遵守 [docs/README.md](README.md)。
 
 ## 2. 进度
+
+- 2026-10-13：本收尾提交（git log）；前序b0fd1a7/4307873/10fb5c4。docs/48–49及完整差异：x8620对PASS、ARM32第3文件节序FAIL，后续停止；25比较器测试PASS，全部资源回收。
 
 - 2026-10-13：本提交。docs/49 §16：全部20对既有x86对象六项门禁PASS，未重编/转换；ARM32夹具启动。
 
@@ -586,3 +588,9 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 - 诊断：真实发布夹具第二项重定位多重集合及局部符号不同；尚未认定语义错误，也未自动豁免（docs/49 §4.3）。
 - 人工裁决沿用：发布模式完全无调试参数才进入无调试分支，原生POSIX sh、major22+精确函数属性；重阶段10GiB准入+共享flock。停止不重试，本轮未使用辅助重试额度。
 - 挂账：先裁决发布模式实物差异，再恢复后续认证。未给BOLT创建或冻结新构建树；另一会话的工作目录/分支/证据未改。
+
+### 2026-10-13 docs/49续二停止边界
+
+- 硬证据：x8640个既有对象SHA一致且20对六项门禁PASS；ARM32 1381可加载节中36个节序不同，首差序号452。每节属性/内容与按目标重定位相同不豁免用户的顺序硬条件。证据docs/49 §16–§17、F/stop-diagnosis.json。
+- 辅助实现挂账：比较器把不同目标节的重定位按节序展平，报告额外排序差异；第2项逐目标只读复核实际PASS。未修后重试，下一轮需补跨目标换序夹具并去掉额外约束。
+- 尚无本轮新225档全量回归、候选补丁更新、完整构建或BOLT交接；两ARM生产小试和LLVM23探测仍NOT RUN。Source仍c43523c0/1bac8db6；旧候选SHA不变。无新推Gerrit。
