@@ -1,7 +1,9 @@
 # 49 续五至续六：x86完整构建环境、准入与验证记录
 
+**当前状态（续八）：授权的三处导出临时目录已清理，正常磁盘准入PASS，无需一次性放宽；第二轮完整构建准备启动，结果待后续章节。**
+
 日期：2026-10-13；开场提交 `6e874fdbd0149a33167c9b83f8938d17df7c7ceb`。
-**最终状态（续七）：STOP_DISK_ADMISSION_AFTER_APPROVED_EMPTY_ROOT_DELETE。获批中止导出目录已删除，实际为15个空目录/0文件，释放61,440B（60KiB）；删除后/var/tmp可用263.726074GiB，仍低于263.758319GiB，差33.018750MiB。第二轮GBS调用0次，未清理其他目录、未重试；验收1–7未执行，无BOLT交接。**
+**历史状态（续七）：STOP_DISK_ADMISSION_AFTER_APPROVED_EMPTY_ROOT_DELETE。获批中止导出目录已删除，实际为15个空目录/0文件，释放61,440B（60KiB）；删除后/var/tmp可用263.726074GiB，仍低于263.758319GiB，差33.018750MiB。第二轮GBS调用0次，未清理其他目录、未重试；验收1–7未执行，无BOLT交接。**
 
 **历史状态（续六）：STOP_DISK_ADMISSION_AFTER_EXPORT_HELPER_ABORT。新Base/Unified仓库预检PASS；GBS首次启动在源码导出阶段因入口漏选spec而主动中止，未创建chroot、未编译。入口已修正，但重跑前可用263.725967GiB低于263.758319GiB，按规则停止；没有重跑、清理或放宽门槛，没有新RPM/BOLT交接。**
 
@@ -463,3 +465,33 @@ BOLT为**NOT_READY**：没有新BUILD、ThinLTO缓存、构建完成时间或新
 项目锁已释放，19:35:53终检本任务进程0、临时挂载0、项目锁0；未取得共享重任务锁、未启动采样器，未干扰BOLT。完整性核对保留全部冻结文件和第一轮证据；新证据目录位于W/temp，未提交载荷。E7/{lock-acquired.json,lock-released.json,cleanup-final.json,final-integrity.json,stop.json}记录回收与边界。
 
 本轮只提交本页与STATUS，没有修改Source、Commands、比较器、spec、配置、候选补丁或构建入口；未做编译/打包、未推Gerrit。报告与STATUS同提交推送GitHub main，报告不超过50KB。历史§1–§12保持原结果，当前结论以§13–§15为准。
+
+
+## 16. 续八：导出临时目录定位、授权清理与第二轮准入
+
+开场main=da4b69b6f66f14cc8a516d4807433f8d7d48969b；E8=`temp/release-x86-full-build-20261013/round2-launch`。14项冻结文件SHA与此前登记一致，用户gbs_llvm.conf修改未纳入提交；两项目锁19:44:58取得。仅盘点/清理本轮指定范围，旧E6/E7证据及第一轮调用标记保留。
+
+### 16.1 盘点与归属
+
+19:20以后mtime或ctime变化的顶层条目共4个，均属linhao。完整元数据E8/top-level-stat.json，删除前逐文件清单E8/delete-full-inventory.jsonl（184,853条），大小统计delete-inventory-summary.json；不跟随符号链接、不跨文件系统。
+
+|/var/tmp顶层名|mtime=ctime（+08）|du字节|普通文件数|归属与处理|
+|---|---|---:|---:|---|
+|.gbs_export_3hy1gs20|19:21:14.563871|233717760|11|llvm.spec、Source及5个配方文件与本轮PS2 checkout逐字节相同；导出载荷，已删|
+|.gbs_export_xyqf69nu|19:21:40.902833|12288|1|libcxx-runtimes.spec只有GBS追加VCS行，指向4c36e899…-dirty；去该行与本轮checkout相同，已删|
+|gbp_qpdqpzal|19:21:41.188872|2607124480|169020|第一轮19:21:43 PID2024061的tar -C明确指向其dump_tree_cgrm8h2n；内容为LLVM源码树，已删|
+|linhao-gbs|19:21:06.849912|233472|17|持久GBS配置目录，含多个其他任务配置；**保留**|
+
+身份原文：E8/export-content-identity.json、first-export-process-paths.json。三个删除对象均满足19:21:00–19:22:10、属主、归属三条件；更早gbp/.gbs_export目录不触碰。挂载检查无后代挂载；可读/proc cwd/root/exe/fd无使用引用。保留可见性限制：其他身份的297组cwd/root/exe、296组fd目录与135个fd链接无法读取，未提权；不能声称全宿主无盲区。删除前对全部条目的inode/dev/size/mtime/ctime重核一致。证据mountinfo-before-delete.txt、process-reference-check.json、clean_aborted_export.py。
+
+### 16.2 删除与磁盘
+
+19:49:56–19:49:57只删除表中三项。/var/tmp可用从283075473408B（263.634579GiB）到285916327936B（266.280189GiB），增加2840854528B（2.645610GiB），与三目录du合计相同。证据deletion-result.json。未删linhao-gbs或其他目录。
+
+运行前PM批准的一次性规则：正常263.758319GiB准入未通过时，仅第二轮可在短缺≤1GiB且可用减219.798599GiB≥40GiB的交集内放行；30GiB实时底线不变。本轮清理后正常准入已满足，**未动用放宽**。实际启动前仍在共享锁内复查内存/磁盘，结果写full-build-scope/disk-admission.json。
+
+### 16.3 第二轮入口登记
+
+仍使用§7–§8冻结配置/快照/PS3/PS2/Source/完整checkout；GBS显式`--spec llvm.spec`。辅助入口新增`--round 2`，仅改变本次session身份、证据目录和一次性标记（E8/gbs-invoked-round2.json），首轮E6不改；normal路径没有放宽。4项测试PASS：原身份/新根约束、正常磁盘界限、第二轮≤1GiB及40GiB双边界、两轮标记隔离。测试日志E8/driver-tests.log；本地冻结身份与准入预检E8/local-preflight.json。
+
+资源继续18GiB/swap0、6/6/2、debuginfo-j4、nice15/ionice3、共享flock、每2秒30GiB磁盘底线、宿主可用<2GiB中止。重阶段内存准入按本系列§1的10GiB，5分钟检查/最多60分钟；并非更改普通完整构建入口。另以独立观察器每10秒登记本轮新建gbp/.gbs_export顶层临时目录路径/du，仅观察新条目，不改文件。验收4条件及不阻塞交接沿用§13.1；本节不宣称构建或验收已完成。

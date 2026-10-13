@@ -17,6 +17,28 @@ class RegisteredBuild(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError,'disk admission'):
                 trial.disk_admission(free)
 
+    def test_round2_exception_is_scoped_and_bounded(self):
+        allowed = trial.ADMISSION-1
+        self.assertTrue(trial.disk_admission(allowed,2)['pm_exception_used'])
+        self.assertFalse(trial.disk_admission(trial.ADMISSION,2)['pm_exception_used'])
+        self.assertTrue(trial.disk_admission(trial.ADMISSION-trial.guard.GIB,2)['pm_exception_used'])
+        for round_number, free in [(1,allowed),(2,trial.ADMISSION-trial.guard.GIB-1),
+                                    (2,trial.BUDGET+40*trial.guard.GIB-1)]:
+            with self.assertRaisesRegex(RuntimeError,'disk admission'):
+                trial.disk_admission(free,round_number)
+        # Exercise independent 40 GiB floor even with a relaxed mock admission.
+        with patch.object(trial,'ADMISSION',trial.BUDGET+40*trial.guard.GIB):
+            with self.assertRaisesRegex(RuntimeError,'disk admission'):
+                trial.disk_admission(trial.ADMISSION-1,2)
+
+    def test_round2_marker_and_evidence_are_separate(self):
+        first, first_marker=trial.run_paths(1)
+        second, second_marker=trial.run_paths(2)
+        self.assertNotEqual(first,second)
+        self.assertNotEqual(first_marker,second_marker)
+        self.assertEqual(first,trial.E)
+        with self.assertRaises(ValueError):trial.run_paths(3)
+
     def test_exact_identity_and_fresh_root(self):
         with tempfile.TemporaryDirectory() as tmp:
             w=Path(tmp); e=w/'e'; e.mkdir(); source=w/'source'; source.mkdir()

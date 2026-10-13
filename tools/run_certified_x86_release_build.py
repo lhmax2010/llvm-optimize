@@ -40,7 +40,7 @@ HASHES = {
 }
 
 
-def verify_inputs():
+def verify_inputs(round_number=1):
     files = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in HASHES}
     for p, expected in HASHES.items():
         if files[str(p)] != expected:
@@ -54,7 +54,9 @@ def verify_inputs():
     for p in (W/'temp/.llvm-optimize-exclusive.lock',
               W/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock'):
         lock = json.loads(p.read_text())
-        if lock['session'] != 'release-x86-latest-base-20261013':
+        expected_session = ('release-x86-latest-base-20261013' if round_number == 1
+                            else 'release-x86-round2-launch-20261013')
+        if lock['session'] != expected_session:
             raise RuntimeError('wrong project lock owner')
         Path('/proc',str(lock['pid'])).stat()
     if ROOT.exists():
@@ -62,20 +64,38 @@ def verify_inputs():
     return files
 
 
-def disk_admission(free):
-    if free < ADMISSION or free-BUDGET < FLOOR:
+def disk_admission(free, round_number=1):
+    normal = free >= ADMISSION and free-BUDGET >= FLOOR
+    exception = (round_number == 2 and 0 < ADMISSION-free <= guard.GIB
+                 and free-BUDGET >= 40*guard.GIB)
+    if not (normal or exception):
         raise RuntimeError(f'disk admission failed: {free}; budget={BUDGET}; required={ADMISSION}; floor={FLOOR}')
+    return dict(free_bytes=free,required_bytes=ADMISSION,budget_bytes=BUDGET,
+                shortfall_bytes=max(0,ADMISSION-free),remaining_after_budget_bytes=free-BUDGET,
+                pm_exception_used=exception and not normal,round_number=round_number)
+
+
+def run_paths(round_number):
+    if round_number == 1:
+        return E, 'gbs-invoked.json'
+    if round_number == 2:
+        return E.parent/'round2-launch', 'gbs-invoked-round2.json'
+    raise ValueError('unregistered build round')
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run',action='store_true')
+    parser.add_argument('--round',dest='round_number',type=int,choices=(1,2),default=1)
     args = parser.parse_args()
-    files = verify_inputs()
-    disk_admission(shutil.disk_usage(ROOT.parent).free)
+    run_e, marker = run_paths(args.round_number)
+    if (run_e/marker).exists():
+        raise RuntimeError('GBS invocation already recorded; no retry')
+    files = verify_inputs(args.round_number)
+    admission = disk_admission(shutil.disk_usage(ROOT.parent).free,args.round_number)
     if not args.run:
-        print(json.dumps(dict(status='PASS',files=files,root=str(ROOT)),indent=2)); return
-    audit = guard.Audit(E/'full-build-scope')
+        print(json.dumps(dict(status='PASS',files=files,root=str(ROOT),admission=admission),indent=2)); return
+    audit = guard.Audit(run_e/'full-build-scope')
     lock = Path('/home/linhao/Toolchain/development/heavy-stage.lock').open('a')
     locked = False
     try:
@@ -96,7 +116,9 @@ def main():
             if available >= 10*guard.GIB: break
             if time.monotonic()-start >= 3600: raise RuntimeError('memory admission timeout')
             time.sleep(300)
-        files=verify_inputs(); free=shutil.disk_usage(ROOT.parent).free; disk_admission(free)
+        files=verify_inputs(args.round_number); free=shutil.disk_usage(ROOT.parent).free
+        admission=disk_admission(free,args.round_number)
+        audit.json('disk-admission.json',admission)
         for cmd in (['nproc'],['free','-g'],['df','-h',str(ROOT.parent)],
                     ['systemd-run','--user','--scope','-p','MemoryMax=1G','-p','MemorySwapMax=0','/bin/true']):
             audit.run(cmd)
@@ -104,6 +126,7 @@ def main():
         plan=dict(memory_max_gib=18,ninja_jobs=6,compile_jobs=6,link_jobs=2,debuginfo_jobs=4,
                   gbs_threads=1,available_bytes=available,disk_free_bytes=free,disk_floor_bytes=FLOOR,
                   admission='EXPLICIT_PS3_PS2_LATEST_BASE_TRIAL',files=files,head=HEAD,
+                  round_number=args.round_number,disk_admission=admission,
                   # Select only the ordinary static CMake contract and final cgroup capture.
                   certify_fingerprint='archive-fix-trial',
                   cmake_parameters=dict(LLVM_TARGETS_TO_BUILD='X86;ARM;AArch64;BPF',
@@ -111,7 +134,7 @@ def main():
                     CMAKE_C_COMPILER='clang',CMAKE_CXX_COMPILER='clang++',LLVM_ENABLE_RTTI='ON',
                     LLVM_BUILD_LLVM_DYLIB='ON',LLVM_PARALLEL_COMPILE_JOBS='6',LLVM_PARALLEL_LINK_JOBS='2'))
         audit.json('registered-plan.json',plan)
-        with (E/'gbs-invoked.json').open('x') as f:
+        with (run_e/marker).open('x') as f:
             json.dump(dict(time=guard.stamp(),root=str(ROOT),head=HEAD),f)
         guard.build(audit,SimpleNamespace(buildroot=ROOT,source=SOURCE,config=E/'gbs-build.conf',spec='llvm.spec'),
                     plan,E/'repository-preflight/buildconfig.conf','systemd')
