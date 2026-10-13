@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续三）STOP_ARM32_ALLOC_CONTENT并收尾**：最终十项比较器41测试PASS（78e58f5）；已有80对象SHA核对PASS，x8620/20 PASS，ARM32前12对PASS、第13对Serialize.cpp同身份函数节720→716字节、重定位/符号不符，立即停止；剩余7对/AArch6420对NOT RUN。ChangeNamespace本轮PASS，输入IR已有18个定义换序。两Source未改，未重编/转换/重试门禁；后续全量回归、补丁再生成、完整构建验收1–7与BOLT交接NOT RUN。只读readelf辅助筛选修一次不改门禁；全部锁/进程/采样器/挂载回收。详见docs/49_release_contract_final.md §20–§25，证据temp/release-contract-final-20261013。
+**当前任务（docs/49续四）进行中**：新参数/归因辅助16测试PASS；不改两Source、Commands或十项比较器。发布认证FAIL不阻塞debug主线；待33对参数核查与Serialize归因。见docs/49_release_attribution.md，证据temp/release-attribution-20261013。
+
+**历史任务（docs/49续三）STOP_ARM32_ALLOC_CONTENT并收尾**：最终十项比较器41测试PASS（78e58f5）；已有80对象SHA核对PASS，x8620/20 PASS，ARM32前12对PASS、第13对Serialize.cpp同身份函数节720→716字节、重定位/符号不符，立即停止；剩余7对/AArch6420对NOT RUN。ChangeNamespace本轮PASS，输入IR已有18个定义换序。两Source未改，未重编/转换/重试门禁；后续全量回归、补丁再生成、完整构建验收1–7与BOLT交接NOT RUN。只读readelf辅助筛选修一次不改门禁；全部锁/进程/采样器/挂载回收。详见docs/49_release_contract_final.md §20–§25，证据temp/release-contract-final-20261013。
 
 **历史任务（docs/49续二）STOP_ARM32_ALLOC_ORDER并收尾**：800798e完整性135条归因/669 SHA PASS；比较器25测试PASS；x8620对全部PASS。ARM32 60次编译、两路各20成员转换/完整索引PASS；前2对调试无关性PASS，第3个ChangeNamespace.cpp的36个可加载节顺序变化FAIL。按节名内容、按目标节4066重定位、1865符号/780组相同不豁免顺序；其余17对未判定，AArch64及后续全量回归/新补丁/完整构建/交接NOT RUN。Source不改。辅助比较器跨目标重定位展平额外约束已如实登记，未以它认定语义差异；产品门禁失败后不修不重试。项目锁/进程/采样器/proc全部回收；证据temp/release-contract-v2-20261013。
 
@@ -80,6 +82,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 - 原始日志、大文件仍放 `temp/`；提交推送遵守 [docs/README.md](README.md)。
 
 ## 2. 进度
+
+- 2026-10-13：本提交。docs/49_release_attribution.md、独立参数/归因辅助与16测试：PASS，冻结新判据；两Source与比较器未改。
 
 - 2026-10-13：比较器提交`78e58f5`；本收尾提交（git log）。docs/48–49与续页、完整差异、STATUS：80对象SHA PASS，x8620 PASS，ARM32 12 PASS/1内容FAIL，后续停止；41夹具PASS；两Source未改、资源回收。
 
@@ -400,6 +404,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 - **续三固定输入复验闭合（硬证据）**：新Source e2c2ebfa的x86225档/3864成员/完整索引/3853 flags与docs/35完全相同；ARM32 210档/A64 212档与docs/40 §12逐档after SHA相同；5个ARM及3个x86 bitcode asm成员保留GLOBAL/UND；TLS105/106两链接器共享链接与dlopen PASS。证据docs/44 §22–§26、E4各result；旧消费者/strip按相同SHA授权沿用，未重跑。
 
 ## 4. 人工裁决前提
+
+- **2026-10-13 续四PM裁决**：Serialize.cpp的4字节差异判断为编译器debug/nondebug代码生成差异；需按opt --strip-debug/llvm-diff或后端重放归因实测。发布认证硬门禁改参数一致，仅允许-g/-gdwarf-4差异；产物仍用十项工具比较，函数外差异不可豁免。发布认证FAIL只停止该线，不阻塞debug主线；若FAIL，PS3说明标明发布模式尚未完成认证。docs/49_release_attribution.md §1。
 
 - **2026-10-13 用户确认**：Quickbuild当前Tizen-Base-Toolchain定义`_toolchain`走debug分支；未来进入Tizen-Base不定义该宏走发布分支。调试无关性认证是未来交付前提；发布模式完整构建优先级提高，仍待PM安排。最终比较规则见docs/49_release_contract_final.md §20.1；旧停止判定保留。
 
