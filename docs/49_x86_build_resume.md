@@ -642,3 +642,12 @@ rpmbuild --define '_smp_mflags -j4' --define '_srcdefattr (-,root,root)' \
 截至2026-10-14T03:40:38.231642+08:00，最新完成行为`2026-10-14T03:36:17+08:00 [812/902] Creating library symlink lib64/liblldbIntelFeatures.so`，正在`bin/lldb-instr`链接。clang-tidy、clangd-fuzzer、clangd、clangd-indexer等已链接成功；单次rpmbuild继续，未进入%install/打包。最近MemAvailable=26203971584B，/var/tmp可用=169793449984B；无保护中止。证据E11/interim-0340-progress.json。
 
 同根只读rpm查询记录120个已安装包：clang/llvm=22.1.8-1.6、glibc=2.40-1.7、python3=3.14.2-1.6、rpm-build=4.14.1.1-1.6、util-linux=2.41.2-1.6。/usr/bin/prlimit归util-linux，python3归python3-base，sh归bash3.2.57-1.4，llvm-strip归llvm22.1.8-1.6。四条子命令退出均为0，原始argv/stdout/stderr在E11/root-dependency-facts.json与.log。没有安装或更改依赖；这是验收1的依赖事实，不是归档转换/RPM验收通过。
+
+
+### 16.7 04:38进度与验收辅助预检（仍未完成）
+
+截至2026-10-14T04:38:54.040872+08:00，最近完成行为`2026-10-14T04:38:23+08:00 [844/902] Linking CXX executable bin/llvm-extract`，正在llvm-extract链接。宿主MemAvailable=26478907392B，/var/tmp可用=147073318912B；唯一rpmbuild继续，安装/打包与验收尚未开始。证据E11/interim-0438-progress.json。
+
+只读预检发现准备中的日志证明脚本有两个错误假设：Ninja日志永远只追加、每条构建边只有一个输出。实际启动时压缩了8条旧重复记录；此前7,606条最新完成记录的五字段全部原样保留。冻结build.ninja还声明LLDB头的相对/绝对路径双输出，以及libclang.so版本/非版本软链接双输出。辅助脚本改为核对全部旧最新记录并按冻结构建边展开输出，未知输出与未获准的重复任务仍拒绝。当前1,015条新日志记录全在允许边内，未获准重复0；5个正负夹具通过。仅准备脚本修正，尚未运行最终验收、没有构建重试或改门禁。证据ninja-history-preexecution-review.json、post_resume-history-review.diff、ninja-history-helper-tests.log。
+
+新测试包根在执行前选定为W/temp/gbs-root-release-consumer-20261014-bfd与-lld，尚未创建；完整LLVM根仍在/var/tmp。用于保留后者空间，输入、快照、串行6GiB cap/8GiB准入不变；/home当时可用417,120,927,744B，按每根20GiB预算与1.2倍+30GiB底线预检。证据test-root-storage-plan.json。条件同环境安装基线的辅助入口仅已准备，未运行。
