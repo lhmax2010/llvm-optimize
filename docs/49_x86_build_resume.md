@@ -1,6 +1,8 @@
 # 49 续九、续十：第二轮部分构建树续跑前核查
 
-**续十最新：STOP_RECONFIGURE_PENDING_OUTPUTS；实际配置成功、命令不变，干跑新增8个已完成输出越界；rpmbuild调用0次。见§8–§14。**
+**续十一进度：8/8定向重建输出逐字节PASS，见§15；尚未调用rpmbuild，随后复查准入。**
+
+**续十历史：STOP_RECONFIGURE_PENDING_OUTPUTS；实际配置成功、命令不变，干跑新增8个已完成输出越界；rpmbuild调用0次。见§8–§14。**
 
 **续九历史最终状态：STOP_RESUME_PREFLIGHT；续跑调用0次。** 指定的`--define '_smp_mflags -j1'`不会把本配方的Ninja改成串行：根内展开后仍是`ninja -j 6`。此外，干跑894项超过本轮规定上限811，历史单链接峰值也超过当前可用内存减2GiB的预算。按“任一不满足则不启动”停止，没有改宏、spec或资源后重试。
 
@@ -507,3 +509,45 @@ B与B/lto.cache继续保留；没有“构建完成时间”，不作交接后�
 |`lib64/libomp.so`|0.191963|
 |`lib64/libompd.so`|UNKNOWN|
 |`projects/openmp/libompd/gdb-plugin/python-module/ompd/ompdModule.so`|UNKNOWN|
+
+
+## 15. 续十一：8个输出定向重建逐字节证明
+
+日期2026-10-13；开场main=ea02f90572180fd269dc3a32e7c099eccef64bc6。本节新证据E11=`W/temp/release-x86-full-build-20261013/round2-eight-output-proof`；R、B及专用配置均沿用§8。以E10/new-build-checkpoint.json核验当前生成图，没有回滚。31条开场身份/检查点全部PASS，仅gbs_llvm.conf保留用户既有未提交改动；22:37:23取得两项目锁，无本项目竞争进程。
+
+### 15.1 新裁决与快照
+
+PM将8项定性为configure触碰，要求先逐字节实证，不直接豁免。8项全部同字节后，允许续跑集合扩为旧未完成805项、中止6项、两类LLDB暂存及这8个输出；接受20个无历史采样的小工具/运行库。只允许一次正常`-ba --noprep`，只追加mlgo_build_jobs=1，_smp_mflags保持-j4；准入13.344585GiB，不足5分钟复查、最多60分钟，保护/锁沿用，续跑后再次对比8项。验收4条件执行及不阻塞交接的既有裁决保持。
+
+快照总计15文件、23,375,679B；每份副本SHA与原件一致。8个产物列下表；另存当前BuildVariables.inc与6个占位源文件。生成输入与Rnew（docs/35原根）同路径文件**7/7同字节**，完整副本、摘要及空diff均存E11，不读取或修改BOLT工作树。（snapshot-manifest.json、generated-input-reference-comparison.json、snapshot/、rnew-generated-inputs/、generated-input-diffs/。）
+
+|输出（相对B）|字节|快照mtime（本地时间）|前后共同SHA256|定向重建对照|
+|---|---:|---|---|---|
+|`lib64/tf_runtime/CMakeFiles/tf_xla_runtime.dir/tf_xla_runtime_dummy.c.o`|4660|2026-10-13T20:00:41.687965+08:00|2ac3bc66e414248cd6e6777e42f95e127589f187bd8d47b424632a213f8f99fc|PASS|
+|`projects/compiler-rt/lib/ubsan/CMakeFiles/RTUbsan_dynamic_version_script_dummy.x86_64.dir/dummy.cpp.o`|3144|2026-10-13T20:32:25.023041+08:00|9a48fc753b9b94d94e64610b6c40565957b86477cfc8e0a26cae74d97487994f|PASS|
+|`projects/compiler-rt/lib/asan/CMakeFiles/RTAsan_dynamic_version_script_dummy.x86_64.dir/dummy.cpp.o`|3184|2026-10-13T20:32:27.317040+08:00|fb8ec35b2502ef50408a6e53876202af146d9a9bd5d7441c7db96afed4205d09|PASS|
+|`projects/compiler-rt/lib/hwasan/CMakeFiles/RTHwasan_dynamic_version_script_dummy.x86_64.dir/dummy.cpp.o`|3224|2026-10-13T20:32:29.348041+08:00|d59aac784416ad5c13fe2e3acf09548215099996d179f3ec02bb05c02ebf3f90|PASS|
+|`projects/compiler-rt/lib/nsan/CMakeFiles/RTNsan_dynamic_version_script_dummy.x86_64.dir/dummy.cpp.o`|3128|2026-10-13T20:32:39.945041+08:00|18243b5b76578cd0e5a878e8c5e62bb500a754027379500d3640c7a10b8e866b|PASS|
+|`projects/compiler-rt/lib/memprof/CMakeFiles/RTMemprof_dynamic_version_script_dummy.x86_64.dir/dummy.cpp.o`|3296|2026-10-13T20:32:48.928041+08:00|248803087f975d8fe73149e7b911240b267d469f78e21fbb938e6bed36e83789|PASS|
+|`tools/llvm-config/CMakeFiles/llvm-config.dir/llvm-config.cpp.o`|868400|2026-10-13T20:32:54.645042+08:00|96c89523a891441d7e9dec67973a11ce9de408bef1dbad02dadab732846f4c6c|PASS|
+|`lib64/libtf_xla_runtime.a`|22484724|2026-10-13T20:00:48.755965+08:00|f15c565d30a981c22c71cbcf823030302cf51d19a381f4cc82e44626688be1ed|PASS|
+
+### 15.2 定向执行与门禁
+
+沿用原始RPM生成的original-rpm-build.sh完整环境前导与CMake命令，截断最终ninja之前，再追加定向步骤。以相同GBS chroot/abuild、`/bin/sh -e`执行，没有改根内spec或任何编译参数。
+
+```sh
+# <8输出>是上表全部完整路径，以独立argv传入，保存在targets.json：
+ninja -n -v <8输出>
+ninja -t compdb
+# 干跑命令逐项映射到唯一输出，集合和数量严格等于8项后，才执行：
+ninja -j 1 <8输出>
+```
+
+实际干跑8条，输出匹配无歧义、无额外项；实际执行8条，exit0。八个输出与快照直接bytes比较全部相同，同时核SHA；7个生成输入也同快照。特别是llvm-config.cpp.o为PASS，故不存在本次触碰改变其内容的证据。不是只检查节区或符号。（directed-dry-gate.json、directed-build.log、directed-byte-comparison.json、directed-result.json。）
+
+定向Ninja wall 1.096445s；包含CMake与scope管理的总wall 6.167523s；scope峰值463773696B（0.431923GiB），18GiB cap/swap0，无max/oom/oom_kill事件。2秒宿主2GiB与磁盘30GiB保护无告警。重阶段持共享flock，阶段结束已释放；项目锁继续持有到任务收尾。
+
+快照辅助脚本在复制前曾把静态归档规则的dummy.c.o输入误当作占位源文件，relative_to检查失败，尚未复制或重建；修正为只选择.c/.cpp源文件后重做快照，精确得到6个占位源+1个BuildVariables.inc。仅证据选择修正，不改变任何产品门禁；旧脚本和snapshot-helper.diff保留。定向重建只执行一次，无失败后重试。
+
+本阶段提交时rpmbuild调用0次；续跑后8项对照、RPM及后续验收尚未执行，不提前标PASS。
