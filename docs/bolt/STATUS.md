@@ -94,9 +94,9 @@ PM裁决：
 | 3 旧树流水线预演 | 未执行；准备异常后依用户规则停止 | 无新重链/BOLT/三目标/30对数据；E/stop-and-recovery.json |
 | 4 standalone配置/干跑 | 未执行（停止后不继续产品实验） | 仅LLVMConfig文件现存，兼容性/任务数UNKNOWN |
 | 5 90对资产 | 未执行，0/90新文件 | 不是确认材料缺失；未将历史30对冒充90对 |
-| 6 profile压缩 | 完成，解压SHA PASS；本条所在提交 | Source9735212B/SHA52fd8522…；uncompressed171232190B/SHA d9b132f9… |
+| 6 profile压缩 | 完成，210f82b；解压SHA PASS | Source9735212B/SHA52fd8522…；uncompressed171232190B/SHA d9b132f9… |
 | 7 周三预注册 | 文档完成；未执行 | 01附录V4.1-6；新树正式交接/共享锁/匹配优先/普通任务0门禁 |
-| 8 收尾 | 临时R1绑定/所有scope已回收，正在封存推送 | 本文与05；源提交未推Gerrit |
+| 8 收尾 | 完成；本条所在提交，11个scope与R1绑定已回收 | 本文与05；源提交未推Gerrit |
 
 本轮Quickbuild模式结论分项目，实际job项目UNKNOWN；独立归档摘要见04 §3。sandbox原样建分支已授权完成；本轮BOLT草案不推Gerrit。
 
@@ -107,3 +107,5 @@ PM裁决：
 - 全profile Source压缩9.735MB可进GitHub；完整patch12.58MB及xz10.13MB超10MB文件规范，留E，通过文本patch+Source+manifest完整交付，不拆片。Gerrit大小限制尚未验证；Source/BOLT commit未推，只建分支原始cb已推。
 - 待恢复：安全R1输出/cache隔离；Source helper全pipeline夹具；真实spec debug条件/完整post展开；实际工具install manifest差集；普通final debug清单与无DWARF候选的严格例外边界。草案暂用两次post取参考，未认证，不允许发货。
 - 旧树预演R、S/N、双flags对照、VMHWM、三目标/30对、standalone、90资产均UNKNOWN/未执行。没有因历史正例/fixture PASS把它们写成通过。共享flock未取未等；归档两锁/根与W tracked文件未动。
+
+最终GitHub封存：04环境16030e7；草案/59fixtures/05/设计v4.1 b6b5624；压缩Source210f82b；本状态收尾提交可由git log追溯。v4.1正文44782B≤50KB，POSIX片段dash -n及本地链接检查通过；Python3.9语法兼容性静态检查通过。E/final-publication.json在本次push后登记本地/远端和raw文件核对。**任务按停止规则收尾，未完成全部产品验证步骤；不自动恢复实验。**
