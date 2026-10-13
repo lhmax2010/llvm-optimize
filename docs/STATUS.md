@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续四）进行中**：独立参数/归因辅助16测试PASS；60/60参数PASS，发布认证PASS，Serialize按(b)归因。两Source/Commands/十项比较器不变；发布认证独立于debug主线，两次x86全量回归各225档/3864成员/完整索引/3853flags全部一致；PS3/PS2候选已重生成，顺序apply与完整tree一致；下一步完整构建磁盘准入。完整构建/验收与BOLT交接尚未执行。见docs/49_release_attribution.md，证据temp/release-attribution-20261013。
+**当前任务（docs/49续四）STOP_DISK_ADMISSION并收尾**：独立辅助16测试PASS；60/60参数PASS（仅差-g/-gdwarf-4），53对相同、7对20函数全部经(b)归因PASS。两Source/Commands/十项比较器不变；两条x86路径各225档/3864有序成员/完整索引/3853flags与docs/35相同。PS3/PS2候选已重生成且顺序apply/tree PASS。历史无清理空间预算×1.2=263.758319GiB；/home73.925907、/var/tmp246.889961均不足，完整构建0次。验收1–7、ARM全量/根内/64MiB、bash清单、LLVM23未执行，无BOLT新树交接；项目锁/进程/采样器/挂载回收。详见docs/49_release_attribution.md及temp/release-attribution-20261013。
 
 **历史任务（docs/49续三）STOP_ARM32_ALLOC_CONTENT并收尾**：最终十项比较器41测试PASS（78e58f5）；已有80对象SHA核对PASS，x8620/20 PASS，ARM32前12对PASS、第13对Serialize.cpp同身份函数节720→716字节、重定位/符号不符，立即停止；剩余7对/AArch6420对NOT RUN。ChangeNamespace本轮PASS，输入IR已有18个定义换序。两Source未改，未重编/转换/重试门禁；后续全量回归、补丁再生成、完整构建验收1–7与BOLT交接NOT RUN。只读readelf辅助筛选修一次不改门禁；全部锁/进程/采样器/挂载回收。详见docs/49_release_contract_final.md §20–§25，证据temp/release-contract-final-20261013。
 
@@ -49,7 +49,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：docs/49续四的60对参数/差异归因认证PASS；两条x86路径各225档全量不变性PASS；PS3/PS2候选已重生成并验顺序apply/tree。下一步新x86完整构建的磁盘准入；发布模式完整构建仍挂账，没有BOLT新树交接。
+当前阶段：docs/49续四的发布夹具认证、两条x86全量回归和PS3/PS2候选apply/tree均PASS；新x86完整构建因磁盘准入不足STOP。候选仍待完整RPM验收，未认证构建不得发货。发布模式完整构建仍挂账，没有BOLT新树交接。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -82,6 +82,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 - 原始日志、大文件仍放 `temp/`；提交推送遵守 [docs/README.md](README.md)。
 
 ## 2. 进度
+
+本轮阶段：c5b7e41（辅助16测试）、70117de（33对与Serialize）、aeea5f8（60对认证）、0b6f5d8（生产x86回归/手册）、d1ccc5d（双回归）、a454bbc（两候选apply/tree）均已推送。2026-10-13 **本提交**新增docs/49_release_attribution.md最终停止记录并更新STATUS：磁盘准入不足，无完整构建/交接；用`git log -1 -- docs/49_release_attribution.md`定位收尾提交。
 
 - 2026-10-13：本提交。docs/49_release_attribution.md、独立参数/归因辅助与16测试：PASS，冻结新判据；两Source与比较器未改。
 
@@ -188,7 +190,10 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 ## 3. 已闭合结论
 
-- **本轮最终判据硬证据**：80个既有对象SHA与上轮相同；x8620对PASS；ARM32前12对PASS，第13对Serialize.cpp函数节720/716 B、节内20条重定位及符号size不符。依据docs/49续三 §22–§23与H/stop-readonly-retry；不能由此推断运行语义错误，也不能豁免硬门禁。
+- **续四硬证据（非性能结论）**：60对仅差-g/-gdwarf-4，其余转换参数/顺序、clang实体、cwd/环境核查PASS；53对十项相同，7个文件/架构组合20函数的指定IR在strip-debug后相同，去debug再按原发布命令转换后相同，归因(b) PASS。证据docs/49_release_attribution.md §3–§4、E/release-status.json；不是任意输入调试无关或完整发布打包的证明。
+- **续四x86硬证据**：生产c43523c0与ARM候选1bac8db6各225档after SHA/3864有序成员/完整索引/3853flags与docs/35完全相同；Source本轮不改。证据同报告§5及E/x86-*-result.json。
+
+- **续三历史判据硬证据**：80个既有对象SHA与上轮相同；x8620对PASS；ARM32前12对PASS，第13对Serialize.cpp函数节720/716 B、节内20条重定位及符号size不符。依据docs/49续三 §22–§23与H/stop-readonly-retry；不能由此推断运行语义错误，也不能豁免硬门禁。
 - **顺序诊断**：ChangeNamespace的两路bitcode均853定义，18个定义位置不同、多重集合相同，说明换序先于转换；其最终十项对象比较PASS。依据docs/49续三 §22.1；定义顺序分析为诊断，门禁结果为硬证据。
 
 - **docs/47硬证据**：生产7c83e822与ARM候选3cdaeceb两条x86路径各225档/3864有序成员/完整索引/3853后端flags与docs/35全同；ARM32 210档/AArch64 212档after SHA与docs/40 §12全同，允许沿用消费者/strip。宿主134PASS；根内130PASS+3环境不适用+1既有AS发现。证据docs/47 §5、§7.1及temp/review-round4-20261012各result/summary。
@@ -613,3 +618,10 @@ docs/30的v1完整构建及全部新RPM/Tizen验收、docs/31的干净HEAD提交
 ### 2026-10-13 docs/49续三停止边界
 
 Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安排；本轮未改Source、未生成新补丁、未构建/交接新树。AArch64夹具、两次x86全量、完整构建1–7、ARM根内限制、bash清单/LLVM23均NOT RUN。发布模式完整构建因未来Tizen-Base未定义_toolchain交付而提高优先级，仍挂账。详见docs/49_release_contract_final.md §24。
+
+### 2026-10-13 docs/49续四挂账与BOLT交接状态
+
+- 发布参数/差异归因60对认证PASS，debug两次x86回归PASS；候选PS3 patch SHA0d777afbf7b1a7b86afc5c1da5f7bef6b622315efc1316be0cac2b6e782d94e7，PS2 SHA c679f342a72d52de92914cd2d0007c981e0d6d22a6b378f811ca8ee8e12da9ff；基准cb679968…，生产Source c43523c0…。
+- 完整构建待满足磁盘准入后由PM安排；18GiB/swap0等资源规则未更改，不清理、不重试。263.758319GiB是历史文件系统高水位加回缓存回收后的1.2倍预算，非独立根精确du峰值；详见新报告§7.1。若另定义更精确口径，需要单独证据与裁决，不能擅自缩减。
+- **BOLT交接NOT READY**：本轮没有新构建根/build目录、ThinLTO缓存目录、构建完成时间或经RPM验收的配置指纹；不提供旧树冒充新树。补丁候选身份只用于评审。未进入或修改BOLT工作树/分支/证据。
+- 后续顺序仍为新x86完整构建/验收1–7→冻结交接→两ARM全量/根内小试/64MiB负例→bash依赖清单与LLVM23。发布模式完整构建独立挂账，因未来Tizen-Base实际使用发布路径而提高优先级。

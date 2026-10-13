@@ -1,6 +1,6 @@
 # 49 续四：发布模式参数认证与差异归因
 
-日期：2026-10-13；开场HEAD `df729697426dff67a3871bfa850754ee8be7d376`。**进行中：60对参数PASS；发布模式参数与归因认证PASS；debug主线两次x86全量回归PASS，PS3/PS2候选顺序apply与整树核对PASS，完整构建准入待检查。** 旧docs/49及续三保留，十项ELF比较器和两份Source/Commands不修改。本页不超过50KB。
+日期：2026-10-13；开场HEAD `df729697426dff67a3871bfa850754ee8be7d376`。**最终状态：STOP_DISK_ADMISSION。发布认证60/60 PASS（53相同、7对/20函数由(b)归因）；两次x86全量回归PASS；新PS3/PS2 apply/tree PASS。完整构建与后续步骤未执行，无BOLT新树交接。** 旧docs/49及续三保留，十项ELF比较器和两份Source/Commands不修改。本页不超过50KB。
 
 ## 1. 用户裁决、完整性与执行边界
 
@@ -131,6 +131,7 @@ ARM32余7对全部相同PASS；AArch64结果见§4。
 ### 4.1 工具身份
 
 以下工具全部22.1.8；仅用于opt去debug、llvm-diff及反汇编，未替换原架构转换编译器（E/diagnostic-tools-retry/identity.json）。
+
 |工具|绝对路径|SHA256|
 |---|---|---|
 |opt|`/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/opt`|`c842412e6854a534898139eb24b2769b00284502f900a3af13f2f21d02848322`|
@@ -146,6 +147,7 @@ R64以原编译命令分别生成debug/release/native共60对象；两路bitcode
 ### 4.3 直接非LTO对照（仅诊断）
 
 “预期差异：转换对已做链接前优化的bitcode再次完整优化”。以下统计使用既有同一describe/differences方法；不要求字节相同、不作通过门禁。
+
 |架构|结构记录相同|有结构差异|证据|
 |---|---:|---:|---|
 |x86_64|10|10|`temp/release-debug-independence-20261013/physical-x86_64/direct-diagnostic.json`|
@@ -637,6 +639,7 @@ release：
 ## 5. debug主线：两次x86全量不变性回归
 
 输入E5/x86-input的225档全部before SHA先核对docs/35锚点；各工具SHA先核对。新生产Source与ARM候选的x86路径分别独立全量转换，未覆盖输入或历史输出。完整比较归档after SHA、成员ordinal/name/occurrence/SHA、完整符号→成员索引与3853后端flags；三份同asm成员的`_ZSt21ios_base_library_initv`均保持唯一U。结果如下（E/x86-*-result.json与progress.json）：
+
 |路径|Source SHA256|归档/成员/flags|结果|转换wall秒|scope峰GiB|
 |---|---|---|---|---:|---:|
 |production|`c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e`|225 / 3864 / 3853|全部逐字节/完整映射相同 PASS|1787.577|3.711048|
@@ -649,7 +652,7 @@ candidate允许缺失符号（按原策略）：`{'W': 1920}`；强符号缺失0
 
 `build/bin/clang`为软链接`clang-22`，samefile=true且可执行，clang实体SHA `d25e99607c9ea23bf2e50da5075c21f0145f6da24a39a4228d2fd8026ead70cf`。候选spec可按已裁决使用无版本号别名（E/clang-alias.json）。
 
-下一步：重生成PS3/PS2候选、顺序apply与完整tree核对；之后才进入新根完整构建的磁盘门禁。当前没有新构建树交接给BOLT。
+后续已完成候选重生成与apply/tree核对（§6），随后磁盘门禁停止（§7）。没有新构建树交接给BOLT。
 
 
 ## 6. PS3 / PS2候选重生成与整树核对
@@ -666,4 +669,70 @@ PS3 spec相对已上传PS2只将转换器入口由build/bin/clang-22改成clang�
 |[docs/49_356627_ps3.diff](../docs/49_356627_ps3.diff)|52698|`0d777afbf7b1a7b86afc5c1da5f7bef6b622315efc1316be0cac2b6e782d94e7`|
 |[docs/49_356639_ps2.diff](../docs/49_356639_ps2.diff)|3147|`c679f342a72d52de92914cd2d0007c981e0d6d22a6b378f811ca8ee8e12da9ff`|
 
-本轮替换的是ps3/ps2候选子目录，不是两份已上传补丁。旧候选摘要保留：PS3 patch `1293f6982c87cfbeefe91aa08e92a7d1b72a129f716417f8c8cee61693c463c6`；PS3 Source `014fd32f309bc0be80471eebf8a4a3cf50a5656ce3a2584e4bbdfb9a05a9affd`；PS2 patch `aab2cfd1ad3fb58bfe44cdbdda50bbe67d5343b29a6a6d598408d3bb96620e88`（E/initial-integrity.json；旧版本仍在Git历史）。
+本轮替换的是ps3/ps2候选子目录，不是两份已上传补丁。旧候选摘要保留：PS3 patch `1293f6982c87cfbeefe91aa08e92a7d1b72a129f716417f8c8cee61693c463c6`；PS3 Source `014fd32f309bc0be80471eebf8a4a3cf50a5656ce3a2584e4bbdfb9a05a9affd`；PS2 patch `aab2cfd1ad3fb58bfe44cdbdda50bbe67d5343b29a6a6d598408d3bb96620e88`（E/initial-integrity.json、final-integrity.json；旧版本仍在Git历史）。
+
+
+## 7. 完整构建磁盘准入：STOP_DISK_ADMISSION
+
+完整构建尚未启动；本轮没有执行gbs/rpmbuild、没有生成RPM，未执行额外磁盘清理（Source自身中间文件生命周期不变）。两Source、Commands、十项比较器、W/llvm/spec、配置和两份已上传补丁均保持原身份。
+
+### 7.1 历史口径与本次计算
+
+最后一次完整x86构建是docs/34（含批准的恢复段）；docs/35、38为增量，不用其增量占用冒充完整构建需求。采用历史文件系统可用空间高水位，并补回那次为完成构建而清理的20GiB ThinLTO缓存：本轮禁止清理，不能把回收带来的空闲当作无需预留。
+
+- 入口可用：220,941,500,416B（docs/34 E/full-build/resource-plan.json）。
+- 恢复段最低采样可用：6,409,388,032B（E34/resume-20261008/combined-build-resources.json）。
+- 当时释放缓存的已分配空间：21,474,836,480B（同目录cache-reclaim-result.json）。
+- 无清理预算口径：入口−最低采样+已回收=236,006,948,864B（219.798599GiB）。另核对清理前读数，取较大值；不是把各组件不同时刻的峰值相加。
+- 既定1.2倍准入：ceil(上述值×1.2)=283,208,338,637B，即 **263.758319GiB**。
+
+口径边界：这是历史文件系统整体空间变化（构建树、cache、安装树、转换证据、RPM等），不是隔离根的独占du峰值；历史日志不能分离同时期其他写入者，故不能宣称LLVM自身精确需要这些字节。这里用该已记录的空间预算执行准入，不以清理后的最终树大小缩减预算。若要求独立根峰值，现有记录不足以据此宣称准入已满足。docs/30另一次完整构建的入口−最低采样为235,383,414,784B，其1.2倍为282,460,097,741B（263.061465GiB），本次两个位置也均低于该交叉参照；不是用增量空间估完整构建（docs/30 §2，E/disk-admission.json）。
+
+|检查位置|可用B|可用GiB|准入|
+|---|---:|---:|---|
+|`/home/linhao/Toolchain/development/llvm-optimize/temp`|79,377,338,368|73.925907|FAIL|
+|`/var/tmp`|265,096,077,312|246.889961|FAIL|
+
+采样时间2026-10-13T18:15:02.939479+08:00；同时记录df原文，/home与/var/tmp是两个文件系统，空间不相加。没有清理、拆分构建目录、调低门槛或启动后重试（E/disk-admission.json、disk-df.txt）。
+
+### 7.2 后续步骤与BOLT交接
+
+|原任务步骤|本轮状态|
+|---|---|
+|新x86完整-ba构建、CMake/依赖指纹|NOT RUN：磁盘准入FAIL后停止|
+|验收1：身份、依赖、实际转换非SKIP|NOT RUN|
+|验收2：install-post/execve、逐档llvm-strip与其余brp|NOT RUN|
+|验收3：225归档、45 compiler-rt、libarcher双归属|NOT RUN（离线x86回归不代替RPM验收）|
+|验收4：同配方无补丁基线的非归档比较|NOT RUN|
+|验收5：七宿主与Tizen bfd/lld、运行库消费者|NOT RUN|
+|验收6：独立真实安装与同树SKIP|NOT RUN|
+|验收7：新构建≥10成员直接非LTO结构记录|NOT RUN；§4的60对夹具诊断另存，不冒称新构建记录|
+|BOLT交接|NOT READY，无新build目录、完成时间、ThinLTO缓存或经验证配置可交接|
+|两ARM全量、根内小试、64MiB负例|NOT RUN：按原顺序位于完整构建之后|
+|bash依赖清单、LLVM23探测|NOT RUN：停止后不越过执行顺序|
+|发布模式完整构建、ARM第二段打包|继续挂账；发布路径将来用于Tizen-Base，优先级提高|
+
+PS3/PS2是评审候选，提交说明仍保留完整构建待补；未生成伪称全验收通过的commit-message-final.txt。没有发出“BOLT可在新树续跑”的交接承诺，现有Rnew只作为本轮只读工具/输入。新补丁身份见§6，但这些身份不是新RPM或新构建树的身份（E/stop.json、patch-result.json）。
+
+## 8. 资源、回收、证据与提交
+
+所有实际执行scope为18GiB/swap0、nice15/ionice3；重阶段有共享flock，clang/诊断工具命令4GiB AS。下表wall为scope过程时长，不是性能对比；峰值含页缓存。
+
+|阶段|入场可用GiB / 门槛|wall秒|scope峰GiB|宿主最低GiB|exit|
+|---|---|---:|---:|---:|---:|
+|attribution-tests|12.992691 / 6|2.121|0.016949|12.992382|0|
+|first33|13.402748 / 10|12.181|1.055183|13.402702|1|
+|first33-retry|11.749428 / 10|84.593|0.616970|11.501190|0|
+|remaining7|13.447994 / 10|2.122|0.114418|13.447994|0|
+|aarch64-physical|13.433128 / 10|296.170|1.159843|11.183235|0|
+|x86-production|13.454914 / 10|1885.153|3.711048|12.247395|0|
+|x86-candidate|13.492382 / 10|1800.622|5.264145|11.958115|0|
+|patch-generation|13.572456 / 6|10.172|0.558895|13.572575|0|
+
+first33首次exit1是§3.2的辅助路径错误，唯一一次授权修正重跑PASS，不隐去失败。全部scope无OOM；首次first33共享锁等待约752秒，第二轮x86等待270.006秒。资源包装器日志统一写BUILD COMMAND，该标签不代表执行过本轮LLVM完整构建。
+
+最终核查14项SHA PASS；旧候选Source的014fd32f…另从开场Git提交读取核对，受保护两份已上传补丁与6bd0546a Source副本均未改。项目锁已在18:16:47释放，8个scope均退出、采样器及日志线程回收；任务相关进程0、临时挂载0、项目锁0，各重阶段的共享锁均按finally释放。没有读取BOLT工作树/证据或操作其他会话进程（E/final-integrity.json、cleanup-final.json、final-mountinfo.txt、各heavy-lock-released.json）。
+
+阶段提交均已推GitHub main：辅助与16测试c5b7e41；33对与Serialize归因70117de；60对认证aeea5f8；生产x86回归/升级手册0b6f5d8；双x86回归d1ccc5d；候选补丁a454bbc。此停止报告与STATUS同提交；最终钉提交号链接在回复中给出。未推Gerrit。
+
+全部原始输出在E（本机，不上传）：参数逐token与上下文证明、60对比较/归因、opt/llvm-diff/objdump完整命令与原文、后端再转换、各Source转换summary/逐成员检查、apply/tree日志、资源采样、磁盘门禁、收尾核查。评审文档、辅助与测试、候选补丁和外置diff在本仓库。

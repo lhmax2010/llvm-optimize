@@ -47,7 +47,7 @@ ARM 的候选转换器选用构建环境中 `/emul` 的原生 x86_64 三工具�
 - 续四三架构60对参数门禁全部PASS；53对产物相同、7个文件/架构组合的20个函数实例由后端路径(b)归因PASS（指定函数llvm-diff均exit0，去debug后再转换对应函数相同），发布夹具认证完成。Source/Commands及原十项比较器不变。此结论不是任意输入debug/nondebug代码一致性的证明，也不代替完整发布构建（docs/49_release_attribution.md §3–§4）。
 - 原续三Serialize.cpp停止结论按当时判据成立并保留；本轮依据新裁决重新归因，而非改写历史记录。当前独立辅助16测试PASS；十项比较器此前41测试PASS。
 
-- LLVM 23 官方工具的样本探测结果以 docs/49 为准；未完成时写 NOT RUN/SKIP，不宣称兼容。
+- 续四两次x86全量回归和候选apply/tree PASS；完整构建在磁盘准入处STOP，后续ARM根内与LLVM23未执行，详见docs/49_release_attribution.md §5–§8。LLVM23官方工具探测仍为NOT RUN，不宣称兼容。
 - 发布模式完整构建尚需独立执行；静态分类和局部夹具不能替代它。用户确认当前Quickbuild Tizen-Base-Toolchain定义`_toolchain`走debug，未来Tizen-Base未定义该宏走发布；此项优先级提高，待PM安排。
 - ARM 第二段 spec 集成、完整 `%install`/RPM 与消费者验收仍需完成。
 - 仓库验证驱动的 bash 依赖清单见 docs/49；本轮不改这些驱动。LLVM 源码自身的 bash 检查留待总部替换 dash 时另做，不在此手册中假定其已兼容。
