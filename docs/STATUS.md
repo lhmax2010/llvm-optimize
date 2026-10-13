@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-13。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续）STOP_DEBUG_INDEPENDENCE并收尾**：基准8f184dec完整性PASS（290条变化归因、669 SHA）；新判据下x86第1–2源PASS，第3源ChangeNamespace.cpp的614可加载节/3102相关重定位相同，但debug多一个指向.rodata.str1.1的SECTION符号，按符号逐项判据FAIL并停止。两路各20成员转换与完整索引PASS；余17源未判定、两ARM未启动；直接非LTO20项仅诊断。Source仍c43523c0/1bac8db6未改；新增比较器12测试PASS（修一次错误正例，未改门禁）。后续全量回归、补丁再生成、完整构建/验收/交接均NOT RUN；锁/采样器/proc已回收。docs/48与49已更新，证据temp/release-debug-independence-20261013/stop.json、cleanup-final.json。
+**当前任务（docs/49续二）进行中**：800798e完整性135条归因、669 SHA PASS。PM补全六项调试无关性规则，比较器待修订并测试；先重判已有x86 20对，再继续两ARM和后续流程。证据temp/release-contract-v2-20261013；Source、Commands、候选补丁未改。
+
+**历史任务（docs/49续）STOP_DEBUG_INDEPENDENCE并收尾**：基准8f184dec完整性PASS（290条变化归因、669 SHA）；新判据下x86第1–2源PASS，第3源ChangeNamespace.cpp的614可加载节/3102相关重定位相同，但debug多一个指向.rodata.str1.1的SECTION符号，按符号逐项判据FAIL并停止。两路各20成员转换与完整索引PASS；余17源未判定、两ARM未启动；直接非LTO20项仅诊断。Source仍c43523c0/1bac8db6未改；新增比较器12测试PASS（修一次错误正例，未改门禁）。后续全量回归、补丁再生成、完整构建/验收/交接均NOT RUN；锁/采样器/proc已回收。docs/48与49已更新，证据temp/release-debug-independence-20261013/stop.json、cleanup-final.json。
 
 **上一轮任务（docs/49）STOP_RELEASE_STRUCTURE_MISMATCH并收尾**：第零步PASS；新Source c43523c0/1bac8db6，宿主147PASS、ARM32根143PASS+3环境不适用+1AS既有发现。发布模式11,235条静态分类PASS；x86 20源40次编译及20成员转换/索引/无调试通过，但第2个TU ApplyReplacements.cpp的PLT32为681→678、局部.L.str.29消失，独立readelf复核为真实差异，按规则停止。没有重试、没有失败后改Source。两ARM实物、全量回归、候选补丁再生成、完整构建及其后步骤NOT RUN；无BOLT新构建树交接。旧patches候选仍docs/46。docs/48升级手册与docs/49停止材料完成，锁/进程/采样器/proc均已回收。证据：temp/review-round4-continue-20261013/stop.json、cleanup-final.json。
 
@@ -43,7 +45,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：docs/49新调试无关性门禁在x86第三源符号表差异处停止，等待PM处理；不自行排除普通节SECTION符号。未执行新全量回归、构建或BOLT交接，不得直接发货。
+当前阶段：docs/49续二按PM完整六项规则重判；完整性已通过，比较器/三架构实物认证及后续步骤逐项执行，未认证构建不得发货。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -76,6 +78,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 - 原始日志、大文件仍放 `temp/`；提交推送遵守 [docs/README.md](README.md)。
 
 ## 2. 进度
+
+- 2026-10-13：本提交（git log）。docs/49 §14与STATUS：800798e续二完整性PASS，冻结补全的六项调试无关性判据。
 
 - 2026-10-13：完整性续接`15556e7`；本收尾提交见git log。docs/48–49、调试无关性差异、比较器与测试：x86两项PASS/第三项符号门禁FAIL，后续停止，历史证据保留。
 

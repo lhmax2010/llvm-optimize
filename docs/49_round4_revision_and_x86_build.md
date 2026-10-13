@@ -1,7 +1,7 @@
 # 49 归档修复第四轮修订与 x86 完整构建
 
 日期：2026-10-13。开场基准 `89ad784b10fb033aff4820dd9bb94d9e2fbe1f3d`。
-**本轮最终状态：STOP_DEBUG_INDEPENDENCE。新判据下x86第1–2项PASS，第3项ChangeNamespace.cpp因debug产物多一个指向非调试节.rodata.str1.1的SECTION符号而FAIL；该项SHF_ALLOC及重定位相同。按规则停止，未继续两ARM、全量回归、新补丁或完整构建。原§0–§8停止记录保留为历史，本轮续接见§9–§13。**
+**本轮状态：IN_PROGRESS，续二完整性PASS；按PM补全的六项调试无关性规则继续。§0–§13全部保留为历史，当前续接见§14起。**
 
 历史状态（8f184dec）：**STOP_RELEASE_STRUCTURE_MISMATCH：第零步与第一步 PASS；第二步的三架构静态分类全部 PASS，但 x86 发布模式实物对照在第2个 TU 出现真实结构差异，按用户规则停止。ARM 实物夹具、全量回归、补丁再生成与完整构建均未执行。第九步停止材料及升级手册已完成；没有重试或失败后改 Source。**
 
@@ -380,3 +380,9 @@ Source的147项宿主、根内143PASS+3环境不适用+1既有AS发现沿用§3�
 | patches/llvm-strip/ps2/0001-packaging-use-llvm-strip-for-x86_64-archives.patch | `aab2cfd1ad3fb58bfe44cdbdda50bbe67d5343b29a6a6d598408d3bb96620e88` | 未再生成 |
 
 证据D/final-source-identity.json；补丁仍§6登记值。Commands、spec、已上传的两份补丁、W/llvm和gbs配置均未改；未运行完整构建、BOLT、性能校准、Chromium或Gerrit推送。比较器与辅助测试是新增可审阅工具，其余驱动/原始输出保存在D。完整性阶段提交`15556e7`已推送，本停止材料与STATUS同提交推送；最终提交号见仓库Git记录，避免文档自引用哈希循环。
+
+## 14. 续二开场：完整性与事前判据
+
+2026-10-13，以`800798e51fd2b6885f09dbb94e23642e50b1272e`为基准，reflog截止14:44:14+08。本轮证据F=`W/temp/release-contract-v2-20261013`。完整性135条新增元数据全部归因、未知0；主库完整status 5,308,096行，仅用户既有gbs配置修改；W/llvm仍仅三处并发设置。647档输入加工具/Source/候选补丁等669项SHA全部PASS。两个上轮交付JSON逐项与800798e的Git blob一致；BOLT的210f82b/4c79280及其工作树/证据归于授权会话，不修改。权限盲区免密只读补扫新增0。（F/metadata-gate.json、prior-delivery-attribution.json、bolt-session-attribution.json、input-integrity-result.json。）
+
+PM事前补全判据：①SHF_ALLOC节按顺序比较名称/类型/标志/大小/对齐/entsize/内容；②按目标节逐条比较重定位，STT_SECTION目标规范为所指节名；③非LOCAL及非空且非`.L`开头的LOCAL符号按名称/类型/绑定/可见性/所在节名或特殊号/值/大小的多重集合比较；④排除SECTION、FILE、空名LOCAL和`.L`LOCAL；⑤COMDAT按签名/组标志/有序成员名多重集合比较，仅从成员中去掉`.debug*`及其`.rel.debug*`/`.rela.debug*`；⑥发布产物无`.debug*`。不另增豁免。REL隐式addend由目标节完整字节一致覆盖，RELA直接比较显式addend。直接非LTO比较只诊断。新比较器须先通过正负夹具，再重判上一轮全部20对x86对象；两ARM夹具和其后各阶段尚未执行。
