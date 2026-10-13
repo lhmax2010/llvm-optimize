@@ -651,3 +651,8 @@ rpmbuild --define '_smp_mflags -j4' --define '_srcdefattr (-,root,root)' \
 只读预检发现准备中的日志证明脚本有两个错误假设：Ninja日志永远只追加、每条构建边只有一个输出。实际启动时压缩了8条旧重复记录；此前7,606条最新完成记录的五字段全部原样保留。冻结build.ninja还声明LLDB头的相对/绝对路径双输出，以及libclang.so版本/非版本软链接双输出。辅助脚本改为核对全部旧最新记录并按冻结构建边展开输出，未知输出与未获准的重复任务仍拒绝。当前1,015条新日志记录全在允许边内，未获准重复0；5个正负夹具通过。仅准备脚本修正，尚未运行最终验收、没有构建重试或改门禁。证据ninja-history-preexecution-review.json、post_resume-history-review.diff、ninja-history-helper-tests.log。
 
 新测试包根在执行前选定为W/temp/gbs-root-release-consumer-20261014-bfd与-lld，尚未创建；完整LLVM根仍在/var/tmp。用于保留后者空间，输入、快照、串行6GiB cap/8GiB准入不变；/home当时可用417,120,927,744B，按每根20GiB预算与1.2倍+30GiB底线预检。证据test-root-storage-plan.json。条件同环境安装基线的辅助入口仅已准备，未运行。
+
+
+### 16.8 05:38进度（仍未完成）
+
+截至2026-10-14T05:38:24.734274+08:00，最近完成行为`2026-10-14T05:36:32+08:00 [893/902] Linking CXX executable bin/obj2yaml`，正在opt链接。最近MemAvailable=26736549888B，/var/tmp可用=125816889344B，保护未中止。04:49只读scope复查：MemoryPeak=MemoryMax=18GiB，max=30885，oom/oom_kill/oom_group_kill均0；原始值在E11/interim-0449-scope.json。后续最终计数待结束，不能把受限scope峰值当作进程自然峰值。%install/打包、续跑后8项对照、验收1–7与BOLT交接仍NOT RUN。证据E11/interim-0538-progress.json。
