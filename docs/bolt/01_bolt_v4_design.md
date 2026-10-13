@@ -312,7 +312,7 @@ R1 资格预演只代表 f111162e 配方，不等于 cb679968 的匹配度/最�
 
 ### V4.1-5a 本次资格实测与后续执行细节
 
-R1实际dual-flags严格比较失败：ALLOC及全部重定位一致，但2,344个STT_FILE使符号表不一致；不得豁免。因此此树采用reference重链+LLVM strip-debug。新cb树仍须重新严格比较，不把旧树FAIL/PASS移植过去。R1新rewrite的R=1/23593≈0.004238545%、S/N=0%，note→strip-all身份与三目标PASS；完整30对象首轮因.GCC.command.line记录两编译器不同实体路径而FAIL，公平重测等待共享锁，结果见07。
+R1实际dual-flags严格比较失败：ALLOC及全部重定位一致，但2,344个STT_FILE使符号表不一致；不得豁免。因此此树采用reference重链+LLVM strip-debug。新cb树仍须重新严格比较，不把旧树FAIL/PASS移植过去。R1新rewrite的R=1/23593≈0.004238545%、S/N=0%，note→strip-all身份与三目标PASS；完整30对象首轮因.GCC.command.line记录两编译器不同实体路径而FAIL，最终同一实体路径两批复制的公平重测30/30 PASS，结果见07。
 
 90新资产全部PASS（缺源/缺头0），30selection/20不同源，每组10×三目标；所有原宏、实际命令、源/.ii/头SHA在09和公开manifest。双模式小spec使用历史v2 strip-all副本，两模式实际完整post各一次、clang未被strip工具调用、控制正例分别eu-strip/GNU strip -g、RPM clang SHA及三目标PASS；见08，不能据此省略完整Tizen-Base验证。
 

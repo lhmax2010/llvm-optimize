@@ -32,3 +32,5 @@
 E=/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261014。fixtures.log、fixtures-final-scope、ordinary-strip.json、ordinary-fixed-scope、draft-freeze.json、0001-clang-bolt-draft.patch 为本轮原始证据。R1真实预演、小 spec、90资产结果后续登记；同树生产工具图、真实完整宏、完整 cb RPM 清单认证仍不能由上述夹具替代。
 
 最终草案封套在修正一条已过时的debug专用注释后重新freeze：完整patch和文本+Source的静态apply/整树仍全部PASS；helper功能未变。最终本地源码提交 a3c31d2c40809adbfacfd8cb6c12f3e87476a058。完整LLVM宏/工具图/真实完整包仍待认证。
+
+最终冻结版本84/84夹具再次PASS（0.544s，4GiB scope wall1.526s）；不是只验证旧版helper。

@@ -125,3 +125,24 @@ PM八项新裁决按01附录修订执行：fully strip、前note/前后SHA/最�
 步骤4：90/90新预处理资产PASS（30历史selection/20独立路径×3目标），缺源/缺头0，完整argv/源SHA/.ii SHA/逐头SHA已保存，.ii合计677747108B留E。净42.576s/scope43.598s；09与assets90-manifest公开，小spec与资产不冒充90对象或完整包认证。
 
 步骤5计划与最终草案已修订：公平完整对象改为同一专用实体路径的两批验证；新树先匹配、复制缓存（工具链接也需隔离核查）、不豁免STT_FILE、debug本地逐包SHA/逐个缺失DWARF证明，发布完整构建不得由小spec代替。只读origin/main aeea5f8仍未正式交接新树，未进入归档根。最终源码草案 a3c31d2c40809adbfacfd8cb6c12f3e87476a058，完整与公开封套再次apply/tree PASS，无Gerrit推送；周五前standalone仍未做。
+
+## 本次续任务最终状态（2026-10-13）
+
+本次授权六步已执行并分步推送GitHub bolt-v4；没有规定外环境异常导致整体停止。真实门禁失败和测量错误均保留：dual-flags与reference的完整符号表一致性FAIL（2344 STT_FILE），按上一轮PM明确的fallback采用reference+LLVM strip-debug，不放宽；30对象首轮不同编译器路径使.GCC.command.line差异，公平同一实体路径重测30/30 PASS；小spec.gnu_debuglink错误判定及重复strip输出被保护拒绝均记录，复核同一debugRPM并单次正常release后所有规定判据PASS。
+
+| 步骤 | 最终结果 | 证据 |
+| --- | --- | --- |
+| 1 草案/fixture/普通包 | 完全strip双模式、单次完整post尾检、三路径cache重放、SHA身份链、本地严格双模式清单策略；84/84 PASS；静态完整patch与公开封套apply/tree PASS；普通RPM clang无.symtab/file stripped/原件不变 | 06/helper/test/patch/manifest |
+| 2 R1预演 | cache全复制/原cache最终不变PASS；dual严格对照FAIL但authorized reference fallback；R=0.004238545%、S/N=0%；前BOLT标识/strip-all/三目标PASS；公平历史30/30完整对象PASS | 07/r1-rehearsal/resource-metrics |
+| 3 两模式小spec | historical-v2 fallback副本，debug/release原post各一次，clang两模式都跳过，普通控制分别FD/eu-strip及GNU strip -g处理；RPM clang SHA575fc9db…/三目标均PASS | 08/dual-mode-smoke/两spec |
+| 4 90资产 | 90/90新.ii及argv/源/逐头SHA PASS；缺源0/缺头0；30selection/20源路径，677747108B留E | 09/assets90-manifest |
+| 5 周三计划 | 正式origin/main交接+锁空闲为开始条件，先匹配、新树完整cache副本、工具链接cache隔离/普通任务0、debug本地逐包字节对照及逐缺失DWARF证明；发布完整构建待做；Gerrit推送条件/命令列出但不执行 | 01附录v4.1 |
+| 6 收尾 | 原cache/普通clang不变、R1/proc与scope全部回收、设计≤50KB、Python3.9、Git文件≤10MB；最后提交/推送及raw清单 | 本文/resource-metrics/10 raw清单 |
+
+最终本地LLVM源草案a3c31d2c40809adbfacfd8cb6c12f3e87476a058，父cb67996861d070d68fec2b4c623eed7d20ba2e23，tree4ec0029fcb10baf632af6fc9e2bd58aad1eed224；作者FatTank；不是GitHub证据仓库提交。未向Gerrit推BOLT提交。sandbox仍仅此前原样创建基线，周五前没有standalone、没有完整LLVM构建。
+
+共享锁cache段约41m、其余最长reference约11m；公平30段实际等锁363.056s/持锁351.706s，未等锁超时；一次内存准入SKIP和自己的未取锁等待暂挂记录保留，没有豁免入口12GiB。轻实验与公平重测串行，没有向归档项目锁/进程发信号。只在B/E/R1新BOLT工作写入，W tracked/llvm不改，未进入归档任何构建根。
+
+当前origin/main aeea5f83f35d9e957c329830fa61eb3ec0aa7e88的STATUS仍未正式交接cb新树，周三不能据目录存在开始。完整in-tree新llvm-bolt图/其cache隔离/install差集、cb匹配与实际完整spec后处理尾挂接、同模式普通cbRPM本地文件清单/DWARF逐项证明、发布完整构建/其他包/消费者/90真实对象/性能均仍待认证。小spec与R1资格不代替这些门禁；草案不可据本次直接推送发货。
+
+原始E=/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261014；R1专用/home/abuild/bolt-work/bolt-v4-20261014。大cache/ELF/.ii/完整patch/原日志均留新工作目录；Git只提交可评审文档、helper/fixtures、文本patch+压缩Source+manifest、小spec及JSON摘要。全部raw分支版/钉提交版索引随本次10发布；最终GitHub提交由git log与收尾回复给出。

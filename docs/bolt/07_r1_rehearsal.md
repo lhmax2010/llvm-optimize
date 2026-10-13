@@ -29,12 +29,20 @@ VmHWM来自/proc逐进程0.5秒采样，JSON保留PID/名称各自最大值，�
 
 strip前SHA4f95c348c6eaa123959c7e90fd89d652f2d2c2453721fd3fc9b2487f234a360a，检查.note.bolt_info及其他BOLT标识节存在；同树llvm-strip --strip-all后SHA575fc9db9a18c28ad7d8ae12c999ca52b01bc3662fa13b68cedebe89a0b01965，无.symtab、debug/gdb_index、BOLT note。保持5个LOAD和合法entry；armv7l/aarch64/x86_64微型对象与同树普通clang全部完整字节一致，版本存活PASS。
 
-## 历史30对象：初轮FAIL，完整门禁尚未通过
+## 历史30对象：初轮路径差异FAIL；公平重测30/30 PASS
 
 30份历史.ii均存在且输入SHA可核验。初轮第1份ARM训练ARMISelLowering普通/候选.o不同，立即停后29份未跑；只读ELF诊断证实唯一不同节.GCC.command.line，完整记录了两个不同编译器路径，其他节（含代码、DWARF、重定位）相同，producer均clang22.1.8。没有删除录命令参数/过滤节或改判据。
 
-源码复核发现GCC记录使用canonical实际ELF路径，只改argv[0]不足。因此验证器已准备在新的工作目录同一实体路径分两批复制普通/候选（各一次），复制前后SHA证明来源；输入、全部参数、cwd、输出一致，仍比较完整.o，原实体不改。公平重测第一次未满足12GiB入口所以SKIP_ADMISSION，第二次共享锁被占用；暂挂自己的未取锁等待以完成不依赖重锁的后续轻任务，未向归档进程发信号。后续在2小时预算内继续等，最终状态会更新本文。
+源码复核发现GCC记录使用canonical实际ELF路径，只改argv[0]不足。因此验证器已准备在新的工作目录同一实体路径分两批复制普通/候选（各一次），复制前后SHA证明来源；输入、全部参数、cwd、输出一致，仍比较完整.o，原实体不改。公平重测第一次未满足12GiB入口所以SKIP_ADMISSION，第二次共享锁被占用；暂挂自己的未取锁等待以完成不依赖重锁的后续轻任务，未向归档进程发信号。公平重测随后实际等锁363.056s取得共享锁；入口合格，按16GiB/swap0/nice15/ionice3完成全部30对，完整字节相同。采用同一实体路径的两批复制，普通与候选只各复制一次，来源SHA在JSON；没有改编译参数、删除frecord或过滤任何节。初轮失败及准入/挂等待记录仍保留。
 
 ## 原始证据与边界
 
 E=/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261014；R1新工作=/home/abuild/bolt-work/bolt-v4-20261014。cache-admission/cache-copy、各*-session mountinfo/锁时间、*-scope采样/峰值、link.original/两replay、rewrite/identity/tiny、objects初轮、symbol/object-difference/original-cache-final均保存；大原始日志留E，不进Git。公开tools/bolt/results/r1-rehearsal.json给参数、身份和资源。真实RPM完整清单与cb新树匹配度未认证。
+
+## 最终重测与收尾
+
+公平30对净350秒以内（精确每段字段见JSON），scope wall351.600s、cgroup峰4.572GiB、最大采样clang VmHWM722544kB，持锁351.706s；30完整.o全部PASS，未因首轮差异忽略.GCC.command.line。所有普通/候选调用的实际实体路径、input/cwd/argv/output均相同，每批实际来源与复制SHA分别验证，普通原文件SHA d25e9960…前后不变。
+
+**预演可闭合的路径为reference重链→LLVM strip-debug→BOLT→LLVM strip-all**。dual-flags严格符号表一致性仍FAIL，2,344个STT_FILE不豁免。新cb树重新认证；本轮不能称dual-flags快路径PASS或Gerrit/Quickbuild已就绪。
+
+最终独立缓存审核在公平重测后再次PASS；原47,770文件/98,248,402,280B的文件清单、mtime与34抽样SHA全部不变。最终审计确认R1无proc/root绑定残留、各已结束scope消失、源草案干净/公开helper与源内helper相同、Python3.9语法及设计50KB限制PASS。公开resource-metrics.json记录每个scope、所有失败、锁及挂载info摘要，不隐藏测量代码错误。
