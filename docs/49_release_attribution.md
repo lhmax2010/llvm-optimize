@@ -1,6 +1,6 @@
 # 49 续四：发布模式参数认证与差异归因
 
-日期：2026-10-13；开场HEAD `df729697426dff67a3871bfa850754ee8be7d376`。**进行中：独立辅助16项测试PASS；前33对参数PASS，Serialize.cpp按后端路径(b)已归因PASS。** 旧docs/49及续三保留，十项ELF比较器和两份Source/Commands不修改。本页不超过50KB。
+日期：2026-10-13；开场HEAD `df729697426dff67a3871bfa850754ee8be7d376`。**进行中：60对参数PASS；发布模式参数与归因认证PASS；debug主线全量回归待执行。** 旧docs/49及续三保留，十项ELF比较器和两份Source/Commands不修改。本页不超过50KB。
 
 ## 1. 用户裁决、完整性与执行边界
 
@@ -100,4 +100,538 @@ release：
 
 首次实物驱动在opt执行前失败：引用了Source完成转换后已删除的临时`members/fixture.a/00012/input.bc`。只读核查发现原始输入副本仍在`physical-armv7l/{debug,release}-input/members/12.o`，SHA与before.json完全一致（debug `e3f1f129fa94f8d9ed8cbed5d1cf1b1618ebf0075a16d09aa3efda83a267bfac`，release `160f7682ca2dd05f402c51a1ce4e7a875837e3901fa39668a1d12559adf4bc81`）。按授权只修输入定位，门禁与参数不改；本步骤唯一一次重跑PASS。证据E/input-path-fix-proof.json、input-path-helper-fix.diff；首次和重跑日志均保留。第一次共享锁等待约752s，重跑scope峰662,466,560B，swap0/18GiB上限，无OOM（E/first33-scope、first33-retry-scope）。
 
-ARM32余7对、AArch6420对尚待执行。
+ARM32余7对全部相同PASS；AArch64结果见§5。
+
+
+## 5. 三架构60对发布模式认证
+
+本轮发布认证 **PASS**：参数60/60 PASS；状态计数`{'PASS_ATTRIBUTED': 7, 'PASS_IDENTICAL': 53}`。该结论只覆盖选定60成员的参数及差异归因，不等于发布模式完整构建认证。Source与Commands不变（E/release-status.json）。
+
+|序号|源文件|x86|ARM32|AArch64|
+|---:|---|---|---|---|
+|0|`build/tools/clang/tools/extra/clangd/CompletionModel.cpp`|相同PASS|相同PASS|相同PASS|
+|1|`clang-tools-extra/clang-apply-replacements/lib/Tooling/ApplyReplacements.cpp`|相同PASS|相同PASS|已归因PASS(b)|
+|2|`clang-tools-extra/clang-change-namespace/ChangeNamespace.cpp`|相同PASS|相同PASS|已归因PASS(b)|
+|3|`clang-tools-extra/clang-doc/BitcodeReader.cpp`|相同PASS|相同PASS|已归因PASS(b)|
+|4|`clang-tools-extra/clang-doc/BitcodeWriter.cpp`|相同PASS|相同PASS|相同PASS|
+|5|`clang-tools-extra/clang-doc/ClangDoc.cpp`|相同PASS|相同PASS|相同PASS|
+|6|`clang-tools-extra/clang-doc/Generators.cpp`|相同PASS|相同PASS|相同PASS|
+|7|`clang-tools-extra/clang-doc/HTMLGenerator.cpp`|相同PASS|相同PASS|相同PASS|
+|8|`clang-tools-extra/clang-doc/JSONGenerator.cpp`|相同PASS|相同PASS|相同PASS|
+|9|`clang-tools-extra/clang-doc/MDGenerator.cpp`|相同PASS|相同PASS|相同PASS|
+|10|`clang-tools-extra/clang-doc/Mapper.cpp`|相同PASS|相同PASS|相同PASS|
+|11|`clang-tools-extra/clang-doc/Representation.cpp`|相同PASS|相同PASS|已归因PASS(b)|
+|12|`clang-tools-extra/clang-doc/Serialize.cpp`|相同PASS|已归因PASS(b)|已归因PASS(b)|
+|13|`clang-tools-extra/clang-doc/YAMLGenerator.cpp`|相同PASS|相同PASS|相同PASS|
+|14|`clang-tools-extra/clang-doc/support/File.cpp`|相同PASS|相同PASS|相同PASS|
+|15|`clang-tools-extra/clang-include-fixer/FuzzySymbolIndex.cpp`|相同PASS|相同PASS|相同PASS|
+|16|`clang-tools-extra/clang-include-fixer/InMemorySymbolIndex.cpp`|相同PASS|相同PASS|相同PASS|
+|17|`clang-tools-extra/clang-include-fixer/IncludeFixer.cpp`|相同PASS|相同PASS|已归因PASS(b)|
+|18|`clang-tools-extra/clang-include-fixer/IncludeFixerContext.cpp`|相同PASS|相同PASS|相同PASS|
+|19|`clang-tools-extra/clang-include-fixer/SymbolIndexManager.cpp`|相同PASS|相同PASS|相同PASS|
+
+所有参数仅去掉固定集合`-g`、`-gdwarf-4`，其余参数顺序保持不变。x86与ARM32历史两路在同一父进程循环中继承cwd/环境（代码与SHA证据，未声称持有历史环境原始快照）；新AArch64两次转换另记录cwd与完整环境键值集合的SHA，未把敏感环境值写入报告（E/physical-aarch64/conversion-contexts.json）。
+
+### 5.1 工具身份
+
+以下工具全部22.1.8；仅用于opt去debug、llvm-diff及反汇编，未替换原架构转换编译器（E/diagnostic-tools-retry/identity.json）。
+|工具|绝对路径|SHA256|
+|---|---|---|
+|opt|`/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/opt`|`c842412e6854a534898139eb24b2769b00284502f900a3af13f2f21d02848322`|
+|llvm-diff|`/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-diff`|`227c137b0ae007eb4be57c5a788f0e7ad34ea6f6a3415af4cf9cc164460bda05`|
+|llvm-objdump|`/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-objdump`|`a9448cb80dd2464ee55762f2d741459f39138c84a4b68d5f328ae71df2568daa`|
+
+### 5.2 AArch64过程与顺序诊断
+
+R64以原编译命令分别生成debug/release/native共60对象；两路bitcode均保持ThinLTO，native仅去掉ThinLTO、只作诊断。两路各20成员转换与完整索引PASS，发布路无debug节；临时proc挂载及卸载均exit0（E/physical-aarch64/commands.json，根内generation.json，archive-inspections.json）。
+节顺序变化清单（不据此豁免内容差异）：
+- armv7l `clang-tools-extra/clang-change-namespace/ChangeNamespace.cpp`；沿用同SHA输入的H/physical-armv7l/02-comparison/ir-order-diagnostic.json：853定义、584函数、269全局，18个定义位置变化，变化已存在于转换前（docs/49_release_contract_final.md §22.1）。
+
+### 5.3 直接非LTO对照（仅诊断）
+
+“预期差异：转换对已做链接前优化的bitcode再次完整优化”。以下统计使用既有同一describe/differences方法；不要求字节相同、不作通过门禁。
+|架构|结构记录相同|有结构差异|证据|
+|---|---:|---:|---|
+|x86_64|10|10|`temp/release-debug-independence-20261013/physical-x86_64/direct-diagnostic.json`|
+|armv7l|10|10|`temp/release-contract-v2-20261013/physical-armv7l/direct-diagnostic.json`|
+|aarch64|9|11|`temp/release-attribution-20261013/physical-aarch64/direct-diagnostic.json`|
+
+
+### 5.4 AArch64差异逐函数归因与反汇编
+
+AArch64有6文件、19函数出现内容差异。19次指定函数llvm-diff均exit0、输出为空；各文件去debug后的debug bitcode用原发布命令再转换，对应函数十项规则全部相同，均由后端路径(b)归因。所有函数外差异门禁PASS。以下每函数两路合计不超过16行；原文完整命令、stderr、反汇编、差异和重转对象在E/aarch64-evaluation/NN/。没有据经验放行任何额外差异。
+
+#### 1 ApplyReplacements.cpp
+
+llvm-diff（每个下列函数）：exit=0，stdout/stderr为空；归因(b) PASS。后端重转wall 0.4023422930040397秒、RSS 481252KiB。
+
+函数`_ZN4llvm12handleErrorsIJZNS_12consumeErrorENS_5ErrorEEUlRKNS_13ErrorInfoBaseEE_EEES1_S1_DpOT_`：
+debug：
+```text
+     128: d63f0100     	blr	x8
+     12c: 36000160     	tbz	w0, #0x0, 0x158 <_ZN4llvm12handleErrorsIJZNS_12consumeErrorENS_5ErrorEEUlRKNS_13ErrorInfoBaseEE_EEES1_S1_DpOT_+0x158>
+     130: f9400288     	ldr	x8, [x20]
+     134: aa1403e0     	mov	x0, x20
+     138: f900027f     	str	xzr, [x19]
+     13c: f9400501     	ldr	x1, [x8, #0x8]
+     140: a9454ff4     	ldp	x20, x19, [sp, #0x50]
+     144: a94457f6     	ldp	x22, x21, [sp, #0x40]
+```
+release：
+```text
+     128: d63f0100     	blr	x8
+     12c: 36000160     	tbz	w0, #0x0, 0x158 <_ZN4llvm12handleErrorsIJZNS_12consumeErrorENS_5ErrorEEUlRKNS_13ErrorInfoBaseEE_EEES1_S1_DpOT_+0x158>
+     130: f9400288     	ldr	x8, [x20]
+     134: aa1403e0     	mov	x0, x20
+     138: f9400501     	ldr	x1, [x8, #0x8]
+     13c: f900027f     	str	xzr, [x19]
+     140: a9454ff4     	ldp	x20, x19, [sp, #0x50]
+     144: a94457f6     	ldp	x22, x21, [sp, #0x40]
+```
+#### 2 ChangeNamespace.cpp
+
+llvm-diff（每个下列函数）：exit=0，stdout/stderr为空；归因(b) PASS。后端重转wall 0.9031715210294351秒、RSS 481252KiB。
+
+函数`_ZN4llvm12handleErrorsIJZNS_12consumeErrorENS_5ErrorEEUlRKNS_13ErrorInfoBaseEE_EEES1_S1_DpOT_`：
+debug：
+```text
+     128: d63f0100     	blr	x8
+     12c: 36000160     	tbz	w0, #0x0, 0x158 <_ZN4llvm12handleErrorsIJZNS_12consumeErrorENS_5ErrorEEUlRKNS_13ErrorInfoBaseEE_EEES1_S1_DpOT_+0x158>
+     130: f9400288     	ldr	x8, [x20]
+     134: aa1403e0     	mov	x0, x20
+     138: f900027f     	str	xzr, [x19]
+     13c: f9400501     	ldr	x1, [x8, #0x8]
+     140: a9454ff4     	ldp	x20, x19, [sp, #0x50]
+     144: a94457f6     	ldp	x22, x21, [sp, #0x40]
+```
+release：
+```text
+     128: d63f0100     	blr	x8
+     12c: 36000160     	tbz	w0, #0x0, 0x158 <_ZN4llvm12handleErrorsIJZNS_12consumeErrorENS_5ErrorEEUlRKNS_13ErrorInfoBaseEE_EEES1_S1_DpOT_+0x158>
+     130: f9400288     	ldr	x8, [x20]
+     134: aa1403e0     	mov	x0, x20
+     138: f9400501     	ldr	x1, [x8, #0x8]
+     13c: f900027f     	str	xzr, [x19]
+     140: a9454ff4     	ldp	x20, x19, [sp, #0x50]
+     144: a94457f6     	ldp	x22, x21, [sp, #0x40]
+```
+#### 3 BitcodeReader.cpp
+
+llvm-diff（每个下列函数）：exit=0，stdout/stderr为空；归因(b) PASS。后端重转wall 1.7568218999658711秒、RSS 481252KiB。
+
+函数`_ZN4llvm15SmallVectorImplIN5clang3doc13EnumValueInfoEE12emplace_backIJS3_EEERS3_DpOT_`：
+debug：
+```text
+      c4: b9400a68     	ldr	w8, [x19, #0x8]
+      c8: f9400269     	ldr	x9, [x19]
+      cc: 11000508     	add	w8, w8, #0x1
+      d0: 9baa2509     	umaddl	x9, w8, w10, x9
+      d4: b9000a68     	str	w8, [x19, #0x8]
+      d8: d1024120     	sub	x0, x9, #0x90
+      dc: a9434ff4     	ldp	x20, x19, [sp, #0x30]
+      e0: f94013f5     	ldr	x21, [sp, #0x20]
+```
+release：
+```text
+      c4: b9400a68     	ldr	w8, [x19, #0x8]
+      c8: f9400269     	ldr	x9, [x19]
+      cc: 11000508     	add	w8, w8, #0x1
+      d0: 9baa2509     	umaddl	x9, w8, w10, x9
+      d4: d1024120     	sub	x0, x9, #0x90
+      d8: b9000a68     	str	w8, [x19, #0x8]
+      dc: a9434ff4     	ldp	x20, x19, [sp, #0x30]
+      e0: f94013f5     	ldr	x21, [sp, #0x20]
+```
+
+函数`_ZN4llvm15SmallVectorImplIN5clang3doc8LocationEE12emplace_backIJiiRNS_9StringRefEbEEERS3_DpOT_`：
+debug：
+```text
+      b4: 39010299     	strb	w25, [x20, #0x40]
+      b8: 11000529     	add	w9, w9, #0x1
+      bc: f9000688     	str	x8, [x20, #0x8]
+      c0: 9bab292a     	umaddl	x10, w9, w11, x10
+      c4: b9000a69     	str	w9, [x19, #0x8]
+      c8: d1012140     	sub	x0, x10, #0x48
+      cc: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+      d0: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+release：
+```text
+      b4: 39010299     	strb	w25, [x20, #0x40]
+      b8: 11000529     	add	w9, w9, #0x1
+      bc: f9000688     	str	x8, [x20, #0x8]
+      c0: 9bab292a     	umaddl	x10, w9, w11, x10
+      c4: d1012140     	sub	x0, x10, #0x48
+      c8: b9000a69     	str	w9, [x19, #0x8]
+      cc: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+      d0: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+
+函数`_ZN4llvm15SmallVectorImplIN5clang3doc9ReferenceEE12emplace_backIJS3_EEERS3_DpOT_`：
+debug：
+```text
+      e8: 5280250a     	mov	w10, #0x128             // =296
+      ec: f9400269     	ldr	x9, [x19]
+      f0: 11000508     	add	w8, w8, #0x1
+      f4: 9baa2509     	umaddl	x9, w8, w10, x9
+      f8: b9000a68     	str	w8, [x19, #0x8]
+      fc: d104a120     	sub	x0, x9, #0x128
+     100: a9434ff4     	ldp	x20, x19, [sp, #0x30]
+     104: f94013f5     	ldr	x21, [sp, #0x20]
+```
+release：
+```text
+      e8: 5280250a     	mov	w10, #0x128             // =296
+      ec: f9400269     	ldr	x9, [x19]
+      f0: 11000508     	add	w8, w8, #0x1
+      f4: 9baa2509     	umaddl	x9, w8, w10, x9
+      f8: d104a120     	sub	x0, x9, #0x128
+      fc: b9000a68     	str	w8, [x19, #0x8]
+     100: a9434ff4     	ldp	x20, x19, [sp, #0x30]
+     104: f94013f5     	ldr	x21, [sp, #0x20]
+```
+
+函数`_ZN4llvm23SmallVectorTemplateBaseIN5clang3doc13EnumValueInfoELb0EE18growAndEmplaceBackIJS3_EEERS3_DpOT_`：
+debug：
+```text
+      f8: 52801209     	mov	w9, #0x90               // =144
+      fc: f9000274     	str	x20, [x19]
+     100: 11000508     	add	w8, w8, #0x1
+     104: 9ba95109     	umaddl	x9, w8, w9, x20
+     108: 29015668     	stp	w8, w21, [x19, #0x8]
+     10c: d1024120     	sub	x0, x9, #0x90
+     110: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+     114: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+release：
+```text
+      f8: 52801209     	mov	w9, #0x90               // =144
+      fc: f9000274     	str	x20, [x19]
+     100: 11000508     	add	w8, w8, #0x1
+     104: 9ba95109     	umaddl	x9, w8, w9, x20
+     108: d1024120     	sub	x0, x9, #0x90
+     10c: 29015668     	stp	w8, w21, [x19, #0x8]
+     110: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+     114: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+
+函数`_ZN4llvm23SmallVectorTemplateBaseIN5clang3doc13FieldTypeInfoELb0EE18growAndEmplaceBackIJS3_EEERS3_DpOT_`：
+debug：
+```text
+      c0: b9400a68     	ldr	w8, [x19, #0x8]
+      c4: f9000274     	str	x20, [x19]
+      c8: 11000508     	add	w8, w8, #0x1
+      cc: 9bb65109     	umaddl	x9, w8, w22, x20
+      d0: 29015668     	stp	w8, w21, [x19, #0x8]
+      d4: d1060120     	sub	x0, x9, #0x180
+      d8: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+      dc: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+release：
+```text
+      c0: b9400a68     	ldr	w8, [x19, #0x8]
+      c4: f9000274     	str	x20, [x19]
+      c8: 11000508     	add	w8, w8, #0x1
+      cc: 9bb65109     	umaddl	x9, w8, w22, x20
+      d0: d1060120     	sub	x0, x9, #0x180
+      d4: 29015668     	stp	w8, w21, [x19, #0x8]
+      d8: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+      dc: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+
+函数`_ZN4llvm23SmallVectorTemplateBaseIN5clang3doc14MemberTypeInfoELb0EE18growAndEmplaceBackIJS3_EEERS3_DpOT_`：
+debug：
+```text
+     120: 52803409     	mov	w9, #0x1a0              // =416
+     124: f9000274     	str	x20, [x19]
+     128: 11000508     	add	w8, w8, #0x1
+     12c: 9ba95109     	umaddl	x9, w8, w9, x20
+     130: 29015a68     	stp	w8, w22, [x19, #0x8]
+     134: d1068120     	sub	x0, x9, #0x1a0
+     138: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+     13c: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+release：
+```text
+     120: 52803409     	mov	w9, #0x1a0              // =416
+     124: f9000274     	str	x20, [x19]
+     128: 11000508     	add	w8, w8, #0x1
+     12c: 9ba95109     	umaddl	x9, w8, w9, x20
+     130: d1068120     	sub	x0, x9, #0x1a0
+     134: 29015a68     	stp	w8, w22, [x19, #0x8]
+     138: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+     13c: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+
+函数`_ZN4llvm23SmallVectorTemplateBaseIN5clang3doc8LocationELb0EE18growAndEmplaceBackIJiiRNS_9StringRefEbEEERS3_DpOT_`：
+debug：
+```text
+     1a0: 52800909     	mov	w9, #0x48               // =72
+     1a4: f9000274     	str	x20, [x19]
+     1a8: 11000508     	add	w8, w8, #0x1
+     1ac: 9ba95109     	umaddl	x9, w8, w9, x20
+     1b0: 29015a68     	stp	w8, w22, [x19, #0x8]
+     1b4: d1012120     	sub	x0, x9, #0x48
+     1b8: a9474ff4     	ldp	x20, x19, [sp, #0x70]
+     1bc: a94657f6     	ldp	x22, x21, [sp, #0x60]
+```
+release：
+```text
+     1a0: 52800909     	mov	w9, #0x48               // =72
+     1a4: f9000274     	str	x20, [x19]
+     1a8: 11000508     	add	w8, w8, #0x1
+     1ac: 9ba95109     	umaddl	x9, w8, w9, x20
+     1b0: d1012120     	sub	x0, x9, #0x48
+     1b4: 29015a68     	stp	w8, w22, [x19, #0x8]
+     1b8: a9474ff4     	ldp	x20, x19, [sp, #0x70]
+     1bc: a94657f6     	ldp	x22, x21, [sp, #0x60]
+```
+
+函数`_ZN4llvm23SmallVectorTemplateBaseIN5clang3doc9ReferenceELb0EE18growAndEmplaceBackIJS3_EEERS3_DpOT_`：
+debug：
+```text
+     11c: 52802509     	mov	w9, #0x128              // =296
+     120: f9000274     	str	x20, [x19]
+     124: 11000508     	add	w8, w8, #0x1
+     128: 9ba95109     	umaddl	x9, w8, w9, x20
+     12c: 29015668     	stp	w8, w21, [x19, #0x8]
+     130: d104a120     	sub	x0, x9, #0x128
+     134: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+     138: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+release：
+```text
+     11c: 52802509     	mov	w9, #0x128              // =296
+     120: f9000274     	str	x20, [x19]
+     124: 11000508     	add	w8, w8, #0x1
+     128: 9ba95109     	umaddl	x9, w8, w9, x20
+     12c: d104a120     	sub	x0, x9, #0x128
+     130: 29015668     	stp	w8, w21, [x19, #0x8]
+     134: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+     138: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+
+函数`_ZN5clang3docL11addTypeInfoIPNS0_11TypedefInfoENS0_8TypeInfoEEEN4llvm5ErrorET_OT0_`：
+debug：
+```text
+      50: 913c6280     	add	x0, x20, #0xf18
+      54: 91040261     	add	x1, x19, #0x100
+      58: 94000000     	bl	0x58 <_ZN5clang3docL11addTypeInfoIPNS0_11TypedefInfoENS0_8TypeInfoEEEN4llvm5ErrorET_OT0_+0x58>
+      5c: 79425268     	ldrh	w8, [x19, #0x128]
+      60: f90002bf     	str	xzr, [x21]
+      64: 791e8288     	strh	w8, [x20, #0xf40]
+      68: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+      6c: f9400bf5     	ldr	x21, [sp, #0x10]
+```
+release：
+```text
+      50: 913c6280     	add	x0, x20, #0xf18
+      54: 91040261     	add	x1, x19, #0x100
+      58: 94000000     	bl	0x58 <_ZN5clang3docL11addTypeInfoIPNS0_11TypedefInfoENS0_8TypeInfoEEEN4llvm5ErrorET_OT0_+0x58>
+      5c: 79425268     	ldrh	w8, [x19, #0x128]
+      60: 791e8288     	strh	w8, [x20, #0xf40]
+      64: f90002bf     	str	xzr, [x21]
+      68: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+      6c: f9400bf5     	ldr	x21, [sp, #0x10]
+```
+
+函数`_ZN5clang3docL11addTypeInfoIPNS0_12FunctionInfoENS0_8TypeInfoEEEN4llvm5ErrorET_OT0_`：
+debug：
+```text
+      50: 91040261     	add	x1, x19, #0x100
+      54: 8b080280     	add	x0, x20, x8
+      58: 94000000     	bl	0x58 <_ZN5clang3docL11addTypeInfoIPNS0_12FunctionInfoENS0_8TypeInfoEEEN4llvm5ErrorET_OT0_+0x58>
+      5c: 79425268     	ldrh	w8, [x19, #0x128]
+      60: f90002bf     	str	xzr, [x21]
+      64: 7920d288     	strh	w8, [x20, #0x1068]
+      68: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+      6c: f9400bf5     	ldr	x21, [sp, #0x10]
+```
+release：
+```text
+      50: 91040261     	add	x1, x19, #0x100
+      54: 8b080280     	add	x0, x20, x8
+      58: 94000000     	bl	0x58 <_ZN5clang3docL11addTypeInfoIPNS0_12FunctionInfoENS0_8TypeInfoEEEN4llvm5ErrorET_OT0_+0x58>
+      5c: 79425268     	ldrh	w8, [x19, #0x128]
+      60: 7920d288     	strh	w8, [x20, #0x1068]
+      64: f90002bf     	str	xzr, [x21]
+      68: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+      6c: f9400bf5     	ldr	x21, [sp, #0x10]
+```
+
+函数`_ZN5clang3docL11addTypeInfoIPNS0_7VarInfoENS0_8TypeInfoEEEN4llvm5ErrorET_OT0_`：
+debug：
+```text
+      50: 913c6280     	add	x0, x20, #0xf18
+      54: 91040261     	add	x1, x19, #0x100
+      58: 94000000     	bl	0x58 <_ZN5clang3docL11addTypeInfoIPNS0_7VarInfoENS0_8TypeInfoEEEN4llvm5ErrorET_OT0_+0x58>
+      5c: 79425268     	ldrh	w8, [x19, #0x128]
+      60: f90002bf     	str	xzr, [x21]
+      64: 791e8288     	strh	w8, [x20, #0xf40]
+      68: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+      6c: f9400bf5     	ldr	x21, [sp, #0x10]
+```
+release：
+```text
+      50: 913c6280     	add	x0, x20, #0xf18
+      54: 91040261     	add	x1, x19, #0x100
+      58: 94000000     	bl	0x58 <_ZN5clang3docL11addTypeInfoIPNS0_7VarInfoENS0_8TypeInfoEEEN4llvm5ErrorET_OT0_+0x58>
+      5c: 79425268     	ldrh	w8, [x19, #0x128]
+      60: 791e8288     	strh	w8, [x20, #0xf40]
+      64: f90002bf     	str	xzr, [x21]
+      68: a9424ff4     	ldp	x20, x19, [sp, #0x20]
+      6c: f9400bf5     	ldr	x21, [sp, #0x10]
+```
+#### 11 Representation.cpp
+
+llvm-diff（每个下列函数）：exit=0，stdout/stderr为空；归因(b) PASS。后端重转wall 0.7531663629924878秒、RSS 481252KiB。
+
+函数`_ZSt21__unguarded_partitionIN9__gnu_cxx17__normal_iteratorIPN5clang3doc11CommentInfoESt6vectorIS4_SaIS4_EEEENS0_5__ops15_Iter_less_iterEET_SC_SC_SC_T0_`：
+debug：
+```text
+      e4: a94327ea     	ldp	x10, x9, [sp, #0x30]
+      e8: a908a7ea     	stp	x10, x9, [sp, #0x88]
+      ec: a94427ea     	ldp	x10, x9, [sp, #0x40]
+      f0: a909a7ea     	stp	x10, x9, [sp, #0x98]
+      f4: a9452beb     	ldp	x11, x10, [sp, #0x50]
+      f8: f94033e9     	ldr	x9, [sp, #0x60]
+      fc: a90aabeb     	stp	x11, x10, [sp, #0xa8]
+     100: b940013a     	ldr	w26, [x9]
+```
+release：
+```text
+      e4: a94327ea     	ldp	x10, x9, [sp, #0x30]
+      e8: a908a7ea     	stp	x10, x9, [sp, #0x88]
+      ec: a94427ea     	ldp	x10, x9, [sp, #0x40]
+      f0: a909a7ea     	stp	x10, x9, [sp, #0x98]
+      f4: f94033e9     	ldr	x9, [sp, #0x60]
+      f8: a9452beb     	ldp	x11, x10, [sp, #0x50]
+      fc: b940013a     	ldr	w26, [x9]
+     100: a90aabeb     	stp	x11, x10, [sp, #0xa8]
+```
+#### 12 Serialize.cpp
+
+llvm-diff（每个下列函数）：exit=0，stdout/stderr为空；归因(b) PASS。后端重转wall 0.7529030889854766秒、RSS 481252KiB。
+
+函数`_ZN4llvm23SmallVectorTemplateBaseIN5clang3doc13EnumValueInfoELb0EE18growAndEmplaceBackIJNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEENS_9StringRefERSB_EEERS3_DpOT_`：
+debug：
+```text
+      80: b9400a68     	ldr	w8, [x19, #0x8]
+      84: f9000274     	str	x20, [x19]
+      88: 11000508     	add	w8, w8, #0x1
+      8c: 9bb85109     	umaddl	x9, w8, w24, x20
+      90: 29015668     	stp	w8, w21, [x19, #0x8]
+      94: d1024120     	sub	x0, x9, #0x90
+      98: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+      9c: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+release：
+```text
+      80: b9400a68     	ldr	w8, [x19, #0x8]
+      84: f9000274     	str	x20, [x19]
+      88: 11000508     	add	w8, w8, #0x1
+      8c: 9bb85109     	umaddl	x9, w8, w24, x20
+      90: d1024120     	sub	x0, x9, #0x90
+      94: 29015668     	stp	w8, w21, [x19, #0x8]
+      98: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+      9c: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+
+函数`_ZN4llvm23SmallVectorTemplateBaseIN5clang3doc13FieldTypeInfoELb0EE18growAndEmplaceBackIJNS2_8TypeInfoENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEEEERS3_DpOT_`：
+debug：
+```text
+      d0: b9400a68     	ldr	w8, [x19, #0x8]
+      d4: f9000274     	str	x20, [x19]
+      d8: 11000508     	add	w8, w8, #0x1
+      dc: 9bb65109     	umaddl	x9, w8, w22, x20
+      e0: 29015668     	stp	w8, w21, [x19, #0x8]
+      e4: d1060120     	sub	x0, x9, #0x180
+      e8: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+      ec: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+release：
+```text
+      d0: b9400a68     	ldr	w8, [x19, #0x8]
+      d4: f9000274     	str	x20, [x19]
+      d8: 11000508     	add	w8, w8, #0x1
+      dc: 9bb65109     	umaddl	x9, w8, w22, x20
+      e0: d1060120     	sub	x0, x9, #0x180
+      e4: 29015668     	stp	w8, w21, [x19, #0x8]
+      e8: a9444ff4     	ldp	x20, x19, [sp, #0x40]
+      ec: a94357f6     	ldp	x22, x21, [sp, #0x30]
+```
+
+函数`_ZN4llvm23SmallVectorTemplateBaseIN5clang3doc14MemberTypeInfoELb0EE18growAndEmplaceBackIJNS2_8TypeInfoENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEENS1_15AccessSpecifierERbEEERS3_DpOT_`：
+debug：
+```text
+     130: 52803409     	mov	w9, #0x1a0              // =416
+     134: f9000274     	str	x20, [x19]
+     138: 11000508     	add	w8, w8, #0x1
+     13c: 9ba95109     	umaddl	x9, w8, w9, x20
+     140: 29015a68     	stp	w8, w22, [x19, #0x8]
+     144: d1068120     	sub	x0, x9, #0x1a0
+     148: a9454ff4     	ldp	x20, x19, [sp, #0x50]
+     14c: a94457f6     	ldp	x22, x21, [sp, #0x40]
+```
+release：
+```text
+     130: 52803409     	mov	w9, #0x1a0              // =416
+     134: f9000274     	str	x20, [x19]
+     138: 11000508     	add	w8, w8, #0x1
+     13c: 9ba95109     	umaddl	x9, w8, w9, x20
+     140: d1068120     	sub	x0, x9, #0x1a0
+     144: 29015a68     	stp	w8, w22, [x19, #0x8]
+     148: a9454ff4     	ldp	x20, x19, [sp, #0x50]
+     14c: a94457f6     	ldp	x22, x21, [sp, #0x40]
+```
+
+函数`_ZN4llvm23SmallVectorTemplateBaseIN5clang3doc8LocationELb0EE18growAndEmplaceBackIJRS3_EEES6_DpOT_`：
+debug：
+```text
+     150: 52800909     	mov	w9, #0x48               // =72
+     154: f9000274     	str	x20, [x19]
+     158: 11000508     	add	w8, w8, #0x1
+     15c: 9ba95109     	umaddl	x9, w8, w9, x20
+     160: 29015a68     	stp	w8, w22, [x19, #0x8]
+     164: d1012120     	sub	x0, x9, #0x48
+     168: a9454ff4     	ldp	x20, x19, [sp, #0x50]
+     16c: a94457f6     	ldp	x22, x21, [sp, #0x40]
+```
+release：
+```text
+     150: 52800909     	mov	w9, #0x48               // =72
+     154: f9000274     	str	x20, [x19]
+     158: 11000508     	add	w8, w8, #0x1
+     15c: 9ba95109     	umaddl	x9, w8, w9, x20
+     160: d1012120     	sub	x0, x9, #0x48
+     164: 29015a68     	stp	w8, w22, [x19, #0x8]
+     168: a9454ff4     	ldp	x20, x19, [sp, #0x50]
+     16c: a94457f6     	ldp	x22, x21, [sp, #0x40]
+```
+#### 17 IncludeFixer.cpp
+
+llvm-diff（每个下列函数）：exit=0，stdout/stderr为空；归因(b) PASS。后端重转wall 0.2517894949996844秒、RSS 481252KiB。
+
+函数`_ZN4llvm12handleErrorsIJZNS_12consumeErrorENS_5ErrorEEUlRKNS_13ErrorInfoBaseEE_EEES1_S1_DpOT_`：
+debug：
+```text
+     128: d63f0100     	blr	x8
+     12c: 36000160     	tbz	w0, #0x0, 0x158 <_ZN4llvm12handleErrorsIJZNS_12consumeErrorENS_5ErrorEEUlRKNS_13ErrorInfoBaseEE_EEES1_S1_DpOT_+0x158>
+     130: f9400288     	ldr	x8, [x20]
+     134: aa1403e0     	mov	x0, x20
+     138: f900027f     	str	xzr, [x19]
+     13c: f9400501     	ldr	x1, [x8, #0x8]
+     140: a9454ff4     	ldp	x20, x19, [sp, #0x50]
+     144: a94457f6     	ldp	x22, x21, [sp, #0x40]
+```
+release：
+```text
+     128: d63f0100     	blr	x8
+     12c: 36000160     	tbz	w0, #0x0, 0x158 <_ZN4llvm12handleErrorsIJZNS_12consumeErrorENS_5ErrorEEUlRKNS_13ErrorInfoBaseEE_EEES1_S1_DpOT_+0x158>
+     130: f9400288     	ldr	x8, [x20]
+     134: aa1403e0     	mov	x0, x20
+     138: f9400501     	ldr	x1, [x8, #0x8]
+     13c: f900027f     	str	xzr, [x19]
+     140: a9454ff4     	ldp	x20, x19, [sp, #0x50]
+     144: a94457f6     	ldp	x22, x21, [sp, #0x40]
+```
