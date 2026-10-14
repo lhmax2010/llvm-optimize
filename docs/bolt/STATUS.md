@@ -261,10 +261,14 @@ PM确认追加bolt后第二次完整安装创建两个未登记manifest的BOLT�
 
 最终保护审计PASS：22RPM与普通clang等SHA/大小、归档证据元数据、原源码元数据、原树坏cache/ninja指纹不变；原ThinLTO缓存47,987文件/96,881,772,832B无新增，无写入。源a1410e3d工作树干净/spec与helper SHA不变；候选SHA4ec07159…不变。认证scope2.533s/峰0.412GiB/最大采样VmHWM280388kB；审计scope16.048s/峰0.599GiB/最大采样VmHWM178412kB；两轻scope已回收，swap0/无OOM，未获取共享锁或挂载proc。原根free59138056192B，没有单次>10GiB写入。第一里程碑8af4de0已推GitHub bolt-v4；本收尾与全部raw索引继续推送，未推Gerrit。
 
-## 2026-10-14 续跑七：PM扩充乙类，文本门禁PASS
+## 2026-10-15 续跑七：文本/展开PASS，第二次准备性路径错误STOP
 
-PM许可CMake簿记语句对：RERUN_CMAKE依赖和配对phony输出，后者须phony/无全部依赖及变量/输出增删与前者精确相等。7438块全部条件PASS，同88删/20增；全部7439块PASS（BOLT9/规则1/聚合5/混合1/甲7421/乙2）。PM判88首次编译器/ABI/try_compile检测在缓存重配不再读取，新增20为BOLT，来源属首次/重配区别；取消对照，本轮不新配置。18甲类证明SHA绑定沿用，Quickbuild tool-plan仍最终现场门禁。源a1410e3d父cb不变；继续两模式展开及对象/双模式/22RPM-DWARF/30×5性能，全部PASS且geom<0.98才sandbox直推。新E=bolt-v4-20261014-finish，19/finish-text-gate给证据。
+PM扩充乙类为CMake簿记语句对：RERUN_CMAKE依赖与配对phony输出；后者须phony/无全部依赖与变量/输出增删精确配对。7438逐项PASS，同88删/20增；7439全部PASS（BOLT9/规则1/聚合5/混合1/甲7421/乙2）。PM归因88首次编译器/ABI/try_compile检测在缓存重配消失、20为BOLT；对照取消，本轮无新配置。Quickbuild tool-plan仍现场最终把关。
 
-## 两模式展开 PASS
+当前a1410e3d父cb spec两宏展开PASS：BOLT段同字节，普通安装一次，无ordinary-exports/prune，pipeline<compare-root<candidate install；PATH/which沿用原RPM前导。文本bd3c3c5、展开9c173d0均已推GitHub。
 
-当前a1410e3d spec在debug（_toolchain=clang）与release（取消_toolchain）宏下rpmspec展开PASS，BOLT段逐字节相同/SHA 298c888296a30801ca79590543110014ae753a8a391065283711a8547a0b8dd9；两边均只有1次普通-P安装，无ordinary-exports/prune；pipeline < compare-root < candidate install次序PASS。完整展开和参数/env记录见finish-expansion及finish-*-expanded.spec。PATH均/usr/local/bin:/bin:/usr/bin:/usr/local/sbin，which clang=/bin/clang、clang++=/bin/clang++。未运行cmake/ninja，轻4GiB scope/proc已回收。一次准备性路径修正：支持脚本record_call.py位于先前根内专用工作目录，错误宿主temp查询后定位原保存文件，不涉及产品门禁。对象/后处理/包清单/性能尚待。
+120保存.ii（30历史+90资产）逐SHA准备PASS/901204757B，但objects compiled=0。先猜错宿主record_call.py位置后从原根专用目录修正一次；又猜错资产辅助脚本assets90-stage.py文件名，为同类第二次保存路径错误，按规则STOP_PREPARATORY_SUPPORT_PATH_SECOND_ERROR，不修正、不继续实验。展开原文两个EOF空行的diff-check提示保留。无产品门禁失败，不隐去準备错误。
+
+30/90对象、双模式小spec、22RPM/DWARF预期差异、30×5性能均NOT RUN，geom未知；sandbox未尝试/远端未查。源a1410e3d14b8836e3f9be5a1b4380f914dc2e705父cb不变，候选历史后备SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9。保护审计PASS：22RPM/原clang/归档证据/源码/坏cache-ninja不变；原cache47987/96881772832B零新增。全部4GiB轻scope已回收；无重阶段/共享锁/cmake/ninja/link，展开proc临时挂载已卸载。19/finish-text-gate/finish-expansion/finish-stop给全部证据与资源，E=bolt-v4-20261014-finish。
+
+周四核匹配同量级/双5%、tool-plan、compare-root、Quickbuild性能、debugsource实物清单；不核双方clang SHA。原树禁用不变，剩余资格未完成，不推sandbox。

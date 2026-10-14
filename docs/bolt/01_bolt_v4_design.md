@@ -355,8 +355,10 @@ git push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm AUDITED_C
 
 15临时配置PASS但原树恢复FAIL；16历史后备候选4ec07159…门禁PASS，安装遗漏STOP；17修成单次安装/compare-root，103夹具及封套PASS，文本门禁STOP。详见15–17，原树禁CMake/Ninja；未来临时配置专用cache。
 
-### v4.1-15 文本补充认证（2026-10-14，最新）
+### v4.1-15/16 文本补充与续跑七（最新2026-10-15）
 
-PM采用a1410e3d草案；甲类须变量未被任何rule字段引用且build其余不变，乙类只限build build.ninja的RERUN_CMAKE依赖。7421甲类块/6838普通语句PASS，两个PDB变量在2454规则中0引用；乙类1块PASS。另1块改多输出phony输出清单（88删/20增）不属许可，7439块中1 FAIL，严格STOP；不做对照/展开/对象/双模式/DWARF/性能/sandbox。详见18/STATUS。
+18仅RERUN_CMAKE获许可而phony STOP；最新PM扩展为簿记语句对，phony无依赖/变量且输出88删/20增与RERUN完全配对，7439文本块全PASS。来源按PM首次检测/缓存重配判定，对照取消，禁止新CMake配置。Quickbuild tool-plan仍现场把关。
 
-debug间接读取按86配置相同/tool-plan/完全strip覆盖，不另阻塞。周四核统计同量级/双5%、tool-plan、compare-root、Quickbuild性能、debugsource实物清单；不核两边SHA。原树与cache只读，失败不扩许可。
+19当前a1410e3d草案debug/release展开PASS，同BOLT段/一次安装/无exports-prune/compare-root次序正确；120输入SHA准备PASS但未编译。同类辅助脚本路径错误第二次触发准备STOP，30/90对象、双模式、RPM-DWARF、性能、sandbox均未做。原树/cache未写，保护审计PASS；候选仍历史后备4ec07159…，源父cb不变。
+
+周四核统计同量级/双5%、tool-plan、compare-root、Quickbuild性能、debugsource实际清单；不比较双方SHA。86配置/tool-plan/完全strip覆盖debug间接读取。细节见18/19/STATUS。
