@@ -64,4 +64,4 @@ BOLT-ERROR: function reordering only works when relocations are enabled
 
 源草案仍d6ddbff5ba74bfb420b357b5b6ba9ed300971bb4（父cb679968，无归档补丁）；没有提交新BOLT源码或推Gerrit。若tizen_base后续合入归档补丁，周五定稿仍需在新tizen_base变基并解决llvm.spec冲突，本轮未做。
 
-原始E=W/temp/bolt-v4-20261014-wednesday；根内新/home/abuild/bolt-work/bolt-v4-20261014-wednesday仅helper、历史工具与profile副本/解压文件，全部保留。公开wednesday-handoff/matching/stop JSON、qualification.log；raw全分支/钉提交索引见10。此处STOP来自用户任务规则，不是额外审批或skill门禁。
+原始E=W/temp/bolt-v4-20261014-wednesday；根内新/home/abuild/bolt-work/bolt-v4-20261014-wednesday仅helper、历史工具与profile副本/解压文件，全部保留。公开wednesday-handoff/matching/stop JSON、qualification.txt；raw全分支/钉提交索引见10。此处STOP来自用户任务规则，不是额外审批或skill门禁。
