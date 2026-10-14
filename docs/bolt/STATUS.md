@@ -258,3 +258,5 @@ PM确认追加bolt后第二次完整安装创建两个未登记manifest的BOLT�
 失败后停止产品实验：无BOLT对照配置、当前草案debug/release展开、30/90对象、双模式小spec、22RPM/DWARF预期差异、30×5性能与sandbox全部NOT RUN；geom未知、远端未查。候选仍历史后备SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9，源a1410e3d14b8836e3f9be5a1b4380f914dc2e705父cb679968；不改草案/patch，不重试产品失败。新18和text-proof认证JSON/独立phony原文给全证据。仅一次文档路径准备性修正：猜测17旧名失败，rg定位正确文件后读取；无其他修正。
 
 周四清单：匹配统计同量级/双5% PASS、tool-plan PASS、compare-root PASS、Quickbuild性能、debugsource实际清单与旧快照对比；不要求local/Quickbuild clang SHA一致。新E=bolt-v4-20261014-text-proof；没有cmake/ninja/link、新配置/chroot/proc/共享锁或原cache写入，停止后仅只读保护审计/报告/GitHub提交发布。
+
+最终保护审计PASS：22RPM与普通clang等SHA/大小、归档证据元数据、原源码元数据、原树坏cache/ninja指纹不变；原ThinLTO缓存47,987文件/96,881,772,832B无新增，无写入。源a1410e3d工作树干净/spec与helper SHA不变；候选SHA4ec07159…不变。认证scope2.533s/峰0.412GiB/最大采样VmHWM280388kB；审计scope16.048s/峰0.599GiB/最大采样VmHWM178412kB；两轻scope已回收，swap0/无OOM，未获取共享锁或挂载proc。原根free59138056192B，没有单次>10GiB写入。第一里程碑8af4de0已推GitHub bolt-v4；本收尾与全部raw索引继续推送，未推Gerrit。

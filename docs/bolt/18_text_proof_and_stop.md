@@ -187,3 +187,5 @@ sandbox NOT ATTEMPTED，远端前后未查，推送前提不满足；没有Gerri
 ## 运行记录
 
 只有4GiB/swap0/nice19/ionice3只读轻scope；未获取共享锁，未有CMake/Ninja/链接或chroot/proc挂载，未进入ARM根。每类准备性修正一次规则下，动用一次文档路径修正：猜测17文件名错误，rg --files定位正确17_no_reinstall_and_text_gate.md后读取；不涉及产品判定，未重试失败门禁。新E为W/temp/bolt-v4-20261014-text-proof。最终保护审计与资源见text-proof-stop.json。
+
+最终保护审计PASS：22RPM与普通clang等SHA/大小、归档证据元数据、原源码元数据、原树坏cache/ninja指纹不变；原ThinLTO缓存47,987文件/96,881,772,832B无新增，无写入。源a1410e3d工作树干净/spec与helper SHA不变；候选SHA4ec07159…不变。认证scope2.533s/峰0.412GiB/最大采样VmHWM280388kB；审计scope16.048s/峰0.599GiB/最大采样VmHWM178412kB；两轻scope已回收，swap0/无OOM，未获取共享锁或挂载proc。原根free59138056192B，没有单次>10GiB写入。第一里程碑8af4de0已推GitHub bolt-v4；本收尾与全部raw索引继续推送，未推Gerrit。
