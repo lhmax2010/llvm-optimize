@@ -242,3 +242,9 @@ PM认定上轮没有先移开污染cache是恢复方法问题，不是新产品�
 PM确认追加bolt后第二次完整安装创建两个未登记manifest的BOLT别名，Quickbuild会在prune失败。采用去掉第二次安装/exports备份恢复/prune，不增加特例；普通安装后baseline到BOLT pipeline结束重新取完整清单，逐项比较路径/类型/权限/大小/SHA/链接目标，有差异即停，候选install仍单独替换clang。前轮cache+361/+1674072B接受为交接缓存正常变动，后续临时配置专用cache；本轮无需配置。原树禁所有cmake/ninja/-P安装。文本比对现存build.ninja/rules.ninja、包含无输入CUSTOM，禁compdb。其余资源/保护/准备性最多一次修正/产品失败即停与sandbox资格规则不变。
 
 草案编辑与103/103 fixtures PASS，旧95+新8，prune保留供历史夹具但生产不调用；snapshot/compare-root记录目录与链接权限，报错含路径。新源提交a1410e3d14b8836e3f9be5a1b4380f914dc2e705 父cb679968，spec SHA14d17a60369a2c05661037583740b410f0fd710aef2c0c78de08175a57bb6c0c、helper SHA7614228b5da020fd1ae08eaef0ebaf096c317f21a370e249285ee632711888e7，完整patch与公开封套静态apply/tree PASS。第一步后续读取审核依赖第二步，故在两模式展开前做文本比对；该严格产品门禁FAIL后立即停，第一步尚未完整认证，debug/release展开未执行，未拿旧展开顶替。17与fixtures/draft-change/manifest给证据，未推Gerrit。
+
+第二步完整文本门禁FAIL，状态STOP_ORDINARY_BUILD_EDGE_CHANGE：7439个非equal文本块，允许BOLT构建9/规则1/聚合5/混合1；普通PDB元数据7421块（6255对象+583链接边）、CMake普通依赖移除2块不允许。88个普通compiler-check/benchmark依赖被删，同时新增20个BOLT依赖；不能只计新增忽略删除。普通clang对象TARGET_COMPILE_PDB/TARGET_PDB删除，链接TARGET_PDB bin/clang.pdb→clang.dbg；虽此前普通编译/链接命令相同且Linux规则不引用PDB变量，仍严格停止，不豁免。17/edge-compare/build.diff/rules.diff及全记录xz给分类、例子与完整原文。
+
+第一步第4项后续读取资料审核列出own BOLT work资产、源目录clang Python、安装树普通动作及原debug find-debuginfo对DWARF引用build源/生成头的间接读取；86配置同字节只为部分证据，因全边FAIL及DWARF验证未跑，不认证完全不受影响。当前新草案两模式rpmspec展开未执行；第三步对象/双模式/预期清单/性能全NOT RUN，geom未知，sandbox未尝试/远端未查。源a1410e3d14b8836e3f9be5a1b4380f914dc2e705父cb679968，封套apply/tree PASS但不是合格推送提交。候选仍历史后备SHA4ec07159…，周四匹配统计同量级/双5%+性能，不核local/Quickbuild SHA一致。
+
+保护审计PASS：原clang/22RPM/归档证据/源码/坏cache-ninja配置不变，原cache47987/96881772832B本轮零新增（前轮增长PM已接受）。本轮没有CMake/Ninja/link/新配置/chroot/proc/shared-lock，全部4GiB轻scope已回收，无准备性错误重试；严格失败后只读完善分类/封套/报告，不继续产品实验。W tracked仅原有gbs改动，不写W/llvm、不进入ARM树。原根free59147931648B，未有>10GiB写入。

@@ -351,11 +351,10 @@ git push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm AUDITED_C
 此次临时baseline因只准备llvm链接、漏同级cmake目录失败而按规则STOP，尚未append；临时目录清理，原树cache/ninja仍上一失败bd8ad3aa…/a37efa6a…未恢复。没有重试/恢复/构建/后备候选/推送。正式草案仍d6ddbff5…父cb679968，未改源码封套；22RPM/归档证据保护通过、proc/scope回收，未取重锁/进ARM。未来tizen_base合归档修复时周五再变基解spec冲突。不能直接在当前失配配置上ninja，原快照在13对应E。
 
 
-### v4.1-12 原 RPM 环境实证与恢复停止（2026-10-14）
+### v4.1-12/13 原环境与后备历史（2026-10-14）
 
-15覆盖最新状态：临时原源码-S/新-B两次配置PASS；所有cmake/ninja原RPM PATH先/bin，编译器解析/bin，cache仅BOLT相关、clang链接边与原树逐字一致、源码未变。派生目录计数667→684由全部tools/bolt的17新增目录证明；检查器误报用一次准备性修正。spec不改。原树一次完整原命令恢复却因污染compiler缓存再次删cache，41关键项不一致，产品门禁FAIL立即STOP。树未恢复，无干跑/后备候选/对象/双模式/清单/性能/sandbox；下一次需先授权恢复污染cache，不用历史匹配顶替。完整证据见15及rpm-env结果，周五变基/发布完整构建仍挂账。
+15临时追加配置PASS、污染缓存恢复失败；16改历史工具候选4ec07159…门禁PASS，安装清理漏两个未登记别名，停止。原树禁CMake/Ninja；前轮缓存增量由最新PM接受，未来临时配置专用cache。
 
+### v4.1-14 单次普通安装与文本严格门禁（2026-10-14）
 
-### v4.1-13 本周历史工具后备（2026-10-14）
-
-16/STATUS覆盖：原树禁cmake/ninja，本地正式候选改历史1da7bb73工具；新工具/安装清理交Quickbuild。候选4ec07159…匹配/strip/三目标PASS。第三步采集同类第二次错误STOP，静态清理遗漏两个未登记manifest的BOLT别名；本轮不改草案、不跑对象/性能、不推sandbox。临时配置还触碰原cache，后续用专用cache。周四核Quickbuild匹配统计同量级/双5%及性能，不核两边clang SHA相等。
+17覆盖最新状态：删除第二次安装/exports备份恢复/prune，pipeline后compare-root验证普通安装零BOLT副作用；103夹具及封套apply/tree PASS，新源a1410e3d…父cb679968。7439文本块中普通PDB元数据7421与普通CMake依赖移除2不在允许类别，产品FAIL停止，不按Linux命令相同豁免。新宏展开/对象/双模式/DWARF/性能/推送NOT RUN；原树和cache未写。周四核Quickbuild匹配统计同量级/双5%及性能，不比较两边clang SHA。

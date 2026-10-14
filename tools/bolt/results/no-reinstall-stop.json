@@ -1,0 +1,322 @@
+{
+  "status": "STOP_ORDINARY_BUILD_EDGE_CHANGE",
+  "draft": {
+    "draft_commit": "a1410e3d14b8836e3f9be5a1b4380f914dc2e705",
+    "base": "cb67996861d070d68fec2b4c623eed7d20ba2e23",
+    "tree": "33b4e9f84cec3336878501d55fe243b41c092c80",
+    "apply_check": true,
+    "tree_equal": true,
+    "gerrit_pushed": false,
+    "public_envelope_tree": "33b4e9f84cec3336878501d55fe243b41c092c80",
+    "public_envelope_tree_equal": true,
+    "source_git_blob": "0c7860cfc46b7b10f04ac87cc70b12bc48f3de3c",
+    "files": [
+      {
+        "file": "0001-clang-bolt-draft-review.patch",
+        "bytes": 39727,
+        "sha256": "6f3c7c90cc33dde66ac38e4d8954802343d38e747124b81e95cb7c2f98377cdd"
+      },
+      {
+        "file": "clang-bolt-v2.fdata.xz",
+        "bytes": 9735212,
+        "sha256": "52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f"
+      }
+    ],
+    "full_patch_local": {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261014-no-reinstall/0001-clang-bolt-draft.patch",
+      "sha256": "6fddbfa27af0450d2620d9e8e4e5527c8ff198f5a0ae57111821a128c809da82",
+      "bytes": 12587359
+    },
+    "spec_sha256": "14d17a60369a2c05661037583740b410f0fd710aef2c0c78de08175a57bb6c0c",
+    "helper_sha256": "7614228b5da020fd1ae08eaef0ebaf096c317f21a370e249285ee632711888e7",
+    "fixtures": 103,
+    "qualification": "STOP_ORDINARY_BUILD_EDGE_CHANGE; not ready for sandbox",
+    "debug_release_expansion": "NOT_RUN after strict text gate STOP",
+    "instructions": "Apply review.patch to base, copy fdata.xz to packaging/clang-bolt-v2.fdata.xz, git add packaging, then write-tree. Do not git am text-only patch as the complete commit."
+  },
+  "fixtures": {
+    "status": "PASS",
+    "tests": 103,
+    "new_tests": 8,
+    "old_tests": 95,
+    "wall_s": 0.5805802890099585,
+    "helper_sha256": "7614228b5da020fd1ae08eaef0ebaf096c317f21a370e249285ee632711888e7",
+    "spec_sha256": "14d17a60369a2c05661037583740b410f0fd710aef2c0c78de08175a57bb6c0c",
+    "prune_retained_unused": "Retained for previous audit evidence and original fixtures; production spec never calls it.",
+    "snapshot_full_metadata": "snapshot uses root_snapshot: original file list/type/mode/size/SHA/link target plus directory and symlink modes. compare-root saves new snapshot before rejecting and reports first differing relative path.",
+    "gate_position": "Immediately after pipeline in BOLT block, before unchanged ordinary install finishing steps and existing candidate install at end; guards BOLT configuration/build/pipeline side effects on ordinary CMake installation without moving alias handling.",
+    "python39_parse": true
+  },
+  "edge_report": {
+    "difference_blocks": 7439,
+    "strict_gate": "FAIL",
+    "block_class_counts": {
+      "aggregate_BOLT_dependencies": 5,
+      "ordinary_PDB_metadata_change": 7421,
+      "BOLT_build_edges": 9,
+      "BOLT_build_edges+aggregate_BOLT_dependencies": 1,
+      "ordinary_CMake_dependency_removal": 2,
+      "BOLT_rules": 1
+    },
+    "ordinary_PDB_object_edges": 6255,
+    "ordinary_PDB_link_edges": 583,
+    "CMake_removed_dependencies": 88,
+    "CMake_added_BOLT_dependencies": 20
+  },
+  "post_BOLT_build_reads": [
+    {
+      "phase": "install",
+      "command": "python3 SOURCE1201 install",
+      "paths": [
+        "build/clang-bolt/clang.candidate",
+        "build/clang-bolt/identity.json",
+        "identity.before_path (BOLT output)"
+      ],
+      "assessment": "intentional BOLT artifacts; SHA/ELF identity checked by helper, not ordinary generated CMake metadata"
+    },
+    {
+      "phase": "install",
+      "command": "cp -a ../clang/bindings/python/clang",
+      "paths": [
+        "PROJECT/clang/bindings/python/clang"
+      ],
+      "assessment": "source outside build/, source metadata unchanged by configuration; all other install finishing commands use buildroot only"
+    },
+    {
+      "phase": "files",
+      "command": "%files and %manifest",
+      "paths": [
+        "buildroot package paths",
+        "PROJECT/llvm.manifest and platform debug manifests"
+      ],
+      "assessment": "no ordinary build/ generated exports copied after BOLT; %%files uses installed tree. No %%check section."
+    },
+    {
+      "phase": "spec_install_post",
+      "command": "original find-debuginfo.sh debug branch",
+      "paths": [
+        "PROJECT via %{_builddir}/%{buildsubdir}",
+        "DWARF-referenced build/ generated headers and other source paths"
+      ],
+      "assessment": "indirect build/ reads exist; 86 configured product contents same, but all-edge gate FAIL and full RPM/DWARF proof not run. Not certified as entirely unaffected."
+    },
+    {
+      "phase": "spec_install_post",
+      "command": "python3 SOURCE1201 post",
+      "paths": [
+        "build/clang-bolt/install-state.json",
+        "build/clang-bolt/ordinary-clang-22",
+        "build/clang-bolt/post-gate",
+        "buildroot/lib64/clang/22"
+      ],
+      "assessment": "saved compiler and identity state plus installed resources; ordinary CMake export files and PDB variables are not read"
+    },
+    {
+      "phase": "spec_install_post",
+      "command": "arch/os/isu platform post chain",
+      "paths": [
+        "buildroot files"
+      ],
+      "assessment": "strip/compress/python byte-compilation inspect installed paths; no new CMake install or build/ export metadata read"
+    }
+  ],
+  "post_read_audit": "PARTIAL; indirect DWARF source reads cannot be certified from failed text gate alone",
+  "debug_release_expansion": "NOT_RUN after strict product gate STOP; old expanded draft not substituted",
+  "objects_30_90": "NOT_RUN",
+  "dual_mode_smoke": "NOT_RUN",
+  "expected_RPM_DWARF_diff": "NOT_RUN; new design baseline excludes all BOLT libraries/tool aliases/changed exports because no second install",
+  "performance": "NOT_RUN; geometric mean unknown",
+  "sandbox_push": "NOT_ATTEMPTED; no remote branch before/after check",
+  "candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
+  "candidate_route": "historical tool fallback (previous PASS retained, no rewrite this task)",
+  "protected_inputs": [
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/SOURCES/llvm.spec",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/SOURCES/llvm-static-archives-native.py",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/clang-22",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-ar",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/lld",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/clang-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/clang-debuginfo-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/clang-devel-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/clang-devel-debuginfo-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/compiler-rt-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/compiler-rt-debuginfo-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/libllvm-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/libllvm-debuginfo-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/libomp-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/libomp-debuginfo-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/libomp-devel-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/lldb-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/lldb-debuginfo-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/lldb-devel-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/lldb-devel-debuginfo-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-debuginfo-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-debugsource-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-devel-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-devel-debuginfo-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-static-devel-22.1.8-1.x86_64.rpm",
+    "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/python-clang-22.1.8-1.x86_64.rpm"
+  ],
+  "RPMs_preserved": 22,
+  "archive_evidence_metadata_equal": true,
+  "original_source_metadata_equal": true,
+  "disabled_original_config_unchanged": true,
+  "original_cache": {
+    "files": 47987,
+    "bytes": 96881772832
+  },
+  "original_cache_written_this_task": false,
+  "CMake_Ninja_link_invocations": 0,
+  "shared_lock_acquired": false,
+  "proc_mounted": false,
+  "preparatory_corrections": [],
+  "filesystem_free_bytes": 59147931648,
+  "resources": {
+    "fixtures": {
+      "status": "PASS",
+      "scope_wall_s": 1.5272792169998866,
+      "cgroup_peak_bytes": 58773504,
+      "process_VmHWM": [
+        {
+          "pid": 1008204,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12604
+        },
+        {
+          "pid": 1008207,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 20600
+        },
+        {
+          "pid": 1008208,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 44088
+        }
+      ],
+      "minimum_host_MemAvailable": 16554856448,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "edge-compare": {
+      "status": "FAIL",
+      "scope_wall_s": 151.78238949699153,
+      "cgroup_peak_bytes": 589443072,
+      "process_VmHWM": [
+        {
+          "pid": 1020708,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12576
+        },
+        {
+          "pid": 1020711,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 387212
+        }
+      ],
+      "minimum_host_MemAvailable": 16306655232,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "freeze": {
+      "status": "PASS",
+      "scope_wall_s": 18.570019411999965,
+      "cgroup_peak_bytes": 517201920,
+      "process_VmHWM": [
+        {
+          "pid": 1048575,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12600
+        },
+        {
+          "pid": 1048579,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 29244
+        },
+        {
+          "pid": 1048601,
+          "name": "Name:\tgit",
+          "VmHWM_kB": 55644
+        },
+        {
+          "pid": 1048675,
+          "name": "Name:\tgit",
+          "VmHWM_kB": 26592
+        },
+        {
+          "pid": 1048678,
+          "name": "Name:\tgit",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 1048683,
+          "name": "Name:\tgit",
+          "VmHWM_kB": 55052
+        }
+      ],
+      "minimum_host_MemAvailable": 17404112896,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "edge-report": {
+      "status": "PASS",
+      "scope_wall_s": 1.5286147919978248,
+      "cgroup_peak_bytes": 285868032,
+      "process_VmHWM": [
+        {
+          "pid": 1048479,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12604
+        },
+        {
+          "pid": 1048483,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 281460
+        }
+      ],
+      "minimum_host_MemAvailable": 17133060096,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "edge-report-final": {
+      "status": "PASS",
+      "scope_wall_s": 1.5280423229996813,
+      "cgroup_peak_bytes": 284418048,
+      "process_VmHWM": [
+        {
+          "pid": 1049024,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12604
+        },
+        {
+          "pid": 1049027,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 280488
+        }
+      ],
+      "minimum_host_MemAvailable": 17360461824,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "final-audit": {
+      "status": "PASS",
+      "scope_wall_s": 16.060443306007073,
+      "cgroup_peak_bytes": 1046237184,
+      "process_VmHWM": [
+        {
+          "pid": 1049627,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12588
+        },
+        {
+          "pid": 1049631,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 178192
+        }
+      ],
+      "minimum_host_MemAvailable": 17556824064,
+      "cgroup_reaped": true,
+      "swap0": true
+    }
+  }
+}
