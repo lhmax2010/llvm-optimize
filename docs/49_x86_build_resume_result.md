@@ -258,3 +258,19 @@ compiler-rt 宿主 10 项（两链接器 × ASan 坏/好、UBSan、profile、bui
 配置：debug分支、ThinLTO/O3；CMake编译/链接池6/2；原阶段Ninja6，唯一续跑Ninja1，debuginfo -j4；18GiB/swap0。完整冻结清单、22RPM再哈希、三个构建树ELF与.ninja_log身份在 `bolt-handoff.json`，缓存原命令在handoff-cache-command-lines.txt，交接核对scope已释放。发布模式60对参数/归因认证PASS沿用，发布模式完整构建仍挂账。
 
 两补丁保持冻结，不改format-patch；最终英文提交说明另存commit-message-final.txt，明确本次基线比较尚未执行。不推Gerrit。ARM全量/根内限制负例、bash清单与LLVM23后续进行。
+
+## 12. ARM32宿主全量复验 PASS
+
+候选Source仍为 `1bac8db608554b35d16482711bf0667f1fbee8d60c6fc52f0f448d240ffaa9e4`，未修改代码或策略。先逐档核对原件/既有输入副本与登记SHA，核对包装脚本及其真实ELF身份；宿主转换明确使用 `arm_allow_wrapper_tools=True`，不把该方式冒充根内生产入口。新输出为E11/arm-followup/armv7l-conversion。
+
+|项目|结果|
+|---|---|
+|归档/成员|210档、3690有序成员；3683 bitcode转换、7原机器码保留|
+|逐档after SHA|210/210与docs/40 §12完全一致，差异0|
+|完整索引/强符号/PIC等Source门禁|PASS；强符号缺失0，允许W缺失2953|
+|Thumb与ARM属性|3683个参考对象门禁PASS；全属性列表差异0|
+|宿主AS|软/硬均4294967296B；不是根内原生启动器证据|
+|module asm符号|LLVMAnalysis/MLInlineAdvisor.cpp.o（ordinal80）、LLVMCodeGen/MLRegAllocEvictAdvisor.cpp.o（ordinal137）：均恰一个GLOBAL/NOTYPE/DEFAULT/UND，value/size均0|
+|资源|Source转换1787.344025s；含输入核对总wall1866.007947s；scope1867.820830s、峰14041628672B；OOM0|
+
+因整档逐字节相同，按用户合同沿用docs/40 §12该架构三套消费者和两种strip证据，未重复运行消费者或声称新的消费者耗时。根内小试与64MiB负例另做，尚未完成。证据E11/arm-followup/{armv7l-inputs-checked.json,armv7l-result.json,armv7l-conversion/summary.json}、armv7l-followup-scope/；共享锁与scope采样/日志线程已释放回收。下一步AArch64全量。
