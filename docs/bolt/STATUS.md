@@ -186,3 +186,11 @@ main=91b45c167a8773bbe1564b5ab902033da5060d83、docs/49_x86_build_resume_result.
 资格scope1.025s、kernel峰515,751,936B/0.480GiB，16GiB/swap0/nice15/ionice3；入口17.43GiB、最低17.40GiB，OOM0。短命BOLT未被0.5秒VmHWM采样捕获，采样Python12596kB不能冒充BOLT峰值。共享锁等约0.000014s/持1.063s，finally已释；proc已卸载，所有scope回收。停止后轻审计8文件/22RPM SHA大小不变、原cache完整name/size/mtime相同、归档证据元数据相同；未进入本次两棵/var/tmp ARM根，W tracked既有gbs改动保留不写。
 
 本次授权未完成，状态STOP_QUALIFICATION_ARGUMENT_ERROR；只完成身份/准备及失败探测证据，停止后仅审计/报告/提交，不继续产品实验。下次恢复先明确非重定位资格查询入口。源码草案/patch/manifest/profile不变，仍d6ddbff5…父cb679968；周五若tizen_base合归档补丁仍需变基并解spec冲突，本次未做。12给全部资源、失败原文与边界；wednesday-handoff/matching/stop及qualification.txt公开，10更新全部raw。
+
+## 2026-10-14 修正顺序续跑：最新人工裁决与开工
+
+PM判断：上次把含函数重排的正式参数用于无emit-relocs普通clang，BOLT按设计拒绝，是执行顺序错误，不是profile失配，匹配仍未知。本次取消普通clang独立探测；先保存配置bolt前的原clang链接字串，原地cache同树只加emit-relocs重链并LLVM strip-debug，再历史SHA1da7bb73…工具以正式参数完整重写，仅检查N/M/S/U/Q、R、S/N，早期产物用后删除且不作候选；5%双门禁失败即停、不建新工具。正式候选仍必须由本树新建llvm-bolt产生，配置前后clang链接命令逐字相同、CMake变化仅bolt相关、独立DESTDIR差集/exports门禁不变。其后30/90同实体对象、双模式/22RPM DWARF预期清单、30×5性能geom<0.98及sandbox直推条件继续有效；Gerrit拒绝原文停止、不拆profile。本顺序修正不豁免任何门禁。
+
+三个关键SHA复核PASS：普通clang7df0ff90…、CMakeCache f7e93b87…、build.ninja9fcc8683…均未变。既有完整交接PASS沿用，不重新访问ARM树。新E=W/temp/bolt-v4-20261014-relink-first；根内新/home/abuild/bolt-work/bolt-v4-20261014-relink-first。普通bin/clang-22保留作对照；“原地重链”为在交接build执行、输出BOLT专用目录、原cache不改路径不复制，与spec重放方式一致。第一步重阶段进行中，后续结果按门禁逐步登记。
+
+第一步PASS：唯一原链接字串已保存（SHA352a6f57…），只改输出/depfile、保留原cache字串并追加emit-relocs；链接8.840s、LLVM strip-debug5.376s、scope17.571s，kernel峰13.071GiB、最大采样VmHWM10211668kB。去debug输入SHA158275040dbaa71999f60a4b62e4dd9a23a58b4d72e7ff85fb3c5f5ebff064e4，226,738,888B；之前完整ELF3,560,483,168B。普通clang未变，cache仍47107/96877810360B，free60,410,531,840B；锁/proc/scope均回收。早期匹配下一步，不把本重链PASS冒充匹配PASS。
