@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-14。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续十一）x86完成并交接BOLT**：唯一正常-ba --noprep、mlgo_build_jobs=1于2026-10-14 06:49:10结束；8输出续跑前后全同，22RPM无ShortCircuited。验收1–3、5–7 PASS/诊断完成；225开发档/3864成员、45运行库/1964成员、7宿主、两Tizen包及运行库、独立-bi与同树SKIP均通过。验收4可用58.154GiB<85.5792GiB，依裁决跳过待PM，不宣称非归档基线相同、不阻塞交接。BOLT READY；本会话不再写交接树。详见[结果续页](49_x86_build_resume_result.md) §11；ARM32全量210档/3690成员、3683Thumb门禁PASS，after SHA与docs/40 §12全同；下一步AArch64全量、两根小试/64MiB、bash/LLVM23。
+**当前任务（docs/49续十一）x86完成并交接BOLT**：唯一正常-ba --noprep、mlgo_build_jobs=1于2026-10-14 06:49:10结束；8输出续跑前后全同，22RPM无ShortCircuited。验收1–3、5–7 PASS/诊断完成；225开发档/3864成员、45运行库/1964成员、7宿主、两Tizen包及运行库、独立-bi与同树SKIP均通过。验收4可用58.154GiB<85.5792GiB，依裁决跳过待PM，不宣称非归档基线相同、不阻塞交接。BOLT READY；本会话不再写交接树。详见[结果续页](49_x86_build_resume_result.md) §11；ARM32全量210档/3690成员、3683Thumb门禁PASS，after SHA与docs/40 §12全同；AArch64全量212档/3706成员亦PASS、after SHA全同；下一步两根小试/64MiB、bash/LLVM23。
 
 
 ### 2026-10-14 BOLT正式交接（本条优先于下方历史NOT_READY）
@@ -734,3 +734,5 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 进度：2026-10-14｜本提交｜docs/49_x86_build_resume_result.md §8–§11｜独立-bi/SKIP与12项结构诊断完成；验收4按磁盘门槛跳过；BOLT正式交接，后续不写该树。
 
 进度：2026-10-14｜本提交｜docs/49_x86_build_resume_result.md §12｜ARM32全量210档after SHA与§12全同，3683Thumb/完整索引/强符号门禁PASS；根内小试待做。
+
+进度：2026-10-14｜本提交｜docs/49_x86_build_resume_result.md §13｜AArch64全量212档/3706成员、完整索引/强符号门禁PASS；212档after SHA与§12全同，消费者证据依合同沿用。

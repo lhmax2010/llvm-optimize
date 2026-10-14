@@ -1,7 +1,7 @@
 # 续十一：串行续跑结果与新 RPM 验收
 
 **当前阶段：x86验收1–3、5–7完成；验收4因磁盘门槛跳过、待PM；BOLT交接READY。后续ARM步骤尚在进行。**
-状态：**构建成功，续跑前后 8/8 输出逐字节 PASS；RPM 内容、归档与后处理 PASS；消费者等验收进行中，BOLT 尚未交接**。
+初次记录（历史，后续由§11完成）：构建成功、8/8输出逐字节PASS，当时消费者尚在进行；现以页首当前阶段为准。
 
 本页承接 [续跑记录 §15–§16](49_x86_build_resume.md)，旧记录保留。2026-10-14 消息流断开后恢复核查，没有再次调用 rpmbuild。时间均为北京时间。
 
@@ -274,3 +274,11 @@ compiler-rt 宿主 10 项（两链接器 × ASan 坏/好、UBSan、profile、bui
 |资源|Source转换1787.344025s；含输入核对总wall1866.007947s；scope1867.820830s、峰14041628672B；OOM0|
 
 因整档逐字节相同，按用户合同沿用docs/40 §12该架构三套消费者和两种strip证据，未重复运行消费者或声称新的消费者耗时。根内小试与64MiB负例另做，尚未完成。证据E11/arm-followup/{armv7l-inputs-checked.json,armv7l-result.json,armv7l-conversion/summary.json}、armv7l-followup-scope/；共享锁与scope采样/日志线程已释放回收。下一步AArch64全量。
+
+## 13. AArch64宿主全量复验 PASS
+
+Source与§12同一SHA。212档/3706有序成员（3699 bitcode转换、7原机器码保留），完整索引、强符号、PIC/module asm等Source门禁全部通过；允许W缺失1698、强符号缺失0。**212/212 after SHA与docs/40 §12完全一致，差异0**，故依合同沿用该架构原三套消费者及两种strip证据，未重跑消费者。宿主软硬AS均4294967296B，不混同根内原生限制。
+
+三处白名单module asm：LLVMAnalysis/MLInlineAdvisor.cpp.o（ordinal80）、LLVMCodeGen/MLRegAllocEvictAdvisor.cpp.o（137）、libarcher_static.a/ompt-tsan.cpp.o（0），`_ZSt21ios_base_library_initv`均为唯一GLOBAL/NOTYPE/DEFAULT/UND，value/size均0。
+
+转换wall1571.769328s，输入核对及总helper wall1615.203745s；scope1617.547703s（13:46:00–14:12:57），MemoryPeak14,231,101,440B，无OOM/守护问题，采样器和日志线程已回收、共享锁释放。证据E11/arm-followup/{aarch64-inputs-checked.json,aarch64-result.json,aarch64-conversion/summary.json}与aarch64-followup-scope/。两ARM宿主全量已完成；下一步根内小试和64MiB负例。
