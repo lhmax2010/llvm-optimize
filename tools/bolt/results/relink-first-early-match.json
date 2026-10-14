@@ -1,0 +1,80 @@
+{
+  "status": "PASS",
+  "tool_origin": "historical qualification only",
+  "candidate": false,
+  "counts": {
+    "N": 23592,
+    "M": 144032,
+    "S": 0,
+    "U": 1,
+    "Q": 383,
+    "R": 4.238545331242318e-05,
+    "S_over_N": 0.0
+  },
+  "argv": [
+    "/home/abuild/bolt-work/bolt-v4-20261014-relink-first/llvm-bolt.historical",
+    "/home/abuild/bolt-work/bolt-v4-20261014-relink-first/relinked-clang-22",
+    "-o",
+    "/home/abuild/bolt-work/bolt-v4-20261014-relink-first/early-qualification.bolt",
+    "-data=/home/abuild/bolt-work/bolt-v4-20261014-relink-first/profile.fdata",
+    "-reorder-blocks=ext-tsp",
+    "-reorder-functions=cdsort",
+    "-split-functions",
+    "-split-all-cold",
+    "-split-eh",
+    "-dyno-stats",
+    "--thread-count=1",
+    "-stale-threshold=5"
+  ],
+  "tool_sha256": "1da7bb735f7bc1afab9a863154260699b0b0f88c6fd05b99231dd21ef653fd5a",
+  "profile_sha256": "d9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326",
+  "input_sha256": "158275040dbaa71999f60a4b62e4dd9a23a58b4d72e7ff85fb3c5f5ebff064e4",
+  "output_sha256": "06d644a08de8d683971c6d27655bd9fbb830d595a707e17550f946133fcf14d3",
+  "output_bytes": 218890176,
+  "wall_s": 25.2797944220074,
+  "early_output_deleted": true,
+  "resources": {
+    "status": "PASS",
+    "scope_wall_s": 26.074675272000604,
+    "cgroup_peak_bytes": 4089356288,
+    "process_VmHWM": [
+      {
+        "pid": 531742,
+        "name": "Name:\tpython3",
+        "VmHWM_kB": 12580
+      },
+      {
+        "pid": 531746,
+        "name": "Name:\tpython3",
+        "VmHWM_kB": 20128
+      },
+      {
+        "pid": 531747,
+        "name": "Name:\tsudo",
+        "VmHWM_kB": 7336
+      },
+      {
+        "pid": 531748,
+        "name": "Name:\tpython3",
+        "VmHWM_kB": 23252
+      },
+      {
+        "pid": 531792,
+        "name": "Name:\tllvm-bolt.histo",
+        "VmHWM_kB": 3868076
+      }
+    ],
+    "minimum_host_MemAvailable": 16087642112,
+    "cgroup_reaped": true,
+    "swap0": true,
+    "lock": {
+      "pid": 531737,
+      "acquired": 1791965928.227899,
+      "wait_s": 1.215799420606345e-05
+    },
+    "lock_release": {
+      "released": 1791965954.3344922,
+      "hold_s": 26.10659263600246
+    }
+  }
+}
