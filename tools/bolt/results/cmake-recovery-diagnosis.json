@@ -1,0 +1,69 @@
+{
+  "status": "READONLY_LOCAL_ENVIRONMENT_MISMATCH",
+  "trigger": "You have changed variables that require your cache to be deleted.\nConfigure will be re-run and you may have to reset some variables.\nThe following variables have changed:\nCMAKE_C_COMPILER= clang\nCMAKE_CXX_COMPILER= clang++\nCMAKE_CXX_COMPILER= clang++\nCMAKE_C_COMPILER= clang\nCMAKE_CXX_COMPILER= clang++\nCMAKE_CXX_COMPILER= clang++\n\n",
+  "trigger_variables": [
+    "CMAKE_C_COMPILER",
+    "CMAKE_CXX_COMPILER"
+  ],
+  "original_script_path": "/home/linhao/Toolchain/development/llvm-optimize/temp/release-x86-full-build-20261013/round2-resume-serial/original-rpm-build.sh",
+  "original_script_sha256": "98bc967aab9c28b39bfed458a3c306b9e6fae381a3c21f670351eb6738cd6e5b",
+  "original_cmake": "cmake \\\n    -G Ninja \\\n    -DTIZEN=1 \\\n    -DCMAKE_C_COMPILER=clang \\\n    -DCMAKE_CXX_COMPILER=clang++ \\\n    -DLLVM_HOST_TRIPLE=x86_64-tizen-linux-gnu \\\n    -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-tizen-linux-gnu \\\n    -DLLVM_TARGET_TRIPLE_ENV=x86_64-tizen-linux-gnu \\\n    -DCMAKE_ASM_FLAGS=\"$CFLAGS\" \\\n    -DCMAKE_C_FLAGS=\"$CFLAGS\" \\\n    -DCMAKE_CXX_FLAGS=\"$CXXFLAGS\" \\\n    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\\n    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\\n    -DLLVM_USE_LINKER=lld \\\n    -DLLVM_ENABLE_LTO=Thin \\\n    -DCMAKE_RANLIB=/usr/bin/llvm-ranlib \\\n    -DCMAKE_AR=/usr/bin/llvm-ar \\\n    -DLLVM_ENABLE_ASSERTIONS=No \\\n    -DLLVM_ENABLE_RTTI=ON \\\n    -DCMAKE_BUILD_TYPE=Release \\\n    -DLLVM_TARGETS_TO_BUILD='X86;ARM;AArch64;BPF' \\\n    -DCLANG_ENABLE_ARCMT=OFF \\\n    -DLLVM_BUILD_LLVM_DYLIB=ON \\\n    -DCLANG_BUILD_CLANG_DYLIB=ON \\\n    -DLLVM_LINK_LLVM_DYLIB=OFF \\\n    -DCLANG_LINK_CLANG_DYLIB=OFF \\\n    -DLLVM_ENABLE_PROJECTS=\"clang;lldb;clang-tools-extra;lld;compiler-rt;openmp\" \\\n    -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \\\n    -DLLVM_BUILD_EXAMPLES=OFF \\\n    -DLLVM_INCLUDE_EXAMPLES=OFF \\\n    -DLLVM_BUILD_TESTS=OFF \\\n    -DLLVM_INCLUDE_TESTS=OFF \\\n    -DLLVM_ENABLE_DOXYGEN=OFF \\\n    -DLLVM_BUILD_DOCS=OFF \\\n    -DLLVM_INCLUDE_DOCS=OFF \\\n    -DLLVM_OPTIMIZED_TABLEGEN=ON \\\n    -DCMAKE_INSTALL_PREFIX=/usr \\\n    -DLLVM_LIBDIR_SUFFIX=`echo lib64 | sed s/lib//g` \\\n    -DCLANG_RESOURCE_DIR=\"../lib64/clang/22\" \\\n    -DLLVM_BINUTILS_INCDIR=/usr/include \\\n    -DLLVM_PARALLEL_COMPILE_JOBS=6 \\\n    -DLLVM_PARALLEL_LINK_JOBS=2 \\\n    -DTENSORFLOW_AOT_PATH=\"${MLGO_AOT_DIR}/mlgo_sysroot\" \\\n    -DLLVM_MLGO_EXPORT_TF_XLA_RUNTIME=OFF \\\n    -DLLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS=\"${MLGO_RUNTIME_OBJECTS}\" \\\n    -DLLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL=\"${MLGO_AOT_DIR}/InlinerSizeModel.h\" \\\n    -DLLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL=\"${MLGO_AOT_DIR}/InlinerSizeModel.o\" \\\n    -DLLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL=\"${MLGO_AOT_DIR}/RegAllocEvictModel.h\" \\\n    -DLLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL=\"${MLGO_AOT_DIR}/RegAllocEvictModel.o\" \\\n    ../llvm",
+  "original_RPM_preamble": "#!/bin/sh\n\n\n  RPM_SOURCE_DIR=\"/home/abuild/rpmbuild/SOURCES\"\n  RPM_BUILD_DIR=\"/home/abuild/rpmbuild/BUILD\"\n  RPM_OPT_FLAGS=\"-Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument -momit-leaf-frame-pointer  -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer -g\"\n  RPM_ARCH=\"x86_64\"\n  RPM_OS=\"linux\"\n  export RPM_SOURCE_DIR RPM_BUILD_DIR RPM_OPT_FLAGS RPM_ARCH RPM_OS\n  RPM_DOC_DIR=\"/usr/share/doc/packages\"\n  export RPM_DOC_DIR\n  RPM_PACKAGE_NAME=\"llvm\"\n  RPM_PACKAGE_VERSION=\"22.1.8\"\n  RPM_PACKAGE_RELEASE=\"1\"\n  export RPM_PACKAGE_NAME RPM_PACKAGE_VERSION RPM_PACKAGE_RELEASE\n  LANG=C\n  export LANG\n  unset CDPATH DISPLAY ||:\n  RPM_BUILD_ROOT=\"/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64\"\n  export RPM_BUILD_ROOT\n  \n  PKG_CONFIG_PATH=\"${PKG_CONFIG_PATH}:/usr/lib64/pkgconfig:/usr/share/pkgconfig\"\n  export PKG_CONFIG_PATH\n  \n  set -x\n  umask 022\n  cd \"/home/abuild/rpmbuild/BUILD\"\n\n  CFLAGS=\"${CFLAGS:--Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument -momit-leaf-frame-pointer  -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer -g}\" ; export CFLAGS ; \n  CXXFLAGS=\"${CXXFLAGS:--Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument -momit-leaf-frame-pointer  -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer -g}\" ; export CXXFLAGS ; \n  LDFLAGS=\"${LDFLAGS:--Wl,-z,relro,--as-needed}\" ; export LDFLAGS;\n\ncd 'llvm-22.1.8'\nref=/usr/lib/rpm\nmints=0\ncase $(uname -m) in\n    aarch64) mints=20120610;;\n    ppc64le) mints=20130610;;\n    riscv64) mints=20160911;;\nesac\nfor s in guess sub; do\n    for c in $(find -maxdepth 8 -name \"config.$s\"); do\n         grep -q config-patches@ $c || continue\n         timestamp=$(sed -n \"/^timestamp=/{s///;s/[-'\\\"]//g;p;q;}\" $c | tr -d '\n')\n         test -n \"$timestamp\" || timestamp=0\n         test $timestamp -ge $mints || install -m 755 $ref/config.$s $c\n     done\ndone\n\nexport AR=llvm-ar RANLIB=llvm-ranlib;\nexport CC=x86_64-tizen-linux-gnu-clang CXX=x86_64-tizen-linux-gnu-clang++;\nexport MAKEFLAGS+=\" -k\";\n\n\ncp /home/abuild/rpmbuild/SOURCES/llvm.manifest .\n\n\n\n# Strip pre-existing optimization flags and remove performance-harming flags, then force -O3 + ThinLTO\nOPTFLAGS_CFLAGS=$(echo \"$CFLAGS\" | sed \\\n    -e 's/\\-O[0-9sz]//g' \\\n    -e 's/\\-Ofast//g' \\\n    -e 's/\\-fstack-protector-strong//g' \\\n    -e 's/\\-fstack-protector-all//g' \\\n    -e 's/\\-fstack-protector//g' \\\n    -e 's/\\-fno-inline-functions//g' \\\n    -e 's/\\-fno-omit-frame-pointer//g' \\\n    -e 's/\\-momit-leaf-frame-pointer//g')\nOPTFLAGS_CXXFLAGS=$(echo \"$CXXFLAGS\" | sed \\\n    -e 's/\\-O[0-9sz]//g' \\\n    -e 's/\\-Ofast//g' \\\n    -e 's/\\-fstack-protector-strong//g' \\\n    -e 's/\\-fstack-protector-all//g' \\\n    -e 's/\\-fstack-protector//g' \\\n    -e 's/\\-fno-inline-functions//g' \\\n    -e 's/\\-fno-omit-frame-pointer//g' \\\n    -e 's/\\-momit-leaf-frame-pointer//g')\nexport CFLAGS=\"$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument\"\nexport CXXFLAGS=\"$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument\"\n\n# Set up MLGO AOT model paths from bundled verify assets\nMLGO_AOT_DIR=\"$PWD/mlgo_verify_assets\"\nMLGO_BUILD_DIR=\"$PWD/build\"\nMLGO_RUNTIME_OBJECTS=\"${MLGO_AOT_DIR}/xla_runtime_objects/xla_compiled_cpu_function.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/cpu_function_runtime.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/custom_call_status.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/executable_run_options.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o\"\nMLGO_REQUIRED_RUNTIME_OBJECTS=\"xla_compiled_cpu_function.cc.o cpu_function_runtime.cc.o custom_call_status.cc.o executable_run_options.cc.o runtime_single_threaded_matmul_f32.cc.o\"\n\nmkdir -p build\ncd build",
+  "actual_failed_argv": [
+    "cmake",
+    "-S",
+    "../llvm",
+    "-B",
+    ".",
+    "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+    "-DBOLT_BUILD_TOOLS=OFF",
+    "-DBOLT_ENABLE_RUNTIME=OFF",
+    "-DBOLT_INCLUDE_TESTS=OFF",
+    "-DBOLT_TARGETS_TO_BUILD=X86"
+  ],
+  "actual_failed_launcher_compiler_env": {
+    "CC": null,
+    "CXX": null
+  },
+  "draft_macros": [
+    {
+      "mode": "debug",
+      "BOLT_cmake": "cmake -S ../llvm -B . \\\n  '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' \\\n  -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \\\n  -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86 || exit 1",
+      "expanded_sha256": "e839c702df476af6c227f3f9cd545f70bfc13d4fef172eb70d9106220e815eba"
+    },
+    {
+      "mode": "release",
+      "BOLT_cmake": "cmake -S ../llvm -B . \\\n  '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' \\\n  -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \\\n  -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86 || exit 1",
+      "expanded_sha256": "3426836c999481250d09524882c339f7ed261a5137be58770117327437bdb840"
+    }
+  ],
+  "conclusion": "Select local environment mismatch: actual local and spec append argv agree, but local userspec entry searches /usr/bin before /bin while the original RPM login searches /bin first. This changes the resolved spelling of relative compiler names and the log records compiler-change cache reset. Correct-RPM spec reconfiguration has not been certified because the temporary baseline failed due to an unrelated agent source-layout setup error.",
+  "fix_contract": "Do not alter production spec based on the failed local environment. Validate in original RPM login environment and complete source layout first; temporary validation is NOT COMPLETED, so no Quickbuild success claim.",
+  "selected_conclusion": "LOCAL_TEST_ENVIRONMENT_DIFFERS_FROM_SPEC_RPM_ENVIRONMENT",
+  "original_login_selected_env": {
+    "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+    "LANG": "POSIX",
+    "LC_ALL": "POSIX",
+    "CC": null,
+    "CXX": null,
+    "CFLAGS": null,
+    "CXXFLAGS": null,
+    "LDFLAGS": null,
+    "PKG_CONFIG_PATH": null
+  },
+  "failed_entry_selected_env": {
+    "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin",
+    "CC": null,
+    "CXX": null,
+    "CFLAGS": null,
+    "CXXFLAGS": null,
+    "LDFLAGS": null
+  },
+  "compiler_lookup": {
+    "original": "/bin/clang and /bin/clang++",
+    "failed": "/usr/bin/clang and /usr/bin/clang++",
+    "same_regular_inode": true,
+    "CMake_reader": "/usr/share/cmake/Modules/CMakeDetermineCompiler.cmake:115-148 resolves non-absolute preset compiler with find_program"
+  },
+  "initial_conclusion_retracted": "Initial incomplete analysis called it a spec defect before inspecting login PATH. That assertion is retracted; no source fix was applied."
+}

@@ -202,3 +202,13 @@ PM判断：上次把含函数重排的正式参数用于无emit-relocs普通clan
 **交接树的CMakeCache/build.ninja已被失败配置改写且未恢复**，停止SHA bd8ad3aa…/a37efa6a…，before/after快照在本次E；其他生成配置也受影响，不可直接ninja续跑，不能假定只覆盖两文件即完整恢复。本轮不修复重试，按停止规则只审计/报告。普通clang仍7df0ff90…；22RPM逐SHA大小及归档独立install证据元数据未变；cache规模47107/96877810360B不变，部分mtime由原地LLD访问改变，符合授权。锁/proc/scope全回收，未进入两棵ARM树。
 
 当前完成范围：步骤1重链PASS（link8.840/strip5.376s，scope17.571s，峰13.071GiB、VmHWM10211668kB），步骤2早期匹配PASS（N23592/M144032/S0/U1/Q383，R0.004238545%、S/N0%，scope26.075s/峰3.809GiB，早期产物已删除），步骤3配置FAIL且未建新工具；正式匹配/正式流水线/DESTDIR/30+90对象/双模式与预期清单/性能/推送均NOT RUN。未向Gerrit推BOLT，不用历史候选顶替。源码草案及封套不变d6ddbff5…父cb679968，周五若mainline合归档补丁仍需变基解spec冲突，本轮未做。13与relink-first-stop/tool/relink/early-match给全部原文/资源。GitHub前两里程碑2bc142d/59899b7已推；本停止材料随后提交，raw索引更新。
+
+## 2026-10-14 周三续跑二：原因诊断与临时布局错误STOP
+
+最新PM前提：早期匹配PASS不变；此次比较original-rpm-build.sh完整环境/命令、失败入口、spec debug/release展开后才判断草案缺陷；临时不删cache/仅bolt差异/链接逐字验证PASS才恢复。恢复dry-run扣除已证明8触碰和LLDB头后≤50才-j1补完，>50允许历史1da7bb73后备；spec临时验证、候选、对象及性能geom<0.98仍是sandbox直推前提。原证据/22RPM/ARM树保护、Gerrit拒绝原文停与源父cb679968规则沿用。
+
+只读诊断新增关键证据：原RPM登录PATH /usr/local/bin:/bin:/usr/bin:/usr/local/sbin先/bin；失败userspec入口PATH先/usr/bin，且未复用RPM前导。相对compiler cache clang/clang++因此从原/bin拼写变/usr/bin，两路径实际同inode。CMake模块非绝对compiler通过find_program定位，原日志触发变量明确CMAKE_C_COMPILER/CMAKE_CXX_COMPILER。三组完整命令/两宏展开/选定环境在cmake-recovery-diagnosis.json。判断选本地命令/环境与spec正常RPM环境不一致；初判spec缺陷在检查PATH前依据不足，已撤回，生产spec未改。spec无删cache/链接保持认证仍需临时实证，不把该判断当PASS。
+
+第二步唯一临时baseline配置rc1：本任务仅准备llvm源链接却漏同级cmake/Modules，CMakePolicy/LLVMVersion include缺失、VERSION '..' invalid；是临时布局准备错误，未到追加bolt。按规定外停止，不补链/换源重试；临时失败cache/文件清单留E，自己新建temp-debug已删除，其他证据保留。两模式rpmspec展开PASS不替代临时配置门禁。无原树恢复、干跑分类、候选、对象/双模式/DWARF、性能或sandbox推送；草案/fixtures/本地提交/文本patch/manifest保持旧版d6ddbff5…，没有本次新增fixture PASS。
+
+停止后审计仅修正一次错误的.ninja_log旧基线比较（可变生成记录，不是保护原件），必要清理审计PASS；22RPM与普通clang/source/spec/ar/lld SHA、归档证据元数据未变，原cache仍bd8ad3aa…/ninja a37efa6a…保持上轮STOP状态、未恢复。本次只4GiB轻任务，未取共享锁，proc/scope均回收，没有进入两棵ARM树，W tracked/llvm未写。E=W/temp/bolt-v4-20261014-cmake-recovery；根内新/home/abuild/bolt-work/bolt-v4-20261014-cmake-recovery。14给全部证据/未完成边界，raw随后更新。本任务状态STOP_TEMPORARY_SOURCE_LAYOUT_ERROR。

@@ -1,6 +1,6 @@
 # 01 Tizen LLVM BOLT 集成设计 v4.1：Quickbuild sandbox 第一版
 
-修订：2026-10-14（Asia/Shanghai）。**最新裁决与执行记录见附录末尾，冲突以最新条目为准；原v4保留为历史设计。** 修正顺序后重链/早期匹配PASS，同树BOLT配置改变了非BOLT缓存而STOP；正式候选与后续未做，未推Gerrit。当前树配置已被失败cmake改写，恢复前不得续跑；见13。
+修订：2026-10-14（Asia/Shanghai）。**最新裁决与执行记录在附录末尾，旧v4保留为历史设计。** 原地重链/早期匹配已PASS；同树配置失败后，原因诊断发现RPM与本地PATH不一致。本轮临时baseline因源布局准备错误STOP，尚未认证spec、恢复原树或生成正式候选；见14。
 
 原v4日期：2026-10-12（Asia/Shanghai）。目标周五2026-10-16前交付Quickbuild试验材料，周四只对补丁做一轮外部评审；本轮不构建LLVM、不打RPM、不上传Gerrit。本文为自包含实施与验收设计，尚无生产集成补丁或新RPM。今晚实测和未测项分别标明，不能以历史PASS替代新配方认证。
 
@@ -338,20 +338,14 @@ git push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm AUDITED_C
 
 远端基线已变化则停止报告，不能自动重基/review豁免。本轮只推GitHub bolt-v4，sandbox此前仅原样创建基线。Source当前唯一重链版本和静态整树身份在patches/bolt/draft-manifest.json；95fixtures通过，完整新树/真实RPM认证仍未完成。温cache Quickbuild pipeline暂估12–15min/峰约6.04GiB，不含新llvm-bolt编译或正常post，精确边界和R1采样依据见11/single-path-estimate.json。
 
-### V4.1-8 周三执行记录：身份PASS，资格入口错误后停止（2026-10-14）
+### V4.1-8 周三执行记录与恢复边界（最新2026-10-14）
 
-最新任务授权以本次前六步全部PASS（含几何平均candidate/ordinary耗时比<0.98）作为sandbox直推前提；父cb679968、无归档补丁，拒绝原样停，不拆profile。本条覆盖V4.1-6/7旧“不推BOLT”与不同推送前提；发布完整构建仍挂账。
+历次完整记录分别见12（普通无relocs误探测）、13（修正顺序/重链和早期匹配PASS、同树配置非bolt变化STOP）、14（原因诊断/临时源布局错误STOP），原v4正文与V4.1-1至7不改，旧执行附录已完整保存在GitHub0d78c75。最新授权覆盖旧“先普通匹配”与“不推BOLT”：先emit-relocs/strip-debug再匹配；全部规定门禁及性能geom<0.98后，父cb679968直接sandbox，Gerrit拒绝原文停、不拆profile。
 
-main91b45c1的STATUS及49_x86_build_resume_result §11正式READY；准确根/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0，交接13:10:12，三个关键SHA及cache47107/96877810360B、8文件/22RPM核对PASS。已按交接原地使用策略准备，未复制cache。
+现有重链输入15827504…/226738888B；历史早期N23592/M144032/S0/U1/Q383、R0.004238545%、S/N0% PASS，产物已删。重链scope17.571s/峰13.071GiB、早期scope26.075s/峰3.809GiB，不能沿用旧峰估6.04GiB。正式工具/候选仍无，后续30/90、双模式、DWARF预期清单与性能未做。
 
-先行资格查询把cdsort/split-eh生产参数错误地用于无emit-relocs的普通clang，历史资格工具rc1：“function reordering only works when relocations are enabled”。N/M/S/U/Q、R、S/N全部未知，不能判profile失配，也不能当门禁PASS。遵用户停止规则，无参数修正/重试、无先重链绕过；步骤2–7未执行、未推sandbox。停止后8文件/22RPM及原cache、归档证据均未变，锁/proc/scope全回收。完整实测与资源见12及wednesday-stop.json。
+新增只读原因：相对compiler缓存，在原RPM登录PATH先/bin，失败本地入口先/usr/bin，导致同一实体的compiler路径拼写变；CMake提示CMAKE_C_COMPILER/CMAKE_CXX_COMPILER变化、自动删cache重配。本地与两宏spec追加命令参数相同，但环境不同；先前“spec缺陷”初判已撤回，尚不能宣称Quickbuild认证PASS。
 
-下一次恢复先解决独立匹配查询入口，普通无重定位ELF不能套用需重定位的最终函数重排参数；本次未实施修正。不以R1历史结果替代本次资格。若后续tizen_base合入归档补丁，周五再变基并处理spec冲突，本次未做。
+最新恢复任务要求临时先原配置再追加bolt（不删cache/仅bolt键/链接逐字）PASS，然后原始RPM前导/命令恢复一次、dry-run扣除8触碰和LLDB暂存后≤50编链才-j1补，>50允许历史工具后备。两路线必须候选门禁、30/90、双模式/DWARF、30×5性能合格才推；后备Quickbuild SHA交叉核对条件只在实际生成合格候选后成立。
 
-### V4.1-9 修正顺序的本次执行（2026-10-14）
-
-PM取消普通无relocs独立匹配查询；先保存原链接字串，原地cache只emit-relocs重链并LLVM strip-debug，再历史SHA1da7bb73…完整正式参数重写、取N/M/S/U/Q及5%双门禁，用后删产物，不作候选。通过后才同树建llvm-bolt并正式重写。原工具来源/配置前后链接字串/仅BOLT缓存变化/DESTDIR差集、对象/双模式/DWARF、性能geom<0.98、父cb直推sandbox/Gerrit拒绝原样停及内存等待裁决全保持。本顺序修正不放宽门禁，覆盖V4.1-6/8的先普通ELF探测顺序。
-
-重链PASS：link8.840s/strip-debug5.376s、scope17.571s、kernel峰13.071GiB、VmHWM10211668kB，普通clang保留；cache原地不复制。早期匹配真实PASS：N23592/M144032/S0/U1/Q383，R0.004238545%、S/N0%，scope26.075s/峰3.809GiB；早期产物已删。新峰不能继承旧R1估6.04GiB，温缓存链接时间也不等于编译性能认证。
-
-第三步一次cmake rc0但自动删缓存/重配，681键变化/678非BOLT；ThinLTO→OFF、项目→空、prefix→/usr/local、targets→all，配置保持门禁FAIL。build.ninja无clang边，未再query/dry-run/ninja构建；新工具与正式匹配/候选、独立DESTDIR、30/90、小spec/DWARF预期清单、性能和sandbox全部未执行。按规则STOP，未修复重试/恢复。**当前Root cache/ninja已改写；前后快照留E，恢复前不能直接ninja。** 22RPM/归档证据/普通实体保护审计通过，锁/proc/scope回收；详情13及relink-first JSON。若未来tizen_base合归档修复，周五再变基解spec冲突，当前未做。
+此次临时baseline因只准备llvm链接、漏同级cmake目录失败而按规则STOP，尚未append；临时目录清理，原树cache/ninja仍上一失败bd8ad3aa…/a37efa6a…未恢复。没有重试/恢复/构建/后备候选/推送。正式草案仍d6ddbff5…父cb679968，未改源码封套；22RPM/归档证据保护通过、proc/scope回收，未取重锁/进ARM。未来tizen_base合归档修复时周五再变基解spec冲突。不能直接在当前失配配置上ninja，原快照在13对应E。
