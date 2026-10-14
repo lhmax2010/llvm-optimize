@@ -228,3 +228,5 @@ PM确认删缓存源于本地PATH先/usr/bin、原RPM先/bin；spec同一RPM环�
 PM认定上轮没有先移开污染cache是恢复方法问题，不是新产品缺陷。已刷新的普通生成头mtime会触发大量对象重建，本周放弃恢复及树内工具路线；禁止在原树cmake/ninja（含-n），原树仅作只读输入来源，周五后定恢复/废弃。本周本地正式候选改为历史1da7bb735f7bc1afab9a863154260699b0b0f88c6fd05b99231dd21ef653fd5a工具；树内llvm-bolt构建与安装清理由Quickbuild验证，其余门禁不变。周四不要求Quickbuild/local clang SHA一致（前BOLT输入不同），核对日志N/M/S/U/Q、R、S/N同量级且5%双门禁及Quickbuild性能。准备性错误每类一次修正，产品失败即停；原RPM环境/记录要求、资源/保护与最终sandbox父cb直推条件沿用。
 
 第一步PASS：保留13的emit-relocs+strip-debug输入，SHA158275040dbaa71999f60a4b62e4dd9a23a58b4d72e7ff85fb3c5f5ebff064e4/226738888B与原记录一致，不重放、不进入原树cmake/ninja。tool/profile/普通clang指纹PASS，新E=bolt-v4-20261014-fallback，轻scope12.049s。16与fallback-input给证据，后续尚未认证。
+
+第二步后备候选PASS：历史工具按两模式展开的同一helper正式参数重写，N23592/M144032/S0/U1/Q383，R0.004238545%、S/N0%，禁infer-stale；BOLTnote/strip-all/前后各三目标/身份链PASS。最终SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9。草案pipeline/main stdout JSON包含全部匹配统计，详细BOLT日志另存，未改草案。资源及路径见16/fallback-candidate/formal-bolt；第三步与对象/性能/推送资格仍待。

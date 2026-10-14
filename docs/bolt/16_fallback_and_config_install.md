@@ -16,3 +16,11 @@
 13重链并LLVM strip-debug的输入仍在 /home/abuild/bolt-work/bolt-v4-20261014-relink-first/relinked-clang-22，226,738,888B，SHA158275040dbaa71999f60a4b62e4dd9a23a58b4d72e7ff85fb3c5f5ebff064e4，与relink-first-relink.json一致。不需要链接输入审计或重放，没有在原树调用cmake/ninja/链接。历史tool完整SHA、profile SHA d9b132f9…与普通clang SHA7df0ff90…均复核PASS。
 
 新E=W/temp/bolt-v4-20261014-fallback；根内新/home/abuild/bolt-work/bolt-v4-20261014-fallback。第一步4GiB轻scope12.049s，不取共享锁；source元数据基线保存，无准备性修正。后续候选与配置级四项结果待登记；尚无推送资格。
+
+## 第二步：正式后备候选PASS
+
+本次重新rpmspec展开debug/release草案，均调用同一Source1201 pipeline，helper镜像SHA与源提交一致；正式OPTIONS为ext-tsp、cdsort、split-functions/all-cold/eh、dyno-stats、thread-count=1、stale-threshold=5，不含infer-stale。历史工具按这些参数完整重写保留输入，匹配 N=23592/M=144032/S=0/U=1/Q=383；R=0.004238545%、S/N=0.000000000%，5%双门禁PASS。
+
+前BOLT标识节与完整ELF审计PASS；strip-all前及后各三目标微型对象字节门禁PASS。BOLT输出SHAf5e665fb2d2b77b512ce71b38d639ebcaa470369153b7a352a8246b13866c83d；最终完全strip候选SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9；输入/profile/tool身份链见fallback-candidate.json，其中identity明确strip前BOLT节存在、前后SHA与strip工具SHA。候选留根内本轮工作目录clang.candidate，历史工具路线不冒充本树新工具。
+
+草案会在rpmbuild stdout打印匹配统计：pipeline返回counts(N/M/S/U/Q/R/S_over_N)，main JSON打印整个result；BOLT原始详细日志存work/rewrite/bolt.log。无需修改草案；周四可从构建日志读JSON数值与双门禁结果（未通过会BOLT_GATE_FAILED且退出）。重阶段scope26.620s、kernel峰4.030GiB、最大采样VmHWM3850992 kB，原RPM入口PATH与which见JSON；共享锁/proc/scope已回收。第三步静态配置/安装核对尚待。
