@@ -1,0 +1,56 @@
+packaging: refine x86_64 static archive handling
+
+Background:
+Change 356627 converts ThinLTO bitcode members in installed x86_64 static
+archives to native objects and rebuilds their indexes. This avoids index
+damage from GNU strip and makes the archives usable by GNU ld without
+LTO or an LLVM plugin.
+
+Changes:
+- Support release builds without _toolchain. When the recorded command
+  has no debug options, do not add -g or -gdwarf-4 during conversion.
+  The merged version rejects this case because it requires -gdwarf-4.
+  Reject no-debug commands whose IR still contains a debug compile unit.
+- Reject unsupported assembler options (-Wa, and -Xassembler), require
+  clang, llvm-dis and llvm-nm to have the same full LLVM 22 version, and
+  check ELF section, symbol and relocation table bounds and strides.
+  Allow only the certified iostream module-assembly declaration and
+  verify that its undefined symbol is preserved after conversion.
+- Use the build/bin/clang alias instead of a hard-coded clang-22 path.
+- Use llvm-strip for static archive post-processing, following the
+  platform's move to LLVM. Override only the archive-strip argument in
+  __strip_install_post; ordinary executable stripping keeps the platform
+  default. Find-debuginfo and other enabled post-processing remain intact.
+  The override copies tizen_macros:34-38 from rpm-build-4.14.1.1-1.4 and
+  must be synchronized when the platform changes that macro. It covers
+  all static archives in this package's buildroot, including compiler-rt.
+
+Scope:
+Only x86_64 is affected. The conversion also includes libarcher_static.a.
+armv7l and aarch64 packaging are unchanged; ARM support will be submitted
+separately. Final static archives contain no DWARF after stripping.
+
+Testing:
+A full x86_64 build completed with one serial continuation in the
+Tizen-Base-Toolchain tizen-base-toolchain_20261010.120615 environment.
+All 225 development archives (3,864 ordered members) contain native
+objects and complete indexes. Checks passed for all 45 compiler-rt
+archives, including allocated section contents and symbol-to-member
+mappings. Host and Tizen GNU ld (without LTO or plugins) and lld consumers
+linked and ran successfully, including sanitizer, profile and builtins
+probes. Independent reinstallation reproduced the converted archives;
+a repeated converter invocation skipped the already-native archives.
+
+Across 60 paired x86_64, armv7l and aarch64 source samples, release/debug
+conversion arguments differed only by the debug options. Differences in
+object output were attributed to compiler debug-information handling.
+A complete release-mode package build is still pending.
+
+The non-archive file comparison against an unpatched build in the same
+environment has not yet been run; it will be checked using the next
+official snapshot.
+
+Supersedes Change 356639.
+
+Signed-off-by: FatTank <hao.lin@samsung.com>
+Change-Id: I9a815cad07c9bd5ae1e3068fe5b13a339e2ea3ce

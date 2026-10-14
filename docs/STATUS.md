@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-14。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（续十二）进行中**：tizen_base已核实合入356627 PS2（67619ec8bbba），356639仍NEW；cb679968后仅这一提交，无额外配方变化。准备生成与已验收4c36e899内容一致的新单提交并按用户授权上传Gerrit review；旧Source/候选补丁不改，ARM根内暂停。见[docs/50](50_archive_followup_review.md)。
+**当前任务（续十二）进行中**：tizen_base已核实合入356627 PS2（67619ec8bbba），356639仍NEW；cb679968后仅这一提交，无额外配方变化。新提交d4dd40da3b6a整树与已验收4c36e899一致、干净apply与debug/发布parse通过，下一步按授权上传Gerrit review；旧Source/候选补丁不改，ARM根内暂停。见[docs/50](50_archive_followup_review.md)。
 
 **上一任务（docs/49续十一）已收尾：STOP_ARM_CHROOT_EXEC_FORMAT。** x86唯一正常-ba --noprep串行续跑完成；8输出前后同字节、22RPM无ShortCircuited；验收1–3、5–7完成，验收4按磁盘门槛跳过待PM。BOLT已正式交接（997dbb1），本会话此后不写交接树。两ARM宿主全量210/212档SHA与docs/40 §12全同；ARM32根内小试在/proc挂载前/bin/mount Exec format error，当前binfmt只有jar/python3.12、无qemu ARM条目。Source未启动，不改宿主、不重试；AArch64根内、两根64MiB、bash/LLVM23未执行。详见[结果续页](49_x86_build_resume_result.md) §11–§15。
 

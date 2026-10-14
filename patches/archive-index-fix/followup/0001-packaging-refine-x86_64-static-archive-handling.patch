@@ -1,0 +1,325 @@
+From d4dd40da3b6ab28925b57d24d66bd992b4ad798c Mon Sep 17 00:00:00 2001
+From: FatTank <hao.lin@samsung.com>
+Date: Wed, 14 Oct 2026 15:52:36 +0800
+Subject: [PATCH] packaging: refine x86_64 static archive handling
+
+Background:
+Change 356627 converts ThinLTO bitcode members in installed x86_64 static
+archives to native objects and rebuilds their indexes. This avoids index
+damage from GNU strip and makes the archives usable by GNU ld without
+LTO or an LLVM plugin.
+
+Changes:
+- Support release builds without _toolchain. When the recorded command
+  has no debug options, do not add -g or -gdwarf-4 during conversion.
+  The merged version rejects this case because it requires -gdwarf-4.
+  Reject no-debug commands whose IR still contains a debug compile unit.
+- Reject unsupported assembler options (-Wa, and -Xassembler), require
+  clang, llvm-dis and llvm-nm to have the same full LLVM 22 version, and
+  check ELF section, symbol and relocation table bounds and strides.
+  Allow only the certified iostream module-assembly declaration and
+  verify that its undefined symbol is preserved after conversion.
+- Use the build/bin/clang alias instead of a hard-coded clang-22 path.
+- Use llvm-strip for static archive post-processing, following the
+  platform's move to LLVM. Override only the archive-strip argument in
+  __strip_install_post; ordinary executable stripping keeps the platform
+  default. Find-debuginfo and other enabled post-processing remain intact.
+  The override copies tizen_macros:34-38 from rpm-build-4.14.1.1-1.4 and
+  must be synchronized when the platform changes that macro. It covers
+  all static archives in this package's buildroot, including compiler-rt.
+
+Scope:
+Only x86_64 is affected. The conversion also includes libarcher_static.a.
+armv7l and aarch64 packaging are unchanged; ARM support will be submitted
+separately. Final static archives contain no DWARF after stripping.
+
+Testing:
+A full x86_64 build completed with one serial continuation in the
+Tizen-Base-Toolchain tizen-base-toolchain_20261010.120615 environment.
+All 225 development archives (3,864 ordered members) contain native
+objects and complete indexes. Checks passed for all 45 compiler-rt
+archives, including allocated section contents and symbol-to-member
+mappings. Host and Tizen GNU ld (without LTO or plugins) and lld consumers
+linked and ran successfully, including sanitizer, profile and builtins
+probes. Independent reinstallation reproduced the converted archives;
+a repeated converter invocation skipped the already-native archives.
+
+Across 60 paired x86_64, armv7l and aarch64 source samples, release/debug
+conversion arguments differed only by the debug options. Differences in
+object output were attributed to compiler debug-information handling.
+A complete release-mode package build is still pending.
+
+The non-archive file comparison against an unpatched build in the same
+environment has not yet been run; it will be checked using the next
+official snapshot.
+
+Supersedes Change 356639.
+
+Signed-off-by: FatTank <hao.lin@samsung.com>
+Change-Id: I9a815cad07c9bd5ae1e3068fe5b13a339e2ea3ce
+---
+ packaging/llvm-static-archives-native.py | 121 ++++++++++++++++++++---
+ packaging/llvm.spec                      |  12 ++-
+ 2 files changed, 116 insertions(+), 17 deletions(-)
+
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index d839b8062ff9..87bbaedb6d9b 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -169,6 +169,7 @@ def inspect(path):
+                     machine_symbol_entries=len(native_map))
+ 
+ 
++# Certify the LLVM major; ARM separately checks literal function attributes.
+ CERTIFIED_LLVM_MAJOR = 22
+ CERTIFIED_OPTIMIZATION = {'x86_64': '-O3'}
+ CERTIFIED_TRIPLES = {'x86_64': {'x86_64-tizen-linux-gnu'}}
+@@ -239,6 +240,8 @@ def classify_options(argv, arch='x86_64'):
+             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
+         elif token == '-flto=thin':
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
++        elif token.startswith('-Wa,') or token == '-Xassembler':
++            raise ValueError('unclassified original assembler option: -Wa, / -Xassembler')
+         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
+                                '-fdiagnostics-color=')) or token in
+               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+@@ -252,7 +255,9 @@ def classify_options(argv, arch='x86_64'):
+         index += 1
+     if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
+         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
+-    if not dwarfs or dwarfs[-1] != '-gdwarf-4':
++    has_debug_options = any(row['token'].startswith('-g') and
++                            row['category'] != 'irrelevant' for row in rows)
++    if has_debug_options and (not dwarfs or dwarfs[-1] != '-gdwarf-4'):
+         raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
+     effective = {}
+     for key, values in switches.items():
+@@ -262,17 +267,47 @@ def classify_options(argv, arch='x86_64'):
+     contraction = contractions[-1] if contractions else DEFAULTS['fp-contract']
+     if contraction not in ('on', 'off', 'fast'):
+         raise ValueError('uncertified FP contraction value: '+contraction)
+-    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1],
++    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1] if dwarfs else None,
+                 switches=effective, fp_contract=contraction,
+                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
+ 
+ 
++# GCC 14.2.0 iostream:82 in the certified roots, including x86_64 at
++# /usr/lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/iostream.
++# This declaration requests library-side iostream initialization; preserve it.
++CERTIFIED_MODULE_ASM = {'.globl _ZSt21ios_base_library_initv'}
++
++
++def module_asm_whitelist(lines):
++    statements = []
++    for line in lines:
++        if not line.startswith('module asm '):
++            continue
++        match = re.fullmatch(r'module asm "(.*)"\s*', line)
++        if not match:
++            raise ValueError('unrecognized module asm encoding')
++        encoded = match[1]
++        if re.search(r'\\(?![0-9A-Fa-f]{2})', encoded):
++            raise ValueError('invalid module asm escape')
++        statement = re.sub(r'\\([0-9A-Fa-f]{2})', lambda m: chr(int(m[1], 16)), encoded).strip()
++        if statement not in CERTIFIED_MODULE_ASM:
++            raise ValueError('uncertified module asm: '+repr(statement))
++        statements.append(statement)
++    return statements
++
++
+ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+     """Read LLVM 22 textual metadata/attributes without modifying input IR."""
+     retained, metadata = [], {}
++    module_asm_lines = []
+     triple, command_id = None, None
+     levels, cpus, features = {}, set(), set()
++    has_debug_cu = False
+     for line in lines:
++        if line.startswith('!llvm.dbg.cu ='):
++            has_debug_cu = True
++        if line.startswith('module asm '):
++            module_asm_lines.append(line)
+         # Intrinsic references, not string literals in LLVM's own implementation.
+         for intrinsic in ('llvm.type.test', 'llvm.public.type.test'):
+             if re.search(r'@'+re.escape(intrinsic)+r'(?:\.|\s*\()', line):
+@@ -307,6 +342,7 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+             if key in levels and levels[key] != int(value):
+                 raise ValueError('conflicting relocation flags')
+             levels[key] = int(value)
++    module_asm = module_asm_whitelist(module_asm_lines)
+     if triple not in CERTIFIED_TRIPLES.get(arch, set()):
+         raise ValueError('uncertified '+arch+' IR triple: '+str(triple))
+     pic, pie = levels.get('PIC Level', 0), levels.get('PIE Level', 0)
+@@ -319,13 +355,17 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+         lambda match: chr(int(match[1], 16)), metadata[command_id]))
+     policy = classify_options(recorded_command, arch)
++    if policy['dwarf'] is None and has_debug_cu:
++        raise ValueError('no-debug command has !llvm.dbg.cu')
++    backend_flags = (BACKEND_FLAGS if policy['dwarf'] is not None else
++                     [flag for flag in BACKEND_FLAGS if flag not in ('-g', '-gdwarf-4')])
+     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+-             *BACKEND_FLAGS, '-ffp-contract='+policy['fp_contract'], '-c']
++             *backend_flags, '-ffp-contract='+policy['fp_contract'], '-c']
+     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
+               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
+                 target_features=sorted(features), flags=flags, evidence=retained,
+-                recorded_command=recorded_command, policy=policy)
++                recorded_command=recorded_command, policy=policy, module_asm=module_asm)
+ 
+ 
+ def pic_relocations(data):
+@@ -336,24 +376,46 @@ def pic_relocations(data):
+     PC-relative relocations are not all forbidden: e.g. hidden symbols and
+     .eh_frame legitimately use them. A consumer GNU ld -shared check follows.
+     """
+-    if member_kind(data) != 'machine' or data[4:6] != b'\x02\x01' or struct.unpack_from('<H', data, 18)[0] != 62:
++    if (len(data) < 64 or member_kind(data) != 'machine' or data[4:6] != b'\x02\x01'
++            or struct.unpack_from('<H', data, 18)[0] != 62):
+         raise ValueError('not x86_64 ELF64 little-endian ET_REL')
+     off = struct.unpack_from('<Q', data, 40)[0]
+     stride, count = struct.unpack_from('<HH', data, 58)
++    if stride < 64:
++        raise ValueError('x86_64 invalid section header stride')
++    if off < 64 or off > len(data) or stride > len(data)-off:
++        raise ValueError('x86_64 section zero outside member')
+     if not count:
+         count = struct.unpack_from('<IIQQQQIIQQ', data, off)[5]
++    if not count or count > (len(data)-off)//stride:
++        raise ValueError('x86_64 section table outside member')
+     sections = [struct.unpack_from('<IIQQQQIIQQ', data, off+i*stride) for i in range(count)]
+     checked, forbidden = 0, []
+     for section in sections:
+         if section[1] not in (4, 9):
+             continue
++        if section[6] >= count:
++            raise ValueError('x86_64 relocation sh_link outside section table')
++        if section[7] >= count:
++            raise ValueError('x86_64 relocation sh_info outside section table')
++        if section[9] < (24 if section[1] == 4 else 16) or section[5] % section[9]:
++            raise ValueError('x86_64 invalid relocation table entsize')
++        if section[4] > len(data) or section[5] > len(data)-section[4]:
++            raise ValueError('x86_64 relocation table outside member')
++        symbols = sections[section[6]]
++        if symbols[9] < 24 or symbols[5] % symbols[9]:
++            raise ValueError('x86_64 invalid symbol table entsize')
++        if symbols[4] > len(data) or symbols[5] > len(data)-symbols[4]:
++            raise ValueError('x86_64 symbol table outside member')
++        symbol_count = symbols[5] // symbols[9]
+         target = sections[section[7]]
+         if not target[2] & 2:  # SHF_ALLOC; excludes all debug sections
+             continue
+-        symbols = sections[section[6]]
+         for pos in range(section[4], section[4]+section[5], section[9]):
+             _, info = struct.unpack_from('<QQ', data, pos)
+             kind, symbol_index = info & 0xffffffff, info >> 32
++            if symbol_index >= symbol_count:
++                raise ValueError('x86_64 relocation symbol outside table')
+             symbol = struct.unpack_from('<IBBHQQ', data, symbols[4]+symbol_index*symbols[9])
+             checked += 1
+             # SHN_ABS references do not need runtime relocation.
+@@ -521,6 +583,23 @@ def check_symbols(nm, source, target, command):
+     return result
+ 
+ 
++# x86_64 keeps the certified llvm-nm U-name check; ARM uses strict ELF fields
++# because its GLOBAL/NOTYPE/DEFAULT/UND declaration has a separate certification.
++def check_module_asm_symbol(nm, target, statements, command):
++    if not statements:
++        return dict(required=False)
++    output = target.parent/'module-asm-symbols.txt'
++    with output.open('wb') as stream:
++        command.run([nm, str(target)], target.parent/'module-asm-nm', stdout=stream)
++    matches = [(kind, name) for kind, name in parse_nm(output.read_text())
++               if name == '_ZSt21ios_base_library_initv']
++    result = dict(required=True, symbol='_ZSt21ios_base_library_initv', matches=matches)
++    atomic_json(target.parent/'module-asm-symbol.json', result)
++    if matches != [('U', '_ZSt21ios_base_library_initv')]:
++        raise ValueError('module asm requires exactly one U symbol: '+repr(matches))
++    return result
++
++
+ def validate_archive(archive):
+     if archive.is_symlink():
+         raise ValueError('archive symlink not certified: '+str(archive))
+@@ -538,15 +617,23 @@ def validate_tools(build, compiler, disassembler, nm, command, output):
+     for label, tool in [('compiler', compiler), ('disassembler', disassembler), ('nm', nm)]:
+         if not tool.is_file() or not os.access(tool, os.X_OK):
+             raise ValueError('missing or non-executable --'+label+': '+str(tool))
+-    version = output/'compiler-version.txt'
+-    with version.open('wb') as stream:
+-        command.run([compiler, '--version'], output/'compiler-version-command', stdout=stream)
+-    text = version.read_text()
+-    match = re.search(r'clang version (\d+)\.', text)
+-    if not match or int(match[1]) != CERTIFIED_LLVM_MAJOR:
+-        raise ValueError('uncertified compiler major (required 22): '+text.strip())
+-    return dict(compiler=str(compiler), version=text, compiler_sha256=sha(compiler),
+-                disassembler=str(disassembler), nm=str(nm))
++    versions = {}
++    for label, tool in [('compiler', compiler), ('disassembler', disassembler), ('nm', nm)]:
++        path = output/(label+'-version.txt')
++        with path.open('wb') as stream:
++            command.run([tool, '--version'], output/(label+'-version-command'), stdout=stream)
++        text = path.read_text()
++        pattern = r'clang version (\d+\.\d+\.\d+)\b' if label == 'compiler' else r'LLVM version (\d+\.\d+\.\d+)\b'
++        match = re.search(pattern, text)
++        if label == 'compiler':
++            if not match or int(match[1].split('.')[0]) != CERTIFIED_LLVM_MAJOR:
++                raise ValueError('uncertified compiler major/full version (required 22): '+text.strip())
++        elif not match or match[1] != versions['compiler']['version']:
++            raise ValueError(label+' version differs from clang '+versions['compiler']['version']+': '+text.strip())
++        versions[label] = dict(path=str(tool), resolved_path=str(tool.resolve()), sha256=sha(tool), version=match[1], raw=text)
++    return dict(compiler=str(compiler), version=versions['compiler']['raw'],
++                compiler_sha256=versions['compiler']['sha256'], disassembler=str(disassembler),
++                nm=str(nm), tool_versions=versions)
+ 
+ 
+ def reset_evidence(root, output, build):
+@@ -653,9 +740,11 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                 atomic_json(source.parent/'relocations.json', relocs)
+                 if settings['pic_level'] and relocs['forbidden']:
+                     raise ValueError('non-PIC relocation in '+str(target))
++                module_asm = check_module_asm_symbol(nm, target, settings['module_asm'], command)
+                 symbols = check_symbols(nm, source, target, command)
+                 return dict(ordinal=member['ordinal'], name=member['name'], preserved=False,
+-                            settings=settings, conversion=record, symbols=symbols, sha256=sha(target))
++                            settings=settings, conversion=record, symbols=symbols,
++                            module_asm_symbol=module_asm, sha256=sha(target))
+             results = []
+             iterator = iter(paths)
+             with ThreadPoolExecutor(max_workers=jobs) as pool:
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 8240282641a3..3bffa7b82659 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -1,3 +1,12 @@
++%ifarch x86_64
++# From /usr/lib/rpm/tizen_macros:34-38, rpm-build-4.14.1.1-1.4.x86_64.
++# Replace only archive stripping; executable strip keeps the platform default.
++# brp-strip-comment-note is disabled in the platform macro (tizen_macros:37).
++%define __strip_install_post    \
++    %{!?__debug_package:%{_rpmconfigdir}/brp-strip %{__strip}} \
++    %{_rpmconfigdir}/brp-strip-static-archive %{_bindir}/llvm-strip \
++%{nil}
++%endif
+ %define keepstatic 1
+ 
+ # MLGO AOT support for LLVM MLGO (Ahead-of-Time compilation)
+@@ -434,10 +443,11 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+     --build "%{_builddir}/%{buildsubdir}/build" \
+     --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
+     --arch x86_64 \
+-    --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
++    --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang" \
+     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+     --jobs 4 --address-space-bytes 4294967296 || exit 1
++%{_bindir}/llvm-strip --version || exit 1
+ %endif
+ 
+ %post -n clang -p /sbin/ldconfig
+-- 
+2.43.0
+
