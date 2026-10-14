@@ -260,3 +260,7 @@ PM确认追加bolt后第二次完整安装创建两个未登记manifest的BOLT�
 周四清单：匹配统计同量级/双5% PASS、tool-plan PASS、compare-root PASS、Quickbuild性能、debugsource实际清单与旧快照对比；不要求local/Quickbuild clang SHA一致。新E=bolt-v4-20261014-text-proof；没有cmake/ninja/link、新配置/chroot/proc/共享锁或原cache写入，停止后仅只读保护审计/报告/GitHub提交发布。
 
 最终保护审计PASS：22RPM与普通clang等SHA/大小、归档证据元数据、原源码元数据、原树坏cache/ninja指纹不变；原ThinLTO缓存47,987文件/96,881,772,832B无新增，无写入。源a1410e3d工作树干净/spec与helper SHA不变；候选SHA4ec07159…不变。认证scope2.533s/峰0.412GiB/最大采样VmHWM280388kB；审计scope16.048s/峰0.599GiB/最大采样VmHWM178412kB；两轻scope已回收，swap0/无OOM，未获取共享锁或挂载proc。原根free59138056192B，没有单次>10GiB写入。第一里程碑8af4de0已推GitHub bolt-v4；本收尾与全部raw索引继续推送，未推Gerrit。
+
+## 2026-10-14 续跑七：PM扩充乙类，文本门禁PASS
+
+PM许可CMake簿记语句对：RERUN_CMAKE依赖和配对phony输出，后者须phony/无全部依赖及变量/输出增删与前者精确相等。7438块全部条件PASS，同88删/20增；全部7439块PASS（BOLT9/规则1/聚合5/混合1/甲7421/乙2）。PM判88首次编译器/ABI/try_compile检测在缓存重配不再读取，新增20为BOLT，来源属首次/重配区别；取消对照，本轮不新配置。18甲类证明SHA绑定沿用，Quickbuild tool-plan仍最终现场门禁。源a1410e3d父cb不变；继续两模式展开及对象/双模式/22RPM-DWARF/30×5性能，全部PASS且geom<0.98才sandbox直推。新E=bolt-v4-20261014-finish，19/finish-text-gate给证据。
