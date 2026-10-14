@@ -154,3 +154,19 @@ docs/47 §9.1.3 的本项合同是可加载内容、符号属性、重定位和�
 证据：`archive-acceptance.json`、`archive-checks-retry/`、`ba-conversion-summary.json`、`archive-check-corrected-once-scope/`。本次独立检查 wall 16 秒量级、scope峰 6,049,361,920 B；最终 wall 以 outcome.json 为准。
 
 宿主消费者正在执行；Tizen、独立-bi/SKIP、同环境非归档基线与结构诊断尚未完成。BOLT NOT_READY。
+
+## 7. 宿主消费者 PASS，Tizen 测试启动
+
+七项宿主测试全部 PASS：A 的 bfd/lld 输出与本次新 RPM opt -O2 一致；B 的 bfd/lld 进程内链接生成物均退出 37；共享库以 -shared -z defs -z text 链接并 dlopen 执行正确；GC 版本输出一致；原 bitcode 归档在无插件 GNU ld 下按预期失败。A 普通版本 47,389,584 B，GC 版本 28,380,432 B。消费者不依赖 LLVM 共享库，完整 argv/驱动展开与资源日志保留。scope wall 24.273742 s，峰 983,031,808 B。
+
+环境：LLVM 头文件/静态库/clang/opt 都来自本次 N=`temp/toolchain-release-x86-20261013`；C++ 与 libc 头文件、运行时 glibc/libstdc++ 来自宿主（编译 -v 和 loader --list 原文）；显式宿主 loader `/lib64/ld-linux-x86-64.so.2`，独立 Tizen libxml2 路径 `temp/toolchain-runtime-baseline/libxml2/usr/lib64`。编译 4 GiB AS，链接不设 AS、由 cgroup 控制；GNU ld 无 LTO/插件。参数名 baseline 在脚本中实际指向 N，不是旧 RPM。
+
+compiler-rt 宿主 10 项（两链接器 × ASan 坏/好、UBSan、profile、builtins）全部 PASS：坏程序确实报告 heap-buffer-overflow，正常程序 0；UBSan 报有符号溢出；profraw 与 merge 成功；__divti3 调用及结果正确。资源目录显式指向 N/usr/lib64/clang/22。
+
+证据：`new-rpm-consumers/`、`runtime-host/`、两个同名 scope。22 新 RPM 在同文件系统硬链接到 `/var/tmp/llvm-optimize-x86-archivefix-20261013-new-rpm-repo`，inode 一致，没有再复制 8.86GB。createrepo_c 成功，清单在 `new-rpm-identity.json`。Tizen bfd 于11:58:46启动，6GiB/swap0/≥8GiB准入、与原构建相同的冻结 Base/Unified 配置；根放在 `/home` 的新路径，后续 lld 串行，尚无结果。
+
+### 7.1 Tizen bfd PASS
+
+11:58:46→12:06:39，wall 473.178732 s。构建与 %check PASS，根内 270 归档 + 5 工具 SHA 与新 RPM 全同，A 输出逐字相同、B 生成物退出 37；ASan/UBSan/profile/builtins 均通过。scope MemoryPeak=6442450944 B（6GiB cap，含文件缓存）；memory.events 原文：`low 0; high 0; max 142; oom 0; oom_kill 0; oom_group_kill 0`。whole-archive 仅诊断，原文在 check-outputs/，不作门禁。证据 tizen-bfd/{result.json,installed-identities.json,build.log,scope-after-rpm.json,check-outputs/}。
+
+第二个独立 lld 测试包于12:07:43开始，使用同一冻结配置、6GiB/swap0/8GiB准入，串行执行，尚无结论。
