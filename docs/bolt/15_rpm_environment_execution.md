@@ -22,7 +22,7 @@
 
 保存失败配置开始时间以来的923个改写文件清单（以共享锁取得1791966147.7645748为界，紧接失败配置启动，清单是时间筛选候选而非逐文件因果断言）。其后只执行一次原始完整 cmake 命令，原 RPM 前导及 PATH 与第一步完全一致，which 仍 /bin/clang、/bin/clang++，真实 argv/环境均在 rpm-env-restoration.json 与 rpm-env-restore-configure.txt。没有省略原始 -D 参数。
 
-调用返回0，但已有污染cache仍保存先前 /usr/bin compiler 记录；本次改回 /bin 又触发 CMAKE_C_COMPILER/CMAKE_CXX_COMPILER 变化及相同“require your cache to be deleted”提示。日志首轮启用clang/ThinLTO/原projects，自动删cache后第二轮变为默认配置。与失败前快照对比，49个显式命令/核心身份项中41项不一致；完整cache有664键差异。例如 LLVM_ENABLE_LTO Thin→OFF，LLVM_ENABLE_PROJECTS 原六项目→空，LLVM_TARGETS_TO_BUILD 四目标→all，CMAKE_INSTALL_PREFIX /usr→/usr/local，链接flags/MLGO/clang配置丢失。本次恢复 **FAIL**，不能将cmake rc0当恢复成功。
+调用返回0，但已有污染cache仍保存先前 /usr/bin compiler 记录；本次改回 /bin 又触发 CMAKE_C_COMPILER/CMAKE_CXX_COMPILER 变化及相同“require your cache to be deleted”提示。日志首轮启用clang/ThinLTO/原projects，自动删cache后第二轮变为默认配置。与失败前快照对比，50个显式命令/核心身份项中41项不一致；完整cache有664键差异。例如 LLVM_ENABLE_LTO Thin→OFF，LLVM_ENABLE_PROJECTS 原六项目→空，LLVM_TARGETS_TO_BUILD 四目标→all，CMAKE_INSTALL_PREFIX /usr→/usr/local，链接flags/MLGO/clang配置丢失。本次恢复 **FAIL**，不能将cmake rc0当恢复成功。
 
 这是第二步明确的产品门禁“恢复后关键项必须一致”失败，按最新PM规则立即停止，不将它重命名为准备性错误重试。一次准备性修正仅用于第一步派生目录计数检查器；恢复命令未重试。ninja查询/干跑/分类与-j1补完未执行，>50条件没有评估，因此没有选择历史工具后备路线；本次无候选最终SHA、正式匹配、strip-all/微型门禁、DESTDIR、30/90对象、双模式、预期RPM/DWARF差异或30×5性能数据，sandbox未尝试、未查远端前后。此前早期匹配PASS仍仅历史资格结果，不能冒充本次候选。
 
@@ -37,7 +37,7 @@
 |一次准备性修正后临时验证PASS|40.635|0.405|310256|
 |原树恢复门禁FAIL|35.128|0.567|328556|
 
-修正轮 baseline cmake28.166s、ninja边查询0.110s、append cmake3.894s、ninja边查询0.103s；恢复 cmake32.714s。完整各进程样本/宿主最低MemAvailable/轻4GiB swap0与scope回收在JSON；宿主最低仍≥16.66GiB。没有获取共享锁或运行重阶段，proc在配置各段finally卸载，没有宿主bind/ns。停止审计轻scope40.104s，保护原件逐SHA/大小与归档元数据均PASS。
+修正轮 baseline cmake28.166s、ninja边查询0.110s、append cmake3.894s、ninja边查询0.103s；恢复 cmake32.714s。完整各进程样本/宿主最低MemAvailable/轻4GiB swap0与scope回收在JSON；宿主最低仍≥16.66GiB。没有获取共享锁或运行重阶段，proc在配置各段finally卸载，没有宿主bind/ns。停止审计轻scope40.104s，kernel峰4.000GiB（含文件页缓存，受4GiB cap约束），保护原件逐SHA/大小与归档元数据均PASS。
 
 普通clang仍7df0ff90…，22普通RPM全部不变，review49-independent-install元数据一致；源码树清单与任务前一致，W tracked仅既有gbs_llvm.conf改动、没有写W/llvm或进入ARM根。原地cache最终47,626文件/96,880,098,760B，比开工多519文件/2,288,400B；本轮配置可能执行测试链接，未复制cache，原地LLD写入/清理按交接授权允许，不声称cache冻结。文件系统free60,543,275,008B（56.39GiB）。没有任何>10GiB写入操作。
 
