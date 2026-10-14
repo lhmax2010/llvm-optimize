@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-14。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续十一）已收尾：STOP_ARM_CHROOT_EXEC_FORMAT。** x86唯一正常-ba --noprep串行续跑完成；8输出前后同字节、22RPM无ShortCircuited；验收1–3、5–7完成，验收4按磁盘门槛跳过待PM。BOLT已正式交接（997dbb1），本会话此后不写交接树。两ARM宿主全量210/212档SHA与docs/40 §12全同；ARM32根内小试在/proc挂载前/bin/mount Exec format error，当前binfmt只有jar/python3.12、无qemu ARM条目。Source未启动，不改宿主、不重试；AArch64根内、两根64MiB、bash/LLVM23未执行。详见[结果续页](49_x86_build_resume_result.md) §11–§15。
+**当前任务（续十二）进行中**：tizen_base已核实合入356627 PS2（67619ec8bbba），356639仍NEW；cb679968后仅这一提交，无额外配方变化。准备生成与已验收4c36e899内容一致的新单提交并按用户授权上传Gerrit review；旧Source/候选补丁不改，ARM根内暂停。见[docs/50](50_archive_followup_review.md)。
+
+**上一任务（docs/49续十一）已收尾：STOP_ARM_CHROOT_EXEC_FORMAT。** x86唯一正常-ba --noprep串行续跑完成；8输出前后同字节、22RPM无ShortCircuited；验收1–3、5–7完成，验收4按磁盘门槛跳过待PM。BOLT已正式交接（997dbb1），本会话此后不写交接树。两ARM宿主全量210/212档SHA与docs/40 §12全同；ARM32根内小试在/proc挂载前/bin/mount Exec format error，当前binfmt只有jar/python3.12、无qemu ARM条目。Source未启动，不改宿主、不重试；AArch64根内、两根64MiB、bash/LLVM23未执行。详见[结果续页](49_x86_build_resume_result.md) §11–§15。
 
 
 ### 2026-10-14 BOLT正式交接（本条优先于下方历史NOT_READY）
@@ -742,3 +744,7 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 人工裁决边界：沿用“环境失败停止，不手工修改宿主、不自行重试”；本轮未把Exec format error当作辅助脚本缺陷。2026-10-14只读事实为宿主启动2026-10-13 21:58:44、binfmt无ARM条目、mmap_min_addr=65536；不能因历史授权GBS标准初始化便在失败后补跑初始化。根内生产限制认证须下次恢复环境后继续。证据E11/arm-followup/root-small/environment-diagnosis.json（硬证据）。
 
 收尾核查（2026-10-14 14:19:28）：20个本任务scope/采样器/日志线程回收，本任务进程0、临时挂载0、两项目锁释放；23条冻结身份检查一致。交接给BOLT的树不再写或重断言可变检查点。W/gbs配置用户改动保留，未提交；未推Gerrit。证据E11/cleanup-final.json、final-scope-cleanup.json、final-protected-identities.json。
+
+进度：2026-10-14｜本提交｜docs/50 §1–§2、STATUS｜356627合入/356639未合入及最新HEAD核查PASS，候选差异来源确定。
+
+人工裁决（续十二）：合并已验收PS3后续增量与PS2静态库llvm-strip，新Change-Id、作者FatTank <hao.lin@samsung.com>，授权仅推refs/for/tizen_base评审；356639由用户随后Abandon。不改冻结两份Source/补丁、不进入已交接树。ARM根内/64MiB暂停下周，先完成bash清单与LLVM23调查；发布完整构建与同环境非归档比较仍挂账。
