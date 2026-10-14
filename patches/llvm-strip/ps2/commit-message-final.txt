@@ -1,0 +1,39 @@
+packaging: use llvm-strip for x86_64 archives
+
+The platform builds with LLVM. Use llvm-strip for static archive
+post-processing in this package while keeping executable stripping on the
+platform default. Override __strip_install_post only to change the
+brp-strip-static-archive argument, without overriding __strip. Check that
+llvm-strip is available after native archive conversion.
+
+This depends on change 356627: bitcode must first be converted to native
+objects. Keep find-debuginfo and other RPM post-processing intact. The
+override is copied from tizen_macros:34-38 in rpm-build-4.14.1.1-1.4 and
+must track future platform macro changes. The disabled comment-note step
+is documented outside the macro body. The override covers every static
+archive in the package buildroot, including compiler-rt subpackages.
+
+The combined x86_64 candidates completed a full LLVM 22.1.8 build through
+one serial -ba --noprep continuation. Full-spec expansion and exec/exit
+tracing establish that conversion preceded stripping, all 270 archive
+llvm-strip calls exited zero, debug-enabled brp-strip was not executed,
+and find-debuginfo and the remaining enabled steps ran normally.
+
+All 225 development archives have native members, no DWARF and complete
+indexes. All 45 compiler-rt archives retain their build originals'
+allocated contents, symbol attributes, relocations and indexes; stripping
+may change non-allocated ELF structure. Host and Tizen GNU ld and lld
+consumers passed, including ASan, UBSan, profile and builtins probes.
+Independent installation and same-tree SKIP checks also passed.
+
+The same-environment unpatched non-archive installation comparison is
+pending because its disk admission budget was not met; do not infer
+byte-identical non-archive outputs from a different snapshot build.
+Earlier small RPM fixtures covered debug on/off and confirmed executable
+stripping remains on the platform default in the non-debug branch.
+
+Limit this override to x86_64. ARM follows after archive conversion and
+packaging validation on those targets.
+
+Change-Id: Iac085555112855d60cc7591931e91466691db6b2
+Signed-off-by: FatTank <hao.lin@samsung.com>

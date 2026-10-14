@@ -1,7 +1,20 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-14。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续十一）构建成功，验收进行中**：唯一一次正常 `-ba --noprep` / mlgo_build_jobs=1 于2026-10-14 06:49:10成功结束，wall29166.743332s；Ninja902/902、Source实际转换225档。续跑后8/8输出与快照逐字节相同，全部7606条原最新Ninja完成记录保留，允许集合外0、未获准重复0；18GiB scope峰含缓存、OOM0，宿主/磁盘保护未触发。消息流中断后恢复核查，没有重启构建。22新RPM/17689路径摘要、270归档后处理、225开发档/3864成员与45运行库/1964成员已PASS；七宿主消费者、10运行库宿主探针与Tizen bfd/lld两包（各270档+5工具身份）PASS；独立安装再次转换225档、before/after SHA与-ba全同，后处理/SKIP及余项继续，BOLT NOT_READY。见[结果续页](49_x86_build_resume_result.md)，证据E11；项目锁仍持有，重任务按共享锁串行。
+**当前任务（docs/49续十一）x86完成并交接BOLT**：唯一正常-ba --noprep、mlgo_build_jobs=1于2026-10-14 06:49:10结束；8输出续跑前后全同，22RPM无ShortCircuited。验收1–3、5–7 PASS/诊断完成；225开发档/3864成员、45运行库/1964成员、7宿主、两Tizen包及运行库、独立-bi与同树SKIP均通过。验收4可用58.154GiB<85.5792GiB，依裁决跳过待PM，不宣称非归档基线相同、不阻塞交接。BOLT READY；本会话不再写交接树。详见[结果续页](49_x86_build_resume_result.md) §11；下一步两ARM全量/根内/64MiB、bash/LLVM23。
+
+
+### 2026-10-14 BOLT正式交接（本条优先于下方历史NOT_READY）
+
+- 构建根：`/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0`。
+- build：`/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`。
+- ThinLTO缓存：`/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache`，47,107文件/96,877,810,360B；原地使用，不复制。
+- 构建完成2026-10-14T06:49:10+08；交接2026-10-14T13:10:12+08；**经一次续跑完成（-ba --noprep，ninja串行）**。交接后归档会话不再写此树，BOLT可在此树续跑。
+- Base=tizen-base-toolchain_20261010.120615，repomd SHA `2a99108e748092148d1161f4ef5e50fbaa57d98132460db6ad02852fea4a39a5`；Unified=tizen-unified-toolchain_20260814.092727，repomd SHA `e7af3f222f0ce958678d964589f2d156e8b47ba463ac0b3b0b96c74663382200`。
+- 源码PS2 HEAD=4c36e899dffee2869af9afd174346e3eb9a7d7ca；spec SHA `822f22fe7a5a7d9cbebfdcae202d5d43cf428f05693070a60e4369517e8f3cd9`；Source SHA `c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e`。
+- PS3 patch SHA `0d777afbf7b1a7b86afc5c1da5f7bef6b622315efc1316be0cac2b6e782d94e7`；PS2 patch SHA `c679f342a72d52de92914cd2d0007c981e0d6d22a6b378f811ca8ee8e12da9ff`。
+- 配置与clang/build.ninja/cache全部身份、验收1–7结论、22RPM清单见docs/49_x86_build_resume_result.md §11及E11/bolt-handoff.json。验收4SKIP_DISK_PENDING_PM；其余均通过/按裁决完成诊断。Source/候选补丁不改。
+
 
 **历史任务（docs/49续十）STOP_RECONFIGURE_PENDING_OUTPUTS，已收尾**：唯一一次原%build环境CMake重配成功，21,987条compdb与完整命令同字节，串行宏mlgo_build_jobs=1已验证。干跑894→902；新增7编译+1归档的8个输出均在原.ninja_log有完成记录，不属允许集合，按规则停止；rpmbuild调用0次、0新RPM、无BOLT交接。待链接历史L=11.344585GiB，参考可用23.085735GiB已足，停止不归因内存。CMake生成的新Cache/build.ninja保留，.ninja_log未改；Source/spec/配置/补丁不变。22:22:56两项目锁/共享锁、进程、scope/采样器和挂载已回收。详见[续十报告](49_x86_build_resume.md#8-续十新裁决输入与唯一配置预检)，证据temp/release-x86-full-build-20261013/round2-resume-serial。
 
@@ -717,3 +730,5 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 进度：2026-10-13｜本提交｜docs/49_x86_build_continuation.md §8及专用构建入口｜冻结输入预检、15+2门禁测试PASS；新增运行期30GiB中止检查，准备启动唯一一次完整构建。
 
 进度：2026-10-13｜本提交｜docs/49_x86_build_continuation.md §9–§12、构建入口与测试｜导出误枚举辅助缺陷已修正；重跑前磁盘缺33.128MiB，STOP，不删不重试；完整构建/验收/交接待恢复。证据E6/driver-spec-selection-diagnosis.json、stop.json、cleanup-final.json。
+
+进度：2026-10-14｜本提交｜docs/49_x86_build_resume_result.md §8–§11｜独立-bi/SKIP与12项结构诊断完成；验收4按磁盘门槛跳过；BOLT正式交接，后续不写该树。

@@ -1,0 +1,55 @@
+packaging: fix llvm-static-devel with ThinLTO
+
+ThinLTO leaves bitcode members in installed static archives. The GNU strip
+run by brp-strip-static-archive can return success while dropping or
+truncating their symbol indexes. Even with an intact index, GNU ld without
+LTO or an LLVM plugin cannot link those bitcode members.
+
+At the end of %install, convert bitcode to native objects using an
+explicitly certified backend policy and rebuild deterministic GNU archives
+and indexes. Preserve existing native members, member order and duplicate
+names. Leave standard RPM post-processing intact; final archives have no
+DWARF after strip processing.
+
+Apply this to all installed x86_64 archives containing bitcode, including
+libarcher_static.a owned by libomp-devel and llvm-static-devel. ARM targets
+require separate certification. Tool compilation and linkage are unchanged
+by this recipe change. Accel extracts host tools for ARM cross-builds;
+x86_64 static-devel consumers build x86_64 targets.
+
+Fail closed on unclassified original options, an uncertified LLVM major,
+incompatible IR metadata, mismatched tool versions or unexpected module
+assembly. This is a certified backend policy, not generic option replay.
+The strong-symbol check compares names; it does not establish arbitrary
+symbol binding, visibility, size or type equivalence.
+
+This fix targets -O3/ThinLTO recipes. Without bitcode the converter reports
+NATIVE_ARCHIVES_SKIP. With ThinLTO, compiler options must match the policy
+or %install fails pending recertification. The no-debug path omits only
+-g and -gdwarf-4. Sixty paired source fixtures passed parameter checks and
+compiler-difference attribution; a complete release-mode build is pending.
+
+Validation used LLVM 22.1.8 on Base-Toolchain 20261010.120615 and Unified
+20260814.092727. One full build completed through one -ba --noprep resume
+with serial Ninja after the initial 6/6/2 concurrency hit the host memory
+floor. Debuginfo used -j4. The 22 RPMs have no ShortCircuited dependency.
+All 225 development archives (3,864 ordered members) are native, have no
+DWARF and have complete indexes. All 45 compiler-rt archives preserve their
+build originals' allocated contents, symbol attributes, relocations and
+indexes after llvm-strip. Libarcher ownership agrees across both packages.
+
+Seven host consumers and both Tizen consumer packages passed with
+plugin-free, non-LTO GNU ld and lld. Tests cover LLVM O2 IR processing,
+in-process lld linking, shared-library loading, section garbage collection,
+and sanitizer/profile/builtins runtimes. A separate real %install
+reconverted all 225 archives with identical before/after hashes; a repeated
+converter call on that tree skipped all 270 native archives without
+changing them. Both x86 offline paths also matched the earlier validated
+225 archives, 3,864 members, indexes and 3,853 backend flag sets.
+
+The same-environment unpatched non-archive installation comparison remains
+pending: available disk space did not satisfy its pre-registered admission
+budget. Different snapshot builds were not substituted as that baseline.
+
+Change-Id: Id4eb147e7ec4764d58a81110cf7bf57d21b64ac8
+Signed-off-by: FatTank <hao.lin@samsung.com>

@@ -1,5 +1,6 @@
 # 续十一：串行续跑结果与新 RPM 验收
 
+**当前阶段：x86验收1–3、5–7完成；验收4因磁盘门槛跳过、待PM；BOLT交接READY。后续ARM步骤尚在进行。**
 状态：**构建成功，续跑前后 8/8 输出逐字节 PASS；RPM 内容、归档与后处理 PASS；消费者等验收进行中，BOLT 尚未交接**。
 
 本页承接 [续跑记录 §15–§16](49_x86_build_resume.md)，旧记录保留。2026-10-14 消息流断开后恢复核查，没有再次调用 rpmbuild。时间均为北京时间。
@@ -188,3 +189,72 @@ compiler-rt 宿主 10 项（两链接器 × ASan 坏/好、UBSan、profile、bui
 真实 `rpmbuild -bi --short-circuit --noclean` 使用独立 buildroot。225 档再次实际转换，Source wall1324.993260s；每档 before/after SHA 均与本轮正常-ba的转换摘要一致（225/225），允许弱W缺失1920，强符号缺失0；Source已清理其临时大载荷。证据 `independent-conversion-repeat.json`、`independent-conversion-summary.json` 和 `ba-install-conversion-evidence/`。
 
 12:50时仍在find-debuginfo标准后处理，不能提前将整个-bi或SKIP验收记PASS。进度显示曾将 `NATIVE_ARCHIVE_INSTALLED` 前缀误作JSON导致显示错误；只读原文证实安装正常，计数显示改为区分转换/回写前缀，未重启任何阶段、未修改Source/门禁。证据 `install-progress-display-diagnosis.json`。
+
+### 8.1 独立安装与同树 SKIP 最终 PASS
+
+独立-bi于13:08:51成功结束，scope wall3321.020848s，MemoryPeak14,166,802,432B（13.193863GiB）、memory.events全部0；没有创建新RPM。225档、3864有序成员复查全部机器码、无DWARF、完整索引与10个每函数一段样本PASS。随后同一安装树直接调用Source：`NATIVE_ARCHIVES_SKIP all archives already native`，跳过270个纯机器码归档，225个开发归档SHA未变。两步均保留独立argv与退出码，不能混同为一次SKIP测试。
+
+证据：independent-bi/{attempt.json,outcome.json,build.log,scope-after-rpm.json}、independent-archives-result.json、independent-archive-checks/、independent-skip/、independent-skip-verification.json。三个检查scope与-bi的采样、日志线程均回收；原正常-ba的22RPM没有被-bi覆盖。
+
+## 9. 跨子系统结构诊断（仅记录）
+
+按原编译命令去掉LTO与依赖文件输出，保留其他参数，编译12个不同子系统的成员；4GiB编译AS，原根环境与编译器。直接对象另以同版本llvm-strip -g处理，再与新RPM机器码成员比较，避免单纯DWARF移除主导差异。**此比较不作门禁：转换对已做链接前优化的bitcode再次完整优化，允许记录结构差异，不将其自动认定为错误或字节等价。** 选样规则为各子系统最小bitcode成员，包含空/仅数据成员，不能代表复杂TU覆盖度；225档与消费者门禁另行完成。
+
+|归档 / 成员|直接/转换函数段数|节集合差异|重定位数差异（直接独有/转换独有）|定义符号差异（直接独有/转换独有）|
+|---|---:|---|---:|---:|
+|libLLVMAnalysis.a / TFLiteUtils.cpp.o|0/0|无|0/0|0/0|
+|libLLVMAsmParser.a / LLLexer.cpp.o|31/31|无|744/0|417/81|
+|libLLVMBitReader.a / ValueList.cpp.o|6/6|无|0/0|0/0|
+|libLLVMCodeGen.a / GCMetadataPrinter.cpp.o|15/15|无|0/0|0/0|
+|libLLVMCore.a / GVMaterializer.cpp.o|2/2|无|0/0|0/0|
+|libLLVMMC.a / MCAsmMacro.cpp.o|0/0|无|0/0|0/0|
+|libLLVMObject.a / WindowsMachineFlag.cpp.o|2/2|无|0/0|0/0|
+|libLLVMPasses.a / OptimizationLevel.cpp.o|0/0|无|0/0|0/0|
+|libLLVMSupport.a / blake3_neon.c.o|0/0|无|0/0|0/0|
+|libLLVMTransformUtils.a / Utils.cpp.o|1/1|无|0/0|0/0|
+|libclangAST.a / InitMap.cpp.o|3/3|无|0/0|0/0|
+|liblldCommon.a / Utils.cpp.o|1/1|无|0/0|0/0|
+
+12/12编译与诊断命令成功，差异原文、readelf输出、编译/strip argv与SHA在 `new-build-structure/`；LLLexer.cpp.o存在上表差异，未作为失败重跑，也未宣称两种优化流水线等价。scope wall10.220345s、峰1,797,505,024B。
+
+## 10. 验收4的有条件执行结果
+
+13:09:20复查：/var/tmp可用62,441,951,232B（58.154 GiB），要求91,889,966,304B（85.5792GiB）=1.2×46.316GiB+30GiB。按续七裁决**不执行同环境无补丁-bi，状态SKIP_DISK_PENDING_PM**。未创建该基线安装树，未删除任何现有目录；不能宣称本次非归档文件与同环境无补丁基线逐字相同。旧环境基线不可替代。该项明确不阻塞交接。
+
+待PM条件恢复后，可在同一构建输入/环境、独立安装树执行已批准的只安装比较；执行前仍须Ninja无编译/链接待办、执行中禁止编译/链接。磁盘预算仍46.316GiB×1.2+30GiB。耗时参考本轮实际-bi 3321s（含1325s转换，不是无补丁时长预测），没有据此伪造无补丁实测。证据same-environment-baseline/{disk-admission.json,result.json}。
+
+## 11. x86验收总表与BOLT交接
+
+|原验收项|最终状态|证据|
+|---|---|---|
+|1 身份、依赖、完整构建|PASS；构建经一次续跑完成（-ba --noprep，ninja串行）；22RPM无ShortCircuited|§1–§3、§7.3；root-dependency-facts、ninja-history-proof|
+|2 实际转换与完整后处理|PASS；225实际转换、270归档llvm-strip逐档exit0|§5；trace与postprocessing-result|
+|3 开发归档/运行库/双归属|PASS；225/3864与45/1964、完整索引等|§6；archive-acceptance|
+|4 同环境非归档基线|SKIP_DISK_PENDING_PM；不阻塞交接，未宣称相同|§10|
+|5 宿主/Tizen消费者与运行库|PASS；7宿主、10运行库、bfd/lld两包|§7|
+|6 独立-bi与同树SKIP|PASS；两步骤分别证明|§8.1|
+|7 跨子系统结构|12项完成，仅诊断；差异保留|§9|
+
+交接冻结时间：2026-10-14T13:10:12.026995+08:00。完整构建结束时间：2026-10-14T06:49:10+08:00。**BOLT会话可在以下树原地使用缓存；本归档会话从交接起不再写这棵树。** 后续ARM验证使用其原有两棵ARM树/独立新输出，重任务继续共享flock排队。
+
+- 构建根：`/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0`
+- 构建目录：`/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`
+- ThinLTO缓存：`/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache`；47,107文件、96,877,810,360B。路径由build.ninja的完整--thinlto-cache-dir原文确认，未复制或删除。
+
+|交接身份|值|
+|---|---|
+|Base|tizen-base-toolchain_20261010.120615；repomd `2a99108e748092148d1161f4ef5e50fbaa57d98132460db6ad02852fea4a39a5`|
+|Unified|tizen-unified-toolchain_20260814.092727；repomd `e7af3f222f0ce958678d964589f2d156e8b47ba463ac0b3b0b96c74663382200`|
+|源码提交|基准cb67996861d070d68fec2b4c623eed7d20ba2e23；PS3=3731eda7e1b81bd313849a61d60fbac4970a99b1；PS2=4c36e899dffee2869af9afd174346e3eb9a7d7ca|
+|PS3补丁SHA|`0d777afbf7b1a7b86afc5c1da5f7bef6b622315efc1316be0cac2b6e782d94e7`|
+|PS2补丁SHA|`c679f342a72d52de92914cd2d0007c981e0d6d22a6b378f811ca8ee8e12da9ff`|
+|导出spec SHA|`822f22fe7a5a7d9cbebfdcae202d5d43cf428f05693070a60e4369517e8f3cd9`（含GBS VCS行）|
+|生产Source SHA|`c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e`|
+|CMakeCache SHA|`f7e93b874c5aefdbe4515e6bedb8318ee7c207a95442162e460480545cceb59f`|
+|build.ninja SHA|`9fcc86836b133cff1968f7393e608969341f2775cfbbd11d2e3a00199b36f551`|
+|构建树clang-22 SHA|`7df0ff90dbca7f99ed6a642546281584dbfaab1528a94abf7a1bb524ca371b2c`，1,793,485,264B|
+|专用配置SHA|`d1ff39acbaffd03f3c626e9fa8c4a397ea902066e722fd305539cb298de7ab34`|
+
+配置：debug分支、ThinLTO/O3；CMake编译/链接池6/2；原阶段Ninja6，唯一续跑Ninja1，debuginfo -j4；18GiB/swap0。完整冻结清单、22RPM再哈希、三个构建树ELF与.ninja_log身份在 `bolt-handoff.json`，缓存原命令在handoff-cache-command-lines.txt，交接核对scope已释放。发布模式60对参数/归因认证PASS沿用，发布模式完整构建仍挂账。
+
+两补丁保持冻结，不改format-patch；最终英文提交说明另存commit-message-final.txt，明确本次基线比较尚未执行。不推Gerrit。ARM全量/根内限制负例、bash清单与LLVM23后续进行。
