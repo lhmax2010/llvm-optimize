@@ -18,3 +18,7 @@ PM归因：删除88项是首次配置的编译器检测/ABI/try_compile模块或
 |合计|7439|全部PASS|
 
 源a1410e3d14b8836e3f9be5a1b4380f914dc2e705父cb67996861d070d68fec2b4c623eed7d20ba2e23，草案不改。后续步骤逐项更新，不将文本PASS代替对象/双模式/RPM/DWARF/性能资格。候选历史工具后备SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9。
+
+## 两模式展开 PASS
+
+当前a1410e3d spec在debug（_toolchain=clang）与release（取消_toolchain）宏下rpmspec展开PASS，BOLT段逐字节相同/SHA 298c888296a30801ca79590543110014ae753a8a391065283711a8547a0b8dd9；两边均只有1次普通-P安装，无ordinary-exports/prune；pipeline < compare-root < candidate install次序PASS。完整展开和参数/env记录见finish-expansion及finish-*-expanded.spec。PATH均/usr/local/bin:/bin:/usr/bin:/usr/local/sbin，which clang=/bin/clang、clang++=/bin/clang++。未运行cmake/ninja，轻4GiB scope/proc已回收。一次准备性路径修正：支持脚本record_call.py位于先前根内专用工作目录，错误宿主temp查询后定位原保存文件，不涉及产品门禁。对象/后处理/包清单/性能尚待。

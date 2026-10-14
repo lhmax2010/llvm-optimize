@@ -264,3 +264,7 @@ PM确认追加bolt后第二次完整安装创建两个未登记manifest的BOLT�
 ## 2026-10-14 续跑七：PM扩充乙类，文本门禁PASS
 
 PM许可CMake簿记语句对：RERUN_CMAKE依赖和配对phony输出，后者须phony/无全部依赖及变量/输出增删与前者精确相等。7438块全部条件PASS，同88删/20增；全部7439块PASS（BOLT9/规则1/聚合5/混合1/甲7421/乙2）。PM判88首次编译器/ABI/try_compile检测在缓存重配不再读取，新增20为BOLT，来源属首次/重配区别；取消对照，本轮不新配置。18甲类证明SHA绑定沿用，Quickbuild tool-plan仍最终现场门禁。源a1410e3d父cb不变；继续两模式展开及对象/双模式/22RPM-DWARF/30×5性能，全部PASS且geom<0.98才sandbox直推。新E=bolt-v4-20261014-finish，19/finish-text-gate给证据。
+
+## 两模式展开 PASS
+
+当前a1410e3d spec在debug（_toolchain=clang）与release（取消_toolchain）宏下rpmspec展开PASS，BOLT段逐字节相同/SHA 298c888296a30801ca79590543110014ae753a8a391065283711a8547a0b8dd9；两边均只有1次普通-P安装，无ordinary-exports/prune；pipeline < compare-root < candidate install次序PASS。完整展开和参数/env记录见finish-expansion及finish-*-expanded.spec。PATH均/usr/local/bin:/bin:/usr/bin:/usr/local/sbin，which clang=/bin/clang、clang++=/bin/clang++。未运行cmake/ninja，轻4GiB scope/proc已回收。一次准备性路径修正：支持脚本record_call.py位于先前根内专用工作目录，错误宿主temp查询后定位原保存文件，不涉及产品门禁。对象/后处理/包清单/性能尚待。
