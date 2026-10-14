@@ -355,10 +355,10 @@ git push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm AUDITED_C
 
 15临时配置PASS但原树恢复FAIL；16历史后备候选4ec07159…门禁PASS，安装遗漏STOP；17修成单次安装/compare-root，103夹具及封套PASS，文本门禁STOP。详见15–17，原树禁CMake/Ninja；未来临时配置专用cache。
 
-### v4.1-15/16 文本补充与续跑七（最新2026-10-15）
+### v4.1-15至17 最新执行记录（2026-10-15）
 
-18仅RERUN_CMAKE获许可而phony STOP；最新PM扩展为簿记语句对，phony无依赖/变量且输出88删/20增与RERUN完全配对，7439文本块全PASS。来源按PM首次检测/缓存重配判定，对照取消，禁止新CMake配置。Quickbuild tool-plan仍现场把关。
+18曾因phony许可STOP；19 PM扩充簿记语句对后7439文本/双模式展开PASS，但路径查询错误STOP。20续跑八按新查找规则继续：120完整对象PASS，debug/release mini的compare-root/install/单次原post尾检/SHA/三目标/alias PASS；133调试ELF（其他132）穷尽来源与CRC证明，自身.debug及5exclusive源为debug缺失例外、无build-id链接可删，其他文件/目录严格保持、无BOLT新增。
 
-19当前a1410e3d草案debug/release展开PASS，同BOLT段/一次安装/无exports-prune/compare-root次序正确；120输入SHA准备PASS但未编译。同类辅助脚本路径错误第二次触发准备STOP，30/90对象、双模式、RPM-DWARF、性能、sandbox均未做。原树/cache未写，保护审计PASS；候选仍历史后备4ec07159…，源父cb不变。
+30份x86资产各侧5次，固定CPU2/并行1/交替顺序，geom0.855890085<0.98 PASS。保护审计后，sandbox由cb679968更新至a1410e3d14b8836e3f9be5a1b4380f914dc2e705并核对；源父cb/无归档补丁，本地候选历史后备4ec07159…。
 
-周四核统计同量级/双5%、tool-plan、compare-root、Quickbuild性能、debugsource实际清单；不比较双方SHA。86配置/tool-plan/完全strip覆盖debug间接读取。细节见18/19/STATUS。
+周四核QB统计同量级/双5%、tool-plan、compare-root、自身性能、debugsource实物清单；不比较local/QB SHA，父目录不自动允许删除。发布完整构建仍挂账；周五若tizen_base合归档补丁再变基解spec冲突。所有锁/proc/scope回收，无原树配置/Ninja/cache写入或ARM根/完整LLVM构建。细节20/STATUS，原大证据留E。

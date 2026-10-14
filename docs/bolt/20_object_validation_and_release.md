@@ -133,3 +133,25 @@ clang包允许实体内容/大小变化与6个别名target规范化；7个family
 | aarch64-training/09-AsmParser | 2.716850 | 2.338638 | 0.860790 |
 
 几何平均比 0.855890085，按(1-ratio)耗时降低14.411%，阈值严格<0.98：PASS。load1范围1.37–2.54/中位1.93（含被测单进程），完整5次原样本/环境/cpu频率在validation-performance.json。scope 1704.017s/峰4.343GiB/VmHWM最高725344kB，锁持1704.056s；proc/scope/锁已回收，无低内存/OOM。不是Quickbuild性能；周四实物仍须复核。
+
+## Sandbox推送与收尾 PASS
+
+全部前四步门禁通过且保护审计PASS后，直接推授权源提交 a1410e3d14b8836e3f9be5a1b4380f914dc2e705（父cb67996861d070d68fec2b4c623eed7d20ba2e23）到 sandbox/lhmax2025/bolt_pgo；远端before cb67996861d070d68fec2b4c623eed7d20ba2e23，after a1410e3d14b8836e3f9be5a1b4380f914dc2e705。Git返回0，无force、无refs/for、无tizen_base，没有archive补丁/变基；source tree33b4e9f84cec3336878501d55fe243b41c092c80。完整stdout/stderr及远端前后查询公开validation-sandbox-*，元数据validation-sandbox-push.json。
+
+|源提交文件|操作|字节|SHA256|
+|---|---|---:|---|
+| packaging/clang-bolt-helper.py | A | 33098 | 7614228b5da020fd1ae08eaef0ebaf096c317f21a370e249285ee632711888e7 |
+| packaging/clang-bolt-v2.fdata.xz | A | 9735212 | 52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f |
+| packaging/llvm.spec | M | 24322 | 14d17a60369a2c05661037583740b410f0fd710aef2c0c78de08175a57bb6c0c |
+
+本地候选最终SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9，路线历史工具后备。周四必须核Quickbuild匹配统计同量级/双5%、现场tool-plan、compare-root、Quickbuild自身性能、debugsource逐项清单；不要求两边clang SHA相同。若tizen_base之后合归档install补丁，周五在新基线上变基处理spec冲突；本次不做。发布完整普通/BOLT构建及消费者仍挂账，双模式mini只证明机制。
+
+保护审计PASS：22RPM/普通clang等指纹、归档独立证据/原源码元数据、坏cache/ninja SHA保持；120原输入再次逐SHA不变。原cache47987/96881772832B，无新CMake/Ninja/原cache写入；无ARM根访问/完整LLVM构建/W tracked或W/llvm修改。所有18次重锁单次≤60m、proc/scope回收；最终审计scope30.592s，sandbox轻scope22.592s。原根free53753024512B/E free426093473792B。
+
+本轮查找更正0：均先rg --files/find定位。产品准备性修正三类各一次：(1)报告误要求debug也调用brp-strip，根据08及同一trace改为debug0/release1，未重跑RPM、未改产物；(2)旧scope CLI打印FAIL却返回rc0导致一次Git缺少未生成report的pathspec错误，未提交；本会话CLI改为正确传播状态，后续操作失败即退出。(3)收尾报告正文百分号格式转义错误，修正生成器一次，不重跑产品或推送。失败report原文与三项理由公开，非产品门禁豁免。性能进度消息曾236误计为206已即时纠正，原300样本未受影响。
+
+任务第一至第五步完成，最终PASS；证据分步GitHub提交0009452、dc5163f、bcbdd1a、b2e18dd，sandbox已更新。所有数据/每file5次中位数CSV/完整来源和原包头/execve/资源与约束在本20及validation-*；原大.o/.ii/ELF/RPM和cgroup/mountinfo留E/根内专用目录。GitHub收尾与raw索引随后推送并逐URL校验。
+
+收尾报告修正补充：正文百分号格式错误修正一次；另一次stdin报告辅助命令从W导入E的metrics模块失败，实际未执行任何报告动作，rg定位后去掉不需要的导入，以标准库复制/更新资料。两类各修正一次；连同先前post链计数/scope CLI共四类各一次，实验和sandbox推送均未重跑/改变。两收尾失败原文和完整四项记录公开。查找已有文件均先搜索，本次无产品查找路径更正；模块搜索路径属于报告命令准备错误，不计为产品结果FAIL。
+
+原始artifact格式：CSV保留标准CRLF，git whitespace以cr-at-eol识别；Gerrit captured stderr原样保留尾空格，仅该路径排除whitespace lint。其余提交文件diff-check PASS，文件大小/HTTP/SHA检查不排除任何文件，不改原样本数字或网络原文。

@@ -253,17 +253,9 @@ PM确认追加bolt后第二次完整安装创建两个未登记manifest的BOLT�
 
 甲类7421块/6838普通语句PASS，两个PDB变量在2454规则中0引用；当时乙类只限RERUN_CMAKE，配对phony输出块未获许可而STOP。完整人工裁决、88/20全文、保护与资源见18及GitHub dd7053a中的本STATUS；该历史停止被后续PM扩充许可覆盖，原始证据不删。
 
-## 2026-10-15 续跑七：文本/展开PASS，第二次准备性路径错误STOP
+## 2026-10-15 续跑七（历史）
 
-PM扩充乙类为CMake簿记语句对：RERUN_CMAKE依赖与配对phony输出；后者须phony/无全部依赖与变量/输出增删精确配对。7438逐项PASS，同88删/20增；7439全部PASS（BOLT9/规则1/聚合5/混合1/甲7421/乙2）。PM归因88首次编译器/ABI/try_compile检测在缓存重配消失、20为BOLT；对照取消，本轮无新配置。Quickbuild tool-plan仍现场最终把关。
-
-当前a1410e3d父cb spec两宏展开PASS：BOLT段同字节，普通安装一次，无ordinary-exports/prune，pipeline<compare-root<candidate install；PATH/which沿用原RPM前导。文本bd3c3c5、展开9c173d0均已推GitHub。
-
-120保存.ii（30历史+90资产）逐SHA准备PASS/901204757B，但objects compiled=0。先猜错宿主record_call.py位置后从原根专用目录修正一次；又猜错资产辅助脚本assets90-stage.py文件名，为同类第二次保存路径错误，按规则STOP_PREPARATORY_SUPPORT_PATH_SECOND_ERROR，不修正、不继续实验。展开原文两个EOF空行的diff-check提示保留。无产品门禁失败，不隐去準备错误。
-
-30/90对象、双模式小spec、22RPM/DWARF预期差异、30×5性能均NOT RUN，geom未知；sandbox未尝试/远端未查。源a1410e3d14b8836e3f9be5a1b4380f914dc2e705父cb不变，候选历史后备SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9。保护审计PASS：22RPM/原clang/归档证据/源码/坏cache-ninja不变；原cache47987/96881772832B零新增。全部4GiB轻scope已回收；无重阶段/共享锁/cmake/ninja/link，展开proc临时挂载已卸载。19/finish-text-gate/finish-expansion/finish-stop给全部证据与资源，E=bolt-v4-20261014-finish。
-
-周四核匹配同量级/双5%、tool-plan、compare-root、Quickbuild性能、debugsource实物清单；不核双方clang SHA。原树禁用不变，剩余资格未完成，不推sandbox。
+7439文本/当前a141两模式展开PASS，120输入SHA准备PASS；两次辅助脚本路径查询错误触发当时准备STOP，后续对象等未跑。完整人工裁决/路径错误/资源/保护见19及GitHub dd7053a中的本STATUS。续跑八PM已调整查找错误规则，此历史状态被后续执行覆盖，原证据保留。
 
 ## 2026-10-15 续跑八：从对象继续（进行中）
 
@@ -278,3 +270,7 @@ PM确认7439文本/两模式展开/120输入准备已经结束，不重做；只
 续跑八步骤3预期清单/证据PASS：22RPM绑定，133debug ELF来源穷尽、其他132清单SHA；GNUdebuglink CRC绑定clang自身debug；只clang实体+6alias变化、自身.debug删除、5个exclusive源缺失（详细20/expected JSON）。当前基线自身build-id链接0；无任何新增BOLT产物/非clang变化。父目录不自动允许删除，周四按基线逐项核。发布仅(a)规则模拟，不替代完整发布构建。16/20GiB解包写入均磁盘预检与写后≥30G，单锁/proc/scope回收。准备修正两类各一次/产品未重跑，查找更正0。接下来30份x86资产5轮固定核性能；geom<0.98才sandbox。
 
 续跑八步骤4性能PASS：30份x86资产各侧5次，固定CPU2/并行1/角色交替，geom 0.855890085（阈值<0.98），load1 1.37–2.54。scope1704.017s/峰4.343GiB，锁/proc/scope回收；完整逐项中位数/原样本/条件见20/validation-performance。未拿本地性能替代QB性能。
+
+续跑八最终PASS（2026-10-15T02:24:43.219484+08:00）：sandbox从cb67996861d070d68fec2b4c623eed7d20ba2e23直接更新至a1410e3d14b8836e3f9be5a1b4380f914dc2e705，远端前后核对PASS；不推refs/for/tizen_base、未force/重基。120对象/双模式mini/22RPM-DWARF预期清单/性能geom0.855890085全部PASS，候选历史后备4ec07159…；保护审计和120输入再次SHA PASS，所有锁/proc/scope回收。原cache47987/96881772832B不变，无CMake/Ninja/ARM根/完整LLVM/W tracked修改。查找更正0；报告debug brp条件与scope CLI返回值各修正一次，同一RPM与trace未重跑，详见20/validation-preparatory-corrections；进度计数消息误报已纠正，原300样本正确。周四六项QA与源父目录严格核对保持，发布完整构建/周五若新tizen_base合归档补丁再变基仍挂账。20和validation-final-result给全部结果，Raw索引最后更新。
+
+收尾补充：四类準备修正各一次（post计数、scopeCLI、报告百分号、报告模块搜索路径）；产品/推送未重跑，完整记录与原文公开，查找路径更正0。

@@ -12,5 +12,19 @@
     "error": "Existing scope CLI printed FAIL but returned outer rc0; next git add attempted missing report output and failed before mutations",
     "correction": "Own run_scope.py CLI now exits nonzero unless returned status is PASS; imports/session behavior unchanged",
     "product_impact": "No product operation or commit occurred after failed report; GitHub/source working trees unchanged at that failure"
+  },
+  {
+    "class": "final report string formatting",
+    "count": 1,
+    "error": "Unescaped literal percent in a formatted Chinese report paragraph raised ValueError before documentation mutations",
+    "correction": "Escape that literal percent; validate planned design size before rerunning report generation; products and sandbox push not rerun",
+    "first_failed_scope": "final-report-scope"
+  },
+  {
+    "class": "host reporting Python module path",
+    "count": 1,
+    "error": "An unused import metrics in a stdin-only final-publication helper was executed from W rather than its own E directory, yielding ModuleNotFoundError before any helper action",
+    "correction": "Locate metrics.py with rg --files, remove the unused import and perform only stdlib file-copy/JSON updates; product experiments and sandbox push unchanged",
+    "product_impact": "No product action or evidence mutation occurred in the failed helper"
   }
 ]

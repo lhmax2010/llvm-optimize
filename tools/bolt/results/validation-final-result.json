@@ -1,0 +1,119 @@
+{
+  "status": "PASS_LOCAL_VALIDATION_AND_SANDBOX_PUSH",
+  "finished_CST": "2026-10-15T02:24:43.219484+08:00",
+  "source_commit": "a1410e3d14b8836e3f9be5a1b4380f914dc2e705",
+  "parent": "cb67996861d070d68fec2b4c623eed7d20ba2e23",
+  "candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
+  "candidate_route": "historical tool fallback",
+  "objects": {
+    "count": 120,
+    "historical30": 30,
+    "assets90": 90,
+    "complete_bytes_equal": true,
+    "scope_s": 1380.1329743290116,
+    "maximum_cgroup_peak_bytes": 3037630464
+  },
+  "dual_mode": {
+    "debug": "PASS",
+    "release": "PASS",
+    "candidate_SHA_unchanged": true,
+    "positive_control_processed": true,
+    "a141_compare_root_install_post": "PASS"
+  },
+  "expected_diff": {
+    "baseline_RPM_count": 22,
+    "all_debug_ELFs": 133,
+    "all_other_debug_ELFs": 132,
+    "changed_entity": 1,
+    "changed_aliases": 6,
+    "removed_clang_debug": 1,
+    "owned_build_id_links": 0,
+    "exclusive_debugsource_files": [
+      "/usr/src/debug/llvm-22.1.8-1.x86_64/build/tools/clang/tools/driver/clang-driver.cpp",
+      "/usr/src/debug/llvm-22.1.8-1.x86_64/clang/tools/driver/cc1_main.cpp",
+      "/usr/src/debug/llvm-22.1.8-1.x86_64/clang/tools/driver/cc1as_main.cpp",
+      "/usr/src/debug/llvm-22.1.8-1.x86_64/clang/tools/driver/cc1gen_reproducer_main.cpp",
+      "/usr/src/debug/llvm-22.1.8-1.x86_64/clang/tools/driver/driver.cpp"
+    ],
+    "other_files_and_directories": "exact baseline required",
+    "scope": "expected debug differences with proof; full Quickbuild comparison pending"
+  },
+  "performance": {
+    "geometric_mean_ratio": 0.8558900849814584,
+    "time_reduction_percent": 14.410991501854165,
+    "samples": 300,
+    "rows": 30,
+    "fixed_cpu": 2,
+    "parallel_compiles": 1,
+    "CPU": "Intel(R) Core(TM) Ultra 7 265",
+    "governor": "powersave",
+    "load1_range": [
+      1.37,
+      2.54
+    ],
+    "load1_median": 1.93,
+    "scope_s": 1704.0174064349994,
+    "peak_bytes": 4662829056
+  },
+  "sandbox": {
+    "status": "PASS",
+    "remote_before": "cb67996861d070d68fec2b4c623eed7d20ba2e23",
+    "remote_after": "a1410e3d14b8836e3f9be5a1b4380f914dc2e705",
+    "branch": "refs/heads/sandbox/lhmax2025/bolt_pgo"
+  },
+  "protected_audit": "PASS",
+  "cache": {
+    "files": 47987,
+    "bytes": 96881772832
+  },
+  "all_heavy_leases_released": true,
+  "proc_unmounted": true,
+  "path_search_corrections": [],
+  "preparatory_corrections": [
+    {
+      "class": "post-chain report expectation",
+      "count": 1,
+      "error": "Report expected brp-strip script once in debug, although 08 and preserved trace show debug skips it",
+      "correction": "Require find-debuginfo debug1/release0 and brp-strip debug0/release1; recheck the same RPM/trace, no product rerun or gate relaxation",
+      "first_failed_scope": "smoke-report-scope"
+    },
+    {
+      "class": "scope CLI exit propagation",
+      "count": 1,
+      "error": "Existing scope CLI printed FAIL but returned outer rc0; next git add attempted missing report output and failed before mutations",
+      "correction": "Own run_scope.py CLI now exits nonzero unless returned status is PASS; imports/session behavior unchanged",
+      "product_impact": "No product operation or commit occurred after failed report; GitHub/source working trees unchanged at that failure"
+    },
+    {
+      "class": "final report string formatting",
+      "count": 1,
+      "error": "Unescaped literal percent in a formatted Chinese report paragraph raised ValueError before documentation mutations",
+      "correction": "Escape that literal percent; validate planned design size before rerunning report generation; products and sandbox push not rerun",
+      "first_failed_scope": "final-report-scope"
+    },
+    {
+      "class": "host reporting Python module path",
+      "count": 1,
+      "error": "An unused import metrics in a stdin-only final-publication helper was executed from W rather than its own E directory, yielding ModuleNotFoundError before any helper action",
+      "correction": "Locate metrics.py with rg --files, remove the unused import and perform only stdlib file-copy/JSON updates; product experiments and sandbox push unchanged",
+      "product_impact": "No product action or evidence mutation occurred in the failed helper"
+    }
+  ],
+  "commentary_count_correction": "Intermediate performance progress said 236 where the saved count was 206; corrected immediately in commentary. Raw samples and final 300 count were unaffected.",
+  "Quickbuild_Thursday_checks": [
+    "matching same order of magnitude, R<=5% and S/N<=5%",
+    "live tool-plan PASS",
+    "compare-root PASS",
+    "Quickbuild clang performance rerun",
+    "debugsource inventory against prior baseline with per-path proof",
+    "do not compare Quickbuild clang SHA with local candidate"
+  ],
+  "release_full_build": "Deferred until before entering Tizen-Base; no full release LLVM build done",
+  "Friday_rebase": "If tizen_base incorporates archive install fixes, rebase and resolve llvm.spec after Friday finalization; not done here",
+  "artifact_whitespace_check": {
+    "CSV": "Preserve standard CRLF; git cr-at-eol setting accepts this format",
+    "Gerrit_raw_stderr": "Preserve byte-exact trailing spaces, excluded by this exact path from whitespace-only lint",
+    "all_other_files": "git diff --cached --check required; no broader exclusion",
+    "product_gate_impact": false
+  }
+}
