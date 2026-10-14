@@ -249,17 +249,9 @@ PM确认追加bolt后第二次完整安装创建两个未登记manifest的BOLT�
 
 保护审计PASS：原clang/22RPM/归档证据/源码/坏cache-ninja配置不变，原cache47987/96881772832B本轮零新增（前轮增长PM已接受）。本轮没有CMake/Ninja/link/新配置/chroot/proc/shared-lock，全部4GiB轻scope已回收，无准备性错误重试；严格失败后只读完善分类/封套/报告，不继续产品实验。W tracked仅原有gbs改动，不写W/llvm、不进入ARM树。原根free59147931648B，未有>10GiB写入。
 
-## 2026-10-14 周三续跑六：甲类认证PASS，phony输出块不属乙类STOP
+## 2026-10-14 续跑六（历史）
 
-人工裁决：采用a1410e3d父cb679968的单次安装/compare-root草案及103已通过夹具；新增甲类仅未被任何rule字段引用的变量且同一build其余全部相同，乙类仅RERUN_CMAKE的build build.ninja依赖列表。debug间接源读取以86同字节配置/Quickbuild现场tool-plan/完全strip覆盖，不再单独阻塞，周四加实际debugsource清单对照。原树禁配置与Ninja不变，唯一新配置只能认证通过后临时专用cache对照；其他门禁不放宽。
-
-本次7,421甲类块全部PASS：仅TARGET_COMPILE_PDB/TARGET_PDB，两快照两文件所有2454条rule的全部字段分别0引用；6838普通语句（6255对象/583链接）头行及其余变量/字节完全相同。真正RERUN_CMAKE依赖块PASS，88删/20增全文列18/JSON。但第7438块是多输出phony语句，改的是冒号左输出清单（同88删/20增），不是RERUN_CMAKE/build build.ninja，也不是变量或聚合依赖新增。故7439块中7438 PASS、1 FAIL，状态STOP_CMAKE_PHONY_OUTPUTS_OUTSIDE_ALLOWED_CLASSES；没有自行把关联的phony块扩大纳入乙类。
-
-失败后停止产品实验：无BOLT对照配置、当前草案debug/release展开、30/90对象、双模式小spec、22RPM/DWARF预期差异、30×5性能与sandbox全部NOT RUN；geom未知、远端未查。候选仍历史后备SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9，源a1410e3d14b8836e3f9be5a1b4380f914dc2e705父cb679968；不改草案/patch，不重试产品失败。新18和text-proof认证JSON/独立phony原文给全证据。仅一次文档路径准备性修正：猜测17旧名失败，rg定位正确文件后读取；无其他修正。
-
-周四清单：匹配统计同量级/双5% PASS、tool-plan PASS、compare-root PASS、Quickbuild性能、debugsource实际清单与旧快照对比；不要求local/Quickbuild clang SHA一致。新E=bolt-v4-20261014-text-proof；没有cmake/ninja/link、新配置/chroot/proc/共享锁或原cache写入，停止后仅只读保护审计/报告/GitHub提交发布。
-
-最终保护审计PASS：22RPM与普通clang等SHA/大小、归档证据元数据、原源码元数据、原树坏cache/ninja指纹不变；原ThinLTO缓存47,987文件/96,881,772,832B无新增，无写入。源a1410e3d工作树干净/spec与helper SHA不变；候选SHA4ec07159…不变。认证scope2.533s/峰0.412GiB/最大采样VmHWM280388kB；审计scope16.048s/峰0.599GiB/最大采样VmHWM178412kB；两轻scope已回收，swap0/无OOM，未获取共享锁或挂载proc。原根free59138056192B，没有单次>10GiB写入。第一里程碑8af4de0已推GitHub bolt-v4；本收尾与全部raw索引继续推送，未推Gerrit。
+甲类7421块/6838普通语句PASS，两个PDB变量在2454规则中0引用；当时乙类只限RERUN_CMAKE，配对phony输出块未获许可而STOP。完整人工裁决、88/20全文、保护与资源见18及GitHub dd7053a中的本STATUS；该历史停止被后续PM扩充许可覆盖，原始证据不删。
 
 ## 2026-10-15 续跑七：文本/展开PASS，第二次准备性路径错误STOP
 
@@ -272,3 +264,11 @@ PM扩充乙类为CMake簿记语句对：RERUN_CMAKE依赖与配对phony输出；
 30/90对象、双模式小spec、22RPM/DWARF预期差异、30×5性能均NOT RUN，geom未知；sandbox未尝试/远端未查。源a1410e3d14b8836e3f9be5a1b4380f914dc2e705父cb不变，候选历史后备SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9。保护审计PASS：22RPM/原clang/归档证据/源码/坏cache-ninja不变；原cache47987/96881772832B零新增。全部4GiB轻scope已回收；无重阶段/共享锁/cmake/ninja/link，展开proc临时挂载已卸载。19/finish-text-gate/finish-expansion/finish-stop给全部证据与资源，E=bolt-v4-20261014-finish。
 
 周四核匹配同量级/双5%、tool-plan、compare-root、Quickbuild性能、debugsource实物清单；不核双方clang SHA。原树禁用不变，剩余资格未完成，不推sandbox。
+
+## 2026-10-15 续跑八：从对象继续（进行中）
+
+PM确认7439文本/两模式展开/120输入准备已经结束，不重做；只按要求复核保存输入SHA。查询已有脚本/证据/配置必须先rg --files或find；产品操作前改正的查找路径不计准备错误但逐项报告；产品用错输入/env/参数仍每类修正一次，第二次或产品门禁失败即停。a1410e3d父cb和历史后备候选4ec07159…不改。本轮禁止新CMake，原树cmake/ninja/-P仍禁。
+
+120输入SHA复核PASS，共901204757B；新E=bolt-v4-20261015-validation，根内同名专用目录。六段单锁16GiB/swap0/nice15/ionice3/单编译进程，普通与候选同一实体路径及inode、相同argv/cwd/input/output，完整.o不删.GCC.command.line。随后双模式小spec、22RPM/DWARF预期清单、30×5性能geom<0.98才推sandbox。路径查找更正/准备性修正目前0；既有输入不再复制。
+
+续跑八步骤1 PASS：120/120（历史30+资产90），240次同一实体路径/inode编译，完整.o含.GCC.command.line同字节；六段scope共1380.133s/最大峰2.829GiB，16GiB资源/锁≤60m/单编译进程，锁/proc/scope回收。详见20/validation-objects；开始双模式小spec。查找更正/产品准备修正目前0，原树禁用继续。
