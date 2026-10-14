@@ -1,6 +1,6 @@
 # 续十一：串行续跑结果与新 RPM 验收
 
-**当前阶段：x86验收1–3、5–7完成；验收4因磁盘门槛跳过、待PM；BOLT交接READY。后续ARM步骤尚在进行。**
+**最终状态：STOP_ARM_CHROOT_EXEC_FORMAT，按环境失败规则收尾。x86验收1–3、5–7完成、BOLT已正式交接；验收4按磁盘门槛跳过。两ARM宿主全量回归PASS；ARM32根内小试在挂载/proc前Exec format error，Source未启动，后续不重试。**
 初次记录（历史，后续由§11完成）：构建成功、8/8输出逐字节PASS，当时消费者尚在进行；现以页首当前阶段为准。
 
 本页承接 [续跑记录 §15–§16](49_x86_build_resume.md)，旧记录保留。2026-10-14 消息流断开后恢复核查，没有再次调用 rpmbuild。时间均为北京时间。
@@ -282,3 +282,74 @@ Source与§12同一SHA。212档/3706有序成员（3699 bitcode转换、7原机�
 三处白名单module asm：LLVMAnalysis/MLInlineAdvisor.cpp.o（ordinal80）、LLVMCodeGen/MLRegAllocEvictAdvisor.cpp.o（137）、libarcher_static.a/ompt-tsan.cpp.o（0），`_ZSt21ios_base_library_initv`均为唯一GLOBAL/NOTYPE/DEFAULT/UND，value/size均0。
 
 转换wall1571.769328s，输入核对及总helper wall1615.203745s；scope1617.547703s（13:46:00–14:12:57），MemoryPeak14,231,101,440B，无OOM/守护问题，采样器和日志线程已回收、共享锁释放。证据E11/arm-followup/{aarch64-inputs-checked.json,aarch64-result.json,aarch64-conversion/summary.json}与aarch64-followup-scope/。两ARM宿主全量已完成；下一步根内小试和64MiB负例。
+
+## 14. ARM32根内小试：环境失败，停止后续
+
+### 14.1 唯一一次执行与原文
+
+14:14:13启动一次受控小试。选择三个最小含bitcode归档，原SHA与本轮离线输入一致；仅复制到ARM32根内新目录 `/home/abuild/review49-small-20261014/input`，未改构建树原件。选择清单：
+
+|归档|输入B|期望after SHA|
+|---|---:|---|
+|libLLVMABI.a|25442|b42d54db2684fd0d6b5b1ed954bffe33df7c77a4c2b82a1af12b905a236e6f5c|
+|libLLVMExtensions.a|26526|152c6e4b1be5db9d9f1a33ff670af3ac1dd70d4eb1489023bf117f3c14b99108|
+|libLLVMFrontendDirective.a|51068|254ed15ba174a63796c3d786d624ec6a303403d8e195005d64dd7ea090ba4e77|
+
+临时/proc挂载命令为：
+
+```sh
+sudo -n /usr/sbin/chroot /var/tmp/llvm-optimize-arm-c1-20261010/gbs-libraries-armv7l/local/BUILD-ROOTS/scratch.armv7l.0 /bin/mount -n -tproc none /proc
+```
+
+原文：
+
+```text
+/usr/sbin/chroot: failed to run command ‘/bin/mount’: Exec format error
+```
+
+退出1，**根内Source/clang转换均未启动、/proc没有挂载成功**。小试helper墙钟0.019971s；含scope管理4.175408s，峰704,204,800B。准入MemAvailable19,794,137,088B，18GiB/swap0；不是内存/磁盘门禁中止。失败后没有改Source、Commands、辅助脚本、宿主配置或再次调用该步骤，也没有绕过chroot改成宿主测试。
+
+### 14.2 只读原因核查
+
+|事实|观测|
+|---|---|
+|宿主架构|x86_64|
+|宿主本次启动时间|2026-10-13 21:58:44（uptime -s）|
+|binfmt_misc文件系统|已挂载，status=enabled|
+|已注册条目|仅jar、python3.12；无ARM、AArch64或qemu条目|
+|根内/bin/mount|ELF32 ARM EABI5，解释器/lib/ld-linux.so.3，e_flags=0x5000200|
+|当前mmap_min_addr|65536，未修改|
+|临时/proc|挂载前、后mountinfo均无R32/proc；两份记录一致|
+
+这组事实解释ARM ELF为何不能由当前宿主chroot直接启动；未归因是谁改变了注册状态。当前环境已经不同于此前完成ARM构建/根内测试时的环境。既有授权允许GBS/build自己的标准初始化，不等于允许在本步骤失败后手工注册或增加初始化重试。因此按“规定之外/环境失败停止”收尾，**不是可用辅助脚本缺陷条款放行的情形**。下一次恢复需先恢复并核实经授权的ARM执行环境，再另立根内小试入口；本轮不执行修复命令。
+
+证据：E11/arm-followup/root-small/{armv7l-root-selection.json,armv7l-root-commands.json,armv7l-small-mount.stderr,armv7l-root-small-result.json,environment-diagnosis.json,diagnose-*.txt,armv7l-small-mount-before.txt,armv7l-small-mount-after.txt}；armv7l-root-small-scope/{launch.json,outcome.json,scope-after-rpm.json}。
+
+## 15. 最终完成范围与挂账
+
+|步骤|结论|
+|---|---|
+|8输出快照、定向重建、续跑后对比|8/8逐字节PASS；配置生成输入7/7同字节，见§2|
+|一次正常-ba --noprep续跑|PASS；保留已完成任务、Ninja串行902项、22RPM，无ShortCircuited，见§1–§3|
+|x86验收1–3、5–7|PASS/按裁决完成诊断；逐项见§11|
+|验收4同环境非归档比较|SKIP_DISK_PENDING_PM；不得宣称新环境与旧基线相同，见§10|
+|BOLT交接|READY，997dbb1已推送；交接树此后未写，见§11|
+|两次x86全量回归、候选补丁|此前续四完成并冻结；未因消息流中断重复运行或重新生成|
+|两ARM宿主全量|210+212档after SHA全同；原消费者/strip证据按合同沿用，见§12–§13|
+|ARM32根内小试|STOP_ARM_CHROOT_EXEC_FORMAT；未运行Source，见§14|
+|AArch64根内小试、两根64MiB负例|NOT RUN，依赖前步停止；不能用宿主4GiB探针替代根内证据|
+|bash依赖清单、LLVM23官方工具探测|NOT RUN；只准备了未执行辅助脚本，未给出版本兼容结论|
+|发布模式完整构建|仍挂账；60对参数/归因认证PASS不等于完整发布构建|
+|ARM第二段spec集成与完整RPM验收|仍挂账，未推Gerrit|
+
+生产Source SHA `c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e`；ARM候选 `1bac8db608554b35d16482711bf0667f1fbee8d60c6fc52f0f448d240ffaa9e4`；两候选补丁SHA见§11。冻结Source/Commands/比较器/配置/补丁均未改。147宿主测试及根内143通过+3环境不适用+1既有AS发现，是docs/49前阶段已完成证据；本次续跑未重复宣称为新根内测试。两份英文最终提交说明已推送，明确验收4尚未完成，不修改冻结format-patch。
+
+消息流错误属于API连接中断；恢复时先核实后台进程和已推送状态，没有再次启动完整构建。最终停止来自上述新实测环境条件，与消息流错误分开记录。
+
+## 16. 收尾、身份与材料
+
+2026-10-14 14:19:28收尾核查：20个本任务scope均不再active，20份outcome的采样器/日志线程已回收；本任务进程0、两项目锁已释放、所查ARM临时/proc及两Tizen测试根挂载0。各阶段共享flock已释放，不查询/干预其他会话持锁。23条保护身份记录逐条相符；交接后的8个x86根内身份项不再重新断言，因为该树已交由BOLT原地使用，未写入或清理。W/gbs_llvm.conf仍是用户已登记改动，未暂存提交。证据E11/{final-protected-identities.json,final-scope-cleanup.json,lock-released.json,cleanup-final.json,stop-final.json}。
+
+本轮关键进度提交：997dbb1（x86验收与BOLT交接）、861cfd7（ARM32全量）、c13d109（AArch64全量）；本收尾提交同步更新本页、升级手册和STATUS。源代码及两候选format-patch未改，未推Gerrit。
+
+可公开读取的材料：本页、[续跑前门禁与8输出快照记录](49_x86_build_resume.md)、[升级手册](48_llvm_gcc_upgrade_recertification.md)、[STATUS](STATUS.md)、[PS3最终说明](../patches/archive-index-fix/ps3/commit-message-final.txt)、[PS2最终说明](../patches/llvm-strip/ps2/commit-message-final.txt)。原始JSON/日志按各节本机E11路径保留，大文件未上传GitHub。

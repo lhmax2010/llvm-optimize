@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-14。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续十一）x86完成并交接BOLT**：唯一正常-ba --noprep、mlgo_build_jobs=1于2026-10-14 06:49:10结束；8输出续跑前后全同，22RPM无ShortCircuited。验收1–3、5–7 PASS/诊断完成；225开发档/3864成员、45运行库/1964成员、7宿主、两Tizen包及运行库、独立-bi与同树SKIP均通过。验收4可用58.154GiB<85.5792GiB，依裁决跳过待PM，不宣称非归档基线相同、不阻塞交接。BOLT READY；本会话不再写交接树。详见[结果续页](49_x86_build_resume_result.md) §11；ARM32全量210档/3690成员、3683Thumb门禁PASS，after SHA与docs/40 §12全同；AArch64全量212档/3706成员亦PASS、after SHA全同；下一步两根小试/64MiB、bash/LLVM23。
+**当前任务（docs/49续十一）已收尾：STOP_ARM_CHROOT_EXEC_FORMAT。** x86唯一正常-ba --noprep串行续跑完成；8输出前后同字节、22RPM无ShortCircuited；验收1–3、5–7完成，验收4按磁盘门槛跳过待PM。BOLT已正式交接（997dbb1），本会话此后不写交接树。两ARM宿主全量210/212档SHA与docs/40 §12全同；ARM32根内小试在/proc挂载前/bin/mount Exec format error，当前binfmt只有jar/python3.12、无qemu ARM条目。Source未启动，不改宿主、不重试；AArch64根内、两根64MiB、bash/LLVM23未执行。详见[结果续页](49_x86_build_resume_result.md) §11–§15。
 
 
 ### 2026-10-14 BOLT正式交接（本条优先于下方历史NOT_READY）
@@ -736,3 +736,9 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 进度：2026-10-14｜本提交｜docs/49_x86_build_resume_result.md §12｜ARM32全量210档after SHA与§12全同，3683Thumb/完整索引/强符号门禁PASS；根内小试待做。
 
 进度：2026-10-14｜本提交｜docs/49_x86_build_resume_result.md §13｜AArch64全量212档/3706成员、完整索引/强符号门禁PASS；212档after SHA与§12全同，消费者证据依合同沿用。
+
+进度：2026-10-14｜本提交｜docs/49_x86_build_resume_result.md §14–§15、docs/48、STATUS｜ARM32根内小试因缺qemu binfmt在mount前STOP；Source未执行，无重试。x86交接与两ARM离线全量PASS保留，后续根内/64MiB/bash/LLVM23挂账。
+
+人工裁决边界：沿用“环境失败停止，不手工修改宿主、不自行重试”；本轮未把Exec format error当作辅助脚本缺陷。2026-10-14只读事实为宿主启动2026-10-13 21:58:44、binfmt无ARM条目、mmap_min_addr=65536；不能因历史授权GBS标准初始化便在失败后补跑初始化。根内生产限制认证须下次恢复环境后继续。证据E11/arm-followup/root-small/environment-diagnosis.json（硬证据）。
+
+收尾核查（2026-10-14 14:19:28）：20个本任务scope/采样器/日志线程回收，本任务进程0、临时挂载0、两项目锁释放；23条冻结身份检查一致。交接给BOLT的树不再写或重断言可变检查点。W/gbs配置用户改动保留，未提交；未推Gerrit。证据E11/cleanup-final.json、final-scope-cleanup.json、final-protected-identities.json。
