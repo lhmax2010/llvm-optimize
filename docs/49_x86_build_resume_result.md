@@ -176,3 +176,15 @@ compiler-rt 宿主 10 项（两链接器 × ASan 坏/好、UBSan、profile、bui
 12:07:43→12:11:41，wall 237.756389 s；scope峰 6028075008 B，memory.events=`low 0; high 0; max 0; oom 0; oom_kill 0; oom_group_kill 0`。构建/%check、A/B、全部运行库探针 PASS；12:13:03 完成根内 270 归档 + 5 工具 SHA 全同复核，A 输出与根内 opt 完全一致。证据 tizen-lld/{result.json,installed-identities.json,build.log,scope-after-rpm.json,check-outputs/}。因此验收5（七宿主、Tizen两包及运行库）PASS。
 
 独立真实-bi已按原同宏入口启动准备，使用 `R/home/abuild/review49-independent-install/install-root`，不覆盖原-ba安装树；Source原-ba证据先备份到E11/ba-install-conversion-evidence。启动前/var/tmp可用112,110,084,096B，满足1.2×46.316GiB+30GiB；此步仍需等待实际转换与逐档检查，不能提前认定幂等PASS。
+
+### 7.3 依赖身份与 whole-archive 诊断补记
+
+完整构建根的 `/usr/bin/prlimit` 属于 util-linux-2.41.2-1.6.x86_64，Python 为3.14.2，`/usr/bin/llvm-strip` 属于 llvm-22.1.8-1.6.x86_64；依赖已实际安装，不是仅凭 BuildRequires 推断。完整包表、rpm -qf 与版本命令在 `root-dependency-facts.json`、`root-dependency-facts.log`，后处理的版本探针在 `rpm-exec-exit.trace`。此环境与旧快照不同，验收4只按获准同环境方案处理。
+
+两 Tizen 包日志均记录 `WHOLE_ARCHIVE_DIAGNOSTIC_EXIT=0`；stdout/stderr为空。未定义符号清单由脚本的 `llvm-nm --undefined-only` 输出在各自build.log中，仍只作诊断，不据此增加门禁或改变原通过条件。独立安装验收尚在进行。
+
+## 8. 独立安装的再次转换阶段 PASS（后处理进行中）
+
+真实 `rpmbuild -bi --short-circuit --noclean` 使用独立 buildroot。225 档再次实际转换，Source wall1324.993260s；每档 before/after SHA 均与本轮正常-ba的转换摘要一致（225/225），允许弱W缺失1920，强符号缺失0；Source已清理其临时大载荷。证据 `independent-conversion-repeat.json`、`independent-conversion-summary.json` 和 `ba-install-conversion-evidence/`。
+
+12:50时仍在find-debuginfo标准后处理，不能提前将整个-bi或SKIP验收记PASS。进度显示曾将 `NATIVE_ARCHIVE_INSTALLED` 前缀误作JSON导致显示错误；只读原文证实安装正常，计数显示改为区分转换/回写前缀，未重启任何阶段、未修改Source/门禁。证据 `install-progress-display-diagnosis.json`。
