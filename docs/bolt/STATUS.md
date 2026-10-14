@@ -230,3 +230,9 @@ PM认定上轮没有先移开污染cache是恢复方法问题，不是新产品�
 第一步PASS：保留13的emit-relocs+strip-debug输入，SHA158275040dbaa71999f60a4b62e4dd9a23a58b4d72e7ff85fb3c5f5ebff064e4/226738888B与原记录一致，不重放、不进入原树cmake/ninja。tool/profile/普通clang指纹PASS，新E=bolt-v4-20261014-fallback，轻scope12.049s。16与fallback-input给证据，后续尚未认证。
 
 第二步后备候选PASS：历史工具按两模式展开的同一helper正式参数重写，N23592/M144032/S0/U1/Q383，R0.004238545%、S/N0%，禁infer-stale；BOLTnote/strip-all/前后各三目标/身份链PASS。最终SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9。草案pipeline/main stdout JSON包含全部匹配统计，详细BOLT日志另存，未改草案。资源及路径见16/fallback-candidate/formal-bolt；第三步与对象/性能/推送资格仍待。
+
+第三步STOP_PREPARATORY_COMMAND_CAPTURE_SECOND_ERROR：根内Ninja不支持compdb -a，使用一次采集准备性修正为显式全部规则；修正轮两次cmake及采集rc0，但compdb漏无输入CUSTOM_COMMAND（before2016/after2067），同类第二次错误即停，不再换采集器。全部边未认证；已采11405普通命令相同，86个普通配置产物相同，compile_commands聚合只追加BOLT。临时目录删、源码未变。
+
+停止后快照只读诊断还证明清理覆盖FAIL：非BOLT安装规则不变，17新增BOLT安装脚本带7个/usr/lib64/libLLVMBOLT*.a（manifest/prune覆盖）及/usr/bin/perf2bolt、llvm-boltdiff两链接（指向llvm-bolt）。LLVMInstallSymlink不登记manifest，prune_install会拒绝两个未注册新增路径，现草案遗漏；47导出元数据仅额外检查的LLVMConfig.cmake变化且普通exports完整恢复覆盖。建议下轮绑定baseline/链接类型目标证据后清理两别名，最终inventory严格相同；本轮按约束不改草案。16及fallback-config-install/stop、两份完整配置tar.xz给四项结果/建议/原文。
+
+原clang/22RPM/归档证据/源码与原树cache/ninja配置SHA审计PASS，未在原树cmake/ninja或刷新生成头；但临时配置沿用15原lto.cache预置，测试链接仍新增361文件1674072B（cache47987/96881772832B），未满足原树仅作输入来源意图，已如实记录，不再触碰原cache。下次临时配置用专用cache且不复制原cache。全部proc/scope回收、候选重锁已释；第四步对象/双模式/DWARF清单/性能全部NOT RUN，geom未知，sandbox未尝试。最终候选SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9保留；源d6ddbff5与封套未改。周四核Quickbuild统计/双5%门禁及性能，不核local/Quickbuild SHA相等。
