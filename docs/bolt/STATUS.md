@@ -174,3 +174,15 @@ PM八项新裁决按01附录修订执行：fully strip、前note/前后SHA/最�
 - origin/main6e874fdb…仍NOT READY；正式交接后才读准确/var/tmp根，先匹配，原cache单路径，30/90同一实体路径完整对象，本地debug RPM与普通DWARF逐项证明；发布完整构建/完整同树工具与post/RPM/消费者仍挂账。今晚不声称这些通过。
 
 新原始E=/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261014-simplify；公开11、single-path-estimate、r1-cache-cleanup、light-task-validation及补丁manifest；全raw分支/钉提交索引10随最终提交更新。
+
+## 2026-10-14 周三续跑：交接PASS，先行匹配探测参数错误后STOP
+
+最新授权：main正式交接的/var/tmp新树原地cache；同树只建llvm-bolt并核对bolt配置前后clang链接字串；前六步全部PASS且性能geom(candidate/ordinary)<0.98后，父cb679968、无归档补丁BOLT提交可直推sandbox/lhmax2025/bolt_pgo；不推refs/for/tizen_base。内存准入不足5分钟复查、最多60分钟。本授权覆盖旧“不推BOLT”及旧更宽/不同推送前提，实际门禁失败仍不推。
+
+main=91b45c167a8773bbe1564b5ab902033da5060d83、docs/49_x86_build_resume_result.md §11/15正式READY，时间13:10:12。用户列出的clang/CMakeCache/build.ninja SHA、cache47,107文件/96,877,810,360B全部相符；8交接文件和22普通RPM逐SHA/大小通过；环境/源码/补丁指纹与冻结记录相符。归档review49-independent-install元数据基线保存，原件只读；新输出在/home/abuild/bolt-work/bolt-v4-20261014-wednesday及W/temp/bolt-v4-20261014-wednesday。
+
+第一步匹配资格仅一次调用rc1：本任务错误地把带cdsort/split-eh的最终重写参数组用于无emit-relocs的普通clang，BOLT原文“function reordering only works when relocations are enabled”。这是探针入口参数错误，不是profile失配；N/M/S/U/Q、R、S/N未知，5%双门禁未评估。按“规定之外停止”不改参数重试、不先重链绕过，也不拿旧R1数据顶替。步骤2–7（新工具、流水线、30/90对象、小spec/DWARF预期差异、性能、sandbox）全部NOT RUN；没有Gerrit推送或远端前后核对。
+
+资格scope1.025s、kernel峰515,751,936B/0.480GiB，16GiB/swap0/nice15/ionice3；入口17.43GiB、最低17.40GiB，OOM0。短命BOLT未被0.5秒VmHWM采样捕获，采样Python12596kB不能冒充BOLT峰值。共享锁等约0.000014s/持1.063s，finally已释；proc已卸载，所有scope回收。停止后轻审计8文件/22RPM SHA大小不变、原cache完整name/size/mtime相同、归档证据元数据相同；未进入本次两棵/var/tmp ARM根，W tracked既有gbs改动保留不写。
+
+本次授权未完成，状态STOP_QUALIFICATION_ARGUMENT_ERROR；只完成身份/准备及失败探测证据，停止后仅审计/报告/提交，不继续产品实验。下次恢复先明确非重定位资格查询入口。源码草案/patch/manifest/profile不变，仍d6ddbff5…父cb679968；周五若tizen_base合归档补丁仍需变基并解spec冲突，本次未做。12给全部资源、失败原文与边界；wednesday-handoff/matching/stop及qualification.log公开，10更新全部raw。

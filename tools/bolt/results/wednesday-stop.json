@@ -1,0 +1,130 @@
+{
+  "status": "STOP_QUALIFICATION_ARGUMENT_ERROR",
+  "reason": "Probe passed relocation-dependent cdsort to ordinary clang without emit-relocs. This is an agent probe setup error; no retry under user stop rule. It does not establish profile mismatch.",
+  "BOLT_stderr": "BOLT-INFO: shared object or position-independent executable detected\nBOLT-INFO: Target architecture: x86_64\nBOLT-INFO: BOLT version: <unknown>\nBOLT-INFO: first alloc address is 0x0\nBOLT-INFO: creating new program header table at address 0x8600000, offset 0x8600000\nBOLT-WARNING: debug info will be stripped from the binary. Use -update-debug-sections to keep it.\nBOLT-WARNING: disabling -split-eh in non-relocation mode\nBOLT-ERROR: function reordering only works when relocations are enabled\n",
+  "qualification_argv": {
+    "argv": [
+      "/home/abuild/bolt-work/bolt-v4-20261014-wednesday/llvm-bolt.historical",
+      "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/clang-22",
+      "-o",
+      "/home/abuild/bolt-work/bolt-v4-20261014-wednesday/qualification.bolt",
+      "-data=/home/abuild/bolt-work/bolt-v4-20261014-wednesday/profile.fdata",
+      "-reorder-blocks=ext-tsp",
+      "-reorder-functions=cdsort",
+      "-split-functions",
+      "-split-all-cold",
+      "-split-eh",
+      "-dyno-stats",
+      "--thread-count=1",
+      "-stale-threshold=5"
+    ],
+    "rc": 1,
+    "purpose": "matching qualification only; ordinary ELF has not been relinked; historical tool is not final producer"
+  },
+  "profile_counters": {
+    "N": null,
+    "M": null,
+    "S": null,
+    "U": null,
+    "Q": null,
+    "R": null,
+    "S_over_N": null
+  },
+  "profile_gate": "NOT_EVALUATED",
+  "steps": {
+    "handoff": "PASS",
+    "matching": "COMMAND_FAILED before counters",
+    "llvm_bolt_build": "NOT_RUN",
+    "unique_pipeline": "NOT_RUN",
+    "objects_30": "NOT_RUN",
+    "objects_90": "NOT_RUN",
+    "dual_mode_smoke": "NOT_RUN",
+    "expected_rpm_diff": "NOT_RUN",
+    "performance": "NOT_RUN",
+    "sandbox_push": "NOT_ATTEMPTED"
+  },
+  "preserved_handoff_files": 8,
+  "preserved_RPMs": 22,
+  "protected_archive_metadata_equal": true,
+  "cache_metadata_equal": true,
+  "cache_files": 47107,
+  "cache_bytes": 96877810360,
+  "shared_lock_wait_s": 1.3798999134451151e-05,
+  "shared_lock_hold_s": 1.0629014930018457,
+  "lock_released_by_finally": true,
+  "temporary_proc_after": false,
+  "scopes": [
+    {
+      "name": "identity",
+      "status": "PASS",
+      "scope_wall_s": 7.052386085997568,
+      "cgroup_peak_bytes": 2493222912,
+      "sampled_VmHWM_max_kB": 110220,
+      "short_process_sampling_limit": "0.5s sampling may miss llvm-bolt; VmHWM is a sampled lower bound",
+      "mem_available_at_admission": 18349854720,
+      "minimum_runtime_available": 18349854720,
+      "nice": 19,
+      "ionice": "idle",
+      "memory_max_bytes": 4294967296,
+      "swap_max_bytes": 0,
+      "cgroup_reaped": true
+    },
+    {
+      "name": "prepare-match",
+      "status": "PASS",
+      "scope_wall_s": 6.544629930998781,
+      "cgroup_peak_bytes": 1662455808,
+      "sampled_VmHWM_max_kB": 153048,
+      "short_process_sampling_limit": "0.5s sampling may miss llvm-bolt; VmHWM is a sampled lower bound",
+      "mem_available_at_admission": 18755846144,
+      "minimum_runtime_available": 18660921344,
+      "nice": 19,
+      "ionice": "idle",
+      "memory_max_bytes": 4294967296,
+      "swap_max_bytes": 0,
+      "cgroup_reaped": true
+    },
+    {
+      "name": "matching",
+      "status": "FAIL",
+      "scope_wall_s": 1.0245560100011062,
+      "cgroup_peak_bytes": 515751936,
+      "sampled_VmHWM_max_kB": 12596,
+      "short_process_sampling_limit": "0.5s sampling may miss llvm-bolt; VmHWM is a sampled lower bound",
+      "mem_available_at_admission": 18717745152,
+      "minimum_runtime_available": 18678910976,
+      "nice": 15,
+      "ionice": "idle",
+      "memory_max_bytes": 17179869184,
+      "swap_max_bytes": 0,
+      "cgroup_reaped": true
+    }
+  ],
+  "audit_wall_s": 6.528291187998548,
+  "new_tree_free_bytes": 61596930048,
+  "sandbox_source_draft": "d6ddbff5ba74bfb420b357b5b6ba9ed300971bb4",
+  "own_root_artifacts": [
+    {
+      "path": "bolt_helper.py",
+      "bytes": 31418
+    },
+    {
+      "path": "profile.fdata",
+      "bytes": 171232190
+    },
+    {
+      "path": "profile.fdata.xz",
+      "bytes": 9735212
+    },
+    {
+      "path": "llvm-bolt.historical",
+      "bytes": 648678768
+    }
+  ],
+  "stop_audit_scope": {
+    "status": "PASS",
+    "scope_wall_s": 7.541120696994767,
+    "cgroup_peak_bytes": 2504257536,
+    "cgroup_reaped": true
+  }
+}

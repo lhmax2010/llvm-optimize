@@ -1,6 +1,6 @@
 # 01 Tizen LLVM BOLT 集成设计 v4.1：Quickbuild sandbox 第一版
 
-修订：2026-10-13（Asia/Shanghai）。**最新 v4.1 裁决与周三计划见文末附录，冲突以附录为准；原 v4 正文保留为历史设计。** 本次晚间仅轻任务：草案唯一重链、磁盘预检、R1自建副本残余清理与计划更新；没有取重锁或运行重阶段。历史停止与失败见05/07/08；完整新树与RPM门禁仍待完成，未推Gerrit。
+修订：2026-10-14（Asia/Shanghai）。**最新 v4.1 裁决和周三执行记录见文末附录，冲突以最新条目为准；原 v4 正文保留为历史设计。** 新树交接身份PASS，先行匹配查询参数错误后按规则STOP；N/M/S/U/Q未知，后续未执行、未推Gerrit。历史停止与失败见05/07/08，当前证据见12。
 
 原v4日期：2026-10-12（Asia/Shanghai）。目标周五2026-10-16前交付Quickbuild试验材料，周四只对补丁做一轮外部评审；本轮不构建LLVM、不打RPM、不上传Gerrit。本文为自包含实施与验收设计，尚无生产集成补丁或新RPM。今晚实测和未测项分别标明，不能以历史PASS替代新配方认证。
 
@@ -337,3 +337,13 @@ git push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm AUDITED_C
 ```
 
 远端基线已变化则停止报告，不能自动重基/review豁免。本轮只推GitHub bolt-v4，sandbox此前仅原样创建基线。Source当前唯一重链版本和静态整树身份在patches/bolt/draft-manifest.json；95fixtures通过，完整新树/真实RPM认证仍未完成。温cache Quickbuild pipeline暂估12–15min/峰约6.04GiB，不含新llvm-bolt编译或正常post，精确边界和R1采样依据见11/single-path-estimate.json。
+
+### V4.1-8 周三执行记录：身份PASS，资格入口错误后停止（2026-10-14）
+
+最新任务授权以本次前六步全部PASS（含几何平均candidate/ordinary耗时比<0.98）作为sandbox直推前提；父cb679968、无归档补丁，拒绝原样停，不拆profile。本条覆盖V4.1-6/7旧“不推BOLT”与不同推送前提；发布完整构建仍挂账。
+
+main91b45c1的STATUS及49_x86_build_resume_result §11正式READY；准确根/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0，交接13:10:12，三个关键SHA及cache47107/96877810360B、8文件/22RPM核对PASS。已按交接原地使用策略准备，未复制cache。
+
+先行资格查询把cdsort/split-eh生产参数错误地用于无emit-relocs的普通clang，历史资格工具rc1：“function reordering only works when relocations are enabled”。N/M/S/U/Q、R、S/N全部未知，不能判profile失配，也不能当门禁PASS。遵用户停止规则，无参数修正/重试、无先重链绕过；步骤2–7未执行、未推sandbox。停止后8文件/22RPM及原cache、归档证据均未变，锁/proc/scope全回收。完整实测与资源见12及wednesday-stop.json。
+
+下一次恢复先解决独立匹配查询入口，普通无重定位ELF不能套用需重定位的最终函数重排参数；本次未实施修正。不以R1历史结果替代本次资格。若后续tizen_base合入归档补丁，周五再变基并处理spec冲突，本次未做。

@@ -1,0 +1,34 @@
+{
+  "status": "COMMAND_FAILED_BEFORE_COUNTERS",
+  "input_sha256": "7df0ff90dbca7f99ed6a642546281584dbfaab1528a94abf7a1bb524ca371b2c",
+  "historical_tool_sha256": "1da7bb735f7bc1afab9a863154260699b0b0f88c6fd05b99231dd21ef653fd5a",
+  "profile_sha256": "d9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326",
+  "counts": {
+    "N": null,
+    "M": null,
+    "S": null,
+    "U": null,
+    "Q": null,
+    "R": null,
+    "S_over_N": null
+  },
+  "profile_gate": "NOT_EVALUATED",
+  "argv": [
+    "/home/abuild/bolt-work/bolt-v4-20261014-wednesday/llvm-bolt.historical",
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/clang-22",
+    "-o",
+    "/home/abuild/bolt-work/bolt-v4-20261014-wednesday/qualification.bolt",
+    "-data=/home/abuild/bolt-work/bolt-v4-20261014-wednesday/profile.fdata",
+    "-reorder-blocks=ext-tsp",
+    "-reorder-functions=cdsort",
+    "-split-functions",
+    "-split-all-cold",
+    "-split-eh",
+    "-dyno-stats",
+    "--thread-count=1",
+    "-stale-threshold=5"
+  ],
+  "returncode": 1,
+  "error": "function reordering only works when relocations are enabled",
+  "retry": false
+}
