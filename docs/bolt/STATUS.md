@@ -276,3 +276,5 @@ PM确认7439文本/两模式展开/120输入准备已经结束，不重做；只
 续跑八步骤2双模式小spec PASS：a141 compare-root/install/单次原post+尾检，两RPM候选SHA4ec07159…保持，原链ctrl处理/clang未strip，前后各三目标与alias通过；debug/release scope32.628/34.612s，详细资源和trace见20/validation-dual-mode。原树/原cache未写；报告判据与scopeCLI各修正一次，产品未重跑。步骤3逐包/DWARF预期清单继续。
 
 续跑八步骤3预期清单/证据PASS：22RPM绑定，133debug ELF来源穷尽、其他132清单SHA；GNUdebuglink CRC绑定clang自身debug；只clang实体+6alias变化、自身.debug删除、5个exclusive源缺失（详细20/expected JSON）。当前基线自身build-id链接0；无任何新增BOLT产物/非clang变化。父目录不自动允许删除，周四按基线逐项核。发布仅(a)规则模拟，不替代完整发布构建。16/20GiB解包写入均磁盘预检与写后≥30G，单锁/proc/scope回收。准备修正两类各一次/产品未重跑，查找更正0。接下来30份x86资产5轮固定核性能；geom<0.98才sandbox。
+
+续跑八步骤4性能PASS：30份x86资产各侧5次，固定CPU2/并行1/角色交替，geom 0.855890085（阈值<0.98），load1 1.37–2.54。scope1704.017s/峰4.343GiB，锁/proc/scope回收；完整逐项中位数/原样本/条件见20/validation-performance。未拿本地性能替代QB性能。

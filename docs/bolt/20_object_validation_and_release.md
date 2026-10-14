@@ -94,3 +94,42 @@ clang包允许实体内容/大小变化与6个别名target规范化；7个family
 2. 解开所有RPM，以本基准逐包枚举路径/类型/权限/大小/SHA/链接target；只允许清单中clang与alias变更及已证明debug缺失，任何新增/非clang变更失败；clang用QB自己的candidate SHA。
 3. 对debugsource完整文件清单与上快照比较，除5源外其他文件及目录不自动放行；现存所有CMake导出SHA须等普通值，排除BOLT库/工具/工具alias/新源。
 4. 核实包内clang存活/三目标/aliases，再对Quickbuild clang性能复核；不比较local/QB clang SHA。周五若tizen_base合归档静态库补丁再变基/解spec冲突，本步不做。
+
+## 固定核性能复核 PASS
+
+30份x86_64资产条目，三组各10按既定权重（不把cohort重复条目去重），每侧5次/总300次编译。固定CPU 2，Intel(R) Core(TM) Ultra 7 265，无SMT同胞；intel_pstate/powersave，策略范围800–5300MHz，实测频率/负载每次前后保留，未修改策略。并行度1、共享重锁、16GiB/swap0/nice15/ionice3；准入该核busy约4%，load1约1.03。角色先后逐轮交替，拷贝/SHA/前导/chroot不计时，计taskset+clang subprocess wall_s，不删异常样本。
+
+|cohort/源条目|普通中位秒|候选中位秒|候选/普通|
+|---|---:|---:|---:|
+| arm-training/00-SemaStmt | 5.924246 | 5.020201 | 0.847399 |
+| arm-training/01-SemaExprCXX | 6.181000 | 5.169195 | 0.836304 |
+| arm-training/02-SelectionDAG | 7.183144 | 6.210044 | 0.864530 |
+| arm-training/03-MachinePipeliner | 6.345171 | 5.447421 | 0.858515 |
+| arm-training/04-Attributor | 6.564803 | 5.624523 | 0.856770 |
+| arm-training/05-WholeProgramDevirt | 5.941800 | 5.093702 | 0.857266 |
+| arm-training/06-ARMISelLowering | 8.524114 | 7.381667 | 0.865975 |
+| arm-training/07-ARMTargetTransformInfo | 5.063993 | 4.241886 | 0.837656 |
+| arm-training/08-MasmParser | 3.384084 | 2.922770 | 0.863681 |
+| arm-training/09-AsmParser | 2.736224 | 2.321193 | 0.848320 |
+| arm-holdout/00-ParentMapContext | 5.920512 | 5.041770 | 0.851577 |
+| arm-holdout/01-ParseDecl | 5.030503 | 4.227525 | 0.840378 |
+| arm-holdout/02-Driver | 5.267358 | 4.606841 | 0.874602 |
+| arm-holdout/03-CoverageMappingGen | 5.696608 | 4.675234 | 0.820705 |
+| arm-holdout/04-Metadata | 5.550470 | 4.755958 | 0.856857 |
+| arm-holdout/05-ScalarEvolution | 9.854125 | 8.643751 | 0.877171 |
+| arm-holdout/06-AArch64InstructionSelector | 5.816990 | 4.987474 | 0.857398 |
+| arm-holdout/07-X86ISelDAGToDAG | 5.202233 | 4.501135 | 0.865231 |
+| arm-holdout/08-ELF | 5.744014 | 5.139962 | 0.894838 |
+| arm-holdout/09-InstrProfReader | 4.498176 | 3.833669 | 0.852272 |
+| aarch64-training/00-SemaStmt | 5.927614 | 4.994018 | 0.842500 |
+| aarch64-training/01-SemaExprCXX | 6.179533 | 5.178743 | 0.838048 |
+| aarch64-training/02-SelectionDAG | 7.179609 | 6.223661 | 0.866852 |
+| aarch64-training/03-MachinePipeliner | 6.325929 | 5.456417 | 0.862548 |
+| aarch64-training/04-Attributor | 6.574663 | 5.619978 | 0.854793 |
+| aarch64-training/05-WholeProgramDevirt | 5.925185 | 5.080818 | 0.857495 |
+| aarch64-training/06-ARMISelLowering | 8.521611 | 7.380459 | 0.866087 |
+| aarch64-training/07-ARMTargetTransformInfo | 5.066534 | 4.256032 | 0.840028 |
+| aarch64-training/08-MasmParser | 3.400408 | 2.936897 | 0.863690 |
+| aarch64-training/09-AsmParser | 2.716850 | 2.338638 | 0.860790 |
+
+几何平均比 0.855890085，按(1-ratio)耗时降低14.411%，阈值严格<0.98：PASS。load1范围1.37–2.54/中位1.93（含被测单进程），完整5次原样本/环境/cpu频率在validation-performance.json。scope 1704.017s/峰4.343GiB/VmHWM最高725344kB，锁持1704.056s；proc/scope/锁已回收，无低内存/OOM。不是Quickbuild性能；周四实物仍须复核。
