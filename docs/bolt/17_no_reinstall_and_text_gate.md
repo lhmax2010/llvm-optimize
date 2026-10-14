@@ -91,3 +91,29 @@ debug/release当前草案展开NOT RUN；30历史+90对象、双模式小spec、
 保护审计PASS：22RPM/普通clang等完整SHA大小、归档独立install证据元数据、原源码清单一致；原树坏cache/ninja配置保持17f7fbc7…/c0068a3e…，未恢复/写入。原ThinLTO cache仍47987/96881772832B，本轮0新增，前轮增量按PM接受。没有任何cmake/ninja/链接、新配置、chroot/proc mount或共享锁；全是4GiB/swap0/nice19/ionice3轻scope，全部回收；不进入ARM根、不改W tracked/llvm。对比scope151.782s/峰0.549GiB/VmHWM387212kB，fixture1.527s/峰0.055GiB，freeze18.570s/峰0.482GiB，审计16.060s/峰0.974GiB。没有>10GiB写入；原根free59147931648B。
 
 本轮未动用准备性错误重试。严格产品失败后仅归档、只读细分类、Git封套验证与报告/发布；不会依据“Linux未使用PDB变量”放宽准入。GitHub源修订材料abc3e19已推；完整停止材料与raw索引随后分步推送。
+
+## 各类附加原文摘录
+
+ordinary_PDB_metadata_change 原文示例：
+
+```ninja
+  TARGET_PDB = lib64/libtf_xla_runtime.pdb
+```
+
+BOLT_build_edges 原文示例：
+
+```ninja
+build tools/bolt/list_install_components: phony
+```
+
+BOLT_build_edges+aggregate_BOLT_dependencies 原文示例：
+
+```ninja
+build tools/bolt/lib/Core/all: phony lib64/libLLVMBOLTCore.a
+```
+
+BOLT_rules 原文示例：
+
+```ninja
+rule CXX_EXECUTABLE_LINKER__llvm-bolt_Release
+```
