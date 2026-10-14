@@ -351,10 +351,12 @@ git push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm AUDITED_C
 此次临时baseline因只准备llvm链接、漏同级cmake目录失败而按规则STOP，尚未append；临时目录清理，原树cache/ninja仍上一失败bd8ad3aa…/a37efa6a…未恢复。没有重试/恢复/构建/后备候选/推送。正式草案仍d6ddbff5…父cb679968，未改源码封套；22RPM/归档证据保护通过、proc/scope回收，未取重锁/进ARM。未来tizen_base合归档修复时周五再变基解spec冲突。不能直接在当前失配配置上ninja，原快照在13对应E。
 
 
-### v4.1-12/13 原环境与后备历史（2026-10-14）
+### v4.1-12至14 历史记录
 
-15临时追加配置PASS、污染缓存恢复失败；16改历史工具候选4ec07159…门禁PASS，安装清理漏两个未登记别名，停止。原树禁CMake/Ninja；前轮缓存增量由最新PM接受，未来临时配置专用cache。
+15临时配置PASS但原树恢复FAIL；16历史后备候选4ec07159…门禁PASS，安装遗漏STOP；17修成单次安装/compare-root，103夹具及封套PASS，文本门禁STOP。详见15–17，原树禁CMake/Ninja；未来临时配置专用cache。
 
-### v4.1-14 单次普通安装与文本严格门禁（2026-10-14）
+### v4.1-15 文本补充认证（2026-10-14，最新）
 
-17覆盖最新状态：删除第二次安装/exports备份恢复/prune，pipeline后compare-root验证普通安装零BOLT副作用；103夹具及封套apply/tree PASS，新源a1410e3d…父cb679968。7439文本块中普通PDB元数据7421与普通CMake依赖移除2不在允许类别，产品FAIL停止，不按Linux命令相同豁免。新宏展开/对象/双模式/DWARF/性能/推送NOT RUN；原树和cache未写。周四核Quickbuild匹配统计同量级/双5%及性能，不比较两边clang SHA。
+PM采用a1410e3d草案；甲类须变量未被任何rule字段引用且build其余不变，乙类只限build build.ninja的RERUN_CMAKE依赖。7421甲类块/6838普通语句PASS，两个PDB变量在2454规则中0引用；乙类1块PASS。另1块改多输出phony输出清单（88删/20增）不属许可，7439块中1 FAIL，严格STOP；不做对照/展开/对象/双模式/DWARF/性能/sandbox。详见18/STATUS。
+
+debug间接读取按86配置相同/tool-plan/完全strip覆盖，不另阻塞。周四核统计同量级/双5%、tool-plan、compare-root、Quickbuild性能、debugsource实物清单；不核两边SHA。原树与cache只读，失败不扩许可。

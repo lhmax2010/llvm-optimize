@@ -248,3 +248,13 @@ PM确认追加bolt后第二次完整安装创建两个未登记manifest的BOLT�
 第一步第4项后续读取资料审核列出own BOLT work资产、源目录clang Python、安装树普通动作及原debug find-debuginfo对DWARF引用build源/生成头的间接读取；86配置同字节只为部分证据，因全边FAIL及DWARF验证未跑，不认证完全不受影响。当前新草案两模式rpmspec展开未执行；第三步对象/双模式/预期清单/性能全NOT RUN，geom未知，sandbox未尝试/远端未查。源a1410e3d14b8836e3f9be5a1b4380f914dc2e705父cb679968，封套apply/tree PASS但不是合格推送提交。候选仍历史后备SHA4ec07159…，周四匹配统计同量级/双5%+性能，不核local/Quickbuild SHA一致。
 
 保护审计PASS：原clang/22RPM/归档证据/源码/坏cache-ninja配置不变，原cache47987/96881772832B本轮零新增（前轮增长PM已接受）。本轮没有CMake/Ninja/link/新配置/chroot/proc/shared-lock，全部4GiB轻scope已回收，无准备性错误重试；严格失败后只读完善分类/封套/报告，不继续产品实验。W tracked仅原有gbs改动，不写W/llvm、不进入ARM树。原根free59147931648B，未有>10GiB写入。
+
+## 2026-10-14 周三续跑六：甲类认证PASS，phony输出块不属乙类STOP
+
+人工裁决：采用a1410e3d父cb679968的单次安装/compare-root草案及103已通过夹具；新增甲类仅未被任何rule字段引用的变量且同一build其余全部相同，乙类仅RERUN_CMAKE的build build.ninja依赖列表。debug间接源读取以86同字节配置/Quickbuild现场tool-plan/完全strip覆盖，不再单独阻塞，周四加实际debugsource清单对照。原树禁配置与Ninja不变，唯一新配置只能认证通过后临时专用cache对照；其他门禁不放宽。
+
+本次7,421甲类块全部PASS：仅TARGET_COMPILE_PDB/TARGET_PDB，两快照两文件所有2454条rule的全部字段分别0引用；6838普通语句（6255对象/583链接）头行及其余变量/字节完全相同。真正RERUN_CMAKE依赖块PASS，88删/20增全文列18/JSON。但第7438块是多输出phony语句，改的是冒号左输出清单（同88删/20增），不是RERUN_CMAKE/build build.ninja，也不是变量或聚合依赖新增。故7439块中7438 PASS、1 FAIL，状态STOP_CMAKE_PHONY_OUTPUTS_OUTSIDE_ALLOWED_CLASSES；没有自行把关联的phony块扩大纳入乙类。
+
+失败后停止产品实验：无BOLT对照配置、当前草案debug/release展开、30/90对象、双模式小spec、22RPM/DWARF预期差异、30×5性能与sandbox全部NOT RUN；geom未知、远端未查。候选仍历史后备SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9，源a1410e3d14b8836e3f9be5a1b4380f914dc2e705父cb679968；不改草案/patch，不重试产品失败。新18和text-proof认证JSON/独立phony原文给全证据。仅一次文档路径准备性修正：猜测17旧名失败，rg定位正确文件后读取；无其他修正。
+
+周四清单：匹配统计同量级/双5% PASS、tool-plan PASS、compare-root PASS、Quickbuild性能、debugsource实际清单与旧快照对比；不要求local/Quickbuild clang SHA一致。新E=bolt-v4-20261014-text-proof；没有cmake/ninja/link、新配置/chroot/proc/共享锁或原cache写入，停止后仅只读保护审计/报告/GitHub提交发布。
