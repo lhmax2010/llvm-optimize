@@ -138,6 +138,37 @@ class ElfTests(Base):
         (self.d/'a').write_bytes(b'\x7fELF\x02\x01')
         with self.assertRaises(h.GateError):h.ELF(self.d/'a')
 
+class BuildrootUnchangedTests(Base):
+    def setUp(self):
+        super().setUp()
+        self.root=self.d/'root';(self.root/'usr/share').mkdir(parents=True)
+        self.file=self.root/'usr/share/probe';self.file.write_bytes(b'original')
+        self.link=self.root/'usr/share/link';self.link.symlink_to('probe')
+        self.before=h.root_snapshot(self.root)
+    def compare(self):return h.compare_root(self.root,self.before,self.d/'after.json')
+    def test_unchanged_passes(self):self.assertTrue(self.compare()['buildroot_unchanged'])
+    def test_added_file_fails_with_path(self):
+        (self.root/'usr/share/new').write_bytes(b'x')
+        with self.assertRaisesRegex(h.GateError,'added: usr/share/new'):self.compare()
+    def test_added_symlink_fails_with_path(self):
+        (self.root/'usr/share/new').symlink_to('probe')
+        with self.assertRaisesRegex(h.GateError,'added: usr/share/new'):self.compare()
+    def test_removed_file_fails_with_path(self):
+        self.file.unlink()
+        with self.assertRaisesRegex(h.GateError,'removed: usr/share/probe'):self.compare()
+    def test_content_change_fails_with_path(self):
+        self.file.write_bytes(b'different')
+        with self.assertRaisesRegex(h.GateError,'entry differs: usr/share/probe'):self.compare()
+    def test_permission_change_fails_with_path(self):
+        self.file.chmod(0o600)
+        with self.assertRaisesRegex(h.GateError,'entry differs: usr/share/probe'):self.compare()
+    def test_symlink_target_change_fails_with_path(self):
+        self.link.unlink();self.link.symlink_to('different')
+        with self.assertRaisesRegex(h.GateError,'entry differs: usr/share/link'):self.compare()
+    def test_directory_permission_change_fails_with_path(self):
+        (self.root/'usr/share').chmod(0o700)
+        with self.assertRaisesRegex(h.GateError,'metadata differ: usr/share'):self.compare()
+
 class InstallTests(Base):
     def root(self):
         r=self.d/'root';(r/'usr/bin').mkdir(parents=True);elf(r/'usr/bin/clang-22');return r

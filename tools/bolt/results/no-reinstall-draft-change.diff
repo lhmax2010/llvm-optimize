@@ -1,0 +1,95 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index f673947d23a8..75eefbc0f6a7 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -214,6 +214,37 @@ def inventory(root):
+                 raise GateError('special file in buildroot: '+key)
+     return {'root': str(root), 'files': files}
+ 
++def root_snapshot(root):
++    """Packaging baseline, including directory and symlink permissions."""
++    root = Path(root).absolute()
++    result = inventory(root)
++    result['metadata'] = {}
++    for key in [''] + sorted(result['files']):
++        path = root/key
++        st = path.lstat()
++        item = {'mode': stat.S_IMODE(st.st_mode)}
++        if stat.S_ISLNK(st.st_mode):
++            item['bytes'] = st.st_size
++        result['metadata'][key] = item
++    return result
++
++def compare_root(root, baseline, after_path):
++    """Reject any buildroot side effect before installing the candidate."""
++    current = root_snapshot(root)
++    save(after_path, current)
++    require(baseline.get('root') == current['root'], 'buildroot baseline belongs to a different root')
++    require('metadata' in baseline, 'buildroot baseline lacks complete permission metadata')
++    old, new = baseline['files'], current['files']
++    for key in sorted(old.keys() | new.keys()):
++        require(key in old, 'buildroot added: '+key)
++        require(key in new, 'buildroot removed: '+key)
++        require(old[key] == new[key], 'buildroot entry differs: '+key)
++        require(baseline['metadata'].get(key) == current['metadata'][key],
++                'buildroot permissions/metadata differ: '+key)
++    require(baseline['metadata'].get('') == current['metadata'][''],
++            'buildroot permissions/metadata differ: .')
++    return {'buildroot_unchanged': True, 'entries': len(new)}
++
+ def prune_install(root, baseline, installed_paths):
+     root = Path(root).absolute(); before = baseline['files']; after = inventory(root)['files']
+     require(before.keys() <= after.keys(), 'ordinary install file removed before BOLT cleanup')
+@@ -521,6 +552,7 @@ def main():
+     s=sub.add_parser('rewrite');s.add_argument('tool');s.add_argument('profile');s.add_argument('input');s.add_argument('output');s.add_argument('work')
+     s=sub.add_parser('tiny');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('work');s.add_argument('--resource-dir')
+     s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
++    s=sub.add_parser('compare-root');s.add_argument('root');s.add_argument('baseline');s.add_argument('after')
+     s=sub.add_parser('prune');s.add_argument('root');s.add_argument('before');s.add_argument('install_manifest');s.add_argument('result')
+     s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
+     s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
+@@ -538,7 +570,8 @@ def main():
+         Path(a.script).write_text(script);Path(a.script).chmod(0o755);result={'script':a.script}
+     elif a.cmd=='rewrite':result=rewrite(a.tool,a.profile,a.input,a.output,a.work)
+     elif a.cmd=='tiny':result=tiny_gate(a.ordinary,a.candidate,a.work,a.resource_dir)
+-    elif a.cmd=='snapshot':result=inventory(a.root);save(a.output,result)
++    elif a.cmd=='snapshot':result=root_snapshot(a.root);save(a.output,result)
++    elif a.cmd=='compare-root':result=compare_root(a.root,json.loads(Path(a.baseline).read_text()),a.after)
+     elif a.cmd=='prune':
+         result=prune_install(a.root,json.loads(Path(a.before).read_text()),Path(a.install_manifest).read_text().splitlines());save(a.result,result)
+     elif a.cmd=='install':result=install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()))
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index c53b4ea55e20..ebebf184396d 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -424,12 +424,11 @@ cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
+ # The handed-off build owns its original ThinLTO cache; do not duplicate it.
+ # Default 16 GiB BOLT-stage write budget must leave 30 GiB on this filesystem.
+ BOLT_WORK="$PWD/clang-bolt"
+-mkdir -p "$BOLT_WORK/ordinary-exports" || exit 1
++mkdir -p "$BOLT_WORK" || exit 1
+ python3 %{SOURCE1201} disk-preflight "$BOLT_WORK" 17179869184 || exit 1
+ # File-list baseline is the actual ordinary CMake install, not a name whitelist.
+ python3 %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
+ cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt" || exit 1
+-cp -a "%{buildroot}%{_libdir}/cmake/llvm/." "$BOLT_WORK/ordinary-exports/" || exit 1
+ cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22" || exit 1
+ ninja -t commands -s bin/clang-22 > "$BOLT_WORK/link.original" || exit 1
+ python3 %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || exit 1
+@@ -443,12 +442,10 @@ python3 %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" || exit 1
+ python3 %{SOURCE1201} disk-preflight "$PWD" 17179869184 || exit 1
+ ninja -j 1 llvm-bolt || exit 1
+ python3 %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
+-python3 %{SOURCE1201} disk-preflight "%{buildroot}" 17179869184 || exit 1
+-cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake || exit 1
+-# Restore ordinary LLVM export metadata; BOLT libraries must not leak to consumers.
+-cp -a "$BOLT_WORK/ordinary-exports/." "%{buildroot}%{_libdir}/cmake/llvm/" || exit 1
+-python3 %{SOURCE1201} prune "%{buildroot}" "$BOLT_WORK/install-before.json" \
+-  install_manifest.txt "$BOLT_WORK/install-cleanup.json" || exit 1
++# BOLT configuration/build/rewrite must not change the ordinary installation.
++# Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
++python3 %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
++  "$BOLT_WORK/install-after-pipeline.json" || exit 1
+ %endif
+ %endif
+ ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}

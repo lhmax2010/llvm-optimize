@@ -236,3 +236,9 @@ PM认定上轮没有先移开污染cache是恢复方法问题，不是新产品�
 停止后快照只读诊断还证明清理覆盖FAIL：非BOLT安装规则不变，17新增BOLT安装脚本带7个/usr/lib64/libLLVMBOLT*.a（manifest/prune覆盖）及/usr/bin/perf2bolt、llvm-boltdiff两链接（指向llvm-bolt）。LLVMInstallSymlink不登记manifest，prune_install会拒绝两个未注册新增路径，现草案遗漏；47导出元数据仅额外检查的LLVMConfig.cmake变化且普通exports完整恢复覆盖。建议下轮绑定baseline/链接类型目标证据后清理两别名，最终inventory严格相同；本轮按约束不改草案。16及fallback-config-install/stop、两份完整配置tar.xz给四项结果/建议/原文。
 
 原clang/22RPM/归档证据/源码与原树cache/ninja配置SHA审计PASS，未在原树cmake/ninja或刷新生成头；但临时配置沿用15原lto.cache预置，测试链接仍新增361文件1674072B（cache47987/96881772832B），未满足原树仅作输入来源意图，已如实记录，不再触碰原cache。下次临时配置用专用cache且不复制原cache。全部proc/scope回收、候选重锁已释；第四步对象/双模式/DWARF清单/性能全部NOT RUN，geom未知，sandbox未尝试。最终候选SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9保留；源d6ddbff5与封套未改。周四核Quickbuild统计/双5%门禁及性能，不核local/Quickbuild SHA相等。
+
+## 2026-10-14 周三续跑五：删除第二次安装与文本门禁STOP
+
+PM确认追加bolt后第二次完整安装创建两个未登记manifest的BOLT别名，Quickbuild会在prune失败。采用去掉第二次安装/exports备份恢复/prune，不增加特例；普通安装后baseline到BOLT pipeline结束重新取完整清单，逐项比较路径/类型/权限/大小/SHA/链接目标，有差异即停，候选install仍单独替换clang。前轮cache+361/+1674072B接受为交接缓存正常变动，后续临时配置专用cache；本轮无需配置。原树禁所有cmake/ninja/-P安装。文本比对现存build.ninja/rules.ninja、包含无输入CUSTOM，禁compdb。其余资源/保护/准备性最多一次修正/产品失败即停与sandbox资格规则不变。
+
+草案编辑与103/103 fixtures PASS，旧95+新8，prune保留供历史夹具但生产不调用；snapshot/compare-root记录目录与链接权限，报错含路径。新源提交a1410e3d14b8836e3f9be5a1b4380f914dc2e705 父cb679968，spec SHA14d17a60369a2c05661037583740b410f0fd710aef2c0c78de08175a57bb6c0c、helper SHA7614228b5da020fd1ae08eaef0ebaf096c317f21a370e249285ee632711888e7，完整patch与公开封套静态apply/tree PASS。第一步后续读取审核依赖第二步，故在两模式展开前做文本比对；该严格产品门禁FAIL后立即停，第一步尚未完整认证，debug/release展开未执行，未拿旧展开顶替。17与fixtures/draft-change/manifest给证据，未推Gerrit。

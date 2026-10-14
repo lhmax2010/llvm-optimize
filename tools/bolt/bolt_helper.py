@@ -214,6 +214,37 @@ def inventory(root):
                 raise GateError('special file in buildroot: '+key)
     return {'root': str(root), 'files': files}
 
+def root_snapshot(root):
+    """Packaging baseline, including directory and symlink permissions."""
+    root = Path(root).absolute()
+    result = inventory(root)
+    result['metadata'] = {}
+    for key in [''] + sorted(result['files']):
+        path = root/key
+        st = path.lstat()
+        item = {'mode': stat.S_IMODE(st.st_mode)}
+        if stat.S_ISLNK(st.st_mode):
+            item['bytes'] = st.st_size
+        result['metadata'][key] = item
+    return result
+
+def compare_root(root, baseline, after_path):
+    """Reject any buildroot side effect before installing the candidate."""
+    current = root_snapshot(root)
+    save(after_path, current)
+    require(baseline.get('root') == current['root'], 'buildroot baseline belongs to a different root')
+    require('metadata' in baseline, 'buildroot baseline lacks complete permission metadata')
+    old, new = baseline['files'], current['files']
+    for key in sorted(old.keys() | new.keys()):
+        require(key in old, 'buildroot added: '+key)
+        require(key in new, 'buildroot removed: '+key)
+        require(old[key] == new[key], 'buildroot entry differs: '+key)
+        require(baseline['metadata'].get(key) == current['metadata'][key],
+                'buildroot permissions/metadata differ: '+key)
+    require(baseline['metadata'].get('') == current['metadata'][''],
+            'buildroot permissions/metadata differ: .')
+    return {'buildroot_unchanged': True, 'entries': len(new)}
+
 def prune_install(root, baseline, installed_paths):
     root = Path(root).absolute(); before = baseline['files']; after = inventory(root)['files']
     require(before.keys() <= after.keys(), 'ordinary install file removed before BOLT cleanup')
@@ -521,6 +552,7 @@ def main():
     s=sub.add_parser('rewrite');s.add_argument('tool');s.add_argument('profile');s.add_argument('input');s.add_argument('output');s.add_argument('work')
     s=sub.add_parser('tiny');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('work');s.add_argument('--resource-dir')
     s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
+    s=sub.add_parser('compare-root');s.add_argument('root');s.add_argument('baseline');s.add_argument('after')
     s=sub.add_parser('prune');s.add_argument('root');s.add_argument('before');s.add_argument('install_manifest');s.add_argument('result')
     s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
     s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
@@ -538,7 +570,8 @@ def main():
         Path(a.script).write_text(script);Path(a.script).chmod(0o755);result={'script':a.script}
     elif a.cmd=='rewrite':result=rewrite(a.tool,a.profile,a.input,a.output,a.work)
     elif a.cmd=='tiny':result=tiny_gate(a.ordinary,a.candidate,a.work,a.resource_dir)
-    elif a.cmd=='snapshot':result=inventory(a.root);save(a.output,result)
+    elif a.cmd=='snapshot':result=root_snapshot(a.root);save(a.output,result)
+    elif a.cmd=='compare-root':result=compare_root(a.root,json.loads(Path(a.baseline).read_text()),a.after)
     elif a.cmd=='prune':
         result=prune_install(a.root,json.loads(Path(a.before).read_text()),Path(a.install_manifest).read_text().splitlines());save(a.result,result)
     elif a.cmd=='install':result=install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()))

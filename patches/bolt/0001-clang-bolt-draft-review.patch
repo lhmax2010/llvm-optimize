@@ -1,35 +1,34 @@
-From d6ddbff5ba74bfb420b357b5b6ba9ed300971bb4 Mon Sep 17 00:00:00 2001
+From a1410e3d14b8836e3f9be5a1b4380f914dc2e705 Mon Sep 17 00:00:00 2001
 From: FatTank <hao.lin@samsung.com>
 Date: Tue, 13 Oct 2026 14:09:46 +0800
-Subject: [PATCH] =?UTF-8?q?=E5=AE=9E=E7=8E=B0=E5=8D=95=E4=B8=80=E9=87=8D?=
- =?UTF-8?q?=E9=93=BE=E4=B8=8E=E5=AE=8C=E5=85=A8=20strip=20=E7=9A=84=20x86?=
- =?UTF-8?q?=5F64=20clang=20BOLT=20=E5=8F=8C=E6=A8=A1=E5=BC=8F=E8=8D=89?=
- =?UTF-8?q?=E6=A1=88?=
+Subject: [PATCH] =?UTF-8?q?=E7=A7=BB=E9=99=A4=20BOLT=20=E8=8D=89=E6=A1=88?=
+ =?UTF-8?q?=E4=B8=AD=E7=9A=84=E7=AC=AC=E4=BA=8C=E6=AC=A1=E5=AE=89=E8=A3=85?=
+ =?UTF-8?q?=EF=BC=8C=E5=A2=9E=E5=8A=A0=E6=9E=84=E5=BB=BA=E6=A0=B9=E4=B8=8D?=
+ =?UTF-8?q?=E5=8F=98=E9=97=A8=E7=A6=81?=
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
 
-基于 cb679968；不叠归档补丁，不推 Gerrit。只加 emit-relocs 重链，
-再 LLVM strip-debug；删除双路比较及回退。BOLT 匹配、前后微型门禁、
-strip 前 note 与前后 SHA、单次原后处理末尾终检均保留。
-交接树原地使用 ThinLTO cache；受保护旧树可显式改写缓存路径。
-超过 10 GiB 的声明写入预算须在写完后保留至少 30 GiB。
-本地 RPM 清单严格区分 debug/release 例外，不新增或改变非 clang 文件。
+基于 cb679968，仅一次普通 CMake 安装；追加 bolt 后不再次安装，
+不备份或恢复普通 exports，不调用 prune。pipeline 后重新取构建根
+清单并检查文件类型、权限、大小、SHA、链接目标及目录权限。
+候选安装与单次原后处理终检保持原顺序和参数。
 
-95 个 helper 夹具通过；静态完整 patch 与公开封套整树校验另见 manifest。
-完整构建、同树工具图及新树/RPM 认证仍待完成。
+保留旧 prune 供历史夹具与审计，生产不再调用。103 个夹具通过。
+本地严格 Ninja 文本门禁因普通 PDB 变量及 CMake 依赖移除失败；
+本提交只是可评审草案，新的双模式展开、对象、性能未认证，未推 Gerrit。
 ---
- packaging/clang-bolt-helper.py | 554 +++++++++++++++++++++++++++++++++
- packaging/llvm.spec            |  78 +++++
- 2 files changed, 632 insertions(+)
+ packaging/clang-bolt-helper.py | 587 +++++++++++++++++++++++++++++++++
+ packaging/llvm.spec            |  75 +++++
+ 2 files changed, 662 insertions(+)
  create mode 100644 packaging/clang-bolt-helper.py
 
 diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
 new file mode 100644
-index 000000000000..f673947d23a8
+index 000000000000..75eefbc0f6a7
 --- /dev/null
 +++ b/packaging/clang-bolt-helper.py
-@@ -0,0 +1,554 @@
+@@ -0,0 +1,587 @@
 +#!/usr/bin/env python3
 +"""Tizen clang BOLT draft. Every command fails closed; Python >= 3.9, POSIX sh."""
 +import argparse
@@ -245,6 +244,37 @@ index 000000000000..f673947d23a8
 +            else:
 +                raise GateError('special file in buildroot: '+key)
 +    return {'root': str(root), 'files': files}
++
++def root_snapshot(root):
++    """Packaging baseline, including directory and symlink permissions."""
++    root = Path(root).absolute()
++    result = inventory(root)
++    result['metadata'] = {}
++    for key in [''] + sorted(result['files']):
++        path = root/key
++        st = path.lstat()
++        item = {'mode': stat.S_IMODE(st.st_mode)}
++        if stat.S_ISLNK(st.st_mode):
++            item['bytes'] = st.st_size
++        result['metadata'][key] = item
++    return result
++
++def compare_root(root, baseline, after_path):
++    """Reject any buildroot side effect before installing the candidate."""
++    current = root_snapshot(root)
++    save(after_path, current)
++    require(baseline.get('root') == current['root'], 'buildroot baseline belongs to a different root')
++    require('metadata' in baseline, 'buildroot baseline lacks complete permission metadata')
++    old, new = baseline['files'], current['files']
++    for key in sorted(old.keys() | new.keys()):
++        require(key in old, 'buildroot added: '+key)
++        require(key in new, 'buildroot removed: '+key)
++        require(old[key] == new[key], 'buildroot entry differs: '+key)
++        require(baseline['metadata'].get(key) == current['metadata'][key],
++                'buildroot permissions/metadata differ: '+key)
++    require(baseline['metadata'].get('') == current['metadata'][''],
++            'buildroot permissions/metadata differ: .')
++    return {'buildroot_unchanged': True, 'entries': len(new)}
 +
 +def prune_install(root, baseline, installed_paths):
 +    root = Path(root).absolute(); before = baseline['files']; after = inventory(root)['files']
@@ -553,6 +583,7 @@ index 000000000000..f673947d23a8
 +    s=sub.add_parser('rewrite');s.add_argument('tool');s.add_argument('profile');s.add_argument('input');s.add_argument('output');s.add_argument('work')
 +    s=sub.add_parser('tiny');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('work');s.add_argument('--resource-dir')
 +    s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
++    s=sub.add_parser('compare-root');s.add_argument('root');s.add_argument('baseline');s.add_argument('after')
 +    s=sub.add_parser('prune');s.add_argument('root');s.add_argument('before');s.add_argument('install_manifest');s.add_argument('result')
 +    s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
 +    s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
@@ -570,7 +601,8 @@ index 000000000000..f673947d23a8
 +        Path(a.script).write_text(script);Path(a.script).chmod(0o755);result={'script':a.script}
 +    elif a.cmd=='rewrite':result=rewrite(a.tool,a.profile,a.input,a.output,a.work)
 +    elif a.cmd=='tiny':result=tiny_gate(a.ordinary,a.candidate,a.work,a.resource_dir)
-+    elif a.cmd=='snapshot':result=inventory(a.root);save(a.output,result)
++    elif a.cmd=='snapshot':result=root_snapshot(a.root);save(a.output,result)
++    elif a.cmd=='compare-root':result=compare_root(a.root,json.loads(Path(a.baseline).read_text()),a.after)
 +    elif a.cmd=='prune':
 +        result=prune_install(a.root,json.loads(Path(a.before).read_text()),Path(a.install_manifest).read_text().splitlines());save(a.result,result)
 +    elif a.cmd=='install':result=install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()))
@@ -585,7 +617,7 @@ index 000000000000..f673947d23a8
 +    except (GateError, OSError, ValueError, lzma.LZMAError) as e:
 +        print('BOLT_GATE_FAILED: '+str(e),file=sys.stderr);sys.exit(1)
 diff --git a/packaging/llvm.spec b/packaging/llvm.spec
-index 64705188b67c..c53b4ea55e20 100644
+index 64705188b67c..ebebf184396d 100644
 --- a/packaging/llvm.spec
 +++ b/packaging/llvm.spec
 @@ -1,3 +1,10 @@
@@ -625,7 +657,7 @@ index 64705188b67c..c53b4ea55e20 100644
  
  %if %{undefined _toolchain}
  %ifarch x86_64
-@@ -385,11 +404,53 @@ cmake \
+@@ -385,11 +404,50 @@ cmake \
  %endif
  
  # Full build using ninja (already in build/ directory after cd build)
@@ -649,12 +681,11 @@ index 64705188b67c..c53b4ea55e20 100644
 +# The handed-off build owns its original ThinLTO cache; do not duplicate it.
 +# Default 16 GiB BOLT-stage write budget must leave 30 GiB on this filesystem.
 +BOLT_WORK="$PWD/clang-bolt"
-+mkdir -p "$BOLT_WORK/ordinary-exports" || exit 1
++mkdir -p "$BOLT_WORK" || exit 1
 +python3 %{SOURCE1201} disk-preflight "$BOLT_WORK" 17179869184 || exit 1
 +# File-list baseline is the actual ordinary CMake install, not a name whitelist.
 +python3 %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
 +cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt" || exit 1
-+cp -a "%{buildroot}%{_libdir}/cmake/llvm/." "$BOLT_WORK/ordinary-exports/" || exit 1
 +cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22" || exit 1
 +ninja -t commands -s bin/clang-22 > "$BOLT_WORK/link.original" || exit 1
 +python3 %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || exit 1
@@ -668,18 +699,16 @@ index 64705188b67c..c53b4ea55e20 100644
 +python3 %{SOURCE1201} disk-preflight "$PWD" 17179869184 || exit 1
 +ninja -j 1 llvm-bolt || exit 1
 +python3 %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
-+python3 %{SOURCE1201} disk-preflight "%{buildroot}" 17179869184 || exit 1
-+cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake || exit 1
-+# Restore ordinary LLVM export metadata; BOLT libraries must not leak to consumers.
-+cp -a "$BOLT_WORK/ordinary-exports/." "%{buildroot}%{_libdir}/cmake/llvm/" || exit 1
-+python3 %{SOURCE1201} prune "%{buildroot}" "$BOLT_WORK/install-before.json" \
-+  install_manifest.txt "$BOLT_WORK/install-cleanup.json" || exit 1
++# BOLT configuration/build/rewrite must not change the ordinary installation.
++# Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
++python3 %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
++  "$BOLT_WORK/install-after-pipeline.json" || exit 1
 +%endif
 +%endif
  ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
  
  ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
-@@ -421,6 +482,14 @@ rm -rf %{buildroot}%{_libdir}/debug/*
+@@ -421,6 +479,14 @@ rm -rf %{buildroot}%{_libdir}/debug/*
  rm -rf %{buildroot}/usr/lib/libear/*
  rm -rf %{buildroot}/usr/lib/libscanbuild/*
  
@@ -694,7 +723,7 @@ index 64705188b67c..c53b4ea55e20 100644
  %post -n clang -p /sbin/ldconfig
  %postun -n clang -p /sbin/ldconfig
  
-@@ -652,3 +721,12 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+@@ -652,3 +718,12 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
  
  %files -n python-clang
  %{python3_sitelib}/clang
