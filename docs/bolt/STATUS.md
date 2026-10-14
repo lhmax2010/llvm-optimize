@@ -222,3 +222,9 @@ PM确认删缓存源于本地PATH先/usr/bin、原RPM先/bin；spec同一RPM环�
 第二步STOP_RESTORATION_GATE：按原RPM环境与原始完整cmake参数仅恢复一次，PATH/which仍正确且rc0，但污染cache中的/usr/bin compiler改回/bin又触发删cache/默认重配。50关键项中41不一致，664完整cache键变化；Thin→OFF、projects→空、prefix /usr→/usr/local、targets→all。产品恢复门禁FAIL，按PM立即停止，不重试、不运行ninja干跑/分类/补完，>50后备条件未评估，无本次候选/SHA/正式匹配/30+90对象/双模式/DWARF清单/性能或sandbox推送。唯一准备性修正为第一步cache-delta-classifier的派生目录计数误报，不放宽产品门禁。
 
 树仍未恢复，当前cache17f7fbc72b14f6b1a5116aa17622e0af244fe84f2e72ef1e32bba61d3ca32876、ninja c0068a3e42ae3b4303357000ddb6f30a0f72d46da704128277a052953ead4d42；失败配置开始以来923个时间筛选改写文件清单、原始命令/环境、关键项与完整cache差异、59,160,293B ninja差异均保存。15与rpm-env-stop/restoration/configure给证据。恢复cmake32.714s/scope35.128s，峰0.567GiB/VmHWM328556kB；均4GiB轻scope、无共享锁/重阶段，proc/scope回收。普通clang与22RPM逐SHA大小、归档证据元数据、源码前后清单全部PASS；cache47626/96880098760B原地使用、不复制（比开工+519/+2288400B，允许LLD写入）。free60543275008B。草案/源d6ddbff5/patch/manifest无修改，无新夹具PASS声明；本次未完成候选验证目标，在恢复产品门禁处停止。
+
+## 2026-10-14 周三续跑四：PM后备路线与原树禁用
+
+PM认定上轮没有先移开污染cache是恢复方法问题，不是新产品缺陷。已刷新的普通生成头mtime会触发大量对象重建，本周放弃恢复及树内工具路线；禁止在原树cmake/ninja（含-n），原树仅作只读输入来源，周五后定恢复/废弃。本周本地正式候选改为历史1da7bb735f7bc1afab9a863154260699b0b0f88c6fd05b99231dd21ef653fd5a工具；树内llvm-bolt构建与安装清理由Quickbuild验证，其余门禁不变。周四不要求Quickbuild/local clang SHA一致（前BOLT输入不同），核对日志N/M/S/U/Q、R、S/N同量级且5%双门禁及Quickbuild性能。准备性错误每类一次修正，产品失败即停；原RPM环境/记录要求、资源/保护与最终sandbox父cb直推条件沿用。
+
+第一步PASS：保留13的emit-relocs+strip-debug输入，SHA158275040dbaa71999f60a4b62e4dd9a23a58b4d72e7ff85fb3c5f5ebff064e4/226738888B与原记录一致，不重放、不进入原树cmake/ninja。tool/profile/普通clang指纹PASS，新E=bolt-v4-20261014-fallback，轻scope12.049s。16与fallback-input给证据，后续尚未认证。
