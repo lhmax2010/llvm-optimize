@@ -226,3 +226,387 @@ Change-Id: I9a815cad07c9bd5ae1e3068fe5b13a339e2ea3ce
 2026-10-14T16:18:28.485266+08:00终检PASS：开场冻结的两Source、两候选补丁与W/gbs配置SHA全部一致，W/llvm HEAD、工作树状态与本机spec diff保持原样；新公开补丁SHA和上传commit一致。3个scope均结束，采样器与reader回收，本任务进程0、临时挂载0，两项目锁已释放，共享重任务锁按阶段finally释放。没有进入已交接x86树/BOLT工作树，没有修改宿主配置、旧Source/Commands/候选补丁或重新构建/打包；用户既有gbs配置改动保留不提交。证据E/final-audit.json、lock-released.json与各scope outcome/shared-lock-released。
 
 本轮GitHub进度：e289e66（合入核对）、b940a01（新提交/apply/parse）、3b53b98（Gerrit上传回读）、813813b（快照/bash）；最终探测与本节同STATUS提交。Gerrit只有新评审356949，未执行356639 Abandon。
+
+## 11. PS2 提交说明修订
+
+2026-10-14，本节是本轮结果；§1–§10 保留 PS1 历史。只用 `git commit --amend` 修改 Gerrit PS1 的说明，未改代码、spec 或 Source，未构建、未转换，也未取得 heavy-stage 锁。唯一 Gerrit push 为 `HEAD:refs/for/tizen_base`，未提交合入、未打分、未操作其他 change。
+证据 P=`temp/followup-356949-ps2-message-20261014`；34 组带原文件 SHA 和行号的原文见 `P/fact-excerpts.json`，结论见 `P/facts-summary.json`。未进入 BOLT 资产或已交接 x86 构建树。
+
+### 11.1 前置检查与实际底稿
+
+| 项目 | Gerrit PS1 实读 | 结果 |
+|---|---|---|
+| 状态/数量 | `NEW`；只有 patchset 1 | PASS |
+| commit | `d4dd40da3b6ab28925b57d24d66bd992b4ad798c` | PASS |
+| tree | `480be0836bc470dd027f73882b4082d0ce0e5000` | PASS |
+| parent | `67619ec8bbbac7238a6cfc33a481ccfbcd12206f` | PASS |
+| Change-Id | `I9a815cad07c9bd5ae1e3068fe5b13a339e2ea3ce` | PASS |
+
+SSH 查询原文 `P/gerrit-before.jsonl`；从 Gerrit fetch PS1 到 P/review-work 后读取 commit object，而非假定本地说明就是远端。实际说明与原 `patches/archive-index-fix/followup/commit-message.txt` 同字节，保留段没有内容偏差。上传前又查询一次，仍为 NEW/仅 PS1。用户已有 `gbs_llvm.conf` 改动保留、不提交。
+
+### 11.2 只读事实 1a–1f
+
+**1a：发布 sed 的原文。** 以下行号以远端 PS1 `packaging/llvm.spec` 为准（P/ps1-llvm.spec 同字节）：
+
+```text
+192: %if 0%{llvm_release_build}
+194: RELCFLAGS=$(echo $CFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+195: export CFLAGS=${RELCFLAGS}
+196: RELCXXFLAGS=$(echo $CXXFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+197: export CXXFLAGS=${RELCXXFLAGS}
+```
+
+确认删除 `-g`、`-gN`、`-ggdb`、`-gdwarf-N`（此正则的 DWARF 版本只匹配一位数字，现值为 4）。它**没有尾部词边界**，不能泛化为安全删除任意 `-g*`：`-gline-tables-only` / `-grecord-gcc-switches` 会留下 `line-tables-only` / `record-gcc-switches`。本轮不改 sed。
+
+**1b：结论①，当前认证配方的发布记录命令应为零 `-g`，未找到额外来源。** 此为指定配方/宏/工具的事实，不承诺未来任意 optflags，也不是发布模式完整构建认证。
+
+| 核对项 | 原文及 file:line | 判定 |
+|---|---|---|
+| 分支 | PS1 spec:20–24：`%if %{defined _toolchain}` / `%define llvm_release_build 0`，else 为 `1` | 未定义时走去调试分支 |
+| 构建类型 | PS1 spec:270/274/279：`-DCMAKE_BUILD_TYPE=Release` / `MinSizeRel` / `Release` | 三架构都不是 Debug/RelWithDebInfo |
+| C/CXX/ASM 公共 flags | PS1 spec:256–258：`-DCMAKE_ASM_FLAGS="$CFLAGS"`、`-DCMAKE_C_FLAGS="$CFLAGS"`、`-DCMAKE_CXX_FLAGS="$CXXFLAGS"` | 取 sed 后变量；229–230 的 x86 追加项无 `-g` |
+| 构建类型追加项 | 旧 archivefix-v2 的 build/CMakeCache.txt:394/430：`CMAKE_CXX_FLAGS_RELEASE:STRING=-O3 -DNDEBUG` / `CMAKE_C_FLAGS_RELEASE:STRING=-O3 -DNDEBUG`；391/427 为 `-Os -DNDEBUG` | 无 `-g`；Debug/RelWithDebInfo 的默认 flags 未被选择 |
+| LLVM 选项 | 同 Cache:1288 `LLVM_ENABLE_ASSERTIONS:BOOL=No`；1384 `LLVM_ENABLE_MODULES:BOOL=OFF`；2148 `LLVM_USE_SANITIZER:STRING=`；2151 `LLVM_USE_SPLIT_DWARF:BOOL=OFF` | 未启用追加调试选项的条件 |
+| LLVM 追加逻辑 | `llvm/llvm/cmake/modules/HandleLLVMOptions.cmake:719–722` 的 `-gmodules` 只在模块+Debug/RelWithDebInfo；965–974/997 的 `-gline-tables-only` 属 sanitizer 条件；1110–1116 的 `-gsplit-dwarf` 亦受构建类型约束 | 当前值不触发；完整 spec 无其他显式新增 `-g` |
+| 原 optflags | `docs/37_target_recipe_policy_check.md:212`、保存的 `temp/release-x86-full-build-20261013/round2-resume-serial/original-rpm-build.sh:29–31`：`... -g2 -gdwarf-4 ... -frecord-gcc-switches ... -g` | 只有 `-g2/-gdwarf-4/-g`；`-frecord-` 不是 `-grecord-`；无上述 sed 残片形式 |
+| clang 默认 | `docs/37_target_recipe_policy_check.md:299–301`：`clang.cfg` 只有 `-target x86_64-tizen-linux-gnu`、`-resource-dir /usr/lib64/clang/22`；`llvm/clang/lib/Driver/ToolChains/Clang.cpp:6076–6079`：`DebugInfoKind = ... NoDebugInfo`，4400–4406 根据 g_Group 修改 | 未发现 cfg 或 driver 默认加 `-g` |
+| 已记录命令 | 各 `*-release-before.txt` 的调试 token 全集均为 `['-g', '-g2', '-gdwarf-4']`；`*-release-after.txt` 全集均 `[]` | 11,235 条零残留，不只是几个夹具 |
+
+Cache 来自 docs/35 的旧 archivefix-v2 根（完整路径在 P/fact-excerpts.json），不是交接树。真实发布宏展开 `temp/archive-followup-review-20261014/release-isolated-rpmspec.stdout:183–187` 包含上述 sed；完整记录命令已覆盖 CMake 附加项。
+
+**1c：11,235 是三架构已有 debug bitcode 的记录命令，不是发布模式新完整构建。** 原文 `docs/49_round4_revision_and_x86_build.md:58–64`：
+
+```text
+| x86_64 | 3,853 | 3,853 | 0 | dwarf=None，无调试选项 |
+| armv7l | 3,683 | 3,683 | 0 | dwarf=None，无调试选项 |
+| aarch64 | 3,699 | 3,699 | 0 | dwarf=None，无调试选项 |
+合计11,235条；分类脚本 wall 9.669秒。**这只证明策略覆盖记录命令，不证明对应实物与直接编译等价。**
+```
+
+| 架构 | 原始构建范围 | 记录来源与追溯 |
+|---|---|---|
+| x86_64 | docs/35 构建原始 225 档中的 3,853 个 bitcode 成员 | E5/x86-input；`temp/arm-archive-stage1-20261010/anchor-metadata.json:2` 指向 docs/35 summary；后续 `temp/review-round3-continue-20261012/x86-production-conversion/members/**/ir-settings.json` 只重新读取这些记录，不是新编译 |
+| armv7l | docs/40 §11 标准完整 `%build` 的 210 档，3,683 个 bitcode 成员 | `temp/arm-archive-standard-build-20261010/armv7l-ir-census/**` |
+| aarch64 | docs/40 §12 标准完整 `%build` 的 212 档，3,699 个 bitcode 成员 | `temp/arm-archive-tls-thumb-20261010/aarch64-ir-census/**` |
+
+三个 `temp/review-round4-continue-20261013/*-release-classified.json:3` 的 `evidence` 字段分别钉住上述来源；同目录 `release_static.py:9–27` 保存先精确 sed 再拆 token 的方法。原命令静态分类与下面“转换所生成的参数”不是一回事。
+
+60 对每架构各 20（`docs/49_release_attribution.md:106–131` 的逐文件三列）。结果原文 :106 为 `{'PASS_ATTRIBUTED': 7, 'PASS_IDENTICAL': 53}`；:46 为“两路仅差 `-g -gdwarf-4`，其余参数及次序一致，clang实体SHA一致”。
+归因原文 :48：“去debug后的debug bitcode按原发布命令（仅换输入/输出）再转换exit0……与发布产物对应函数节、节内重定位、函数及映射符号完全一致”；:162：“AArch64有6文件、19函数……均由后端路径(b)归因”。合计 ARM32 一个文件一个函数 + AArch64 六个文件十九函数。
+
+**措辞收窄**：`PASS_IDENTICAL` 是十项 ELF 比较规则 PASS，不能写整个 `.o` 字节相同。`tools/check_release_debug_independence.py:119–145` 排除调试专用符号，:167–179 规范化节身份，:186–196 比较 header/alloc/重定位/符号/组/addrsig 而不比较 debug 路的 DWARF。PS2 改成“53 pairs matched under the ELF comparison rules, which exclude debug-only metadata and normalize section identities”。计数及归因不变。
+
+**1d：工具版本比较是数字三元组。** 远端 PS1 Source、main 的 `tools/llvm_static_archives_source.py` 与 `6972188d` 中同名 tools Source 同字节，SHA `c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e`。原文 :626–633：
+
+```python
+pattern = r'clang version (\d+\.\d+\.\d+)\b' if label == 'compiler' else r'LLVM version (\d+\.\d+\.\d+)\b'
+match = re.search(pattern, text)
+if label == 'compiler':
+    if not match or int(match[1].split('.')[0]) != CERTIFIED_LLVM_MAJOR:
+        raise ValueError('uncertified compiler major/full version (required 22): '+text.strip())
+elif not match or match[1] != versions['compiler']['version']:
+    raise ValueError(label+' version differs from clang '+versions['compiler']['version']+': '+text.strip())
+```
+
+clang 须可解析三段数字且主版本 22；llvm-dis/llvm-nm 须等于解析出的 `major.minor.patch`，不比较完整 raw/version/vendor 文本。使用用户提供的三元组措辞。
+
+**1e：Known limitation 逐句核对；缺证据的绝对说法已收窄。**
+
+| 句意 | 原文/证据与行号 | PS2 处置 |
+|---|---|---|
+| 两种 strip 均 sh_link=0 | docs/51:142 `5,799`；:195–196 “其同一5,799个表也全部sh_link=0”；:150–153 `before ... E 1004` → `after ... E 0` | 采纳为本次包内实测，不外推所有 strip 版本 |
+| FILE 删除、重编号 | docs/51:144 “payload SHA全部未变，符号表已重新编号”；`llvm/llvm/lib/ObjCopy/ELF/ELFObjcopy.cpp:384–385`：`if (Config.StripDebug && Sym.Type == STT_FILE) return true;` | 保留删除/重编号与实测 payload 事实 |
+| “strip不更新sh_link” | docs/51:206–207；`ELFObject.cpp:2591–2595` 原文 `If the .symtab indices have not been changed, restore the sh_link`，条件 `!Obj.SymbolTable->indicesChanged()`；:1133–1153 清开 symtab 链接 | 原提法易误读为保持旧有效链接；改成实测 `leave .llvm_addrsig with sh_link=0 and unchanged payload bytes`，不把 LLVM 源码机制冒充 GNU strip 源码证明 |
+| compiler-rt 旧基线也如此 | docs/51:213 “compiler-rt的成员与docs/13基线同字节，故其中的失效也存在于旧基线” | 采纳；未转换运行库为既有证据 |
+| GNU ld 不使用此节 | docs/51 没有 GNU ld 实现级原文；:168–172 有 GNU ld A/B/shared/GC 正确输出 | 删除“不使用”的普遍断言，改为 `The tested GNU ld links produce correct output.` |
+| lld 忽略、保守标地址显著 | docs/51:204–205；`llvm/lld/ELF/InputFiles.cpp:791–804` 无有效 sh_link 时忽略；`Driver.cpp:2587–2611` 无 addrsig 时标记全部符号 | 采纳 |
+| 普通测试输出正确 | docs/51:168 “O2输出与基线opt完全一致”；:169 “退出37”；:170–171 shared/GC 正确 | 保留限定 `tested` |
+| safe ICF 警告、fatal 失败 | docs/51:183–185：GNU strip safe exit0/1057警告；两种 strip safe+fatal 均 exit1；:190–191 警告/错误原文 | 采纳；不称所有 lld 链接失败 |
+| 换 llvm-strip 既非原因也非修复 | docs/51:196/213/215 支持问题此前已存在且该切换不修复；不证明任意环境中“绝非原因” | 标题仍为 not introduced；末句收窄成 `Switching to llvm-strip does not fix this`；后续独立 change |
+
+LLVM 原文/SHA 见 docs/51 的 `*.source.txt`/`source-provenance.json`（f111162e），本轮未重做实验。
+
+**1f：该全量构建用了带版本号的入口。** 不读取交接树，读取构建时已保存的证据副本：
+`temp/release-x86-full-build-20261013/round2-eight-output-proof/ba-install-conversion-evidence/summary.json:3198216–3198223` 的 `tools.tool_versions.compiler`：
+
+```json
+"path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/clang-22",
+"resolved_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/clang-22",
+"sha256": "7df0ff90dbca7f99ed6a642546281584dbfaab1528a94abf7a1bb524ca371b2c",
+"version": "22.1.8"
+```
+
+因此按裁决在 Testing 第一段末追加规定的 alias 覆盖句。别名依据为 `docs/49_release_attribution.md:655` 的 `samefile=true`、`clang-alias.json` 的同 inode，以及 :643–648 两次全量转换输出相等；不冒充该完整构建实用无版本别名。debug 下 brp-strip 未执行的原文为 `docs/49_x86_build_resume_result.md:138`：“debug配置下brp-strip为0”；与 PS1 spec:6 `%{!?__debug_package:...}` 对应。
+
+### 11.3 最终英文说明
+
+保留的 Background、llvm-strip 条、Scope、原 Testing 第一段、Supersedes、Signed-off-by、Change-Id 逐词相同；只重新折行≤72字符，Testing 末尾加上述授权句。PS1 原有 73–74 字符行重新折行；1c/1e 收窄如上。
+
+```text
+packaging: refine x86_64 static archive handling
+
+Background:
+Change 356627 converts ThinLTO bitcode members in installed x86_64
+static archives to native objects and rebuilds their indexes. This
+avoids index damage from GNU strip and makes the archives usable by GNU
+ld without LTO or an LLVM plugin.
+
+Changes:
+- Support release builds without _toolchain for recorded commands that
+  carry no -g option. The release branch of this spec removes -g, -gN,
+  -ggdb and -gdwarf-N from CFLAGS and CXXFLAGS to produce this form. For
+  such commands, do not add -g or -gdwarf-4 during conversion; the
+  merged version rejects them because it requires -gdwarf-4. Commands
+  with other -g options must still have -gdwarf-4 as their last DWARF
+  version option, as in the certified debug build, or they are rejected.
+  Reject no-debug commands whose IR still contains a debug compile unit.
+- Reject unsupported assembler options (-Wa, and -Xassembler), require
+  the compiler to be LLVM 22 and llvm-dis and llvm-nm to report the same
+  major.minor.patch version as the compiler, and check ELF section,
+  symbol and relocation table bounds and strides. Allow only the
+  certified iostream module-assembly declaration and verify that its
+  undefined symbol is preserved after conversion. The recognizer handles
+  the single-line module asm form printed by LLVM 22 llvm-dis, which the
+  version check guarantees; it must also handle the multi-line form
+  before that check allows a later LLVM version.
+- Use the build/bin/clang alias instead of a hard-coded clang-22 path.
+- Use llvm-strip for static archive post-processing, following the
+  platform's move to LLVM. Override only the archive-strip argument in
+  __strip_install_post; ordinary executable stripping keeps the platform
+  default. Find-debuginfo and other enabled post-processing remain
+  intact. The override copies tizen_macros:34-38 from
+  rpm-build-4.14.1.1-1.4 and must be synchronized when the platform
+  changes that macro. It covers all static archives in this package's
+  buildroot, including compiler-rt.
+
+Scope:
+Only x86_64 is affected. The conversion also includes
+libarcher_static.a. armv7l and aarch64 packaging are unchanged; ARM
+support will be submitted separately. Final static archives contain no
+DWARF after stripping.
+
+Testing:
+A full x86_64 build completed with one serial continuation in the
+Tizen-Base-Toolchain tizen-base-toolchain_20261010.120615 environment.
+All 225 development archives (3,864 ordered members) contain native
+objects and complete indexes. Checks passed for all 45 compiler-rt
+archives, including allocated section contents and symbol-to-member
+mappings. Host and Tizen GNU ld (without LTO or plugins) and lld
+consumers linked and ran successfully, including sanitizer, profile and
+builtins probes. Independent reinstallation reproduced the converted
+archives; a repeated converter invocation skipped the already-native
+archives. The clang alias was verified by inode identity and
+conversion-output equality rather than by that build, which still used
+the versioned path.
+
+Across 60 paired source samples (20 each for x86_64, armv7l and
+aarch64), the generated release and debug conversion arguments differed
+only by -g and -gdwarf-4. 53 pairs matched under the ELF comparison
+rules, which exclude debug-only metadata and normalize section
+identities. The other 7 were attributed to the backend's handling of
+debug information by converting the debug bitcode again after removing
+its debug information. This compares generated conversion arguments, not
+recorded commands. Applying this spec's release flag substitution to the
+11,235 commands recorded in the debug builds left no -g option in any of
+them. A complete release-mode package build has not yet been run. The
+tested build used the debug configuration, where __debug_package
+suppresses the brp-strip line of the override, so that line has not been
+executed.
+
+The non-archive file comparison against an unpatched build in the same
+environment has not yet been run. A comparison with the next official
+snapshot is planned, with differences between the build environments
+recorded; that comparison alone does not establish same-environment
+equivalence.
+
+Known limitation (not introduced by this change):
+Stripping debug information from archive members removes STT_FILE
+symbols and renumbers the symbol table. In the tested packaged archives,
+both GNU strip and llvm-strip leave .llvm_addrsig with sh_link=0 and
+unchanged payload bytes; compiler-rt archives, which are not converted,
+have the same state in builds without these changes. The tested GNU ld
+links produce correct output. lld ignores these sections and treats all
+symbols as address-significant, so the tested lld links also produce
+correct output. lld links using --icf=safe print warnings, and adding
+--fatal-warnings makes them fail. Switching to llvm-strip does not fix
+this; it will be addressed in a separate change.
+
+Supersedes Change 356639.
+
+Signed-off-by: FatTank <hao.lin@samsung.com>
+Change-Id: I9a815cad07c9bd5ae1e3068fe5b13a339e2ea3ce
+```
+
+### 11.4 PS1→PS2 说明完整 diff
+
+```diff
+--- 356949-PS1/commit-message
++++ 356949-PS2/commit-message
+@@ -1,34 +1,44 @@
+ packaging: refine x86_64 static archive handling
+ 
+ Background:
+-Change 356627 converts ThinLTO bitcode members in installed x86_64 static
+-archives to native objects and rebuilds their indexes. This avoids index
+-damage from GNU strip and makes the archives usable by GNU ld without
+-LTO or an LLVM plugin.
++Change 356627 converts ThinLTO bitcode members in installed x86_64
++static archives to native objects and rebuilds their indexes. This
++avoids index damage from GNU strip and makes the archives usable by GNU
++ld without LTO or an LLVM plugin.
+ 
+ Changes:
+-- Support release builds without _toolchain. When the recorded command
+-  has no debug options, do not add -g or -gdwarf-4 during conversion.
+-  The merged version rejects this case because it requires -gdwarf-4.
++- Support release builds without _toolchain for recorded commands that
++  carry no -g option. The release branch of this spec removes -g, -gN,
++  -ggdb and -gdwarf-N from CFLAGS and CXXFLAGS to produce this form. For
++  such commands, do not add -g or -gdwarf-4 during conversion; the
++  merged version rejects them because it requires -gdwarf-4. Commands
++  with other -g options must still have -gdwarf-4 as their last DWARF
++  version option, as in the certified debug build, or they are rejected.
+   Reject no-debug commands whose IR still contains a debug compile unit.
+ - Reject unsupported assembler options (-Wa, and -Xassembler), require
+-  clang, llvm-dis and llvm-nm to have the same full LLVM 22 version, and
+-  check ELF section, symbol and relocation table bounds and strides.
+-  Allow only the certified iostream module-assembly declaration and
+-  verify that its undefined symbol is preserved after conversion.
++  the compiler to be LLVM 22 and llvm-dis and llvm-nm to report the same
++  major.minor.patch version as the compiler, and check ELF section,
++  symbol and relocation table bounds and strides. Allow only the
++  certified iostream module-assembly declaration and verify that its
++  undefined symbol is preserved after conversion. The recognizer handles
++  the single-line module asm form printed by LLVM 22 llvm-dis, which the
++  version check guarantees; it must also handle the multi-line form
++  before that check allows a later LLVM version.
+ - Use the build/bin/clang alias instead of a hard-coded clang-22 path.
+ - Use llvm-strip for static archive post-processing, following the
+   platform's move to LLVM. Override only the archive-strip argument in
+   __strip_install_post; ordinary executable stripping keeps the platform
+-  default. Find-debuginfo and other enabled post-processing remain intact.
+-  The override copies tizen_macros:34-38 from rpm-build-4.14.1.1-1.4 and
+-  must be synchronized when the platform changes that macro. It covers
+-  all static archives in this package's buildroot, including compiler-rt.
++  default. Find-debuginfo and other enabled post-processing remain
++  intact. The override copies tizen_macros:34-38 from
++  rpm-build-4.14.1.1-1.4 and must be synchronized when the platform
++  changes that macro. It covers all static archives in this package's
++  buildroot, including compiler-rt.
+ 
+ Scope:
+-Only x86_64 is affected. The conversion also includes libarcher_static.a.
+-armv7l and aarch64 packaging are unchanged; ARM support will be submitted
+-separately. Final static archives contain no DWARF after stripping.
++Only x86_64 is affected. The conversion also includes
++libarcher_static.a. armv7l and aarch64 packaging are unchanged; ARM
++support will be submitted separately. Final static archives contain no
++DWARF after stripping.
+ 
+ Testing:
+ A full x86_64 build completed with one serial continuation in the
+@@ -36,19 +46,45 @@
+ All 225 development archives (3,864 ordered members) contain native
+ objects and complete indexes. Checks passed for all 45 compiler-rt
+ archives, including allocated section contents and symbol-to-member
+-mappings. Host and Tizen GNU ld (without LTO or plugins) and lld consumers
+-linked and ran successfully, including sanitizer, profile and builtins
+-probes. Independent reinstallation reproduced the converted archives;
+-a repeated converter invocation skipped the already-native archives.
++mappings. Host and Tizen GNU ld (without LTO or plugins) and lld
++consumers linked and ran successfully, including sanitizer, profile and
++builtins probes. Independent reinstallation reproduced the converted
++archives; a repeated converter invocation skipped the already-native
++archives. The clang alias was verified by inode identity and
++conversion-output equality rather than by that build, which still used
++the versioned path.
+ 
+-Across 60 paired x86_64, armv7l and aarch64 source samples, release/debug
+-conversion arguments differed only by the debug options. Differences in
+-object output were attributed to compiler debug-information handling.
+-A complete release-mode package build is still pending.
++Across 60 paired source samples (20 each for x86_64, armv7l and
++aarch64), the generated release and debug conversion arguments differed
++only by -g and -gdwarf-4. 53 pairs matched under the ELF comparison
++rules, which exclude debug-only metadata and normalize section
++identities. The other 7 were attributed to the backend's handling of
++debug information by converting the debug bitcode again after removing
++its debug information. This compares generated conversion arguments, not
++recorded commands. Applying this spec's release flag substitution to the
++11,235 commands recorded in the debug builds left no -g option in any of
++them. A complete release-mode package build has not yet been run. The
++tested build used the debug configuration, where __debug_package
++suppresses the brp-strip line of the override, so that line has not been
++executed.
+ 
+ The non-archive file comparison against an unpatched build in the same
+-environment has not yet been run; it will be checked using the next
+-official snapshot.
++environment has not yet been run. A comparison with the next official
++snapshot is planned, with differences between the build environments
++recorded; that comparison alone does not establish same-environment
++equivalence.
++
++Known limitation (not introduced by this change):
++Stripping debug information from archive members removes STT_FILE
++symbols and renumbers the symbol table. In the tested packaged archives,
++both GNU strip and llvm-strip leave .llvm_addrsig with sh_link=0 and
++unchanged payload bytes; compiler-rt archives, which are not converted,
++have the same state in builds without these changes. The tested GNU ld
++links produce correct output. lld ignores these sections and treats all
++symbols as address-significant, so the tested lld links also produce
++correct output. lld links using --icf=safe print warnings, and adding
++--fatal-warnings makes them fail. Switching to llvm-strip does not fix
++this; it will be addressed in a separate change.
+ 
+ Supersedes Change 356639.
+ 
+```
+
+### 11.5 远端回读与补丁正文
+
+| 项目 | 结果 |
+|---|---|
+| PS2 commit | `a18ce53708d3b6ef596dcd27d0b51e18ce1db282` |
+| tree / parent | `480be0836bc470dd027f73882b4082d0ce0e5000` / `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`，均与 PS1 相同 |
+| Change-Id | `I9a815cad07c9bd5ae1e3068fe5b13a339e2ea3ce`，不变 |
+| Gerrit | [356949 PS2](https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/356949/2)，`NEW`，`kind=NO_CODE_CHANGE` |
+| fetch | `refs/changes/49/356949/2`，commit/tree/parent/Change-Id 与本地相同，message 同字节 |
+| 唯一 push | 1 次，用户授权的 `HEAD:refs/for/tizen_base`；回读时间 `2026-10-14T20:15:11.283881+08:00` |
+| 说明 SHA256 | `e452b9ff4ed02254fc2eb813e3b05251c539fbb90bc4fffd18fe8d5fd6887157` |
+| PS1 patch SHA256（历史保留） | `437f128a668b6e38cfed582c44e8ec48dec52144f68b1aa4126f496f384087ff` |
+| PS2 patch SHA256 | `23a4cfa1eb1e602459f3b3ae39096ec2cc2458679164c23407e0dc394ee23d76` |
+| diff 正文 SHA256 | `f5310a84d19a84b878cedfb805177c9c121688dac973222e8669f9661e239011`，新旧同字节 |
+
+`P/amend-check.json`、`P/upload-result.json`、`P/post-push-query.stdout` 与 `P/fetch-ps2.*` 保存原始检查。新旧 format-patch 从 `diff --git` 至结尾完全相同；从说明结束的 `---` 起（diffstat/正文/Git版本尾注）也完全相同。封装的 `From <commit>` 随 amend 更新，作者/作者时间/标题相同，除提交说明及 commit 身份封装外无差异。`git diff PS1 PS2` 为空，Source/spec 的树内容不变。
+
+### 11.6 评审采纳表
+
+| 意见/来源 | 最终处置 |
+|---|---|
+| addrsig 已知限制（三家） | 采纳；加入实测边界、两 strip 均失败的 ICF 条件；机制/GNU ld 普遍断言按证据收窄 |
+| 发布支持收窄（Claude Code P5-1、Codex R1） | 采纳；限定零-g，说明现 sed 与其他-g仍要求末项DWARF4，no-debug/IR矛盾拒绝 |
+| brp-strip 行未执行（Claude Code P5-7） | 采纳；不以 debug 构建证明该行执行 |
+| 快照口径（Codex R4） | 采纳；未来官方跨环境对照不等于同环境未打补丁对照 |
+| 版本门禁（Claude Code P5-2） | 采纳；解析的 major.minor.patch，不是 raw 字符串 |
+| 60对（Claude Code P5-6） | 采纳；每架构20，53为规定ELF比较同等，7为后端归因；生成参数与记录命令区分 |
+| module asm 单行（Claude Code P5-3） | 采纳；LLVM22打印格式与版本门禁边界；放行新主版本前先支持多行 |
+| alias 覆盖（Claude Code P3-6/P5-5） | 采纳；全量构建 clang-22，明确别名仅同inode/输出相等证据 |
+
+### 11.7 代码边界与推迟项（本次不改）
+
+已记录的真实命令只有 `-g/-g2/-gdwarf-4`，未触发以下两种调试开关边界。Source:258–270 按是否出现调试 token 与末个 DWARF 选项判定，:358–361 由 dwarf 是否为 None 选择后端参数。重定位 Source:397–411 **已检查 sh_link/sh_info 索引范围**，但未校验 sh_link 指向节的类型及 sh_info 的完整语义；不能写成“完全不检查 sh_info”。
+
+| 推迟项 | 现状与后续归属 |
+|---|---|
+| `-gdwarf-4` 后出现 `-g0` | 仍按调试处理；ARM 补丁处理并带 x86 回归 |
+| 只有 `-gdwarf-4` 没有 `-g` | 当前仍补 `-g`；ARM 补丁处理并带 x86 回归 |
+| relocation sh_link 类型/sh_info 语义 | 上述范围检查之外的加固；ARM 补丁并带 x86 回归 |
+| dbg.cu 对称门禁 | no-debug命令含debug CU的现有拒绝已在Source；更完整对称策略去ARM补丁并带x86回归 |
+| BACKEND_FLAGS 元组、错误信息、符号从白名单派生 | ARM补丁并带x86回归 |
+| tizen_macros 漂移检查 | ARM补丁并带x86回归；此次保留同步平台宏的说明 |
+| 多行 module asm 解析 | ARM补丁并带x86回归；升级LLVM主版本闸门前完成 |
+| addrsig 修复 | 独立change；先做 `llvm-strip -g --keep-file-symbols` 探针，备选strip后删除该节；扫描Tizen中`--icf=safe --fatal-warnings`使用，新增sh_link状态回归测试；本轮未运行/未许诺探针必有效 |
+| 发布模式完整打包 | 正式启用发布模式前完成；60对认证不能代替 |
+
+无产品门禁停止点。主库只更新本节、STATUS、followup说明/封装；Source/spec/冻结补丁不改，用户gbs修改保留；无构建/采样器/挂载/heavy锁。

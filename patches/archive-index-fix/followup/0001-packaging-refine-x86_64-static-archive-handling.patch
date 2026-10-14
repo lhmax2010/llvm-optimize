@@ -1,37 +1,47 @@
-From d4dd40da3b6ab28925b57d24d66bd992b4ad798c Mon Sep 17 00:00:00 2001
+From a18ce53708d3b6ef596dcd27d0b51e18ce1db282 Mon Sep 17 00:00:00 2001
 From: FatTank <hao.lin@samsung.com>
 Date: Wed, 14 Oct 2026 15:52:36 +0800
 Subject: [PATCH] packaging: refine x86_64 static archive handling
 
 Background:
-Change 356627 converts ThinLTO bitcode members in installed x86_64 static
-archives to native objects and rebuilds their indexes. This avoids index
-damage from GNU strip and makes the archives usable by GNU ld without
-LTO or an LLVM plugin.
+Change 356627 converts ThinLTO bitcode members in installed x86_64
+static archives to native objects and rebuilds their indexes. This
+avoids index damage from GNU strip and makes the archives usable by GNU
+ld without LTO or an LLVM plugin.
 
 Changes:
-- Support release builds without _toolchain. When the recorded command
-  has no debug options, do not add -g or -gdwarf-4 during conversion.
-  The merged version rejects this case because it requires -gdwarf-4.
+- Support release builds without _toolchain for recorded commands that
+  carry no -g option. The release branch of this spec removes -g, -gN,
+  -ggdb and -gdwarf-N from CFLAGS and CXXFLAGS to produce this form. For
+  such commands, do not add -g or -gdwarf-4 during conversion; the
+  merged version rejects them because it requires -gdwarf-4. Commands
+  with other -g options must still have -gdwarf-4 as their last DWARF
+  version option, as in the certified debug build, or they are rejected.
   Reject no-debug commands whose IR still contains a debug compile unit.
 - Reject unsupported assembler options (-Wa, and -Xassembler), require
-  clang, llvm-dis and llvm-nm to have the same full LLVM 22 version, and
-  check ELF section, symbol and relocation table bounds and strides.
-  Allow only the certified iostream module-assembly declaration and
-  verify that its undefined symbol is preserved after conversion.
+  the compiler to be LLVM 22 and llvm-dis and llvm-nm to report the same
+  major.minor.patch version as the compiler, and check ELF section,
+  symbol and relocation table bounds and strides. Allow only the
+  certified iostream module-assembly declaration and verify that its
+  undefined symbol is preserved after conversion. The recognizer handles
+  the single-line module asm form printed by LLVM 22 llvm-dis, which the
+  version check guarantees; it must also handle the multi-line form
+  before that check allows a later LLVM version.
 - Use the build/bin/clang alias instead of a hard-coded clang-22 path.
 - Use llvm-strip for static archive post-processing, following the
   platform's move to LLVM. Override only the archive-strip argument in
   __strip_install_post; ordinary executable stripping keeps the platform
-  default. Find-debuginfo and other enabled post-processing remain intact.
-  The override copies tizen_macros:34-38 from rpm-build-4.14.1.1-1.4 and
-  must be synchronized when the platform changes that macro. It covers
-  all static archives in this package's buildroot, including compiler-rt.
+  default. Find-debuginfo and other enabled post-processing remain
+  intact. The override copies tizen_macros:34-38 from
+  rpm-build-4.14.1.1-1.4 and must be synchronized when the platform
+  changes that macro. It covers all static archives in this package's
+  buildroot, including compiler-rt.
 
 Scope:
-Only x86_64 is affected. The conversion also includes libarcher_static.a.
-armv7l and aarch64 packaging are unchanged; ARM support will be submitted
-separately. Final static archives contain no DWARF after stripping.
+Only x86_64 is affected. The conversion also includes
+libarcher_static.a. armv7l and aarch64 packaging are unchanged; ARM
+support will be submitted separately. Final static archives contain no
+DWARF after stripping.
 
 Testing:
 A full x86_64 build completed with one serial continuation in the
@@ -39,19 +49,45 @@ Tizen-Base-Toolchain tizen-base-toolchain_20261010.120615 environment.
 All 225 development archives (3,864 ordered members) contain native
 objects and complete indexes. Checks passed for all 45 compiler-rt
 archives, including allocated section contents and symbol-to-member
-mappings. Host and Tizen GNU ld (without LTO or plugins) and lld consumers
-linked and ran successfully, including sanitizer, profile and builtins
-probes. Independent reinstallation reproduced the converted archives;
-a repeated converter invocation skipped the already-native archives.
+mappings. Host and Tizen GNU ld (without LTO or plugins) and lld
+consumers linked and ran successfully, including sanitizer, profile and
+builtins probes. Independent reinstallation reproduced the converted
+archives; a repeated converter invocation skipped the already-native
+archives. The clang alias was verified by inode identity and
+conversion-output equality rather than by that build, which still used
+the versioned path.
 
-Across 60 paired x86_64, armv7l and aarch64 source samples, release/debug
-conversion arguments differed only by the debug options. Differences in
-object output were attributed to compiler debug-information handling.
-A complete release-mode package build is still pending.
+Across 60 paired source samples (20 each for x86_64, armv7l and
+aarch64), the generated release and debug conversion arguments differed
+only by -g and -gdwarf-4. 53 pairs matched under the ELF comparison
+rules, which exclude debug-only metadata and normalize section
+identities. The other 7 were attributed to the backend's handling of
+debug information by converting the debug bitcode again after removing
+its debug information. This compares generated conversion arguments, not
+recorded commands. Applying this spec's release flag substitution to the
+11,235 commands recorded in the debug builds left no -g option in any of
+them. A complete release-mode package build has not yet been run. The
+tested build used the debug configuration, where __debug_package
+suppresses the brp-strip line of the override, so that line has not been
+executed.
 
 The non-archive file comparison against an unpatched build in the same
-environment has not yet been run; it will be checked using the next
-official snapshot.
+environment has not yet been run. A comparison with the next official
+snapshot is planned, with differences between the build environments
+recorded; that comparison alone does not establish same-environment
+equivalence.
+
+Known limitation (not introduced by this change):
+Stripping debug information from archive members removes STT_FILE
+symbols and renumbers the symbol table. In the tested packaged archives,
+both GNU strip and llvm-strip leave .llvm_addrsig with sh_link=0 and
+unchanged payload bytes; compiler-rt archives, which are not converted,
+have the same state in builds without these changes. The tested GNU ld
+links produce correct output. lld ignores these sections and treats all
+symbols as address-significant, so the tested lld links also produce
+correct output. lld links using --icf=safe print warnings, and adding
+--fatal-warnings makes them fail. Switching to llvm-strip does not fix
+this; it will be addressed in a separate change.
 
 Supersedes Change 356639.
 

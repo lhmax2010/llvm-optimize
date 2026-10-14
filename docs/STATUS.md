@@ -1,7 +1,9 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-14。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/51）已完成**：只合入356627+GNU strip的功能证据来自docs/35–36（Source6bd同字节，实测spec6a91，不能冒充d93a目标配方从零完整构建）。本轮270档/5828成员副本GNU strip后native/完整索引/可加载内容/符号/重定位及7宿主消费者PASS，成员与docs/35全部同字节；发现5799个.llvm_addrsig的sh_link归零、payload未更新。lld --icf=safe警告，叠加--fatal-warnings失败；docs/38 llvm-strip RPM对照也失败，故356949不能被当作该问题已验证的修复。16:27官方最新仍20261013.140248，无合入后快照，官方对照挂账。见[docs/51](51_gnu_strip_merged_validation.md)。未改Source/spec/补丁，未进入BOLT资产/交接树，未推Gerrit。
+**当前任务（356949 PS2说明修订）已完成**：唯一授权Gerrit push上传PS2 `a18ce53708d3b6ef596dcd27d0b51e18ce1db282`，状态NEW，Gerrit `NO_CODE_CHANGE`；tree `480be0836bc470dd027f73882b4082d0ce0e5000`、parent、Change-Id及补丁diff正文不变，远端说明同字节。只读1a–1f支持发布零-g预期；53对限定为ELF规则比较，7对后端归因；GNU ld及addrsig措辞按实证收窄；补明全量构建使用clang-22、别名验证边界。见[docs/50 §11](50_archive_followup_review.md#11-ps2-提交说明修订)。未改Source/spec，未构建/转换，未进入BOLT或交接树；发布完整打包及addrsig独立修复仍挂账。
+
+**上一任务（docs/51）已完成**：只合入356627+GNU strip的功能证据来自docs/35–36（Source6bd同字节，实测spec6a91，不能冒充d93a目标配方从零完整构建）。本轮270档/5828成员副本GNU strip后native/完整索引/可加载内容/符号/重定位及7宿主消费者PASS，成员与docs/35全部同字节；发现5799个.llvm_addrsig的sh_link归零、payload未更新。lld --icf=safe警告，叠加--fatal-warnings失败；docs/38 llvm-strip RPM对照也失败，故356949不能被当作该问题已验证的修复。16:27官方最新仍20261013.140248，无合入后快照，官方对照挂账。见[docs/51](51_gnu_strip_merged_validation.md)。未改Source/spec/补丁，未进入BOLT资产/交接树，未推Gerrit。
 
 **上一任务（续十二）已完成**：新评审[356949](https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/356949) PS1，commit d4dd40da3b6ab28925b57d24d66bd992b4ad798c，父为已合入356627的67619ec8bbba；整树等于已验收4c36e899，apply、debug/发布parse及远端回读PASS。356639由用户Abandon。bash清单14项、三shell专项6PASS；LLVM23.1.3三架构600样本读取完成，发现8个module asm多行格式漏读（ARM32另2项asm跟踪丢失），未改Source/未认证23。官方目录尚无合入后新快照，RPM对照挂账；ARM根内/64MiB按用户决定下周恢复。见[docs/50](50_archive_followup_review.md)。
 
@@ -116,7 +118,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 ## 2. 进度
 
-2026-10-14｜本提交｜docs/51及机器可读摘要｜GNU strip组合补查、7消费者通过；addrsig失效及两种strip的ICF+fatal-warnings失败确认，官方新快照未出现。
+2026-10-14｜本提交（父449b1a6）；Gerrit PS2 a18ce537｜docs/50 §11、followup说明/format-patch、STATUS｜说明修订上传/远端回读PASS；代码树及diff正文不变，NO_CODE_CHANGE。
+
+2026-10-14｜449b1a6｜docs/51及机器可读摘要｜GNU strip组合补查、7消费者通过；addrsig失效及两种strip的ICF+fatal-warnings失败确认，官方新快照未出现。
 
 | 日期 | 提交 | 产出 | 结论 |
 |---|---|---|---|
@@ -260,6 +264,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 2026-10-14｜本提交｜docs/49_x86_build_resume_result.md §8｜独立-bi再次转换225档，before/after SHA与-ba全部相同；后处理尚在运行，BOLT未交接。
 
 ## 3. 已闭合结论
+
+- **硬证据，2026-10-14**：356949 PS2仅说明变化，树/父/Change-Id与PS1一致，Gerrit NO_CODE_CHANGE、远端message及补丁diff正文逐字节相同；docs/50 §11.5、temp/followup-356949-ps2-message-20261014/upload-result.json。53/7的准确口径及1a–1f原文见§11.2，不把ELF规则相等称为整个文件相同。
 
 - **硬证据，docs/51 §1–§3**：356627 PS2 Source6bd已有GNU strip的实际RPM+宿主/Tizen验证，但d93a整套目标配方未做该次从零构建。本轮225+45归档全部成员与docs/35同字节，完整索引/可加载内容/符号/重定位与普通消费者通过。
 - **硬证据，docs/51 §2.3、§3.2**：GNU strip后5799个addrsig失效；lld safe ICF保守忽略，fatal-warnings可阻塞链接。docs/38同身份llvm-strip RPM也有5799个失效表并在相同选项下失败；不能声称356949解决此问题。
@@ -490,6 +496,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 4. 人工裁决前提
 
+- **2026-10-14 356949 PS2**：用户只授权一次向该change上传说明修订；不改产品树、不构建、不推其他change/submit/打分。保留段逐词不变（仅≤72列重排），1c/1e按证据收窄，1f若versioned路径补alias覆盖句；本轮已按此完成。代码边界后移ARM补丁并带x86回归，addrsig独立change，发布完整打包须在正式启用前完成（docs/50 §11）。
+
 - 2026-10-14 docs/51：用户要求核查仅356627+GNU strip组合；历史证据不完整则仅在副本补strip/消费者实验。官方对照固定20261013.140248与合入后新快照；无新快照不等待。禁止改Source/spec/补丁、推Gerrit及进入BOLT资产/已交接树。
 
 - **2026-10-13 续十一**：8个configure触碰输出先快照、精确定向串行重建、逐字节一致才准入；通过后允许集合加入这8项，接受20个无历史采样的小工具/运行库。续跑仍一次-ba --noprep/仅mlgo_build_jobs=1，内存≥13.344585GiB，完成后8项再比；出现差异不自动豁免。第一段8/8同字节已实证，后续未提前认证。（docs/49_x86_build_resume.md §15。）
@@ -603,6 +611,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 续接PM已将其替换为两架构精确白名单`.globl _ZSt21ios_base_library_initv`且须保留输出GLOBAL符号；其余未知声明仍失败。辅助修正仅一次，本轮用于测试期望遗漏-g；第二次宿主套件再次失败后停止，不改共用取消代码或继续复验。生产Source与两patch不改。
 
 ## 5. 挂账
+
+- **docs/50 §11.7**：ARM补丁带x86回归处理-g0/仅DWARF4、relocation链接类型及sh_info语义、dbg.cu对称门禁、BACKEND_FLAGS/错误/派生符号、平台宏漂移、多行asm；addrsig独立修复先keep-file-symbols探针，备选删节、Tizen ICF+fatal使用调查及sh_link回归；发布完整打包在正式启用前完成。本轮均未改/未运行。
 
 - docs/51：16:27:24官方最新仍20261013.140248；等待包含356627的新快照后做官方RPM对照。未执行的官方比较不记PASS。
 - docs/51：addrsig在GNU strip及已验llvm-strip版本均失效，safe ICF+fatal-warnings消费者可能需要单独修复/评审；未改产品，不以356949可解决此项为由要求紧急合入。
