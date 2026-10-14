@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-14。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续十一）构建成功，验收进行中**：唯一一次正常 `-ba --noprep` / mlgo_build_jobs=1 于2026-10-14 06:49:10成功结束，wall29166.743332s；Ninja902/902、Source实际转换225档。续跑后8/8输出与快照逐字节相同，全部7606条原最新Ninja完成记录保留，允许集合外0、未获准重复0；18GiB scope峰含缓存、OOM0，宿主/磁盘保护未触发。消息流中断后恢复核查，没有重启构建。22新RPM/17689路径摘要、270归档后处理、225开发档/3864成员与45运行库/1964成员已PASS；七宿主消费者、10运行库宿主探针与Tizen bfd包（含270档+5工具身份）PASS；lld测试及独立安装等继续，BOLT NOT_READY。见[结果续页](49_x86_build_resume_result.md)，证据E11；项目锁仍持有，重任务按共享锁串行。
+**当前任务（docs/49续十一）构建成功，验收进行中**：唯一一次正常 `-ba --noprep` / mlgo_build_jobs=1 于2026-10-14 06:49:10成功结束，wall29166.743332s；Ninja902/902、Source实际转换225档。续跑后8/8输出与快照逐字节相同，全部7606条原最新Ninja完成记录保留，允许集合外0、未获准重复0；18GiB scope峰含缓存、OOM0，宿主/磁盘保护未触发。消息流中断后恢复核查，没有重启构建。22新RPM/17689路径摘要、270归档后处理、225开发档/3864成员与45运行库/1964成员已PASS；七宿主消费者、10运行库宿主探针与Tizen bfd/lld两包（各270档+5工具身份）PASS；独立安装/SKIP及余项继续，BOLT NOT_READY。见[结果续页](49_x86_build_resume_result.md)，证据E11；项目锁仍持有，重任务按共享锁串行。
 
 **历史任务（docs/49续十）STOP_RECONFIGURE_PENDING_OUTPUTS，已收尾**：唯一一次原%build环境CMake重配成功，21,987条compdb与完整命令同字节，串行宏mlgo_build_jobs=1已验证。干跑894→902；新增7编译+1归档的8个输出均在原.ninja_log有完成记录，不属允许集合，按规则停止；rpmbuild调用0次、0新RPM、无BOLT交接。待链接历史L=11.344585GiB，参考可用23.085735GiB已足，停止不归因内存。CMake生成的新Cache/build.ninja保留，.ninja_log未改；Source/spec/配置/补丁不变。22:22:56两项目锁/共享锁、进程、scope/采样器和挂载已回收。详见[续十报告](49_x86_build_resume.md#8-续十新裁决输入与唯一配置预检)，证据temp/release-x86-full-build-20261013/round2-resume-serial。
 
@@ -98,6 +98,10 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 - 原始日志、大文件仍放 `temp/`；提交推送遵守 [docs/README.md](README.md)。
 
 ## 2. 进度
+
+| 日期 | 提交 | 产出 | 结论 |
+|---|---|---|---|
+| 2026-10-14 | 本提交（父04f50b5） | docs/49_x86_build_resume_result.md、STATUS | Tizen lld及身份PASS，两包均完成；进入独立真实安装/SKIP验收。 |
 
 | 日期 | 提交 | 产出 | 结论 |
 |---|---|---|---|

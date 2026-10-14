@@ -170,3 +170,9 @@ compiler-rt 宿主 10 项（两链接器 × ASan 坏/好、UBSan、profile、bui
 11:58:46→12:06:39，wall 473.178732 s。构建与 %check PASS，根内 270 归档 + 5 工具 SHA 与新 RPM 全同，A 输出逐字相同、B 生成物退出 37；ASan/UBSan/profile/builtins 均通过。scope MemoryPeak=6442450944 B（6GiB cap，含文件缓存）；memory.events 原文：`low 0; high 0; max 142; oom 0; oom_kill 0; oom_group_kill 0`。whole-archive 仅诊断，原文在 check-outputs/，不作门禁。证据 tizen-bfd/{result.json,installed-identities.json,build.log,scope-after-rpm.json,check-outputs/}。
 
 第二个独立 lld 测试包于12:07:43开始，使用同一冻结配置、6GiB/swap0/8GiB准入，串行执行，尚无结论。
+
+### 7.2 Tizen lld PASS；独立安装启动
+
+12:07:43→12:11:41，wall 237.756389 s；scope峰 6028075008 B，memory.events=`low 0; high 0; max 0; oom 0; oom_kill 0; oom_group_kill 0`。构建/%check、A/B、全部运行库探针 PASS；12:13:03 完成根内 270 归档 + 5 工具 SHA 全同复核，A 输出与根内 opt 完全一致。证据 tizen-lld/{result.json,installed-identities.json,build.log,scope-after-rpm.json,check-outputs/}。因此验收5（七宿主、Tizen两包及运行库）PASS。
+
+独立真实-bi已按原同宏入口启动准备，使用 `R/home/abuild/review49-independent-install/install-root`，不覆盖原-ba安装树；Source原-ba证据先备份到E11/ba-install-conversion-evidence。启动前/var/tmp可用112,110,084,096B，满足1.2×46.316GiB+30GiB；此步仍需等待实际转换与逐档检查，不能提前认定幂等PASS。
