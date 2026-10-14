@@ -22,3 +22,12 @@ PM确认7439文本/两模式展开/120输入准备已经结束，不重做；只
 | assets-x86_64 | 30 | 339.852 | 2.803 | 724084 | 339.887 |
 
 合计scope 1380.133s，最大cgroup峰2.829GiB；每段16GiB/swap0/nice15/ionice3、单编译进程、锁≤60分钟，全部锁/proc/scope回收，无低内存或OOM。没有CMake/Ninja/原cache写入。全.o/ii/原始calls留E与根内专用目录，非公开大二进制。双模式/预期清单/性能仍待，不推sandbox。
+
+## 双模式小spec PASS
+
+使用a1410e3d helper，普通clang/control先安装→snapshot/compare-root→候选install→原平台post一次→BOLT post尾检。没有第二次CMake安装或新配置。debug/release各一次rpmbuild-bb，execve证明helper post各1次、find-debuginfo仅debug1次、brp-strip脚本debug0次/release1次（原debug宏跳过该脚本）；debug control由eu-strip处理、release control由GNU strip处理，候选两边均未被strip/eu-strip处理。两RPM解包候选SHA保持4ec07159…，每边包装前尾检和包装后三目标对象全部PASS，clang家族链接归一clang-22。
+
+- debug: scope 32.628s，峰3.245GiB；file原文 `/home/abuild/bolt-work/bolt-v4-20261015-validation/clang.candidate: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, stripped`。
+- release: scope 34.612s，峰3.166GiB；file原文 `/home/abuild/bolt-work/bolt-v4-20261015-validation/clang.candidate: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 3.2.0, stripped`。
+
+完整spec/日志/execve/逐调用环境见validation-smoke-*及validation-dual-mode.json；控制ELF小链接单锁16GiB，RPM两段4GiB轻scope，无共享锁，proc/scope均回收。不是完整LLVM RPM后处理认证，逐包预期/DWARF清单下一步。

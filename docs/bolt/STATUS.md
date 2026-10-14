@@ -272,3 +272,5 @@ PM确认7439文本/两模式展开/120输入准备已经结束，不重做；只
 120输入SHA复核PASS，共901204757B；新E=bolt-v4-20261015-validation，根内同名专用目录。六段单锁16GiB/swap0/nice15/ionice3/单编译进程，普通与候选同一实体路径及inode、相同argv/cwd/input/output，完整.o不删.GCC.command.line。随后双模式小spec、22RPM/DWARF预期清单、30×5性能geom<0.98才推sandbox。路径查找更正/准备性修正目前0；既有输入不再复制。
 
 续跑八步骤1 PASS：120/120（历史30+资产90），240次同一实体路径/inode编译，完整.o含.GCC.command.line同字节；六段scope共1380.133s/最大峰2.829GiB，16GiB资源/锁≤60m/单编译进程，锁/proc/scope回收。详见20/validation-objects；开始双模式小spec。查找更正/产品准备修正目前0，原树禁用继续。
+
+续跑八步骤2双模式小spec PASS：a141 compare-root/install/单次原post+尾检，两RPM候选SHA4ec07159…保持，原链ctrl处理/clang未strip，前后各三目标与alias通过；debug/release scope32.628/34.612s，详细资源和trace见20/validation-dual-mode。原树/原cache未写，准备修正0。步骤3逐包/DWARF预期清单继续。
