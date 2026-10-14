@@ -273,4 +273,6 @@ PM确认7439文本/两模式展开/120输入准备已经结束，不重做；只
 
 续跑八步骤1 PASS：120/120（历史30+资产90），240次同一实体路径/inode编译，完整.o含.GCC.command.line同字节；六段scope共1380.133s/最大峰2.829GiB，16GiB资源/锁≤60m/单编译进程，锁/proc/scope回收。详见20/validation-objects；开始双模式小spec。查找更正/产品准备修正目前0，原树禁用继续。
 
-续跑八步骤2双模式小spec PASS：a141 compare-root/install/单次原post+尾检，两RPM候选SHA4ec07159…保持，原链ctrl处理/clang未strip，前后各三目标与alias通过；debug/release scope32.628/34.612s，详细资源和trace见20/validation-dual-mode。原树/原cache未写，准备修正0。步骤3逐包/DWARF预期清单继续。
+续跑八步骤2双模式小spec PASS：a141 compare-root/install/单次原post+尾检，两RPM候选SHA4ec07159…保持，原链ctrl处理/clang未strip，前后各三目标与alias通过；debug/release scope32.628/34.612s，详细资源和trace见20/validation-dual-mode。原树/原cache未写；报告判据与scopeCLI各修正一次，产品未重跑。步骤3逐包/DWARF预期清单继续。
+
+续跑八步骤3预期清单/证据PASS：22RPM绑定，133debug ELF来源穷尽、其他132清单SHA；GNUdebuglink CRC绑定clang自身debug；只clang实体+6alias变化、自身.debug删除、5个exclusive源缺失（详细20/expected JSON）。当前基线自身build-id链接0；无任何新增BOLT产物/非clang变化。父目录不自动允许删除，周四按基线逐项核。发布仅(a)规则模拟，不替代完整发布构建。16/20GiB解包写入均磁盘预检与写后≥30G，单锁/proc/scope回收。准备修正两类各一次/产品未重跑，查找更正0。接下来30份x86资产5轮固定核性能；geom<0.98才sandbox。

@@ -1,0 +1,16 @@
+[
+  {
+    "class": "post-chain report expectation",
+    "count": 1,
+    "error": "Report expected brp-strip script once in debug, although 08 and preserved trace show debug skips it",
+    "correction": "Require find-debuginfo debug1/release0 and brp-strip debug0/release1; recheck the same RPM/trace, no product rerun or gate relaxation",
+    "first_failed_scope": "smoke-report-scope"
+  },
+  {
+    "class": "scope CLI exit propagation",
+    "count": 1,
+    "error": "Existing scope CLI printed FAIL but returned outer rc0; next git add attempted missing report output and failed before mutations",
+    "correction": "Own run_scope.py CLI now exits nonzero unless returned status is PASS; imports/session behavior unchanged",
+    "product_impact": "No product operation or commit occurred after failed report; GitHub/source working trees unchanged at that failure"
+  }
+]
