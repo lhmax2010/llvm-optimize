@@ -1,0 +1,1487 @@
+{
+  "status": "PASS",
+  "seed_cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache",
+  "preparatory_corrections": [
+    {
+      "class": "cache-delta-classifier",
+      "attempt": 1,
+      "reason": "CMAKE_NUMBER_OF_MAKEFILES counts generated directory makefiles; verify exact added BOLT directories before accepting this derived key"
+    }
+  ],
+  "calls": [
+    {
+      "label": "temp-baseline",
+      "argv": [
+        "cmake",
+        "-G",
+        "Ninja",
+        "-DTIZEN=1",
+        "-DCMAKE_C_COMPILER=clang",
+        "-DCMAKE_CXX_COMPILER=clang++",
+        "-DLLVM_HOST_TRIPLE=x86_64-tizen-linux-gnu",
+        "-DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-tizen-linux-gnu",
+        "-DLLVM_TARGET_TRIPLE_ENV=x86_64-tizen-linux-gnu",
+        "-DCMAKE_ASM_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "-DCMAKE_C_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "-DCMAKE_CXX_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+        "-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+        "-DLLVM_USE_LINKER=lld",
+        "-DLLVM_ENABLE_LTO=Thin",
+        "-DCMAKE_RANLIB=/usr/bin/llvm-ranlib",
+        "-DCMAKE_AR=/usr/bin/llvm-ar",
+        "-DLLVM_ENABLE_ASSERTIONS=No",
+        "-DLLVM_ENABLE_RTTI=ON",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64;BPF",
+        "-DCLANG_ENABLE_ARCMT=OFF",
+        "-DLLVM_BUILD_LLVM_DYLIB=ON",
+        "-DCLANG_BUILD_CLANG_DYLIB=ON",
+        "-DLLVM_LINK_LLVM_DYLIB=OFF",
+        "-DCLANG_LINK_CLANG_DYLIB=OFF",
+        "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp",
+        "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF",
+        "-DLLVM_BUILD_EXAMPLES=OFF",
+        "-DLLVM_INCLUDE_EXAMPLES=OFF",
+        "-DLLVM_BUILD_TESTS=OFF",
+        "-DLLVM_INCLUDE_TESTS=OFF",
+        "-DLLVM_ENABLE_DOXYGEN=OFF",
+        "-DLLVM_BUILD_DOCS=OFF",
+        "-DLLVM_INCLUDE_DOCS=OFF",
+        "-DLLVM_OPTIMIZED_TABLEGEN=ON",
+        "-DCMAKE_INSTALL_PREFIX=/usr",
+        "-DLLVM_LIBDIR_SUFFIX=64",
+        "-DCLANG_RESOURCE_DIR=../lib64/clang/22",
+        "-DLLVM_BINUTILS_INCDIR=/usr/include",
+        "-DLLVM_PARALLEL_COMPILE_JOBS=6",
+        "-DLLVM_PARALLEL_LINK_JOBS=2",
+        "-DTENSORFLOW_AOT_PATH=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/mlgo_sysroot",
+        "-DLLVM_MLGO_EXPORT_TF_XLA_RUNTIME=OFF",
+        "-DLLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/xla_compiled_cpu_function.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/cpu_function_runtime.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/custom_call_status.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/executable_run_options.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o",
+        "-DLLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.h",
+        "-DLLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.o",
+        "-DLLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.h",
+        "-DLLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.o",
+        "-S",
+        "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm",
+        "-B",
+        "/home/abuild/bolt-work/bolt-v4-20261014-rpm-env/temp-build"
+      ],
+      "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+      "environment": {
+        "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+        "CC": "x86_64-tizen-linux-gnu-clang",
+        "CXX": "x86_64-tizen-linux-gnu-clang++",
+        "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "LDFLAGS": "-Wl,-z,relro,--as-needed",
+        "AR": "llvm-ar",
+        "RANLIB": "llvm-ranlib",
+        "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+        "LANG": "C",
+        "LC_ALL": "POSIX"
+      },
+      "which_clang": "/bin/clang",
+      "which_clangxx": "/bin/clang++",
+      "returncode": 0,
+      "wall_s": 28.166358791000675
+    },
+    {
+      "label": "temp-link-before",
+      "argv": [
+        "ninja",
+        "-t",
+        "commands",
+        "-s",
+        "bin/clang-22"
+      ],
+      "cwd": "/home/abuild/bolt-work/bolt-v4-20261014-rpm-env/temp-build",
+      "environment": {
+        "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+        "CC": "x86_64-tizen-linux-gnu-clang",
+        "CXX": "x86_64-tizen-linux-gnu-clang++",
+        "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "LDFLAGS": "-Wl,-z,relro,--as-needed",
+        "AR": "llvm-ar",
+        "RANLIB": "llvm-ranlib",
+        "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+        "LANG": "C",
+        "LC_ALL": "POSIX"
+      },
+      "which_clang": "/bin/clang",
+      "which_clangxx": "/bin/clang++",
+      "returncode": 0,
+      "wall_s": 0.11037923399999272
+    },
+    {
+      "label": "temp-append",
+      "argv": [
+        "cmake",
+        "-S",
+        "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm",
+        "-B",
+        "/home/abuild/bolt-work/bolt-v4-20261014-rpm-env/temp-build",
+        "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+        "-DBOLT_BUILD_TOOLS=OFF",
+        "-DBOLT_ENABLE_RUNTIME=OFF",
+        "-DBOLT_INCLUDE_TESTS=OFF",
+        "-DBOLT_TARGETS_TO_BUILD=X86"
+      ],
+      "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+      "environment": {
+        "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+        "CC": "x86_64-tizen-linux-gnu-clang",
+        "CXX": "x86_64-tizen-linux-gnu-clang++",
+        "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "LDFLAGS": "-Wl,-z,relro,--as-needed",
+        "AR": "llvm-ar",
+        "RANLIB": "llvm-ranlib",
+        "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+        "LANG": "C",
+        "LC_ALL": "POSIX"
+      },
+      "which_clang": "/bin/clang",
+      "which_clangxx": "/bin/clang++",
+      "returncode": 0,
+      "wall_s": 3.8939352839952335
+    },
+    {
+      "label": "temp-link-after",
+      "argv": [
+        "ninja",
+        "-t",
+        "commands",
+        "-s",
+        "bin/clang-22"
+      ],
+      "cwd": "/home/abuild/bolt-work/bolt-v4-20261014-rpm-env/temp-build",
+      "environment": {
+        "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+        "CC": "x86_64-tizen-linux-gnu-clang",
+        "CXX": "x86_64-tizen-linux-gnu-clang++",
+        "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "LDFLAGS": "-Wl,-z,relro,--as-needed",
+        "AR": "llvm-ar",
+        "RANLIB": "llvm-ranlib",
+        "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+        "LANG": "C",
+        "LC_ALL": "POSIX"
+      },
+      "which_clang": "/bin/clang",
+      "which_clangxx": "/bin/clang++",
+      "returncode": 0,
+      "wall_s": 0.1027493090077769
+    }
+  ],
+  "baseline_link_equals_original": true,
+  "cache_changes": [
+    {
+      "key": "BOLT_BUILD_TOOLS:BOOL",
+      "before": null,
+      "after": "OFF"
+    },
+    {
+      "key": "BOLT_CLANG_EXE:FILEPATH",
+      "before": null,
+      "after": ""
+    },
+    {
+      "key": "BOLT_ENABLE_RUNTIME:BOOL",
+      "before": null,
+      "after": "OFF"
+    },
+    {
+      "key": "BOLT_INCLUDE_DOCS:BOOL",
+      "before": null,
+      "after": "OFF"
+    },
+    {
+      "key": "BOLT_INCLUDE_TESTS:UNINITIALIZED",
+      "before": null,
+      "after": "OFF"
+    },
+    {
+      "key": "BOLT_LLD_EXE:FILEPATH",
+      "before": null,
+      "after": ""
+    },
+    {
+      "key": "BOLT_TARGETS_TO_BUILD:STRING",
+      "before": null,
+      "after": "X86"
+    },
+    {
+      "key": "BOLT_TOOLS_INSTALL_DIR-ADVANCED:INTERNAL",
+      "before": null,
+      "after": "1"
+    },
+    {
+      "key": "BOLT_TOOLS_INSTALL_DIR:PATH",
+      "before": null,
+      "after": "bin"
+    },
+    {
+      "key": "CMAKE_NUMBER_OF_MAKEFILES:INTERNAL",
+      "before": "667",
+      "after": "684"
+    },
+    {
+      "key": "LLVM_ENABLE_PROJECTS:STRING",
+      "before": "clang;lldb;clang-tools-extra;lld;compiler-rt;openmp",
+      "after": "clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt"
+    },
+    {
+      "key": "LLVM_EXTERNAL_BOLT_SOURCE_DIR:PATH",
+      "before": "",
+      "after": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/../bolt"
+    },
+    {
+      "key": "LLVM_TOOL_BOLT_BUILD:BOOL",
+      "before": "FALSE",
+      "after": "TRUE"
+    }
+  ],
+  "generated_directory_delta": {
+    "before_count": 667,
+    "after_count": 684,
+    "added": [
+      "tools/bolt",
+      "tools/bolt/lib",
+      "tools/bolt/lib/Core",
+      "tools/bolt/lib/Passes",
+      "tools/bolt/lib/Profile",
+      "tools/bolt/lib/Rewrite",
+      "tools/bolt/lib/RuntimeLibs",
+      "tools/bolt/lib/Target",
+      "tools/bolt/lib/Target/X86",
+      "tools/bolt/lib/Utils",
+      "tools/bolt/tools",
+      "tools/bolt/tools/bat-dump",
+      "tools/bolt/tools/binary-analysis",
+      "tools/bolt/tools/driver",
+      "tools/bolt/tools/heatmap",
+      "tools/bolt/tools/llvm-bolt-fuzzer",
+      "tools/bolt/tools/merge-fdata"
+    ],
+    "removed": []
+  },
+  "makefile_count_is_exact_bolt_directory_delta": true,
+  "unexpected_cache_changes": [],
+  "append_link_equals_before": true,
+  "append_link_equals_original": true,
+  "wall_s": 32.676676739996765,
+  "source_unchanged": true,
+  "temporary_directory_deleted": true,
+  "resources": {
+    "setup": {
+      "status": "PASS",
+      "scope_wall_s": 10.043272673996398,
+      "cgroup_peak_bytes": 464601088,
+      "process_VmHWM": [
+        {
+          "pid": 779247,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12600
+        },
+        {
+          "pid": 779250,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 201148
+        }
+      ],
+      "minimum_host_MemAvailable": 18102181888,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "temporary": {
+      "status": "FAIL",
+      "scope_wall_s": 40.632784012006596,
+      "cgroup_peak_bytes": 764272640,
+      "process_VmHWM": [
+        {
+          "pid": 779384,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12604
+        },
+        {
+          "pid": 779387,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 178580
+        },
+        {
+          "pid": 779388,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7352
+        },
+        {
+          "pid": 779389,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2392
+        },
+        {
+          "pid": 779399,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12048
+        },
+        {
+          "pid": 779402,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 307016
+        },
+        {
+          "pid": 779421,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 18116
+        },
+        {
+          "pid": 779522,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3952
+        },
+        {
+          "pid": 779524,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2284
+        },
+        {
+          "pid": 779525,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43272
+        },
+        {
+          "pid": 779526,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 35136
+        },
+        {
+          "pid": 779697,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 779866,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 208
+        },
+        {
+          "pid": 780028,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3772
+        },
+        {
+          "pid": 780029,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 47928
+        },
+        {
+          "pid": 780386,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 2668
+        },
+        {
+          "pid": 780535,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3764
+        },
+        {
+          "pid": 780536,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 61568
+        },
+        {
+          "pid": 780691,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3728
+        },
+        {
+          "pid": 780796,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3920
+        },
+        {
+          "pid": 780798,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2336
+        },
+        {
+          "pid": 780799,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43480
+        },
+        {
+          "pid": 780800,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 30336
+        },
+        {
+          "pid": 780933,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3940
+        },
+        {
+          "pid": 780935,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2300
+        },
+        {
+          "pid": 780936,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 43488
+        },
+        {
+          "pid": 781145,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 28368
+        },
+        {
+          "pid": 781291,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3956
+        },
+        {
+          "pid": 781293,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2368
+        },
+        {
+          "pid": 781294,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 43488
+        },
+        {
+          "pid": 781295,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 63780
+        },
+        {
+          "pid": 781581,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 781583,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2204
+        },
+        {
+          "pid": 781584,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 8164
+        },
+        {
+          "pid": 781915,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3964
+        },
+        {
+          "pid": 781917,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2260
+        },
+        {
+          "pid": 781918,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43168
+        },
+        {
+          "pid": 781919,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 33276
+        },
+        {
+          "pid": 782265,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3964
+        },
+        {
+          "pid": 782267,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2304
+        },
+        {
+          "pid": 782268,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 34252
+        },
+        {
+          "pid": 782982,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 552
+        },
+        {
+          "pid": 783116,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3804
+        },
+        {
+          "pid": 783118,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2336
+        },
+        {
+          "pid": 783119,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 783466,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 16
+        },
+        {
+          "pid": 783629,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3900
+        },
+        {
+          "pid": 783631,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2308
+        },
+        {
+          "pid": 783632,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 43496
+        },
+        {
+          "pid": 783633,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 35548
+        },
+        {
+          "pid": 783863,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 23032
+        },
+        {
+          "pid": 784015,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3788
+        },
+        {
+          "pid": 784016,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 5848
+        },
+        {
+          "pid": 784319,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 784321,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2228
+        },
+        {
+          "pid": 784481,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3936
+        },
+        {
+          "pid": 784483,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2380
+        },
+        {
+          "pid": 784484,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 7752
+        },
+        {
+          "pid": 784643,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3780
+        },
+        {
+          "pid": 784932,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 785079,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3776
+        },
+        {
+          "pid": 785080,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 6192
+        },
+        {
+          "pid": 785160,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3776
+        },
+        {
+          "pid": 785161,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 84528
+        },
+        {
+          "pid": 785248,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3808
+        },
+        {
+          "pid": 785249,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 44944
+        },
+        {
+          "pid": 785510,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3968
+        },
+        {
+          "pid": 785512,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2400
+        },
+        {
+          "pid": 785513,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 5080
+        },
+        {
+          "pid": 785719,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3656
+        },
+        {
+          "pid": 785859,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 20
+        },
+        {
+          "pid": 786147,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 786290,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 786408,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3776
+        },
+        {
+          "pid": 786409,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 51808
+        },
+        {
+          "pid": 786453,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3784
+        },
+        {
+          "pid": 786454,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 65640
+        },
+        {
+          "pid": 786538,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7340
+        },
+        {
+          "pid": 786539,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2372
+        },
+        {
+          "pid": 786546,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 11948
+        },
+        {
+          "pid": 786549,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 78080
+        },
+        {
+          "pid": 786550,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7384
+        },
+        {
+          "pid": 786551,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2364
+        },
+        {
+          "pid": 786558,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 11940
+        },
+        {
+          "pid": 786561,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 299680
+        },
+        {
+          "pid": 786589,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 34548
+        },
+        {
+          "pid": 786603,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3732
+        },
+        {
+          "pid": 786604,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 62208
+        }
+      ],
+      "minimum_host_MemAvailable": 17981403136,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "temporary-corrected": {
+      "status": "PASS",
+      "scope_wall_s": 40.6349838909955,
+      "cgroup_peak_bytes": 434454528,
+      "process_VmHWM": [
+        {
+          "pid": 786879,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12676
+        },
+        {
+          "pid": 786882,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 199508
+        },
+        {
+          "pid": 786883,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7372
+        },
+        {
+          "pid": 786884,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2308
+        },
+        {
+          "pid": 786894,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12072
+        },
+        {
+          "pid": 786897,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 310256
+        },
+        {
+          "pid": 787307,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 19976
+        },
+        {
+          "pid": 787451,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3940
+        },
+        {
+          "pid": 787453,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2448
+        },
+        {
+          "pid": 787454,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 3456
+        },
+        {
+          "pid": 787640,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3740
+        },
+        {
+          "pid": 787641,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 787978,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3768
+        },
+        {
+          "pid": 787979,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 88
+        },
+        {
+          "pid": 788128,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3800
+        },
+        {
+          "pid": 788129,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 32972
+        },
+        {
+          "pid": 788254,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 3828
+        },
+        {
+          "pid": 788357,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3768
+        },
+        {
+          "pid": 788546,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3924
+        },
+        {
+          "pid": 788548,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2376
+        },
+        {
+          "pid": 788549,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43576
+        },
+        {
+          "pid": 788550,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 58068
+        },
+        {
+          "pid": 788735,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3808
+        },
+        {
+          "pid": 788737,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2272
+        },
+        {
+          "pid": 788738,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43736
+        },
+        {
+          "pid": 788739,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 10088
+        },
+        {
+          "pid": 788879,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3964
+        },
+        {
+          "pid": 788881,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2428
+        },
+        {
+          "pid": 788882,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43728
+        },
+        {
+          "pid": 788883,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 5704
+        },
+        {
+          "pid": 788936,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 13212
+        },
+        {
+          "pid": 789083,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3952
+        },
+        {
+          "pid": 789085,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2428
+        },
+        {
+          "pid": 789086,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 44076
+        },
+        {
+          "pid": 789087,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 53072
+        },
+        {
+          "pid": 789255,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3772
+        },
+        {
+          "pid": 789256,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 51212
+        },
+        {
+          "pid": 789457,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 3408
+        },
+        {
+          "pid": 789630,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3796
+        },
+        {
+          "pid": 789631,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 5976
+        },
+        {
+          "pid": 789791,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3960
+        },
+        {
+          "pid": 789793,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2376
+        },
+        {
+          "pid": 789794,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 44112
+        },
+        {
+          "pid": 789795,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 54696
+        },
+        {
+          "pid": 790080,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 12
+        },
+        {
+          "pid": 790246,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3728
+        },
+        {
+          "pid": 790247,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 9848
+        },
+        {
+          "pid": 790408,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3780
+        },
+        {
+          "pid": 790409,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 41624
+        },
+        {
+          "pid": 790640,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 790642,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2340
+        },
+        {
+          "pid": 790643,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 41996
+        },
+        {
+          "pid": 790802,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3928
+        },
+        {
+          "pid": 790804,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2472
+        },
+        {
+          "pid": 790805,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43300
+        },
+        {
+          "pid": 790806,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 14252
+        },
+        {
+          "pid": 791157,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 24004
+        },
+        {
+          "pid": 791289,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3944
+        },
+        {
+          "pid": 791291,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2380
+        },
+        {
+          "pid": 791292,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 39956
+        },
+        {
+          "pid": 791674,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 791676,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2472
+        },
+        {
+          "pid": 791677,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43640
+        },
+        {
+          "pid": 791678,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 57112
+        },
+        {
+          "pid": 791843,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3752
+        },
+        {
+          "pid": 791844,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 44448
+        },
+        {
+          "pid": 792001,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 32040
+        },
+        {
+          "pid": 792292,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3728
+        },
+        {
+          "pid": 792293,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 47964
+        },
+        {
+          "pid": 792433,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 792576,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3948
+        },
+        {
+          "pid": 792578,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2296
+        },
+        {
+          "pid": 792579,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 44176
+        },
+        {
+          "pid": 792580,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 44752
+        },
+        {
+          "pid": 792684,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3788
+        },
+        {
+          "pid": 792685,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 72600
+        },
+        {
+          "pid": 792747,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3952
+        },
+        {
+          "pid": 792749,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2344
+        },
+        {
+          "pid": 792750,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 44468
+        },
+        {
+          "pid": 792916,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 793009,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3956
+        },
+        {
+          "pid": 793011,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2464
+        },
+        {
+          "pid": 793012,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 43976
+        },
+        {
+          "pid": 793013,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 45484
+        },
+        {
+          "pid": 793391,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3920
+        },
+        {
+          "pid": 793393,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2312
+        },
+        {
+          "pid": 793394,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43780
+        },
+        {
+          "pid": 793395,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 63524
+        },
+        {
+          "pid": 793710,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3508
+        },
+        {
+          "pid": 793846,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3768
+        },
+        {
+          "pid": 793847,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 64752
+        },
+        {
+          "pid": 793934,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3732
+        },
+        {
+          "pid": 793935,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 88040
+        },
+        {
+          "pid": 794074,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7340
+        },
+        {
+          "pid": 794075,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2444
+        },
+        {
+          "pid": 794082,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 11980
+        },
+        {
+          "pid": 794085,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 297032
+        },
+        {
+          "pid": 794157,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7328
+        },
+        {
+          "pid": 794158,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2404
+        },
+        {
+          "pid": 794165,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 5140
+        }
+      ],
+      "minimum_host_MemAvailable": 18124009472,
+      "cgroup_reaped": true,
+      "swap0": true
+    }
+  },
+  "first_attempt": {
+    "status": "STOP_TEMP_CONFIG_GATE",
+    "seed_cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache",
+    "preparatory_corrections": [],
+    "calls": [
+      {
+        "label": "temp-baseline",
+        "argv": [
+          "cmake",
+          "-G",
+          "Ninja",
+          "-DTIZEN=1",
+          "-DCMAKE_C_COMPILER=clang",
+          "-DCMAKE_CXX_COMPILER=clang++",
+          "-DLLVM_HOST_TRIPLE=x86_64-tizen-linux-gnu",
+          "-DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-tizen-linux-gnu",
+          "-DLLVM_TARGET_TRIPLE_ENV=x86_64-tizen-linux-gnu",
+          "-DCMAKE_ASM_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "-DCMAKE_C_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "-DCMAKE_CXX_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+          "-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+          "-DLLVM_USE_LINKER=lld",
+          "-DLLVM_ENABLE_LTO=Thin",
+          "-DCMAKE_RANLIB=/usr/bin/llvm-ranlib",
+          "-DCMAKE_AR=/usr/bin/llvm-ar",
+          "-DLLVM_ENABLE_ASSERTIONS=No",
+          "-DLLVM_ENABLE_RTTI=ON",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64;BPF",
+          "-DCLANG_ENABLE_ARCMT=OFF",
+          "-DLLVM_BUILD_LLVM_DYLIB=ON",
+          "-DCLANG_BUILD_CLANG_DYLIB=ON",
+          "-DLLVM_LINK_LLVM_DYLIB=OFF",
+          "-DCLANG_LINK_CLANG_DYLIB=OFF",
+          "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp",
+          "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF",
+          "-DLLVM_BUILD_EXAMPLES=OFF",
+          "-DLLVM_INCLUDE_EXAMPLES=OFF",
+          "-DLLVM_BUILD_TESTS=OFF",
+          "-DLLVM_INCLUDE_TESTS=OFF",
+          "-DLLVM_ENABLE_DOXYGEN=OFF",
+          "-DLLVM_BUILD_DOCS=OFF",
+          "-DLLVM_INCLUDE_DOCS=OFF",
+          "-DLLVM_OPTIMIZED_TABLEGEN=ON",
+          "-DCMAKE_INSTALL_PREFIX=/usr",
+          "-DLLVM_LIBDIR_SUFFIX=64",
+          "-DCLANG_RESOURCE_DIR=../lib64/clang/22",
+          "-DLLVM_BINUTILS_INCDIR=/usr/include",
+          "-DLLVM_PARALLEL_COMPILE_JOBS=6",
+          "-DLLVM_PARALLEL_LINK_JOBS=2",
+          "-DTENSORFLOW_AOT_PATH=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/mlgo_sysroot",
+          "-DLLVM_MLGO_EXPORT_TF_XLA_RUNTIME=OFF",
+          "-DLLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/xla_compiled_cpu_function.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/cpu_function_runtime.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/custom_call_status.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/executable_run_options.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o",
+          "-DLLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.h",
+          "-DLLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.o",
+          "-DLLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.h",
+          "-DLLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.o",
+          "-S",
+          "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm",
+          "-B",
+          "/home/abuild/bolt-work/bolt-v4-20261014-rpm-env/temp-build"
+        ],
+        "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+        "environment": {
+          "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+          "CC": "x86_64-tizen-linux-gnu-clang",
+          "CXX": "x86_64-tizen-linux-gnu-clang++",
+          "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "LDFLAGS": "-Wl,-z,relro,--as-needed",
+          "AR": "llvm-ar",
+          "RANLIB": "llvm-ranlib",
+          "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+          "LANG": "C",
+          "LC_ALL": "POSIX"
+        },
+        "which_clang": "/bin/clang",
+        "which_clangxx": "/bin/clang++",
+        "returncode": 0,
+        "wall_s": 28.76857328999904
+      },
+      {
+        "label": "temp-link-before",
+        "argv": [
+          "ninja",
+          "-t",
+          "commands",
+          "-s",
+          "bin/clang-22"
+        ],
+        "cwd": "/home/abuild/bolt-work/bolt-v4-20261014-rpm-env/temp-build",
+        "environment": {
+          "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+          "CC": "x86_64-tizen-linux-gnu-clang",
+          "CXX": "x86_64-tizen-linux-gnu-clang++",
+          "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "LDFLAGS": "-Wl,-z,relro,--as-needed",
+          "AR": "llvm-ar",
+          "RANLIB": "llvm-ranlib",
+          "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+          "LANG": "C",
+          "LC_ALL": "POSIX"
+        },
+        "which_clang": "/bin/clang",
+        "which_clangxx": "/bin/clang++",
+        "returncode": 0,
+        "wall_s": 0.10875822800153401
+      },
+      {
+        "label": "temp-append",
+        "argv": [
+          "cmake",
+          "-S",
+          "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm",
+          "-B",
+          "/home/abuild/bolt-work/bolt-v4-20261014-rpm-env/temp-build",
+          "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+          "-DBOLT_BUILD_TOOLS=OFF",
+          "-DBOLT_ENABLE_RUNTIME=OFF",
+          "-DBOLT_INCLUDE_TESTS=OFF",
+          "-DBOLT_TARGETS_TO_BUILD=X86"
+        ],
+        "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+        "environment": {
+          "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+          "CC": "x86_64-tizen-linux-gnu-clang",
+          "CXX": "x86_64-tizen-linux-gnu-clang++",
+          "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "LDFLAGS": "-Wl,-z,relro,--as-needed",
+          "AR": "llvm-ar",
+          "RANLIB": "llvm-ranlib",
+          "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+          "LANG": "C",
+          "LC_ALL": "POSIX"
+        },
+        "which_clang": "/bin/clang",
+        "which_clangxx": "/bin/clang++",
+        "returncode": 0,
+        "wall_s": 3.749321098002838
+      }
+    ],
+    "baseline_link_equals_original": true,
+    "cache_changes": [
+      {
+        "key": "BOLT_BUILD_TOOLS:BOOL",
+        "before": null,
+        "after": "OFF"
+      },
+      {
+        "key": "BOLT_CLANG_EXE:FILEPATH",
+        "before": null,
+        "after": ""
+      },
+      {
+        "key": "BOLT_ENABLE_RUNTIME:BOOL",
+        "before": null,
+        "after": "OFF"
+      },
+      {
+        "key": "BOLT_INCLUDE_DOCS:BOOL",
+        "before": null,
+        "after": "OFF"
+      },
+      {
+        "key": "BOLT_INCLUDE_TESTS:UNINITIALIZED",
+        "before": null,
+        "after": "OFF"
+      },
+      {
+        "key": "BOLT_LLD_EXE:FILEPATH",
+        "before": null,
+        "after": ""
+      },
+      {
+        "key": "BOLT_TARGETS_TO_BUILD:STRING",
+        "before": null,
+        "after": "X86"
+      },
+      {
+        "key": "BOLT_TOOLS_INSTALL_DIR-ADVANCED:INTERNAL",
+        "before": null,
+        "after": "1"
+      },
+      {
+        "key": "BOLT_TOOLS_INSTALL_DIR:PATH",
+        "before": null,
+        "after": "bin"
+      },
+      {
+        "key": "CMAKE_NUMBER_OF_MAKEFILES:INTERNAL",
+        "before": "667",
+        "after": "684"
+      },
+      {
+        "key": "LLVM_ENABLE_PROJECTS:STRING",
+        "before": "clang;lldb;clang-tools-extra;lld;compiler-rt;openmp",
+        "after": "clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt"
+      },
+      {
+        "key": "LLVM_EXTERNAL_BOLT_SOURCE_DIR:PATH",
+        "before": "",
+        "after": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/../bolt"
+      },
+      {
+        "key": "LLVM_TOOL_BOLT_BUILD:BOOL",
+        "before": "FALSE",
+        "after": "TRUE"
+      }
+    ],
+    "unexpected_cache_changes": [
+      {
+        "key": "CMAKE_NUMBER_OF_MAKEFILES:INTERNAL",
+        "before": "667",
+        "after": "684"
+      }
+    ],
+    "reason": "non-BOLT cache changes CMAKE_NUMBER_OF_MAKEFILES:INTERNAL",
+    "wall_s": 32.888211466997745,
+    "source_unchanged": true,
+    "temporary_directory_deleted": true
+  },
+  "spec_modified": false,
+  "link_before_sha256": "352a6f57fdc617c20f3e616a0f49ad113d1d5f057e44dcad0afa88c63a9a68cf",
+  "link_after_sha256": "352a6f57fdc617c20f3e616a0f49ad113d1d5f057e44dcad0afa88c63a9a68cf"
+}

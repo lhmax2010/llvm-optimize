@@ -212,3 +212,9 @@ PM判断：上次把含函数重排的正式参数用于无emit-relocs普通clan
 第二步唯一临时baseline配置rc1：本任务仅准备llvm源链接却漏同级cmake/Modules，CMakePolicy/LLVMVersion include缺失、VERSION '..' invalid；是临时布局准备错误，未到追加bolt。按规定外停止，不补链/换源重试；临时失败cache/文件清单留E，自己新建temp-debug已删除，其他证据保留。两模式rpmspec展开PASS不替代临时配置门禁。无原树恢复、干跑分类、候选、对象/双模式/DWARF、性能或sandbox推送；草案/fixtures/本地提交/文本patch/manifest保持旧版d6ddbff5…，没有本次新增fixture PASS。
 
 停止后审计仅修正一次错误的.ninja_log旧基线比较（可变生成记录，不是保护原件），必要清理审计PASS；22RPM与普通clang/source/spec/ar/lld SHA、归档证据元数据未变，原cache仍bd8ad3aa…/ninja a37efa6a…保持上轮STOP状态、未恢复。本次只4GiB轻任务，未取共享锁，proc/scope均回收，没有进入两棵ARM树，W tracked/llvm未写。E=W/temp/bolt-v4-20261014-cmake-recovery；根内新/home/abuild/bolt-work/bolt-v4-20261014-cmake-recovery。14给全部证据/未完成边界，raw随后更新。本任务状态STOP_TEMPORARY_SOURCE_LAYOUT_ERROR。
+
+## 2026-10-14 周三续跑三：人工裁决与临时验证 PASS
+
+PM确认删缓存源于本地PATH先/usr/bin、原RPM先/bin；spec同一RPM环境无此缺陷，不改草案。所有cmake/ninja必须用原RPM环境前导并记录PATH/which；临时原源码-S加新-B，不复制源码；准备性错误每类允许一次修正，同类第二次或产品门禁失败即停。原树恢复dry-run扣除已证明8触碰/LLDB头后≤50才-j1补完，>50走历史工具后备；候选/30+90对象/双模式/22RPM-DWARF/性能geom<0.98与sandbox父cb直推条件沿用。
+
+第一步PASS：原PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin，四次cmake/ninja均which=/bin/clang及/bin/clang++；无删cache，追加仅13个BOLT相关差异，其中目录计数667→684经17个全部tools/bolt新增生成目录逐项证明。原clang链接命令与临时前后两边逐字相同（SHA352a6f57…），原源码元数据清单一致，临时目录已删除。使用一次cache-delta-classifier准备性修正：初版仅按键名误报派生目录计数，修正后须集合与数量证明；首轮证据保留，不放宽产品门禁。生产草案/源d6ddbff5/patch/manifest不改。15/rpm-env-temporary及四日志给全部记录。接下来恢复原树，尚无候选/性能/sandbox结果。
