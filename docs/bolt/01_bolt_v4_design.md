@@ -349,3 +349,8 @@ git push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm AUDITED_C
 最新恢复任务要求临时先原配置再追加bolt（不删cache/仅bolt键/链接逐字）PASS，然后原始RPM前导/命令恢复一次、dry-run扣除8触碰和LLDB暂存后≤50编链才-j1补，>50允许历史工具后备。两路线必须候选门禁、30/90、双模式/DWARF、30×5性能合格才推；后备Quickbuild SHA交叉核对条件只在实际生成合格候选后成立。
 
 此次临时baseline因只准备llvm链接、漏同级cmake目录失败而按规则STOP，尚未append；临时目录清理，原树cache/ninja仍上一失败bd8ad3aa…/a37efa6a…未恢复。没有重试/恢复/构建/后备候选/推送。正式草案仍d6ddbff5…父cb679968，未改源码封套；22RPM/归档证据保护通过、proc/scope回收，未取重锁/进ARM。未来tizen_base合归档修复时周五再变基解spec冲突。不能直接在当前失配配置上ninja，原快照在13对应E。
+
+
+### v4.1-12 原 RPM 环境实证与恢复停止（2026-10-14）
+
+15覆盖最新状态：临时原源码-S/新-B两次配置PASS；所有cmake/ninja原RPM PATH先/bin，编译器解析/bin，cache仅BOLT相关、clang链接边与原树逐字一致、源码未变。派生目录计数667→684由全部tools/bolt的17新增目录证明；检查器误报用一次准备性修正。spec不改。原树一次完整原命令恢复却因污染compiler缓存再次删cache，41关键项不一致，产品门禁FAIL立即STOP。树未恢复，无干跑/后备候选/对象/双模式/清单/性能/sandbox；下一次需先授权恢复污染cache，不用历史匹配顶替。完整证据见15及rpm-env结果，周五变基/发布完整构建仍挂账。

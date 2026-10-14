@@ -1,0 +1,5777 @@
+{
+  "status": "STOP_RESTORATION_GATE",
+  "calls": [
+    {
+      "label": "restore-configure",
+      "argv": [
+        "cmake",
+        "-G",
+        "Ninja",
+        "-DTIZEN=1",
+        "-DCMAKE_C_COMPILER=clang",
+        "-DCMAKE_CXX_COMPILER=clang++",
+        "-DLLVM_HOST_TRIPLE=x86_64-tizen-linux-gnu",
+        "-DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-tizen-linux-gnu",
+        "-DLLVM_TARGET_TRIPLE_ENV=x86_64-tizen-linux-gnu",
+        "-DCMAKE_ASM_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "-DCMAKE_C_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "-DCMAKE_CXX_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+        "-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+        "-DLLVM_USE_LINKER=lld",
+        "-DLLVM_ENABLE_LTO=Thin",
+        "-DCMAKE_RANLIB=/usr/bin/llvm-ranlib",
+        "-DCMAKE_AR=/usr/bin/llvm-ar",
+        "-DLLVM_ENABLE_ASSERTIONS=No",
+        "-DLLVM_ENABLE_RTTI=ON",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64;BPF",
+        "-DCLANG_ENABLE_ARCMT=OFF",
+        "-DLLVM_BUILD_LLVM_DYLIB=ON",
+        "-DCLANG_BUILD_CLANG_DYLIB=ON",
+        "-DLLVM_LINK_LLVM_DYLIB=OFF",
+        "-DCLANG_LINK_CLANG_DYLIB=OFF",
+        "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp",
+        "-DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF",
+        "-DLLVM_BUILD_EXAMPLES=OFF",
+        "-DLLVM_INCLUDE_EXAMPLES=OFF",
+        "-DLLVM_BUILD_TESTS=OFF",
+        "-DLLVM_INCLUDE_TESTS=OFF",
+        "-DLLVM_ENABLE_DOXYGEN=OFF",
+        "-DLLVM_BUILD_DOCS=OFF",
+        "-DLLVM_INCLUDE_DOCS=OFF",
+        "-DLLVM_OPTIMIZED_TABLEGEN=ON",
+        "-DCMAKE_INSTALL_PREFIX=/usr",
+        "-DLLVM_LIBDIR_SUFFIX=64",
+        "-DCLANG_RESOURCE_DIR=../lib64/clang/22",
+        "-DLLVM_BINUTILS_INCDIR=/usr/include",
+        "-DLLVM_PARALLEL_COMPILE_JOBS=6",
+        "-DLLVM_PARALLEL_LINK_JOBS=2",
+        "-DTENSORFLOW_AOT_PATH=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/mlgo_sysroot",
+        "-DLLVM_MLGO_EXPORT_TF_XLA_RUNTIME=OFF",
+        "-DLLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/xla_compiled_cpu_function.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/cpu_function_runtime.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/custom_call_status.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/executable_run_options.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o",
+        "-DLLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.h",
+        "-DLLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.o",
+        "-DLLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.h",
+        "-DLLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.o",
+        "../llvm"
+      ],
+      "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build",
+      "environment": {
+        "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+        "CC": "x86_64-tizen-linux-gnu-clang",
+        "CXX": "x86_64-tizen-linux-gnu-clang++",
+        "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+        "LDFLAGS": "-Wl,-z,relro,--as-needed",
+        "AR": "llvm-ar",
+        "RANLIB": "llvm-ranlib",
+        "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+        "LANG": "C",
+        "LC_ALL": "POSIX"
+      },
+      "which_clang": "/bin/clang",
+      "which_clangxx": "/bin/clang++",
+      "returncode": 0,
+      "wall_s": 32.714055705000646
+    }
+  ],
+  "failed_config_files_count": 923,
+  "failed_config_cutoff_epoch": 1791966147.7645748,
+  "cache_delete_prompt": true,
+  "key_comparison": [
+    {
+      "key": "CLANG_BUILD_CLANG_DYLIB",
+      "before": "ON",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "CLANG_ENABLE_ARCMT",
+      "before": "OFF",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "CLANG_LINK_CLANG_DYLIB",
+      "before": "OFF",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "CLANG_RESOURCE_DIR",
+      "before": "../lib64/clang/22",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "CMAKE_AR",
+      "before": "/usr/bin/llvm-ar",
+      "restored": "/bin/llvm-ar",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_ASM_FLAGS",
+      "before": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_BUILD_TYPE",
+      "before": "Release",
+      "restored": "Release",
+      "equal": true
+    },
+    {
+      "key": "CMAKE_CXX_COMPILER",
+      "before": "clang++",
+      "restored": "/bin/clang++",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_CXX_FLAGS",
+      "before": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "restored": "-Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_C_COMPILER",
+      "before": "clang",
+      "restored": "/bin/clang",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_C_FLAGS",
+      "before": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "restored": "-Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_EXE_LINKER_FLAGS",
+      "before": "-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+      "restored": "-Wl,-z,relro,--as-needed",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_GENERATOR",
+      "before": "Ninja",
+      "restored": "Ninja",
+      "equal": true
+    },
+    {
+      "key": "CMAKE_HOME_DIRECTORY",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm",
+      "restored": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm",
+      "equal": true
+    },
+    {
+      "key": "CMAKE_INSTALL_PREFIX",
+      "before": "/usr",
+      "restored": "/usr/local",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_RANLIB",
+      "before": "/usr/bin/llvm-ranlib",
+      "restored": "/bin/llvm-ranlib",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_SHARED_LINKER_FLAGS",
+      "before": "-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+      "restored": "-Wl,-z,relro,--as-needed",
+      "equal": false
+    },
+    {
+      "key": "LLVM_BINUTILS_INCDIR",
+      "before": "/usr/include",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_BUILD_DOCS",
+      "before": "OFF",
+      "restored": "OFF",
+      "equal": true
+    },
+    {
+      "key": "LLVM_BUILD_EXAMPLES",
+      "before": "OFF",
+      "restored": "OFF",
+      "equal": true
+    },
+    {
+      "key": "LLVM_BUILD_LLVM_DYLIB",
+      "before": "ON",
+      "restored": "OFF",
+      "equal": false
+    },
+    {
+      "key": "LLVM_BUILD_TESTS",
+      "before": "OFF",
+      "restored": "OFF",
+      "equal": true
+    },
+    {
+      "key": "LLVM_DEFAULT_TARGET_TRIPLE",
+      "before": "x86_64-tizen-linux-gnu",
+      "restored": "x86_64-unknown-linux-gnu",
+      "equal": false
+    },
+    {
+      "key": "LLVM_ENABLE_ASSERTIONS",
+      "before": "No",
+      "restored": "OFF",
+      "equal": false
+    },
+    {
+      "key": "LLVM_ENABLE_DOXYGEN",
+      "before": "OFF",
+      "restored": "OFF",
+      "equal": true
+    },
+    {
+      "key": "LLVM_ENABLE_LTO",
+      "before": "Thin",
+      "restored": "OFF",
+      "equal": false
+    },
+    {
+      "key": "LLVM_ENABLE_PER_TARGET_RUNTIME_DIR",
+      "before": "OFF",
+      "restored": "ON",
+      "equal": false
+    },
+    {
+      "key": "LLVM_ENABLE_PROJECTS",
+      "before": "clang;lldb;clang-tools-extra;lld;compiler-rt;openmp",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_ENABLE_RTTI",
+      "before": "ON",
+      "restored": "OFF",
+      "equal": false
+    },
+    {
+      "key": "LLVM_HOST_TRIPLE",
+      "before": "x86_64-tizen-linux-gnu",
+      "restored": "x86_64-unknown-linux-gnu",
+      "equal": false
+    },
+    {
+      "key": "LLVM_INCLUDE_DOCS",
+      "before": "OFF",
+      "restored": "ON",
+      "equal": false
+    },
+    {
+      "key": "LLVM_INCLUDE_EXAMPLES",
+      "before": "OFF",
+      "restored": "ON",
+      "equal": false
+    },
+    {
+      "key": "LLVM_INCLUDE_TESTS",
+      "before": "OFF",
+      "restored": "ON",
+      "equal": false
+    },
+    {
+      "key": "LLVM_LIBDIR_SUFFIX",
+      "before": "64",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_LINK_LLVM_DYLIB",
+      "before": "OFF",
+      "restored": "OFF",
+      "equal": true
+    },
+    {
+      "key": "LLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/xla_compiled_cpu_function.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/cpu_function_runtime.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/custom_call_status.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/executable_run_options.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_MLGO_EXPORT_TF_XLA_RUNTIME",
+      "before": "OFF",
+      "restored": "ON",
+      "equal": false
+    },
+    {
+      "key": "LLVM_OPTIMIZED_TABLEGEN",
+      "before": "ON",
+      "restored": "OFF",
+      "equal": false
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.h",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.h",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.o",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.o",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "LLVM_PARALLEL_COMPILE_JOBS",
+      "before": "6",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_PARALLEL_LINK_JOBS",
+      "before": "2",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_TARGETS_TO_BUILD",
+      "before": "X86;ARM;AArch64;BPF",
+      "restored": "all",
+      "equal": false
+    },
+    {
+      "key": "LLVM_TARGET_TRIPLE_ENV",
+      "before": "x86_64-tizen-linux-gnu",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_THINLTO_CACHE_PATH",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache",
+      "restored": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache",
+      "equal": true
+    },
+    {
+      "key": "LLVM_USE_LINKER",
+      "before": "lld",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "TENSORFLOW_AOT_PATH",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/mlgo_sysroot",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "TIZEN",
+      "before": "1",
+      "restored": null,
+      "equal": false
+    }
+  ],
+  "key_mismatches": [
+    {
+      "key": "CLANG_BUILD_CLANG_DYLIB",
+      "before": "ON",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "CLANG_ENABLE_ARCMT",
+      "before": "OFF",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "CLANG_LINK_CLANG_DYLIB",
+      "before": "OFF",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "CLANG_RESOURCE_DIR",
+      "before": "../lib64/clang/22",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "CMAKE_AR",
+      "before": "/usr/bin/llvm-ar",
+      "restored": "/bin/llvm-ar",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_ASM_FLAGS",
+      "before": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_CXX_COMPILER",
+      "before": "clang++",
+      "restored": "/bin/clang++",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_CXX_FLAGS",
+      "before": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "restored": "-Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_C_COMPILER",
+      "before": "clang",
+      "restored": "/bin/clang",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_C_FLAGS",
+      "before": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "restored": "-Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_EXE_LINKER_FLAGS",
+      "before": "-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+      "restored": "-Wl,-z,relro,--as-needed",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_INSTALL_PREFIX",
+      "before": "/usr",
+      "restored": "/usr/local",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_RANLIB",
+      "before": "/usr/bin/llvm-ranlib",
+      "restored": "/bin/llvm-ranlib",
+      "equal": false
+    },
+    {
+      "key": "CMAKE_SHARED_LINKER_FLAGS",
+      "before": "-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+      "restored": "-Wl,-z,relro,--as-needed",
+      "equal": false
+    },
+    {
+      "key": "LLVM_BINUTILS_INCDIR",
+      "before": "/usr/include",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_BUILD_LLVM_DYLIB",
+      "before": "ON",
+      "restored": "OFF",
+      "equal": false
+    },
+    {
+      "key": "LLVM_DEFAULT_TARGET_TRIPLE",
+      "before": "x86_64-tizen-linux-gnu",
+      "restored": "x86_64-unknown-linux-gnu",
+      "equal": false
+    },
+    {
+      "key": "LLVM_ENABLE_ASSERTIONS",
+      "before": "No",
+      "restored": "OFF",
+      "equal": false
+    },
+    {
+      "key": "LLVM_ENABLE_LTO",
+      "before": "Thin",
+      "restored": "OFF",
+      "equal": false
+    },
+    {
+      "key": "LLVM_ENABLE_PER_TARGET_RUNTIME_DIR",
+      "before": "OFF",
+      "restored": "ON",
+      "equal": false
+    },
+    {
+      "key": "LLVM_ENABLE_PROJECTS",
+      "before": "clang;lldb;clang-tools-extra;lld;compiler-rt;openmp",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_ENABLE_RTTI",
+      "before": "ON",
+      "restored": "OFF",
+      "equal": false
+    },
+    {
+      "key": "LLVM_HOST_TRIPLE",
+      "before": "x86_64-tizen-linux-gnu",
+      "restored": "x86_64-unknown-linux-gnu",
+      "equal": false
+    },
+    {
+      "key": "LLVM_INCLUDE_DOCS",
+      "before": "OFF",
+      "restored": "ON",
+      "equal": false
+    },
+    {
+      "key": "LLVM_INCLUDE_EXAMPLES",
+      "before": "OFF",
+      "restored": "ON",
+      "equal": false
+    },
+    {
+      "key": "LLVM_INCLUDE_TESTS",
+      "before": "OFF",
+      "restored": "ON",
+      "equal": false
+    },
+    {
+      "key": "LLVM_LIBDIR_SUFFIX",
+      "before": "64",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/xla_compiled_cpu_function.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/cpu_function_runtime.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/custom_call_status.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/executable_run_options.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_MLGO_EXPORT_TF_XLA_RUNTIME",
+      "before": "OFF",
+      "restored": "ON",
+      "equal": false
+    },
+    {
+      "key": "LLVM_OPTIMIZED_TABLEGEN",
+      "before": "ON",
+      "restored": "OFF",
+      "equal": false
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.h",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.h",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.o",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.o",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "LLVM_PARALLEL_COMPILE_JOBS",
+      "before": "6",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_PARALLEL_LINK_JOBS",
+      "before": "2",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_TARGETS_TO_BUILD",
+      "before": "X86;ARM;AArch64;BPF",
+      "restored": "all",
+      "equal": false
+    },
+    {
+      "key": "LLVM_TARGET_TRIPLE_ENV",
+      "before": "x86_64-tizen-linux-gnu",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "LLVM_USE_LINKER",
+      "before": "lld",
+      "restored": null,
+      "equal": false
+    },
+    {
+      "key": "TENSORFLOW_AOT_PATH",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/mlgo_sysroot",
+      "restored": "",
+      "equal": false
+    },
+    {
+      "key": "TIZEN",
+      "before": "1",
+      "restored": null,
+      "equal": false
+    }
+  ],
+  "reason": "restored critical CMake keys differ",
+  "wall_s": 34.19855502599967,
+  "all_cache_changes": [
+    {
+      "key": "CAN_TARGET_x86_64:INTERNAL",
+      "before": "TRUE",
+      "after": null
+    },
+    {
+      "key": "CLANG:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CLANGD_BUILD_DEXP:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANGD_BUILD_XPC:BOOL",
+      "before": "0",
+      "after": null
+    },
+    {
+      "key": "CLANGD_DECISION_FOREST:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANGD_MALLOC_TRIM:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANGD_TIDY_CHECKS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_BOLT:STRING",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CLANG_BUILD_CLANG_DYLIB:UNINITIALIZED",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_BUILD_EXAMPLES:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CLANG_BUILD_TOOLS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_DEFAULT_CXX_STDLIB:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CLANG_DEFAULT_LINKER:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CLANG_DEFAULT_OBJCOPY:STRING",
+      "before": "objcopy",
+      "after": null
+    },
+    {
+      "key": "CLANG_DEFAULT_OPENMP_RUNTIME:STRING",
+      "before": "libomp",
+      "after": null
+    },
+    {
+      "key": "CLANG_DEFAULT_PIE_ON_LINUX:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_DEFAULT_RTLIB:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CLANG_DEFAULT_UNWINDLIB:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CLANG_ENABLE_ARCMT:UNINITIALIZED",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CLANG_ENABLE_CLANGD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_ENABLE_HLSL-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_ENABLE_HLSL:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CLANG_ENABLE_LIBXML2:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_ENABLE_OBJC_REWRITER:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CLANG_ENABLE_PROTO_FUZZER:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CLANG_ENABLE_STATIC_ANALYZER:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_EXECUTABLE_VERSION-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_EXECUTABLE_VERSION:STRING",
+      "before": "22",
+      "after": null
+    },
+    {
+      "key": "CLANG_FORCE_MATCHING_LIBCLANG_SOVERSION:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_HAVE_DLADDR:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_HAVE_DLFCN_H:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_HAVE_RLIMITS:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_INCLUDE_DOCS:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CLANG_INCLUDE_TESTS:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CLANG_INSTALL_PACKAGE_DIR:STRING",
+      "before": "lib64/cmake/clang",
+      "after": null
+    },
+    {
+      "key": "CLANG_INSTALL_SCANBUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_INSTALL_SCANBUILDPY:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_INSTALL_SCANVIEW:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_LINK_CLANG_DYLIB:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CLANG_PLUGIN_SUPPORT:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_PYTHON_BINDINGS_VERSIONS:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CLANG_REPOSITORY_STRING:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CLANG_RESOURCE_DIR:STRING",
+      "before": "../lib64/clang/22",
+      "after": null
+    },
+    {
+      "key": "CLANG_SPAWN_CC1:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CLANG_SYSTEMZ_DEFAULT_ARCH:STRING",
+      "before": "z10",
+      "after": null
+    },
+    {
+      "key": "CLANG_TABLEGEN:STRING",
+      "before": "clang-tblgen",
+      "after": null
+    },
+    {
+      "key": "CLANG_TABLEGEN_EXE:INTERNAL",
+      "before": "clang-tblgen",
+      "after": null
+    },
+    {
+      "key": "CLANG_TIDY_CONFUSABLE_CHARS_GEN:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CLANG_TIDY_ENABLE_QUERY_BASED_CUSTOM_CHECKS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TIDY_ENABLE_STATIC_ANALYZER:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOLS_EXTRA_INCLUDE_DOCS:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOLS_INSTALL_DIR-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOLS_INSTALL_DIR:PATH",
+      "before": "bin",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_APINOTES_TEST_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_APINOTES_TEST_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CIR_LSP_SERVER_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CIR_LSP_SERVER_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CIR_OPT_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CIR_OPT_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CIR_TRANSLATE_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CIR_TRANSLATE_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_CHECK_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_CHECK_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_DIFF_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_DIFF_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_EXTDEF_MAPPING_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_EXTDEF_MAPPING_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_FORMAT_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_FORMAT_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_FUZZER_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_FUZZER_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_IMPORT_TEST_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_IMPORT_TEST_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_INSTALLAPI_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_INSTALLAPI_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_LINKER_WRAPPER_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_LINKER_WRAPPER_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_NVLINK_WRAPPER_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_NVLINK_WRAPPER_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_OFFLOAD_BUNDLER_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_OFFLOAD_BUNDLER_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_REFACTOR_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_REFACTOR_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_REPL_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_REPL_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_SCAN_DEPS_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_SCAN_DEPS_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_SHLIB_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_SHLIB_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_SYCL_LINKER_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_CLANG_SYCL_LINKER_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_C_INDEX_TEST_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_C_INDEX_TEST_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_DIAGTOOL_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_DIAGTOOL_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_DICTIONARY_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_DRIVER_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_DRIVER_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_HANDLE_CXX_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_HANDLE_LLVM_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_LIBCLANG_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_LIBCLANG_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_OFFLOAD_ARCH_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_OFFLOAD_ARCH_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_SCAN_BUILD_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_SCAN_BUILD_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_SCAN_BUILD_PY_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_SCAN_BUILD_PY_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_SCAN_VIEW_BUILD-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CLANG_TOOL_SCAN_VIEW_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "CLANG_VENDOR:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CLANG_VENDOR_UTI:STRING",
+      "before": "org.llvm.clang",
+      "after": null
+    },
+    {
+      "key": "CMAKE_AR:FILEPATH",
+      "before": null,
+      "after": "/bin/llvm-ar"
+    },
+    {
+      "key": "CMAKE_AR:UNINITIALIZED",
+      "before": "/usr/bin/llvm-ar",
+      "after": null
+    },
+    {
+      "key": "CMAKE_ASM_FLAGS:STRING",
+      "before": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "after": ""
+    },
+    {
+      "key": "CMAKE_CXX_COMPILER:STRING",
+      "before": null,
+      "after": "/bin/clang++"
+    },
+    {
+      "key": "CMAKE_CXX_COMPILER:UNINITIALIZED",
+      "before": "clang++",
+      "after": null
+    },
+    {
+      "key": "CMAKE_CXX_FLAGS:STRING",
+      "before": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "after": "-Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+    },
+    {
+      "key": "CMAKE_C_COMPILER:STRING",
+      "before": null,
+      "after": "/bin/clang"
+    },
+    {
+      "key": "CMAKE_C_COMPILER:UNINITIALIZED",
+      "before": "clang",
+      "after": null
+    },
+    {
+      "key": "CMAKE_C_FLAGS:STRING",
+      "before": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+      "after": "-Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+    },
+    {
+      "key": "CMAKE_EXE_LINKER_FLAGS:STRING",
+      "before": "-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+      "after": "-Wl,-z,relro,--as-needed"
+    },
+    {
+      "key": "CMAKE_INSTALL_LIBDIR-ADVANCED:INTERNAL",
+      "before": null,
+      "after": "1"
+    },
+    {
+      "key": "CMAKE_INSTALL_LIBDIR:PATH",
+      "before": null,
+      "after": "lib64"
+    },
+    {
+      "key": "CMAKE_INSTALL_PACKAGEDIR:PATH",
+      "before": "lib64/cmake",
+      "after": "lib/cmake"
+    },
+    {
+      "key": "CMAKE_INSTALL_PREFIX:PATH",
+      "before": "/usr",
+      "after": "/usr/local"
+    },
+    {
+      "key": "CMAKE_LIPO:PATH",
+      "before": "lipo",
+      "after": null
+    },
+    {
+      "key": "CMAKE_NUMBER_OF_MAKEFILES:INTERNAL",
+      "before": "667",
+      "after": "496"
+    },
+    {
+      "key": "CMAKE_RANLIB:FILEPATH",
+      "before": null,
+      "after": "/bin/llvm-ranlib"
+    },
+    {
+      "key": "CMAKE_RANLIB:UNINITIALIZED",
+      "before": "/usr/bin/llvm-ranlib",
+      "after": null
+    },
+    {
+      "key": "CMAKE_SHARED_LINKER_FLAGS:STRING",
+      "before": "-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+      "after": "-Wl,-z,relro,--as-needed"
+    },
+    {
+      "key": "CODESIGN:FILEPATH",
+      "before": "CODESIGN-NOTFOUND",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_ARM_OPTIMIZED_FP:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_ASAN_UNIT_TESTS_USE_HOST_RUNTIME-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_ASAN_UNIT_TESTS_USE_HOST_RUNTIME:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BAREMETAL_BUILD:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_BUILTINS-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_BUILTINS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_CRT:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_CTX_PROFILE-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_CTX_PROFILE:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_GWP_ASAN-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_GWP_ASAN:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_LIBFUZZER-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_LIBFUZZER:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_MEMPROF-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_MEMPROF:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_ORC-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_ORC:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_PROFILE-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_PROFILE:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_SANITIZERS-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_SANITIZERS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_SCUDO_STANDALONE_WITH_LLVM_LIBC-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_SCUDO_STANDALONE_WITH_LLVM_LIBC:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_STANDALONE_LIBATOMIC:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_XRAY-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_XRAY:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_XRAY_NO_PREINIT-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILD_XRAY_NO_PREINIT:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_BUILTINS_HIDE_SYMBOLS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_CAN_EXECUTE_TESTS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_CRT_USE_EH_FRAME_REGISTRY:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_CXX_LIBRARY:STRING",
+      "before": "default",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_DEBUG:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_DEFAULT_TARGET_ONLY:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_DEFAULT_TARGET_TRIPLE:STRING",
+      "before": "x86_64-tizen-linux-gnu",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_DISABLE_AARCH64_FMV-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_DISABLE_AARCH64_FMV:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_ENABLE_CET:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_ENABLE_INTERNAL_SYMBOLIZER-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_ENABLE_INTERNAL_SYMBOLIZER:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_ENABLE_SOFTWARE_INT128:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_ENABLE_WERROR:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_EXCLUDE_ATOMIC_BUILTIN:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_EXCLUDE_LIBC_PROVIDED_ARM_AEABI_BUILTINS:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_EXTERNALIZE_DEBUGINFO:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_AARCH64_SME:INTERNAL",
+      "before": "False",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_ARM_FP:INTERNAL",
+      "before": "False",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_ARM_UNALIGNED:INTERNAL",
+      "before": "False",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_ARRAY_BOUNDS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_ARRAY_BOUNDS_POINTER_ARITHMETIC_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_ASM_LSE:INTERNAL",
+      "before": "False",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_ATOMIC_KEYWORD:INTERNAL",
+      "before": "True",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_AUXV:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_BUILTIN_FORMAL_SECURITY_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_BUILTIN_MEMCPY_CHK_SIZE_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_CODE_OBJECT_VERSION_FLAG:INTERNAL",
+      "before": "True",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_EMPTY_BODY_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_EXTERNAL_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FCF_PROTECTION_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FCONVERGENT_FUNCTIONS_FLAG:INTERNAL",
+      "before": "True",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FFREESTANDING_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FLTO_FLAG:INTERNAL",
+      "before": "True",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_BUILTIN_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_COVERAGE_MAPPING_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_EXCEPTIONS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_FUNCTION_SECTIONS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_LTO_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_PARTIAL_INLINING_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_PROFILE_GENERATE_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_PROFILE_INSTR_GENERATE_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_PROFILE_INSTR_USE_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_RTTI_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_SANITIZE_SAFE_STACK_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FNO_STACK_PROTECTOR_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FOMIT_FRAME_POINTER_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FORMAT_INSUFFICIENT_ARGS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FPIC_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FPIE_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FRTTI_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FTLS_MODEL_INITIAL_EXEC:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FUNC_SYMBOL:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FUNWIND_TABLES_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FUSE_LD_LLD_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FVISIBILITY_HIDDEN_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_FVISIBILITY_INLINES_HIDDEN_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_GCC_S_LIB:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_GLINE_TABLES_ONLY_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_GR_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_GS_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_G_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_LIBATOMIC:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_LIBC:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_LIBCXX:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_LIBDL:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_LIBEXECINFO:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_LIBM:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_LIBPTHREAD:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_LIBRT:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_LIBSTDCXX:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_LIBUNWIND:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_MCRC32_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_MCRC_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_MSSE4_2_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_MT_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_NOGPULIB_FLAG:INTERNAL",
+      "before": "True",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_NOSTDINCXX_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_NOSTDLIBXX_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_NO_DEFAULT_CONFIG_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_OMIT_FRAME_POINTER_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_Oy_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_RETURN_STACK_ADDRESS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_SHADOW_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_SIZEOF_ARRAY_ARGUMENT_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_SIZEOF_ARRAY_DECAY_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_SIZEOF_ARRAY_DIV_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_SIZEOF_POINTER_DIV_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_SIZEOF_POINTER_MEMACCESS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_STD_C11_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_SUSPICIOUS_MEMACCESS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_SYSROOT_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_TRIVIAL_AUTO_INIT:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_UNINITIALIZED_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_VERSION_SCRIPT:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_VISIBILITY_HIDDEN_FLAG:INTERNAL",
+      "before": "True",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_W4_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WALL_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WBUILTIN_DECLARATION_MISMATCH_FLAG:INTERNAL",
+      "before": "False",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WC99_EXTENSIONS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WCOVERED_SWITCH_DEFAULT_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WD4146_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WD4206_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WD4221_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WD4291_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WD4391_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WD4722_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WD4800_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WERROR_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WFRAME_LARGER_THAN_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WGLOBAL_CONSTRUCTORS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WGNU_ANONYMOUS_STRUCT_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WGNU_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WNO_C2Y_EXTENSIONS:INTERNAL",
+      "before": "True",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WNO_FORMAT:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WNO_FORMAT_PEDANTIC:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WNO_PEDANTIC:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WSUGGEST_OVERRIDE_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WTHREAD_SAFETY_BETA_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WTHREAD_SAFETY_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WTHREAD_SAFETY_REFERENCE_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WUNUSED_PARAMETER_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WVARIADIC_MACROS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_WX_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_XRAY_COMPILER_FLAG:INTERNAL",
+      "before": "True",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_ZL_FLAG:INTERNAL",
+      "before": "False",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_Z_TEXT:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_Zi_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_x86_64_BFLOAT16:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HAS_x86_64_FLOAT16:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_HWASAN_WITH_INTERCEPTORS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_INCLUDE_TESTS:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_INSTALL_BINARY_DIR:PATH",
+      "before": "bin/../lib64/clang/22/bin",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_INSTALL_DATA_DIR:PATH",
+      "before": "bin/../lib64/clang/22/share",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_INSTALL_INCLUDE_DIR:PATH",
+      "before": "bin/../lib64/clang/22/include",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_INSTALL_LIBRARY_DIR:PATH",
+      "before": "bin/../lib64/clang/22/lib/linux",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_INTERCEPT_LIBDISPATCH:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_LIBATOMIC_USE_PTHREAD:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_LIBDISPATCH_INSTALL_PATH:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_PROFILE_BAREMETAL:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_SANITIZERS_TO_BUILD:STRING",
+      "before": "all",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_SCUDO_STANDALONE_BUILD_SHARED-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_SCUDO_STANDALONE_BUILD_SHARED:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_SCUDO_STANDALONE_SYSROOT_PATH-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_SCUDO_STANDALONE_SYSROOT_PATH:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_STATIC_CXX_LIBRARY:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_TARGET_HAS_ATOMICS:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_TARGET_HAS_FCNTL_LCK:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_TARGET_HAS_FLOCK:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_TARGET_HAS_UNAME:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_TEST_STANDALONE_BUILD_LIBS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_USE_ATOMIC_LIBRARY:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_USE_BUILTINS_LIBRARY:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_USE_LIBCXX:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "COMPILER_RT_USE_LLVM_UNWINDER:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "CURSES_CURSES_LIBRARY-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CURSES_CURSES_LIBRARY:FILEPATH",
+      "before": "CURSES_CURSES_LIBRARY-NOTFOUND",
+      "after": null
+    },
+    {
+      "key": "CURSES_EXTRA_LIBRARY-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CURSES_EXTRA_LIBRARY:FILEPATH",
+      "before": "/usr/lib64/libtinfo.so",
+      "after": null
+    },
+    {
+      "key": "CURSES_FORM_LIBRARY-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CURSES_FORM_LIBRARY:FILEPATH",
+      "before": "/usr/lib64/libform.so",
+      "after": null
+    },
+    {
+      "key": "CURSES_HAS_TINFO-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CURSES_HAS_TINFO:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CURSES_INCLUDE_PATH-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CURSES_INCLUDE_PATH:PATH",
+      "before": "/usr/include",
+      "after": null
+    },
+    {
+      "key": "CURSES_NCURSES_HAS_CBREAK:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CURSES_NCURSES_HAS_NODELAY:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CURSES_NCURSES_LIBRARY-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CURSES_NCURSES_LIBRARY:FILEPATH",
+      "before": "/usr/lib64/libncurses.so",
+      "after": null
+    },
+    {
+      "key": "CXX_SUPPORTS_CUSTOM_LINKER:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "CXX_SUPPORTS_STRINGOP_TRUNCATION:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "CXX_SUPPORTS_UNWINDLIB_NONE_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "C_INCLUDE_DIRS:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "C_SUPPORTS_NODEFAULTLIBS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "DEFAULT_SYSROOT:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "DOXYGEN_DOT_EXECUTABLE-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "DOXYGEN_DOT_EXECUTABLE:FILEPATH",
+      "before": "DOXYGEN_DOT_EXECUTABLE-NOTFOUND",
+      "after": null
+    },
+    {
+      "key": "DOXYGEN_EXECUTABLE-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "DOXYGEN_EXECUTABLE:FILEPATH",
+      "before": "DOXYGEN_EXECUTABLE-NOTFOUND",
+      "after": null
+    },
+    {
+      "key": "ENABLE_LINKER_BUILD_ID:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "ENABLE_X86_RELAX_RELOCATIONS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "FBSDVMCore_DIR:PATH",
+      "before": "FBSDVMCore_DIR-NOTFOUND",
+      "after": null
+    },
+    {
+      "key": "FIND_PACKAGE_MESSAGE_DETAILS_CursesAndPanel:INTERNAL",
+      "before": "[/usr/include][/usr/lib64/libncurses.so;/usr/lib64/libtinfo.so;/usr/lib64/libform.so][/usr/lib64/libpanel.so][$<OR:$<BOOL:>,$<BOOL:1>>][v()]",
+      "after": null
+    },
+    {
+      "key": "FIND_PACKAGE_MESSAGE_DETAILS_LibLZMA:INTERNAL",
+      "before": "[/usr/lib64/liblzma.so][/usr/include][1][1][1][v5.8.1()]",
+      "after": null
+    },
+    {
+      "key": "FIND_PACKAGE_MESSAGE_DETAILS_LibXml2:INTERNAL",
+      "before": "[/usr/lib64/libxml2.so][/usr/include/libxml2][v2.15.1(2.8)]",
+      "after": "[/usr/lib64/libxml2.so][/usr/include/libxml2][v2.15.1()]"
+    },
+    {
+      "key": "FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL",
+      "before": "[/bin/python3.14][cfound components: Interpreter ][v3.14.2()]",
+      "after": "[/bin/python3.14][cfound components: Interpreter ][v3.14.2(3.8)]"
+    },
+    {
+      "key": "GCC_INSTALL_PREFIX:PATH",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "GDB_FOUND:FILEPATH",
+      "before": "GDB_FOUND-NOTFOUND",
+      "after": null
+    },
+    {
+      "key": "GNU_LD_EXECUTABLE:FILEPATH",
+      "before": "/bin/ld.bfd",
+      "after": null
+    },
+    {
+      "key": "GRPC_INSTALL_PATH:PATH",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "HAS_THREAD_LOCAL:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "HAS_i386_DEF:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "HAVE_ACCEPT4:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "HAVE_INOTIFY:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "HAVE_LIBCOMPRESSION:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "HAVE_LINKER_FLAG_LONG_PLT:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "HAVE_NR_PROCESS_VM_READV:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "HAVE_PPOLL:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "HAVE_PROCESS_VM_READV:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "HAVE_PTSNAME_R:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "HAVE_RPC_XDR_H:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "HAVE_SYS_EVENT_H:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "HAVE_TERMIOS_H:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "HAVE_UNWIND_H:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBARCHER_HAVE_BUILTIN_ATOMIC:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBARCHER_HAVE_LIBATOMIC:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBARCHER_TEST_FLAGS:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBCLANG_BUILD_STATIC:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LIBCLANG_LIBRARY_VERSION-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBCLANG_LIBRARY_VERSION:STRING",
+      "before": "22",
+      "after": null
+    },
+    {
+      "key": "LIBLZMA_HAS_AUTO_DECODER:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBLZMA_HAS_EASY_ENCODER:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBLZMA_HAS_LZMA_PRESET:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBLZMA_INCLUDE_DIR-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBLZMA_INCLUDE_DIR:PATH",
+      "before": "/usr/include",
+      "after": null
+    },
+    {
+      "key": "LIBLZMA_LIBRARY_DEBUG-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBLZMA_LIBRARY_DEBUG:FILEPATH",
+      "before": "LIBLZMA_LIBRARY_DEBUG-NOTFOUND",
+      "after": null
+    },
+    {
+      "key": "LIBLZMA_LIBRARY_RELEASE-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBLZMA_LIBRARY_RELEASE:FILEPATH",
+      "before": "/usr/lib64/liblzma.so",
+      "after": null
+    },
+    {
+      "key": "LIBOMPD_LD_STD_FLAGS:BOOL",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMPTARGET_OPENMP_HEADER_FOLDER:STRING",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/projects/openmp/runtime/src",
+      "after": null
+    },
+    {
+      "key": "LIBOMPTARGET_OPENMP_HOST_RTL_FOLDER:STRING",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/./lib64",
+      "after": null
+    },
+    {
+      "key": "LIBOMPTEST_BUILD_STANDALONE:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LIBOMPTEST_BUILD_UNITTESTS:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LIBOMPTEST_INSTALL_COMPONENTS:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_ARCHER_SUPPORT:BOOL",
+      "before": "TRUE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_ASMFLAGS:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_COPY_EXPORTS:STRING",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_CPPFLAGS:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_CXXFLAGS:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_ENABLE_SHARED:BOOL",
+      "before": "TRUE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_FFLAGS:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_FORTRAN_MODULES:BOOL",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_ALIGNED_ALLOC:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_AS_NEEDED_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_ATTRIBUTE_RTM:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_ATTRIBUTE_WAITPKG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_BUILTIN_ATOMIC:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_FNO_EXCEPTIONS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_FNO_RTTI_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_FTLS_MODEL_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_IMMINTRIN_H:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_LIBATOMIC:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_LIBM:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_M32_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_MMIC_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_MSSE2_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_POSIX_MEMALIGN:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_PSAPI:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_PTHREAD_SETNAME_NP:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_PTHREAD_SET_NAME_NP:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_RTM_INTRINSICS:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_SHM_OPEN_NO_LRT:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_STATIC_LIBGCC_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_VERSION_SCRIPT_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_VERSION_SYMBOLS:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WAITPKG_INTRINSICS:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WCAST_QUAL_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WCLASS_MEMACCESS_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WCOVERED_SWITCH_DEFAULT_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WEAK_ATTRIBUTE:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WFRAME_ADDRESS_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WINT_TO_VOID_POINTER_CAST_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WRETURN_TYPE_C_LINKAGE_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WSTRICT_ALIASING_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WSTRINGOP_OVERFLOW_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WSTRINGOP_TRUNCATION_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WSWITCH_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_WUNINITIALIZED_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_XMMINTRIN_H:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_X_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE_Z_NOEXECSTACK_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE__ALIGNED_MALLOC:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE__MM_MALLOC:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HAVE___BUILTIN_FRAME_ADDRESS:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_HWLOC_INSTALL_DIR:PATH",
+      "before": "/usr/local",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_INSTALL_ALIASES:BOOL",
+      "before": "TRUE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_LDFLAGS:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_LIBFLAGS:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_LIB_NAME:STRING",
+      "before": "libomp",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_LIB_TYPE:STRING",
+      "before": "normal",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_MIC_ARCH:STRING",
+      "before": "knc",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_OMPD_GDB_SUPPORT:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_OMPD_SUPPORT:BOOL",
+      "before": "TRUE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_OMPT_DEBUG:BOOL",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_OMPT_OPTIONAL:BOOL",
+      "before": "TRUE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_OMPT_SUPPORT:BOOL",
+      "before": "TRUE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_OMPX_TASKGRAPH:BOOL",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_OSX_ARCHITECTURES:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_SHELL:FILEPATH",
+      "before": "/bin/sh",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_STATS:BOOL",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_USE_ADAPTIVE_LOCKS:BOOL",
+      "before": "TRUE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_USE_DEBUGGER:BOOL",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_USE_HIER_SCHED:BOOL",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_USE_HWLOC:BOOL",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_USE_INTERNODE_ALIGNMENT:BOOL",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_USE_ITT_NOTIFY:BOOL",
+      "before": "TRUE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_USE_QUAD_PRECISION:BOOL",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_USE_STDCPPLIB:BOOL",
+      "before": "FALSE",
+      "after": null
+    },
+    {
+      "key": "LIBOMP_USE_VERSION_SYMBOLS:BOOL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LINKER_SUPPORTS_COLOR_DIAGNOSTICS:INTERNAL",
+      "before": "1",
+      "after": ""
+    },
+    {
+      "key": "LLDB_BUILD_FRAMEWORK:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LLDB_BUILD_INTEL_MPX:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "LLDB_BUILD_INTEL_PT:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LLDB_ENABLE_CURSES:STRING",
+      "before": "Auto",
+      "after": null
+    },
+    {
+      "key": "LLDB_ENABLE_FBSDVMCORE:STRING",
+      "before": "Auto",
+      "after": null
+    },
+    {
+      "key": "LLDB_ENABLE_LIBEDIT:STRING",
+      "before": "Auto",
+      "after": null
+    },
+    {
+      "key": "LLDB_ENABLE_LIBXML2:STRING",
+      "before": "Auto",
+      "after": null
+    },
+    {
+      "key": "LLDB_ENABLE_LUA:STRING",
+      "before": "Auto",
+      "after": null
+    },
+    {
+      "key": "LLDB_ENABLE_LZMA:STRING",
+      "before": "Auto",
+      "after": null
+    },
+    {
+      "key": "LLDB_ENABLE_PROTOCOL_SERVERS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "LLDB_ENABLE_PYTHON:STRING",
+      "before": "Auto",
+      "after": null
+    },
+    {
+      "key": "LLDB_ENABLE_SWIG:STRING",
+      "before": "Auto",
+      "after": null
+    },
+    {
+      "key": "LLDB_ENFORCE_STRICT_TEST_REQUIREMENTS:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LLDB_EXPORT_ALL_SYMBOLS:BOOL",
+      "before": "0",
+      "after": null
+    },
+    {
+      "key": "LLDB_EXPORT_ALL_SYMBOLS_EXPORTS_FILE:PATH",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LLDB_GENERATE_PLUGIN_DEP_GRAPH:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LLDB_GLOBAL_INIT_DIRECTORY:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LLDB_INCLUDE_TESTS:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LLDB_LIBXML2_VERSION-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LLDB_LIBXML2_VERSION:STRING",
+      "before": "2.8",
+      "after": null
+    },
+    {
+      "key": "LLDB_NO_INSTALL_DEFAULT_RPATH:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LLDB_SKIP_DSYM:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LLDB_SKIP_STRIP:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LLDB_TABLEGEN:STRING",
+      "before": "lldb-tblgen",
+      "after": null
+    },
+    {
+      "key": "LLDB_TOOL_LLDB_DAP_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "LLDB_TOOL_LLDB_INSTR_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "LLDB_TOOL_LLDB_MCP_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "LLDB_TOOL_LLDB_SERVER_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "LLDB_TOOL_YAML2MACHO_CORE_BUILD:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "LLDB_USE_ENTITLEMENTS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "LLDB_USE_SYSTEM_DEBUGSERVER:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LLD_BUILD_TOOLS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "LLD_DEFAULT_LD_LLD_IS_MINGW:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LLD_INSTALL_PACKAGE_DIR:STRING",
+      "before": "lib64/cmake/lld",
+      "after": null
+    },
+    {
+      "key": "LLD_TOOLS_INSTALL_DIR-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "LLD_TOOLS_INSTALL_DIR:PATH",
+      "before": "bin",
+      "after": null
+    },
+    {
+      "key": "LLD_USE_VTUNE:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "LLD_VENDOR:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "LLVM_BINUTILS_INCDIR:PATH",
+      "before": "/usr/include",
+      "after": ""
+    },
+    {
+      "key": "LLVM_BUILD_LLVM_DYLIB:BOOL",
+      "before": "ON",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_BYE_LINK_INTO_TOOLS:BOOL",
+      "before": null,
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_DEFAULT_TARGET_TRIPLE:STRING",
+      "before": "x86_64-tizen-linux-gnu",
+      "after": "x86_64-unknown-linux-gnu"
+    },
+    {
+      "key": "LLVM_ENABLE_ASSERTIONS:BOOL",
+      "before": "No",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_ENABLE_LTO:STRING",
+      "before": "Thin",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_ENABLE_PER_TARGET_RUNTIME_DIR:BOOL",
+      "before": "OFF",
+      "after": "ON"
+    },
+    {
+      "key": "LLVM_ENABLE_PROJECTS:STRING",
+      "before": "clang;lldb;clang-tools-extra;lld;compiler-rt;openmp",
+      "after": ""
+    },
+    {
+      "key": "LLVM_ENABLE_PROJECTS_USED:BOOL",
+      "before": "ON",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_ENABLE_RTTI:BOOL",
+      "before": "ON",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_EXAMPLEIRTRANSFORMS_LINK_INTO_TOOLS:BOOL",
+      "before": null,
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_EXTERNAL_CLANG_SOURCE_DIR:PATH",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/../clang",
+      "after": ""
+    },
+    {
+      "key": "LLVM_EXTERNAL_CLANG_TOOLS_EXTRA_SOURCE_DIR:PATH",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/../clang-tools-extra",
+      "after": null
+    },
+    {
+      "key": "LLVM_EXTERNAL_COMPILER_RT_SOURCE_DIR:PATH",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/../compiler-rt",
+      "after": ""
+    },
+    {
+      "key": "LLVM_EXTERNAL_CROSS_PROJECT_TESTS_SOURCE_DIR:PATH",
+      "before": null,
+      "after": ""
+    },
+    {
+      "key": "LLVM_EXTERNAL_LLDB_SOURCE_DIR:PATH",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/../lldb",
+      "after": ""
+    },
+    {
+      "key": "LLVM_EXTERNAL_LLD_SOURCE_DIR:PATH",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/../lld",
+      "after": ""
+    },
+    {
+      "key": "LLVM_EXTERNAL_OPENMP_SOURCE_DIR:PATH",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/../openmp",
+      "after": ""
+    },
+    {
+      "key": "LLVM_GTEST_RUN_UNDER:STRING",
+      "before": null,
+      "after": ""
+    },
+    {
+      "key": "LLVM_HAVE_TF_AOT:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "LLVM_HOST_TRIPLE:STRING",
+      "before": "x86_64-tizen-linux-gnu",
+      "after": "x86_64-unknown-linux-gnu"
+    },
+    {
+      "key": "LLVM_INCLUDE_DOCS:BOOL",
+      "before": "OFF",
+      "after": "ON"
+    },
+    {
+      "key": "LLVM_INCLUDE_EXAMPLES:BOOL",
+      "before": "OFF",
+      "after": "ON"
+    },
+    {
+      "key": "LLVM_INCLUDE_TESTS:BOOL",
+      "before": "OFF",
+      "after": "ON"
+    },
+    {
+      "key": "LLVM_INLINER_MODEL_CURRENT_URL:STRING",
+      "before": "<UNSPECIFIED>",
+      "after": null
+    },
+    {
+      "key": "LLVM_INSTALL_PACKAGE_DIR:STRING",
+      "before": "lib64/cmake/llvm",
+      "after": "lib/cmake/llvm"
+    },
+    {
+      "key": "LLVM_LIBDIR_SUFFIX:STRING",
+      "before": "64",
+      "after": ""
+    },
+    {
+      "key": "LLVM_LINKER_IS_GNULD:INTERNAL",
+      "before": null,
+      "after": "YES"
+    },
+    {
+      "key": "LLVM_LINKER_IS_LLD:INTERNAL",
+      "before": "YES",
+      "after": null
+    },
+    {
+      "key": "LLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS:STRING",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/xla_compiled_cpu_function.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/cpu_function_runtime.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/custom_call_status.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/executable_run_options.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o",
+      "after": ""
+    },
+    {
+      "key": "LLVM_MLGO_EXPORT_TF_XLA_RUNTIME:BOOL",
+      "before": "OFF",
+      "after": "ON"
+    },
+    {
+      "key": "LLVM_OPTIMIZED_TABLEGEN:BOOL",
+      "before": "ON",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL:UNINITIALIZED",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.h",
+      "after": null
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL:UNINITIALIZED",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.h",
+      "after": null
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL:UNINITIALIZED",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.o",
+      "after": null
+    },
+    {
+      "key": "LLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL:UNINITIALIZED",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.o",
+      "after": null
+    },
+    {
+      "key": "LLVM_PARALLEL_COMPILE_JOBS:STRING",
+      "before": "6",
+      "after": ""
+    },
+    {
+      "key": "LLVM_PARALLEL_LINK_JOBS:STRING",
+      "before": "2",
+      "after": ""
+    },
+    {
+      "key": "LLVM_RAEVICT_MODEL_CURRENT_URL:STRING",
+      "before": "<UNSPECIFIED>",
+      "after": null
+    },
+    {
+      "key": "LLVM_TARGETS_TO_BUILD:STRING",
+      "before": "X86;ARM;AArch64;BPF",
+      "after": "all"
+    },
+    {
+      "key": "LLVM_TARGET_TRIPLE_ENV:STRING",
+      "before": "x86_64-tizen-linux-gnu",
+      "after": ""
+    },
+    {
+      "key": "LLVM_TOOL_BOLT_BUILD:BOOL",
+      "before": "FALSE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_TOOL_CLANG_BUILD:BOOL",
+      "before": "TRUE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_TOOL_CLANG_TOOLS_EXTRA_BUILD:BOOL",
+      "before": "TRUE",
+      "after": null
+    },
+    {
+      "key": "LLVM_TOOL_COMPILER_RT_BUILD:BOOL",
+      "before": "TRUE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_TOOL_CROSS_PROJECT_TESTS_BUILD:BOOL",
+      "before": "FALSE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_TOOL_FLANG_BUILD:BOOL",
+      "before": "FALSE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_TOOL_LIBCLC_BUILD:BOOL",
+      "before": "FALSE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_TOOL_LIBC_BUILD:BOOL",
+      "before": "FALSE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_TOOL_LLDB_BUILD:BOOL",
+      "before": "TRUE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_TOOL_LLD_BUILD:BOOL",
+      "before": "TRUE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_TOOL_MLIR_BUILD:BOOL",
+      "before": "FALSE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_TOOL_OPENMP_BUILD:BOOL",
+      "before": "TRUE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_TOOL_POLLY_BUILD:BOOL",
+      "before": "FALSE",
+      "after": "OFF"
+    },
+    {
+      "key": "LLVM_USE_LINKER:UNINITIALIZED",
+      "before": "lld",
+      "after": null
+    },
+    {
+      "key": "NCURSES_CFLAGS:INTERNAL",
+      "before": "-D_DEFAULT_SOURCE;-D_XOPEN_SOURCE=600;-I/usr/include/ncurses",
+      "after": null
+    },
+    {
+      "key": "NCURSES_CFLAGS_I:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_CFLAGS_OTHER:INTERNAL",
+      "before": "-D_DEFAULT_SOURCE;-D_XOPEN_SOURCE=600",
+      "after": null
+    },
+    {
+      "key": "NCURSES_FOUND:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "NCURSES_INCLUDEDIR:INTERNAL",
+      "before": "/usr/include/ncurses",
+      "after": null
+    },
+    {
+      "key": "NCURSES_INCLUDE_DIRS:INTERNAL",
+      "before": "/usr/include/ncurses",
+      "after": null
+    },
+    {
+      "key": "NCURSES_LDFLAGS:INTERNAL",
+      "before": "-Wl,-O2,-Bsymbolic-functions,--as-needed;-lncurses;-ltinfo",
+      "after": null
+    },
+    {
+      "key": "NCURSES_LDFLAGS_OTHER:INTERNAL",
+      "before": "-Wl,-O2,-Bsymbolic-functions,--as-needed",
+      "after": null
+    },
+    {
+      "key": "NCURSES_LIBDIR:INTERNAL",
+      "before": "/usr/lib64",
+      "after": null
+    },
+    {
+      "key": "NCURSES_LIBRARIES:INTERNAL",
+      "before": "ncurses;tinfo",
+      "after": null
+    },
+    {
+      "key": "NCURSES_LIBRARY_DIRS:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_LIBS:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_LIBS_L:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_LIBS_OTHER:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_LIBS_PATHS:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_MODULE_NAME:INTERNAL",
+      "before": "ncurses",
+      "after": null
+    },
+    {
+      "key": "NCURSES_PREFIX:INTERNAL",
+      "before": "/usr",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_CFLAGS:INTERNAL",
+      "before": "-D_DEFAULT_SOURCE;-D_XOPEN_SOURCE=600;-I/usr/include/ncurses",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_CFLAGS_I:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_CFLAGS_OTHER:INTERNAL",
+      "before": "-D_DEFAULT_SOURCE;-D_XOPEN_SOURCE=600",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_INCLUDE_DIRS:INTERNAL",
+      "before": "/usr/include/ncurses",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_LDFLAGS:INTERNAL",
+      "before": "-Wl,-O2,-Bsymbolic-functions,--as-needed;-lncurses;-ltinfo;-lpthread",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_LDFLAGS_OTHER:INTERNAL",
+      "before": "-Wl,-O2,-Bsymbolic-functions,--as-needed",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_LIBDIR:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_LIBRARIES:INTERNAL",
+      "before": "ncurses;tinfo;pthread",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_LIBRARY_DIRS:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_LIBS:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_LIBS_L:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_LIBS_OTHER:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_STATIC_LIBS_PATHS:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_VERSION:INTERNAL",
+      "before": "6.6.20251230",
+      "after": null
+    },
+    {
+      "key": "NCURSES_ncurses_INCLUDEDIR:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_ncurses_LIBDIR:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_ncurses_PREFIX:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "NCURSES_ncurses_VERSION:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "OMPT_LOAD_CLIENT_TEST_CFLAGS:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "OPENMP_ENABLE_LIBOMPTARGET:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "OPENMP_ENABLE_LIBOMP_PROFILING:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "OPENMP_ENABLE_OMPT_TOOLS:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_COLOR_DIAGNOSTICS:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_DATA_SECTIONS:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_FUNCTION_SECTIONS:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_NO_SEMANTIC_INTERPOSITION:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_ONEAPI_COMPILER:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_WALL_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_WCAST_QUAL_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_WERROR_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_WEXTRA_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_WFORMAT_PEDANTIC_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_WIMPLICIT_FALLTHROUGH_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_WMAYBE_UNINITIALIZED_FLAG:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_WPEDANTIC_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_HAVE_WSIGN_COMPARE_FLAG:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_INSTALL_LIBDIR:STRING",
+      "before": "lib64",
+      "after": null
+    },
+    {
+      "key": "OPENMP_MSVC_NAME_SCHEME:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "OPENMP_TEST_CXX_COMPILER:STRING",
+      "before": "/bin/clang++",
+      "after": null
+    },
+    {
+      "key": "OPENMP_TEST_C_COMPILER:STRING",
+      "before": "/bin/clang",
+      "after": null
+    },
+    {
+      "key": "OPENMP_TEST_ENABLE_TSAN:BOOL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "OPENMP_TEST_FLAGS:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "OPENMP_TEST_Fortran_COMPILER:STRING",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "OPENMP_TEST_OPENMP_FLAGS:STRING",
+      "before": "'-fopenmp '",
+      "after": null
+    },
+    {
+      "key": "PANEL_LIBRARIES-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "PANEL_LIBRARIES:FILEPATH",
+      "before": "/usr/lib64/libpanel.so",
+      "after": null
+    },
+    {
+      "key": "PPC_LINUX_DEFAULT_IEEELONGDOUBLE:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_AARCH64_39BIT_VA:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_ALLOW_CXXABI:BOOL",
+      "before": "ON",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_CXX_ABI-STRINGS:INTERNAL",
+      "before": "none;default;libstdc++;libc++;libcxxabi",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_CXX_ABI:STRING",
+      "before": "default",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_DISABLE_SYMBOLIZER_PATH_SEARCH-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_DISABLE_SYMBOLIZER_PATH_SEARCH:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_NO_UNDEFINED_SYMBOLS:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_TEST_CXX-STRINGS:INTERNAL",
+      "before": "none;default;libstdc++;libc++",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_TEST_CXX:STRING",
+      "before": "default",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_USE_STATIC_CXX_ABI:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_USE_STATIC_LLVM_UNWINDER:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "SANITIZER_USE_STATIC_TEST_CXX:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "SWIG_EXECUTABLE-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "SWIG_EXECUTABLE:FILEPATH",
+      "before": "SWIG_EXECUTABLE-NOTFOUND",
+      "after": null
+    },
+    {
+      "key": "TENSORFLOW_AOT_COMPILER:PATH",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/mlgo_sysroot/../../../../bin/saved_model_cli",
+      "after": null
+    },
+    {
+      "key": "TENSORFLOW_AOT_PATH:PATH",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/mlgo_sysroot",
+      "after": ""
+    },
+    {
+      "key": "TIZEN:UNINITIALIZED",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "TOOL_INFO_PLIST:STRING",
+      "before": "Info.plist",
+      "after": null
+    },
+    {
+      "key": "USE_DEPRECATED_GCC_INSTALL_PREFIX:BOOL",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX:INTERNAL",
+      "before": "/usr",
+      "after": "/usr/local"
+    },
+    {
+      "key": "_Python3_DEVELOPMENT_EMBED_SIGNATURE:INTERNAL",
+      "before": "050f84ff6018cbe751f5e6cdb1c10f5c",
+      "after": null
+    },
+    {
+      "key": "_Python3_DEVELOPMENT_MODULE_SIGNATURE:INTERNAL",
+      "before": "72a2c9bb46240cf2230673b8310f17fe",
+      "after": null
+    },
+    {
+      "key": "_Python3_INCLUDE_DIR:INTERNAL",
+      "before": "/usr/include/python3.14",
+      "after": null
+    },
+    {
+      "key": "_Python3_INTERPRETER_PROPERTIES:INTERNAL",
+      "before": "Python;3;14;2;64;<none>;cpython-314-x86_64-linux-gnu;abi3;/usr/lib64/python3.14;/usr/lib64/python3.14;/usr/lib/python3.14/site-packages;/usr/lib64/python3.14/site-packages",
+      "after": "Python;3;14;2;64;32;<none>;cpython-314-x86_64-linux-gnu;abi3;/usr/lib64/python3.14;/usr/lib64/python3.14;/usr/lib/python3.14/site-packages;/usr/lib64/python3.14/site-packages"
+    },
+    {
+      "key": "_Python3_Interpreter_REASON_FAILURE:INTERNAL",
+      "before": "",
+      "after": null
+    },
+    {
+      "key": "_Python3_LIBRARY_RELEASE:INTERNAL",
+      "before": "/usr/lib64/libpython3.14.so",
+      "after": null
+    },
+    {
+      "key": "__pkg_config_arguments_NCURSES:INTERNAL",
+      "before": "QUIET;ncurses",
+      "after": null
+    },
+    {
+      "key": "__pkg_config_checked_NCURSES:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "clang_exe:STRING",
+      "before": "$<TARGET_FILE:clang>",
+      "after": null
+    },
+    {
+      "key": "clang_target:STRING",
+      "before": "clang",
+      "after": null
+    },
+    {
+      "key": "clang_tidy_confusable_chars_gen:STRING",
+      "before": "$<TARGET_FILE:clang-tidy-confusable-chars-gen>",
+      "after": null
+    },
+    {
+      "key": "clang_tidy_confusable_chars_gen_target:STRING",
+      "before": "clang-tidy-confusable-chars-gen",
+      "after": null
+    },
+    {
+      "key": "errc_compiled:INTERNAL",
+      "before": null,
+      "after": "TRUE"
+    },
+    {
+      "key": "errc_exit_code:INTERNAL",
+      "before": null,
+      "after": "0"
+    },
+    {
+      "key": "libompd_BINARY_DIR:STATIC",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/projects/openmp/libompd/src",
+      "after": null
+    },
+    {
+      "key": "libompd_IS_TOP_LEVEL:STATIC",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "libompd_SOURCE_DIR:STATIC",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/openmp/libompd/src",
+      "after": null
+    },
+    {
+      "key": "omptest_BINARY_DIR:STATIC",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/projects/openmp/tools/omptest",
+      "after": null
+    },
+    {
+      "key": "omptest_IS_TOP_LEVEL:STATIC",
+      "before": "OFF",
+      "after": null
+    },
+    {
+      "key": "omptest_SOURCE_DIR:STATIC",
+      "before": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/openmp/tools/omptest",
+      "after": null
+    },
+    {
+      "key": "pkgcfg_lib_NCURSES_ncurses-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "pkgcfg_lib_NCURSES_ncurses:FILEPATH",
+      "before": "/usr/lib64/libncurses.so",
+      "after": null
+    },
+    {
+      "key": "pkgcfg_lib_NCURSES_tinfo-ADVANCED:INTERNAL",
+      "before": "1",
+      "after": null
+    },
+    {
+      "key": "pkgcfg_lib_NCURSES_tinfo:FILEPATH",
+      "before": "/usr/lib64/libtinfo.so",
+      "after": null
+    },
+    {
+      "key": "prefix_result:INTERNAL",
+      "before": "/usr/lib64",
+      "after": "/usr//usr/lib64"
+    },
+    {
+      "key": "unifdef_EXECUTABLE:FILEPATH",
+      "before": "unifdef_EXECUTABLE-NOTFOUND",
+      "after": null
+    }
+  ],
+  "cache_change_count": 664,
+  "restored_cache_sha256": "17f7fbc72b14f6b1a5116aa17622e0af244fe84f2e72ef1e32bba61d3ca32876",
+  "restored_ninja_sha256": "c0068a3e42ae3b4303357000ddb6f30a0f72d46da704128277a052953ead4d42",
+  "build_ninja_diff_bytes": 59160293,
+  "build_ninja_diff_sha256": "7eadf3257d8cdc72a1a7ef81f8baf6b08e1305379f5e59217bd3e415b629a41d",
+  "ninja_dry_run": "NOT_RUN; restoration critical-key gate failed",
+  "tree_restored": false,
+  "candidate_route": "NOT_SELECTED",
+  "candidate_final_sha256": null,
+  "object_validation": "NOT_RUN",
+  "dual_mode": "NOT_RUN",
+  "expected_RPM_DWARF_diff": "NOT_RUN",
+  "performance": "NOT_RUN; geometric mean unknown",
+  "sandbox_push": "NOT_ATTEMPTED",
+  "preparatory_corrections": [
+    {
+      "class": "cache-delta-classifier",
+      "attempt": 1,
+      "result": "corrected; exact17 BOLT directories prove derived count; temp gate PASS"
+    }
+  ],
+  "protected_inputs": [
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/SOURCES/llvm.spec",
+      "bytes": 22656,
+      "sha256": "822f22fe7a5a7d9cbebfdcae202d5d43cf428f05693070a60e4369517e8f3cd9"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/SOURCES/llvm-static-archives-native.py",
+      "bytes": 45786,
+      "sha256": "c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/clang-22",
+      "bytes": 1793485264,
+      "sha256": "7df0ff90dbca7f99ed6a642546281584dbfaab1528a94abf7a1bb524ca371b2c"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-ar",
+      "bytes": 121871272,
+      "sha256": "69519da7d070c510c2984f15b1c566559e5b2733f2e44ddceae1394512660be2"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/lld",
+      "bytes": 1079529040,
+      "sha256": "2f169e5ba321691c9910cecf9a25c2f4d01dde41da4de43993e0507b5a443b0d"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/clang-22.1.8-1.x86_64.rpm",
+      "bytes": 310005746,
+      "sha256": "d1e5cac296eb0744ac2722d904f4cfd415e58b505ba002f98bb6fa67fe1b66ed"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/clang-debuginfo-22.1.8-1.x86_64.rpm",
+      "bytes": 2928268018,
+      "sha256": "dfb0f2b487c77cb1aea3a41d203c2bb0ce193e8634e6e962f0bf3a547994a71e"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/clang-devel-22.1.8-1.x86_64.rpm",
+      "bytes": 4098954,
+      "sha256": "f15b23c5457f417d0cee1d62248d45dba4e12805609919921336c769a9aad62e"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/clang-devel-debuginfo-22.1.8-1.x86_64.rpm",
+      "bytes": 5730302,
+      "sha256": "b99cb48cfadbb409ea0e276db4ac492b68ae2af0261e39ff9ac7418f96278f07"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/compiler-rt-22.1.8-1.x86_64.rpm",
+      "bytes": 3786278,
+      "sha256": "1566ea95539a15ca5fe866fe4afac8dc1f25c06986cbbbcad05022b4cb07807e"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/compiler-rt-debuginfo-22.1.8-1.x86_64.rpm",
+      "bytes": 1288074,
+      "sha256": "7be800c5b1c5c569467575749634c7d23369e54df8af5372ceedf029df47fe68"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/libllvm-22.1.8-1.x86_64.rpm",
+      "bytes": 23651318,
+      "sha256": "5ecb4b77600fbe83aad8686efa8c6e42511388beefa3fdcab48c1a43b010e039"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/libllvm-debuginfo-22.1.8-1.x86_64.rpm",
+      "bytes": 198054338,
+      "sha256": "71a91ec71aa253e9db2e1fc8a5a460b5f3b088e838afdd321b4143b110ee8a8c"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/libomp-22.1.8-1.x86_64.rpm",
+      "bytes": 373658,
+      "sha256": "28a59e1aa728346ce92870a4261621339e2c604e6208136b57316c2e418b3f03"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/libomp-debuginfo-22.1.8-1.x86_64.rpm",
+      "bytes": 1142626,
+      "sha256": "9f9543d833a53c7db38f06a5a7465a10a05cc3e78fdc56db1e9f7b3c515d9213"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/libomp-devel-22.1.8-1.x86_64.rpm",
+      "bytes": 25470,
+      "sha256": "b4f4624e8f732e0615b3aa460406f458ed9ecda314bbbba89fa4824cfc817a16"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/lldb-22.1.8-1.x86_64.rpm",
+      "bytes": 30772842,
+      "sha256": "804fd63f9d1421d5f853f2c0a3c0d8e3f17cfdcd124239fe2c643ab5fb353cbf"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/lldb-debuginfo-22.1.8-1.x86_64.rpm",
+      "bytes": 332831986,
+      "sha256": "ce810b31e49eb24ef68e3661362f8cdebc8873e9f52916bcde08288f2e20c6df"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/lldb-devel-22.1.8-1.x86_64.rpm",
+      "bytes": 30517826,
+      "sha256": "6fede95403aa1ce02251fdb6b33fb40cb92fd5c77f503fbe2de2eadb014c3e38"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/lldb-devel-debuginfo-22.1.8-1.x86_64.rpm",
+      "bytes": 279572642,
+      "sha256": "26766352a6f85dfb70ec82821314d2f251d7be4875c7125a4ca205b9b2accad1"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-22.1.8-1.x86_64.rpm",
+      "bytes": 410603834,
+      "sha256": "4f3e419210909517c9665da8e59d0abbef7341008d8597442b6a179cd0692fe0"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-debuginfo-22.1.8-1.x86_64.rpm",
+      "bytes": 3842582214,
+      "sha256": "adc25a671c4f383be0cfe947a790618765bc40cd6de20736dcf5a7a8d26000e4"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-debugsource-22.1.8-1.x86_64.rpm",
+      "bytes": 43652310,
+      "sha256": "72ac2533efb5bae4d1c4f67446d540f4645168678e569b6e4b2e063dcbb12374"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-devel-22.1.8-1.x86_64.rpm",
+      "bytes": 41191590,
+      "sha256": "ccc57f0a314ca8744d326404aa4b64f66221671bde96d285c6bdd86db75f2af9"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-devel-debuginfo-22.1.8-1.x86_64.rpm",
+      "bytes": 308615178,
+      "sha256": "b1ef1fda0081a0f0f777e2ac970807121df2fc03eb78c91c1b553ea6ffe06d6d"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/llvm-static-devel-22.1.8-1.x86_64.rpm",
+      "bytes": 59584342,
+      "sha256": "b7c88d43127e7ca4135d411cbf9ec9b3981910d16a1c81497d4427666b9628e3"
+    },
+    {
+      "path": "/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/python-clang-22.1.8-1.x86_64.rpm",
+      "bytes": 36382,
+      "sha256": "f4f665175a081bfeca3d65c1f199c6a92f37e736ddf39b4e0458d865e59b9bbc"
+    }
+  ],
+  "RPMs_preserved": 22,
+  "archive_evidence_metadata_equal": true,
+  "source_unchanged": true,
+  "shared_lock_acquired": false,
+  "proc_remaining": false,
+  "resources": {
+    "setup": {
+      "status": "PASS",
+      "scope_wall_s": 10.043272673996398,
+      "cgroup_peak_bytes": 464601088,
+      "process_VmHWM": [
+        {
+          "pid": 779247,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12600
+        },
+        {
+          "pid": 779250,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 201148
+        }
+      ],
+      "minimum_host_MemAvailable": 18102181888,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "temporary": {
+      "status": "FAIL",
+      "scope_wall_s": 40.632784012006596,
+      "cgroup_peak_bytes": 764272640,
+      "process_VmHWM": [
+        {
+          "pid": 779384,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12604
+        },
+        {
+          "pid": 779387,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 178580
+        },
+        {
+          "pid": 779388,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7352
+        },
+        {
+          "pid": 779389,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2392
+        },
+        {
+          "pid": 779399,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12048
+        },
+        {
+          "pid": 779402,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 307016
+        },
+        {
+          "pid": 779421,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 18116
+        },
+        {
+          "pid": 779522,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3952
+        },
+        {
+          "pid": 779524,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2284
+        },
+        {
+          "pid": 779525,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43272
+        },
+        {
+          "pid": 779526,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 35136
+        },
+        {
+          "pid": 779697,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 779866,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 208
+        },
+        {
+          "pid": 780028,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3772
+        },
+        {
+          "pid": 780029,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 47928
+        },
+        {
+          "pid": 780386,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 2668
+        },
+        {
+          "pid": 780535,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3764
+        },
+        {
+          "pid": 780536,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 61568
+        },
+        {
+          "pid": 780691,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3728
+        },
+        {
+          "pid": 780796,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3920
+        },
+        {
+          "pid": 780798,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2336
+        },
+        {
+          "pid": 780799,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43480
+        },
+        {
+          "pid": 780800,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 30336
+        },
+        {
+          "pid": 780933,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3940
+        },
+        {
+          "pid": 780935,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2300
+        },
+        {
+          "pid": 780936,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 43488
+        },
+        {
+          "pid": 781145,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 28368
+        },
+        {
+          "pid": 781291,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3956
+        },
+        {
+          "pid": 781293,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2368
+        },
+        {
+          "pid": 781294,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 43488
+        },
+        {
+          "pid": 781295,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 63780
+        },
+        {
+          "pid": 781581,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 781583,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2204
+        },
+        {
+          "pid": 781584,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 8164
+        },
+        {
+          "pid": 781915,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3964
+        },
+        {
+          "pid": 781917,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2260
+        },
+        {
+          "pid": 781918,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43168
+        },
+        {
+          "pid": 781919,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 33276
+        },
+        {
+          "pid": 782265,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3964
+        },
+        {
+          "pid": 782267,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2304
+        },
+        {
+          "pid": 782268,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 34252
+        },
+        {
+          "pid": 782982,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 552
+        },
+        {
+          "pid": 783116,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3804
+        },
+        {
+          "pid": 783118,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2336
+        },
+        {
+          "pid": 783119,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 783466,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 16
+        },
+        {
+          "pid": 783629,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3900
+        },
+        {
+          "pid": 783631,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2308
+        },
+        {
+          "pid": 783632,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 43496
+        },
+        {
+          "pid": 783633,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 35548
+        },
+        {
+          "pid": 783863,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 23032
+        },
+        {
+          "pid": 784015,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3788
+        },
+        {
+          "pid": 784016,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 5848
+        },
+        {
+          "pid": 784319,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 784321,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2228
+        },
+        {
+          "pid": 784481,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3936
+        },
+        {
+          "pid": 784483,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2380
+        },
+        {
+          "pid": 784484,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 7752
+        },
+        {
+          "pid": 784643,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3780
+        },
+        {
+          "pid": 784932,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 785079,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3776
+        },
+        {
+          "pid": 785080,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 6192
+        },
+        {
+          "pid": 785160,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3776
+        },
+        {
+          "pid": 785161,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 84528
+        },
+        {
+          "pid": 785248,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3808
+        },
+        {
+          "pid": 785249,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 44944
+        },
+        {
+          "pid": 785510,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3968
+        },
+        {
+          "pid": 785512,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2400
+        },
+        {
+          "pid": 785513,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 5080
+        },
+        {
+          "pid": 785719,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3656
+        },
+        {
+          "pid": 785859,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 20
+        },
+        {
+          "pid": 786147,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 786290,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 786408,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3776
+        },
+        {
+          "pid": 786409,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 51808
+        },
+        {
+          "pid": 786453,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3784
+        },
+        {
+          "pid": 786454,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 65640
+        },
+        {
+          "pid": 786538,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7340
+        },
+        {
+          "pid": 786539,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2372
+        },
+        {
+          "pid": 786546,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 11948
+        },
+        {
+          "pid": 786549,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 78080
+        },
+        {
+          "pid": 786550,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7384
+        },
+        {
+          "pid": 786551,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2364
+        },
+        {
+          "pid": 786558,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 11940
+        },
+        {
+          "pid": 786561,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 299680
+        },
+        {
+          "pid": 786589,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 34548
+        },
+        {
+          "pid": 786603,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3732
+        },
+        {
+          "pid": 786604,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 62208
+        }
+      ],
+      "minimum_host_MemAvailable": 17981403136,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "temporary-corrected": {
+      "status": "PASS",
+      "scope_wall_s": 40.6349838909955,
+      "cgroup_peak_bytes": 434454528,
+      "process_VmHWM": [
+        {
+          "pid": 786879,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12676
+        },
+        {
+          "pid": 786882,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 199508
+        },
+        {
+          "pid": 786883,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7372
+        },
+        {
+          "pid": 786884,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2308
+        },
+        {
+          "pid": 786894,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12072
+        },
+        {
+          "pid": 786897,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 310256
+        },
+        {
+          "pid": 787307,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 19976
+        },
+        {
+          "pid": 787451,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3940
+        },
+        {
+          "pid": 787453,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2448
+        },
+        {
+          "pid": 787454,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 3456
+        },
+        {
+          "pid": 787640,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3740
+        },
+        {
+          "pid": 787641,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 787978,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3768
+        },
+        {
+          "pid": 787979,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 88
+        },
+        {
+          "pid": 788128,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3800
+        },
+        {
+          "pid": 788129,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 32972
+        },
+        {
+          "pid": 788254,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 3828
+        },
+        {
+          "pid": 788357,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3768
+        },
+        {
+          "pid": 788546,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3924
+        },
+        {
+          "pid": 788548,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2376
+        },
+        {
+          "pid": 788549,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43576
+        },
+        {
+          "pid": 788550,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 58068
+        },
+        {
+          "pid": 788735,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3808
+        },
+        {
+          "pid": 788737,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2272
+        },
+        {
+          "pid": 788738,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43736
+        },
+        {
+          "pid": 788739,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 10088
+        },
+        {
+          "pid": 788879,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3964
+        },
+        {
+          "pid": 788881,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2428
+        },
+        {
+          "pid": 788882,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43728
+        },
+        {
+          "pid": 788883,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 5704
+        },
+        {
+          "pid": 788936,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 13212
+        },
+        {
+          "pid": 789083,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3952
+        },
+        {
+          "pid": 789085,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2428
+        },
+        {
+          "pid": 789086,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 44076
+        },
+        {
+          "pid": 789087,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 53072
+        },
+        {
+          "pid": 789255,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3772
+        },
+        {
+          "pid": 789256,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 51212
+        },
+        {
+          "pid": 789457,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 3408
+        },
+        {
+          "pid": 789630,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3796
+        },
+        {
+          "pid": 789631,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 5976
+        },
+        {
+          "pid": 789791,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3960
+        },
+        {
+          "pid": 789793,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2376
+        },
+        {
+          "pid": 789794,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 44112
+        },
+        {
+          "pid": 789795,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 54696
+        },
+        {
+          "pid": 790080,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 12
+        },
+        {
+          "pid": 790246,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3728
+        },
+        {
+          "pid": 790247,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 9848
+        },
+        {
+          "pid": 790408,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3780
+        },
+        {
+          "pid": 790409,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 41624
+        },
+        {
+          "pid": 790640,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 790642,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2340
+        },
+        {
+          "pid": 790643,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 41996
+        },
+        {
+          "pid": 790802,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3928
+        },
+        {
+          "pid": 790804,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2472
+        },
+        {
+          "pid": 790805,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43300
+        },
+        {
+          "pid": 790806,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 14252
+        },
+        {
+          "pid": 791157,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 24004
+        },
+        {
+          "pid": 791289,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3944
+        },
+        {
+          "pid": 791291,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2380
+        },
+        {
+          "pid": 791292,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 39956
+        },
+        {
+          "pid": 791674,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 791676,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2472
+        },
+        {
+          "pid": 791677,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43640
+        },
+        {
+          "pid": 791678,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 57112
+        },
+        {
+          "pid": 791843,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3752
+        },
+        {
+          "pid": 791844,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 44448
+        },
+        {
+          "pid": 792001,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 32040
+        },
+        {
+          "pid": 792292,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3728
+        },
+        {
+          "pid": 792293,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 47964
+        },
+        {
+          "pid": 792433,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 792576,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3948
+        },
+        {
+          "pid": 792578,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2296
+        },
+        {
+          "pid": 792579,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 44176
+        },
+        {
+          "pid": 792580,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 44752
+        },
+        {
+          "pid": 792684,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3788
+        },
+        {
+          "pid": 792685,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 72600
+        },
+        {
+          "pid": 792747,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3952
+        },
+        {
+          "pid": 792749,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2344
+        },
+        {
+          "pid": 792750,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 44468
+        },
+        {
+          "pid": 792916,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 793009,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3956
+        },
+        {
+          "pid": 793011,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2464
+        },
+        {
+          "pid": 793012,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 43976
+        },
+        {
+          "pid": 793013,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 45484
+        },
+        {
+          "pid": 793391,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3920
+        },
+        {
+          "pid": 793393,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2312
+        },
+        {
+          "pid": 793394,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43780
+        },
+        {
+          "pid": 793395,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 63524
+        },
+        {
+          "pid": 793710,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3508
+        },
+        {
+          "pid": 793846,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3768
+        },
+        {
+          "pid": 793847,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 64752
+        },
+        {
+          "pid": 793934,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3732
+        },
+        {
+          "pid": 793935,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 88040
+        },
+        {
+          "pid": 794074,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7340
+        },
+        {
+          "pid": 794075,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2444
+        },
+        {
+          "pid": 794082,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 11980
+        },
+        {
+          "pid": 794085,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 297032
+        },
+        {
+          "pid": 794157,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7328
+        },
+        {
+          "pid": 794158,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2404
+        },
+        {
+          "pid": 794165,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 5140
+        }
+      ],
+      "minimum_host_MemAvailable": 18124009472,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "restore": {
+      "status": "FAIL",
+      "scope_wall_s": 35.12846033299866,
+      "cgroup_peak_bytes": 608276480,
+      "process_VmHWM": [
+        {
+          "pid": 794403,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12624
+        },
+        {
+          "pid": 794406,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 31400
+        },
+        {
+          "pid": 794412,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 7340
+        },
+        {
+          "pid": 794413,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2432
+        },
+        {
+          "pid": 794423,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12056
+        },
+        {
+          "pid": 794426,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 328556
+        },
+        {
+          "pid": 794635,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3924
+        },
+        {
+          "pid": 794637,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2360
+        },
+        {
+          "pid": 794638,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 794807,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3944
+        },
+        {
+          "pid": 794809,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2248
+        },
+        {
+          "pid": 794810,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43524
+        },
+        {
+          "pid": 794811,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 54084
+        },
+        {
+          "pid": 794996,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 794998,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2288
+        },
+        {
+          "pid": 794999,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 795184,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 795186,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2432
+        },
+        {
+          "pid": 795187,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 5740
+        },
+        {
+          "pid": 795373,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3780
+        },
+        {
+          "pid": 795374,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 7808
+        },
+        {
+          "pid": 795496,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3936
+        },
+        {
+          "pid": 795498,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2328
+        },
+        {
+          "pid": 795499,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 4316
+        },
+        {
+          "pid": 795854,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3936
+        },
+        {
+          "pid": 795856,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2384
+        },
+        {
+          "pid": 795857,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 2692
+        },
+        {
+          "pid": 796115,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3956
+        },
+        {
+          "pid": 796117,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2368
+        },
+        {
+          "pid": 796118,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43660
+        },
+        {
+          "pid": 796119,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 42628
+        },
+        {
+          "pid": 796304,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3928
+        },
+        {
+          "pid": 796306,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2252
+        },
+        {
+          "pid": 796307,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43908
+        },
+        {
+          "pid": 796308,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 42216
+        },
+        {
+          "pid": 796493,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3928
+        },
+        {
+          "pid": 796495,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2312
+        },
+        {
+          "pid": 796678,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 15220
+        },
+        {
+          "pid": 796810,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3776
+        },
+        {
+          "pid": 796811,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 797069,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 797228,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 21004
+        },
+        {
+          "pid": 797374,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3928
+        },
+        {
+          "pid": 797376,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2472
+        },
+        {
+          "pid": 797377,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 44156
+        },
+        {
+          "pid": 797378,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 49800
+        },
+        {
+          "pid": 797536,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3808
+        },
+        {
+          "pid": 797538,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2372
+        },
+        {
+          "pid": 797539,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43916
+        },
+        {
+          "pid": 797540,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 49616
+        },
+        {
+          "pid": 797705,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 797707,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2276
+        },
+        {
+          "pid": 797708,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 798141,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3732
+        },
+        {
+          "pid": 798142,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 77064
+        },
+        {
+          "pid": 798249,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3776
+        },
+        {
+          "pid": 798250,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 67444
+        },
+        {
+          "pid": 798506,
+          "name": "Name:\tpython3.14",
+          "VmHWM_kB": 9340
+        },
+        {
+          "pid": 798598,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3320
+        },
+        {
+          "pid": 798840,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3948
+        },
+        {
+          "pid": 798842,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2232
+        },
+        {
+          "pid": 798843,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43604
+        },
+        {
+          "pid": 798844,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 49900
+        },
+        {
+          "pid": 798982,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3968
+        },
+        {
+          "pid": 798984,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2376
+        },
+        {
+          "pid": 798985,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43304
+        },
+        {
+          "pid": 798986,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 43892
+        },
+        {
+          "pid": 799063,
+          "name": "Name:\tld.lld",
+          "VmHWM_kB": 5380
+        },
+        {
+          "pid": 799104,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3948
+        },
+        {
+          "pid": 799106,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2292
+        },
+        {
+          "pid": 799107,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 44156
+        },
+        {
+          "pid": 799108,
+          "name": "Name:\tld",
+          "VmHWM_kB": 41796
+        },
+        {
+          "pid": 799161,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 799163,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2352
+        },
+        {
+          "pid": 799164,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 43744
+        },
+        {
+          "pid": 799165,
+          "name": "Name:\tld",
+          "VmHWM_kB": 37280
+        },
+        {
+          "pid": 799212,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3928
+        },
+        {
+          "pid": 799214,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2340
+        },
+        {
+          "pid": 799215,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 43932
+        },
+        {
+          "pid": 799216,
+          "name": "Name:\tld",
+          "VmHWM_kB": 56464
+        },
+        {
+          "pid": 799266,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3824
+        },
+        {
+          "pid": 799268,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2420
+        },
+        {
+          "pid": 799269,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 44148
+        },
+        {
+          "pid": 799270,
+          "name": "Name:\tld",
+          "VmHWM_kB": 7096
+        },
+        {
+          "pid": 799321,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3940
+        },
+        {
+          "pid": 799323,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2296
+        },
+        {
+          "pid": 799324,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 28276
+        },
+        {
+          "pid": 799383,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 799482,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3916
+        },
+        {
+          "pid": 799484,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2228
+        },
+        {
+          "pid": 799485,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 6648
+        },
+        {
+          "pid": 799581,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3936
+        },
+        {
+          "pid": 799583,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2276
+        },
+        {
+          "pid": 799584,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 43756
+        },
+        {
+          "pid": 799585,
+          "name": "Name:\tld",
+          "VmHWM_kB": 54892
+        },
+        {
+          "pid": 799634,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 1072
+        },
+        {
+          "pid": 799675,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3940
+        },
+        {
+          "pid": 799677,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2404
+        },
+        {
+          "pid": 799678,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43900
+        },
+        {
+          "pid": 799679,
+          "name": "Name:\tld",
+          "VmHWM_kB": 41964
+        },
+        {
+          "pid": 799752,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3800
+        },
+        {
+          "pid": 799754,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2332
+        },
+        {
+          "pid": 799755,
+          "name": "Name:\tclang",
+          "VmHWM_kB": 4336
+        },
+        {
+          "pid": 799851,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 4
+        },
+        {
+          "pid": 799897,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3960
+        },
+        {
+          "pid": 799899,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2296
+        },
+        {
+          "pid": 799900,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 0
+        },
+        {
+          "pid": 799949,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3928
+        },
+        {
+          "pid": 799951,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2332
+        },
+        {
+          "pid": 799952,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43656
+        },
+        {
+          "pid": 799953,
+          "name": "Name:\tld",
+          "VmHWM_kB": 43172
+        },
+        {
+          "pid": 799982,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3808
+        },
+        {
+          "pid": 799983,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 62888
+        },
+        {
+          "pid": 799990,
+          "name": "Name:\tcmake",
+          "VmHWM_kB": 3852
+        },
+        {
+          "pid": 800040,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3932
+        },
+        {
+          "pid": 800042,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2388
+        },
+        {
+          "pid": 800043,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 4264
+        },
+        {
+          "pid": 800084,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3952
+        },
+        {
+          "pid": 800086,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2312
+        },
+        {
+          "pid": 800087,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43652
+        },
+        {
+          "pid": 800088,
+          "name": "Name:\tld",
+          "VmHWM_kB": 36984
+        },
+        {
+          "pid": 800135,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3944
+        },
+        {
+          "pid": 800137,
+          "name": "Name:\tsh",
+          "VmHWM_kB": 2456
+        },
+        {
+          "pid": 800138,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 43876
+        },
+        {
+          "pid": 800139,
+          "name": "Name:\tld",
+          "VmHWM_kB": 41976
+        },
+        {
+          "pid": 800175,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3748
+        },
+        {
+          "pid": 800176,
+          "name": "Name:\tclang++",
+          "VmHWM_kB": 85800
+        },
+        {
+          "pid": 800204,
+          "name": "Name:\tninja",
+          "VmHWM_kB": 3968
+        }
+      ],
+      "minimum_host_MemAvailable": 17890570240,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "stop-audit": {
+      "status": "PASS",
+      "scope_wall_s": 40.10399520400097,
+      "cgroup_peak_bytes": 4294967296,
+      "process_VmHWM": [
+        {
+          "pid": 800341,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12612
+        },
+        {
+          "pid": 800345,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 311444
+        }
+      ],
+      "minimum_host_MemAvailable": 18290917376,
+      "cgroup_reaped": true,
+      "swap0": true
+    }
+  },
+  "lto_cache": {
+    "files": 47626,
+    "bytes": 96880098760,
+    "copied": false
+  },
+  "filesystem_free_bytes": 60543275008
+}
