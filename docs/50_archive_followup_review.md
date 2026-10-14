@@ -1,6 +1,6 @@
 # 50 x86_64静态归档后续增量评审与升级调查
 
-当前阶段：合入核查、新提交整树/apply与两模式宏展开PASS；准备上传Gerrit。日期2026-10-14，时间均为北京时间。
+当前阶段：新评审356949已上传并远端回读核对PASS；继续官方快照与bash/LLVM23调查。日期2026-10-14，时间均为北京时间。
 
 证据E=`temp/archive-followup-review-20261014`；已验收最终树为`4c36e899dffee2869af9afd174346e3eb9a7d7ca`，生产Source SHA `c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e`。既有Source、冻结候选补丁、W/gbs配置和已交接x86构建树不修改。本轮不处理ARM根内执行环境。
 
@@ -41,3 +41,14 @@
 两种模式rpmspec --parse均exit0，且分支断言通过：debug不含RELCFLAGS去debug段，release包含该段；两者转换器均展开为build/bin/clang。使用旧x86 archivefix-v2根的RPM及库经显式loader只读运行，未进入已交接构建树、没有执行%build/%install。发布环境是历史abuild/.rpmmacros的证据副本，**仅去掉%_toolchain定义一行**；其他宏相同，解析的候选spec本体不改。完整argv/输出/宏diff见E/rpmspec-final-result.json、debug-rpmspec.stdout、release-isolated-rpmspec.stdout、release-macro-environment.diff。
 
 辅助环境检查曾两次拒绝错误的“发布”输入：CLI --undefine，以及临时输入前缀单次%undefine，均parse exit0却仍含debug分支，不能当作发布PASS。根宏文件home/abuild/.rpmmacros:63确实定义_toolchain；改以隔离宏文件去掉该定义后，未修改候选spec，真实发布分支通过。原始输出及两个尝试保留；这是解析环境构造问题，不是配方或Source失败，也未放宽发布分支断言。
+
+## 4. Gerrit上传与远端回读
+
+2026-10-14 15:58:18，新评审 **[356949](https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/356949)**，patchset1，状态NEW。唯一push目标`HEAD:refs/for/tizen_base`；上传前ls-remote复核父HEAD仍为67619ec8。没有直推tizen_base/sandbox，没有操作356639状态。
+
+- commit：`d4dd40da3b6ab28925b57d24d66bd992b4ad798c`
+- parent：`67619ec8bbbac7238a6cfc33a481ccfbcd12206f`
+- Change-Id：`I9a815cad07c9bd5ae1e3068fe5b13a339e2ea3ce`
+- ref：`refs/changes/49/356949/1`
+
+上传后SSH query及fetch上述ref，FETCH_HEAD的commit与完整tree均精确等于本地；这是远端实际回读，不只依赖push成功信息。证据E/gerrit-push.*、new-change-query.stdout、fetch-uploaded-change.*、uploaded-review.json。356639由用户Abandon。
