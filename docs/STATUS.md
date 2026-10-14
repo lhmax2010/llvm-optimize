@@ -1,9 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-14。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（docs/49续十一）续跑中**：8/8定向重建逐字节PASS（a9b6acc）；全量干跑894项全部落在允许902输出内，compdb不变。22:43:03内存22,770,294,784B通过13.344585GiB准入，唯一一次正常-ba --noprep已启动，只加mlgo_build_jobs=1，实际ninja-j1；18GiB/swap0与2秒宿主2GiB/磁盘30GiB保护继续。RPM与后续验收尚无结论、未BOLT交接；项目锁与共享重阶段锁持有。见docs/49_x86_build_resume.md §15–§16，证据temp/release-x86-full-build-20261013/round2-eight-output-proof。
-
-**续十一中途观察（2026-10-14 05:56，非最终结论）**：Ninja于05:48:16完成902/902；%build日志界限25,513秒。同次-ba进入%install，05:52:53开始实际转换，已输出32档；未走SKIP。安装/后处理/打包仍未完成，无新RPM验收/交接，详见docs/49_x86_build_resume.md §16.9。
+**当前任务（docs/49续十一）构建成功，验收进行中**：唯一一次正常 `-ba --noprep` / mlgo_build_jobs=1 于2026-10-14 06:49:10成功结束，wall29166.743332s；Ninja902/902、Source实际转换225档。续跑后8/8输出与快照逐字节相同，全部7606条原最新Ninja完成记录保留，允许集合外0、未获准重复0；18GiB scope峰含缓存、OOM0，宿主/磁盘保护未触发。消息流中断后恢复核查，没有重启构建。RPM/消费者等验收尚未完成，BOLT NOT_READY。见[结果续页](49_x86_build_resume_result.md)，证据E11；项目锁仍持有，重任务按共享锁串行。
 
 **历史任务（docs/49续十）STOP_RECONFIGURE_PENDING_OUTPUTS，已收尾**：唯一一次原%build环境CMake重配成功，21,987条compdb与完整命令同字节，串行宏mlgo_build_jobs=1已验证。干跑894→902；新增7编译+1归档的8个输出均在原.ninja_log有完成记录，不属允许集合，按规则停止；rpmbuild调用0次、0新RPM、无BOLT交接。待链接历史L=11.344585GiB，参考可用23.085735GiB已足，停止不归因内存。CMake生成的新Cache/build.ninja保留，.ninja_log未改；Source/spec/配置/补丁不变。22:22:56两项目锁/共享锁、进程、scope/采样器和挂载已回收。详见[续十报告](49_x86_build_resume.md#8-续十新裁决输入与唯一配置预检)，证据temp/release-x86-full-build-20261013/round2-resume-serial。
 
@@ -67,7 +65,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：发布夹具、两条x86回归和PS3/PS2候选apply/tree均PASS；续十一8项定向重建逐字节PASS，允许集合902输出内的唯一一次正常-ba --noprep串行续跑正在执行。当前729/902，完整RPM验收、续跑后8项复查与BOLT交接尚未完成；发布模式完整构建和后续ARM验收继续挂账。
+当前阶段：发布夹具、两条x86回归和PS3/PS2候选apply/tree均PASS；串行续跑成功、前后8项同字节，正在新RPM验收。BOLT尚未交接，发布模式完整构建与后续ARM验收挂账。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -100,6 +98,10 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 - 原始日志、大文件仍放 `temp/`；提交推送遵守 [docs/README.md](README.md)。
 
 ## 2. 进度
+
+| 日期 | 提交 | 产出 | 结论 |
+|---|---|---|---|
+| 2026-10-14 | 本提交（父f2cc786） | docs/49_x86_build_resume_result.md、STATUS | 续跑成功，8/8输出前后同字节；新RPM验收继续，未交接。 |
 
 - 2026-10-13｜本提交（git log -1 -- docs/49_x86_build_resume.md）｜docs/49_x86_build_resume.md、STATUS｜续跑前门禁FAIL：干跑894>811、指定_smp_mflags不控制ninja、历史单链接超宿主预算；0次续跑，现场保留并回收锁。
 
