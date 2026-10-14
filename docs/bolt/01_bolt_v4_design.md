@@ -1,6 +1,6 @@
 # 01 Tizen LLVM BOLT 集成设计 v4.1：Quickbuild sandbox 第一版
 
-修订：2026-10-14（Asia/Shanghai）。**最新 v4.1 裁决和周三执行记录见文末附录，冲突以最新条目为准；原 v4 正文保留为历史设计。** 新树交接身份PASS，先行匹配查询参数错误后按规则STOP；N/M/S/U/Q未知，后续未执行、未推Gerrit。历史停止与失败见05/07/08，当前证据见12。
+修订：2026-10-14（Asia/Shanghai）。**最新裁决与执行记录见附录末尾，冲突以最新条目为准；原v4保留为历史设计。** 修正顺序后重链/早期匹配PASS，同树BOLT配置改变了非BOLT缓存而STOP；正式候选与后续未做，未推Gerrit。当前树配置已被失败cmake改写，恢复前不得续跑；见13。
 
 原v4日期：2026-10-12（Asia/Shanghai）。目标周五2026-10-16前交付Quickbuild试验材料，周四只对补丁做一轮外部评审；本轮不构建LLVM、不打RPM、不上传Gerrit。本文为自包含实施与验收设计，尚无生产集成补丁或新RPM。今晚实测和未测项分别标明，不能以历史PASS替代新配方认证。
 
@@ -347,3 +347,11 @@ main91b45c1的STATUS及49_x86_build_resume_result §11正式READY；准确根/va
 先行资格查询把cdsort/split-eh生产参数错误地用于无emit-relocs的普通clang，历史资格工具rc1：“function reordering only works when relocations are enabled”。N/M/S/U/Q、R、S/N全部未知，不能判profile失配，也不能当门禁PASS。遵用户停止规则，无参数修正/重试、无先重链绕过；步骤2–7未执行、未推sandbox。停止后8文件/22RPM及原cache、归档证据均未变，锁/proc/scope全回收。完整实测与资源见12及wednesday-stop.json。
 
 下一次恢复先解决独立匹配查询入口，普通无重定位ELF不能套用需重定位的最终函数重排参数；本次未实施修正。不以R1历史结果替代本次资格。若后续tizen_base合入归档补丁，周五再变基并处理spec冲突，本次未做。
+
+### V4.1-9 修正顺序的本次执行（2026-10-14）
+
+PM取消普通无relocs独立匹配查询；先保存原链接字串，原地cache只emit-relocs重链并LLVM strip-debug，再历史SHA1da7bb73…完整正式参数重写、取N/M/S/U/Q及5%双门禁，用后删产物，不作候选。通过后才同树建llvm-bolt并正式重写。原工具来源/配置前后链接字串/仅BOLT缓存变化/DESTDIR差集、对象/双模式/DWARF、性能geom<0.98、父cb直推sandbox/Gerrit拒绝原样停及内存等待裁决全保持。本顺序修正不放宽门禁，覆盖V4.1-6/8的先普通ELF探测顺序。
+
+重链PASS：link8.840s/strip-debug5.376s、scope17.571s、kernel峰13.071GiB、VmHWM10211668kB，普通clang保留；cache原地不复制。早期匹配真实PASS：N23592/M144032/S0/U1/Q383，R0.004238545%、S/N0%，scope26.075s/峰3.809GiB；早期产物已删。新峰不能继承旧R1估6.04GiB，温缓存链接时间也不等于编译性能认证。
+
+第三步一次cmake rc0但自动删缓存/重配，681键变化/678非BOLT；ThinLTO→OFF、项目→空、prefix→/usr/local、targets→all，配置保持门禁FAIL。build.ninja无clang边，未再query/dry-run/ninja构建；新工具与正式匹配/候选、独立DESTDIR、30/90、小spec/DWARF预期清单、性能和sandbox全部未执行。按规则STOP，未修复重试/恢复。**当前Root cache/ninja已改写；前后快照留E，恢复前不能直接ninja。** 22RPM/归档证据/普通实体保护审计通过，锁/proc/scope回收；详情13及relink-first JSON。若未来tizen_base合归档修复，周五再变基解spec冲突，当前未做。
