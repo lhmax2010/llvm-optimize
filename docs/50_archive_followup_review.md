@@ -52,3 +52,32 @@
 - ref：`refs/changes/49/356949/1`
 
 上传后SSH query及fetch上述ref，FETCH_HEAD的commit与完整tree均精确等于本地；这是远端实际回读，不只依赖push成功信息。证据E/gerrit-push.*、new-change-query.stdout、fetch-uploaded-change.*、uploaded-review.json。356639由用户Abandon。
+
+## 5. 合入后官方快照：条件尚未满足
+
+2026-10-14 15:59直取下载站[Base快照目录](https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/)，HTTP200，原文SHA `93dd5db3a111998f83f2e5c668018788c0d91fdb3dca55e63fb840d34d8d0281`。目录列出20260914.073422、20260924.094908、20261010.120615、20261013.024319、**20261013.140248**；最新仍为10月13日。Gerrit SUBM时间为2026-10-14 14:48:39+08，未见合入后的快照目录，故本轮不启动两快照RPM下载/比较，登记待办、不等待。不是以作者日期10月9日推断已发快照，也未声称任一历史快照静态库或非归档文件对照通过。证据E/base-list.body、official-release-check.json、post-merge-snapshot-result.json与gerrit-status.jsonl。
+
+## 6. bash依赖清单
+
+本轮对git跟踪的tools/*.py、*.sh逐文件扫描，并人工核对命中类别。两份Source AST均只有一处外部启动：生产Source:480/488、ARM候选:1208/1216先构造`['/usr/bin/prlimit', ..., *map(str, argv)]`再`subprocess.Popen(command, ...)`；没有shell=True、os.system/os.popen或直接bash调用。ARM:747–789显式选择参数传入的原生shell，借`/usr/bin/env -u BASH_ENV -u ENV`隔离环境，再执行POSIX sh片段和`exec "$@"`；可以指向bash，但不依赖bash命令名称/专有语法（本次Source SHA仍c43523c0/1bac8db6）。
+
+宿主本轮实际运行`python3 -m unittest -v test_archive_review_round4_continue.PosixLauncherTests`：**6/6 PASS，52.156秒**。逐项：shell不存在/不可执行/错误架构拒绝；限制设置失败exit125；bash/dash/sh三者AS软硬4GiB与core0读回/身份；引号参数与BASH_ENV/ENV不执行；三者超时SIGKILL与子进程回收；不支持ulimit与读回错值exit125。/bin/sh实际指向dash；三路径resolved/SHA与完整输出存E/bash-audit/launcher-tests.*。这不是ARM根内实测，本轮按决定不挂载/proc、不恢复binfmt。
+
+下列14个文件保留为仓库辅助驱动/测试的bash债务，**没有修改它们**。测试中的bash字面量可能只是覆盖多shell/拒绝参数的夹具，不代表转换生产依赖；Python局部变量名bash与注释亦不算外部调用。完整行原文、文件SHA、AST审计见E/bash-audit/result.json。该扫描不等同任意动态生成shell内容的形式化证明；LLVM源码自身bash审计仍留待总部dash切换时另做。
+
+|文件|类别|行号|
+|---|---|---|
+|tools/bolt_final_attempt.py|explicit bash argv/string|159|
+|tools/build_llvm_x86_64.sh|bash shebang (possibly generated fixture)；bash-specific shell option/builtin|1, 3|
+|tools/check_bolt_liveness.sh|bash shebang (possibly generated fixture)；bash-specific shell option/builtin|1, 3|
+|tools/finish_bolt_final.py|explicit bash argv/string|71|
+|tools/relink_clang_for_bolt.py|explicit bash argv/string|90|
+|tools/resume_llvm_x86_64.py|explicit bash argv/string|109|
+|tools/run_bolt_stage.py|explicit bash argv/string|97, 99|
+|tools/run_static_archive_conversion.py|explicit bash argv/string|58|
+|tools/test_archive_review_round4.py|测试/夹具；explicit bash argv/string|170|
+|tools/test_archive_review_round4_continue.py|测试/夹具；explicit bash argv/string|93, 95|
+|tools/test_check_bolt_liveness.sh|测试/夹具；bash shebang (possibly generated fixture)；bash syntax (manual review required)；bash-specific shell option/builtin|1, 3, 16, 21|
+|tools/test_verify_toolchain_identity.sh|测试/夹具；bash shebang (possibly generated fixture)；bash syntax (manual review required)；bash-specific shell option/builtin|1, 3, 35, 37, 52, 53, 56, 57, 61, 62, 68, 69, 70, 71, 75, 81, 88, 89, 94, 110, 121, 132, 178, 191, 224|
+|tools/verify_toolchain.sh|bash shebang (possibly generated fixture)；bash-specific shell option/builtin|1, 3|
+|tools/verify_toolchain_identity.sh|bash shebang (possibly generated fixture)；bash syntax (manual review required)；bash-specific shell option/builtin|1, 3, 74, 76, 79, 80, 84, 88, 89, 92, 94, 98, 100, 102, 103, 104, 106, 112, 117, 119, 120, 124, 126, 127, 130, 154, 157, 164, 173, 175, 177, 182, 194, 195, 197, 199, 205, 207, 208, 209, 212, 215, 216, 220, 231, 232, 235, 239, 242, 251, 252, 268, 276, 281, 282, 300, 301, 302, 313, 317|

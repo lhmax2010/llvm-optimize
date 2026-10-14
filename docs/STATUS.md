@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-14。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（续十二）进行中**：新评审[356949](https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/356949) PS1已上传，commit d4dd40da3b6a、父为已合入356627的67619ec8。新提交整树与已验收4c36e899一致，apply/debug与发布parse/远端fetch复核PASS；356639仍由用户Abandon。继续官方快照与bash/LLVM23调查，旧Source/冻结补丁不改，ARM根内暂停。见[docs/50](50_archive_followup_review.md)。
+**当前任务（续十二）进行中**：新评审[356949](https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/356949) PS1已上传，commit d4dd40da3b6a、父为已合入356627的67619ec8。新提交整树与已验收4c36e899一致，apply/debug与发布parse/远端fetch复核PASS；356639仍由用户Abandon。官方目录最新20261013.140248早于10月14日合入，快照对照挂账；bash扫描14项与三shell专项6/6PASS，LLVM23.1.3已下载校验，正在600成员读取探测。旧Source/冻结补丁不改，ARM根内暂停。见[docs/50](50_archive_followup_review.md)。
 
 **上一任务（docs/49续十一）已收尾：STOP_ARM_CHROOT_EXEC_FORMAT。** x86唯一正常-ba --noprep串行续跑完成；8输出前后同字节、22RPM无ShortCircuited；验收1–3、5–7完成，验收4按磁盘门槛跳过待PM。BOLT已正式交接（997dbb1），本会话此后不写交接树。两ARM宿主全量210/212档SHA与docs/40 §12全同；ARM32根内小试在/proc挂载前/bin/mount Exec format error，当前binfmt只有jar/python3.12、无qemu ARM条目。Source未启动，不改宿主、不重试；AArch64根内、两根64MiB、bash/LLVM23未执行。详见[结果续页](49_x86_build_resume_result.md) §11–§15。
 
