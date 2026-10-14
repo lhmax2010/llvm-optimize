@@ -1,6 +1,6 @@
 # 50 x86_64静态归档后续增量评审与升级调查
 
-当前阶段：新评审356949已上传并远端回读核对PASS；继续官方快照与bash/LLVM23调查。日期2026-10-14，时间均为北京时间。
+最终状态：新评审356949已上传并远端回读核对PASS；bash清单与LLVM23探测完成（发现升级解析边界）；官方快照对照待新快照，ARM根内按用户决定暂停。日期2026-10-14，时间均为北京时间。
 
 证据E=`temp/archive-followup-review-20261014`；已验收最终树为`4c36e899dffee2869af9afd174346e3eb9a7d7ca`，生产Source SHA `c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e`。既有Source、冻结候选补丁、W/gbs配置和已交接x86构建树不修改。本轮不处理ARM根内执行环境。
 
@@ -34,7 +34,7 @@
 |---|---:|---|
 |packaging/llvm.spec|22505|e88ef4cb4cfc4010bceb62a94389f517aedff0b2c2df819ba64dd988d9910426|
 |packaging/llvm-static-archives-native.py|45786|c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e|
-|新format-patch|见generation-result.json及仓库文件|437f128a668b6e38cfed582c44e8ec48dec52144f68b1aa4126f496f384087ff|
+|新format-patch|17916|437f128a668b6e38cfed582c44e8ec48dec52144f68b1aa4126f496f384087ff|
 
 新增补丁与完整英文说明分别为[format-patch](../patches/archive-index-fix/followup/0001-packaging-refine-x86_64-static-archive-handling.patch)、[commit-message](../patches/archive-index-fix/followup/commit-message.txt)。旧PS3/PS2冻结文件保留不覆盖。
 
@@ -77,7 +77,152 @@
 |tools/run_static_archive_conversion.py|explicit bash argv/string|58|
 |tools/test_archive_review_round4.py|测试/夹具；explicit bash argv/string|170|
 |tools/test_archive_review_round4_continue.py|测试/夹具；explicit bash argv/string|93, 95|
-|tools/test_check_bolt_liveness.sh|测试/夹具；bash shebang (possibly generated fixture)；bash syntax (manual review required)；bash-specific shell option/builtin|1, 3, 16, 21|
-|tools/test_verify_toolchain_identity.sh|测试/夹具；bash shebang (possibly generated fixture)；bash syntax (manual review required)；bash-specific shell option/builtin|1, 3, 35, 37, 52, 53, 56, 57, 61, 62, 68, 69, 70, 71, 75, 81, 88, 89, 94, 110, 121, 132, 178, 191, 224|
+|tools/test_check_bolt_liveness.sh|测试/夹具；bash shebang、pipefail、BASH_SOURCE数组、bash语法|1, 3, 8, 16, 21|
+|tools/test_verify_toolchain_identity.sh|测试/夹具；bash shebang (possibly generated fixture)；bash syntax (manual review required)；bash-specific shell option/builtin|1, 3, 4, 35, 37, 41, 52, 53, 56, 57, 61, 62, 68, 69, 70, 71, 75, 81, 88, 89, 94, 110, 121, 132, 178, 191, 224|
 |tools/verify_toolchain.sh|bash shebang (possibly generated fixture)；bash-specific shell option/builtin|1, 3|
 |tools/verify_toolchain_identity.sh|bash shebang (possibly generated fixture)；bash syntax (manual review required)；bash-specific shell option/builtin|1, 3, 74, 76, 79, 80, 84, 88, 89, 92, 94, 98, 100, 102, 103, 104, 106, 112, 117, 119, 120, 124, 126, 127, 130, 154, 157, 164, 173, 175, 177, 182, 194, 195, 197, 199, 205, 207, 208, 209, 212, 215, 216, 220, 231, 232, 235, 239, 242, 251, 252, 268, 276, 281, 282, 300, 301, 302, 313, 317|
+
+## 7. LLVM23前向读取探测（方法与工具）
+
+从[LLVM官方发布页23.1.3](https://github.com/llvm/llvm-project/releases/tag/llvmorg-23.1.3)选择当时最新非预发布23.x版本。GitHub官方releases API前100项原文HTTP200、SHA `3362d46f9ae9b34ab037cb8ac07f3f337c6a67911f18a9f7fc6c1824f02850cb`；选取Linux-X64 `.tar.zst`，1,188,398,549B，下载SHA与官方asset digest相同：`14d2f701eb68fb799001bdea6231048f3990690fa2f406d563555ff8f744daba`。只解包clang、llvm-dis及同包顶层共享库到本轮证据目录，不安装宿主软件、不使用已交接的x86构建树。
+
+第一次辅助解包未产出工具：zstd默认解码窗口上限128MiB，官方文件声明1GiB窗口；只读`zstd -lv`与`zstd -t`明确报`1073741824 > 134217728`并建议`--memory=1024MB`。按提示修辅助解包命令一次，保持18GiB/swap0、共享锁及内存/磁盘底线，新输出目录保留首次记录。第二次解包成功，wall10.975秒、scope峰2,320,326,656B、OOM0；没有修改Source/命令策略或升级版本门禁。证据llvm23-probe/extraction-helper-diagnosis.json、zstd-default-test.stderr、E/llvm23-extract-helper-fix.diff、两次extraction-scope。
+
+工具身份：
+
+|工具|实际版本|SHA256|
+|---|---|---|
+|新包bin/llvm-dis|23.1.3|52a2775dd1e203a83420ea879111222f3aa6162c100e2039729c73b7d8f662a5|
+|新包bin/clang→clang-23|23.1.3|913453afb492abab17025139852413ba7fd7a52b4fb75fcce58ff3fe399d0a9e|
+|旧x86 archivefix-v2 build/bin/llvm-dis|22.1.8|9416f931e11ca81259c02fb53f103125771cb8fa3a534a1bf4c7daf2df9a34c7|
+
+clang --version原文首三行（InstalledDir完整路径见E/llvm23-probe/clang-23-version.stdout）：
+
+```text
+clang version 23.1.3 (https://github.com/llvm/llvm-project 0d261d1ca552c95a8f007e061c787ac7132fbcbc)
+Target: x86_64-unknown-linux-gnu
+Thread model: posix
+```
+
+选样先纳入此前全量普查的全部module asm成员（x863、ARM322、AArch643），再按已保存归档路径排序等距选档、每档选首个bitcode成员，确定性补到每架构200个不同成员。没有根据新解析结果挑选样本。逐档核对旧summary的before SHA，按ordinal/名称/同名序号提取且核对成员SHA；输入分别为E5/x86-input、E11原armv7l-input和E12原aarch64-input，均为已有22.1.8 bitcode。选样清单及引用summary SHA见E/llvm23-probe/selection-members.json。
+
+每成员执行22.1.8与23.1.3的`llvm-dis input.bc -o {22,23}.ll`，均经`prlimit --as=4294967296 --core=0`；使用当前未改Source的ir_settings/arm_ir_settings直接解析文本，比对**所有返回字段**，保留两份文本、参数、stderr、IR SHA、完整解析结果及unified diff。不调用clang做代码生成/转换，不绕过生产validate_tools门禁。x86旧读取器取自历史archivefix-v2根，和已交接给BOLT的20261013新根不是同一棵树。
+
+### 7.1 600个样本的结果与全部解析差异
+
+|架构|样本|两版llvm-dis成功/当前解析异常|返回字段完全相同|evidence字段不同|module_asm漏读|module_asm_sections漏读|
+|---|---:|---|---:|---:|---:|---:|
+|x86_64|200|200 / 0|18|182|3|不适用|
+|armv7l|200|200 / 0|21|179|2|2|
+|aarch64|200|200 / 0|14|186|3|不适用|
+
+600个样本的flags、原命令、policy、triple、PIC/PIE、CPU/features（以及ARM函数认证返回值）在两版输出中均相同。但这不表示解析结果全部正确：**LLVM23将module asm改为两行，现解析器静默漏读全部8个已有声明。** 例如x86 libLLVMAnalysis.a/MLInlineAdvisor.cpp.o ordinal80（同名序号1），LLVM22与LLVM23原文分别为：
+
+```llvm
+; LLVM22，第6行
+module asm ".globl _ZSt21ios_base_library_initv"
+; LLVM23，第6–7行
+module asm
+    ".globl _ZSt21ios_base_library_initv"
+```
+
+生产ir_settings在tools/llvm_static_archives_source.py:309按`line.startswith('module asm ')`收集；白名单在:281起同样依赖单行。ARM白名单在tools/llvm_static_archives_arm_trial.py:573起同一假设，ARM32节跟踪也因此漏记。**声明仍存在于23的IR文本，是解析器漏读，不是llvm-dis删除声明。** 当前生产入口的validate_tools仍在生产:629、ARM:1357硬拒绝LLVM主版本非22，本轮不改任何版本/解析门禁。将来不能只把主版本常量改成23；须先认证多行IR语法并重新检查全部asm白名单/输出符号门禁。本次仅探测，不将LLVM23标为兼容认证。
+
+8个必选成员如下，ordinal为0起、同名序号均1：
+
+|架构|归档|成员|ordinal|
+|---|---|---|---:|
+|x86_64|libLLVMAnalysis.a|MLInlineAdvisor.cpp.o|80|
+|x86_64|libLLVMCodeGen.a|MLRegAllocEvictAdvisor.cpp.o|137|
+|x86_64|libarcher_static.a|ompt-tsan.cpp.o|0|
+|armv7l|libLLVMAnalysis.a|MLInlineAdvisor.cpp.o|80|
+|armv7l|libLLVMCodeGen.a|MLRegAllocEvictAdvisor.cpp.o|137|
+|aarch64|libLLVMAnalysis.a|MLInlineAdvisor.cpp.o|80|
+|aarch64|libLLVMCodeGen.a|MLRegAllocEvictAdvisor.cpp.o|137|
+|aarch64|libarcher_static.a|ompt-tsan.cpp.o|0|
+
+`evidence`是Source保留的原始属性组/模块标志文本。去掉属性组/元数据编号、忽略列表次序后，ARM32与AArch64各1个仅编号/顺序不同；其余x86182、ARM32178、AArch64185个仍有属性内容或数量差异（如内存内建声明的nosync属性变化、属性组数量变化）。不把这些差异隐去，也不声称代码生成等价。**每一个差异字段的两版完整值**以及600项成员身份、输入/IR SHA、错误、必选asm原文已公开到[解析差异JSON](50_llvm23_probe_results.json)，字段差异按SHA去重引用difference_catalogue；这只是存储去重，不丢差异。全量原始.ll、命令、stderr、unified diff仍保留E/llvm23-probe/samples。
+
+公开JSON 6,290,224B，SHA `c026254166a59dc83c538d8c7a2b1d214522f4f820a2d02d67bbb3aa7239cb6b`。本次读取探测wall 564.164s，scope峰 11,494,162,432B（含页缓存，非单个llvm-dis自身RSS），最大采样进程树RSS 614,035,456B；宿主可用最低采样 17,259,884,544B、/home可用最低采样 333,983,961,088B。scope18GiB/swap0，无OOM/max事件；每2秒保护、30秒持久采样，共享锁在读取前取得、完成后释放，采样器/reader已回收。资源原文E/probe-resource-summary.json与llvm23-probe-scope。未做任何LLVM构建、归档转换或新性能结论。
+
+## 8. 最终范围与后续
+
+|项目|本轮状态|
+|---|---|
+|tizen_base与356627/356639状态|PASS，67619ec8为父，只有356627改动；356639未合入|
+|新提交、最终内容/整树、apply、双模式parse|PASS，新commit d4dd40da3b6a，完整树等于已验收4c36e899|
+|Gerrit上传与回读|PASS，新356949 PS1；用户随后Abandon356639|
+|官方快照非归档/归档对照|PENDING：目录未出现合入后的新快照；没有下载两套RPM或宣称比较PASS|
+|bash依赖扫描及三shell测试|完成：14辅助脚本登记债务，6专项PASS；两Source无直接bash或shell=True|
+|LLVM23探测|完成600样本，0读取/解析异常但8个asm静默漏读；未认证23、未改Source|
+|ARM根内小试/64MiB负例|按用户决定暂停至下周，本轮不处理binfmt、不挂载/proc|
+|发布模式完整构建|仍待PM；已有60对样本认证不能代替完整发布构建|
+
+## 9. 本次提交说明全文
+
+以下与上传commit message逐字相同（独立文件见§3）：
+
+```text
+packaging: refine x86_64 static archive handling
+
+Background:
+Change 356627 converts ThinLTO bitcode members in installed x86_64 static
+archives to native objects and rebuilds their indexes. This avoids index
+damage from GNU strip and makes the archives usable by GNU ld without
+LTO or an LLVM plugin.
+
+Changes:
+- Support release builds without _toolchain. When the recorded command
+  has no debug options, do not add -g or -gdwarf-4 during conversion.
+  The merged version rejects this case because it requires -gdwarf-4.
+  Reject no-debug commands whose IR still contains a debug compile unit.
+- Reject unsupported assembler options (-Wa, and -Xassembler), require
+  clang, llvm-dis and llvm-nm to have the same full LLVM 22 version, and
+  check ELF section, symbol and relocation table bounds and strides.
+  Allow only the certified iostream module-assembly declaration and
+  verify that its undefined symbol is preserved after conversion.
+- Use the build/bin/clang alias instead of a hard-coded clang-22 path.
+- Use llvm-strip for static archive post-processing, following the
+  platform's move to LLVM. Override only the archive-strip argument in
+  __strip_install_post; ordinary executable stripping keeps the platform
+  default. Find-debuginfo and other enabled post-processing remain intact.
+  The override copies tizen_macros:34-38 from rpm-build-4.14.1.1-1.4 and
+  must be synchronized when the platform changes that macro. It covers
+  all static archives in this package's buildroot, including compiler-rt.
+
+Scope:
+Only x86_64 is affected. The conversion also includes libarcher_static.a.
+armv7l and aarch64 packaging are unchanged; ARM support will be submitted
+separately. Final static archives contain no DWARF after stripping.
+
+Testing:
+A full x86_64 build completed with one serial continuation in the
+Tizen-Base-Toolchain tizen-base-toolchain_20261010.120615 environment.
+All 225 development archives (3,864 ordered members) contain native
+objects and complete indexes. Checks passed for all 45 compiler-rt
+archives, including allocated section contents and symbol-to-member
+mappings. Host and Tizen GNU ld (without LTO or plugins) and lld consumers
+linked and ran successfully, including sanitizer, profile and builtins
+probes. Independent reinstallation reproduced the converted archives;
+a repeated converter invocation skipped the already-native archives.
+
+Across 60 paired x86_64, armv7l and aarch64 source samples, release/debug
+conversion arguments differed only by the debug options. Differences in
+object output were attributed to compiler debug-information handling.
+A complete release-mode package build is still pending.
+
+The non-archive file comparison against an unpatched build in the same
+environment has not yet been run; it will be checked using the next
+official snapshot.
+
+Supersedes Change 356639.
+
+Signed-off-by: FatTank <hao.lin@samsung.com>
+Change-Id: I9a815cad07c9bd5ae1e3068fe5b13a339e2ea3ce
+```
+
+## 10. 收尾与完整性
+
+2026-10-14T16:18:28.485266+08:00终检PASS：开场冻结的两Source、两候选补丁与W/gbs配置SHA全部一致，W/llvm HEAD、工作树状态与本机spec diff保持原样；新公开补丁SHA和上传commit一致。3个scope均结束，采样器与reader回收，本任务进程0、临时挂载0，两项目锁已释放，共享重任务锁按阶段finally释放。没有进入已交接x86树/BOLT工作树，没有修改宿主配置、旧Source/Commands/候选补丁或重新构建/打包；用户既有gbs配置改动保留不提交。证据E/final-audit.json、lock-released.json与各scope outcome/shared-lock-released。
+
+本轮GitHub进度：e289e66（合入核对）、b940a01（新提交/apply/parse）、3b53b98（Gerrit上传回读）、813813b（快照/bash）；最终探测与本节同STATUS提交。Gerrit只有新评审356949，未执行356639 Abandon。

@@ -1,7 +1,7 @@
 # LLVM 吞吐优化分支状态
 
 更新日期：2026-10-14。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
-**当前任务（续十二）进行中**：新评审[356949](https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/356949) PS1已上传，commit d4dd40da3b6a、父为已合入356627的67619ec8。新提交整树与已验收4c36e899一致，apply/debug与发布parse/远端fetch复核PASS；356639仍由用户Abandon。官方目录最新20261013.140248早于10月14日合入，快照对照挂账；bash扫描14项与三shell专项6/6PASS，LLVM23.1.3已下载校验，正在600成员读取探测。旧Source/冻结补丁不改，ARM根内暂停。见[docs/50](50_archive_followup_review.md)。
+**当前任务（续十二）已完成**：新评审[356949](https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/356949) PS1，commit d4dd40da3b6ab28925b57d24d66bd992b4ad798c，父为已合入356627的67619ec8bbba；整树等于已验收4c36e899，apply、debug/发布parse及远端回读PASS。356639由用户Abandon。bash清单14项、三shell专项6PASS；LLVM23.1.3三架构600样本读取完成，发现8个module asm多行格式漏读（ARM32另2项asm跟踪丢失），未改Source/未认证23。官方目录尚无合入后新快照，RPM对照挂账；ARM根内/64MiB按用户决定下周恢复。见[docs/50](50_archive_followup_review.md)。
 
 **上一任务（docs/49续十一）已收尾：STOP_ARM_CHROOT_EXEC_FORMAT。** x86唯一正常-ba --noprep串行续跑完成；8输出前后同字节、22RPM无ShortCircuited；验收1–3、5–7完成，验收4按磁盘门槛跳过待PM。BOLT已正式交接（997dbb1），本会话此后不写交接树。两ARM宿主全量210/212档SHA与docs/40 §12全同；ARM32根内小试在/proc挂载前/bin/mount Exec format error，当前binfmt只有jar/python3.12、无qemu ARM条目。Source未启动，不改宿主、不重试；AArch64根内、两根64MiB、bash/LLVM23未执行。详见[结果续页](49_x86_build_resume_result.md) §11–§15。
 
@@ -748,3 +748,17 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 进度：2026-10-14｜本提交｜docs/50 §1–§2、STATUS｜356627合入/356639未合入及最新HEAD核查PASS，候选差异来源确定。
 
 人工裁决（续十二）：合并已验收PS3后续增量与PS2静态库llvm-strip，新Change-Id、作者FatTank <hao.lin@samsung.com>，授权仅推refs/for/tizen_base评审；356639由用户随后Abandon。不改冻结两份Source/补丁、不进入已交接树。ARM根内/64MiB暂停下周，先完成bash清单与LLVM23调查；发布完整构建与同环境非归档比较仍挂账。
+
+### 2026-10-14 续十二收尾
+
+进度：2026-10-14｜e289e66｜docs/50 §1–§2｜356627合入身份与356639未合入核查，唯一新基准67619ec8。
+进度：2026-10-14｜b940a01｜docs/50 §3、patches/archive-index-fix/followup/｜新单提交d4dd40da与已验收最终树一致，干净apply与两种模式parse通过。
+进度：2026-10-14｜3b53b98｜docs/50 §4｜356949上传review并fetch回读commit/tree同字节；未直接推分支。
+进度：2026-10-14｜813813b｜docs/50 §5–§6｜新快照尚未出现；bash静态清单14文件与三shell6测试完成。
+进度：2026-10-14｜本提交｜docs/50 §7–§9、docs/48、600样本JSON｜LLVM23读取探测完成，module asm多行语法漏识别已登记，不升级Source。
+
+已闭合（硬证据）：356949的父67619ec8、commit d4dd40da、Change-Id I9a815cad07c9bd5ae1e3068fe5b13a339e2ea3ce，完整tree480be083等于4c36e899；远端fetch相同。证据temp/archive-followup-review-20261014/{generation-result,rpmspec-final-result,uploaded-review}.json与docs/50 §1–§4。
+已闭合（硬证据，仅抽样读取）：600个LLVM22输入可由官方LLVM23.1.3反汇编，但当前解析器漏读全部8条已知asm，不能宣称LLVM23兼容。证据docs/50 §7与docs/50_llvm23_probe_results.json；无转换/编译性能含义。
+挂账：用户Abandon356639；等待包含合入356627的新官方快照做RPM对照；发布完整构建；ARM根内限制/64MiB与后续打包；14文件bash债务与LLVM源码bash审计；未来LLVM23多行IR解析重新认证。已交接BOLT树与冻结Source/补丁不改。
+
+收尾核查（续十二，2026-10-14T16:18:28.485266+08:00）：冻结输入与W/llvm状态一致，三scope及其采样器回收，本任务进程/挂载0，两项目锁释放；未进入已交接树，用户gbs配置改动保留。证据temp/archive-followup-review-20261014/final-audit.json。
