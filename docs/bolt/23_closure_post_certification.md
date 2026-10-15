@@ -32,6 +32,8 @@ PASS；源提交 ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8，sandbox已快进推�
 
 原解析器把输出列表中的`|`也放入旧图输出集合，导致只要新边有隐式输出，就被all(x not in old)误判。新版移除|/||（亦移除|@分隔符），将${cmake_ninja_workdir}与对应绝对构建前缀归一，去重同一输出的双写；递归遍历全部显式/隐式/order-only依赖，不调用Ninja。1911闭包边不变，仅tools/bolt/lib/Utils/VCSVersion.inc的new标志false→true；普通1792→1791，新phony9不变，实际BOLT110→111。没有其他分类变化或旧边丢失。旧110描述JSON与旧闭包文件保持原字节。
 
+上述结论只覆盖保存的静态 Ninja 图；未加载 .ninja_deps/depfile，未做完整 dirty 判定。未知真实任务继续失败关闭，不能将离线闭包称为完整 Ninja 实际执行认证。
+
 111描述为102对象+7静态库+1可执行+1 generated（Generating VCSVersion.inc）。同名描述在全图可重复，但llvm-bolt闭包中恰好对应这一条边；独立JSON与完整闭包夹具证明，不从helper常量生成测试全集。
 
 构建目录中未被任何边生产的外部文件只有3个：lib64/tf_runtime/tf_xla_runtime_dummy.c由TF自定义CMakeLists第6–7行file(WRITE)每次刷新，历史下游是TF对象与归档两条；lib/Analysis/InlinerSizeModel.o与lib/CodeGen/RegAllocEvictModel.o由TensorFlowCompile.cmake的override分支configure_file(COPYONLY)产生，覆盖源不变时不重写，现有对象与源模型SHA相同，历史日志没有普通Analysis/CodeGen归档重建。另一个外部节点`.`是目录及phony/order-only锚点，不是生成文件。其他外部输入在源码/MLGO资产目录，不属于构建目录。完整CMake原文、调用处及SHA在external-input-audit。

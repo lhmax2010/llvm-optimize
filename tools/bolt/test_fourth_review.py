@@ -1,5 +1,5 @@
 """Review fourteen: complete logs, preconditions, semantic ELF and strict graph inputs."""
-import importlib.util,json,shutil,struct,sys,unittest
+import importlib.util,json,lzma,re,shutil,struct,sys,unittest
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -128,5 +128,21 @@ class FourthClosureTests(Base):
         with self.assertRaisesRegex(graph.GraphError,'unexpanded description variable'):graph.analyze(*self.inputs(description='$unknown'),1)
     def test_wrong_task_count(self):
         with self.assertRaisesRegex(graph.GraphError,'task count'):graph.analyze(*self.inputs(),2)
+
+class FourthInstallOrderTests(unittest.TestCase):
+    def test_expanded_modes_and_disabled_native_conversion(self):
+        root=Path(__file__).parent/'results'
+        for mode in ('debug','release'):
+            for setting in ('on','off'):
+                with lzma.open(root/('review4-macro-'+mode+'-'+setting+'.expanded.spec.xz'),'rt') as f:text=f.read()
+                install=text[text.index('%install\n'):text.index('%post -n clang')]
+                conversion=re.findall(r'^python3 .*llvm-static-archives-native\.py --root ',install,re.M)
+                self.assertEqual(len(conversion),1)
+                if setting=='on':
+                    positions=[install.index('clang-bolt-helper.py '+op) for op in ('snapshot ','compare-root ')]
+                    positions += [install.index(conversion[0]),install.index('clang-bolt-helper.py install ')]
+                    self.assertEqual(positions,sorted(positions));self.assertEqual(len(set(positions)),4)
+                    self.assertLess(install.index('echo BOLT_COMPARE_ROOT_PASS'),positions[2])
+                else:self.assertNotIn('clang-bolt-helper.py',install)
 
 if __name__=='__main__':unittest.main()

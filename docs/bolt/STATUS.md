@@ -282,16 +282,16 @@ ARM/AArch64性能均PASS：geom30 0.856351167/0.847699213；独立20与留出10�
 
 202夹具与真实历史候选新门禁PASS，d08父b7；overlay权限不足NOT RUN，第七步采集准备第二次失败STOP，未推sandbox。完整人工裁决/过程/保护与源码SHA见22和858c114版STATUS；PM材料补发ac299f4。十三A重新授权捕获计次，明确本轮不含真实树演练，故不以十二缺项阻塞本轮授权推送；历史证据不删。
 
-## 2026-10-15 续跑十三A：PASS，sandbox已推；QB未启动
+## 2026-10-15 续跑十三A（历史完成）
 
-PM审完0003后指定两修复：解析输出去|/||并归一cmake_ninja_workdir双写，唯一VCSVersion.inc false→true，新描述111；no_bolt_products仅解析.cmake链接，普通悬空/越界链接允许，遍历失败关闭及BOLT路径/导出检查保持。原树仍禁cmake/ninja/-P，不做overlay/真实树演练；作者/提交者/Signed-off-by均Hao Lin，单次-c不改全局。
+ad8a2606父b7，214夹具、闭包111、完整22RPM/四post/真实门禁PASS，sandbox已推、QB未启动。完整裁决、资源、纠正与raw见[23](23_closure_post_certification.md)及43c6a3720606bb1f8ed79b666be726c929ba1f2b版STATUS，历史证据未删。
 
-闭包1911，仅1边变类，111=102对象+7库+1可执行+1generated；外部文件只有TF锚点fileWRITE刷新、两个模型configure_file COPYONLY保持，另.为目录。历史126=111BOLT+2TF+8runtime+2merge-fdata+3AArch64，未归因0，筛选重编号113行通过。旧110JSON/旧闭包不改。
+## 2026-10-15 续跑十四：STOP，RPM身份不符，新sandbox未推
 
-214/214（原202保留+12），22RPM完整新合并根17722路径/47cmake新版PASS，d08同根也PASS，无实测误拒。全解包约497s、锁约497s/16GiB，最低样本free371802681344B。ordinary7df/4ec重跑安全/tiny/双根post/compare-root PASS，候选及profile/生成参数不变。spec SHA04bc88f9…与d08相同，关闭开关两模式逐字证据沿用；helper6bea2346…镜像相同。
+PM裁决：采用十二项修复；保持4ec候选/profile/生成参数，变基最新tizen_base并压单提交；全部重新认证PASS才推新sandbox/lhmax2025/bolt_pgo_v2；QB和真实树演练由用户在PM审后启动。Hao Lin署名，保护/资源/原树禁用规则不变。
 
-四份post真实生成脚本PASS：debug含FD、不含brp-strip，release相反；平台段1446/879B逐字节同cb，只尾追加BOLT post/anchor且最后。捕获后每次仅105条BUILDROOT文件缺失为预期；两类准备各一次修正（错误边界标记、初始release宏链实为debug），原文/错误模式/专用宏副本保留，原平台和用户宏未改；首条实际平台命令定界并保留以下原始字节。初始release PASS表述撤回，最终以release-corrected结果为准。
+0004源91f2ab3618900bb828a228c274d19004681e6d4d；压缩源8be7348a6baf9d4b8b55c382b8a04dade712208d，父67619ec8bbbac7238a6cfc33a481ccfbcd12206f（与预期一致，356949未合入）。252夹具PASS、严格离线闭包1911/1791/9/111且分类变化0、真实link检查与新增安全字段PASS；新基线两模式OFF debug20/release18段逐字相同、ON转换顺序PASS、四post平台段逐字相同且尾检最后。
 
-源d08直接amend为ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8，父b7e61fb，tree62748a008e606fe4c234bc742626c2f76bfd9a3c；0003相对b7静态apply/tree PASS。34项材料先GitHub 0ac1113e8b3bbb66340c0c9573458f0f57a3e64e（68 raw核验），然后sandbox只读查b7→无force快进ad8→只读查ad8。未推评审/tizen_base。docs23/本STATUS/raw索引在推后补。软件包platform/upstream/llvm@ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8；QB仅用户在PM审核后启动，不因sandbox推送自动启动。
+新载荷选授权docs35回退（1199098索引缺10个debug包），首个clang RPM SHA与docs35记录不符，立即STOP，尚未解包，未换SHA/包或重试。预期82970941d586e91861ebe5afe7d0c99db98e6142bd77e5c2b9d6aaf44c2e2604，实际6317baba9fd2e1b99d5076d85b08849b556245302618b7d01239c1245d305ed1；字节310019538→310008958。不推断变化原因。锁44.195秒释放、scope回收、proc卸载。
 
-保护审计PASS：22RPM/归档证据/原源码/禁用配置/原缓存47987/96881772832B保持，scope/proc/锁回收，W跟踪文件未改。完整执行、原文、资源、纠正及长期待验项见23和review3系列。真实树演练另发prompt；QB现场工具/流水线/清单/性能仍需验证。
+最终压缩提交全量重测/新安装顺序测试运行/真实tiny和双根post/完整载荷/maintenance/新sandbox均NOT RUN；不得把此前252结果冒充最终压缩版本认证。源helper/profile保持0004字节，新候选未生成。完整逐项状态、准备性纠正、原文与身份见[24](24_rebase_recertification.md)。

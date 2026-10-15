@@ -66,13 +66,13 @@ class SecondBuildTests(Base):
         self.assertTrue(s['prebuilt_evidence']['archive_equal'])
     def test_task_outside_plan(self):
         p,s=self.setup_build()
-        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,'[1/1] '+TF[0],s)
+        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,'[1/1] '+TF[0]+'\n'+h.BUILD_SUCCESS,s)
     def test_duplicate(self):
         p,s=self.setup_build()
-        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,plan_text([LINK,LINK]),s)
+        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,plan_text([LINK,LINK])+'\n'+h.BUILD_SUCCESS,s)
     def test_up_to_date_progress(self):
         p,s=self.setup_build();p=h.tool_plan('ninja: no work to do.')
-        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,'[1/1] '+LINK,s)
+        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,'[1/1] '+LINK+'\n'+h.BUILD_SUCCESS,s)
     def test_archive_changed(self):
         p,s=self.setup_build(True);(self.d/'lib64/libtf_xla_runtime.a').write_bytes(b'changed')
         with self.assertRaisesRegex(h.GateError,'TF archive SHA changed'):h.tool_verify(self.d,p,plan_text(TF+[LINK])+'\n'+h.BUILD_SUCCESS,s)
@@ -81,10 +81,10 @@ class SecondBuildTests(Base):
         with self.assertRaises(h.GateError):h.tool_verify(self.d,p,plan_text(TF+[LINK])+'\n'+h.BUILD_SUCCESS,s)
     def test_executable_symlink(self):
         p,s=self.setup_build();exe=self.d/'bin/llvm-bolt';exe.rename(exe.with_name('other'));exe.symlink_to('other')
-        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,'[1/1] '+LINK,s)
+        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,'[1/1] '+LINK+'\n'+h.BUILD_SUCCESS,s)
     def test_discontinuous_progress(self):
         p,s=self.setup_build()
-        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,'[2/2] '+LINK,s)
+        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,'[2/2] '+LINK+'\n'+h.BUILD_SUCCESS,s)
 
 class SecondProcessTests(Base):
     def test_wait_deadline_stubborn(self):

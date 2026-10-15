@@ -1,20 +1,17 @@
 {
-  "draft_commit": "91f2ab3618900bb828a228c274d19004681e6d4d",
-  "base": "ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8",
-  "tree": "62748a008e606fe4c234bc742626c2f76bfd9a3c",
-  "amended_from": "d08b54da276102c2b607fbddd07966111f5147cd",
+  "draft_commit": "8be7348a6baf9d4b8b55c382b8a04dade712208d",
+  "base": "67619ec8bbbac7238a6cfc33a481ccfbcd12206f",
+  "tree": "f293a0d2957e64516831d1b780bb20327d24c60e",
   "author": "Hao Lin <hao.lin@samsung.com>",
   "committer": "Hao Lin <hao.lin@samsung.com>",
   "Signed-off-by": "Hao Lin <hao.lin@samsung.com>",
-  "apply_check": true,
-  "tree_equal": true,
   "helper_mirror_equal": true,
-  "qualification": "STEP1_PASS; REBASE_AND_RECERTIFICATION_PENDING",
+  "qualification": "STOP_NEW_BASELINE_RPM_IDENTITY_MISMATCH; SQUASHED_SOURCE_NOT_FULLY_RECERTIFIED",
   "files": [
     {
       "path": "packaging/llvm.spec",
-      "bytes": 25748,
-      "sha256": "e78fed33917f55e29cd29463c8e052f91beb621b2058f495f31e05ffc1b76fb6"
+      "bytes": 26530,
+      "sha256": "5fb99b761b1de26aebdf6c7d47f303acbdb91acd38dab76c2b9da934f5070e92"
     },
     {
       "path": "packaging/clang-bolt-helper.py",
@@ -28,24 +25,21 @@
     }
   ],
   "patch": {
-    "file": "0004-clang-bolt-third-review.patch"
+    "file": "0000-clang-bolt-squashed.patch",
+    "sha256": "8cdd4222739a774fcac30c79d87b3b0ad726fa6ed5e415b8c8112cd5d7ee9ab0",
+    "complete_binary_format_patch": false,
+    "binary_source_separate": "clang-bolt-v2.fdata.xz",
+    "full_binary_patch_local_only": "oversized public artifact; see source result bytes/SHA"
   },
   "fixtures": 252,
-  "ordinary_RPMs": 22,
-  "payload_paths_checked": 17722,
-  "cmake_files_checked": 47,
-  "post_capture": "PASS debug/release baseline and candidate, original platform bytes unchanged, BOLT tail last",
-  "spec_unchanged_from_d08": true,
-  "disabled_macro_proof_reused": "review2-macro-result.json",
+  "post_capture": "PASS new baseline debug/release; original platform bytes unchanged; BOLT tail last",
+  "disabled_macro_proof_reused": false,
   "local_candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
   "candidate_route": "historical llvm-bolt fallback, not regenerated",
-  "sandbox_branch": "sandbox/lhmax2025/bolt_pgo",
+  "sandbox_branch": "sandbox/lhmax2025/bolt_pgo_v2",
   "Quickbuild_start": "Only user starts QB after PM review; sandbox push does not authorize QB",
-  "publication_order": "materials first on GitHub, then conditional sandbox fast-forward, then docs/STATUS/raw index",
-  "real_tree_rehearsal": "Not in 13A; separate user prompt required",
-  "remote_before": "b7e61fb92b34795868230e4f9cee8e3ec65496f6",
-  "remote_after": "ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8",
-  "material_pin": "0ac1113e8b3bbb66340c0c9573458f0f57a3e64e",
+  "publication_order": "0004 milestone pushed; stopping evidence published after RPM identity gate failure; no sandbox attempt",
+  "real_tree_rehearsal": "NOT RUN; separate user authorization required",
   "sandbox_pushed": false,
   "previous_sandbox_pushed": true,
   "gerrit_review_pushed": false,
@@ -55,5 +49,18 @@
     "b7e61fb92b34795868230e4f9cee8e3ec65496f6",
     "ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8",
     "91f2ab3618900bb828a228c274d19004681e6d4d"
-  ]
+  ],
+  "squashed_commit": "8be7348a6baf9d4b8b55c382b8a04dade712208d",
+  "squashed_parent": "67619ec8bbbac7238a6cfc33a481ccfbcd12206f",
+  "final_squashed_tests": "NOT RUN; stopped at RPM identity gate",
+  "disabled_macro_proof": "review4-macro-result.json",
+  "payload_check": "FAIL before extraction: docs35 historical SHA mismatch",
+  "apply_check": null,
+  "tree_equal": null,
+  "previous_13A_full_payload": {
+    "RPMs": 22,
+    "paths": 17722,
+    "cmake": 47,
+    "current_recertification": false
+  }
 }
