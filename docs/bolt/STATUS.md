@@ -286,12 +286,12 @@ ARM/AArch64性能均PASS：geom30 0.856351167/0.847699213；独立20与留出10�
 
 ad8a2606父b7，214夹具、闭包111、完整22RPM/四post/真实门禁PASS，sandbox已推、QB未启动。完整裁决、资源、纠正与raw见[23](23_closure_post_certification.md)及43c6a3720606bb1f8ed79b666be726c929ba1f2b版STATUS，历史证据未删。
 
-## 2026-10-15 续跑十四：STOP，RPM身份不符，新sandbox未推
+## 2026-10-15 续跑十四A（历史STOP）
 
-PM裁决：采用十二项修复；保持4ec候选/profile/生成参数，变基最新tizen_base并压单提交；全部重新认证PASS才推新sandbox/lhmax2025/bolt_pgo_v2；QB和真实树演练由用户在PM审后启动。Hao Lin署名，保护/资源/原树禁用规则不变。
+源8be7348a6baf9d4b8b55c382b8a04dade712208d父67619ec8，RPM身份停止，sandbox未推。完整修复、252阶段夹具/宏/post及停止/发布纠正见24与ac56ad25aeda6a96ea5d9488c4b885e60a19d203版STATUS。十四B的PM裁决已解释为旧路径指向docs38产物，未发现产品问题；不删除历史证据。
 
-0004源91f2ab3618900bb828a228c274d19004681e6d4d；压缩源8be7348a6baf9d4b8b55c382b8a04dade712208d，父67619ec8bbbac7238a6cfc33a481ccfbcd12206f（与预期一致，356949未合入）。252夹具PASS、严格离线闭包1911/1791/9/111且分类变化0、真实link检查与新增安全字段PASS；新基线两模式OFF debug20/release18段逐字相同、ON转换顺序PASS、四post平台段逐字相同且尾检最后。
+## 2026-10-15 续跑十四B：进行中
 
-新载荷选授权docs35回退（1199098索引缺10个debug包），首个clang RPM SHA与docs35记录不符，立即STOP，尚未解包，未换SHA/包或重试。预期82970941d586e91861ebe5afe7d0c99db98e6142bd77e5c2b9d6aaf44c2e2604，实际6317baba9fd2e1b99d5076d85b08849b556245302618b7d01239c1245d305ed1；字节310019538→310008958。不推断变化原因。锁44.195秒释放、scope回收、proc卸载。
+PM裁决：docs35原22包已移至W/temp/archive-fix-v2-final-20261009/rpms-docs35；原R/RPMS为docs38，不能混用或称为67619ec8新构建物。逐包核对docs35附录A后才解包；Source/spec差异若涉及.cmake安装或%files则停止。作者/提交者/Signed-off-by为Hao Lin，保留Change-Id；生成参数、profile和4ec候选不变；原树禁cmake/ninja/-P，保护/资源/锁规则不变。全部认证PASS、材料先GitHub后，才推新sandbox/lhmax2025/bolt_pgo_v2，不推旧分支/评审/tizen_base；QB由用户在PM审完后启动。
 
-最终压缩提交全量重测/新安装顺序测试运行/真实tiny和双根post/完整载荷/maintenance/新sandbox均NOT RUN；不得把此前252结果冒充最终压缩版本认证。源helper/profile保持0004字节，新候选未生成。完整逐项状态、准备性纠正、原文与身份见[24](24_rebase_recertification.md)。
+阶段1 PASS：保全22 RPM字节与SHA逐项符合docs35附录A；完整合并根no_bolt_products PASS，paths_checked=17722、cmake_files_checked=47。Source1005与67619ec8逐字节相同；spec仅构建相关差异，%install至文件末尾逐字相同，不涉及.cmake安装或%files。GitHub ls-remote补核PASS，起点ac56ad2。新压缩提交及后续认证尚待完成。

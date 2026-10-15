@@ -1,0 +1,82 @@
+--- docs35/llvm.spec
++++ 67619ec8/llvm.spec
+@@ -63,6 +63,13 @@
+ BuildRequires: sed
+ %endif
+ BuildRequires: ninja
++
++%if %{undefined _toolchain}
++%ifarch x86_64
++BuildRequires: clang, llvm, libllvm
++%{!?_toolchain: %define _toolchain clang}
++%endif
++%endif
+ 
+ 
+ Requires: libllvm = %{version}-%{release}
+@@ -190,25 +197,29 @@
+ export QEMU_RESERVED_VA=0x100000000
+ %endif
+ 
++%ifarch x86_64
+ # Strip pre-existing optimization flags and remove performance-harming flags, then force -O3 + ThinLTO
+ OPTFLAGS_CFLAGS=$(echo "$CFLAGS" | sed \
+     -e 's/\-O[0-9sz]//g' \
+     -e 's/\-Ofast//g' \
++    -e 's/\-fstack-protector-strong//g' \
++    -e 's/\-fstack-protector-all//g' \
+     -e 's/\-fstack-protector//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector-strong//g' \
++    -e 's/\-fno-inline-functions//g' \
+     -e 's/\-fno-omit-frame-pointer//g' \
+     -e 's/\-momit-leaf-frame-pointer//g')
+ OPTFLAGS_CXXFLAGS=$(echo "$CXXFLAGS" | sed \
+     -e 's/\-O[0-9sz]//g' \
+     -e 's/\-Ofast//g' \
++    -e 's/\-fstack-protector-strong//g' \
++    -e 's/\-fstack-protector-all//g' \
+     -e 's/\-fstack-protector//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector-strong//g' \
++    -e 's/\-fno-inline-functions//g' \
+     -e 's/\-fno-omit-frame-pointer//g' \
+     -e 's/\-momit-leaf-frame-pointer//g')
+-export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer"
+-export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer"
++export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
++export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
++%endif
+ 
+ # Set up MLGO AOT model paths from bundled verify assets
+ %if %{with mlgo}
+@@ -223,8 +234,13 @@
+ cmake \
+     -G Ninja \
+     -DTIZEN=1 \
++%ifarch x86_64
++    -DCMAKE_C_COMPILER=clang \
++    -DCMAKE_CXX_COMPILER=clang++ \
++%else
+     -DCMAKE_C_COMPILER=%__cc \
+     -DCMAKE_CXX_COMPILER=%__cxx \
++%endif
+     -DLLVM_HOST_TRIPLE=%{_host} \
+     -DLLVM_DEFAULT_TARGET_TRIPLE=%{_host} \
+     -DLLVM_TARGET_TRIPLE_ENV=%{_host} \
+@@ -262,6 +278,15 @@
+     -DCLANG_ENABLE_ARCMT=OFF \
+     -DLLVM_BUILD_LLVM_DYLIB=ON \
+     -DCLANG_BUILD_CLANG_DYLIB=ON \
++%ifarch x86_64
++    -DLLVM_LINK_LLVM_DYLIB=OFF \
++    -DCLANG_LINK_CLANG_DYLIB=OFF \
++%else
++%if %{defined _toolchain}
++    -DLLVM_LINK_LLVM_DYLIB=ON \
++    -DCLANG_LINK_CLANG_DYLIB=ON \
++%endif
++%endif
+     -DLLVM_ENABLE_PROJECTS="clang;lldb;clang-tools-extra;lld;compiler-rt;openmp" \
+     -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
+     -DLLVM_BUILD_EXAMPLES=OFF \

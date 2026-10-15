@@ -1,5 +1,7 @@
 # 24 续跑十四：第三轮修复、变基与停止记录
 
+以下为十四A历史记录；十四B处置与进展见文末。
+
 STOP；压缩源提交 `8be7348a6baf9d4b8b55c382b8a04dade712208d`，父 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`；新分支 sandbox/lhmax2025/bolt_pgo_v2 未推。未启动 QB 或真实树演练。
 
 ## 人工裁决与执行边界
@@ -61,3 +63,11 @@ STOP；压缩源提交 `8be7348a6baf9d4b8b55c382b8a04dade712208d`，父 `67619ec
 ## 最后发布核对
 
 96个branch/pinned raw URL的HTTP200和字节SHA检查已全部通过，之后独立git ls-remote查询GitHub失败：`Failure when receiving data from the peer`（exit128）。因此HTTP阶段PASS，完整发布核验不是PASS；此前bolt-v4各次push均返回成功。完整错误原文见review4-publication-check.json。查找该日志时曾把W下相对路径用于B工作目录，发现后按已定位的W绝对范围读取；只发生在查找阶段，未影响产品输入或门禁。
+
+## 续跑十四B：RPM来源纠正与阶段1
+
+PM确认上一轮不是产品问题：旧R/RPMS现存docs38试构建22包，6317baba符合docs38附录A；docs35原件在rpms-docs35，经docs38记录的rename保全。按新授权，逐一用docs35附录A核对保全22包大小/SHA，全部一致后完整合并解包。未读取docs38的RPM载荷，未称任何历史集为67619ec8新构建物。
+
+阶段1 PASS：paths_checked=17722、cmake_files_checked=47。Source1005字节相同；spec差异为构建依赖、编译器/优化参数与动态链接配置，%install及之后文本逐字相同，不触及.cmake安装/%files；完整diff与来源身份公开。最终helper文档更新后还会在同根重跑反向检查。
+
+补做GitHub远端查询成功，起点ac56ad25aeda6a96ea5d9488c4b885e60a19d203。本轮查找曾在源子仓库使用W相对路径，发现不存在后在产品操作前改正；查找阶段不计准备错误，原文记录保留。
