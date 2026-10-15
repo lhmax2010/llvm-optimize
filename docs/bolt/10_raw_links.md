@@ -131,4 +131,4 @@ sandbox/lhmax2025/bolt_pgo远端由cb67996861d070d68fec2b4c623eed7d20ba2e23更�
 | tools/bolt/results/wednesday-stop.json | [bolt-v4](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/wednesday-stop.json) | [6a0b5a5](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/6a0b5a545a453684a68aa4d3dde35de07b259f78/tools/bolt/results/wednesday-stop.json) | 4553 | 7a4abb1f9961f02f29d182efba073f436073f814e0cc81b6c9955cf55c72ee7a |
 | tools/bolt/test_bolt_helper.py | [bolt-v4](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/test_bolt_helper.py) | [6a0b5a5](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/6a0b5a545a453684a68aa4d3dde35de07b259f78/tools/bolt/test_bolt_helper.py) | 29255 | 2310a88284b95ecd433338b258c344a992dc190549be8a229c9233a101a509e1 |
 
-续跑九（STOP）：[完整 Raw 续表](10_raw_links_part2.md)。
+续跑九/十：[完整 Raw 续表](10_raw_links_part2.md)。
