@@ -1,5 +1,12 @@
 # BOLT v4 状态（新会话开场必读）
 
+## 长期署名规则（PM 裁决，2026-10-15）
+
+作者与提交者可直接使用本机全局配置 liushanshan <ss0217.liu@samsung.com>，或以单次命令参数显式使用 Hao Lin <hao.lin@samsung.com>。任何后续提交、提交说明（含 Signed-off-by）和交付文档仅使用这两组身份，不再使用此前昵称或其他姓名。不修改全局 git 配置；历史提交不因此重写，历史身份按提交号查询原始元数据。
+
+若 Gerrit 因提交者与推送账号不一致而拒收，立即停止该次操作，保留并原样报告完整拒绝输出；报告后再以 Hao Lin <hao.lin@samsung.com> 重新提交。不得隐瞒拒收或继续使用被拒身份重试；仍须遵循具体任务的分支推送授权。
+
+
 日期：2026-10-12（Asia/Shanghai）；证据目录名20261013按用户指定。
 W=`/home/linhao/Toolchain/development/llvm-optimize`；B=`/home/linhao/Toolchain/development/llvm-optimize-bolt`；E=`/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261013`。
 分支bolt-v4；起点为最新origin/main `fb833a4c8ee1ece09027a0d5d04e254ea9899a5f`。W开场docs/47_review_round4_package.md与gbs_llvm.conf有归档会话修改，未触碰；其后主分支提交由归档会话独立推进，不合并到本任务。
@@ -103,7 +110,7 @@ PM裁决：
 ### v4.1 停止点与证据强度
 
 - 按本轮“规定之外的情况停止”规则停止产品实验：R1私有mount准备首次unshare propagation Invalid argument；第二次root self-bind/make-private失败Unknown error5005，观察到本任务绑定传播到宿主。已精确卸载自己的R1绑定；findmnt -R退出1/输出空、mountinfo无R1条目。E/stop-and-recovery.json直接证据；没有挂/proc/overlay或运行parser/linker/BOLT。停止后仅归档现有材料和写文档。
-- 本轮59fixture PASS（轻4GiB），真实pipeline/宏/完整RPM未执行；本地LLVM草案b3ec4f03259e695bb2e6c64d7b61474380eaaa38，父cb679968，作者FatTank。完整format-patch静态apply与tree d2f7657e…相同；文本评审patch+profile公开封套也重建相同tree。文档与源提交身份不同，不混用。
+- 本轮59fixture PASS（轻4GiB），真实pipeline/宏/完整RPM未执行；本地LLVM草案b3ec4f03259e695bb2e6c64d7b61474380eaaa38，父cb679968，作者记录见该提交元数据。完整format-patch静态apply与tree d2f7657e…相同；文本评审patch+profile公开封套也重建相同tree。文档与源提交身份不同，不混用。
 - 全profile Source压缩9.735MB可进GitHub；完整patch12.58MB及xz10.13MB超10MB文件规范，留E，通过文本patch+Source+manifest完整交付，不拆片。Gerrit大小限制尚未验证；Source/BOLT commit未推，只建分支原始cb已推。
 - 待恢复：安全R1输出/cache隔离；Source helper全pipeline夹具；真实spec debug条件/完整post展开；实际工具install manifest差集；普通final debug清单与无DWARF候选的严格例外边界。草案暂用两次post取参考，未认证，不允许发货。
 - 旧树预演R、S/N、双flags对照、VMHWM、三目标/30对、standalone、90资产均UNKNOWN/未执行。没有因历史正例/fixture PASS把它们写成通过。共享flock未取未等；归档两锁/根与W tracked文件未动。
@@ -139,7 +146,7 @@ PM八项新裁决按01附录修订执行：fully strip、前note/前后SHA/最�
 | 5 周三计划 | 正式origin/main交接+锁空闲为开始条件，先匹配、新树完整cache副本、工具链接cache隔离/普通任务0、debug本地逐包字节对照及逐缺失DWARF证明；发布完整构建待做；Gerrit推送条件/命令列出但不执行 | 01附录v4.1 |
 | 6 收尾 | 原cache/普通clang不变、R1/proc与scope全部回收、设计≤50KB、Python3.9、Git文件≤10MB；最后提交/推送及raw清单 | 本文/resource-metrics/10 raw清单 |
 
-最终本地LLVM源草案a3c31d2c40809adbfacfd8cb6c12f3e87476a058，父cb67996861d070d68fec2b4c623eed7d20ba2e23，tree4ec0029fcb10baf632af6fc9e2bd58aad1eed224；作者FatTank；不是GitHub证据仓库提交。未向Gerrit推BOLT提交。sandbox仍仅此前原样创建基线，周五前没有standalone、没有完整LLVM构建。
+最终本地LLVM源草案a3c31d2c40809adbfacfd8cb6c12f3e87476a058，父cb67996861d070d68fec2b4c623eed7d20ba2e23，tree4ec0029fcb10baf632af6fc9e2bd58aad1eed224；作者记录见该提交元数据；不是GitHub证据仓库提交。未向Gerrit推BOLT提交。sandbox仍仅此前原样创建基线，周五前没有standalone、没有完整LLVM构建。
 
 共享锁cache段约41m、其余最长reference约11m；公平30段实际等锁363.056s/持锁351.706s，未等锁超时；一次内存准入SKIP和自己的未取锁等待暂挂记录保留，没有豁免入口12GiB。轻实验与公平重测串行，没有向归档项目锁/进程发信号。只在B/E/R1新BOLT工作写入，W tracked/llvm不改，未进入归档任何构建根。
 
@@ -273,7 +280,7 @@ PM裁决及本轮边界见21：修门禁不改生成参数/4ec候选，源父a14
 
 ## 2026-10-15 续跑十一A：署名与sandbox
 
-源仓库user.name/email均来自global /home/linhao/.gitconfig：liushanshan / ss0217.liu@samsung.com，未修改配置。单次-c amend/reset-author后，新源b7e61fb92b34795868230e4f9cee8e3ec65496f6，author/committer均FatTank <hao.lin@samsung.com>；父a1410e3d，tree ea70ea066dd16430b23c238d9654e1667479b960与97c060a相同，spec df1198d1…/helper4590b337…不变。文本补丁/manifest同步。sandbox查询前a1410e3d→无force快进推送→查询后b7e61fb92b34795868230e4f9cee8e3ec65496f6，确认成功；Gerrit仅提示subject>50字符警告，原文在manifest。未推评审/tizen_base，未做其他验证步骤。
+源仓库user.name/email均来自global /home/linhao/.gitconfig：liushanshan / ss0217.liu@samsung.com，未修改配置。单次-c amend/reset-author后，新源b7e61fb92b34795868230e4f9cee8e3ec65496f6，author/committer使用当时的历史署名（后续遵循下述长期规则）；父a1410e3d，tree ea70ea066dd16430b23c238d9654e1667479b960与97c060a相同，spec df1198d1…/helper4590b337…不变。文本补丁/manifest同步。sandbox查询前a1410e3d→无force快进推送→查询后b7e61fb92b34795868230e4f9cee8e3ec65496f6，确认成功；Gerrit仅提示subject>50字符警告，原文在manifest。未推评审/tizen_base，未做其他验证步骤。
 
 ## 2026-10-15 续跑十一B：两目标性能PASS
 
