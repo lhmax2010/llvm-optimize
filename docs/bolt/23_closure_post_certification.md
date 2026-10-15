@@ -61,7 +61,7 @@ wrapper仅copy rpmbuild生成的%install完整脚本并返回0，未执行其中
 
 ## 6 测试、spec与真实产物
 
-214/214，原202测试方法全部保留，新增12。旧断言只改两组：ReviewToolPlanTests使用独立v2全集并期待generated计数；SecondReverseTests.test_dangling把测试链接改为.cmake，符合新语义。新增生成边唯一性、历史113计划/126归因、TF唯一刷新、普通悬空/越界链接通过、CMake悬空/越界及导出检查。完整stdout为空，stderr包含全部214项原文，不裁剪。
+214/214，原202测试方法全部保留，新增12。旧断言只改两组：ReviewToolPlanTests使用独立v2全集并期待generated计数；SecondReverseTests.test_dangling把测试链接改为.cmake，符合新语义。新增生成边唯一性、历史113计划/126归因、TF唯一刷新、普通悬空/越界链接通过、CMake悬空/越界及导出检查。完整stdout为2600字节，含1条cache_copy与4条BOLT_STRIP_IDENTITY夹具JSON；stderr包含全部214项原文，不裁剪。此前“stdout为空”的描述撤回，原始文件未改。
 
 spec SHA04bc88f92c774b5a1d93d88d9ee2b33b808c383c5a7b5b494d749dc3b39ee8fc，与d08完全相同，因此沿用review2关闭开关debug/release各18段与cb679968逐字相同的证明。helper SHA6bea234609785ab47a35d8eaba31371a0f9aac0cce3ad4614be52554e0461e94，Source/B镜像逐字节相同。
 
@@ -98,3 +98,5 @@ wall为scope墙时，VmHWM为采样到的最大进程高水位；memory.peak为�
 |review3-sandbox-push|PASS|13.544|24354816|107032|
 
 review3-post-capture scope的FAIL仅为上述边界定位准备错误；后续post-analysis通过，但错误release标签随后在发布前复核被撤回，经release-corrected认证真发布链。原始失败/错误模式结果未删除，没有将其冒充最终认证。完整资源/纠正记录见review3-resources、final-resources与corrections，最终post-capture JSON为修正后结果。
+
+十四B复核：review3-tests.stdout.txt实际2600字节/5条夹具JSON，review3-tests.stderr.txt保留214项原文；本轮257项的stdout为2609字节/5条同类夹具JSON，stderr含测试结果。两者原文均保留。闭包证明仍限静态图，不加载.ninja_deps/depfile或完整dirty状态。实际字节/SHA/类别见review4b-stdout-evidence.json。

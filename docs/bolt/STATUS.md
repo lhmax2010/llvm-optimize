@@ -290,8 +290,12 @@ ad8a2606父b7，214夹具、闭包111、完整22RPM/四post/真实门禁PASS，s
 
 源8be7348a6baf9d4b8b55c382b8a04dade712208d父67619ec8，RPM身份停止，sandbox未推。完整修复、252阶段夹具/宏/post及停止/发布纠正见24与ac56ad25aeda6a96ea5d9488c4b885e60a19d203版STATUS。十四B的PM裁决已解释为旧路径指向docs38产物，未发现产品问题；不删除历史证据。
 
-## 2026-10-15 续跑十四B：进行中
+## 2026-10-15 续跑十四B：本地认证PASS，sandbox待推
 
-PM裁决：docs35原22包已移至W/temp/archive-fix-v2-final-20261009/rpms-docs35；原R/RPMS为docs38，不能混用或称为67619ec8新构建物。逐包核对docs35附录A后才解包；Source/spec差异若涉及.cmake安装或%files则停止。作者/提交者/Signed-off-by为Hao Lin，保留Change-Id；生成参数、profile和4ec候选不变；原树禁cmake/ninja/-P，保护/资源/锁规则不变。全部认证PASS、材料先GitHub后，才推新sandbox/lhmax2025/bolt_pgo_v2，不推旧分支/评审/tizen_base；QB由用户在PM审完后启动。
+PM裁决：docs35原22包在W/temp/archive-fix-v2-final-20261009/rpms-docs35，旧R/RPMS为docs38；十四A停止是来源路径问题，不是产品问题。逐包对照docs35附录A的字节/SHA后使用保全包，Source1005与67619ec8字节相同，spec差异不涉及.cmake安装/%files（%install起后文全相同），照常继续。两组历史包均不称作67619ec8新构建物。
 
-阶段1 PASS：保全22 RPM字节与SHA逐项符合docs35附录A；完整合并根no_bolt_products PASS，paths_checked=17722、cmake_files_checked=47。Source1005与67619ec8逐字节相同；spec仅构建相关差异，%install至文件末尾逐字相同，不涉及.cmake安装或%files。GitHub ls-remote补核PASS，起点ac56ad2。新压缩提交及后续认证尚待完成。
+最终压缩源506dc25c86e4e2154150796d10b77b71d71ad6bb，父67619ec8bbbac7238a6cfc33a481ccfbcd12206f；仅新增helper文件头维护说明，修改提交说明的内部流程/外部维护入口；可执行AST、spec/profile不变，Hao Lin作者/提交者/Signed-off-by及Change-Id保留。257/257测试PASS（252+安装顺序1+本轮4），最后两项日志诊断微调已覆盖，stdout2609字节含5条夹具JSON、stderr原文公开；完整二进制补丁独立index apply/tree PASS，公开--no-binary文本patch及单独Source，不再误发超限文件。
+
+22RPM逐包身份PASS；完整合并根no_bolt_products 17722路径/47cmake，最终helper复查PASS。新压缩提交OFF debug20/release18段与新基线逐字相同，ON顺序snapshot<compare-root<转换<install且转换一次；四post平台段逐字一致、尾检最后；真实7df/4ec安全、tiny三目标、双根post/反向/compare-root、111计划正负例全PASS。4ec候选未重生成。受保护22RPM/归档证据/原坏配置/缓存/源码未变，锁/proc/scope回收。产品准备修正0次、产品门禁失败0次；发布准备两类各修正1次（stdout错误假设、忽略归档暂存），查找更正及完整原文见24。
+
+维护完整版见maintenance.md（四remedy、运行前提、升级与重训、锚点、资料保留/崩溃/回退）；23已明确静态图边界与stdout实际内容（2600/2609字节的夹具JSON）。上次GitHub ls-remote已补核PASS。材料先GitHub公开，才按授权推新sandbox/lhmax2025/bolt_pgo_v2；当前待推，旧sandbox/refs-for/tizen_base不动。QB/真实树演练/发布全构建及accel-worker身份仍NOT RUN，用户在PM审完后启动。完整状态/资源/原文见24和review4b系列。

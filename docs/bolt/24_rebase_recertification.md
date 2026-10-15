@@ -1,6 +1,6 @@
-# 24 续跑十四：第三轮修复、变基与停止记录
+# 24 第三轮修复、变基与十四B重新认证
 
-以下为十四A历史记录；十四B处置与进展见文末。
+当前：十四B本地认证全部PASS，sandbox待推；十四B结果在文末。以下十四A记录是保留的历史停止原文，已由十四B的PM裁决纠正来源解释。
 
 STOP；压缩源提交 `8be7348a6baf9d4b8b55c382b8a04dade712208d`，父 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`；新分支 sandbox/lhmax2025/bolt_pgo_v2 未推。未启动 QB 或真实树演练。
 
@@ -13,7 +13,7 @@ STOP；压缩源提交 `8be7348a6baf9d4b8b55c382b8a04dade712208d`，父 `67619ec
 |项目|结果|
 |---|---|
 |helper/spec修复、0004|已实现，修复提交91f2ab3618900bb828a228c274d19004681e6d4d；完整patch公开|
-|原214测试+38新增|252/252 PASS；stdout为空、stderr全部逐项原文|
+|原214测试+38新增|252/252 PASS；stdout实为2600字节/5条夹具JSON（原空文件描述撤回），stderr全部逐项原文|
 |最后两项日志诊断微调及压缩提交后的全量重测|NOT RUN，停在载荷身份；不得把上述252项冒充最终压缩版本认证|
 |新增安装顺序测试方法|已加入，读取实际展开快照；最终测试运行NOT RUN|
 |真实link.original更严格检查|PASS，未执行链接|
@@ -75,3 +75,42 @@ PM确认上一轮不是产品问题：旧R/RPMS现存docs38试构建22包，6317
 ### 十四B阶段2–3：提交维护说明与全部测试
 
 新压缩源506dc25c86e4e2154150796d10b77b71d71ad6bb，父67619ec8，Change-Id保留，作者/提交者/Signed-off-by均Hao Lin。只更新helper模块docstring的维护说明，去掉提交说明里的内部PM启动流程，维护入口改为helper文件头；其余提交说明不变。AST逐字表示相同（去除docstring及位置属性），spec/profile字节保持。新增4夹具覆盖文件头/可执行AST和两处最终日志诊断细化；252+安装顺序1+新增4=257/257 PASS，stdout 2609字节、stderr完整原文已发布。独立index应用含二进制完整补丁后tree与源提交相同。公开0000用显式--no-binary，profile Source单独保留；完整二进制补丁本地保存，不再误发超限材料。
+
+## 续跑十四B最终本地认证（sandbox待推）
+
+总状态：本地认证PASS。最终源`506dc25c86e4e2154150796d10b77b71d71ad6bb`，父`67619ec8bbbac7238a6cfc33a481ccfbcd12206f`，新sandbox尚未推；材料先GitHub，全部公开后才执行已授权推送。没有启动QB或真实树演练。
+
+|本轮要求|结果|证据前缀tools/bolt/results/review4b-|
+|---|---|---|
+|保全22RPM对docs35附录A大小/SHA|PASS，22/22；不使用docs38包|RPM-identities.json|
+|来源spec/Source1005逐字比对|Source相同；spec仅构建差异，%install及其后逐字相同；准许继续|source-audit.json、llvm.spec.diff、llvm-static-archives-native.py.diff|
+|完整合并载荷|PASS，17722路径/47 cmake；旧8be helper及最终helper均检查通过|full-payload-result.json、real-gates.json|
+|提交说明两处与嵌入维护|PASS，AST不变、spec/profile不变、Change-Id和Hao Lin署名保持|source-result.json、commit-message-check.json|
+|全部夹具|PASS，257=原252+安装顺序1+本轮4；stdout2609字节/5条夹具JSON|tests.stdout.txt、tests.stderr.txt、tests-source-certification.json|
+|独立index完整二进制patch应用/整树|PASS，tree一致；完整binary patch仅留E，公开文本patch+Source|tests-source-certification.json|
+|OFF两模式与67619ec8逐字展开|PASS，debug 20段/release 18段全部一致|macro-result.json、macro-*.expanded.spec.xz|
+|ON两模式顺序及OFF转换保留|PASS，snapshot < compare-root < 转换 < install；ON/OFF转换均一次|macro-result.json|
+|四份新生成post脚本|PASS，原平台链逐字一致，BOLT尾检最后；debug有FD、release有brp-strip|post-*.sh、post-capture-result.json|
+|7df/4ec安全属性|PASS（包括shndx和RPATH/RUNPATH），无属性丢失；两边均无GNU property/CET|real-gates.json、real-security.stdout.txt|
+|三目标tiny|PASS，ordinary/candidate完整.o逐字相同，含--no-default-config|real-gates.json、real-tiny.stdout.txt|
+|debug/release双根post、反向检查、compare-root|PASS；注入BOLT工具负例被拒，最终SHA不变|real-gates.json、real-post-*.stdout.txt|
+|111描述计划正例+普通任务负例|PASS；真实Ninja未执行|real-tool-plan*.txt、real-gates.json|
+|受保护树/RPM、原坏配置/缓存、归档证据|PASS，旧文件及4ec未变，原树未运行cmake/ninja/-P|protection-audit.json|
+|维护完整版/23说明/manifest/原文与raw索引|已完成，先公开材料后推sandbox|maintenance.md、draft-manifest.json|
+|QB、真实树演练、发布模式完整构建、accel/worker实物身份|NOT RUN，仍需后续现场验证|不得由本轮本地认证冒充|
+
+### 后处理与安全要点
+
+新基线debug平台post 1455字节、release 885字节；四次捕获均只因空BUILDROOT文件清单错误退出，脚本存在且非空，错误均为预期File not found类别，wrapper没有执行%install或平台post。真实双根只执行helper尾检；不把采集当作完整%install实际执行。新helper文件头变更纳入重新采集与真实运行。
+
+候选仍为4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9，普通仍7df0ff90dbca7f99ed6a642546281584dbfaab1528a94abf7a1bb524ca371b2c。本轮不生成候选、不改重链/strip/BOLT参数、不重训profile、不重测先前已认证的性能或120份对象；维持历史工具后备路线。Quickbuild后续应看自己的匹配统计同量级且5%双门禁PASS、tool-plan/真实构建与TF SHA、compare-root、post/包/DWARF/debugsource清单及自身clang性能，不比较本地与QB clang SHA。
+
+### 资源与准备记录
+
+重阶段payload scope 767.609s，共享锁767.617s，cgroup峰2675634176B；准入与运行MemAvailable、每进程VmHWM、swap0/nice/ionice、磁盘预检与scope回收见resources.json及execution包。全部scope回收、各proc挂载finally卸载。单次大写入预检预计写后约316.8GB，实际最低抽样剩余318925639680B，高于30GiB。
+
+查找阶段更正：曾在源子仓库用W相对路径，改正后才进行产品操作；曾查找不存在的十四A real_gates.py，随后定位并复用十三A脚本，执行前适配111描述及现有错误文本。技能清单的符号链接路径经rg --follow/已安装根定位。均未作为产品输入使用，不计准备错误。产品步骤准备错误修正0次，产品门禁失败0次；发布证据描述准备修正1次：撤回stdout为空的错误假设，保留失败断言原文后按实际2600/2609字节及5条JSON纠正说明，不涉及产品代码或门禁。
+
+发布前按ship技能适用检查审阅源差异、身份与新鲜测试：本次可执行代码AST无变化、说明文本变更范围准确，无新增审查问题。用户固定父提交/单提交/写入范围/直接sandbox/不提问规则优先于通用PR与全局状态流程；未扩展为PR、版本变更或其他目录写入。
+
+发布暂存另有一类准备修正一次：显式*.xz包含被忽略的execution.tar.xz，git add返回1，set -e在提交前停止；改为按目录暂存，再对自有证据包显式git add -f。产品代码、测试输出与门禁不变。合计两类发布准备修正各一次，产品准备错误/产品门禁失败均0。

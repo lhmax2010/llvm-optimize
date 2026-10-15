@@ -6,7 +6,7 @@
   "committer": "Hao Lin <hao.lin@samsung.com>",
   "Signed-off-by": "Hao Lin <hao.lin@samsung.com>",
   "helper_mirror_equal": true,
-  "qualification": "HEADER_ONLY_CHANGE_AND_257_TESTS_PASS; FINAL_MACROS_POST_REAL_GATES_PENDING",
+  "qualification": "ALL_LOCAL_14B_GATES_PASS; MATERIALS_BEFORE_NEW_SANDBOX",
   "files": [
     {
       "path": "packaging/llvm.spec",
@@ -32,13 +32,13 @@
     "full_binary_patch_local_only": "complete binary patch retained locally; public text patch plus separately tracked binary Source"
   },
   "fixtures": 257,
-  "post_capture": "PASS new baseline debug/release; original platform bytes unchanged; BOLT tail last",
+  "post_capture": "PASS fresh baseline/candidate debug/release on final squashed commit; original platform bytes equal; BOLT tail last",
   "disabled_macro_proof_reused": false,
   "local_candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
   "candidate_route": "historical llvm-bolt fallback, not regenerated",
   "sandbox_branch": "sandbox/lhmax2025/bolt_pgo_v2",
   "Quickbuild_start": "Only user starts QB after PM review; sandbox push does not authorize QB",
-  "publication_order": "0004 milestone pushed; stopping evidence published after RPM identity gate failure; no sandbox attempt",
+  "publication_order": "All source/test/post/payload/maintenance materials first on GitHub; then push new sandbox branch without force",
   "real_tree_rehearsal": "NOT RUN; separate user authorization required",
   "sandbox_pushed": false,
   "previous_sandbox_pushed": true,
@@ -52,9 +52,9 @@
   ],
   "squashed_commit": "506dc25c86e4e2154150796d10b77b71d71ad6bb",
   "squashed_parent": "67619ec8bbbac7238a6cfc33a481ccfbcd12206f",
-  "final_squashed_tests": "257/257 PASS; includes both final logging refinements",
-  "disabled_macro_proof": "review4-macro-result.json",
-  "payload_check": "docs35 preserved 22 SHA/size PASS; complete merged root PASS 17722 paths/47 cmake",
+  "final_squashed_tests": "257/257 PASS on 506dc25c86e4e2154150796d10b77b71d71ad6bb",
+  "disabled_macro_proof": "review4b-macro-result.json",
+  "payload_check": "PASS preserved docs35 22 identities and complete root; final helper 17722 paths/47 cmake",
   "apply_check": true,
   "tree_equal": true,
   "previous_13A_full_payload": {
@@ -63,7 +63,12 @@
     "cmake": 47,
     "current_recertification": false
   },
-  "publication_correction": "review4-publication-correction.json; prior cad1c935 includes oversized full binary patch, current branch uses explicit --no-binary",
+  "publication_correction": "Historical oversized artifact retained in old cad1c935; current public patch explicitly --no-binary; full binary patch only local",
   "amended_from": "8be7348a6baf9d4b8b55c382b8a04dade712208d",
-  "Change_Id": "Ic98eab90cc017f127a66e1729b44fab8b8e8fb41"
+  "Change_Id": "Ic98eab90cc017f127a66e1729b44fab8b8e8fb41",
+  "post_proof": "review4b-post-capture-result.json",
+  "real_product_proof": "review4b-real-gates.json",
+  "source_comparison": "Source1005 equal; spec differences limited to build; %install and later text byte equal",
+  "maintenance_notes": "packaging/clang-bolt-helper.py header",
+  "internal_maintenance_guide": "docs/bolt/maintenance.md"
 }
