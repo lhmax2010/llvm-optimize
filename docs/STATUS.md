@@ -127,7 +127,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 ## 2. 进度
 
-2026-10-15｜本提交（父88349f6）；LLVM候选cef4d90b｜docs/52三交付物、52_hybrid_link_evidence/、STATUS｜七文件补丁/git am与三架构展开PASS，三配置+上游动态对照PASS；只配置，不完整构建，待PM review。
+2026-10-15｜本提交（父6b0ac03）｜docs/52_hybrid_link_evidence/{a,b,c,d}-configure.log、STATUS｜补齐被通用*.log忽略规则排除的四份原始CMake日志，内容与交付manifest一致；补丁/配置结论不变。
+
+2026-10-15｜6b0ac03（父88349f6）；LLVM候选cef4d90b｜docs/52三交付物、52_hybrid_link_evidence/、STATUS｜七文件补丁/git am与三架构展开PASS，三配置+上游动态对照PASS；只配置，不完整构建，待PM review。
 
 2026-10-15｜d702aa4（后续体积归因88349f6）｜docs/qb_1199098_vs_1178133/、STATUS｜Quickbuild 对比、完整原始证据及静态归档扫描收尾；验证结果见 raw/validation.json；未获取项明确登记。
 
