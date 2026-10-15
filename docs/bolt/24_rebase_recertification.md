@@ -1,6 +1,6 @@
 # 24 第三轮修复、变基与十四B重新认证
 
-当前：十四B本地认证全部PASS，sandbox待推；十四B结果在文末。以下十四A记录是保留的历史停止原文，已由十四B的PM裁决纠正来源解释。
+当前：十四B全部PASS，新sandbox已推并核对；最终结果在文末。以下十四A记录是保留的历史停止原文，已由十四B的PM裁决纠正来源解释。
 
 STOP；压缩源提交 `8be7348a6baf9d4b8b55c382b8a04dade712208d`，父 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`；新分支 sandbox/lhmax2025/bolt_pgo_v2 未推。未启动 QB 或真实树演练。
 
@@ -116,3 +116,17 @@ PM确认上一轮不是产品问题：旧R/RPMS现存docs38试构建22包，6317
 发布暂存另有一类准备修正一次：显式*.xz包含被忽略的execution.tar.xz，git add返回1，set -e在提交前停止；改为按目录暂存，再对自有证据包显式git add -f。产品代码、测试输出与门禁不变。合计两类发布准备修正各一次，产品准备错误/产品门禁失败均0。
 
 raw索引脚本创建时另有一类准备路径修正一次：在B目录写相对temp路径失败，在任何提交/产品操作前改为E绝对路径。全部为三类发布准备修正，各一次；没有放宽产品门禁。
+
+## 十四B最终推送与交付
+
+PASS。源`506dc25c86e4e2154150796d10b77b71d71ad6bb`，父`67619ec8bbbac7238a6cfc33a481ccfbcd12206f`；`sandbox/lhmax2025/bolt_pgo_v2`已无force新建，前查为空，后查为同一完整源SHA。没有推旧sandbox、refs/for或tizen_base。Gerrit返回0，仅提示subject超过50字符和若干说明行超过72字符，原文sandbox-push.stderr.txt保留；未改提交说明再推。
+
+GitHub材料先发布`6cce921c1e127e73548a21b254bbde4d7922d86a`，raw索引先发布`9c9701638e543686b86cf2fa8a12eed5bbdeb277`；126个branch/pinned URL的HTTP200及字节SHA逐个通过，GitHub远端与本地一致且B干净，然后才进行Gerrit推送。上次独立git ls-remote网络失败已在十四B开始和推送前两次复核闭合。所有测试原文、四post、来源diff、维护说明、最终helper/spec/文本补丁+profile均在先发材料中。末尾推送JSON/原文/资源随后补公开。
+
+供用户在PM审完后启动QB的软件包写法：
+
+```text
+platform/upstream/llvm@506dc25c86e4e2154150796d10b77b71d71ad6bb
+```
+
+QB与真实树演练未启动。发布模式完整构建、accel/worker实物身份、首次真实%install及非LLVM负载性能继续挂账；此处只完成本轮授权的本地认证及sandbox交付。最终候选仍4ec07159…，没有重链或重写。GitHub中公开的0000为--no-binary文本format-patch，profile二进制单列；本地保留完整二进制format-patch并已做独立apply/tree验证。

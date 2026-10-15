@@ -290,7 +290,7 @@ ad8a2606父b7，214夹具、闭包111、完整22RPM/四post/真实门禁PASS，s
 
 源8be7348a6baf9d4b8b55c382b8a04dade712208d父67619ec8，RPM身份停止，sandbox未推。完整修复、252阶段夹具/宏/post及停止/发布纠正见24与ac56ad25aeda6a96ea5d9488c4b885e60a19d203版STATUS。十四B的PM裁决已解释为旧路径指向docs38产物，未发现产品问题；不删除历史证据。
 
-## 2026-10-15 续跑十四B：本地认证PASS，sandbox待推
+## 2026-10-15 续跑十四B：PASS，新sandbox已推
 
 PM裁决：docs35原22包在W/temp/archive-fix-v2-final-20261009/rpms-docs35，旧R/RPMS为docs38；十四A停止是来源路径问题，不是产品问题。逐包对照docs35附录A的字节/SHA后使用保全包，Source1005与67619ec8字节相同，spec差异不涉及.cmake安装/%files（%install起后文全相同），照常继续。两组历史包均不称作67619ec8新构建物。
 
@@ -298,4 +298,4 @@ PM裁决：docs35原22包在W/temp/archive-fix-v2-final-20261009/rpms-docs35，�
 
 22RPM逐包身份PASS；完整合并根no_bolt_products 17722路径/47cmake，最终helper复查PASS。新压缩提交OFF debug20/release18段与新基线逐字相同，ON顺序snapshot<compare-root<转换<install且转换一次；四post平台段逐字一致、尾检最后；真实7df/4ec安全、tiny三目标、双根post/反向/compare-root、111计划正负例全PASS。4ec候选未重生成。受保护22RPM/归档证据/原坏配置/缓存/源码未变，锁/proc/scope回收。产品准备修正0次、产品门禁失败0次；发布准备三类各修正1次（stdout错误假设、忽略归档暂存、索引脚本目标路径），查找更正及完整原文见24。
 
-维护完整版见maintenance.md（四remedy、运行前提、升级与重训、锚点、资料保留/崩溃/回退）；23已明确静态图边界与stdout实际内容（2600/2609字节的夹具JSON）。上次GitHub ls-remote已补核PASS。材料先GitHub公开，才按授权推新sandbox/lhmax2025/bolt_pgo_v2；当前待推，旧sandbox/refs-for/tizen_base不动。QB/真实树演练/发布全构建及accel-worker身份仍NOT RUN，用户在PM审完后启动。完整状态/资源/原文见24和review4b系列。
+维护完整版见maintenance.md（四remedy、运行前提、升级与重训、锚点、资料保留/崩溃/回退）；23已明确静态图边界与stdout实际内容（2600/2609字节的夹具JSON）。上次GitHub ls-remote已补核PASS。材料先GitHub公开并核验126 raw/远端后，无force新建sandbox/lhmax2025/bolt_pgo_v2，前空/后查已等于该源提交，旧sandbox/refs-for/tizen_base不动。QB/真实树演练/发布全构建及accel-worker身份仍NOT RUN，用户在PM审完后启动。完整状态/资源/原文见24和review4b系列。
