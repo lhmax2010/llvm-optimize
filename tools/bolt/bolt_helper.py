@@ -15,6 +15,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import time
 
 PROFILE_SHA = 'd9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326'
 OPTIONS = ['-reorder-blocks=ext-tsp', '-reorder-functions=cdsort', '-split-functions',
@@ -47,6 +48,32 @@ def save(path, value):
     tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n')
     os.replace(tmp, path)
 
+def live_group_members(group):
+    members = []
+    for path in Path('/proc').glob('[0-9]*/stat'):
+        try:
+            # comm may contain spaces and parentheses; the final ')' delimits it.
+            fields = path.read_text().rsplit(')', 1)[1].split()
+        except (FileNotFoundError, ProcessLookupError):
+            continue
+        except (OSError, IndexError) as error:
+            raise GateError('cannot inspect process group member: '+str(path)) from error
+        require(len(fields) >= 3, 'malformed process stat: '+str(path))
+        if int(fields[2]) == group and fields[0] not in ('Z', 'X'):
+            members.append((int(path.parent.name), fields[0]))
+    return sorted(members)
+
+def wait_group_exit(group, timeout=10):
+    deadline = time.monotonic() + timeout
+    while True:
+        members = live_group_members(group)
+        if not members:
+            return
+        require(time.monotonic() < deadline,
+                'process group %d still alive after %s seconds: %s' %
+                (group, timeout, ', '.join('%d:%s' % item for item in members)))
+        time.sleep(0.02)
+
 def call(argv, log, cwd=None, timeout=300):
     log = Path(log)
     log.parent.mkdir(parents=True, exist_ok=True)
@@ -61,12 +88,22 @@ def call(argv, log, cwd=None, timeout=300):
             require(rc == 0, 'COMMAND_FAILED rc=%s: %s' % (rc, argv[0]))
         return log.read_text(errors='replace')
     except BaseException as error:
+        cleanup_error = None
         if process is not None:
             try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            process.wait()
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                try:
+                    process.wait()
+                finally:
+                    wait_group_exit(process.pid)
+            except Exception as cleanup:
+                cleanup_error = cleanup
+        if cleanup_error is not None:
+            raise GateError('%s; original error: %s (see %s)' %
+                            (cleanup_error, error, log)) from error
         if isinstance(error, (KeyboardInterrupt, SystemExit)):
             raise
         raise GateError('%s: %s (see %s)' %

@@ -13,12 +13,23 @@ class ProcessGroupTests(Base):
         with self.assertRaisesRegex(h.GateError,'TIMEOUT.*see'):
             h.call(['/bin/sh',str(script)],self.d/'timeout.log',timeout=1)
         ids=list(map(int,pids.read_text().split()));self.assertEqual(len(ids),3)
-        for pid in ids:
-            status=Path('/proc')/str(pid)/'stat'
-            try:state=status.read_text().split(') ',1)[1].split()[0]
-            except FileNotFoundError:state=None
-            self.assertIn(state,(None,'Z'),str(pid))
+        deadline=time.monotonic()+10
+        while True:
+            live=[]
+            for pid in ids:
+                status=Path('/proc')/str(pid)/'stat'
+                try:state=status.read_text().rsplit(')',1)[1].split()[0]
+                except FileNotFoundError:state=None
+                if state not in (None,'Z','X'):live.append((pid,state))
+            if not live:break
+            self.assertLess(time.monotonic(),deadline,str(live));time.sleep(.02)
         size=heartbeat.stat().st_size;time.sleep(.15);self.assertEqual(heartbeat.stat().st_size,size)
+    def test_stubborn_member_reports_pid_and_original_error(self):
+        with patch.object(h,'live_group_members',return_value=[(424242,'R')]),patch.object(h.time,'monotonic',side_effect=[0,11]):
+            with self.assertRaisesRegex(h.GateError,r'424242:R.*original error.*see'):
+                h.call(['/bin/sh','-c','exit 7'],self.d/'stubborn.log')
+    def test_zombie_and_absent_group_exit(self):
+        with patch.object(h,'live_group_members',return_value=[]):h.wait_group_exit(424242)
     def test_exception_kills_group_and_reports_log(self):
         real_wait=subprocess.Popen.wait;calls=[]
         def wait(p,*a,**kw):

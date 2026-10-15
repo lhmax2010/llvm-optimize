@@ -43,3 +43,11 @@ rsp检查：保存的 link.original SHA256 `352a6f57fdc617c20f3e616a0f49ad113d1d
 新源提交：**未生成**；源HEAD仍a1410e3d，修复在工作副本保留。本轮Gerrit任何分支均未查询或推送。GitHub阶段提交3e7141f已发布tool-plan；停止记录与未认证修复另提交bolt-v4。
 
 准备修正与查找更正逐条见review-corrections.json；两份完整失败日志均公开。初次编辑脚本cwd错误后测试了旧helper，作为旧行为回归复现而非新实现认证；后续109项才是正确实现PASS。停止时没有继续产品步骤。
+
+## 续跑十：PM裁决及进程组约定
+
+上轮不是单纯测试竞态：killpg后只等待直接子进程，不能证明lld等后代已停止写缓存。call异常/超时先killpg(SIGKILL)，回收直接子进程，随后扫描/proc/*/stat，取最后一个右括号之后的state与pgrp；相同pgrp且非Z/X视为存活，每20ms复查，10秒仍存活则GateError列PID/状态。原超时/异常和日志路径保留。/proc消失视为已退出，无法读取/格式错误则失败关闭。
+
+真实shell→子→孙，孙每30ms写心跳；按同样10秒约定观察所有后代退出/僵尸后，再等待150ms（超过两个周期）确认心跳不增。持续存活mock负例报告424242:R、原错误和日志。全套140/140 PASS，新增2方法（累计比原103新增37），reviewfinish-process-tests给原文/资源；4GiB/swap0/nice19/ionice3 scope回收。本轮尚无准备修正。
+
+rsp不加代码、tool-plan闭包及白名单不重做；全套单测包含原有tool-plan回归。候选生成步骤/参数不改；源父a141，本轮不推sandbox或任何Gerrit分支。后续按安全属性→宏链→真实门禁顺序，任一产品失败即停。

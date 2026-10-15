@@ -266,3 +266,7 @@ PM确认追加bolt后第二次完整安装创建两个未登记manifest的BOLT�
 PM裁决及本轮边界见21：修门禁不改生成参数/4ec候选，源父a141；仅push bolt-v4，禁止Gerrit。QB默认开关保持开启；回退需新spec提交改bcond_with，不能改QB配置。第一步离线闭包1911边（普通1792/command1715、新增phony9、实际BOLT110=102对象+7库+1链接），精确描述白名单及固定NINJA_STATUS，109/109夹具PASS。准备入口cwd修正一次，详见21；后续待。
 
 续跑九STOP_PROCESS_TIMEOUT_FIXTURE_SECOND_ERROR：健壮性修改后的138夹具137通过1失败，进程后代退出观察修正一次后仍见R，按第二次错误立即停，不再试。安全属性/宏链开关OFF比对/ARM与AArch64性能/真实新门禁全部NOT RUN，不能生成合格源提交。候选4ec、普通clang、禁用cache/ninja未变；22RPM/归档/源码保护PASS、原cache47987/96881772832B；scope已回收，无重锁/proc/CMake/Ninja/ARM树/Gerrit动作。源HEAD仍a141，未完成修复及manifest单独保存；生产prune移除，rsp证据无@不改代码。35新增测试方法；准备/查找错误、初次109单测未纳入cgroup偏差详见21及review-corrections/resources。保持QB默认开启，回退需新spec提交改bcond_with，正式说明必须注明。
+
+## 2026-10-15 续跑十（进行中）
+
+PM：上轮为真实退出证明缺口，按SIGKILL/直接回收/扫描pgrp等待非Z-X成员清空（10s上限、列存活PID状态）修复；rsp无@关闭；110描述tool-plan已认证不重做；生成参数不改、4ec候选变化即停。原树禁cmake/ninja/-P，禁止任何Gerrit动作；资源/保护/准备修正规则继续。工作副本继续使用，源父a141。步骤1 140/140夹具PASS，比上轮138新增2项；真实shell/子/孙心跳停止、持续存活mock报PID及原错误/日志通过，4GiB scope已回收，无准备修正。安全属性等后续待，详细21。
