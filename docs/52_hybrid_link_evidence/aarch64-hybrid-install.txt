@@ -1,0 +1,42 @@
+export AR=llvm-ar RANLIB=llvm-ranlib;
+export CC=aarch64-tizen-linux-gnu-clang CXX=aarch64-tizen-linux-gnu-clang++;
+
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr -P cmake_install.cmake
+ln -sf /usr/bin/clang++ /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/bin/clang++-22
+
+ln -sf clang /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/bin/aarch64-tizen-linux-gnu-clang
+ln -sf clang++ /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/bin/aarch64-tizen-linux-gnu-clang++
+# Use host triple and resource dir by default via <lang>.cfg
+cat >> /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64//usr/bin/clang.cfg << EOF
+-target aarch64-tizen-linux-gnu
+-resource-dir /usr/lib64/clang/22
+EOF
+ln -sf clang.cfg /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64//usr/bin/clang++.cfg
+
+# copy lldb for sdk
+mkdir -p /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/home/owner/share/tmp/sdk_tools/lldb/bin
+mkdir -p /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/home/owner/share/tmp/sdk_tools/lldb/lib64
+
+mv /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/bin/lldb /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/home/owner/share/tmp/sdk_tools/lldb/bin
+mv /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/bin/lldb-argdumper /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/home/owner/share/tmp/sdk_tools/lldb/bin
+mv /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/bin/lldb-server /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/home/owner/share/tmp/sdk_tools/lldb/bin
+
+ln -sf /home/owner/share/tmp/sdk_tools/lldb/bin/lldb /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/bin/
+
+cp -P /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib64/liblldb.so* /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/home/owner/share/tmp/sdk_tools/lldb/lib64/
+
+# Install the clang python bits
+mkdir -p /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib/python3.14/site-packages
+cp -a ../clang/bindings/python/clang /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib/python3.14/site-packages/
+
+rm -rf /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib64/debug/*
+rm -rf /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib/libear/*
+rm -rf /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib/libscanbuild/*
+
+
+%post -n clang -p /sbin/ldconfig
+%postun -n clang -p /sbin/ldconfig
+
+%post -n lldb
+echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /root/.lldbinit

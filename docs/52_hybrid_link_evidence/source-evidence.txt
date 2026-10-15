@@ -1,0 +1,297 @@
+llvm/tools/opt/CMakeLists.txt:1: set(LLVM_LINK_COMPONENTS
+llvm/tools/opt/CMakeLists.txt:34: add_llvm_library(LLVMOptDriver
+llvm/tools/opt/CMakeLists.txt:35:   STATIC
+llvm/tools/opt/CMakeLists.txt:43: add_llvm_tool(opt
+llvm/tools/opt/CMakeLists.txt:52: target_link_libraries(opt PRIVATE LLVMOptDriver)
+llvm/lib/Debuginfod/CMakeLists.txt:18: add_llvm_library(LLVMDebuginfod
+llvm/lib/Debuginfod/CMakeLists.txt:30:   LINK_COMPONENTS
+llvm/tools/llvm-diff/CMakeLists.txt:1: set(LLVM_LINK_COMPONENTS
+llvm/tools/llvm-diff/CMakeLists.txt:7: add_llvm_tool(llvm-diff
+llvm/tools/llvm-diff/CMakeLists.txt:15: target_link_libraries(llvm-diff PRIVATE LLVMDiff)
+llvm/tools/llvm-cfi-verify/CMakeLists.txt:1: set(LLVM_LINK_COMPONENTS
+llvm/tools/llvm-cfi-verify/CMakeLists.txt:13: add_llvm_tool(llvm-cfi-verify
+llvm/tools/llvm-cfi-verify/CMakeLists.txt:18: target_link_libraries(llvm-cfi-verify PRIVATE LLVMCFIVerify)
+llvm/cmake/modules/TableGen.cmake:183:   set(${target}_OLD_LLVM_LINK_COMPONENTS ${LLVM_LINK_COMPONENTS})
+llvm/cmake/modules/TableGen.cmake:184:   set(LLVM_LINK_COMPONENTS ${LLVM_LINK_COMPONENTS} TableGen)
+llvm/cmake/modules/TableGen.cmake:186:   add_llvm_executable(${target} DISABLE_LLVM_LINK_LLVM_DYLIB
+llvm/cmake/modules/TableGen.cmake:188:   set(LLVM_LINK_COMPONENTS ${${target}_OLD_LLVM_LINK_COMPONENTS})
+llvm/cmake/modules/TableGen.cmake:249:       add_llvm_install_targets("install-${target}"
+llvm/tools/llvm-config/CMakeLists.txt:1: set(LLVM_LINK_COMPONENTS
+llvm/tools/llvm-config/CMakeLists.txt:10: add_llvm_tool(llvm-config
+llvm/tools/llvm-config/CMakeLists.txt:17:   DISABLE_LLVM_LINK_LLVM_DYLIB
+llvm/tools/llvm-config/CMakeLists.txt:75: set(LLVM_SHARED_LIBRARY_PREFIX "${CMAKE_SHARED_LIBRARY_PREFIX}")
+llvm/tools/llvm-config/CMakeLists.txt:84:   LLVM_LINK_LLVM_DYLIB
+llvm/tools/llvm-config/CMakeLists.txt:86:   BUILD_SHARED_LIBS)
+llvm/tools/llvm-config/CMakeLists.txt:87: llvm_expand_pseudo_components(LLVM_DYLIB_COMPONENTS_expanded "${LLVM_DYLIB_COMPONENTS}")
+llvm/tools/llvm-exegesis/CMakeLists.txt:4: set(LLVM_LINK_COMPONENTS
+llvm/tools/llvm-exegesis/CMakeLists.txt:14:   list(APPEND LLVM_LINK_COMPONENTS "${t}AsmParser")
+llvm/tools/llvm-exegesis/CMakeLists.txt:15:   list(APPEND LLVM_LINK_COMPONENTS "${t}CodeGen")
+llvm/tools/llvm-exegesis/CMakeLists.txt:16:   list(APPEND LLVM_LINK_COMPONENTS "${t}Desc")
+llvm/tools/llvm-exegesis/CMakeLists.txt:17:   list(APPEND LLVM_LINK_COMPONENTS "${t}Disassembler")
+llvm/tools/llvm-exegesis/CMakeLists.txt:18:   list(APPEND LLVM_LINK_COMPONENTS "${t}Info")
+llvm/tools/llvm-exegesis/CMakeLists.txt:21: add_llvm_tool(llvm-exegesis
+llvm/tools/llvm-exegesis/CMakeLists.txt:22:   DISABLE_LLVM_LINK_LLVM_DYLIB
+llvm/tools/llvm-exegesis/CMakeLists.txt:36: target_link_libraries(llvm-exegesis PRIVATE
+llvm/tools/lli/ChildTarget/CMakeLists.txt:1: set(LLVM_LINK_COMPONENTS
+llvm/tools/lli/ChildTarget/CMakeLists.txt:8: add_llvm_utility(lli-child-target
+llvm/benchmarks/CMakeLists.txt:1: set(LLVM_LINK_COMPONENTS
+llvm/benchmarks/CMakeLists.txt:41:     target_compile_definitions(RuntimeLibcallsBench PRIVATE
+clang-tools-extra/clang-tidy/CMakeLists.txt:1: set(LLVM_LINK_COMPONENTS
+clang-tools-extra/clang-tidy/CMakeLists.txt:11: add_clang_library(clangTidy STATIC
+clang-tools-extra/clang-tidy/CMakeLists.txt:28: clang_target_link_libraries(clangTidy
+clang-tools-extra/clang-tidy/CMakeLists.txt:29:   PRIVATE
+clang-tools-extra/clang-tidy/CMakeLists.txt:43: if(CLANG_TIDY_ENABLE_STATIC_ANALYZER)
+clang-tools-extra/clang-tidy/CMakeLists.txt:44:   clang_target_link_libraries(clangTidy
+clang-tools-extra/clang-tidy/CMakeLists.txt:45:     PRIVATE
+clang-tools-extra/clang-tidy/CMakeLists.txt:71: if(CLANG_TIDY_ENABLE_STATIC_ANALYZER)
+clang-tools-extra/clang-tidy/CMakeLists.txt:109: if(CLANG_TIDY_ENABLE_STATIC_ANALYZER)
+clang-tools-extra/clang-tidy/CMakeLists.txt:130:     add_llvm_install_targets(install-clang-tidy-headers
+clang-tools-extra/clangd/CMakeLists.txt:42: set(LLVM_LINK_COMPONENTS
+clang-tools-extra/clangd/CMakeLists.txt:64: add_clang_library(clangDaemon STATIC
+clang-tools-extra/clangd/CMakeLists.txt:161: clang_target_link_libraries(clangDaemon
+clang-tools-extra/clangd/CMakeLists.txt:162:   PRIVATE
+clang-tools-extra/clangd/CMakeLists.txt:182: target_link_libraries(clangDaemon
+clang-tools-extra/clangd/CMakeLists.txt:183:   PRIVATE
+clang-tools-extra/clangd/CMakeLists.txt:193:   target_link_libraries(clangDaemon PRIVATE ${ALL_CLANG_TIDY_CHECKS})
+llvm/tools/llvm-shlib/CMakeLists.txt:9: if(LLVM_LINK_LLVM_DYLIB AND LLVM_DYLIB_EXPORTED_SYMBOL_FILE)
+llvm/tools/llvm-shlib/CMakeLists.txt:10:   message(WARNING "Using LLVM_LINK_LLVM_DYLIB with LLVM_DYLIB_EXPORTED_SYMBOL_FILE may not work. Use at your own risk.")
+llvm/tools/llvm-shlib/CMakeLists.txt:21:   llvm_map_components_to_libnames(LIB_NAMES ${LLVM_DYLIB_COMPONENTS})
+llvm/tools/llvm-shlib/CMakeLists.txt:33:   if (LLVM_LINK_LLVM_DYLIB)
+llvm/tools/llvm-shlib/CMakeLists.txt:37:     add_llvm_library(LLVM SHARED DISABLE_LLVM_LINK_LLVM_DYLIB SONAME ${INSTALL_WITH_TOOLCHAIN} ${SOURCES})
+llvm/tools/llvm-shlib/CMakeLists.txt:39:     add_llvm_library(LLVM SHARED DISABLE_LLVM_LINK_LLVM_DYLIB OUTPUT_NAME LLVM ${INSTALL_WITH_TOOLCHAIN} ${SOURCES})
+llvm/tools/llvm-shlib/CMakeLists.txt:41:     llvm_install_library_symlink(LLVM-${LLVM_VERSION_MAJOR}${LLVM_VERSION_SUFFIX} $<TARGET_FILE_NAME:LLVM> SHARED FULL_DEST COMPONENT LLVM)
+llvm/tools/llvm-shlib/CMakeLists.txt:50:     target_link_options(LLVM PRIVATE LINKER:--export-all-symbols)
+llvm/tools/llvm-shlib/CMakeLists.txt:71:       target_link_directories(LLVM PRIVATE ${LLVM_LIBRARY_DIR})
+llvm/tools/llvm-shlib/CMakeLists.txt:73:         target_link_options(LLVM PRIVATE /WHOLEARCHIVE:${library}.lib)
+llvm/tools/llvm-shlib/CMakeLists.txt:87:         target_link_options(LLVM PRIVATE LINKER:-Bsymbolic-functions)
+llvm/tools/llvm-shlib/CMakeLists.txt:92:   target_link_libraries(LLVM PRIVATE ${LIB_NAMES})
+llvm/tools/llvm-shlib/CMakeLists.txt:95:     target_link_libraries(LLVM PUBLIC atomic)
+llvm/tools/llvm-shlib/CMakeLists.txt:124:   set(LIB_NAME ${LIB_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}LLVM)
+llvm/tools/llvm-shlib/CMakeLists.txt:125:   set(LIB_PATH ${LIB_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX})
+llvm/tools/llvm-shlib/CMakeLists.txt:138:   add_llvm_library(LLVM-C SHARED ${SOURCES} INSTALL_WITH_TOOLCHAIN)
+llvm/tools/llvm-shlib/CMakeLists.txt:140:   target_link_libraries(LLVM-C PUBLIC LLVM)
+llvm/tools/llvm-shlib/CMakeLists.txt:151:   set(LLVM_LINK_COMPONENTS
+llvm/tools/llvm-shlib/CMakeLists.txt:152:     ${LLVM_DYLIB_COMPONENTS}
+llvm/tools/llvm-shlib/CMakeLists.txt:155:   llvm_map_components_to_libnames(LIB_NAMES ${LLVM_DYLIB_COMPONENTS})
+llvm/tools/llvm-shlib/CMakeLists.txt:205:   add_llvm_library(LLVM-C SHARED INSTALL_WITH_TOOLCHAIN ${SOURCES} DEPENDS intrinsics_gen)
+llvm/tools/llvm-shlib/CMakeLists.txt:209:     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${CMAKE_CXX_LINKER_WRAPPER_FLAG}-INCLUDE:malloc")
+clang/tools/clang-shlib/CMakeLists.txt:6: get_property(clang_libs GLOBAL PROPERTY CLANG_STATIC_LIBS)
+clang/tools/clang-shlib/CMakeLists.txt:16:   if (BUILD_SHARED_LIBS)
+clang/tools/clang-shlib/CMakeLists.txt:26:   # BUILD_SHARED_LIBS=ON
+clang/tools/clang-shlib/CMakeLists.txt:40: if (CLANG_LINK_CLANG_DYLIB)
+clang/tools/clang-shlib/CMakeLists.txt:48: add_clang_library(clang-cpp
+clang/tools/clang-shlib/CMakeLists.txt:49:                   SHARED
+clang/tools/clang-shlib/CMakeLists.txt:59:   target_link_options(clang-cpp PRIVATE LINKER:--version-script,${CMAKE_CURRENT_BINARY_DIR}/simple_version_script.map)
+clang/tools/clang-shlib/CMakeLists.txt:65:   target_link_options(clang-cpp PRIVATE LINKER:-Bsymbolic-functions)
+clang/tools/clang-shlib/CMakeLists.txt:73:   target_link_options(clang-cpp PRIVATE LINKER:--export-all-symbols)
+llvm/cmake/modules/AddLLVM.cmake:78:   target_compile_options(${name} PRIVATE ${LLVM_COMPILE_FLAGS} $<$<COMPILE_LANGUAGE:CXX>:${LLVM_COMPILE_CXXFLAGS}>)
+llvm/cmake/modules/AddLLVM.cmake:79:   target_compile_definitions(${name} PRIVATE ${LLVM_COMPILE_DEFINITIONS})
+llvm/cmake/modules/AddLLVM.cmake:82: function(add_llvm_symbol_exports target_name export_file)
+llvm/cmake/modules/AddLLVM.cmake:180: endfunction(add_llvm_symbol_exports)
+llvm/cmake/modules/AddLLVM.cmake:473: #   SHARED;STATIC
+llvm/cmake/modules/AddLLVM.cmake:474: #     STATIC by default w/o BUILD_SHARED_LIBS.
+llvm/cmake/modules/AddLLVM.cmake:475: #     SHARED by default w/  BUILD_SHARED_LIBS.
+llvm/cmake/modules/AddLLVM.cmake:477: #     Also create an OBJECT library target. Default if STATIC && SHARED.
+llvm/cmake/modules/AddLLVM.cmake:481: #   DISABLE_LLVM_LINK_LLVM_DYLIB
+llvm/cmake/modules/AddLLVM.cmake:483: #     LLVM_LINK_LLVM_DYLIB is enabled.
+llvm/cmake/modules/AddLLVM.cmake:488: #   LINK_COMPONENTS components...
+llvm/cmake/modules/AddLLVM.cmake:489: #     Same as the variable LLVM_LINK_COMPONENTS.
+llvm/cmake/modules/AddLLVM.cmake:491: #     Same semantics as target_link_libraries().
+llvm/cmake/modules/AddLLVM.cmake:507:     "MODULE;SHARED;STATIC;OBJECT;DISABLE_LLVM_LINK_LLVM_DYLIB;SONAME;NO_INSTALL_RPATH;COMPONENT_LIB"
+llvm/cmake/modules/AddLLVM.cmake:509:     "ADDITIONAL_HEADERS;DEPENDS;LINK_COMPONENTS;LINK_LIBS;OBJLIBS"
+llvm/cmake/modules/AddLLVM.cmake:523:     if(ARG_SHARED OR ARG_STATIC)
+llvm/cmake/modules/AddLLVM.cmake:524:       message(WARNING "MODULE with SHARED|STATIC doesn't make sense.")
+llvm/cmake/modules/AddLLVM.cmake:535:     if(BUILD_SHARED_LIBS AND NOT ARG_STATIC)
+llvm/cmake/modules/AddLLVM.cmake:536:       set(ARG_SHARED TRUE)
+llvm/cmake/modules/AddLLVM.cmake:538:     if(NOT ARG_SHARED)
+llvm/cmake/modules/AddLLVM.cmake:539:       set(ARG_STATIC TRUE)
+llvm/cmake/modules/AddLLVM.cmake:546:   if((ARG_SHARED AND ARG_STATIC) OR ARG_OBJECT)
+llvm/cmake/modules/AddLLVM.cmake:564:     target_include_directories(${obj_name} PRIVATE $<TARGET_PROPERTY:${name},INCLUDE_DIRECTORIES>)
+llvm/cmake/modules/AddLLVM.cmake:577:         "PUBLIC;PRIVATE"
+llvm/cmake/modules/AddLLVM.cmake:591:     if(ARG_DISABLE_LLVM_LINK_LLVM_DYLIB)
+llvm/cmake/modules/AddLLVM.cmake:592:       target_compile_definitions(${obj_name} PRIVATE LLVM_BUILD_STATIC)
+llvm/cmake/modules/AddLLVM.cmake:596:   if(ARG_SHARED AND ARG_STATIC)
+llvm/cmake/modules/AddLLVM.cmake:603:     llvm_add_library(${name_static} STATIC
+llvm/cmake/modules/AddLLVM.cmake:607:       LINK_COMPONENTS ${ARG_LINK_COMPONENTS}
+llvm/cmake/modules/AddLLVM.cmake:612:     target_link_directories(${name_static} PRIVATE $<TARGET_PROPERTY:${name},LINK_DIRECTORIES>)
+llvm/cmake/modules/AddLLVM.cmake:613:     target_link_libraries(${name_static} PRIVATE $<TARGET_PROPERTY:${name},LINK_LIBRARIES>)
+llvm/cmake/modules/AddLLVM.cmake:616:     set(ARG_STATIC)
+llvm/cmake/modules/AddLLVM.cmake:621:   elseif(ARG_SHARED)
+llvm/cmake/modules/AddLLVM.cmake:623:     add_library(${name} SHARED ${ALL_FILES})
+llvm/cmake/modules/AddLLVM.cmake:625:     add_library(${name} STATIC ${ALL_FILES})
+llvm/cmake/modules/AddLLVM.cmake:643:     if(LLVM_BUILD_LLVM_DYLIB OR BUILD_SHARED_LIBS)
+llvm/cmake/modules/AddLLVM.cmake:644:       target_compile_definitions(${name} PRIVATE LLVM_EXPORTS)
+llvm/cmake/modules/AddLLVM.cmake:649:     if (LLVM_BUILD_LLVM_DYLIB_VIS AND NOT BUILD_SHARED_LIBS AND NOT APPLE AND
+llvm/cmake/modules/AddLLVM.cmake:663:     if(ARG_MODULE OR ARG_SHARED)
+llvm/cmake/modules/AddLLVM.cmake:695:   if(ARG_SHARED)
+llvm/cmake/modules/AddLLVM.cmake:713:   if(ARG_MODULE OR ARG_SHARED)
+llvm/cmake/modules/AddLLVM.cmake:721:       add_llvm_symbol_exports( ${name} ${LLVM_EXPORTED_SYMBOL_FILE} )
+llvm/cmake/modules/AddLLVM.cmake:725:   if(ARG_SHARED)
+llvm/cmake/modules/AddLLVM.cmake:735:         llvm_install_library_symlink(${api_name} ${library_name} SHARED
+llvm/cmake/modules/AddLLVM.cmake:737:         llvm_install_library_symlink(${output_name} ${library_name} SHARED
+llvm/cmake/modules/AddLLVM.cmake:743:   if(ARG_STATIC)
+llvm/cmake/modules/AddLLVM.cmake:746:     # We can use PRIVATE since SO knows its dependent libs.
+llvm/cmake/modules/AddLLVM.cmake:747:     set(libtype PRIVATE)
+llvm/cmake/modules/AddLLVM.cmake:754:     if (LLVM_LINK_LLVM_DYLIB AND NOT ARG_DISABLE_LLVM_LINK_LLVM_DYLIB)
+llvm/cmake/modules/AddLLVM.cmake:757:       if(ARG_DISABLE_LLVM_LINK_LLVM_DYLIB)
+llvm/cmake/modules/AddLLVM.cmake:758:         target_compile_definitions(${name} PRIVATE LLVM_BUILD_STATIC)
+llvm/cmake/modules/AddLLVM.cmake:761:        ${ARG_LINK_COMPONENTS}
+llvm/cmake/modules/AddLLVM.cmake:762:        ${LLVM_LINK_COMPONENTS}
+llvm/cmake/modules/AddLLVM.cmake:773:     set_property(TARGET ${name} PROPERTY LLVM_LINK_COMPONENTS ${ARG_LINK_COMPONENTS} ${LLVM_LINK_COMPONENTS})
+llvm/cmake/modules/AddLLVM.cmake:777:     # property as the target_link_libraries call below.
+llvm/cmake/modules/AddLLVM.cmake:781:   target_link_libraries(${name} ${libtype}
+llvm/cmake/modules/AddLLVM.cmake:798:   if(ARG_SHARED OR ARG_MODULE)
+llvm/cmake/modules/AddLLVM.cmake:808:   if(ARG_STATIC AND LLVM_TOUCH_STATIC_LIBRARIES)
+llvm/cmake/modules/AddLLVM.cmake:811:       COMMAND touch ${LLVM_LIBRARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${name}${CMAKE_STATIC_LIBRARY_SUFFIX}
+llvm/cmake/modules/AddLLVM.cmake:816: function(add_llvm_install_targets target)
+llvm/cmake/modules/AddLLVM.cmake:868: # be passed. One can use ADD_TO_COMPONENT option from add_llvm_component_library
+llvm/cmake/modules/AddLLVM.cmake:870: function(add_llvm_component_group name)
+llvm/cmake/modules/AddLLVM.cmake:871:   cmake_parse_arguments(ARG "HAS_JIT" "" "LINK_COMPONENTS" ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:878:   if(ARG_LINK_COMPONENTS)
+llvm/cmake/modules/AddLLVM.cmake:879:     set_property(TARGET ${name} PROPERTY LLVM_LINK_COMPONENTS ${ARG_LINK_COMPONENTS})
+llvm/cmake/modules/AddLLVM.cmake:887: #   - LLVM_LINK_COMPONENTS: a list of component this component depends on
+llvm/cmake/modules/AddLLVM.cmake:891: # component to the LLVM_LINK_COMPONENTS of <component>.
+llvm/cmake/modules/AddLLVM.cmake:892: function(add_llvm_component_library name)
+llvm/cmake/modules/AddLLVM.cmake:898:   add_llvm_library(${name} COMPONENT_LIB ${ARG_UNPARSED_ARGUMENTS})
+llvm/cmake/modules/AddLLVM.cmake:907:     set_property(TARGET ${ARG_ADD_TO_COMPONENT} APPEND PROPERTY LLVM_LINK_COMPONENTS ${component_name})
+llvm/cmake/modules/AddLLVM.cmake:914: macro(add_llvm_library name)
+llvm/cmake/modules/AddLLVM.cmake:916:     "SHARED;BUILDTREE_ONLY;MODULE;INSTALL_WITH_TOOLCHAIN;NO_EXPORT"
+llvm/cmake/modules/AddLLVM.cmake:922:   elseif( BUILD_SHARED_LIBS OR ARG_SHARED )
+llvm/cmake/modules/AddLLVM.cmake:923:     llvm_add_library(${name} SHARED ${ARG_UNPARSED_ARGUMENTS})
+llvm/cmake/modules/AddLLVM.cmake:963:         add_llvm_install_targets(install-${name}
+llvm/cmake/modules/AddLLVM.cmake:979: endmacro(add_llvm_library name)
+llvm/cmake/modules/AddLLVM.cmake:1021:       set_property(GLOBAL APPEND PROPERTY LLVM_DRIVER_COMPONENTS ${LLVM_LINK_COMPONENTS})
+llvm/cmake/modules/AddLLVM.cmake:1027:       target_link_libraries(${obj_name} ${LLVM_PTHREAD_LIB})
+llvm/cmake/modules/AddLLVM.cmake:1028:       llvm_config(${obj_name} ${USE_SHARED} ${LLVM_LINK_COMPONENTS} )
+llvm/cmake/modules/AddLLVM.cmake:1036:   if(NOT TIZEN_HYBRID_LINK OR NOT LLVM_LINK_LLVM_DYLIB OR NOT TARGET ${name})
+llvm/cmake/modules/AddLLVM.cmake:1040:   if(NOT kind STREQUAL "STATIC_LIBRARY")
+llvm/cmake/modules/AddLLVM.cmake:1049:     "LINK_COMPONENTS;LINK_LIBS;DEPENDS;OBJLIBS;ADDITIONAL_HEADERS" ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:1050:   llvm_map_components_to_libnames(components ${H_LINK_COMPONENTS} ${LLVM_LINK_COMPONENTS})
+llvm/cmake/modules/AddLLVM.cmake:1051:   set(static_consumer "$<BOOL:$<TARGET_PROPERTY:TIZEN_STATIC_LLVM>>")
+llvm/cmake/modules/AddLLVM.cmake:1067: macro(add_llvm_executable name)
+llvm/cmake/modules/AddLLVM.cmake:1069:     "DISABLE_LLVM_LINK_LLVM_DYLIB;IGNORE_EXTERNALIZE_DEBUGINFO;NO_INSTALL_RPATH;SUPPORT_PLUGINS;EXPORT_SYMBOLS"
+llvm/cmake/modules/AddLLVM.cmake:1125:     add_llvm_symbol_exports( ${name} ${LLVM_EXPORTED_SYMBOL_FILE} )
+llvm/cmake/modules/AddLLVM.cmake:1140:   if (LLVM_LINK_LLVM_DYLIB AND NOT ARG_DISABLE_LLVM_LINK_LLVM_DYLIB)
+llvm/cmake/modules/AddLLVM.cmake:1141:     set(USE_SHARED USE_SHARED)
+llvm/cmake/modules/AddLLVM.cmake:1146:   llvm_config( ${name} ${USE_SHARED} ${LLVM_LINK_COMPONENTS} )
+llvm/cmake/modules/AddLLVM.cmake:1163:     target_link_libraries(${name} PRIVATE ${LLVM_PTHREAD_LIB})
+llvm/cmake/modules/AddLLVM.cmake:1167:     target_link_libraries(${name} PRIVATE llvmlibc)
+llvm/cmake/modules/AddLLVM.cmake:1176:   if(ARG_DISABLE_LLVM_LINK_LLVM_DYLIB OR NOT LLVM_LINK_LLVM_DYLIB)
+llvm/cmake/modules/AddLLVM.cmake:1177:     target_compile_definitions(${name} PRIVATE LLVM_BUILD_STATIC)
+llvm/cmake/modules/AddLLVM.cmake:1183:     target_compile_options(${name} PRIVATE /Zc:dllexportInlines-)
+llvm/cmake/modules/AddLLVM.cmake:1185: endmacro(add_llvm_executable name)
+llvm/cmake/modules/AddLLVM.cmake:1187: # add_llvm_pass_plugin(name [NO_MODULE] ...)
+llvm/cmake/modules/AddLLVM.cmake:1198: function(add_llvm_pass_plugin name)
+llvm/cmake/modules/AddLLVM.cmake:1217:       list(APPEND ARG_UNPARSED_ARGUMENTS DISABLE_LLVM_LINK_LLVM_DYLIB)
+llvm/cmake/modules/AddLLVM.cmake:1224:     add_llvm_library(${name} OBJECT ${ARG_UNPARSED_ARGUMENTS})
+llvm/cmake/modules/AddLLVM.cmake:1225:     target_compile_definitions(${name} PRIVATE LLVM_${name_upper}_LINK_INTO_TOOLS)
+llvm/cmake/modules/AddLLVM.cmake:1236:     set_property(GLOBAL APPEND PROPERTY LLVM_STATIC_EXTENSIONS ${name})
+llvm/cmake/modules/AddLLVM.cmake:1238:     add_llvm_library(${name} MODULE NO_EXPORT ${ARG_UNPARSED_ARGUMENTS})
+llvm/cmake/modules/AddLLVM.cmake:1240:     add_llvm_library(${name} OBJECT NO_EXPORT ${ARG_UNPARSED_ARGUMENTS})
+llvm/cmake/modules/AddLLVM.cmake:1244: endfunction(add_llvm_pass_plugin)
+llvm/cmake/modules/AddLLVM.cmake:1262:       get_property(LLVM_STATIC_EXTENSIONS GLOBAL PROPERTY LLVM_STATIC_EXTENSIONS)
+llvm/cmake/modules/AddLLVM.cmake:1268:   foreach(llvm_extension ${LLVM_STATIC_EXTENSIONS})
+llvm/cmake/modules/AddLLVM.cmake:1287:           "set(LLVM_STATIC_EXTENSIONS ${LLVM_STATIC_EXTENSIONS})")
+llvm/cmake/modules/AddLLVM.cmake:1295:       foreach(llvm_extension ${LLVM_STATIC_EXTENSIONS})
+llvm/cmake/modules/AddLLVM.cmake:1312:       foreach(llvm_extension ${LLVM_STATIC_EXTENSIONS})
+llvm/cmake/modules/AddLLVM.cmake:1320:       list(LENGTH LLVM_STATIC_EXTENSIONS llvm_static_extension_count)
+llvm/cmake/modules/AddLLVM.cmake:1330:       foreach(llvm_extension ${LLVM_STATIC_EXTENSIONS})
+llvm/cmake/modules/AddLLVM.cmake:1386:           if("${lib_type}" STREQUAL "STATIC_LIBRARY")
+llvm/cmake/modules/AddLLVM.cmake:1423:     add_llvm_symbol_exports( ${target} ${exported_symbol_file} )
+llvm/cmake/modules/AddLLVM.cmake:1516:     add_llvm_executable(${name} ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:1532:           add_llvm_install_targets(install-${name}
+llvm/cmake/modules/AddLLVM.cmake:1548: macro(add_llvm_tool name)
+llvm/cmake/modules/AddLLVM.cmake:1553: macro(add_llvm_example name)
+llvm/cmake/modules/AddLLVM.cmake:1557:   add_llvm_executable(${name} EXPORT_SYMBOLS ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:1568: endmacro(add_llvm_example name)
+llvm/cmake/modules/AddLLVM.cmake:1570: macro(add_llvm_example_library name)
+llvm/cmake/modules/AddLLVM.cmake:1573:     add_llvm_library(${name} BUILDTREE_ONLY ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:1575:     add_llvm_library(${name} ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:1580: endmacro(add_llvm_example_library name)
+llvm/cmake/modules/AddLLVM.cmake:1584: macro(add_llvm_utility name)
+llvm/cmake/modules/AddLLVM.cmake:1589:   add_llvm_executable(${name} DISABLE_LLVM_LINK_LLVM_DYLIB ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:1593:     if (LLVM_INSTALL_UTILS AND LLVM_BUILD_UTILS)
+llvm/cmake/modules/AddLLVM.cmake:1606:         add_llvm_install_targets(install-${name}
+llvm/cmake/modules/AddLLVM.cmake:1615: endmacro(add_llvm_utility name)
+llvm/cmake/modules/AddLLVM.cmake:1617: macro(add_llvm_fuzzer name)
+llvm/cmake/modules/AddLLVM.cmake:1622:     add_llvm_executable(${name} ${ARG_UNPARSED_ARGUMENTS})
+llvm/cmake/modules/AddLLVM.cmake:1623:     target_link_libraries(${name} PRIVATE ${LLVM_LIB_FUZZING_ENGINE})
+llvm/cmake/modules/AddLLVM.cmake:1628:     add_llvm_executable(${name} ${ARG_UNPARSED_ARGUMENTS})
+llvm/cmake/modules/AddLLVM.cmake:1631:     add_llvm_executable(${name} ${ARG_DUMMY_MAIN} ${ARG_UNPARSED_ARGUMENTS})
+llvm/cmake/modules/AddLLVM.cmake:1636: macro(add_llvm_target target_name)
+llvm/cmake/modules/AddLLVM.cmake:1640:   add_llvm_component_library(LLVM${target_name} ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:1642: endmacro(add_llvm_target)
+llvm/cmake/modules/AddLLVM.cmake:1654: function(add_llvm_subdirectory project type name)
+llvm/cmake/modules/AddLLVM.cmake:1655:   set(add_llvm_external_dir "${ARGN}")
+llvm/cmake/modules/AddLLVM.cmake:1656:   if("${add_llvm_external_dir}" STREQUAL "")
+llvm/cmake/modules/AddLLVM.cmake:1657:     set(add_llvm_external_dir ${name})
+llvm/cmake/modules/AddLLVM.cmake:1667:   if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${add_llvm_external_dir}/CMakeLists.txt)
+llvm/cmake/modules/AddLLVM.cmake:1673:       add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/${add_llvm_external_dir} ${add_llvm_external_dir})
+llvm/cmake/modules/AddLLVM.cmake:1691:         add_subdirectory(${LLVM_EXTERNAL_${nameUPPER}_SOURCE_DIR} ${add_llvm_external_dir})
+llvm/cmake/modules/AddLLVM.cmake:1704: macro(add_llvm_external_project name)
+llvm/cmake/modules/AddLLVM.cmake:1705:   add_llvm_subdirectory(LLVM TOOL ${name} ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:1708: macro(add_llvm_tool_subdirectory name)
+llvm/cmake/modules/AddLLVM.cmake:1709:   add_llvm_external_project(${name})
+llvm/cmake/modules/AddLLVM.cmake:1710: endmacro(add_llvm_tool_subdirectory)
+llvm/cmake/modules/AddLLVM.cmake:1715:     target_link_options(${name} PRIVATE ${LLVM_${name}_LINKER_FLAGS})
+llvm/cmake/modules/AddLLVM.cmake:1765:     add_llvm_subdirectory(${project} TOOL "${external_proj}" ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:1769: function(add_llvm_implicit_projects)
+llvm/cmake/modules/AddLLVM.cmake:1771: endfunction(add_llvm_implicit_projects)
+llvm/cmake/modules/AddLLVM.cmake:1795:   target_link_options(${target_name} PRIVATE "${LLVM_UNITTEST_LINK_FLAGS}")
+llvm/cmake/modules/AddLLVM.cmake:1816:   list(APPEND LLVM_LINK_COMPONENTS Support) # gtest needs it for raw_ostream
+llvm/cmake/modules/AddLLVM.cmake:1817:   add_llvm_executable(${test_name} IGNORE_EXTERNALIZE_DEBUGINFO NO_INSTALL_RPATH ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:1831:     target_link_libraries(${test_name} PRIVATE default_gtest_main default_gtest ${LLVM_PTHREAD_LIB})
+llvm/cmake/modules/AddLLVM.cmake:1833:     target_link_libraries(${test_name} PRIVATE llvm_gtest_main llvm_gtest ${LLVM_PTHREAD_LIB})
+llvm/cmake/modules/AddLLVM.cmake:1856:   add_llvm_executable(${benchmark_name} IGNORE_EXTERNALIZE_DEBUGINFO NO_INSTALL_RPATH ${ARGN})
+llvm/cmake/modules/AddLLVM.cmake:1861:   target_link_libraries(${benchmark_name} PRIVATE benchmark)
+llvm/cmake/modules/AddLLVM.cmake:1975:   # FIXME: "ENABLE_SHARED" doesn't make sense, since it is used just for
+llvm/cmake/modules/AddLLVM.cmake:1978:     set(ENABLE_SHARED "1")
+llvm/cmake/modules/AddLLVM.cmake:1980:     set(ENABLE_SHARED "0")
+llvm/cmake/modules/AddLLVM.cmake:2317:   if((WIN32 OR CYGWIN) AND "${type}" STREQUAL "SHARED")
+llvm/cmake/modules/AddLLVM.cmake:2372:     add_llvm_install_targets(install-${name}
+llvm/cmake/modules/AddLLVM.cmake:2408:     if(${target_type} STREQUAL "STATIC_LIBRARY")
+llvm/cmake/modules/AddLLVM.cmake:2410:     elseif(UNIX AND ${target_type} STREQUAL "SHARED_LIBRARY")
+llvm/cmake/modules/AddLLVM.cmake:2470: function(add_llvm_tool_symlink link_name target)
+llvm/cmake/modules/AddLLVM.cmake:2593:   elseif("${CMAKE_SYSTEM_NAME}" MATCHES "AIX" AND BUILD_SHARED_LIBS)
+llvm/cmake/modules/AddLLVM.cmake:2595:     # Since BUILD_SHARED_LIBS is only recommended for use by developers,
+clang/cmake/modules/AddClang.cmake:44: macro(add_clang_subdirectory name)
+clang/cmake/modules/AddClang.cmake:45:   add_llvm_subdirectory(CLANG TOOL ${name})
+clang/cmake/modules/AddClang.cmake:48: macro(add_clang_library name)
+clang/cmake/modules/AddClang.cmake:50:     "SHARED;STATIC;INSTALL_WITH_TOOLCHAIN"
+clang/cmake/modules/AddClang.cmake:87:   if(ARG_SHARED AND ARG_STATIC)
+clang/cmake/modules/AddClang.cmake:88:     set(LIBTYPE SHARED STATIC)
+clang/cmake/modules/AddClang.cmake:89:   elseif(ARG_SHARED)
+clang/cmake/modules/AddClang.cmake:90:     set(LIBTYPE SHARED)
+clang/cmake/modules/AddClang.cmake:92:     # llvm_add_library ignores BUILD_SHARED_LIBS if STATIC is explicitly set,
+clang/cmake/modules/AddClang.cmake:94:     if(BUILD_SHARED_LIBS)
+clang/cmake/modules/AddClang.cmake:95:       set(LIBTYPE SHARED)
+clang/cmake/modules/AddClang.cmake:97:       set(LIBTYPE STATIC)
+clang/cmake/modules/AddClang.cmake:107:     set_property(GLOBAL APPEND PROPERTY CLANG_STATIC_LIBS ${name})
+clang/cmake/modules/AddClang.cmake:112:   if(MSVC AND NOT CLANG_LINK_CLANG_DYLIB)
+clang/cmake/modules/AddClang.cmake:115:     target_compile_definitions(${name} PUBLIC CLANG_BUILD_STATIC)
+clang/cmake/modules/AddClang.cmake:117:       target_compile_definitions("obj.${name}" PUBLIC CLANG_BUILD_STATIC)
+clang/cmake/modules/AddClang.cmake:119:   elseif(TARGET "obj.${name}" AND NOT ARG_SHARED AND NOT ARG_STATIC)
+clang/cmake/modules/AddClang.cmake:120:     # Clang component libraries linked to clang-cpp are declared without SHARED or STATIC
+clang/cmake/modules/AddClang.cmake:125:   if(ARG_SHARED AND ARG_STATIC)
+clang/cmake/modules/AddClang.cmake:131:       target_link_libraries(${lib} INTERFACE ${LLVM_COMMON_LIBS})
+clang/cmake/modules/AddClang.cmake:143:           add_llvm_install_targets(install-${lib}
+clang/cmake/modules/AddClang.cmake:158: endmacro(add_clang_library)
+clang/cmake/modules/AddClang.cmake:160: macro(add_clang_executable name)
+clang/cmake/modules/AddClang.cmake:161:   add_llvm_executable( ${name} ${ARGN} )
+clang/cmake/modules/AddClang.cmake:164: endmacro(add_clang_executable)
+clang/cmake/modules/AddClang.cmake:166: macro(add_clang_tool name)
+clang/cmake/modules/AddClang.cmake:180:     add_clang_executable(${name} ${ARGN})
+clang/cmake/modules/AddClang.cmake:195:         add_llvm_install_targets(install-${name}
+clang/cmake/modules/AddClang.cmake:205: macro(add_clang_symlink name dest)
+clang/cmake/modules/AddClang.cmake:219: function(clang_target_link_libraries target type)
+clang/cmake/modules/AddClang.cmake:221:     target_link_libraries(obj.${target} ${ARGN})
+clang/cmake/modules/AddClang.cmake:229:   if (CLANG_LINK_CLANG_DYLIB)
+clang/cmake/modules/AddClang.cmake:230:     target_link_libraries(${target} ${type} clang-cpp)
+clang/cmake/modules/AddClang.cmake:232:     target_link_libraries(${target} ${type} ${ARGN})
+lld/cmake/modules/AddLLD.cmake:6:     "SHARED"
+lld/cmake/modules/AddLLD.cmake:10:   if(ARG_SHARED)
+lld/cmake/modules/AddLLD.cmake:11:     set(ARG_ENABLE_SHARED SHARED)
+lld/cmake/modules/AddLLD.cmake:13:   llvm_add_library(${name} ${ARG_ENABLE_SHARED} ${ARG_UNPARSED_ARGUMENTS})
+lld/cmake/modules/AddLLD.cmake:26:       add_llvm_install_targets(install-${name}
+lld/cmake/modules/AddLLD.cmake:36:   add_llvm_executable(${name} ${ARGN})
+lld/cmake/modules/AddLLD.cmake:67:         add_llvm_install_targets(install-${name}

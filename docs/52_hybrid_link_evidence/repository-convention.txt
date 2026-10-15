@@ -1,0 +1,27 @@
+$ git -C /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-link-20261015/source show --stat --oneline fd7a4929c0e4
+fd7a4929c0e4 Merge MLGO AOT compilation support and optimization improvements
+ llvm/CMakeLists.txt                        | 17 ++++++++++++-----
+ llvm/cmake/modules/TensorFlowCompile.cmake | 30 ++++++++++++++++++++++++++++--
+ 2 files changed, 40 insertions(+), 7 deletions(-)
+$ git -C /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-link-20261015/source log -8 --format=%h %s -- packaging
+cef4d90b4785 cmake: use hybrid LLVM linkage on x86_64
+67619ec8bbba packaging: fix llvm-static-devel with ThinLTO
+cb67996861d0 remove '-fno-inline-functions' compile options
+7e4dc62d8ac0 optimize llvm performance 1. Use -O3 2. Using thin-lto 3. Static link libllvm
+2d23367d74af packaging: select Clang explicitly for libc++ runtimes
+6771dbc48b7e libcxx: backport EH ABI forced-unwind handling
+43db58633333 packaging: bump-up version to 22.1.8
+3d723549f603 Add packaging
+$ git -C /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-link-20261015/source ls-tree -r --name-only 67619ec8bbbac7238a6cfc33a481ccfbcd12206f packaging
+packaging/SOURCE_PROVENANCE
+packaging/libcxx-llvm22.map
+packaging/libcxx-runtimes.manifest
+packaging/libcxx-runtimes.spec
+packaging/llvm-static-archives-native.py
+packaging/llvm.manifest
+packaging/llvm.spec
+packaging/mlgo_aarch_model.tar.gz
+packaging/mlgo_arm_model.tar.gz
+packaging/mlgo_x86_model.tar.gz
+
+llvm.spec prep is %setup only; no Patch declaration or %patch invocation.

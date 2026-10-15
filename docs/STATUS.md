@@ -4,7 +4,9 @@
 
 **长期署名规则（2026-10-15 PM 裁决，优先于历史署名约定）**：作者、提交者及 Signed-off-by 使用本机全局身份 `liushanshan <ss0217.liu@samsung.com>`，或显式使用 `Hao Lin <hao.lin@samsung.com>`；任何后续提交、提交说明和交付文档均不再使用旧别名。不修改全局 Git 配置。详见 §4。
 
-**当前任务（Base LLVM / clang-accel RPM 体积逐文件取证）已完成**：两快照指定 RPM 的目录/头字段、全路径大小/SHA256、ELF 动态依赖/节表和源码区间提交/完整 diff 均已保存。逐文件配对、排行、互斥与重叠分类金额及 clang-accel 来源匹配见 [SIZE_FINDINGS](qb_1199098_vs_1178133/size_attribution/SIZE_FINDINGS.md) 和同目录 CSV；数字均附 raw 文件行号。qemu-accel 端点 diff 与正向/反向提交集合分开记录；无匹配不当作源码变化证明，分类占比不当作因果比例。指定包取证与交叉核验完成，build-id 未列出及单项优化/压缩贡献不可分离的边界已注明。RPM 仅留 temp/qb_size，逐包解包目录均已删除；未编译、改产品代码或提交 Gerrit。
+**当前任务（docs/52，x86_64混合链接）完成至配置级，待PM review**：最新tizen_base=67619ec8（356627已合入，356949仍NEW）。独立hybrid_link提交cef4d90b、tree80a6fd23；七文件补丁干净git am/tree核对PASS。三组CMake生成PASS，额外原版动态对照PASS；188个链接目标仅clang-22/lld/llvm-ar三组改变，其余185项与动态对照一致。两ARM build/install宏展开同字节，static-devel/转换Source不变。工具私有.a及共享库生产者仍存在，未把“动态LLVM”冒充“链接行零.a”。QB accel107路径已逐项映射，现有收依赖逻辑支持动态库但新包闭合待实测。工作区Base URL当前404；组员完整构建前需解决仓库可用性。只做CMake配置/探针与文本分析，无LLVM target构建、GBS构建或Gerrit推送；未访问BOLT资产、未改原工作区源码。见[docs/52报告](52_hybrid_link_tizen_base.md)、[验证指南](52_hybrid_link_validation.md)、[补丁](52_hybrid_link.patch)。
+
+**上一任务（Base LLVM / clang-accel RPM 体积逐文件取证）已完成**：两快照指定 RPM 的目录/头字段、全路径大小/SHA256、ELF 动态依赖/节表和源码区间提交/完整 diff 均已保存。逐文件配对、排行、互斥与重叠分类金额及 clang-accel 来源匹配见 [SIZE_FINDINGS](qb_1199098_vs_1178133/size_attribution/SIZE_FINDINGS.md) 和同目录 CSV；数字均附 raw 文件行号。qemu-accel 端点 diff 与正向/反向提交集合分开记录；无匹配不当作源码变化证明，分类占比不当作因果比例。指定包取证与交叉核验完成，build-id 未列出及单项优化/压缩贡献不可分离的边界已注明。RPM 仅留 temp/qb_size，逐包解包目录均已删除；未编译、改产品代码或提交 Gerrit。
 
 **上一任务（Quickbuild 1199098 vs 1178133 证据采集）已完成采集与缺口登记**：两个 Unified/standard/armv7l 的页面、数据接口和完整 Rust 日志已存 raw；共同包版本及源码提交映射一致，Quickbuild 总时长差与 Profiling 跨度差分别保留。关联 Base 快照三架构 LLVM 日志、精确提交 spec/补丁、下游实际安装/链接器记录及六个 llvm-static-devel RPM 的逐归档扫描完成。x86_64/aarch64 Unified Rust 日志、实际 checkout 分支参数和 Base 整体时序未获取，原因见 [FINDINGS](qb_1199098_vs_1178133/FINDINGS.md)。所有数字附 raw 来源及行号；只记录事实，不归因。RPM/解包归档只在 temp；未编译、改产品代码或提交 Gerrit。
 
@@ -91,7 +93,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：发布夹具、两条x86回归和PS3/PS2候选apply/tree均PASS；串行续跑成功、前后8项同字节，正在新RPM验收。BOLT尚未交接，发布模式完整构建与后续ARM验收挂账。
+当前阶段：x86归档修复已合入356627，356949 PS2待评审；已完成docs/52混合链接补丁及配置级核对，等待PM review后交组员完整构建。既有x86构建树已于2026-10-14交接BOLT，本任务不访问该资产。历史发布模式完整构建与后续ARM验收仍挂账。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -125,7 +127,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 ## 2. 进度
 
-2026-10-15｜本提交（父94b5307）｜docs/qb_1199098_vs_1178133/、STATUS｜Quickbuild 对比、完整原始证据及静态归档扫描收尾；验证结果见 raw/validation.json；未获取项明确登记。
+2026-10-15｜本提交（父88349f6）；LLVM候选cef4d90b｜docs/52三交付物、52_hybrid_link_evidence/、STATUS｜七文件补丁/git am与三架构展开PASS，三配置+上游动态对照PASS；只配置，不完整构建，待PM review。
+
+2026-10-15｜d702aa4（后续体积归因88349f6）｜docs/qb_1199098_vs_1178133/、STATUS｜Quickbuild 对比、完整原始证据及静态归档扫描收尾；验证结果见 raw/validation.json；未获取项明确登记。
 
 2026-10-15｜94b5307（父0766222）｜docs/STATUS.md｜登记长期署名裁决；本次作者/提交者采用现有全局身份，未改全局配置。
 
@@ -275,6 +279,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 2026-10-14｜本提交｜docs/49_x86_build_resume_result.md §8｜独立-bi再次转换225档，before/after SHA与-ba全部相同；后处理尚在运行，BOLT未交接。
 
 ## 3. 已闭合结论
+
+- **docs/52配置级硬证据**：三组目标静态LLVM，其余指定目标共享LLVM；a/c仅3个link edge不同，c/原版动态188项与rules同字节。两ARM宏展开同字节、Source和files不变；fresh git am tree=80a6fd231c4564a3b762f4ec288cf2c41f9d2e20。证据docs/52 §3–§5及52_hybrid_link_evidence/*.json。不是新RPM、运行或性能认证。
 
 - **硬证据，2026-10-14**：356949 PS2仅说明变化，树/父/Change-Id与PS1一致，Gerrit NO_CODE_CHANGE、远端message及补丁diff正文逐字节相同；docs/50 §11.5、temp/followup-356949-ps2-message-20261014/upload-result.json。53/7的准确口径及1a–1f原文见§11.2，不把ELF规则相等称为整个文件相同。
 
@@ -507,6 +513,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 4. 人工裁决前提
 
+- **2026-10-15 docs/52**：本任务替代旧配置级prompt；以最新tizen_base为基线，只改x86_64。clang/lld/llvm-ar三组静态；其他工具恢复上游动态方式，五个指定强制静态工具保留；ARM、现有优化、static-devel及356627转换不改。仅配置/文本分析，nice19/ionice3；不碰BOLT资产，不推Gerrit或sandbox，只推GitHub；署名显式Hao Lin，全局Git配置不改。本轮产物止于PM review，完整构建由组员后续执行。私有归档等超出字面“零.a”的配置结果如实报告，未擅改源码消除它们。
+
 - **2026-10-15 长期有效：提交署名规则（用户/PM直接裁决）**。作者与提交者可直接使用本机全局 Git 配置 `liushanshan <ss0217.liu@samsung.com>`，也可显式使用 `Hao Lin <hao.lin@samsung.com>`。任何后续提交、提交说明（包括 `Signed-off-by`）和交付文档都只使用上述身份，不再使用此前的旧别名；本条取代全部历史署名约定。不修改全局 Git 配置。若 Gerrit 因提交者与推送账号不一致而拒收，立即停止该次推送，保留并贴出拒绝原文，然后改用 `Hao Lin <hao.lin@samsung.com>` 重新提交。本次仅登记裁决，不重写历史提交、不追加 Gerrit 推送；后续操作仍须遵守对应任务的推送授权范围。
 
 - **2026-10-14 356949 PS2**：用户只授权一次向该change上传说明修订；不改产品树、不构建、不推其他change/submit/打分。保留段逐词不变（仅≤72列重排），1c/1e按证据收窄，1f若versioned路径补alias覆盖句；本轮已按此完成。代码边界后移ARM补丁并带x86回归，addrsig独立change，发布完整打包须在正式启用前完成（docs/50 §11）。
@@ -624,6 +632,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 续接PM已将其替换为两架构精确白名单`.globl _ZSt21ios_base_library_initv`且须保留输出GLOBAL符号；其余未知声明仍失败。辅助修正仅一次，本轮用于测试期望遗漏-g；第二次宿主套件再次失败后停止，不改共用取消代码或继续复验。生产Source与两patch不改。
 
 ## 5. 挂账
+
+- **docs/52当前挂账**：PM review七文件混合补丁及“上游动态仍链接私有.a”的边界；组员提供可用Base配置（当前20261001.092726为404）或用Quickbuild项目构建；完整x86_64编译、22RPM/NEEDED/运行/归档/accel闭合与容量按52_hybrid_link_validation.md执行。本次未运行，不以docs/22旧源码实测替代。356949若之后合入，需rebase并核对新基线；此任务不代为推送sandbox/Gerrit。
 
 - **docs/50 §11.7**：ARM补丁带x86回归处理-g0/仅DWARF4、relocation链接类型及sh_info语义、dbg.cu对称门禁、BACKEND_FLAGS/错误/派生符号、平台宏漂移、多行asm；addrsig独立修复先keep-file-symbols探针，备选删节、Tizen ICF+fatal使用调查及sh_link回归；发布完整打包在正式启用前完成。本轮均未改/未运行。
 
