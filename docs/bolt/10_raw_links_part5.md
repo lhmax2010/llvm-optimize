@@ -55,3 +55,5 @@
 |patches/bolt/clang-bolt-v2.fdata.xz|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/patches/bolt/clang-bolt-v2.fdata.xz)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/e583546c21407c42b94310343dc8456e75132b15/patches/bolt/clang-bolt-v2.fdata.xz)|9735212|52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f|
 
 最终发布核对：[分支原文](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4-publication-check.json)；96 raw字节PASS，随后git远端查询网络失败。该文件钉版取本索引最终提交号。
+
+十四B续跑的新认证与全部材料见[第六份raw索引](10_raw_links_part6.md)。
