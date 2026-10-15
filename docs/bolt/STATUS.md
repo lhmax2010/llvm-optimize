@@ -296,6 +296,6 @@ PM裁决：docs35原22包在W/temp/archive-fix-v2-final-20261009/rpms-docs35，�
 
 最终压缩源506dc25c86e4e2154150796d10b77b71d71ad6bb，父67619ec8bbbac7238a6cfc33a481ccfbcd12206f；仅新增helper文件头维护说明，修改提交说明的内部流程/外部维护入口；可执行AST、spec/profile不变，Hao Lin作者/提交者/Signed-off-by及Change-Id保留。257/257测试PASS（252+安装顺序1+本轮4），最后两项日志诊断微调已覆盖，stdout2609字节含5条夹具JSON、stderr原文公开；完整二进制补丁独立index apply/tree PASS，公开--no-binary文本patch及单独Source，不再误发超限文件。
 
-22RPM逐包身份PASS；完整合并根no_bolt_products 17722路径/47cmake，最终helper复查PASS。新压缩提交OFF debug20/release18段与新基线逐字相同，ON顺序snapshot<compare-root<转换<install且转换一次；四post平台段逐字一致、尾检最后；真实7df/4ec安全、tiny三目标、双根post/反向/compare-root、111计划正负例全PASS。4ec候选未重生成。受保护22RPM/归档证据/原坏配置/缓存/源码未变，锁/proc/scope回收。产品准备修正0次、产品门禁失败0次；发布准备两类各修正1次（stdout错误假设、忽略归档暂存），查找更正及完整原文见24。
+22RPM逐包身份PASS；完整合并根no_bolt_products 17722路径/47cmake，最终helper复查PASS。新压缩提交OFF debug20/release18段与新基线逐字相同，ON顺序snapshot<compare-root<转换<install且转换一次；四post平台段逐字一致、尾检最后；真实7df/4ec安全、tiny三目标、双根post/反向/compare-root、111计划正负例全PASS。4ec候选未重生成。受保护22RPM/归档证据/原坏配置/缓存/源码未变，锁/proc/scope回收。产品准备修正0次、产品门禁失败0次；发布准备三类各修正1次（stdout错误假设、忽略归档暂存、索引脚本目标路径），查找更正及完整原文见24。
 
 维护完整版见maintenance.md（四remedy、运行前提、升级与重训、锚点、资料保留/崩溃/回退）；23已明确静态图边界与stdout实际内容（2600/2609字节的夹具JSON）。上次GitHub ls-remote已补核PASS。材料先GitHub公开，才按授权推新sandbox/lhmax2025/bolt_pgo_v2；当前待推，旧sandbox/refs-for/tizen_base不动。QB/真实树演练/发布全构建及accel-worker身份仍NOT RUN，用户在PM审完后启动。完整状态/资源/原文见24和review4b系列。

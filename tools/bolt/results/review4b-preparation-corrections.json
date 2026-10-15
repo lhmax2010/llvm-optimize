@@ -16,6 +16,12 @@
       "count": 1,
       "cause": "explicit *.xz glob included the ignored execution.tar.xz; git add returned 1 and set -e stopped before commit",
       "action": "stage the directory using Git ignore rules, then add the owned execution archive explicitly with -f; product files/evidence unchanged"
+    },
+    {
+      "class": "publication index script destination cwd",
+      "count": 1,
+      "cause": "relative temp/... script destination used while shell cwd was B; file creation failed, then set -e stopped before commit",
+      "action": "use absolute E paths for creation and git -C for repository commands; no product operation or evidence input was changed"
     }
   ],
   "product_gate_failures": 0,
