@@ -52,3 +52,7 @@ PASS。明确租约 `ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8` 的 force-with-le
 普通安装、preflight/certified、BOLT_BUILDROOT_OK/BOLT_PROC_OK均成功。安装根快照5,429路径。真实dry-run恰113条：BOLT对象102、静态库7、可执行1、生成任务1，另TF刷新2；ninja_diagnostics为空、计数0。tool-plan PASS，没有其他任务。工具构建前bin/llvm-bolt不存在；TF归档f15c565d30a981c22c71cbcf823030302cf51d19a381f4cc82e44626688be1ed与预构建归档相同。正在执行真正-j1构建，尚不能宣称tool-verify或pipeline通过。
 
 实际rpmbuild生成的完整install/post脚本已捕获。额外同UID宿主监护覆盖helper独立session，资源中止时清理abuild进程而保留root包装器做卸载审计；55分钟停止计算任务，为单次60分钟持锁保留5分钟清理时间。它不改变产品命令或门禁。
+
+## 树内工具真实构建：PASS
+
+-j1构建正常结束并打印BOLT_NINJA_EXIT_0。tool-verify planned/executed均113，构建前工具不存在，executable_produced_by_this_build=true，工具SHA `34686c3362e736763cf0a1a6a44bb54b4d2e5cc34e58322477f2fa63696259fc`。TF归档前后及预构建归档三者SHA一致（f15c565d…），完整JSON与日志已公开。开始唯一emit-relocs重链流水线，尚未宣称候选、compare-root、转换或post通过。
