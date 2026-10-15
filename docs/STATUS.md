@@ -1,6 +1,9 @@
 # LLVM 吞吐优化分支状态
 
-更新日期：2026-10-14。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
+更新日期：2026-10-15。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
+
+**长期署名规则（2026-10-15 PM 裁决，优先于历史署名约定）**：作者、提交者及 Signed-off-by 使用本机全局身份 `liushanshan <ss0217.liu@samsung.com>`，或显式使用 `Hao Lin <hao.lin@samsung.com>`；任何后续提交、提交说明和交付文档均不再使用旧别名。不修改全局 Git 配置。详见 §4。
+
 **当前任务（356949 PS2说明修订）已完成**：唯一授权Gerrit push上传PS2 `a18ce53708d3b6ef596dcd27d0b51e18ce1db282`，状态NEW，Gerrit `NO_CODE_CHANGE`；tree `480be0836bc470dd027f73882b4082d0ce0e5000`、parent、Change-Id及补丁diff正文不变，远端说明同字节。只读1a–1f支持发布零-g预期；53对限定为ELF规则比较，7对后端归因；GNU ld及addrsig措辞按实证收窄；补明全量构建使用clang-22、别名验证边界。见[docs/50 §11](50_archive_followup_review.md#11-ps2-提交说明修订)。未改Source/spec，未构建/转换，未进入BOLT或交接树；发布完整打包及addrsig独立修复仍挂账。
 
 **上一任务（docs/51）已完成**：只合入356627+GNU strip的功能证据来自docs/35–36（Source6bd同字节，实测spec6a91，不能冒充d93a目标配方从零完整构建）。本轮270档/5828成员副本GNU strip后native/完整索引/可加载内容/符号/重定位及7宿主消费者PASS，成员与docs/35全部同字节；发现5799个.llvm_addrsig的sh_link归零、payload未更新。lld --icf=safe警告，叠加--fatal-warnings失败；docs/38 llvm-strip RPM对照也失败，故356949不能被当作该问题已验证的修复。16:27官方最新仍20261013.140248，无合入后快照，官方对照挂账。见[docs/51](51_gnu_strip_merged_validation.md)。未改Source/spec/补丁，未进入BOLT资产/交接树，未推Gerrit。
@@ -118,7 +121,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 ## 2. 进度
 
-2026-10-14｜本提交（父449b1a6）；Gerrit PS2 a18ce537｜docs/50 §11、followup说明/format-patch、STATUS｜说明修订上传/远端回读PASS；代码树及diff正文不变，NO_CODE_CHANGE。
+2026-10-15｜本提交（父0766222）｜docs/STATUS.md｜登记长期署名裁决；本次作者/提交者采用现有全局身份，未改全局配置。
+
+2026-10-14｜0766222；Gerrit PS2 a18ce537｜docs/50 §11、followup说明/format-patch、STATUS｜说明修订上传/远端回读PASS；代码树及diff正文不变，NO_CODE_CHANGE。
 
 2026-10-14｜449b1a6｜docs/51及机器可读摘要｜GNU strip组合补查、7消费者通过；addrsig失效及两种strip的ICF+fatal-warnings失败确认，官方新快照未出现。
 
@@ -410,7 +415,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | docs/35原22RPM及C/new-rpm-repo的SHA/大小全部匹配附录A，gbs配置不变；两历史测试根各107缓存，同NEVRA摘要相同且逐个等于原Base primary登记。复原97,776,140B的107包子集，缺失0，不切换最新快照。 | docs/36 §0–§1、附录A；E36/new-rpm-identity.json、historical-metadata-verification.json、local-base-repository.json | 硬证据；是消费者环境子集，不是全快照镜像 |
 | bfd/lld各一次串行GBS成功；各安装113包=107本地Base+6本项目新包，与docs/30 NEVRA差异0；每包来源唯一且摘要校验。根内225归档+4工具SHA同N，A输出与opt O2相同，B生成物exit37。 | docs/36 §2；E36/tizen-{bfd,lld}/environment-verification.json、installed-identities.json、build.log | 硬证据；x86_64固定环境的API消费者，不外推其他架构或任意下游 |
 | 两组实际链接器ld.bfd/ld.lld，driver无-flto或插件；8GiB准入/6GiB cap/swap0原规则，wall88.644845/58.435464s，scope峰6,230,188,032/5,762,170,880B，无内存事件、采样器回收。whole-archive两组exit0且记录508/507行未定义符号，仅诊断。 | docs/36 §2.3–2.4；E36/tizen-summary.json、各check-outputs/ | 硬证据（功能/资源记录）；不作性能或任意全集语义认证 |
-| 无交互fetch取得tizen_base cb679968（已含x86_64 O3/ThinLTO）；单提交2d773cb6、作者FatTank、固定Change-Id，最终format-patch在干净base apply --check PASS且完整tree相同。只有两个spec插入块及Source；Source SHA6bd0546a…完全同已验输入。 | docs/36 §3；E36/target-fetch.json、submission-verification.json、submission-commands.jsonl | 硬证据；新目标整套配方未本轮重建 |
+| 无交互fetch取得tizen_base cb679968（已含x86_64 O3/ThinLTO）；单提交2d773cb6、作者邮箱hao.lin@samsung.com、固定Change-Id，最终format-patch在干净base apply --check PASS且完整tree相同。只有两个spec插入块及Source；Source SHA6bd0546a…完全同已验输入。 | docs/36 §3；E36/target-fetch.json、submission-verification.json、submission-commands.jsonl | 硬证据；新目标整套配方未本轮重建 |
 | 评审目录v2 patch SHA ddef2221db9ba1c044b0087b9fcde2a93202fdf28c518b4d0dcd1c4653119ac6；v1旧patch/Source摘要与副本保留。docs25–35、W原spec和配置不动，无LLVM重建、无Gerrit推送，项目锁/进程/挂载回收。 | docs/36 §3.2、§4；E36/v1-backup/、final-integrity.json、lock-released.json | 硬证据 |
 
 本轮闭合（docs/37）；E37=`temp/target-recipe-policy-check-20261009`：
@@ -496,6 +501,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 4. 人工裁决前提
 
+- **2026-10-15 长期有效：提交署名规则（用户/PM直接裁决）**。作者与提交者可直接使用本机全局 Git 配置 `liushanshan <ss0217.liu@samsung.com>`，也可显式使用 `Hao Lin <hao.lin@samsung.com>`。任何后续提交、提交说明（包括 `Signed-off-by`）和交付文档都只使用上述身份，不再使用此前的旧别名；本条取代全部历史署名约定。不修改全局 Git 配置。若 Gerrit 因提交者与推送账号不一致而拒收，立即停止该次推送，保留并贴出拒绝原文，然后改用 `Hao Lin <hao.lin@samsung.com>` 重新提交。本次仅登记裁决，不重写历史提交、不追加 Gerrit 推送；后续操作仍须遵守对应任务的推送授权范围。
+
 - **2026-10-14 356949 PS2**：用户只授权一次向该change上传说明修订；不改产品树、不构建、不推其他change/submit/打分。保留段逐词不变（仅≤72列重排），1c/1e按证据收窄，1f若versioned路径补alias覆盖句；本轮已按此完成。代码边界后移ARM补丁并带x86回归，addrsig独立change，发布完整打包须在正式启用前完成（docs/50 §11）。
 
 - 2026-10-14 docs/51：用户要求核查仅356627+GNU strip组合；历史证据不完整则仅在副本补strip/消费者实验。官方对照固定20261013.140248与合入后新快照；无新快照不等待。禁止改Source/spec/补丁、推Gerrit及进入BOLT资产/已交接树。
@@ -571,7 +578,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 | 独占仅本项目，允许其他项目构建并存；耗时不作性能结论。 | 完整构建可用≥16GiB、每300秒最多等6小时仅为准入；运行中可用<2GiB才中止，18GiB/swap0不改；未授权人为链接时限。 | 用户通宵任务；docs/34 §0、§3 |
 | hidden负例作废，改真实删除强符号；续跑拆成真实安装与同树Source SKIP两步。 | 用户已裁决，不再等待答复；真实删除及600秒复验本轮已完成。 | docs/34 §2 |
 | HQ __strip=llvm-strip只叠加试验，不包含在归档修复提交中。 | 提交仍是ThinLTO归档转换修复；GNU/LLVM strip差异须实测，不能默认为只有容器变化。 | docs/34 §0.2、§1 |
-| Gerrit候选以可取得的tizen_base引用为基准，未启用ThinLTO时为SKIP。 | 本地origin/tizen_base=2d23367d已取得；作者FatTank、固定Change-Id，用户自行上传；完整验收成功前不覆盖v1。 | docs/34 §0.1、§5 |
+| Gerrit候选以可取得的tizen_base引用为基准，未启用ThinLTO时为SKIP。 | 本地origin/tizen_base=2d23367d已取得；作者邮箱hao.lin@samsung.com、固定Change-Id，用户自行上传；完整验收成功前不覆盖v1。 | docs/34 §0.1、§5 |
 | 2026-09-30节前暂停，节后由用户明确恢复。 | 用户“我要下班了，能帮我暂停下么，节后继续”覆盖此前无人值守继续规则；按可能关机保存磁盘现场并释放内存，不将主动停止记为构建FAIL。恢复前核验对象/cache及不会清空BUILD的增量入口。 | docs/34 §3.2；temp/archive-fix-v2-build-20260929/pause-20260930-1919/ |
 | 2026-10-08恢复同一暂停构建。 | 用户“继续吧，结束后记得报告一起发出来”；先核验再正常-ba --noprep增量执行，不重做%prep、不改变并发或cap。 | docs/34 §3.3；E34/resume-20261008/ |
 
@@ -769,7 +776,7 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 
 进度：2026-10-14｜本提交｜docs/50 §1–§2、STATUS｜356627合入/356639未合入及最新HEAD核查PASS，候选差异来源确定。
 
-人工裁决（续十二）：合并已验收PS3后续增量与PS2静态库llvm-strip，新Change-Id、作者FatTank <hao.lin@samsung.com>，授权仅推refs/for/tizen_base评审；356639由用户随后Abandon。不改冻结两份Source/补丁、不进入已交接树。ARM根内/64MiB暂停下周，先完成bash清单与LLVM23调查；发布完整构建与同环境非归档比较仍挂账。
+人工裁决（续十二）：合并已验收PS3后续增量与PS2静态库llvm-strip，新Change-Id、作者邮箱hao.lin@samsung.com（历史署名约定已被2026-10-15裁决取代），授权仅推refs/for/tizen_base评审；356639由用户随后Abandon。不改冻结两份Source/补丁、不进入已交接树。ARM根内/64MiB暂停下周，先完成bash清单与LLVM23调查；发布完整构建与同环境非归档比较仍挂账。
 
 ### 2026-10-14 续十二收尾
 
