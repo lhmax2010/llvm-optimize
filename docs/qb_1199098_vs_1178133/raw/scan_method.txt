@@ -1,0 +1,23 @@
+Task: compare Quickbuild 1199098 vs 1178133; scan associated Base snapshot llvm-static-devel RPMs.
+No compiler, linker, installed LLVM tool, RPM scriptlet, or archive conversion was run.
+Download: HTTP GET with streamed writes; SHA-256 and URLs in fetch_manifest.jsonl.
+Extraction: rpm2cpio RPM | cpio -idm --quiet --no-absolute-filenames '*.a', each in its own temp extraction directory.
+Extraction/scan: serial, systemd user service CPUQuota=25%, MemoryMax=512M, Nice=19, IOSchedulingClass=idle.
+Only an archive with magic !<arch> followed by LF is accepted; each 60-byte ar header is checked for trailer ` followed by LF.
+GNU ar /, /SYM64/ symbol tables and // long filename tables are excluded from object counts.
+GNU long names, BSD #1/ embedded names and even-byte padding are handled; order and duplicate names are preserved.
+Member classification uses the first four content bytes: 4243c0de or dec0170b => bitcode; 7f454c46 => ELF; any other bytes => other.
+Member-level observed prefixes and sequence are in static_archive_members.jsonl; archive hashes and counts in static_archive_scan.csv.
+A separate read checks every ELF member's EI_DATA and e_type at offset 16; only e_type=1 (ET_REL) is accepted.
+ELF-type read results are static_elf_type_check.jsonl; no files were converted.
+RPM headers were read with rpm -qp --qf for NAME, VERSION, RELEASE, ARCH, BUILDTIME, BUILDHOST, SOURCERPM, PAYLOADCOMPRESSOR.
+RPMs and extracted archives remain in temp/qb_1199098_vs_1178133/{associated Unified build}/{arch}/.
+Rust gap analysis: compare adjacent physical lines only when both match ^\[\s*(\d+)s\]; subtract preceding timestamp from following timestamp.
+Rust gap ordering: descending gap, then ascending preceding line number; retain first 15 per available Rust log.
+Package CSV: profile duration/start/end/version/thread copied from buildtime.json; .pretty.json differs only in JSON serialization whitespace.
+HTML report contains rust-value-bag in both builds but profiling JSON omits it; fill from full package log explicit UTC started/finished timestamps.
+No log elapsed prefix is silently substituted for a UTC timestamp difference; the field time_basis labels the source.
+QuickBuild end time is a derived value (overview begin + overview displayed duration); no scheduling delay is inferred.
+CSV ratios: optimized duration / baseline duration; exact_ratio is a reduced exact rational and displayed decimal is formatted to 12 significant digits.
+Base snapshot LLVM/qemu package timings use explicit UTC finished-start; these are not the Unified run or Base repository total duration.
+Original downloaded bodies are preserved, including failed-access bodies; fetch_manifest records HTTP status so they cannot be mistaken for acquired source.

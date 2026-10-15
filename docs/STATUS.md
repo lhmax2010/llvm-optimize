@@ -4,7 +4,9 @@
 
 **长期署名规则（2026-10-15 PM 裁决，优先于历史署名约定）**：作者、提交者及 Signed-off-by 使用本机全局身份 `liushanshan <ss0217.liu@samsung.com>`，或显式使用 `Hao Lin <hao.lin@samsung.com>`；任何后续提交、提交说明和交付文档均不再使用旧别名。不修改全局 Git 配置。详见 §4。
 
-**当前任务（356949 PS2说明修订）已完成**：唯一授权Gerrit push上传PS2 `a18ce53708d3b6ef596dcd27d0b51e18ce1db282`，状态NEW，Gerrit `NO_CODE_CHANGE`；tree `480be0836bc470dd027f73882b4082d0ce0e5000`、parent、Change-Id及补丁diff正文不变，远端说明同字节。只读1a–1f支持发布零-g预期；53对限定为ELF规则比较，7对后端归因；GNU ld及addrsig措辞按实证收窄；补明全量构建使用clang-22、别名验证边界。见[docs/50 §11](50_archive_followup_review.md#11-ps2-提交说明修订)。未改Source/spec，未构建/转换，未进入BOLT或交接树；发布完整打包及addrsig独立修复仍挂账。
+**当前任务（Quickbuild 1199098 vs 1178133 证据采集）已完成采集与缺口登记**：两个 Unified/standard/armv7l 的页面、数据接口和完整 Rust 日志已存 raw；共同包版本及源码提交映射一致，Quickbuild 总时长差与 Profiling 跨度差分别保留。关联 Base 快照三架构 LLVM 日志、精确提交 spec/补丁、下游实际安装/链接器记录及六个 llvm-static-devel RPM 的逐归档扫描完成。x86_64/aarch64 Unified Rust 日志、实际 checkout 分支参数和 Base 整体时序未获取，原因见 [FINDINGS](qb_1199098_vs_1178133/FINDINGS.md)。所有数字附 raw 来源及行号；只记录事实，不归因。RPM/解包归档只在 temp；未编译、改产品代码或提交 Gerrit。
+
+**上一任务（356949 PS2说明修订）已完成**：唯一授权Gerrit push上传PS2 `a18ce53708d3b6ef596dcd27d0b51e18ce1db282`，状态NEW，Gerrit `NO_CODE_CHANGE`；tree `480be0836bc470dd027f73882b4082d0ce0e5000`、parent、Change-Id及补丁diff正文不变，远端说明同字节。只读1a–1f支持发布零-g预期；53对限定为ELF规则比较，7对后端归因；GNU ld及addrsig措辞按实证收窄；补明全量构建使用clang-22、别名验证边界。见[docs/50 §11](50_archive_followup_review.md#11-ps2-提交说明修订)。未改Source/spec，未构建/转换，未进入BOLT或交接树；发布完整打包及addrsig独立修复仍挂账。
 
 **上一任务（docs/51）已完成**：只合入356627+GNU strip的功能证据来自docs/35–36（Source6bd同字节，实测spec6a91，不能冒充d93a目标配方从零完整构建）。本轮270档/5828成员副本GNU strip后native/完整索引/可加载内容/符号/重定位及7宿主消费者PASS，成员与docs/35全部同字节；发现5799个.llvm_addrsig的sh_link归零、payload未更新。lld --icf=safe警告，叠加--fatal-warnings失败；docs/38 llvm-strip RPM对照也失败，故356949不能被当作该问题已验证的修复。16:27官方最新仍20261013.140248，无合入后快照，官方对照挂账。见[docs/51](51_gnu_strip_merged_validation.md)。未改Source/spec/补丁，未进入BOLT资产/交接树，未推Gerrit。
 
@@ -121,7 +123,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 ## 2. 进度
 
-2026-10-15｜本提交（父0766222）｜docs/STATUS.md｜登记长期署名裁决；本次作者/提交者采用现有全局身份，未改全局配置。
+2026-10-15｜本提交（父94b5307）｜docs/qb_1199098_vs_1178133/、STATUS｜Quickbuild 对比、完整原始证据及静态归档扫描收尾；验证结果见 raw/validation.json；未获取项明确登记。
+
+2026-10-15｜94b5307（父0766222）｜docs/STATUS.md｜登记长期署名裁决；本次作者/提交者采用现有全局身份，未改全局配置。
 
 2026-10-14｜0766222；Gerrit PS2 a18ce537｜docs/50 §11、followup说明/format-patch、STATUS｜说明修订上传/远端回读PASS；代码树及diff正文不变，NO_CODE_CHANGE。
 
