@@ -73,3 +73,20 @@ SHA绑定普通7df0ff90…与候选4ec07159…；readelf完整原文（含全部
 helper新增security_properties/security_compare与security CLI，流水线strip-all之后及post启用，属性不符报具体类别；地址/大小不作比较。原始节/段范围及动态/字符串/版本表边界均失败关闭。返回属性与重符号数据的条数/SHA避免巨大构建日志。
 
 新增6个安全夹具（保持、删除GNU property、改栈权限、删除导出、改绑定、改可见性）全部PASS。全套146/146；比本轮开工138新增8，比原103累计新增43。一次旧post夹具输入修正：placeholder文件名fixture改为其identity已生成的真实before ELF，未mock掉新门禁；首次失败原文保留，修正后通过。本轮产品准备修正目前仅此一类一次。所有4GiB scopes已回收。
+
+## 续跑十宏链：PASS（当前小spec原文证明）
+
+历史20小spec把路径直接代入override，属于结构复用，原文并非逐字相同。本轮用源spec的同一完整片段生成两模式canonical小spec，位于%install和%files之后；逐字相等SHA256为61626efeef3dcaf1989b8ae00466578f733c0d4e638c127f54681d6bd826f180。两边完整原文见macro-evidence包内post-fragment.spec、macro-mini-debug/release.spec；小spec本轮只rpmspec展开，没有冒充新的rpmbuild执行。
+
+```spec
+%global __bolt_original_spec_install_post %{__spec_install_post}
+%define __spec_install_post \
+    %{__bolt_original_spec_install_post} \
+    python3 %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1
+```
+
+静态审查把BOLT新增空白移入条件块，避免关闭时多空行；不改生成命令/参数。debug/release各完成ON、OFF、cb679968基线展开，OFF的prep/build/install/check/clean（如存在）及post/pre/files等相关段逐字节相同，完整列表及SHA在reviewfinish-macros.json，未过滤空白或规范化路径。
+
+根内rpmspec不支持--without：第一次采集参数错误修正一次，改用rpmbuild实际设置的_without_clang_bolt定义。单独rpmbuild --without clang_bolt --eval证明其实际值为字符串--without-clang_bolt；最初报告误期待整数1，属另一类报告判据错误，修正一次。安装macros中bcond_without只检查该变量是否存在；rpmspec传实际同一字符串。两类原文均保存，未将不支持的CLI冒充成功，最终展开PASS。本轮累计准备修正三类各一次：旧post夹具输入、rpmspec选项兼容、宏值报告判据；无同类第二次。
+
+所有调用在原RPM前导，PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin，which clang=/bin/clang、clang++=/bin/clang++；argv/环境与mount前中后原文保存。轻scope已回收/proc已卸载，不取重锁，无CMake/Ninja。真实产物门禁下一步。

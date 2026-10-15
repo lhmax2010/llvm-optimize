@@ -1,0 +1,468 @@
+{
+  "status": "PASS",
+  "modes": {
+    "debug": {
+      "section_count": 18,
+      "byte_equal_sections": [
+        "%prep\n%setup -q",
+        "%build\nexport AR=llvm-ar RANLIB=llvm-ranlib;",
+        "%install\nexport AR=llvm-ar RANLIB=llvm-ranlib;",
+        "%post -n clang -p /sbin/ldconfig",
+        "%postun -n clang -p /sbin/ldconfig",
+        "%post -n lldb",
+        "%files\n%manifest llvm.manifest",
+        "%files devel",
+        "%files static-devel",
+        "%files -n libllvm",
+        "%files -n clang",
+        "%files -n clang-devel",
+        "%files -n lldb",
+        "%files -n lldb-devel",
+        "%files -n compiler-rt",
+        "%files -n libomp",
+        "%files -n libomp-devel",
+        "%files -n python-clang"
+      ],
+      "different_sections": [],
+      "mini_source_fragment_byte_equal": true,
+      "fragment_after_install_and_files": true
+    },
+    "release": {
+      "section_count": 18,
+      "byte_equal_sections": [
+        "%prep\n%setup -q",
+        "%build\nexport AR=llvm-ar RANLIB=llvm-ranlib;",
+        "%install\nexport AR=llvm-ar RANLIB=llvm-ranlib;",
+        "%post -n clang -p /sbin/ldconfig",
+        "%postun -n clang -p /sbin/ldconfig",
+        "%post -n lldb",
+        "%files\n%manifest llvm.manifest",
+        "%files devel",
+        "%files static-devel",
+        "%files -n libllvm",
+        "%files -n clang",
+        "%files -n clang-devel",
+        "%files -n lldb",
+        "%files -n lldb-devel",
+        "%files -n compiler-rt",
+        "%files -n libomp",
+        "%files -n libomp-devel",
+        "%files -n python-clang"
+      ],
+      "different_sections": [],
+      "mini_source_fragment_byte_equal": true,
+      "fragment_after_install_and_files": true
+    }
+  },
+  "rows": [
+    {
+      "label": "macro-debug-on",
+      "mode": "debug",
+      "without_clang_bolt": false,
+      "expanded_sha256": "05368b997c93e2c243ea73c611e68128f41ee28a50a221fbb2f41025dfc03602",
+      "call": {
+        "label": "macro-debug-on",
+        "argv": [
+          "/usr/bin/rpmspec",
+          "--macros=/usr/lib/rpm/macros:/usr/lib/rpm/macros.d/macros.*:/usr/lib/rpm/platform/%{_target}/macros:/usr/lib/rpm/fileattrs/*.attr:/usr/lib/rpm/tizen/macros:/etc/rpm/macros.*:/etc/rpm/macros:/etc/rpm/%{_target}/macros:/home/abuild/.rpmmacros",
+          "--parse",
+          "--define",
+          "_topdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse",
+          "--define",
+          "_sourcedir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish",
+          "--define",
+          "_builddir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILD",
+          "--define",
+          "_buildrootdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILDROOTS",
+          "--define",
+          "_toolchain clang",
+          "/home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/llvm-draft.spec"
+        ],
+        "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+        "environment": {
+          "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+          "CC": "x86_64-tizen-linux-gnu-clang",
+          "CXX": "x86_64-tizen-linux-gnu-clang++",
+          "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "LDFLAGS": "-Wl,-z,relro,--as-needed",
+          "AR": "llvm-ar",
+          "RANLIB": "llvm-ranlib",
+          "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+          "LANG": "C",
+          "LC_ALL": "POSIX"
+        },
+        "which_clang": "/bin/clang",
+        "which_clangxx": "/bin/clang++",
+        "returncode": 0,
+        "wall_s": 0.005657569010509178
+      }
+    },
+    {
+      "label": "macro-debug-off",
+      "mode": "debug",
+      "without_clang_bolt": true,
+      "expanded_sha256": "9b11a48cfe6d13db87464fe87e736b04c75709484308d88c9faaa5caf0ad36d9",
+      "call": {
+        "label": "macro-debug-off",
+        "argv": [
+          "/usr/bin/rpmspec",
+          "--macros=/usr/lib/rpm/macros:/usr/lib/rpm/macros.d/macros.*:/usr/lib/rpm/platform/%{_target}/macros:/usr/lib/rpm/fileattrs/*.attr:/usr/lib/rpm/tizen/macros:/etc/rpm/macros.*:/etc/rpm/macros:/etc/rpm/%{_target}/macros:/home/abuild/.rpmmacros",
+          "--parse",
+          "--define",
+          "_topdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse",
+          "--define",
+          "_sourcedir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish",
+          "--define",
+          "_builddir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILD",
+          "--define",
+          "_buildrootdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILDROOTS",
+          "--define",
+          "_toolchain clang",
+          "--define",
+          "_without_clang_bolt --without-clang_bolt",
+          "/home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/llvm-draft.spec"
+        ],
+        "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+        "environment": {
+          "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+          "CC": "x86_64-tizen-linux-gnu-clang",
+          "CXX": "x86_64-tizen-linux-gnu-clang++",
+          "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "LDFLAGS": "-Wl,-z,relro,--as-needed",
+          "AR": "llvm-ar",
+          "RANLIB": "llvm-ranlib",
+          "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+          "LANG": "C",
+          "LC_ALL": "POSIX"
+        },
+        "which_clang": "/bin/clang",
+        "which_clangxx": "/bin/clang++",
+        "returncode": 0,
+        "wall_s": 0.010400739003671333
+      }
+    },
+    {
+      "label": "macro-debug-baseline",
+      "mode": "debug",
+      "without_clang_bolt": false,
+      "expanded_sha256": "056da1d0c83eb60ba7876f3a6da9602d1d6cb4321637ed44fd47387c1cd4c357",
+      "call": {
+        "label": "macro-debug-baseline",
+        "argv": [
+          "/usr/bin/rpmspec",
+          "--macros=/usr/lib/rpm/macros:/usr/lib/rpm/macros.d/macros.*:/usr/lib/rpm/platform/%{_target}/macros:/usr/lib/rpm/fileattrs/*.attr:/usr/lib/rpm/tizen/macros:/etc/rpm/macros.*:/etc/rpm/macros:/etc/rpm/%{_target}/macros:/home/abuild/.rpmmacros",
+          "--parse",
+          "--define",
+          "_topdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse",
+          "--define",
+          "_sourcedir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish",
+          "--define",
+          "_builddir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILD",
+          "--define",
+          "_buildrootdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILDROOTS",
+          "--define",
+          "_toolchain clang",
+          "/home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/llvm-baseline.spec"
+        ],
+        "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+        "environment": {
+          "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+          "CC": "x86_64-tizen-linux-gnu-clang",
+          "CXX": "x86_64-tizen-linux-gnu-clang++",
+          "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "LDFLAGS": "-Wl,-z,relro,--as-needed",
+          "AR": "llvm-ar",
+          "RANLIB": "llvm-ranlib",
+          "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+          "LANG": "C",
+          "LC_ALL": "POSIX"
+        },
+        "which_clang": "/bin/clang",
+        "which_clangxx": "/bin/clang++",
+        "returncode": 0,
+        "wall_s": 0.005352544016204774
+      }
+    },
+    {
+      "label": "macro-mini-debug",
+      "mode": "debug",
+      "without_clang_bolt": false,
+      "expanded_sha256": "09481b22005d618670aae7ff391c6d72442c964a9d8b999a6f08de70e804e231",
+      "call": {
+        "label": "macro-mini-debug",
+        "argv": [
+          "/usr/bin/rpmspec",
+          "--macros=/usr/lib/rpm/macros:/usr/lib/rpm/macros.d/macros.*:/usr/lib/rpm/platform/%{_target}/macros:/usr/lib/rpm/fileattrs/*.attr:/usr/lib/rpm/tizen/macros:/etc/rpm/macros.*:/etc/rpm/macros:/etc/rpm/%{_target}/macros:/home/abuild/.rpmmacros",
+          "--parse",
+          "--define",
+          "_topdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse",
+          "--define",
+          "_sourcedir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish",
+          "--define",
+          "_builddir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILD",
+          "--define",
+          "_buildrootdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILDROOTS",
+          "--define",
+          "_toolchain clang",
+          "/home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-mini-debug.spec"
+        ],
+        "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+        "environment": {
+          "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+          "CC": "x86_64-tizen-linux-gnu-clang",
+          "CXX": "x86_64-tizen-linux-gnu-clang++",
+          "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "LDFLAGS": "-Wl,-z,relro,--as-needed",
+          "AR": "llvm-ar",
+          "RANLIB": "llvm-ranlib",
+          "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+          "LANG": "C",
+          "LC_ALL": "POSIX"
+        },
+        "which_clang": "/bin/clang",
+        "which_clangxx": "/bin/clang++",
+        "returncode": 0,
+        "wall_s": 0.006332521996228024
+      }
+    },
+    {
+      "label": "macro-release-on",
+      "mode": "release",
+      "without_clang_bolt": false,
+      "expanded_sha256": "6926653a6aeaf2627cdd7e2dae4c4437722aba93db2ad84d1450a81712d2bb6c",
+      "call": {
+        "label": "macro-release-on",
+        "argv": [
+          "/usr/bin/rpmspec",
+          "--macros=/usr/lib/rpm/macros:/usr/lib/rpm/macros.d/macros.*:/usr/lib/rpm/platform/%{_target}/macros:/usr/lib/rpm/fileattrs/*.attr:/usr/lib/rpm/tizen/macros:/etc/rpm/macros.*:/etc/rpm/macros:/etc/rpm/%{_target}/macros:/home/abuild/.rpmmacros",
+          "--parse",
+          "--define",
+          "_topdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse",
+          "--define",
+          "_sourcedir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish",
+          "--define",
+          "_builddir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILD",
+          "--define",
+          "_buildrootdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILDROOTS",
+          "--undefine",
+          "_toolchain",
+          "/home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/llvm-draft.spec"
+        ],
+        "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+        "environment": {
+          "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+          "CC": "x86_64-tizen-linux-gnu-clang",
+          "CXX": "x86_64-tizen-linux-gnu-clang++",
+          "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "LDFLAGS": "-Wl,-z,relro,--as-needed",
+          "AR": "llvm-ar",
+          "RANLIB": "llvm-ranlib",
+          "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+          "LANG": "C",
+          "LC_ALL": "POSIX"
+        },
+        "which_clang": "/bin/clang",
+        "which_clangxx": "/bin/clang++",
+        "returncode": 0,
+        "wall_s": 0.009397534013260156
+      }
+    },
+    {
+      "label": "macro-release-off",
+      "mode": "release",
+      "without_clang_bolt": true,
+      "expanded_sha256": "1f19aec974612e8fec319e3be5809d8b599791e67c239748547762a258e2ce13",
+      "call": {
+        "label": "macro-release-off",
+        "argv": [
+          "/usr/bin/rpmspec",
+          "--macros=/usr/lib/rpm/macros:/usr/lib/rpm/macros.d/macros.*:/usr/lib/rpm/platform/%{_target}/macros:/usr/lib/rpm/fileattrs/*.attr:/usr/lib/rpm/tizen/macros:/etc/rpm/macros.*:/etc/rpm/macros:/etc/rpm/%{_target}/macros:/home/abuild/.rpmmacros",
+          "--parse",
+          "--define",
+          "_topdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse",
+          "--define",
+          "_sourcedir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish",
+          "--define",
+          "_builddir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILD",
+          "--define",
+          "_buildrootdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILDROOTS",
+          "--undefine",
+          "_toolchain",
+          "--define",
+          "_without_clang_bolt --without-clang_bolt",
+          "/home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/llvm-draft.spec"
+        ],
+        "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+        "environment": {
+          "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+          "CC": "x86_64-tizen-linux-gnu-clang",
+          "CXX": "x86_64-tizen-linux-gnu-clang++",
+          "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "LDFLAGS": "-Wl,-z,relro,--as-needed",
+          "AR": "llvm-ar",
+          "RANLIB": "llvm-ranlib",
+          "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+          "LANG": "C",
+          "LC_ALL": "POSIX"
+        },
+        "which_clang": "/bin/clang",
+        "which_clangxx": "/bin/clang++",
+        "returncode": 0,
+        "wall_s": 0.01005824000458233
+      }
+    },
+    {
+      "label": "macro-release-baseline",
+      "mode": "release",
+      "without_clang_bolt": false,
+      "expanded_sha256": "5f2a862c4b296ddfa536e0564a871297ecaa90c597b50df45b5d1ac465973530",
+      "call": {
+        "label": "macro-release-baseline",
+        "argv": [
+          "/usr/bin/rpmspec",
+          "--macros=/usr/lib/rpm/macros:/usr/lib/rpm/macros.d/macros.*:/usr/lib/rpm/platform/%{_target}/macros:/usr/lib/rpm/fileattrs/*.attr:/usr/lib/rpm/tizen/macros:/etc/rpm/macros.*:/etc/rpm/macros:/etc/rpm/%{_target}/macros:/home/abuild/.rpmmacros",
+          "--parse",
+          "--define",
+          "_topdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse",
+          "--define",
+          "_sourcedir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish",
+          "--define",
+          "_builddir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILD",
+          "--define",
+          "_buildrootdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILDROOTS",
+          "--undefine",
+          "_toolchain",
+          "/home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/llvm-baseline.spec"
+        ],
+        "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+        "environment": {
+          "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+          "CC": "x86_64-tizen-linux-gnu-clang",
+          "CXX": "x86_64-tizen-linux-gnu-clang++",
+          "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "LDFLAGS": "-Wl,-z,relro,--as-needed",
+          "AR": "llvm-ar",
+          "RANLIB": "llvm-ranlib",
+          "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+          "LANG": "C",
+          "LC_ALL": "POSIX"
+        },
+        "which_clang": "/bin/clang",
+        "which_clangxx": "/bin/clang++",
+        "returncode": 0,
+        "wall_s": 0.011556868004845455
+      }
+    },
+    {
+      "label": "macro-mini-release",
+      "mode": "release",
+      "without_clang_bolt": false,
+      "expanded_sha256": "a436e026b6ff927767c233eb131982bc99d156679ab32090727745175dd786b5",
+      "call": {
+        "label": "macro-mini-release",
+        "argv": [
+          "/usr/bin/rpmspec",
+          "--macros=/usr/lib/rpm/macros:/usr/lib/rpm/macros.d/macros.*:/usr/lib/rpm/platform/%{_target}/macros:/usr/lib/rpm/fileattrs/*.attr:/usr/lib/rpm/tizen/macros:/etc/rpm/macros.*:/etc/rpm/macros:/etc/rpm/%{_target}/macros:/home/abuild/.rpmmacros",
+          "--parse",
+          "--define",
+          "_topdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse",
+          "--define",
+          "_sourcedir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish",
+          "--define",
+          "_builddir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILD",
+          "--define",
+          "_buildrootdir /home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-parse/BUILDROOTS",
+          "--undefine",
+          "_toolchain",
+          "/home/abuild/bolt-work/bolt-v4-20261015-reviewfinish/macro-mini-release.spec"
+        ],
+        "cwd": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+        "environment": {
+          "PATH": "/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+          "CC": "x86_64-tizen-linux-gnu-clang",
+          "CXX": "x86_64-tizen-linux-gnu-clang++",
+          "CFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "CXXFLAGS": "  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument",
+          "LDFLAGS": "-Wl,-z,relro,--as-needed",
+          "AR": "llvm-ar",
+          "RANLIB": "llvm-ranlib",
+          "PKG_CONFIG_PATH": ":/usr/lib64/pkgconfig:/usr/share/pkgconfig",
+          "LANG": "C",
+          "LC_ALL": "POSIX"
+        },
+        "which_clang": "/bin/clang",
+        "which_clangxx": "/bin/clang++",
+        "returncode": 0,
+        "wall_s": 0.004737266019219533
+      }
+    }
+  ],
+  "macro_fragment": "%global __bolt_original_spec_install_post %{__spec_install_post}\n%define __spec_install_post \\\n    %{__bolt_original_spec_install_post} \\\n    python3 %{SOURCE1201} post \"%{buildroot}\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate\" --resource-dir \"%{buildroot}%{_libdir}/clang/%{llvm_version}\" || exit 1\n",
+  "literal_fragment_sha256": "61626efeef3dcaf1989b8ae00466578f733c0d4e638c127f54681d6bd826f180",
+  "without_compatibility": "rpmspec rejects --without; rpmbuild --without sets _without_clang_bolt to literal --without-clang_bolt (not integer1); rpmspec receives that exact macro definition; installed bcond_without tests existence only",
+  "historical_note": "20 mini specs substituted helper/work/resource paths directly; they were structurally equivalent, not literally identical. Current canonical mini specs below embed the exact source fragment; parsed only, no new rpmbuild claim.",
+  "resources": {
+    "reviewfinish-macros": {
+      "status": "FAIL",
+      "scope_wall_s": 1.024845182982972,
+      "cgroup_peak_bytes": 40865792,
+      "process_VmHWM": [
+        {
+          "pid": 1202198,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12592
+        }
+      ],
+      "minimum_host_MemAvailable": 17788018688,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "reviewfinish-macros-corrected": {
+      "status": "FAIL",
+      "scope_wall_s": 1.0290731480054092,
+      "cgroup_peak_bytes": 29507584,
+      "process_VmHWM": [
+        {
+          "pid": 1202349,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12604
+        }
+      ],
+      "minimum_host_MemAvailable": 17734844416,
+      "cgroup_reaped": true,
+      "swap0": true
+    },
+    "reviewfinish-macros-value-corrected": {
+      "status": "PASS",
+      "scope_wall_s": 1.5246142339892685,
+      "cgroup_peak_bytes": 30994432,
+      "process_VmHWM": [
+        {
+          "pid": 1202431,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 12612
+        },
+        {
+          "pid": 1202434,
+          "name": "Name:\tpython3",
+          "VmHWM_kB": 21940
+        },
+        {
+          "pid": 1202524,
+          "name": "Name:\tsudo",
+          "VmHWM_kB": 6164
+        }
+      ],
+      "minimum_host_MemAvailable": 17794748416,
+      "cgroup_reaped": true,
+      "swap0": true
+    }
+  }
+}
