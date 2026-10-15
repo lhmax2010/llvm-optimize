@@ -282,6 +282,10 @@ PM裁决及本轮边界见21：修门禁不改生成参数/4ec候选，源父a14
 
 源仓库user.name/email均来自global /home/linhao/.gitconfig：liushanshan / ss0217.liu@samsung.com，未修改配置。单次-c amend/reset-author后，新源b7e61fb92b34795868230e4f9cee8e3ec65496f6，author/committer使用当时的历史署名（后续遵循下述长期规则）；父a1410e3d，tree ea70ea066dd16430b23c238d9654e1667479b960与97c060a相同，spec df1198d1…/helper4590b337…不变。文本补丁/manifest同步。sandbox查询前a1410e3d→无force快进推送→查询后b7e61fb92b34795868230e4f9cee8e3ec65496f6，确认成功；Gerrit仅提示subject>50字符警告，原文在manifest。未推评审/tizen_base，未做其他验证步骤。
 
-## 2026-10-15 续跑十一B：两目标性能PASS
+## 2026-10-15 续跑十一B（历史完成）
 
-按20同CPU2/单并行/同槽位inode/五轮交替，每侧5次；两目标各300次全部保留。ARM geom30=0.856351167，独立20=0.858165628，留出10=0.868458776；AArch64 geom30=0.847699213，独立20=0.847858623，留出10=0.847902567，均<0.98。独立20合并重复源全部5/10样本后中位/比值/等权，另有备用entry口径；x86历史0.855890085。逐条中位数、参数与频率负载见21和target-perf系列JSON/CSV/raw。锁1723.072/1702.955秒均<60m（精确值见resources），proc/scope回收。60输入再次SHA及原clang/候选/22RPM/归档/源码/禁用配置/cache审计PASS；源b7e61fb与spec/helper不变，不改LLVM源码/不操作Gerrit/不进ARM树。无删样/重跑/产品准备错误，磁盘底线通过。
+ARM/AArch64性能均PASS：geom30 0.856351167/0.847699213；独立20与留出10、600样本/条件/保护见21及95a2955版STATUS。无源码/Gerrit动作，锁/proc/scope回收。
+
+## 2026-10-15 续跑十二（进行中）
+
+PM第二轮修复以b7e61fb为基线，作者/提交者均Hao Lin <hao.lin@samsung.com>且只用单次-c；全PASS才推sandbox。旧树仍禁CMake/Ninja；第六步只读overlay新授权，失败不可用记NOT RUN不得复制全树。步骤1a历史126任务连续恒t、有TF两条及采集器前缀/元数据；1b主理解成立但真实重生成显示[0/1]，fileWRITE确实触发对象/库重建；1c22RPM共47.cmake新旧规则均0命中，不声称本基准旧post误拒。原文与约束见22，所有证据阶段scope/proc/重锁回收。产品准备错误0，纯查找更正2条见22；helper/spec尚未改，第六步未执行。
