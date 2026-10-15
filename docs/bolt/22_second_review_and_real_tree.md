@@ -38,3 +38,9 @@
 call改waitid WNOWAIT保持组长、killpg后10秒清组/1秒非阻塞回收、SIGCHLD恢复默认、proc namespace自检/枚举及读取失败关闭、Z/X多线程视为活；原错标签先于清理错，成功回收后读日志失败不杀组，KBI/SystemExit保持。测试在返回时立即判后代已退出，随后两个心跳周期不再更新。RELRO现编小程序字节移动/缩小/清零拒绝，dynsym五元组/原始shndx定义类别、版本提供者、DT_BIND_NOW/W+X与NOBITS等负例通过。post复用不算SHA的失败关闭遍历与定向串，根内链接正常、悬空/错误/特殊文件拒绝。@rsp立即拒绝。
 
 旧断言改动逐项理由见review2-implementation-result.json，原有146方法无删减。debug/release各18段，BOLT关闭时均与cb679968展开逐字节相同；canonical mini与源spec追加片段逐字相同且位于install/files之后。此处尚不是第七步实际post脚本证据。rpmspec无--without选项，沿用已认证的rpmbuild实际宏值兼容方式。源与B镜像逐字相同；源尚未提交，第五步前待真实安全门禁。
+
+## 4 真实产物 PASS；5 本地源提交 PASS
+
+普通7df与候选4ec SHA绑定，新安全属性全部相同。RELRO flags4/vaddr136891248/filesz3004136/memsz3007632；DT_BIND_NOW均false、W_X_LOAD均false；dynsym和版本绑定各65241条、verneed43条，全部原文以security-properties xz公开。tiny三目标完整对象一致；20小RPM根的副本分别通过新post反向、compare-root及完整post（SHA/alias/security/tiny），故意加入llvm-bolt被拒。构造110任务通过，编号一致的111任务含普通Support被拒。没有重新生成候选。
+
+源提交d08b54da276102c2b607fbddd07966111f5147cd，父b7e61fb92b34795868230e4f9cee8e3ec65496f6，tree 40a569a2e001dcf11f5cf5e9239211001be9d7a3；作者/提交者均Hao Lin。spec/helper/profile的SHA和字节、0003补丁、完整索引apply/tree一致证明见draft-manifest。该内容锁定用于第六步，尚未推sandbox。

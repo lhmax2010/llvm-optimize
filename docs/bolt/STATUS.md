@@ -288,4 +288,4 @@ ARM/AArch64性能均PASS：geom30 0.856351167/0.847699213；独立20与留出10�
 
 ## 2026-10-15 续跑十二（进行中）
 
-PM第二轮修复以b7e61fb为基线，作者/提交者均Hao Lin <hao.lin@samsung.com>且只用单次-c；全PASS才推sandbox。旧树仍禁CMake/Ninja；第六步只读overlay新授权，失败不可用记NOT RUN不得复制全树。步骤1a历史126任务连续恒t、有TF两条及采集器前缀/元数据；1b主理解成立但真实重生成显示[0/1]，fileWRITE确实触发对象/库重建；1c22RPM共47.cmake新旧规则均0命中，不声称本基准旧post误拒。原文与约束见22，所有证据阶段scope/proc/重锁回收。产品准备错误0，查找更正见22。helper/spec修复与202夹具PASS（原146保留+56），两模式OFF各18段同cb、追加片段同字节；实现/原文/资源见22与review2-implementation-result。源尚未提交，待真实产物门禁；第六步未执行。
+PM第二轮修复以b7e61fb为基线，作者/提交者均Hao Lin <hao.lin@samsung.com>且只用单次-c；全PASS才推sandbox。旧树仍禁CMake/Ninja；第六步只读overlay新授权，失败不可用记NOT RUN不得复制全树。步骤1a历史126任务连续恒t、有TF两条及采集器前缀/元数据；1b主理解成立但真实重生成显示[0/1]，fileWRITE确实触发对象/库重建；1c22RPM共47.cmake新旧规则均0命中，不声称本基准旧post误拒。原文与约束见22，所有证据阶段scope/proc/重锁回收。产品准备错误0，查找更正见22。helper/spec修复与202夹具PASS（原146保留+56），两模式OFF各18段同cb、追加片段同字节；实现/原文/资源见22与review2-implementation-result。真实新security/tiny/双根post与compare-root全部PASS，4ec不变。新本地源d08b54da276102c2b607fbddd07966111f5147cd父b7，0003索引apply/tree PASS；第六步尚未执行，未推sandbox。
