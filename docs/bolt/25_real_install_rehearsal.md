@@ -46,3 +46,9 @@ PASS。明确租约 `ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8` 的 force-with-le
 | mlgo_x86_model.tar.gz | 28652731 | 6c221a08aa63f80c3d82713ba968125797f16351c258a174fc0eec6fdffdbf43 |
 
 前四项直接来自506dc25的Git对象；其余Source复用下层同名原件，经合并根读取再次校验。未解包或修改源码。
+
+## B4 首个真实门禁：PASS
+
+普通安装、preflight/certified、BOLT_BUILDROOT_OK/BOLT_PROC_OK均成功。安装根快照5,429路径。真实dry-run恰113条：BOLT对象102、静态库7、可执行1、生成任务1，另TF刷新2；ninja_diagnostics为空、计数0。tool-plan PASS，没有其他任务。工具构建前bin/llvm-bolt不存在；TF归档f15c565d30a981c22c71cbcf823030302cf51d19a381f4cc82e44626688be1ed与预构建归档相同。正在执行真正-j1构建，尚不能宣称tool-verify或pipeline通过。
+
+实际rpmbuild生成的完整install/post脚本已捕获。额外同UID宿主监护覆盖helper独立session，资源中止时清理abuild进程而保留root包装器做卸载审计；55分钟停止计算任务，为单次60分钟持锁保留5分钟清理时间。它不改变产品命令或门禁。
