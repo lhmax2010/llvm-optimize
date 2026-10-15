@@ -278,3 +278,5 @@ PM裁决及本轮边界见21：修门禁不改生成参数/4ec候选，源父a14
 ## 2026-10-15 续跑十一B：ARM/AArch64性能（进行中）
 
 沿用20方法：CPU2、单并行、同一编译器实体路径/inode、五轮角色先后交替，每侧5次，全部样本保留；普通7df/候选4ec不改。60资产SHA/原参数预检PASS，目标armv7l-tizen-linux-gnueabi与aarch64-tizen-linux-gnu；每目标30条/20独立源，重复源SHA相同。独立20统计合并每源全部5/10样本后取每侧中位数，等权20比值；另报留出10。每目标单独16GiB/swap0/nice15/ionice3及共享锁≤60m，准入MemAvailable≥12G、运行<3G终止，磁盘预算16G后仍≥30G。ARM测量先行；不改LLVM源码/参数、不进ARM树、不操作Gerrit。
+
+十一B ARM PASS：300次完整样本，geom30=0.856351167，独立20=0.858165628，留出10=0.868458776；scope1723.033s，锁/proc/scope回收，细节21与target-perf-armv7l。AArch64下一段独立取锁；准备错误0。

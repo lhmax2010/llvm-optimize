@@ -118,3 +118,44 @@ OPTIONS与PROFILE_SHA常量和父提交相同；候选最终SHA仍4ec07159aeb4f9
 每目标30条=arm-training10、arm-holdout10、aarch64-training10；两个训练cohort是同10源且输入SHA相同，共20独立源。主判据仍30条每侧5次的中位比几何平均严格<0.98；独立20按源汇总全部5/10样本再中位/比值/等权几何平均，留出组10另算。额外保存按entry中位数比值先在源内几何平均再等权20的结果，明确不同口径，不用去重删除任何原样本。
 
 两目标分开重锁与16GiB/swap0/nice15/ionice3，单锁≤60m，MemAvailable准入12G/运行底线3G。磁盘16GiB预检预计剩36,421,627,904B，≥30GiB。准备性错误目前0；未改LLVM源码、未操作Gerrit。结果待。
+
+### 续跑十一B：ARM目标 PASS
+
+30条目、每侧5次/共300次全部保留，几何平均比 **0.856351167** <0.98；独立20源（池化全样本）0.858165628，留出10为0.868458776。独立20按entry中位比先源内平均的备用口径0.859362152，不混用。x86_64历史0.855890085，ARM相近。
+
+CPU2 / Intel(R) Core(TM) Ultra 7 265，intel_pstate/powersave，策略800000–5300000kHz；准入busy3.000%。运行load1 min/median/max=1.59/2.86/4.68；600个编译前后频率样本kHz min/median/max=800000/1572406.0/5200000，属于边界采样而非编译期间平均频率。单并行、同一slot/inode10次覆盖全部核实。scope1723.033s/峰4.585GiB，锁1723.072s；proc/锁/scope回收。
+
+|条目|普通中位s|候选中位s|比值|
+|---|---:|---:|---:|
+|arm-training/00-SemaStmt|6.306962|5.249152|0.832279|
+|arm-training/01-SemaExprCXX|6.451667|5.391396|0.835659|
+|arm-training/02-SelectionDAG|7.172717|6.102068|0.850733|
+|arm-training/03-MachinePipeliner|6.515881|5.621568|0.862749|
+|arm-training/04-Attributor|6.645996|5.643808|0.849204|
+|arm-training/05-WholeProgramDevirt|5.935641|5.178307|0.872409|
+|arm-training/06-ARMISelLowering|8.697455|7.628552|0.877102|
+|arm-training/07-ARMTargetTransformInfo|4.920030|4.256021|0.865040|
+|arm-training/08-MasmParser|3.429316|3.003495|0.875829|
+|arm-training/09-AsmParser|2.800406|2.400299|0.857125|
+|arm-holdout/00-ParentMapContext|6.000011|5.132233|0.855371|
+|arm-holdout/01-ParseDecl|5.015590|4.365531|0.870392|
+|arm-holdout/02-Driver|5.336522|4.718423|0.884176|
+|arm-holdout/03-CoverageMappingGen|5.760749|4.821350|0.836931|
+|arm-holdout/04-Metadata|5.499623|4.860948|0.883869|
+|arm-holdout/05-ScalarEvolution|9.804958|8.751684|0.892577|
+|arm-holdout/06-AArch64InstructionSelector|5.751231|4.925337|0.856397|
+|arm-holdout/07-X86ISelDAGToDAG|5.056611|4.309699|0.852290|
+|arm-holdout/08-ELF|5.761812|5.196722|0.901925|
+|arm-holdout/09-InstrProfReader|4.655609|3.971036|0.852957|
+|aarch64-training/00-SemaStmt|6.200113|5.130725|0.827521|
+|aarch64-training/01-SemaExprCXX|6.471503|5.347725|0.826350|
+|aarch64-training/02-SelectionDAG|7.279690|6.107221|0.838940|
+|aarch64-training/03-MachinePipeliner|6.589895|5.513919|0.836723|
+|aarch64-training/04-Attributor|6.535015|5.558852|0.850626|
+|aarch64-training/05-WholeProgramDevirt|6.011069|5.083873|0.845752|
+|aarch64-training/06-ARMISelLowering|8.805394|7.494910|0.851173|
+|aarch64-training/07-ARMTargetTransformInfo|5.051683|4.205777|0.832550|
+|aarch64-training/08-MasmParser|3.484781|3.042993|0.873224|
+|aarch64-training/09-AsmParser|2.804367|2.381503|0.849212|
+
+完整5次样本/argv/条件见target-perf-armv7l.json；逐条与独立20 CSV、原始logs与scope/session raw归档公开。没有删样、重跑或准备错误。AArch64尚待。

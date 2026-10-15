@@ -55,4 +55,3 @@ loads=[float(m[side]['host_loadavg'].split()[0]) for row in rows for m in row['m
 freqs=[int(m[side]['cpu_current_kHz']) for row in rows for m in row['measurements'] for side in ('before','after') if m[side]['cpu_current_kHz'].isdigit()]
 value['runtime_summary']={'load1_min':min(loads),'load1_median':statistics.median(loads),'load1_max':max(loads),'frequency_samples':len(freqs),'frequency_kHz_min':min(freqs) if freqs else None,'frequency_kHz_median':statistics.median(freqs) if freqs else None,'frequency_kHz_max':max(freqs) if freqs else None,'same_compiler_inode_verified_all10_copies':True,'total_compiles':sum(len(row['measurements']) for row in rows)}
 save();sys.exit(0 if ratio<0.98 else 1)
-
