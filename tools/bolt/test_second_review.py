@@ -23,13 +23,13 @@ class SecondPlanTests(unittest.TestCase):
     def test_other_ninja_message(self):self.rejected('ninja: interrupted by user.')
     def test_regeneration_specific(self):
         for f in (0,1):
-            with self.subTest(f=f),self.assertRaisesRegex(h.GateError,'BOLT 追加配置后 build.ninja 仍需重生成，dry-run 看不到真实计划'):
+            with self.subTest(f=f),self.assertRaisesRegex(h.GateError,'build.ninja still needs regeneration'):
                 h.tool_plan('[%d/1] Re-running CMake...'%f)
     def test_truncated(self):self.rejected('[1/2] '+LINK)
     def test_skip(self):self.rejected('[2/1] '+LINK)
     def test_wrong_total(self):self.rejected('[1/9] '+LINK)
     def test_duplicate(self):self.rejected(plan_text([LINK,LINK]))
-    def test_stderr_warning(self):self.rejected('ninja: warning: bad\n[1/1] '+LINK)
+    def test_stderr_warning(self):self.assertEqual(h.tool_plan('ninja: warning: bad\n[1/1] '+LINK)['ninja_diagnostics'], ['ninja: warning: bad'])
     def test_leading_blank(self):self.rejected('\n[1/1] '+LINK)
     def test_tf_pair(self):
         p=h.tool_plan(plan_text(TF+DESCRIPTIONS))
@@ -47,7 +47,7 @@ class SecondPlanTests(unittest.TestCase):
         self.rejected(normalized)
     def test_real_toy_fixtures(self):
         self.assertEqual(h.tool_plan((RESULTS/'review2-toy-up-to-date.combined.txt').read_text())['tasks'],0)
-        with self.assertRaisesRegex(h.GateError,'仍需重生成'):
+        with self.assertRaisesRegex(h.GateError,'build.ninja still needs regeneration'):
             h.tool_plan((RESULTS/'review2-toy-rerun.combined.txt').read_text())
         self.rejected((RESULTS/'review2-toy-write-rerun.combined.txt').read_text())
 
@@ -62,7 +62,7 @@ class SecondBuildTests(Base):
     def test_warnings_and_restat(self):
         p,s=self.setup_build(True)
         text='[1/5] '+TF[0]+'\ncompiler: warning: fixture\n[2/3] '+TF[1]+'\n[3/3] '+LINK
-        self.assertEqual(h.tool_verify(self.d,p,text,s)['tasks'],3)
+        self.assertEqual(h.tool_verify(self.d,p,text+'\n'+h.BUILD_SUCCESS,s)['tasks'],3)
         self.assertTrue(s['prebuilt_evidence']['archive_equal'])
     def test_task_outside_plan(self):
         p,s=self.setup_build()
@@ -75,10 +75,10 @@ class SecondBuildTests(Base):
         with self.assertRaises(h.GateError):h.tool_verify(self.d,p,'[1/1] '+LINK,s)
     def test_archive_changed(self):
         p,s=self.setup_build(True);(self.d/'lib64/libtf_xla_runtime.a').write_bytes(b'changed')
-        with self.assertRaisesRegex(h.GateError,'TF archive SHA changed'):h.tool_verify(self.d,p,plan_text(TF+[LINK]),s)
+        with self.assertRaisesRegex(h.GateError,'TF archive SHA changed'):h.tool_verify(self.d,p,plan_text(TF+[LINK])+'\n'+h.BUILD_SUCCESS,s)
     def test_archive_missing(self):
         p,s=self.setup_build(True);(self.d/'lib64/libtf_xla_runtime.a').unlink()
-        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,plan_text(TF+[LINK]),s)
+        with self.assertRaises(h.GateError):h.tool_verify(self.d,p,plan_text(TF+[LINK])+'\n'+h.BUILD_SUCCESS,s)
     def test_executable_symlink(self):
         p,s=self.setup_build();exe=self.d/'bin/llvm-bolt';exe.rename(exe.with_name('other'));exe.symlink_to('other')
         with self.assertRaises(h.GateError):h.tool_verify(self.d,p,'[1/1] '+LINK,s)

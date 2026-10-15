@@ -19,7 +19,33 @@ import sys
 import tempfile
 import time
 
-PROFILE_SHA = 'd9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326'
+CERTIFIED = {'llvm_version': '22.1.8', 'bolt_version': 'LLVM version 22.1.8',
+             'profile_sha256': 'd9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326',
+             'bolt_task_count': 111, 'tf_refresh_task_count': 2}
+PROFILE_SHA = CERTIFIED['profile_sha256']
+BUILD_SUCCESS = 'BOLT_NINJA_EXIT_0'
+REGEN_ERROR = ('dry-run shows "Re-running CMake..."; build.ninja still needs regeneration '
+               'after the BOLT configure, so the real plan is not visible')
+
+
+def preflight():
+    require(sys.version_info >= (3, 9), 'Python actual=%s expected=>=3.9' % (tuple(sys.version_info[:3]),))
+    required = ('waitid', 'waitstatus_to_exitcode', 'P_PID', 'WEXITED', 'WNOHANG', 'WNOWAIT', 'CLD_EXITED')
+    missing = [name for name in required if not hasattr(os, name)]
+    require(not missing, 'Python os interfaces actual=missing %s expected=%s' % (missing, required))
+    return {'preflight_pass': True, 'python': list(sys.version_info[:3]), 'os_interfaces': list(required)}
+
+
+def certified():
+    return {**CERTIFIED, 'whitelist_counts': {'bolt': len(BOLT_TASK_DESCRIPTIONS),
+                                             'tf_refresh': len(TF_REFRESH_DESCRIPTIONS)}}
+
+
+def profile_identity(path):
+    actual = digest(path)
+    require(actual == PROFILE_SHA, 'profile SHA actual=%s expected=%s; remedy: first verify the Source identity; '
+            'do not assume the profile is stale' % (actual, PROFILE_SHA))
+
 OPTIONS = ['-reorder-blocks=ext-tsp', '-reorder-functions=cdsort', '-split-functions',
            '-split-all-cold', '-split-eh', '-dyno-stats', '--thread-count=1', '-stale-threshold=5']
 TRIPLES = ['armv7l-tizen-linux-gnueabi', 'aarch64-tizen-linux-gnu', 'x86_64-tizen-linux-gnu']
@@ -162,7 +188,7 @@ def profile_unpack(source, output):
     try:
         with lzma.open(source, 'rb') as src, output.open('xb') as dst:
             shutil.copyfileobj(src, dst, 1024 * 1024)
-        require(digest(output) == PROFILE_SHA, 'profile uncompressed SHA mismatch')
+        profile_identity(output)
     except Exception:
         if output.exists():
             output.unlink()
@@ -178,9 +204,10 @@ def replay_script(original, output, dependency, cache=None):
     require('\n' not in original and original.startswith(': && ') and original.endswith(' && :'),
             'unexpected link edge framing')
     body = original[5:-5]
-    require(not any(arg.startswith('@') for arg in shlex.split(body)),
+    args = shlex.split(body)
+    require(not any(arg.startswith('@') or (arg.startswith('-Wl,') and any(part.startswith('@') for part in arg[4:].split(','))) for arg in args),
             'link edge uses a response file; rsp auditing is not implemented')
-    require('&&' not in body and ';' not in body and '`' not in body and '$(' not in body,
+    require(not any(c in body for c in ';`|&<>') and '$(' not in body,
             'unsupported shell syntax in link edge')
     require(not re.search(r'(?<!\\)\$', body), 'unknown shell substitution')
     require('--emit-relocs' not in body and '--strip-debug' not in body, 'edge already has BOLT flags')
@@ -215,8 +242,8 @@ def match_counts(text, argv, successful, trusted_tool):
     u = int(urows[0]) if urows else 0; q = int(qrows[0]) if qrows else 0
     require(n > 0 and m >= n and s <= n, 'invalid N/M/S')
     # Absent optional zero-counter lines are allowed only for this authenticated success format.
-    require(100 * (s + u) <= 5 * (n + u), 'profile R exceeds 5 percent')
-    require(100 * s <= 5 * n, 'profile S/N exceeds 5 percent')
+    require(100 * (s + u) <= 5 * (n + u), 'profile R actual=%s expected=<=0.05; remedy: verify input identity, then retrain the profile or disable BOLT; never raise the threshold' % ((s+u)/(n+u)))
+    require(100 * s <= 5 * n, 'profile S/N actual=%s expected=<=0.05; remedy: verify input identity, then retrain the profile or disable BOLT; never raise the threshold' % (s/n))
     return {'N': n, 'M': m, 'S': s, 'U': u, 'Q': q,
             'R': (s + u) / (n + u), 'S_over_N': s / n}
 
@@ -274,7 +301,7 @@ class ELF:
         strings = self.sections[sec[6]]; require(strings[1] == 3, 'symbol names are not STRTAB'); result = []
         for off in range(sec[4], sec[4] + sec[5], 24):
             name, info, other, shndx, value, size = self.unpack('<IBBHQQ', off)
-            require(shndx != 65535, 'XINDEX not supported')
+            require(shndx < len(self.sections) or shndx in (0xfff1, 0xfff2), 'invalid symbol shndx: actual=%d expected=section index, SHN_ABS or SHN_COMMON' % shndx)
             target = self.names[shndx] if shndx < len(self.names) else 'RESERVED:%d' % shndx
             result.append((self.string(strings[4], strings[5], name), info, other, target, value, size, shndx))
         return result
@@ -311,7 +338,7 @@ def security_properties(path):
                 values.append(value)
             return values
         interp = [e.string(p[2], p[5], 0) for p in headers(3)]
-        dynamic = e.by_name.get('.dynamic'); needed = []; flags = {}; bind_now = False
+        dynamic = e.by_name.get('.dynamic'); needed = []; flags = {}; bind_now = False; search_paths = {}
         if dynamic:
             require(dynamic[1] == 6 and dynamic[9] == 16 and dynamic[5] % 16 == 0 and dynamic[6] < len(e.sections), 'invalid dynamic table')
             strings = e.sections[dynamic[6]]
@@ -322,6 +349,10 @@ def security_properties(path):
                 if tag == 0:
                     terminated = True
                     break
+                if tag in (15, 29):
+                    key = 'DT_RPATH' if tag == 15 else 'DT_RUNPATH'
+                    require(key not in search_paths, 'duplicate dynamic search path tag: '+key)
+                    search_paths[key] = e.string(strings[4], strings[5], value)
                 if tag == 24:
                     bind_now = True
                 if tag == 1:
@@ -371,6 +402,7 @@ def security_properties(path):
                 'PT_GNU_RELRO': header_values(0x6474e552), 'PT_GNU_STACK': header_values(0x6474e551),
                 'PT_GNU_PROPERTY': header_values(0x6474e553, True),
                 '.note.gnu.property': content(e.by_name['.note.gnu.property']).hex() if '.note.gnu.property' in e.by_name else None,
+                'DT_RPATH': search_paths.get('DT_RPATH'), 'DT_RUNPATH': search_paths.get('DT_RUNPATH'),
                 'DT_FLAGS_FLAGS1': flags, 'DT_BIND_NOW': bind_now, 'W_X_LOAD': any(p[1] & 3 == 3 for p in e.loads), 'DT_NEEDED': needed,
                 '.dynsym': sorted(interface(symbol) for symbol in syms),
                 '.gnu.version': named_versions, '.gnu.version_r': sorted(needs)}
@@ -551,7 +583,7 @@ def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
 
 def certified_version(text):
     lines = re.findall(r'^\s*(LLVM version[^\n]*)$', text, re.M)
-    require(lines == ['LLVM version 22.1.8'], 'uncertified BOLT tool version')
+    require(lines == [CERTIFIED['bolt_version']], 'uncertified BOLT tool version actual=%s expected=%s; remedy: update certified constants and recertify, or disable with --without clang_bolt / bcond_with' % (lines, CERTIFIED['bolt_version']))
     return lines[0]
 
 def no_bolt_products(root):
@@ -579,7 +611,7 @@ def no_bolt_products(root):
 
 def rewrite(bolt, profile, input_elf, output, work):
     work = Path(work); work.mkdir(parents=True, exist_ok=True)
-    require(digest(profile) == PROFILE_SHA, 'profile SHA mismatch')
+    profile_identity(profile)
     version = call([bolt, '--version'], work/'bolt-version.log')
     certified_version(version)
     disk_preflight(Path(output).parent,4*Path(input_elf).stat().st_size)
@@ -606,13 +638,15 @@ def tool_plan(text):
     lines = text.splitlines()
     while lines and not lines[-1].strip():
         lines.pop()
+    require(not any('Re-running CMake...' in line for line in lines), REGEN_ERROR)
+    diagnostics = [line for line in lines if line.startswith('ninja: warning:')]
+    lines = [line for line in lines if not line.startswith('ninja: warning:')]
+    require(not any('Re-running CMake...' in line for line in lines), REGEN_ERROR)
     counts = {'objects': 0, 'static_libraries': 0, 'executables': 0, 'generated': 0}
     if lines == ['ninja: no work to do.']:
         return {'plan_type': 'up-to-date', 'tasks': 0, 'categories': counts,
-                'configuration_refresh_tasks': 0, 'descriptions': []}
+                'configuration_refresh_tasks': 0, 'descriptions': [], 'ninja_diagnostics': diagnostics, 'ninja_diagnostics_count': len(diagnostics)}
     require(bool(lines), 'empty BOLT tool plan')
-    if len(lines) == 1 and re.fullmatch(r'\[\d+/\d+\] Re-running CMake\.\.\.', lines[0]):
-        raise GateError('BOLT 追加配置后 build.ninja 仍需重生成，dry-run 看不到真实计划')
     descriptions = []
     for index, line in enumerate(lines, 1):
         match = re.fullmatch(r'\[([0-9]+)/([0-9]+)\] (.+)', line)
@@ -620,7 +654,7 @@ def tool_plan(text):
         require(int(match[1]) == index and int(match[2]) == len(lines), 'non-contiguous or truncated BOLT plan: '+line)
         body = match[3]
         require(body not in descriptions, 'duplicate BOLT task: '+body)
-        require(body in BOLT_TASK_DESCRIPTIONS or body in TF_REFRESH_DESCRIPTIONS, 'unapproved BOLT task: '+body)
+        require(body in BOLT_TASK_DESCRIPTIONS or body in TF_REFRESH_DESCRIPTIONS, 'unapproved BOLT task: actual=%s expected=certified BOLT/TF tasks; remedy: inspect configuration and dirty causes, regenerate the certified whitelist and recertify if needed; never expand it automatically' % body)
         descriptions.append(body)
         if body in BOLT_TASK_DESCRIPTIONS:
             category = ('generated' if body == 'Generating VCSVersion.inc' else
@@ -631,11 +665,14 @@ def tool_plan(text):
     require(not tf or tf == TF_REFRESH_DESCRIPTIONS, 'TF configuration refresh tasks must appear together')
     require('Linking CXX executable bin/llvm-bolt' in descriptions, 'missing llvm-bolt executable link')
     return {'plan_type': 'build', 'tasks': len(lines), 'categories': counts,
-            'configuration_refresh_tasks': len(tf), 'descriptions': descriptions}
+            'configuration_refresh_tasks': len(tf), 'descriptions': descriptions, 'ninja_diagnostics': diagnostics, 'ninja_diagnostics_count': len(diagnostics)}
 
 def tool_prepare(build, plan, state_path):
     build = Path(build)
-    value = {'configuration_refresh_tasks': plan['configuration_refresh_tasks']}
+    executable = build/'bin/llvm-bolt'
+    exists = executable.exists()
+    value = {'configuration_refresh_tasks': plan['configuration_refresh_tasks'],
+             'executable_before': {'exists': exists, 'sha256': digest(executable) if exists and executable.is_file() else None}}
     if value['configuration_refresh_tasks']:
         archive = build/'lib64/libtf_xla_runtime.a'
         require(archive.is_file(), 'missing TF archive before build')
@@ -654,10 +691,14 @@ def tool_prepare(build, plan, state_path):
     return value
 
 def tool_verify(build, plan, text, state):
+    lines = text.splitlines()
+    require(bool(lines) and lines[-1] == BUILD_SUCCESS and lines.count(BUILD_SUCCESS) == 1,
+            'missing, duplicate or non-final '+BUILD_SUCCESS)
     descriptions = []; counters = []
-    for line in text.splitlines():
+    for line in lines[:-1]:
         match = re.fullmatch(r'\[(\d+)/(\d+)\] (.+)', line)
         if match is None:
+            require(not re.match(r'\[\d', line), 'malformed real build progress: '+line)
             continue
         f, t, body = int(match[1]), int(match[2]), match[3]
         require(f == len(descriptions)+1 and f <= t, 'invalid real build progress: '+line)
@@ -665,6 +706,7 @@ def tool_verify(build, plan, text, state):
         require(body not in descriptions, 'duplicate real build task: '+body)
         descriptions.append(body); counters.append([f, t])
     require(plan['plan_type'] != 'up-to-date' or not descriptions, 'up-to-date build unexpectedly ran tasks')
+    require(plan['plan_type'] != 'build' or bool(descriptions), 'build plan executed no tasks')
     executable = Path(build)/'bin/llvm-bolt'
     require(executable.is_file() and not executable.is_symlink() and os.access(executable, os.X_OK),
             'llvm-bolt is not a regular executable')
@@ -675,7 +717,13 @@ def tool_verify(build, plan, text, state):
         require(archive.is_file(), 'missing TF archive after build')
         tf['after_sha256'] = digest(archive)
         require(tf['after_sha256'] == state['before_sha256'], 'TF archive SHA changed during build')
-    return {'tool_build_verified': True, 'tasks': len(descriptions), 'descriptions': descriptions,
+    after_sha = digest(executable)
+    before = state['executable_before']
+    return {'planned_tasks': plan['tasks'], 'executed_tasks': len(descriptions),
+            'executable_before': before['exists'], 'executable_before_sha256': before['sha256'],
+            'executable_after_sha256': after_sha,
+            'executable_produced_by_this_build': 'Linking CXX executable bin/llvm-bolt' in descriptions,
+            'tool_build_verified': True, 'tasks': len(descriptions), 'descriptions': descriptions,
             'progress_counters': counters, 'TF_archive': tf, 'executable': str(executable)}
 
 
@@ -698,7 +746,7 @@ def disk_preflight(destination, planned_bytes, reserve_bytes=0):
         parent = parent.parent
     require(parent.is_dir(), 'disk preflight requires a destination directory')
     free = shutil.disk_usage(parent).free
-    floor = DISK_FLOOR if planned_bytes > LARGE_WRITE else 0
+    floor = DISK_FLOOR if planned_bytes > LARGE_WRITE else GIB
     value = {'destination':str(destination), 'filesystem_device':parent.stat().st_dev,
              'planned_write_bytes':planned_bytes, 'reserve_bytes':reserve_bytes,
              'free_before_bytes':free, 'projected_free_bytes':free-planned_bytes-reserve_bytes,
@@ -856,6 +904,7 @@ def package_compare(ordinary, candidate, mode, proof):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__); sub = p.add_subparsers(dest='cmd',required=True)
+    sub.add_parser('preflight'); sub.add_parser('certified')
     s=sub.add_parser('security');s.add_argument('ordinary');s.add_argument('candidate')
     s=sub.add_parser('tool-prepare');s.add_argument('build');s.add_argument('plan');s.add_argument('state')
     s=sub.add_parser('tool-verify');s.add_argument('build');s.add_argument('plan');s.add_argument('log');s.add_argument('state');s.add_argument('result')
@@ -874,7 +923,9 @@ def main():
     s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
     s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
     a=p.parse_args()
-    if a.cmd=='security':result=security_compare(a.ordinary,a.candidate)
+    if a.cmd=='preflight':result=preflight()
+    elif a.cmd=='certified':result=certified()
+    elif a.cmd=='security':result=security_compare(a.ordinary,a.candidate)
     elif a.cmd=='tool-prepare':result=tool_prepare(a.build,json.loads(Path(a.plan).read_text()),a.state)
     elif a.cmd=='tool-verify':
         result=tool_verify(a.build,json.loads(Path(a.plan).read_text()),Path(a.log).read_text(),json.loads(Path(a.state).read_text()));save(a.result,result)

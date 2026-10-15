@@ -342,8 +342,8 @@ class DiskTests(Base):
         with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':41*h.GIB})()):
             with self.assertRaises(h.GateError):h.disk_preflight(self.d,11*h.GIB,1)
     def test_exact_ten_gib_is_not_large(self):
-        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':10*h.GIB})()):
-            self.assertEqual(h.disk_preflight(self.d,10*h.GIB)['required_free_after_bytes'],0)
+        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':11*h.GIB})()):
+            self.assertEqual(h.disk_preflight(self.d,10*h.GIB)['required_free_after_bytes'],h.GIB)
     def test_over_ten_gib_activates_floor(self):
         with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':40*h.GIB})()):
             with self.assertRaises(h.GateError):h.disk_preflight(self.d,10*h.GIB+1)

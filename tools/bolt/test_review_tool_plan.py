@@ -22,7 +22,7 @@ class ReviewToolPlanTests(unittest.TestCase):
             with self.subTest(description=description),self.assertRaises(h.GateError):
                 h.tool_plan('[1/2] '+description+'\n[2/2] '+LINK)
     def test_nonprogress(self):
-        for line in ['ninja: warning: anything','', ' [1/1] '+LINK,'[1/1]  '+LINK]:
+        for line in ['ninja: error: anything','', ' [1/1] '+LINK,'[1/1]  '+LINK]:
             with self.subTest(line=line),self.assertRaises(h.GateError):h.tool_plan(line+'\n[1/1] '+LINK)
     def test_empty(self):
         with self.assertRaises(h.GateError):h.tool_plan('')
