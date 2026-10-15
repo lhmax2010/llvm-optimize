@@ -276,3 +276,7 @@ PM：上轮为真实退出证明缺口，按SIGKILL/直接回收/扫描pgrp等�
 续跑十步骤3 PASS：当前canonical双模式小spec复用源override完整原文、同处install/files之后（历史20为路径适配，非原文相同，已澄清）；小spec只展开未重跑RPM。源条件块空白移入BOLT分支，OFF debug/release所有相关段与cb逐字节相同。rpmspec无--without，依rpmbuild实证的_without_clang_bolt字符串与已安装bcond宏作等价展开；选项兼容及宏值报告各准备修正一次，原文保留。累计三类各一次，具体21。
 
 续跑十最终PASS_LOCAL_GATES_STOP_BEFORE_PUSH：真实tiny/security、20双模式根副本完整post/反向检查/compare-root、110计划正反例全PASS；146夹具。新源97c060a10bf0d19cea4b163853ceb873ed431478父a141，patch0002静态apply/整树PASS，spec/helper SHA见21与manifest；profile及4ec候选不变。没有Gerrit查询/推送，按授权停在推送前。三类准备修正各一次、两macro采集错误原因不同均保留；原22RPM/归档/源码/坏配置/cache审计PASS；所有4GiB scopes/proc回收，无重锁/CMake/Ninja/ARM/完整构建。
+
+## 2026-10-15 续跑十一A：署名与sandbox
+
+源仓库user.name/email均来自global /home/linhao/.gitconfig：liushanshan / ss0217.liu@samsung.com，未修改配置。单次-c amend/reset-author后，新源b7e61fb92b34795868230e4f9cee8e3ec65496f6，author/committer均FatTank <hao.lin@samsung.com>；父a1410e3d，tree ea70ea066dd16430b23c238d9654e1667479b960与97c060a相同，spec df1198d1…/helper4590b337…不变。文本补丁/manifest同步。sandbox查询前a1410e3d→无force快进推送→查询后b7e61fb92b34795868230e4f9cee8e3ec65496f6，确认成功；Gerrit仅提示subject>50字符警告，原文在manifest。未推评审/tizen_base，未做其他验证步骤。

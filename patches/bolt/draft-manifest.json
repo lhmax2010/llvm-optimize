@@ -1,11 +1,11 @@
 {
-  "draft_commit": "97c060a10bf0d19cea4b163853ceb873ed431478",
+  "draft_commit": "b7e61fb92b34795868230e4f9cee8e3ec65496f6",
   "base": "a1410e3d14b8836e3f9be5a1b4380f914dc2e705",
   "tree": "ea70ea066dd16430b23c238d9654e1667479b960",
   "apply_check": true,
   "tree_equal": true,
-  "gerrit_pushed": false,
-  "qualification": "PASS_THIS_TASK_LOCAL_GATES; STOP_BEFORE_GERRIT_PUSH",
+  "gerrit_pushed": true,
+  "qualification": "PASS_LOCAL_GATES_AUTHOR_CORRECTED_AND_SANDBOX_PUSHED",
   "files": [
     {
       "path": "packaging/llvm.spec",
@@ -25,19 +25,27 @@
   ],
   "patch": {
     "file": "0002-clang-bolt-gate-repairs.patch",
-    "bytes": 39498,
-    "sha256": "b72835377bb8d5fe58bc611bcd56d1eb9f7591616299b407cfe78e9f44cf2ce2"
+    "bytes": 39491,
+    "sha256": "0584b5fc82fae2789d2af09a100c10c4c2d291d0178b48578401a5f44ddf3df7"
   },
   "fixtures": 146,
   "source_parent_chain": [
     "cb67996861d070d68fec2b4c623eed7d20ba2e23",
     "a1410e3d14b8836e3f9be5a1b4380f914dc2e705",
-    "97c060a10bf0d19cea4b163853ceb873ed431478"
+    "b7e61fb92b34795868230e4f9cee8e3ec65496f6"
   ],
-  "instructions": "Apply 0002 with git am to a1410e3d. For a cb679968 checkout, first apply historical0001 review patch and restore unchanged profile as documented in a1410e3d-historical-manifest.json, then apply0002. Static index apply matches full new tree. No Gerrit push performed.",
+  "instructions": "Apply 0002 with git am to a1410e3d. For a cb679968 checkout, first apply historical0001 review patch and restore unchanged profile as documented in a1410e3d-historical-manifest.json, then apply0002. Static index apply matches full new tree. Sandbox fast-forward pushed and verified; no review or tizen_base push.",
   "quickbuild_default": "x86_64 BOLT enabled; rollback requires new spec commit changing bcond_without to bcond_with",
   "candidate_route": "historical llvm-bolt fallback; no regeneration",
   "local_candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
   "current_task_scope": "process groups/security/macro evidence/real gates; ARM-AArch64 performance not part of this task, still pending from previous task",
-  "historical_x86_performance_ratio": 0.8558900849814584
+  "historical_x86_performance_ratio": 0.8558900849814584,
+  "author": "FatTank <hao.lin@samsung.com>",
+  "committer": "FatTank <hao.lin@samsung.com>",
+  "amended_from": "97c060a10bf0d19cea4b163853ceb873ed431478",
+  "sandbox_branch": "sandbox/lhmax2025/bolt_pgo",
+  "remote_before": "a1410e3d14b8836e3f9be5a1b4380f914dc2e705",
+  "remote_after": "b7e61fb92b34795868230e4f9cee8e3ec65496f6",
+  "push_stdout": "",
+  "push_stderr": "remote: \nremote: Processing changes: refs: 1        \nremote: Processing changes: refs: 1, done            \nremote: commit b7e61fb: warning: subject >50 characters; use shorter first paragraph        \nTo ssh://review.tizen.org:29418/platform/upstream/llvm\n   a1410e3d14b8..b7e61fb92b34  b7e61fb92b34795868230e4f9cee8e3ec65496f6 -> sandbox/lhmax2025/bolt_pgo\n"
 }
