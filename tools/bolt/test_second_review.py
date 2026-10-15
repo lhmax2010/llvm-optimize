@@ -223,7 +223,7 @@ class SecondReverseTests(Base):
         (self.d/'target').write_text('ok');(self.d/'link').symlink_to('/target')
         self.assertTrue(h.no_bolt_products(self.d)['no_bolt_products'])
     def test_dangling(self):
-        (self.d/'link').symlink_to('missing')
+        (self.d/'link.cmake').symlink_to('missing')
         with self.assertRaisesRegex(h.GateError,'dangling'):h.no_bolt_products(self.d)
     def test_permission_error(self):
         with patch.object(os,'scandir',side_effect=PermissionError('forced')),self.assertRaisesRegex(h.GateError,'inventory traversal failed'):h.no_bolt_products(self.d)

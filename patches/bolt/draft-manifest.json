@@ -1,15 +1,16 @@
 {
-  "draft_commit": "d08b54da276102c2b607fbddd07966111f5147cd",
+  "draft_commit": "ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8",
   "base": "b7e61fb92b34795868230e4f9cee8e3ec65496f6",
-  "tree": "40a569a2e001dcf11f5cf5e9239211001be9d7a3",
+  "tree": "62748a008e606fe4c234bc742626c2f76bfd9a3c",
+  "amended_from": "d08b54da276102c2b607fbddd07966111f5147cd",
   "author": "Hao Lin <hao.lin@samsung.com>",
   "committer": "Hao Lin <hao.lin@samsung.com>",
+  "Signed-off-by": "Hao Lin <hao.lin@samsung.com>",
   "apply_check": true,
   "tree_equal": true,
   "helper_mirror_equal": true,
+  "qualification": "PASS_13A_STEPS1_TO6; NO_REAL_TREE_REHEARSAL_IN_THIS_TASK",
   "gerrit_pushed": false,
-  "qualification": "STOP_CAPTURE_PREPARATION; STEPS1_TO5_PASS; OVERLAY_NOT_RUN; POST_SCRIPT_CERTIFICATION_INCOMPLETE",
-  "fixtures": 202,
   "files": [
     {
       "path": "packaging/llvm.spec",
@@ -18,8 +19,8 @@
     },
     {
       "path": "packaging/clang-bolt-helper.py",
-      "bytes": 61040,
-      "sha256": "42a4659f899d5f62a808a2b0ca75ab9097cd10b5b375ab2a58b50e786978fb50"
+      "bytes": 61162,
+      "sha256": "6bea234609785ab47a35d8eaba31371a0f9aac0cce3ad4614be52554e0461e94"
     },
     {
       "path": "packaging/clang-bolt-v2.fdata.xz",
@@ -29,24 +30,20 @@
   ],
   "patch": {
     "file": "0003-clang-bolt-second-review.patch",
-    "bytes": 40436,
-    "sha256": "884a607ddffbead6fe9441c8da8827cfcf2c368d905f27a292e5d80c8b21431f"
+    "bytes": 51092,
+    "sha256": "45fa01912db4089cb26bc260243273caa9b7521b5edc8dd9af52f8de22c9073b"
   },
-  "source_parent_chain": [
-    "cb67996861d070d68fec2b4c623eed7d20ba2e23",
-    "a1410e3d14b8836e3f9be5a1b4380f914dc2e705",
-    "b7e61fb92b34795868230e4f9cee8e3ec65496f6",
-    "d08b54da276102c2b607fbddd07966111f5147cd"
-  ],
-  "instructions": "Apply 0003 with git am to b7e61fb; static index apply matches entire new source tree. No sandbox push before all required gates pass. Historical b7 manifest is preserved at GitHub 2f50e75:patches/bolt/draft-manifest.json.",
-  "quickbuild_default": "x86_64 enabled; rollback is a new spec commit changing bcond_without to bcond_with",
+  "fixtures": 214,
+  "ordinary_RPMs": 22,
+  "payload_paths_checked": 17722,
+  "cmake_files_checked": 47,
+  "post_capture": "PASS debug/release baseline and candidate, original platform bytes unchanged, BOLT tail last",
+  "spec_unchanged_from_d08": true,
+  "disabled_macro_proof_reused": "review2-macro-result.json",
   "local_candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
-  "candidate_route": "historical llvm-bolt fallback; unchanged generation parameters and profile; no regeneration",
+  "candidate_route": "historical llvm-bolt fallback, not regenerated",
   "sandbox_branch": "sandbox/lhmax2025/bolt_pgo",
-  "sandbox_push_this_task": false,
-  "sandbox_remote_observed": "b7e61fb92b34795868230e4f9cee8e3ec65496f6",
-  "sandbox_query": "git ls-remote origin refs/heads/sandbox/lhmax2025/bolt_pgo; read-only, no push",
-  "overlay_rehearsal": "NOT RUN: sudo: a password is required",
-  "post_script_certification": "NOT RUN: capture-entry second preparation failure",
-  "source_worktree_clean": true
+  "Quickbuild_start": "Only user starts QB after PM review; sandbox push does not authorize QB",
+  "publication_order": "materials first on GitHub, then conditional sandbox fast-forward, then docs/STATUS/raw index",
+  "real_tree_rehearsal": "Not in 13A; separate user prompt required"
 }

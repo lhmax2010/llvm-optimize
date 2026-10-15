@@ -3,13 +3,13 @@ from pathlib import Path
 import bolt_helper as h
 
 LINK='Linking CXX executable bin/llvm-bolt'
-DESCRIPTIONS=json.loads((Path(__file__).parent/'results/review-tool-descriptions.json').read_text())
+DESCRIPTIONS=json.loads((Path(__file__).parent/'results/review-tool-descriptions-v2.json').read_text())
 class ReviewToolPlanTests(unittest.TestCase):
     def test_complete_universe(self):
         descriptions=sorted(DESCRIPTIONS)
         self.assertEqual(set(descriptions),h.BOLT_TASK_DESCRIPTIONS)
         text='\n'.join('[%d/%d] %s'%(i+1,len(descriptions),d) for i,d in enumerate(descriptions))
-        self.assertEqual(h.tool_plan(text)['categories'], {'objects':102,'static_libraries':7,'executables':1})
+        self.assertEqual(h.tool_plan(text)['categories'], {'objects':102,'static_libraries':7,'executables':1,'generated':1})
     def test_every_description(self):
         for description in DESCRIPTIONS:
             with self.subTest(description=description):
