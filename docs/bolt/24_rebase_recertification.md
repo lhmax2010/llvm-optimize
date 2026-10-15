@@ -71,3 +71,7 @@ PM确认上一轮不是产品问题：旧R/RPMS现存docs38试构建22包，6317
 阶段1 PASS：paths_checked=17722、cmake_files_checked=47。Source1005字节相同；spec差异为构建依赖、编译器/优化参数与动态链接配置，%install及之后文本逐字相同，不触及.cmake安装/%files；完整diff与来源身份公开。最终helper文档更新后还会在同根重跑反向检查。
 
 补做GitHub远端查询成功，起点ac56ad25aeda6a96ea5d9488c4b885e60a19d203。本轮查找曾在源子仓库使用W相对路径，发现不存在后在产品操作前改正；查找阶段不计准备错误，原文记录保留。
+
+### 十四B阶段2–3：提交维护说明与全部测试
+
+新压缩源506dc25c86e4e2154150796d10b77b71d71ad6bb，父67619ec8，Change-Id保留，作者/提交者/Signed-off-by均Hao Lin。只更新helper模块docstring的维护说明，去掉提交说明里的内部PM启动流程，维护入口改为helper文件头；其余提交说明不变。AST逐字表示相同（去除docstring及位置属性），spec/profile字节保持。新增4夹具覆盖文件头/可执行AST和两处最终日志诊断细化；252+安装顺序1+新增4=257/257 PASS，stdout 2609字节、stderr完整原文已发布。独立index应用含二进制完整补丁后tree与源提交相同。公开0000用显式--no-binary，profile Source单独保留；完整二进制补丁本地保存，不再误发超限材料。

@@ -1,6 +1,6 @@
-From 8be7348a6baf9d4b8b55c382b8a04dade712208d Mon Sep 17 00:00:00 2001
+From 506dc25c86e4e2154150796d10b77b71d71ad6bb Mon Sep 17 00:00:00 2001
 From: Hao Lin <hao.lin@samsung.com>
-Date: Thu, 15 Oct 2026 22:05:48 +0800
+Date: Thu, 15 Oct 2026 22:38:31 +0800
 Subject: [PATCH] Optimize packaged x86_64 clang with guarded BOLT profile
  rewriting
 
@@ -52,28 +52,65 @@ the pre-strip BOLT ELF, matching ordinary ELF, tool and profile identities.
 Still open: full release-mode build; accel/worker identity; first real
 %install execution; cleanup cannot be guaranteed without matching /proc;
 performance outside LLVM workloads. ninja -j1 does not cap linker memory.
-Maintenance and profile retraining instructions: docs/bolt/maintenance.md
-in the llvm-optimize bolt-v4 evidence repository. Quickbuild and real-tree
-rehearsal are started by the user after PM review of this patch/evidence.
+Maintenance notes: header of packaging/clang-bolt-helper.py
 
 Change-Id: Ic98eab90cc017f127a66e1729b44fab8b8e8fb41
 Signed-off-by: Hao Lin <hao.lin@samsung.com>
 ---
- packaging/clang-bolt-helper.py   | 957 +++++++++++++++++++++++++++++++
+ packaging/clang-bolt-helper.py   | 996 +++++++++++++++++++++++++++++++
  packaging/clang-bolt-v2.fdata.xz | Bin 0 -> 9735212 bytes
  packaging/llvm.spec              | 106 ++++
- 3 files changed, 1063 insertions(+)
+ 3 files changed, 1102 insertions(+)
  create mode 100644 packaging/clang-bolt-helper.py
  create mode 100644 packaging/clang-bolt-v2.fdata.xz
 
 diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
 new file mode 100644
-index 000000000000..8914f0b6c73a
+index 000000000000..05e107235bfc
 --- /dev/null
 +++ b/packaging/clang-bolt-helper.py
-@@ -0,0 +1,957 @@
+@@ -0,0 +1,996 @@
 +#!/usr/bin/env python3
-+"""Tizen clang BOLT draft. Every command fails closed; Python >= 3.9, POSIX sh."""
++"""Tizen clang BOLT gates. Python >= 3.9; shell commands use POSIX sh.
++
++Maintenance notes (fail closed; preserve actual/expected values and logs):
++- Tool-version remedy: verify provenance; for an intended LLVM upgrade update
++  CERTIFIED and recertify, otherwise disable BOLT. Do not use substring matches.
++- Profile-SHA remedy: verify the binary Source and decompressed SHA first;
++  a SHA mismatch alone does not establish that the profile is stale.
++- Unapproved-task remedy: inspect configuration and dirty causes. Review the
++  saved Ninja closure, regenerate the independent description JSON and exact
++  whitelist only after review, then recertify. Never expand it automatically.
++- Matching remedy: verify input ELF/tool/profile identity; retrain the profile
++  or disable BOLT when R or S/N exceeds 5%. Never raise the threshold or enable
++  infer-stale to pass a failing gate.
++
++LLVM upgrade: review CERTIFIED.llvm_version, bolt_version, profile_sha256,
++bolt_task_count and tf_refresh_task_count (PROFILE_SHA is an alias), OPTIONS,
++and both task-description sets. Recertify fixtures, static graph plus actual
++Ninja plans/build logs and TF archive SHA, ON/OFF debug/release macro and post
++chains, install ordering/root identity, ELF security, tiny targets, full object
++comparisons, RPM/DWARF payload differences and three-target/holdout performance.
++Static graphs do not load .ninja_deps/depfiles or establish full dirty state.
++
++Rollback: --without clang_bolt locally; where build arguments cannot change,
++change the x86_64 %bcond_without clang_bolt to %bcond_with clang_bolt in a new
++spec commit. BOLT Sources/BuildRequires then disable together. Also restore
++matching accel/worker binaries and repository snapshots; verify their hashes.
++
++Profile retraining is offline, never part of an RPM build: preserve a relinked
++emit-relocs/strip-debug input and matching BOLT/runtime identities, instrument
++with one BOLT thread and a fresh PID-suffixed profile prefix. Reuse the recorded
++13 ARM workloads (A/B/C generator plus ten real TUs) and ten AArch64 TUs, their
++exact flags/sysroots/resource directory and input hashes; exclude holdouts.
++The existing collect_bolt_profile.py and extend_bolt_profile_aarch64.py scripts
++collect these 13+10 profiles and merge explicit paths with merge-fdata. Compress
++the new profile Source, update its SHA, then repeat matching, object, security,
++package and performance gates. Historical successful instrumentation needed
++22 GiB; it is not authorized by a 16 GiB production-validation budget.
++Retain ordinary/pre-strip BOLT ELFs, rewrite/identity records, final RPM/accel
++SHA and Build-ID for crash localization; the shipped clang is fully stripped.
++"""
 +import argparse
 +import collections
 +import shlex

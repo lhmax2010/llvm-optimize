@@ -1,5 +1,44 @@
 #!/usr/bin/env python3
-"""Tizen clang BOLT draft. Every command fails closed; Python >= 3.9, POSIX sh."""
+"""Tizen clang BOLT gates. Python >= 3.9; shell commands use POSIX sh.
+
+Maintenance notes (fail closed; preserve actual/expected values and logs):
+- Tool-version remedy: verify provenance; for an intended LLVM upgrade update
+  CERTIFIED and recertify, otherwise disable BOLT. Do not use substring matches.
+- Profile-SHA remedy: verify the binary Source and decompressed SHA first;
+  a SHA mismatch alone does not establish that the profile is stale.
+- Unapproved-task remedy: inspect configuration and dirty causes. Review the
+  saved Ninja closure, regenerate the independent description JSON and exact
+  whitelist only after review, then recertify. Never expand it automatically.
+- Matching remedy: verify input ELF/tool/profile identity; retrain the profile
+  or disable BOLT when R or S/N exceeds 5%. Never raise the threshold or enable
+  infer-stale to pass a failing gate.
+
+LLVM upgrade: review CERTIFIED.llvm_version, bolt_version, profile_sha256,
+bolt_task_count and tf_refresh_task_count (PROFILE_SHA is an alias), OPTIONS,
+and both task-description sets. Recertify fixtures, static graph plus actual
+Ninja plans/build logs and TF archive SHA, ON/OFF debug/release macro and post
+chains, install ordering/root identity, ELF security, tiny targets, full object
+comparisons, RPM/DWARF payload differences and three-target/holdout performance.
+Static graphs do not load .ninja_deps/depfiles or establish full dirty state.
+
+Rollback: --without clang_bolt locally; where build arguments cannot change,
+change the x86_64 %bcond_without clang_bolt to %bcond_with clang_bolt in a new
+spec commit. BOLT Sources/BuildRequires then disable together. Also restore
+matching accel/worker binaries and repository snapshots; verify their hashes.
+
+Profile retraining is offline, never part of an RPM build: preserve a relinked
+emit-relocs/strip-debug input and matching BOLT/runtime identities, instrument
+with one BOLT thread and a fresh PID-suffixed profile prefix. Reuse the recorded
+13 ARM workloads (A/B/C generator plus ten real TUs) and ten AArch64 TUs, their
+exact flags/sysroots/resource directory and input hashes; exclude holdouts.
+The existing collect_bolt_profile.py and extend_bolt_profile_aarch64.py scripts
+collect these 13+10 profiles and merge explicit paths with merge-fdata. Compress
+the new profile Source, update its SHA, then repeat matching, object, security,
+package and performance gates. Historical successful instrumentation needed
+22 GiB; it is not authorized by a 16 GiB production-validation budget.
+Retain ordinary/pre-strip BOLT ELFs, rewrite/identity records, final RPM/accel
+SHA and Build-ID for crash localization; the shipped clang is fully stripped.
+"""
 import argparse
 import collections
 import shlex
