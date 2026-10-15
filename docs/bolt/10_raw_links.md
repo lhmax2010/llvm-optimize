@@ -132,3 +132,5 @@ sandbox/lhmax2025/bolt_pgo远端由cb67996861d070d68fec2b4c623eed7d20ba2e23更�
 | tools/bolt/test_bolt_helper.py | [bolt-v4](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/test_bolt_helper.py) | [6a0b5a5](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/6a0b5a545a453684a68aa4d3dde35de07b259f78/tools/bolt/test_bolt_helper.py) | 29255 | 2310a88284b95ecd433338b258c344a992dc190549be8a229c9233a101a509e1 |
 
 续跑九/十：[完整 Raw 续表](10_raw_links_part2.md)。
+
+续跑十二修复与停止证据、全部分支/钉提交 raw：[新续表](10_raw_links_part3.md)。新源d08尚未推sandbox，真实树与实际双模式post链未认证。
