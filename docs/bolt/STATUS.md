@@ -275,8 +275,6 @@ PM裁决及本轮边界见21：修门禁不改生成参数/4ec候选，源父a14
 
 源仓库user.name/email均来自global /home/linhao/.gitconfig：liushanshan / ss0217.liu@samsung.com，未修改配置。单次-c amend/reset-author后，新源b7e61fb92b34795868230e4f9cee8e3ec65496f6，author/committer均FatTank <hao.lin@samsung.com>；父a1410e3d，tree ea70ea066dd16430b23c238d9654e1667479b960与97c060a相同，spec df1198d1…/helper4590b337…不变。文本补丁/manifest同步。sandbox查询前a1410e3d→无force快进推送→查询后b7e61fb92b34795868230e4f9cee8e3ec65496f6，确认成功；Gerrit仅提示subject>50字符警告，原文在manifest。未推评审/tizen_base，未做其他验证步骤。
 
-## 2026-10-15 续跑十一B：ARM/AArch64性能（进行中）
+## 2026-10-15 续跑十一B：两目标性能PASS
 
-沿用20方法：CPU2、单并行、同一编译器实体路径/inode、五轮角色先后交替，每侧5次，全部样本保留；普通7df/候选4ec不改。60资产SHA/原参数预检PASS，目标armv7l-tizen-linux-gnueabi与aarch64-tizen-linux-gnu；每目标30条/20独立源，重复源SHA相同。独立20统计合并每源全部5/10样本后取每侧中位数，等权20比值；另报留出10。每目标单独16GiB/swap0/nice15/ionice3及共享锁≤60m，准入MemAvailable≥12G、运行<3G终止，磁盘预算16G后仍≥30G。ARM测量先行；不改LLVM源码/参数、不进ARM树、不操作Gerrit。
-
-十一B ARM PASS：300次完整样本，geom30=0.856351167，独立20=0.858165628，留出10=0.868458776；scope1723.033s，锁/proc/scope回收，细节21与target-perf-armv7l。AArch64下一段独立取锁；准备错误0。
+按20同CPU2/单并行/同槽位inode/五轮交替，每侧5次；两目标各300次全部保留。ARM geom30=0.856351167，独立20=0.858165628，留出10=0.868458776；AArch64 geom30=0.847699213，独立20=0.847858623，留出10=0.847902567，均<0.98。独立20合并重复源全部5/10样本后中位/比值/等权，另有备用entry口径；x86历史0.855890085。逐条中位数、参数与频率负载见21和target-perf系列JSON/CSV/raw。锁1723.072/1702.955秒均<60m（精确值见resources），proc/scope回收。60输入再次SHA及原clang/候选/22RPM/归档/源码/禁用配置/cache审计PASS；源b7e61fb与spec/helper不变，不改LLVM源码/不操作Gerrit/不进ARM树。无删样/重跑/产品准备错误，磁盘底线通过。

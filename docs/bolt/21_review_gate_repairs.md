@@ -159,3 +159,56 @@ CPU2 / Intel(R) Core(TM) Ultra 7 265，intel_pstate/powersave，策略800000–5
 |aarch64-training/09-AsmParser|2.804367|2.381503|0.849212|
 
 完整5次样本/argv/条件见target-perf-armv7l.json；逐条与独立20 CSV、原始logs与scope/session raw归档公开。没有删样、重跑或准备错误。AArch64尚待。
+
+### 续跑十一B：AArch64目标 PASS
+
+30条目、每侧5次/共300次全部保留，几何平均比 **0.847699213**；阈值严格<0.98。独立20源（池化全样本）0.847858623，留出10为0.847902567；备用entry中位数口径独立20为0.847750047。
+
+CPU2 / Intel(R) Core(TM) Ultra 7 265，intel_pstate/powersave，策略800000–5300000kHz；准入busy1.980%。运行load1 min/median/max=0.58/1.55/3.48；600个边界频率样本kHz min/median/max=800000/1324176.0/5144592。单并行/同slot-inode/角色交替。scope1702.921s/峰2.814GiB，锁1702.955s；proc/锁/scope回收。
+
+|条目|普通中位s|候选中位s|比值|
+|---|---:|---:|---:|
+|arm-training/00-SemaStmt|5.852411|4.917169|0.840196|
+|arm-training/01-SemaExprCXX|6.106148|5.095319|0.834457|
+|arm-training/02-SelectionDAG|7.317092|6.206304|0.848193|
+|arm-training/03-MachinePipeliner|6.360688|5.430820|0.853810|
+|arm-training/04-Attributor|6.599587|5.618496|0.851341|
+|arm-training/05-WholeProgramDevirt|5.942862|5.009327|0.842915|
+|arm-training/06-ARMISelLowering|8.559531|7.467597|0.872431|
+|arm-training/07-ARMTargetTransformInfo|5.025584|4.190340|0.833802|
+|arm-training/08-MasmParser|3.421826|3.017507|0.881841|
+|arm-training/09-AsmParser|2.816296|2.404688|0.853847|
+|arm-holdout/00-ParentMapContext|6.089231|5.187010|0.851833|
+|arm-holdout/01-ParseDecl|5.156298|4.335147|0.840748|
+|arm-holdout/02-Driver|5.499464|4.791426|0.871253|
+|arm-holdout/03-CoverageMappingGen|5.787300|4.759894|0.822472|
+|arm-holdout/04-Metadata|5.687852|4.866279|0.855557|
+|arm-holdout/05-ScalarEvolution|10.167534|8.721117|0.857742|
+|arm-holdout/06-AArch64InstructionSelector|5.859820|4.876201|0.832142|
+|arm-holdout/07-X86ISelDAGToDAG|5.267725|4.422101|0.839471|
+|arm-holdout/08-ELF|6.047000|5.317907|0.879429|
+|arm-holdout/09-InstrProfReader|4.638627|3.850826|0.830165|
+|aarch64-training/00-SemaStmt|6.012758|4.923279|0.818806|
+|aarch64-training/01-SemaExprCXX|6.281204|5.057829|0.805232|
+|aarch64-training/02-SelectionDAG|7.359765|6.183350|0.840156|
+|aarch64-training/03-MachinePipeliner|6.457493|5.440901|0.842572|
+|aarch64-training/04-Attributor|6.542446|5.590771|0.854538|
+|aarch64-training/05-WholeProgramDevirt|5.904664|5.037710|0.853175|
+|aarch64-training/06-ARMISelLowering|8.560491|7.459861|0.871429|
+|aarch64-training/07-ARMTargetTransformInfo|4.947170|4.126177|0.834048|
+|aarch64-training/08-MasmParser|3.405693|2.953881|0.867336|
+|aarch64-training/09-AsmParser|2.755815|2.357781|0.855566|
+
+完整原样本/argv/频率负载、逐条目和独立20 CSV与raw归档为target-perf-aarch64系列。
+
+### 续跑十一B最终结论：两目标全部PASS
+
+|目标|30条目几何平均比|独立20源|留出10|耗时降低|
+|---|---:|---:|---:|---:|
+|armv7l|0.856351167|0.858165628|0.868458776|14.365%|
+|aarch64|0.847699213|0.847858623|0.847902567|15.230%|
+|x86_64（20历史）|0.855890085|未在本轮重新测量|未在本轮重新测量|14.411%|
+
+两目标各300次、共600次原样本，无删样或重跑；主判据均严格<0.98。ARM与x86_64相近，AArch64的候选/普通比更低。20独立源的两训练cohort重复输入合并全部10样本，留出每侧5样本；原30条目统计保持三组各10的权重，不混用口径。两目标分时测量，CPU/策略/方法与20相同，完整边界频率和负载原文均保存。
+
+收尾：60输入SHA再次相同；普通clang/4ec候选、22RPM全SHA/大小、归档证据及原源码元数据、禁用cache/ninja SHA不变，原缓存47987文件/96881772832B。源HEAD仍b7e61fb92b34795868230e4f9cee8e3ec65496f6、spec/helper SHA不变且tracked clean。没有LLVM源码修改、Gerrit查询/推送、原树CMake/Ninja/-P、链接/重写、ARM树访问或全构建。两段锁分别约28.7/28.4分钟，全部释放，proc/scope回收；资源详情在target-perf-resources，磁盘底线通过。没有产品准备错误；公开driver仅修正EOF空白格式告警，未改运行脚本/参数或重测。
