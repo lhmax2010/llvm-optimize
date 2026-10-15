@@ -1,0 +1,117 @@
+COMMAND: readelf -W -h /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_armv7l_clang/usr/lib/libclang-cpp.so.22.1
+EXIT: 0
+ELF Header:
+  Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF32
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              DYN (Shared object file)
+  Machine:                           ARM
+  Version:                           0x1
+  Entry point address:               0x0
+  Start of program headers:          52 (bytes into file)
+  Start of section headers:          31408104 (bytes into file)
+  Flags:                             0x5000200, Version5 EABI, soft-float ABI
+  Size of this header:               52 (bytes)
+  Size of program headers:           32 (bytes)
+  Number of program headers:         11
+  Size of section headers:           40 (bytes)
+  Number of section headers:         31
+  Section header string table index: 30
+
+STDERR:
+
+COMMAND: readelf -W -S /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_armv7l_clang/usr/lib/libclang-cpp.so.22.1
+EXIT: 0
+There are 31 section headers, starting at offset 0x1df3fe8:
+
+Section Headers:
+  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            00000000 000000 000000 00      0   0  0
+  [ 1] .dynsym           DYNSYM          00000194 000194 09af20 10   A  6   1  4
+  [ 2] .gnu.version      VERSYM          0009b0b4 09b0b4 0135e4 02   A  1   0  2
+  [ 3] .gnu.version_d    VERDEF          000ae698 0ae698 000038 00   A  6   2  4
+  [ 4] .gnu.version_r    VERNEED         000ae6d0 0ae6d0 0001f0 00   A  6   6  4
+  [ 5] .gnu.hash         GNU_HASH        000ae8c0 0ae8c0 03db68 00   A  1   0  4
+  [ 6] .dynstr           STRTAB          000ec428 0ec428 312a33 00   A  0   0  1
+  [ 7] .rel.dyn          REL             003fee5c 3fee5c 163d28 08   A  1   0  4
+  [ 8] .ARM.exidx        ARM_EXIDX       00562b84 562b84 07e3f8 00  AL 14   0  4
+  [ 9] .rel.plt          REL             005e0f7c 5e0f7c 0040e8 08  AI  1  27  4
+  [10] .rodata           PROGBITS        005e5068 5e5068 40a848 00 AMS  0   0  8
+  [11] .ARM.extab        PROGBITS        009ef8b0 9ef8b0 003ab8 00   A  0   0  4
+  [12] .eh_frame_hdr     PROGBITS        009f3368 9f3368 00000c 00   A  0   0  4
+  [13] .eh_frame         PROGBITS        009f3374 9f3374 000004 00   A  0   0  4
+  [14] .text             PROGBITS        00a03378 9f3378 12b7a34 00  AX  0   0  8
+  [15] .init             PROGBITS        01cbadac 1caadac 00000c 00  AX  0   0  4
+  [16] .fini             PROGBITS        01cbadb8 1caadb8 000008 00  AX  0   0  4
+  [17] .plt              PROGBITS        01cbadc0 1caadc0 0081f0 00  AX  0   0 16
+  [18] .tbss             NOBITS          01cc2fb0 1cb2fb0 000004 00 WAT  0   0  4
+  [19] .fini_array       FINI_ARRAY      01cd2fb0 1cb2fb0 000004 04  WA  0   0  4
+  [20] .init_array       INIT_ARRAY      01cd2fb4 1cb2fb4 000084 00  WA  0   0  4
+  [21] .data.rel.ro      PROGBITS        01cd3038 1cb3038 136f90 00  WA  0   0  8
+  [22] .dynamic          DYNAMIC         01e09fc8 1de9fc8 000110 08  WA  6   0  4
+  [23] .got              PROGBITS        01e0a0d8 1dea0d8 001b48 00  WA  0   0  4
+  [24] .relro_padding    NOBITS          01e0bc20 1debc20 0003e0 00  WA  0   0  1
+  [25] .tm_clone_table   PROGBITS        01e1bc20 1debc20 000000 00  WA  0   0  4
+  [26] .data             PROGBITS        01e1bc20 1debc20 006200 00  WA  0   0  8
+  [27] .got.plt          PROGBITS        01e21e20 1df1e20 002080 00  WA  0   0  4
+  [28] .bss              NOBITS          01e23ea0 1df3ea0 00f038 00  WA  0   0  8
+  [29] .gnu_debuglink    PROGBITS        00000000 1df3ea0 000020 00      0   0  4
+  [30] .shstrtab         STRTAB          00000000 1df3ec0 000125 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  D (mbind), y (purecode), p (processor specific)
+
+STDERR:
+
+COMMAND: readelf -W -d /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_armv7l_clang/usr/lib/libclang-cpp.so.22.1
+EXIT: 0
+
+Dynamic section at offset 0x1de9fc8 contains 34 entries:
+  Tag        Type                         Name/Value
+ 0x0000001d (RUNPATH)                    Library runpath: [$ORIGIN/../lib]
+ 0x00000001 (NEEDED)                     Shared library: [libLLVM.so.22.1]
+ 0x00000001 (NEEDED)                     Shared library: [libstdc++.so.6]
+ 0x00000001 (NEEDED)                     Shared library: [libm.so.6]
+ 0x00000001 (NEEDED)                     Shared library: [libgcc_s.so.1]
+ 0x00000001 (NEEDED)                     Shared library: [libc.so.6]
+ 0x00000001 (NEEDED)                     Shared library: [ld-linux.so.3]
+ 0x0000000e (SONAME)                     Library soname: [libclang-cpp.so.22.1]
+ 0x6ffffffb (FLAGS_1)                    Flags: NODELETE
+ 0x00000011 (REL)                        0x3fee5c
+ 0x00000012 (RELSZ)                      1457448 (bytes)
+ 0x00000013 (RELENT)                     8 (bytes)
+ 0x6ffffffa (RELCOUNT)                   168500
+ 0x00000017 (JMPREL)                     0x5e0f7c
+ 0x00000002 (PLTRELSZ)                   16616 (bytes)
+ 0x00000003 (PLTGOT)                     0x1e21e20
+ 0x00000014 (PLTREL)                     REL
+ 0x00000006 (SYMTAB)                     0x194
+ 0x0000000b (SYMENT)                     16 (bytes)
+ 0x00000005 (STRTAB)                     0xec428
+ 0x0000000a (STRSZ)                      3222067 (bytes)
+ 0x6ffffef5 (GNU_HASH)                   0xae8c0
+ 0x00000019 (INIT_ARRAY)                 0x1cd2fb4
+ 0x0000001b (INIT_ARRAYSZ)               132 (bytes)
+ 0x0000001a (FINI_ARRAY)                 0x1cd2fb0
+ 0x0000001c (FINI_ARRAYSZ)               4 (bytes)
+ 0x0000000c (INIT)                       0x1cbadac
+ 0x0000000d (FINI)                       0x1cbadb8
+ 0x6ffffff0 (VERSYM)                     0x9b0b4
+ 0x6ffffffc (VERDEF)                     0xae698
+ 0x6ffffffd (VERDEFNUM)                  2
+ 0x6ffffffe (VERNEED)                    0xae6d0
+ 0x6fffffff (VERNEEDNUM)                 6
+ 0x00000000 (NULL)                       0x0
+
+STDERR:
+
+COMMAND: readelf -W -n /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_armv7l_clang/usr/lib/libclang-cpp.so.22.1
+EXIT: 0
+
+STDERR:
+

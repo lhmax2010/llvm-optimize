@@ -1,0 +1,63 @@
+side,theme,text,evidence
+old,strip,#disable strip debug info due to patchelf + armv7hl bug,raw/qemu-accel_old_armv7l_retry.spec:29
+old,ELF 修改,#disable strip debug info due to patchelf + armv7hl bug,raw/qemu-accel_old_armv7l_retry.spec:29
+old,strip,%define _rpm_strip_disable 1,raw/qemu-accel_old_armv7l_retry.spec:31
+old,ELF 修改,BuildRequires:  patchelf,raw/qemu-accel_old_armv7l_retry.spec:51
+old,子包划分,%package -n clang-accel,raw/qemu-accel_old_armv7l_retry.spec:110
+old,clang 收录/依赖展开,prepare_package_list() {,raw/qemu-accel_old_armv7l_retry.spec:304
+old,clang 收录/依赖展开,"    bins=""$bins $executable `ldd $executable 2>/dev/null | sed -n 's,.*=> \(/[^ ]*\) .*,\1,p'`""",raw/qemu-accel_old_armv7l_retry.spec:312
+old,clang 收录/依赖展开,prepare_package_list all \,raw/qemu-accel_old_armv7l_retry.spec:333
+old,clang 收录/依赖展开,prepare_package_list clang \,raw/qemu-accel_old_armv7l_retry.spec:336
+old,clang 收录/依赖展开,  %{_bindir}/clang-* \,raw/qemu-accel_old_armv7l_retry.spec:337
+old,clang 收录/依赖展开,  %{_bindir}/clang++ \,raw/qemu-accel_old_armv7l_retry.spec:338
+old,clang 收录/依赖展开,  %{_bindir}/opt \,raw/qemu-accel_old_armv7l_retry.spec:339
+old,clang 收录/依赖展开,  %{_bindir}/lli \,raw/qemu-accel_old_armv7l_retry.spec:340
+old,clang 收录/依赖展开,  %{_bindir}/llc \,raw/qemu-accel_old_armv7l_retry.spec:341
+old,clang 收录/依赖展开,  %{_bindir}/llvm-* \,raw/qemu-accel_old_armv7l_retry.spec:342
+old,clang 收录/依赖展开,  %{_bindir}/lld \,raw/qemu-accel_old_armv7l_retry.spec:343
+old,clang 收录/依赖展开,  %{_bindir}/ld.lld \,raw/qemu-accel_old_armv7l_retry.spec:344
+old,clang 收录/依赖展开,  %{_libdir}/libLTO.so* \,raw/qemu-accel_old_armv7l_retry.spec:345
+old,clang 收录/依赖展开,  %{_libdir}/LLVMgold.so*,raw/qemu-accel_old_armv7l_retry.spec:346
+old,clang 收录/依赖展开,prepare_package_list python \,raw/qemu-accel_old_armv7l_retry.spec:348
+old,clang 收录/依赖展开,prepare_package_list python3 \,raw/qemu-accel_old_armv7l_retry.spec:353
+old,ELF 修改,  if patchelf --print-interpreter $outfile 1>/dev/null 2>/dev/null; then,raw/qemu-accel_old_armv7l_retry.spec:389
+old,ELF 修改,    patchelf --set-interpreter %{emul_path}$rtld $outfile,raw/qemu-accel_old_armv7l_retry.spec:390
+old,ELF 修改,"      patchelf --set-rpath ""%{emul_path}%{_libdir}"" $outfile",raw/qemu-accel_old_armv7l_retry.spec:398
+old,clang 收录/依赖展开,# symlinks to clang-<major version>. prepare_package_list() above,raw/qemu-accel_old_armv7l_retry.spec:619
+old,clang 收录/依赖展开,clang_major=`%{_bindir}/clang --version | sed -ne 's/^.*[cC]lang version\s\+\([[:digit:]]\+\).*$/\1/p'`,raw/qemu-accel_old_armv7l_retry.spec:622
+old,clang 收录/依赖展开,"# Plain clang binary is not copied by ""prepare_package_list clang""",raw/qemu-accel_old_armv7l_retry.spec:635
+old,clang 收录/依赖展开,"echo ""%{_bindir}/clang"" >> clang.list",raw/qemu-accel_old_armv7l_retry.spec:639
+old,子包划分,sed -e 's|^|%{emul_path}|;s|%{emul_path}/%{_lib}|%{emul_path}%{_libdir}|' clang.list | sort -u > clang-full.list,raw/qemu-accel_old_armv7l_retry.spec:668
+old,子包划分,comm -13 %{_sourcedir}/qemu-accel.list clang-full.list > %{_sourcedir}/clang-accel.list,raw/qemu-accel_old_armv7l_retry.spec:670
+old,子包划分,%files -n clang-accel -f %{_sourcedir}/clang-accel.list,raw/qemu-accel_old_armv7l_retry.spec:700
+new,strip,#disable strip debug info due to patchelf + armv7hl bug,raw/qemu-accel_new_armv7l_retry.spec:29
+new,ELF 修改,#disable strip debug info due to patchelf + armv7hl bug,raw/qemu-accel_new_armv7l_retry.spec:29
+new,strip,%define _rpm_strip_disable 1,raw/qemu-accel_new_armv7l_retry.spec:31
+new,ELF 修改,BuildRequires:  patchelf,raw/qemu-accel_new_armv7l_retry.spec:51
+new,子包划分,%package -n clang-accel,raw/qemu-accel_new_armv7l_retry.spec:109
+new,clang 收录/依赖展开,prepare_package_list() {,raw/qemu-accel_new_armv7l_retry.spec:303
+new,clang 收录/依赖展开,"    bins=""$bins $executable `ldd $executable 2>/dev/null | sed -n 's,.*=> \(/[^ ]*\) .*,\1,p'`""",raw/qemu-accel_new_armv7l_retry.spec:311
+new,clang 收录/依赖展开,prepare_package_list all \,raw/qemu-accel_new_armv7l_retry.spec:332
+new,clang 收录/依赖展开,prepare_package_list clang \,raw/qemu-accel_new_armv7l_retry.spec:335
+new,clang 收录/依赖展开,  %{_bindir}/clang-* \,raw/qemu-accel_new_armv7l_retry.spec:336
+new,clang 收录/依赖展开,  %{_bindir}/clang++ \,raw/qemu-accel_new_armv7l_retry.spec:337
+new,clang 收录/依赖展开,  %{_bindir}/opt \,raw/qemu-accel_new_armv7l_retry.spec:338
+new,clang 收录/依赖展开,  %{_bindir}/lli \,raw/qemu-accel_new_armv7l_retry.spec:339
+new,clang 收录/依赖展开,  %{_bindir}/llc \,raw/qemu-accel_new_armv7l_retry.spec:340
+new,clang 收录/依赖展开,  %{_bindir}/llvm-* \,raw/qemu-accel_new_armv7l_retry.spec:341
+new,clang 收录/依赖展开,  %{_bindir}/lld \,raw/qemu-accel_new_armv7l_retry.spec:342
+new,clang 收录/依赖展开,  %{_bindir}/ld.lld \,raw/qemu-accel_new_armv7l_retry.spec:343
+new,clang 收录/依赖展开,  %{_libdir}/libLTO.so* \,raw/qemu-accel_new_armv7l_retry.spec:344
+new,clang 收录/依赖展开,  %{_libdir}/LLVMgold.so*,raw/qemu-accel_new_armv7l_retry.spec:345
+new,clang 收录/依赖展开,prepare_package_list python \,raw/qemu-accel_new_armv7l_retry.spec:347
+new,clang 收录/依赖展开,prepare_package_list python3 \,raw/qemu-accel_new_armv7l_retry.spec:352
+new,ELF 修改,  if patchelf --print-interpreter $outfile 1>/dev/null 2>/dev/null; then,raw/qemu-accel_new_armv7l_retry.spec:388
+new,ELF 修改,    patchelf --set-interpreter %{emul_path}$rtld $outfile,raw/qemu-accel_new_armv7l_retry.spec:389
+new,ELF 修改,"      patchelf --set-rpath ""%{emul_path}%{_libdir}"" $outfile",raw/qemu-accel_new_armv7l_retry.spec:397
+new,clang 收录/依赖展开,# symlinks to clang-<major version>. prepare_package_list() above,raw/qemu-accel_new_armv7l_retry.spec:618
+new,clang 收录/依赖展开,clang_major=`%{_bindir}/clang --version | sed -ne 's/^.*[cC]lang version\s\+\([[:digit:]]\+\).*$/\1/p'`,raw/qemu-accel_new_armv7l_retry.spec:621
+new,clang 收录/依赖展开,"# Plain clang binary is not copied by ""prepare_package_list clang""",raw/qemu-accel_new_armv7l_retry.spec:634
+new,clang 收录/依赖展开,"echo ""%{_bindir}/clang"" >> clang.list",raw/qemu-accel_new_armv7l_retry.spec:638
+new,子包划分,sed -e 's|^|%{emul_path}|;s|%{emul_path}/%{_lib}|%{emul_path}%{_libdir}|' clang.list | sort -u > clang-full.list,raw/qemu-accel_new_armv7l_retry.spec:667
+new,子包划分,comm -13 %{_sourcedir}/qemu-accel.list clang-full.list > %{_sourcedir}/clang-accel.list,raw/qemu-accel_new_armv7l_retry.spec:669
+new,子包划分,%files -n clang-accel -f %{_sourcedir}/clang-accel.list,raw/qemu-accel_new_armv7l_retry.spec:699

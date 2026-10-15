@@ -1,0 +1,125 @@
+From 2737f3bf78ed33be4333114c0e5c741a1deca467 Mon Sep 17 00:00:00 2001
+From: Dongkyun Son <dongkyun.s@samsung.com>
+Date: Wed, 9 Sep 2026 08:12:26 +0900
+Subject: Add libabigail binaries to qemu-accel for native ABI analysis
+
+libabigail's abidw/abidiff are very slow on armv7l when analyzing
+large symbols due to qemu emulation. Add abidw, abidiff, abicompat,
+abipkgdiff, and kmidiff to the qemu-accel package so they run as
+x86_64 native binaries during cross-compile builds.
+
+Change-Id: I214abb2e0d35ccb474f69ce83542ce89afe1b16a
+---
+ packaging/qemu-accel-aarch64.spec | 8 +++++++-
+ packaging/qemu-accel-armv7l.spec  | 8 +++++++-
+ packaging/qemu-accel-riscv64.spec | 8 +++++++-
+ packaging/qemu-accel.spec.in      | 8 +++++++-
+ 4 files changed, 28 insertions(+), 4 deletions(-)
+
+diff --git a/packaging/qemu-accel-aarch64.spec b/packaging/qemu-accel-aarch64.spec
+index 13925a9..d233052 100644
+--- a/packaging/qemu-accel-aarch64.spec
++++ b/packaging/qemu-accel-aarch64.spec
+@@ -74,6 +74,7 @@ BuildRequires:  python3
+ BuildRequires:  python3-base
+ BuildRequires:  glibc-accel-ldso
+ BuildRequires:  diffutils
++BuildRequires:  libabigail
+ 
+ # required for LLVM gold plugin
+ BuildRequires:  llvm-devel
+@@ -280,7 +281,12 @@ for executable in %{emul_path}$LD \
+    %{_rpmconfigdir}/*deps \
+    %{_libdir}/libunwind*.so* \
+    %{_libdir}/libuuid*.so* \
+-   %{_bindir}/localedef
++   %{_bindir}/localedef \
++   %{_bindir}/abidw \
++   %{_bindir}/abidiff \
++   %{_bindir}/abicompat \
++   %{_bindir}/abipkgdiff \
++   %{_bindir}/kmidiff
+ do
+   binaries="$binaries $executable"
+ done
+diff --git a/packaging/qemu-accel-armv7l.spec b/packaging/qemu-accel-armv7l.spec
+index 027a55a..f69b9bd 100644
+--- a/packaging/qemu-accel-armv7l.spec
++++ b/packaging/qemu-accel-armv7l.spec
+@@ -74,6 +74,7 @@ BuildRequires:  python3
+ BuildRequires:  python3-base
+ BuildRequires:  glibc-accel-ldso
+ BuildRequires:  diffutils
++BuildRequires:  libabigail
+ 
+ # required for LLVM gold plugin
+ BuildRequires:  llvm-devel
+@@ -280,7 +281,12 @@ for executable in %{emul_path}$LD \
+    %{_rpmconfigdir}/*deps \
+    %{_libdir}/libunwind*.so* \
+    %{_libdir}/libuuid*.so* \
+-   %{_bindir}/localedef
++   %{_bindir}/localedef \
++   %{_bindir}/abidw \
++   %{_bindir}/abidiff \
++   %{_bindir}/abicompat \
++   %{_bindir}/abipkgdiff \
++   %{_bindir}/kmidiff
+ do
+   binaries="$binaries $executable"
+ done
+diff --git a/packaging/qemu-accel-riscv64.spec b/packaging/qemu-accel-riscv64.spec
+index 38ec629..07f8237 100644
+--- a/packaging/qemu-accel-riscv64.spec
++++ b/packaging/qemu-accel-riscv64.spec
+@@ -74,6 +74,7 @@ BuildRequires:  python3
+ BuildRequires:  python3-base
+ BuildRequires:  glibc-accel-ldso
+ BuildRequires:  diffutils
++BuildRequires:  libabigail
+ 
+ # required for LLVM gold plugin
+ BuildRequires:  llvm-devel
+@@ -280,7 +281,12 @@ for executable in %{emul_path}$LD \
+    %{_rpmconfigdir}/*deps \
+    %{_libdir}/libunwind*.so* \
+    %{_libdir}/libuuid*.so* \
+-   %{_bindir}/localedef
++   %{_bindir}/localedef \
++   %{_bindir}/abidw \
++   %{_bindir}/abidiff \
++   %{_bindir}/abicompat \
++   %{_bindir}/abipkgdiff \
++   %{_bindir}/kmidiff
+ do
+   binaries="$binaries $executable"
+ done
+diff --git a/packaging/qemu-accel.spec.in b/packaging/qemu-accel.spec.in
+index caf018d..2c23021 100644
+--- a/packaging/qemu-accel.spec.in
++++ b/packaging/qemu-accel.spec.in
+@@ -71,6 +71,7 @@ BuildRequires:  python3
+ BuildRequires:  python3-base
+ BuildRequires:  glibc-accel-ldso
+ BuildRequires:  diffutils
++BuildRequires:  libabigail
+ 
+ # required for LLVM gold plugin
+ BuildRequires:  llvm-devel
+@@ -277,7 +278,12 @@ for executable in %{emul_path}$LD \
+    %{_rpmconfigdir}/*deps \
+    %{_libdir}/libunwind*.so* \
+    %{_libdir}/libuuid*.so* \
+-   %{_bindir}/localedef
++   %{_bindir}/localedef \
++   %{_bindir}/abidw \
++   %{_bindir}/abidiff \
++   %{_bindir}/abicompat \
++   %{_bindir}/abipkgdiff \
++   %{_bindir}/kmidiff
+ do
+   binaries="$binaries $executable"
+ done
+-- 
+cgit v1.2.3
+

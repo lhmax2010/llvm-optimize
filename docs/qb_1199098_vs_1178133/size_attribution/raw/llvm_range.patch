@@ -1,0 +1,2113 @@
+From 6771dbc48b7e3db2ec53919a8eebd3514374137b Mon Sep 17 00:00:00 2001
+From: lhmax2025 <hao.lin@samsung.com>
+Date: Tue, 1 Sep 2026 16:15:34 +0900
+Subject: libcxx: backport EH ABI forced-unwind handling
+
+Squash the changes from sandbox/lhmax2025/libcxx-ehabi-backport:
+
+- packaging: add libc++ runtimes spec
+- libc++abi: preserve foreign forced-unwind state
+- libc++abi: expose GNU forced-unwind marker type
+- libcxx: preserve forced unwind in consumer-instantiated handlers
+- libcxx: preserve forced unwind in library-delivered handlers
+
+Change-Id: I0dfaf3ae6c88db033f1aff9167d64ffa211cdf2e
+Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+---
+ libcxx/include/__ostream/basic_ostream.h |   3 +
+ libcxx/include/future                    | 142 ++++++++++++++++++++++++++-
+ libcxx/include/istream                   | 100 +++++++++++++++++++
+ libcxx/include/string                    |   3 +
+ libcxx/src/future.cpp                    |  10 +-
+ libcxx/src/ios.cpp                       |  17 +++-
+ libcxxabi/include/cxxabi.h               |   8 ++
+ libcxxabi/src/cxa_exception.cpp          |   7 +-
+ libcxxabi/src/cxa_personality.cpp        |  28 ++++++
+ packaging/SOURCE_PROVENANCE              |  41 ++++++++
+ packaging/libcxx-llvm22.map              |   4 +
+ packaging/libcxx-runtimes.manifest       |   5 +
+ packaging/libcxx-runtimes.spec           | 158 +++++++++++++++++++++++++++++++
+ 13 files changed, 518 insertions(+), 8 deletions(-)
+ create mode 100644 packaging/SOURCE_PROVENANCE
+ create mode 100644 packaging/libcxx-llvm22.map
+ create mode 100644 packaging/libcxx-runtimes.manifest
+ create mode 100644 packaging/libcxx-runtimes.spec
+
+diff --git a/libcxx/include/__ostream/basic_ostream.h b/libcxx/include/__ostream/basic_ostream.h
+index 62770be72f98..67b9586cbc7c 100644
+--- a/libcxx/include/__ostream/basic_ostream.h
++++ b/libcxx/include/__ostream/basic_ostream.h
+@@ -13,6 +13,7 @@
+ 
+ #if _LIBCPP_HAS_LOCALIZATION
+ 
++#  include <cxxabi.h>
+ #  include <__exception/operations.h>
+ #  include <__fwd/memory.h>
+ #  include <__iterator/ostreambuf_iterator.h>
+@@ -214,6 +215,8 @@ basic_ostream<_CharT, _Traits>::sentry::~sentry() {
+       if (__os_.rdbuf()->pubsync() == -1)
+         __os_.setstate(ios_base::badbit);
+ #  if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      throw;
+     } catch (...) {
+     }
+ #  endif // _LIBCPP_HAS_EXCEPTIONS
+diff --git a/libcxx/include/future b/libcxx/include/future
+index 4cd5e8ab2aec..6261fd382469 100644
+--- a/libcxx/include/future
++++ b/libcxx/include/future
+@@ -367,6 +367,7 @@ template <class R, class Alloc> struct uses_allocator<packaged_task<R>, Alloc>;
+ 
+ #  if _LIBCPP_HAS_THREADS
+ 
++#    include <cxxabi.h>
+ #    include <__assert>
+ #    include <__chrono/duration.h>
+ #    include <__chrono/steady_clock.h>
+@@ -522,6 +523,8 @@ void __throw_future_error(future_errc __ev) {
+ 
+ class _LIBCPP_EXPORTED_FROM_ABI __assoc_sub_state : public __shared_count {
+ protected:
++  enum class __forced_unwind_action { __restore_deferred, __complete_with_error };
++
+   exception_ptr __exception_;
+   mutable mutex __mut_;
+   mutable condition_variable __cv_;
+@@ -530,6 +533,26 @@ protected:
+   void __on_zero_shared() _NOEXCEPT override;
+   void __sub_wait(unique_lock<mutex>& __lk);
+ 
++  _LIBCPP_HIDE_FROM_ABI void
++  __handle_forced_unwind(__forced_unwind_action __action, exception_ptr __error = exception_ptr()) _NOEXCEPT {
++#    if _LIBCPP_HAS_EXCEPTIONS
++    try {
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++      unique_lock<mutex> __lk(__mut_);
++      if (__action == __forced_unwind_action::__restore_deferred) {
++        if (!(__state_ & ready) && !__has_value())
++          __state_ |= deferred;
++      } else if (!(__state_ & ready) && !__has_value()) {
++        __exception_ = std::move(__error);
++        __state_ |= ready;
++      }
++      __cv_.notify_all();
++#    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (...) {
++    }
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++  }
++
+ public:
+   enum { __constructed = 1, __future_attached = 2, ready = 4, deferred = 8 };
+ 
+@@ -591,6 +614,11 @@ protected:
+ 
+   _LIBCPP_HIDE_FROM_ABI_VIRTUAL void __on_zero_shared() _NOEXCEPT override;
+ 
++  template <class _Arg>
++  _LIBCPP_HIDE_FROM_ABI void __construct_value_unready(_Arg&& __arg);
++
++  _LIBCPP_HIDE_FROM_ABI void __complete_forced_unwind(exception_ptr __error) _NOEXCEPT;
++
+ public:
+   template <class _Arg>
+   _LIBCPP_HIDE_FROM_ABI void set_value(_Arg&& __arg);
+@@ -620,6 +648,51 @@ void __assoc_state<_Rp>::set_value(_Arg&& __arg) {
+   __cv_.notify_all();
+ }
+ 
++template <class _Rp>
++template <class _Arg>
++void __assoc_state<_Rp>::__construct_value_unready(_Arg&& __arg) {
++  unique_lock<mutex> __lk(this->__mut_);
++  if (this->__has_value())
++    std::__throw_future_error(future_errc::promise_already_satisfied);
++  ::new ((void*)std::addressof(__value_)) _Rp(std::forward<_Arg>(__arg));
++  this->__state_ |= base::__constructed;
++}
++
++template <class _Rp>
++void __assoc_state<_Rp>::__complete_forced_unwind(exception_ptr __error) _NOEXCEPT {
++  bool __destroy_value = false;
++#    if _LIBCPP_HAS_EXCEPTIONS
++  try {
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++    {
++      unique_lock<mutex> __lk(this->__mut_);
++      if (!(this->__state_ & base::ready)) {
++        __destroy_value = (this->__state_ & base::__constructed) != 0;
++        this->__state_ &= ~base::__constructed;
++        this->__exception_ = std::move(__error);
++      }
++    }
++    if (__destroy_value) {
++#    if _LIBCPP_HAS_EXCEPTIONS
++      try {
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++        reinterpret_cast<_Rp*>(std::addressof(__value_))->~_Rp();
++#    if _LIBCPP_HAS_EXCEPTIONS
++      } catch (...) {
++      }
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++    }
++    unique_lock<mutex> __lk(this->__mut_);
++    if (!(this->__state_ & base::ready) && this->__exception_ != nullptr) {
++      this->__state_ |= base::ready;
++      this->__cv_.notify_all();
++    }
++#    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (...) {
++  }
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++}
++
+ template <class _Rp>
+ template <class _Arg>
+ void __assoc_state<_Rp>::set_value_at_thread_exit(_Arg&& __arg) {
+@@ -659,6 +732,10 @@ protected:
+ 
+   _LIBCPP_HIDE_FROM_ABI_VIRTUAL void __on_zero_shared() _NOEXCEPT override;
+ 
++  _LIBCPP_HIDE_FROM_ABI void __construct_value_unready(_Rp& __arg);
++
++  _LIBCPP_HIDE_FROM_ABI void __complete_forced_unwind(exception_ptr __error) _NOEXCEPT;
++
+ public:
+   _LIBCPP_HIDE_FROM_ABI void set_value(_Rp& __arg);
+   _LIBCPP_HIDE_FROM_ABI void set_value_at_thread_exit(_Rp& __arg);
+@@ -681,6 +758,34 @@ void __assoc_state<_Rp&>::set_value(_Rp& __arg) {
+   __cv_.notify_all();
+ }
+ 
++template <class _Rp>
++void __assoc_state<_Rp&>::__construct_value_unready(_Rp& __arg) {
++  unique_lock<mutex> __lk(this->__mut_);
++  if (this->__has_value())
++    std::__throw_future_error(future_errc::promise_already_satisfied);
++  __value_ = std::addressof(__arg);
++  this->__state_ |= base::__constructed;
++}
++
++template <class _Rp>
++void __assoc_state<_Rp&>::__complete_forced_unwind(exception_ptr __error) _NOEXCEPT {
++#    if _LIBCPP_HAS_EXCEPTIONS
++  try {
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++    unique_lock<mutex> __lk(this->__mut_);
++    if (!(this->__state_ & base::ready)) {
++      this->__state_ &= ~base::__constructed;
++      __value_ = nullptr;
++      this->__exception_ = std::move(__error);
++      this->__state_ |= base::ready;
++      this->__cv_.notify_all();
++    }
++#    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (...) {
++  }
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++}
++
+ template <class _Rp>
+ void __assoc_state<_Rp&>::set_value_at_thread_exit(_Rp& __arg) {
+   unique_lock<mutex> __lk(this->__mut_);
+@@ -789,6 +894,9 @@ void __deferred_assoc_state<_Rp, _Fp>::__execute() {
+ #    endif // _LIBCPP_HAS_EXCEPTIONS
+     this->set_value(__func_());
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    this->__handle_forced_unwind(base::__forced_unwind_action::__restore_deferred);
++    throw;
+   } catch (...) {
+     this->set_exception(current_exception());
+   }
+@@ -820,6 +928,9 @@ void __deferred_assoc_state<void, _Fp>::__execute() {
+     __func_();
+     this->set_value();
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    this->__handle_forced_unwind(base::__forced_unwind_action::__restore_deferred);
++    throw;
+   } catch (...) {
+     this->set_exception(current_exception());
+   }
+@@ -848,8 +959,18 @@ void __async_assoc_state<_Rp, _Fp>::__execute() {
+ #    if _LIBCPP_HAS_EXCEPTIONS
+   try {
+ #    endif // _LIBCPP_HAS_EXCEPTIONS
+-    this->set_value(__func_());
++    this->__construct_value_unready(__func_());
++    this->__make_ready();
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    exception_ptr __error;
++    try {
++      std::__throw_future_error(future_errc::broken_promise);
++    } catch (...) {
++      __error = current_exception();
++    }
++    this->__complete_forced_unwind(std::move(__error));
++    throw;
+   } catch (...) {
+     this->set_exception(current_exception());
+   }
+@@ -887,6 +1008,15 @@ void __async_assoc_state<void, _Fp>::__execute() {
+     __func_();
+     this->set_value();
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    exception_ptr __error;
++    try {
++      std::__throw_future_error(future_errc::broken_promise);
++    } catch (...) {
++      __error = current_exception();
++    }
++    this->__handle_forced_unwind(base::__forced_unwind_action::__complete_with_error, std::move(__error));
++    throw;
+   } catch (...) {
+     this->set_exception(current_exception());
+   }
+@@ -1661,6 +1791,8 @@ void packaged_task<_Rp(_ArgTypes...)>::operator()(_ArgTypes... __args) {
+ #    endif // _LIBCPP_HAS_EXCEPTIONS
+     __p_.set_value(__f_(std::forward<_ArgTypes>(__args)...));
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     __p_.set_exception(current_exception());
+   }
+@@ -1678,6 +1810,8 @@ void packaged_task<_Rp(_ArgTypes...)>::make_ready_at_thread_exit(_ArgTypes... __
+ #    endif // _LIBCPP_HAS_EXCEPTIONS
+     __p_.set_value_at_thread_exit(__f_(std::forward<_ArgTypes>(__args)...));
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     __p_.set_exception_at_thread_exit(current_exception());
+   }
+@@ -1761,6 +1895,8 @@ void packaged_task<void(_ArgTypes...)>::operator()(_ArgTypes... __args) {
+     __f_(std::forward<_ArgTypes>(__args)...);
+     __p_.set_value();
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     __p_.set_exception(current_exception());
+   }
+@@ -1779,6 +1915,8 @@ void packaged_task<void(_ArgTypes...)>::make_ready_at_thread_exit(_ArgTypes... _
+     __f_(std::forward<_ArgTypes>(__args)...);
+     __p_.set_value_at_thread_exit();
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     __p_.set_exception_at_thread_exit(current_exception());
+   }
+@@ -1862,6 +2000,8 @@ async(launch __policy, _Fp&& __f, _Args&&... __args) {
+     if (__does_policy_contain(__policy, launch::async))
+       return std::__make_async_assoc_state<_Rp>(_BF(std::forward<_Fp>(__f), std::forward<_Args>(__args)...));
+ #      if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     if (__policy == launch::async)
+       throw;
+diff --git a/libcxx/include/istream b/libcxx/include/istream
+index dfa22e9f3bfb..c39dce589fa0 100644
+--- a/libcxx/include/istream
++++ b/libcxx/include/istream
+@@ -166,6 +166,7 @@ template <class Stream, class T>
+ 
+ #  if _LIBCPP_HAS_LOCALIZATION
+ 
++#    include <cxxabi.h>
+ #    include <__fwd/istream.h>
+ #    include <__iterator/istreambuf_iterator.h>
+ #    include <__locale_dir/num.h>
+@@ -374,6 +375,10 @@ __input_arithmetic(basic_istream<_CharT, _Traits>& __is, _Tp& __n) {
+       typedef num_get<_CharT, _Ip> _Fp;
+       std::use_facet<_Fp>(__is.getloc()).get(_Ip(__is), _Ip(), __is, __state, __n);
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -465,6 +470,10 @@ __input_arithmetic_with_numeric_limits(basic_istream<_CharT, _Traits>& __is, _Tp
+         __n = static_cast<_Tp>(__temp);
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -516,6 +525,10 @@ __input_c_string(basic_istream<_CharT, _Traits>& __is, _CharT* __p, size_t __n)
+       if (__s == __p)
+         __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -591,6 +604,10 @@ _LIBCPP_HIDE_FROM_ABI basic_istream<_CharT, _Traits>& operator>>(basic_istream<_
+       else
+         __c = _Traits::to_char_type(__i);
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -641,6 +658,12 @@ basic_istream<_CharT, _Traits>::operator>>(basic_streambuf<char_type, traits_typ
+         if (__gc_ == 0)
+           __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++      } catch (const __cxxabiv1::__forced_unwind&) {
++        __state |= ios_base::badbit;
++        if (__gc_ == 0)
++          __state |= ios_base::failbit;
++        this->__setstate_nothrow(__state);
++        throw;
+       } catch (...) {
+         __state |= ios_base::badbit;
+         if (__gc_ == 0)
+@@ -676,6 +699,9 @@ typename basic_istream<_CharT, _Traits>::int_type basic_istream<_CharT, _Traits>
+       else
+         __gc_ = 1;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      this->__setstate_nothrow(this->rdstate() | ios_base::badbit);
++      throw;
+     } catch (...) {
+       this->__setstate_nothrow(this->rdstate() | ios_base::badbit);
+       if (this->exceptions() & ios_base::badbit) {
+@@ -714,6 +740,12 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::get(char_type* _
+         if (__gc_ == 0)
+           __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++      } catch (const __cxxabiv1::__forced_unwind&) {
++        __state |= ios_base::badbit;
++        this->__setstate_nothrow(__state);
++        if (__n > 0)
++          *__s = char_type();
++        throw;
+       } catch (...) {
+         __state |= ios_base::badbit;
+         this->__setstate_nothrow(__state);
+@@ -762,6 +794,10 @@ basic_istream<_CharT, _Traits>::get(basic_streambuf<char_type, traits_type>& __s
+         this->rdbuf()->sbumpc();
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       // according to the spec, exceptions here are caught but not rethrown
+@@ -805,6 +841,14 @@ basic_istream<_CharT, _Traits>::getline(char_type* __s, streamsize __n, char_typ
+         __inc_gcount();
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      if (__n > 0)
++        *__s = char_type();
++      if (__gc_ == 0)
++        __state |= ios_base::failbit;
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -859,6 +903,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::ignore(streamsiz
+         }
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -886,6 +934,10 @@ typename basic_istream<_CharT, _Traits>::int_type basic_istream<_CharT, _Traits>
+       if (traits_type::eq_int_type(__r, traits_type::eof()))
+         __state |= ios_base::eofbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -912,6 +964,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::read(char_type*
+       if (__gc_ != __n)
+         __state |= ios_base::failbit | ios_base::eofbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -951,6 +1007,10 @@ streamsize basic_istream<_CharT, _Traits>::readsome(char_type* __s, streamsize _
+         break;
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -979,6 +1039,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::putback(char_typ
+       if (this->rdbuf() == nullptr || this->rdbuf()->sputbackc(__c) == traits_type::eof())
+         __state |= ios_base::badbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1007,6 +1071,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::unget() {
+       if (this->rdbuf() == nullptr || this->rdbuf()->sungetc() == traits_type::eof())
+         __state |= ios_base::badbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1039,6 +1107,10 @@ int basic_istream<_CharT, _Traits>::sync() {
+         __r = -1;
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1063,6 +1135,10 @@ typename basic_istream<_CharT, _Traits>::pos_type basic_istream<_CharT, _Traits>
+ #    endif // _LIBCPP_HAS_EXCEPTIONS
+       __r = this->rdbuf()->pubseekoff(0, ios_base::cur, ios_base::in);
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1088,6 +1164,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::seekg(pos_type _
+       if (this->rdbuf()->pubseekpos(__pos, ios_base::in) == pos_type(-1))
+         __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1113,6 +1193,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::seekg(off_type _
+       if (this->rdbuf()->pubseekoff(__off, __dir, ios_base::in) == pos_type(-1))
+         __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1146,6 +1230,10 @@ _LIBCPP_HIDE_FROM_ABI basic_istream<_CharT, _Traits>& ws(basic_istream<_CharT, _
+         __is.rdbuf()->sbumpc();
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -1252,6 +1340,10 @@ operator>>(basic_istream<_CharT, _Traits>& __is, basic_string<_CharT, _Traits, _
+       if (__c == 0)
+         __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -1325,6 +1417,10 @@ getline(basic_istream<_CharT, _Traits>& __is, basic_string<_CharT, _Traits, _All
+       __state |= ios_base::eofbit | (__str.empty() ? ios_base::failbit : ios_base::goodbit);
+ 
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    __state |= ios_base::badbit;
++    __is.__setstate_nothrow(__state);
++    throw;
+   } catch (...) {
+     __state |= ios_base::badbit;
+     __is.__setstate_nothrow(__state);
+@@ -1386,6 +1482,10 @@ operator>>(basic_istream<_CharT, _Traits>& __is, bitset<_Size>& __x) {
+       if (_Size > 0 && __c == 0)
+         __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+diff --git a/libcxx/include/string b/libcxx/include/string
+index 34af7efb5665..37a95c0225b9 100644
+--- a/libcxx/include/string
++++ b/libcxx/include/string
+@@ -649,6 +649,7 @@ basic_string<char32_t> operator""s( const char32_t *str, size_t len );
+ #  include <climits>
+ #  include <cstdio> // EOF
+ #  include <cstring>
++#  include <cxxabi.h>
+ #  include <limits>
+ #  include <stdexcept>
+ #  include <string_view>
+@@ -3463,6 +3464,8 @@ inline _LIBCPP_CONSTEXPR_SINCE_CXX20 void basic_string<_CharT, _Traits, _Allocat
+     traits_type::copy(std::__to_address(__buffer.__data_), std::__to_address(__get_long_pointer()), __size + 1);
+     __reset_internal_buffer(__buffer);
+ #  if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     return;
+   }
+diff --git a/libcxx/src/future.cpp b/libcxx/src/future.cpp
+index 7bba635e9006..2d1aae641cb7 100644
+--- a/libcxx/src/future.cpp
++++ b/libcxx/src/future.cpp
+@@ -111,14 +111,16 @@ void __assoc_sub_state::wait() {
+ }
+ 
+ void __assoc_sub_state::__sub_wait(unique_lock<mutex>& __lk) {
+-  if (!__is_ready()) {
++  while (!__is_ready()) {
+     if (__state_ & static_cast<unsigned>(deferred)) {
+       __state_ &= ~static_cast<unsigned>(deferred);
+       __lk.unlock();
+       __execute();
+-    } else
+-      while (!__is_ready())
+-        __cv_.wait(__lk);
++      if (!__lk.owns_lock())
++        __lk.lock();
++    } else {
++      __cv_.wait(__lk);
++    }
+   }
+ }
+ 
+diff --git a/libcxx/src/ios.cpp b/libcxx/src/ios.cpp
+index 02ce4841187f..3aab86189bbc 100644
+--- a/libcxx/src/ios.cpp
++++ b/libcxx/src/ios.cpp
+@@ -9,6 +9,7 @@
+ #include <__config>
+ #include <__locale>
+ #include <algorithm>
++#include <cxxabi.h>
+ #include <ios>
+ #include <limits>
+ #include <memory>
+@@ -362,16 +363,28 @@ void ios_base::swap(ios_base& rhs) noexcept {
+ void ios_base::__set_badbit_and_consider_rethrow() {
+   __rdstate_ |= badbit;
+ #if _LIBCPP_HAS_EXCEPTIONS
+-  if (__exceptions_ & badbit)
++  try {
+     throw;
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
++  } catch (...) {
++    if (__exceptions_ & badbit)
++      throw;
++  }
+ #endif // _LIBCPP_HAS_EXCEPTIONS
+ }
+ 
+ void ios_base::__set_failbit_and_consider_rethrow() {
+   __rdstate_ |= failbit;
+ #if _LIBCPP_HAS_EXCEPTIONS
+-  if (__exceptions_ & failbit)
++  try {
+     throw;
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
++  } catch (...) {
++    if (__exceptions_ & failbit)
++      throw;
++  }
+ #endif // _LIBCPP_HAS_EXCEPTIONS
+ }
+ 
+diff --git a/libcxxabi/include/cxxabi.h b/libcxxabi/include/cxxabi.h
+index 9ea93680f62e..da75b45c84fe 100644
+--- a/libcxxabi/include/cxxabi.h
++++ b/libcxxabi/include/cxxabi.h
+@@ -37,6 +37,14 @@ class type_info; // forward declaration
+ // runtime routines use C calling conventions, but are in __cxxabiv1 namespace
+ namespace __cxxabiv1 {
+ 
++// An out-of-line key function makes the runtime library own the unique
++// exported typeinfo definition. Keep the libstdc++ abstract class shape so
++// this marker can only be caught by reference.
++class _LIBCXXABI_TYPE_VIS __forced_unwind {
++  virtual ~__forced_unwind();
++  virtual void __pure_dummy() = 0;
++};
++
+ struct __cxa_exception;
+ 
+ extern "C"  {
+diff --git a/libcxxabi/src/cxa_exception.cpp b/libcxxabi/src/cxa_exception.cpp
+index 5d7edae697d6..3a6a0b8b8e17 100644
+--- a/libcxxabi/src/cxa_exception.cpp
++++ b/libcxxabi/src/cxa_exception.cpp
+@@ -36,6 +36,8 @@
+ 
+ namespace __cxxabiv1 {
+ 
++__forced_unwind::~__forced_unwind() = default;
++
+ //  Utility routines
+ static
+ inline
+@@ -648,7 +650,10 @@ void __cxa_rethrow() {
+ #ifdef __USING_SJLJ_EXCEPTIONS__
+     _Unwind_SjLj_RaiseException(&exception_header->unwindHeader);
+ #else
+-    _Unwind_RaiseException(&exception_header->unwindHeader);
++    if (native_exception)
++        _Unwind_RaiseException(&exception_header->unwindHeader);
++    else
++        _Unwind_Resume_or_Rethrow(&exception_header->unwindHeader);
+ #endif
+ 
+     //  If we get here, some kind of unwinding error has occurred.
+diff --git a/libcxxabi/src/cxa_personality.cpp b/libcxxabi/src/cxa_personality.cpp
+index 28208194edb3..559000728bcb 100644
+--- a/libcxxabi/src/cxa_personality.cpp
++++ b/libcxxabi/src/cxa_personality.cpp
+@@ -819,6 +819,23 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
+                     }
+                     // Else this is a catch (T) clause and will never
+                     //    catch a foreign exception
++                    else if (!native_exception &&
++                             (actions & _UA_FORCE_UNWIND))
++                    {
++                        void* adjustedPtr =
++                            get_thrown_object_ptr(unwind_exception);
++                        const __shim_type_info* forcedType =
++                            static_cast<const __shim_type_info*>(
++                                &typeid(__cxxabiv1::__forced_unwind));
++                        if (catchType->can_catch(forcedType, adjustedPtr))
++                        {
++                            results.ttypeIndex = ttypeIndex;
++                            results.actionRecord = actionRecord;
++                            results.adjustedPtr = adjustedPtr;
++                            results.reason = _URC_HANDLER_FOUND;
++                            return;
++                        }
++                    }
+                     else if (native_exception)
+                     {
+                         __cxa_exception* exception_header = (__cxa_exception*)(unwind_exception+1) - 1;
+@@ -1254,6 +1271,17 @@ __gxx_personality_v0(_Unwind_State state,
+                       unwind_exception, context);
+         if (results.reason == _URC_HANDLER_FOUND)
+         {
++            // A non-zero ttypeIndex identifies a catching handler. ARM EHABI
++            // requires __cxa_begin_cleanup only for a true cleanup entry
++            // (ttypeIndex == 0), matching libstdc++'s found_cleanup gate.
++            if (is_force_unwinding && !native_exception &&
++                results.ttypeIndex != 0)
++            {
++                save_results_to_barrier_cache(unwind_exception, results);
++                set_registers(unwind_exception, context, results);
++                return _URC_INSTALL_CONTEXT;
++            }
++
+             // Found a non-catching handler
+ 
+             // ARM EHABI 8.4.2: Before we can jump to the cleanup handler, we have to setup some
+diff --git a/packaging/SOURCE_PROVENANCE b/packaging/SOURCE_PROVENANCE
+new file mode 100644
+index 000000000000..d78088d5990c
+--- /dev/null
++++ b/packaging/SOURCE_PROVENANCE
+@@ -0,0 +1,41 @@
++# This file records stable, content-addressed source and release anchors.
++# The exact package revision is recorded by the VCS field generated by GBS.
++# Downstream patch topology is intentionally not recorded: patch counts,
++# filenames, numbering, and commit IDs change under squash, rebase, or
++# cherry-pick even when the resulting source content is identical.
++
++provenance_format=2
++provenance_scope=stable_source_content_and_release_anchors
++package_revision_source=GBS_GENERATED_SPEC_VCS_FIELD
++downstream_patch_topology=INTENTIONALLY_NOT_RECORDED
++downstream_patch_topology_reason=UNSTABLE_UNDER_SQUASH_REBASE_AND_CHERRY_PICK
++
++component=llvm-project libcxx+libcxxabi
++version=22.1.8
++
++source_tarball=llvm-22.1.8.tar.gz
++source_tarball_sha256=1f5fe8da0a18255a63cde36f1570c88265bb8ffc6458deae06d04e77abc6f7d2
++source_tarball_anchor=GBS_STANDARD_EXPORT_FROM_upstream/22.1.8
++source_export_mode=GBS_STANDARD_NON_NATIVE
++source_export_no_patch_mode=FORBIDDEN
++gbs_export_tag=upstream/22.1.8
++gbs_export_tag_peeled_commit=ca7933e47d3a3451d81e72ac174dcb5aa28b59d1
++
++upstream_release_tag=llvmorg-22.1.8
++upstream_release_tag_peeled_commit=ca7933e47d3a3451d81e72ac174dcb5aa28b59d1
++official_release_archive=llvm-project-22.1.8.src.tar.xz
++official_release_archive_sha256=922f1817a0df7b1489272d18134ee0087a8b068828f87ac63b9861b1a9965888
++official_release_anchor_scope=CONTENT_COMPARISON_ONLY
++source_tarball_vs_official_release_difference=clang/bindings/python/.git_archival.txt_only
++source_tarball_vs_official_release_difference_cause=git_export_subst_expansion
++source_tarball_vs_official_release_build_impact=NO_BUILD_IMPACT
++
++validated_component_tree_hash_algorithm=git-sha1
++validated_libcxx_tree=66966034e27ae7b2856aaee7d0aaac6dd06fbd3b
++validated_libcxxabi_tree=8ce21d5fcd3eacb51fb43978ed4c7d05b1fc4ecf
++
++stdlib_abi=libcxxabi
++unwinder=libgcc_s
++compiler_rt=disabled
++llvm_unwinder=disabled
++symbol_version_node=LLVM_22
+\ No newline at end of file
+diff --git a/packaging/libcxx-llvm22.map b/packaging/libcxx-llvm22.map
+new file mode 100644
+index 000000000000..277f8bb6e4c7
+--- /dev/null
++++ b/packaging/libcxx-llvm22.map
+@@ -0,0 +1,4 @@
++LLVM_22 {
++  global:
++    *;
++};
+diff --git a/packaging/libcxx-runtimes.manifest b/packaging/libcxx-runtimes.manifest
+new file mode 100644
+index 000000000000..2a0cec5011c0
+--- /dev/null
++++ b/packaging/libcxx-runtimes.manifest
+@@ -0,0 +1,5 @@
++<manifest>
++  <request>
++    <domain name="_"/>
++  </request>
++</manifest>
+diff --git a/packaging/libcxx-runtimes.spec b/packaging/libcxx-runtimes.spec
+new file mode 100644
+index 000000000000..56fe71f640e1
+--- /dev/null
++++ b/packaging/libcxx-runtimes.spec
+@@ -0,0 +1,158 @@
++%define llvm_major 22
++%define llvm_version 22.1.8
++%define _toolchain_override clang
++
++Name:           libcxx-runtimes
++Version:        22.1.8
++Release:        1
++ExclusiveArch:  armv7l aarch64 x86_64
++Summary:        LLVM libc++ and libc++abi runtimes
++Group:          Development/Toolchain
++License:        Apache-2.0 WITH LLVM-exception
++URL:            https://llvm.org/
++Source0:        llvm-%{version}.tar.gz
++Source1:        libcxx-llvm22.map
++Source2:        libcxx-runtimes.manifest
++Source3:        SOURCE_PROVENANCE
++
++BuildRequires:  clang = %{version}
++BuildRequires:  cmake
++BuildRequires:  ninja
++BuildRequires:  python3
++BuildRequires:  glibc-devel
++BuildRequires:  libgcc
++
++%description
++Source package for the LLVM libc++ standard library and libc++abi runtime.
++The libraries use libgcc_s as the unwinder and export only default-version
++LLVM_22 symbols.
++
++%package -n libc++
++Summary:        LLVM C++ standard library runtime
++Requires:       libc++abi = %{version}-%{release}
++
++%description -n libc++
++Shared LLVM libc++ runtime, built against libc++abi and libgcc_s.
++
++%package -n libc++-devel
++Summary:        LLVM C++ standard library headers and development files
++Requires:       libc++ = %{version}-%{release}
++Requires:       libc++abi-devel = %{version}-%{release}
++
++%description -n libc++-devel
++Headers, ABI linker script, module metadata, and development files for LLVM
++libc++.
++
++%package -n libc++abi
++Summary:        LLVM C++ ABI runtime
++
++%description -n libc++abi
++Shared LLVM libc++abi runtime using libgcc_s rather than LLVM libunwind.
++
++%package -n libc++abi-devel
++Summary:        LLVM C++ ABI development files
++Requires:       libc++abi = %{version}-%{release}
++
++%description -n libc++abi-devel
++Linker name for LLVM libc++abi.  Its public headers are installed in the
++common c++/v1 tree shipped by libc++-devel.
++
++%prep
++%setup -q -n llvm-%{version}
++cp %{SOURCE2} .
++cp %{SOURCE3} .
++
++%build
++mkdir -p build
++cd build
++
++cmake -G Ninja \
++  -DCMAKE_BUILD_TYPE=Release \
++  -DCMAKE_C_COMPILER=%{__cc} \
++  -DCMAKE_CXX_COMPILER=%{__cxx} \
++  -DCMAKE_ASM_COMPILER=%{__cc} \
++  -DCMAKE_C_COMPILER_TARGET=%{_host} \
++  -DCMAKE_CXX_COMPILER_TARGET=%{_host} \
++  -DCMAKE_ASM_COMPILER_TARGET=%{_host} \
++  -DCMAKE_C_FLAGS="$CFLAGS --rtlib=libgcc" \
++  -DCMAKE_CXX_FLAGS="$CXXFLAGS --rtlib=libgcc" \
++  -DCMAKE_ASM_FLAGS="$CFLAGS" \
++  -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--version-script=%{SOURCE1} -Wl,-z,now --rtlib=libgcc" \
++  -DCMAKE_EXE_LINKER_FLAGS="--rtlib=libgcc" \
++  -DCMAKE_INSTALL_PREFIX=%{_prefix} \
++  -DCMAKE_INSTALL_LIBDIR=%{_lib} \
++  -DLIBCXX_INSTALL_LIBRARY_DIR=%{_lib} \
++  -DLIBCXXABI_INSTALL_LIBRARY_DIR=%{_lib} \
++  -DLLVM_ENABLE_RUNTIMES="libcxxabi;libcxx" \
++  -DLLVM_DEFAULT_TARGET_TRIPLE=%{_host} \
++  -DLLVM_INCLUDE_TESTS=OFF \
++  -DLIBCXX_ENABLE_SHARED=ON \
++  -DLIBCXX_ENABLE_STATIC=OFF \
++  -DLIBCXX_INSTALL_SHARED_LIBRARY=ON \
++  -DLIBCXX_INSTALL_STATIC_LIBRARY=OFF \
++  -DLIBCXX_CXX_ABI=libcxxabi \
++  -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=OFF \
++  -DLIBCXX_ENABLE_ABI_LINKER_SCRIPT=ON \
++  -DLIBCXX_USE_COMPILER_RT=OFF \
++  -DLIBCXXABI_ENABLE_SHARED=ON \
++  -DLIBCXXABI_ENABLE_STATIC=OFF \
++  -DLIBCXXABI_INSTALL_SHARED_LIBRARY=ON \
++  -DLIBCXXABI_INSTALL_STATIC_LIBRARY=OFF \
++  -DLIBCXXABI_USE_COMPILER_RT=OFF \
++  -DLIBCXXABI_USE_LLVM_UNWINDER=OFF \
++  -DLIBCXXABI_ENABLE_STATIC_UNWINDER=OFF \
++  -DLIBCXXABI_STATICALLY_LINK_UNWINDER_IN_SHARED_LIBRARY=OFF \
++  -DLIBCXXABI_STATICALLY_LINK_UNWINDER_IN_STATIC_LIBRARY=OFF \
++  -DLIBCXXABI_ENABLE_NEW_DELETE_DEFINITIONS=ON \
++  -DLIBCXX_INCLUDE_TESTS=OFF \
++  -DLIBCXXABI_INCLUDE_TESTS=OFF \
++  -DLIBCXX_INCLUDE_BENCHMARKS=OFF \
++  ../runtimes
++
++cmake --build . --target cxxabi cxx cxx_experimental %{?_smp_mflags}
++
++%install
++cd build
++DESTDIR=%{buildroot} cmake --install .
++
++install -d %{buildroot}%{_datadir}/doc/%{name}
++install -m 0644 ../SOURCE_PROVENANCE \
++  %{buildroot}%{_datadir}/doc/%{name}/SOURCE_PROVENANCE
++
++%files -n libc++
++%manifest %{name}.manifest
++%defattr(-,root,root,-)
++%license libcxx/LICENSE.TXT
++%{_libdir}/libc++.so.1*
++
++%files -n libc++-devel
++%manifest %{name}.manifest
++%defattr(-,root,root,-)
++%{_includedir}/c++/v1
++%{_libdir}/libc++.so
++%{_libdir}/libc++experimental.a
++%{_libdir}/libc++.modules.json
++%{_datadir}/libc++/v1
++%{_datadir}/doc/%{name}/SOURCE_PROVENANCE
++
++%files -n libc++abi
++%manifest %{name}.manifest
++%defattr(-,root,root,-)
++%license libcxxabi/LICENSE.TXT
++%{_libdir}/libc++abi.so.1*
++
++%files -n libc++abi-devel
++%manifest %{name}.manifest
++%defattr(-,root,root,-)
++%{_libdir}/libc++abi.so
++
++%changelog
++* Tue Aug 04 2026 Toolchain ABI Team <toolchain@example.invalid> 22.1.8-1
++- Migrate to the verbatim platform llvm-22.1.8 source tarball and LLVM_22 symbol node.
++- Preserve the adjudicated 21.1.1 multi-architecture packaging decisions.
++
++* Sat Jul 25 2026 Toolchain ABI Team <toolchain@example.invalid> 21.1.1-2
++- Build armv7l, aarch64, and x86_64 repository-candidate runtimes.
++
++* Thu Jul 23 2026 Toolchain ABI Team <toolchain@example.invalid> 21.1.1-1
++- Initial armv7l PoC packaging with LLVM_21 default symbol versions.
+\ No newline at end of file
+-- 
+cgit v1.2.3
+
+
+From 2d23367d74afbf2bb1e9e4013fce072b3a154109 Mon Sep 17 00:00:00 2001
+From: He Fangyu <fangyu.he@samsung.com>
+Date: Wed, 2 Sep 2026 18:07:18 +0800
+Subject: packaging: select Clang explicitly for libc++ runtimes
+
+Select the target-prefixed Clang drivers directly in the libc++ runtimes
+CMake configuration.  The previous package-local _toolchain_override did
+not affect the RPM compiler macros in the Tizen-Base build environment, so
+GCC was still selected and rejected the Clang-only --rtlib=libgcc option.
+
+When an aarch64 GCC-default environment invokes this Clang-only package,
+normalize only the GCC-specific composite -mtune value to cortex-a53.  This
+matches the value already supplied by the LLVM project configuration; all
+other environment flags remain unchanged.
+
+The resulting spec was built in the armv7l and aarch64 GCC-default and LLVM
+environments.  All four builds used Clang 22.1.8, completed successfully,
+linked libc++ and libc++abi against libgcc_s.so.1, and installed the five
+checked forced-unwind header changes.
+
+Change-Id: Id2ae25c37e9319e2303bbd527fe695cb22ee95cd
+Signed-off-by: He Fangyu <fangyu.he@samsung.com>
+---
+ packaging/libcxx-runtimes.spec | 13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/packaging/libcxx-runtimes.spec b/packaging/libcxx-runtimes.spec
+index 56fe71f640e1..bb5b8be1ab4f 100644
+--- a/packaging/libcxx-runtimes.spec
++++ b/packaging/libcxx-runtimes.spec
+@@ -1,6 +1,5 @@
+ %define llvm_major 22
+ %define llvm_version 22.1.8
+-%define _toolchain_override clang
+ 
+ Name:           libcxx-runtimes
+ Version:        22.1.8
+@@ -63,14 +62,20 @@ cp %{SOURCE2} .
+ cp %{SOURCE3} .
+ 
+ %build
++%ifarch aarch64
++CFLAGS="$(printf '%%s\n' "$CFLAGS" | sed 's/-mtune=cortex-a57\.cortex-a53/-mtune=cortex-a53/g')"
++CXXFLAGS="$(printf '%%s\n' "$CXXFLAGS" | sed 's/-mtune=cortex-a57\.cortex-a53/-mtune=cortex-a53/g')"
++export CFLAGS CXXFLAGS
++%endif
++
+ mkdir -p build
+ cd build
+ 
+ cmake -G Ninja \
+   -DCMAKE_BUILD_TYPE=Release \
+-  -DCMAKE_C_COMPILER=%{__cc} \
+-  -DCMAKE_CXX_COMPILER=%{__cxx} \
+-  -DCMAKE_ASM_COMPILER=%{__cc} \
++  -DCMAKE_C_COMPILER=%{_host}-clang \
++  -DCMAKE_CXX_COMPILER=%{_host}-clang++ \
++  -DCMAKE_ASM_COMPILER=%{_host}-clang \
+   -DCMAKE_C_COMPILER_TARGET=%{_host} \
+   -DCMAKE_CXX_COMPILER_TARGET=%{_host} \
+   -DCMAKE_ASM_COMPILER_TARGET=%{_host} \
+-- 
+cgit v1.2.3
+
+
+From 7e4dc62d8ac01f90488a0cc8e0f34f8373228c84 Mon Sep 17 00:00:00 2001
+From: "fangyu.he" <fangyu.he@samsung.com>
+Date: Thu, 24 Sep 2026 12:55:12 +0800
+Subject: optimize llvm performance 1. Use -O3 2. Using thin-lto 3. Static link
+ libllvm
+
+Change-Id: Idcd75c5d5a57368aeae1081f0664be042c2ee707
+---
+ packaging/llvm.spec | 46 ++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 44 insertions(+), 2 deletions(-)
+
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index c901dc5a2d5d..9603051ec3f7 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -59,6 +59,13 @@ BuildRequires: sed
+ %endif
+ BuildRequires: ninja
+ 
++%if %{undefined _toolchain}
++%ifarch x86_64
++BuildRequires: clang, llvm, libllvm
++%{!?_toolchain: %define _toolchain clang}
++%endif
++%endif
++
+ 
+ Requires: libllvm = %{version}-%{release}
+ 
+@@ -185,6 +192,28 @@ cp %{SOURCE1001} .
+ export QEMU_RESERVED_VA=0x100000000
+ %endif
+ 
++%ifarch x86_64
++# Strip pre-existing optimization flags and remove performance-harming flags, then force -O3 + ThinLTO
++OPTFLAGS_CFLAGS=$(echo "$CFLAGS" | sed \
++    -e 's/\-O[0-9sz]//g' \
++    -e 's/\-Ofast//g' \
++    -e 's/\-fstack-protector-strong//g' \
++    -e 's/\-fstack-protector-all//g' \
++    -e 's/\-fstack-protector//g' \
++    -e 's/\-fno-omit-frame-pointer//g' \
++    -e 's/\-momit-leaf-frame-pointer//g')
++OPTFLAGS_CXXFLAGS=$(echo "$CXXFLAGS" | sed \
++    -e 's/\-O[0-9sz]//g' \
++    -e 's/\-Ofast//g' \
++    -e 's/\-fstack-protector-strong//g' \
++    -e 's/\-fstack-protector-all//g' \
++    -e 's/\-fstack-protector//g' \
++    -e 's/\-fno-omit-frame-pointer//g' \
++    -e 's/\-momit-leaf-frame-pointer//g')
++export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
++export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
++%endif
++
+ # Set up MLGO AOT model paths from bundled verify assets
+ %if %{with mlgo}
+ MLGO_AOT_DIR="$PWD/mlgo_verify_assets"
+@@ -198,8 +227,13 @@ cd build
+ cmake \
+     -G Ninja \
+     -DTIZEN=1 \
++%ifarch x86_64
++    -DCMAKE_C_COMPILER=clang \
++    -DCMAKE_CXX_COMPILER=clang++ \
++%else
+     -DCMAKE_C_COMPILER=%__cc \
+     -DCMAKE_CXX_COMPILER=%__cxx \
++%endif
+     -DLLVM_HOST_TRIPLE=%{_host} \
+     -DLLVM_DEFAULT_TARGET_TRIPLE=%{_host} \
+     -DLLVM_TARGET_TRIPLE_ENV=%{_host} \
+@@ -207,9 +241,12 @@ cmake \
+     -DCMAKE_C_FLAGS="$CFLAGS" \
+     -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
+ %if %{defined _toolchain}
+-    -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+-    -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld -ffunction-sections -fdata-sections -Wl,--gc-sections" \
++    -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
++    -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+     -DLLVM_USE_LINKER=lld \
++    -DLLVM_ENABLE_LTO=Thin \
++    -DCMAKE_RANLIB=%{_bindir}/llvm-ranlib \
++    -DCMAKE_AR=%{_bindir}/llvm-ar \
+ %endif
+     -DLLVM_ENABLE_ASSERTIONS=No \
+     -DLLVM_ENABLE_RTTI=ON \
+@@ -234,9 +271,14 @@ cmake \
+     -DCLANG_ENABLE_ARCMT=OFF \
+     -DLLVM_BUILD_LLVM_DYLIB=ON \
+     -DCLANG_BUILD_CLANG_DYLIB=ON \
++%ifarch x86_64
++    -DLLVM_LINK_LLVM_DYLIB=OFF \
++    -DCLANG_LINK_CLANG_DYLIB=OFF \
++%else
+ %if %{defined _toolchain}
+     -DLLVM_LINK_LLVM_DYLIB=ON \
+     -DCLANG_LINK_CLANG_DYLIB=ON \
++%endif
+ %endif
+     -DLLVM_ENABLE_PROJECTS="clang;lldb;clang-tools-extra;lld;compiler-rt;openmp" \
+     -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
+-- 
+cgit v1.2.3
+
+
+From cb67996861d070d68fec2b4c623eed7d20ba2e23 Mon Sep 17 00:00:00 2001
+From: "fangyu.he" <fangyu.he@samsung.com>
+Date: Wed, 30 Sep 2026 16:41:10 +0800
+Subject: remove '-fno-inline-functions' compile options
+
+`-fno-inline-functions` is a compilation option intended for GCC in the project conf of tizen-base-dev.
+LLVM recognizes this option, but its handling is completely different from GCC's.
+This causes projects built with LLVM to have no function inlining at all, severely degrading the performance of the resulting binaries.
+This is the reason why the LLVM build time on the x86_64 architecture was excessively long.(https://quickbuild.tizen.org/build/1182759)
+
+verify:
+https://quickbuild.tizen.org/build/1186390
+
+Change-Id: Idd7d3139708f3bc65b9ce7e9edf24156159ee54c
+---
+ packaging/llvm.spec | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 9603051ec3f7..64705188b67c 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -200,6 +200,7 @@ OPTFLAGS_CFLAGS=$(echo "$CFLAGS" | sed \
+     -e 's/\-fstack-protector-strong//g' \
+     -e 's/\-fstack-protector-all//g' \
+     -e 's/\-fstack-protector//g' \
++    -e 's/\-fno-inline-functions//g' \
+     -e 's/\-fno-omit-frame-pointer//g' \
+     -e 's/\-momit-leaf-frame-pointer//g')
+ OPTFLAGS_CXXFLAGS=$(echo "$CXXFLAGS" | sed \
+@@ -208,6 +209,7 @@ OPTFLAGS_CXXFLAGS=$(echo "$CXXFLAGS" | sed \
+     -e 's/\-fstack-protector-strong//g' \
+     -e 's/\-fstack-protector-all//g' \
+     -e 's/\-fstack-protector//g' \
++    -e 's/\-fno-inline-functions//g' \
+     -e 's/\-fno-omit-frame-pointer//g' \
+     -e 's/\-momit-leaf-frame-pointer//g')
+ export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+-- 
+cgit v1.2.3
+
+
+From 67619ec8bbbac7238a6cfc33a481ccfbcd12206f Mon Sep 17 00:00:00 2001
+From: FatTank <hao.lin@samsung.com>
+Date: Fri, 9 Oct 2026 16:58:36 +0800
+Subject: packaging: fix llvm-static-devel with ThinLTO
+
+ThinLTO leaves LLVM bitcode in the static archives. The GNU strip invoked
+by brp-strip-static-archive does not understand these members but can
+return success while dropping or truncating the archive symbol index.
+Even with an intact index, GNU ld without LTO or an LLVM plugin cannot
+link bitcode members.
+
+At the end of %install, convert bitcode members to native objects using
+an explicitly certified backend policy, then rebuild deterministic GNU
+archives and their indexes. Preserve existing native members, original
+member order and duplicate member names. Leave the standard RPM
+post-processing unchanged; the final archives contain no DWARF after
+standard strip processing.
+
+Apply the conversion only on x86_64, to all installed archives containing
+bitcode, including libarcher_static.a from libomp-devel (also owned by
+llvm-static-devel). Leave armv7l and aarch64 for separate certification.
+Tool compilation and linkage are unchanged.
+
+The x86_64 host tools also cross-compile ARM packages through accel,
+which extracts tools rather than static archives. Consumers of the
+x86_64 static-devel archives build x86_64 targets.
+
+Fail closed on unclassified original compiler options, an uncertified
+LLVM major version or incompatible IR metadata. Such changes require
+option-policy review and recertification; this is not generic option
+replay.
+
+This fix targets LLVM recipes using -O3 and ThinLTO. A recipe without
+ThinLTO is a no-op (NATIVE_ARCHIVES_SKIP) when its installed archives are
+already native. When ThinLTO is enabled, the original compiler options
+must match the certified policy or %install fails pending recertification.
+
+Validation used the certified LLVM 22 x86_64 recipe: one full build plus
+incremental continuation, with build/compile/link concurrency 6/6/2 and
+debuginfo -j4. All 225 development archives contain native objects and
+complete symbol indexes. All 45 compiler-rt archives retain identical
+member ELF bytes and index mappings; only ar header timestamps differ.
+Non-archive files, including clang, lld and llvm-ar, are byte-identical
+to the pre-fix baseline. A fresh independent %install reconverts and
+passes; rerunning the converter on that same tree reports SKIP.
+
+Host and Tizen consumer tests pass with plugin-free GNU ld without LTO
+and with lld. They exercise LLVM IR parsing and the O2 pass pipeline,
+in-process lld ELF linking, and, on the host, shared-library loading and
+section garbage collection. Tizen tests use the same 113 installed
+package versions as the earlier validated environment; 107 Base RPMs
+were recovered from its cache and checked against archived repository
+checksums.
+
+Change-Id: Id4eb147e7ec4764d58a81110cf7bf57d21b64ac8
+Signed-off-by: FatTank <hao.lin@samsung.com>
+---
+ packaging/llvm-static-archives-native.py | 788 +++++++++++++++++++++++++++++++
+ packaging/llvm.spec                      |  19 +
+ 2 files changed, 807 insertions(+)
+ create mode 100644 packaging/llvm-static-archives-native.py
+
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+new file mode 100644
+index 000000000000..d839b8062ff9
+--- /dev/null
++++ b/packaging/llvm-static-archives-native.py
+@@ -0,0 +1,788 @@
++#!/usr/bin/env python3
++"""Convert installed ThinLTO archive members using a certified backend policy.
++
++Requires Python >= 3.9 on Linux and LLVM major 22. Custom ar/ELF parsing retains
++header-offset identities for duplicate member names, and verifies full indexes.
++Text IR metadata/attribute parsing depends on LLVM 22 llvm-dis output syntax.
++Four architecture-specific policy points are deliberately explicit: backend
++options, recorded-command classification, relocation rules, and triple allowlist.
++Failing closed when parameters change is intentional; recertify before use.
++"""
++import argparse
++from collections import Counter
++from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
++import hashlib
++import json
++import mmap
++import os
++from pathlib import Path
++import re
++import shlex
++import shutil
++import signal
++import stat
++import struct
++import subprocess
++import tempfile
++import threading
++import time
++
++
++def cstring(data, offset):
++    if not 0 <= offset < len(data):
++        raise ValueError('string offset outside table')
++    end = data.find(b'\0', offset)
++    if end < 0:
++        raise ValueError('unterminated string')
++    return data[offset:end].decode('utf-8', 'surrogateescape')
++
++
++def member_kind(data):
++    if data[:4] in (b'BC\xc0\xde', b'\xde\xc0\x17\x0b'):
++        return 'bitcode'
++    if (len(data) >= 20 and data[:4] == b'\x7fELF' and
++            data[4] in (1, 2) and data[5] in (1, 2) and
++            int.from_bytes(data[16:18], 'little' if data[5] == 1 else 'big') == 1):
++        return 'machine'
++    return 'other'
++
++
++def elf_details(data):
++    """Defined external symbols and debug sections in an ELF relocatable member."""
++    if member_kind(data) != 'machine':
++        raise ValueError('not a native ELF relocatable')
++    bits, endian = data[4], '<' if data[5] == 1 else '>'
++    if bits == 2:
++        shoff = struct.unpack_from(endian+'Q', data, 40)[0]
++        entsize, count, names_idx = struct.unpack_from(endian+'HHH', data, 58)
++        fmt = endian+'IIQQQQIIQQ'; symfmt = endian+'IBBHQQ'
++    else:
++        shoff = struct.unpack_from(endian+'I', data, 32)[0]
++        entsize, count, names_idx = struct.unpack_from(endian+'HHH', data, 46)
++        fmt = endian+'IIIIIIIIII'; symfmt = endian+'IIIBBH'
++    if not shoff:
++        return [], []
++    if entsize < struct.calcsize(fmt):
++        raise ValueError('short ELF section header')
++    zero = struct.unpack_from(fmt, data, shoff)
++    if count == 0:
++        count = zero[5]
++    if names_idx == 0xffff:
++        names_idx = zero[6]
++    sections = [struct.unpack_from(fmt, data, shoff+i*entsize) for i in range(count)]
++    def contents(section):
++        start, size = section[4:6]
++        if start+size > len(data):
++            raise ValueError('ELF section outside member')
++        return data[start:start+size]
++    names = contents(sections[names_idx]) if names_idx else b'\0'
++    debug = [cstring(names, s[0]) for s in sections
++             if cstring(names, s[0]).startswith(('.debug', '.zdebug', '.rel.debug', '.rela.debug'))]
++    symbols = []
++    for s in sections:
++        if s[1] != 2:  # SHT_SYMTAB, not dynamic symbols
++            continue
++        strings = contents(sections[s[6]])
++        table = contents(s); stride = s[9]
++        if stride < struct.calcsize(symfmt) or len(table) % stride:
++            raise ValueError('invalid ELF symbol table')
++        for pos in range(0, len(table), stride):
++            fields = struct.unpack_from(symfmt, table, pos)
++            name, info, ndx = (fields[0], fields[1], fields[3]) if bits == 2 else (fields[0], fields[3], fields[5])
++            if info >> 4 in (1, 2, 10) and ndx != 0 and name:
++                symbols.append(cstring(strings, name))
++    return symbols, debug
++
++
++def inspect(path):
++    path = Path(path)
++    with path.open('rb') as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as data:
++        magic = data[:8]
++        if magic not in (b'!<arch>\n', b'!<thin>\n'):
++            raise ValueError(f'not an archive: {path}')
++        thin = magic == b'!<thin>\n'
++        pos, longnames, raw_members, tables = 8, b'', [], []
++        while pos < len(data):
++            start = pos; header = data[pos:pos+60]
++            if len(header) != 60 or header[58:60] != b'`\n':
++                raise ValueError(f'invalid ar header at {pos}')
++            name = header[:16].decode('ascii').rstrip(); size = int(header[48:58]); pos += 60
++            special = name in ('/', '//', '/SYM64/')
++            stored_size = size if not thin or special else (int(name[3:]) if name.startswith('#1/') else 0)
++            if pos+stored_size > len(data):
++                raise ValueError('ar member outside file')
++            if name == '//':
++                longnames = data[pos:pos+size]
++            elif name in ('/', '/SYM64/'):
++                tables.append((name, data[pos:pos+size]))
++            else:
++                raw_members.append(dict(header_offset=start, raw_name=name, offset=pos,
++                                        size=size, mtime=header[16:28].decode().strip()))
++            pos += stored_size + stored_size % 2
++        members, offsets, native_map, occurrences = [], {}, [], Counter()
++        for m in raw_members:
++            name, off, size = m.pop('raw_name'), m['offset'], m['size']
++            if name.startswith('#1/'):
++                n = int(name[3:]); name = data[off:off+n].rstrip(b'\0').decode('utf-8', 'surrogateescape'); off += n; size -= n
++            elif name.startswith('/'):
++                n = int(name[1:]); end = longnames.find(b'/\n', n)
++                if end < 0:
++                    raise ValueError('invalid GNU long name')
++                name = longnames[n:end].decode('utf-8', 'surrogateescape')
++            else:
++                name = name.removesuffix('/')
++            if name.startswith('__.SYMDEF'):
++                raise ValueError('BSD ar symbol table unsupported; refuse silent index loss')
++            ordinal = len(members); occurrences[name] += 1
++            m.update(name=name, ordinal=ordinal, occurrence=occurrences[name], offset=off, size=size)
++            payload = data[off:off+size] if not thin else b''
++            m['magic_hex'] = payload[:4].hex() if not thin else None
++            m['kind'] = member_kind(payload) if not thin else 'other'
++            m['sha256'] = hashlib.sha256(payload).hexdigest() if not thin else None
++            m['debug_sections'] = []
++            if m['kind'] == 'machine':
++                symbols, m['debug_sections'] = elf_details(payload)
++                native_map += [[s, ordinal, name, occurrences[name]] for s in symbols]
++            offsets[m['header_offset']] = m; members.append(m)
++        index = []
++        if len(tables) > 1:
++            raise ValueError('multiple ar indexes not supported')
++        for name, table in tables:
++            width = 8 if name == '/SYM64/' else 4
++            if len(table) < width:
++                raise ValueError('short ar index')
++            count = int.from_bytes(table[:width], 'big'); names_start = width*(1+count)
++            if names_start > len(table):
++                raise ValueError('ar index offset array truncated')
++            string_pos = names_start
++            for n in range(count):
++                offset = int.from_bytes(table[width*(n+1):width*(n+2)], 'big')
++                if offset not in offsets:
++                    raise ValueError('ar index references a non-member header')
++                symbol = cstring(table, string_pos); string_pos = table.index(b'\0', string_pos)+1
++                m = offsets[offset]; index.append([symbol, m['ordinal'], m['name'], m['occurrence']])
++        counts = Counter(m['kind'] for m in members)
++        return dict(path=str(path), bytes=len(data), sha256=hashlib.sha256(data).hexdigest(), thin=thin,
++                    members=members, member_count=len(members), bitcode=counts['bitcode'],
++                    machine=counts['machine'], other=counts['other'], index=index, index_entries=len(index),
++                    index_equals_machine_symbols=Counter(map(tuple,index))==Counter(map(tuple,native_map)),
++                    machine_symbol_entries=len(native_map))
++
++
++CERTIFIED_LLVM_MAJOR = 22
++CERTIFIED_OPTIMIZATION = {'x86_64': '-O3'}
++CERTIFIED_TRIPLES = {'x86_64': {'x86_64-tizen-linux-gnu'}}
++BACKEND_FLAGS = ['-ffunction-sections', '-fdata-sections',
++                 '-funique-section-names', '-faddrsig', '-g', '-gdwarf-4']
++# LLVM 22 clang/Driver/ToolChains/Clang.cpp:2797, 6228, 7992-7999.
++DEFAULTS = {'unique-section-names': True, 'addrsig': True, 'fp-contract': 'on'}
++
++
++def sha(path):
++    digest = hashlib.sha256()
++    with Path(path).open('rb') as stream:
++        for block in iter(lambda: stream.read(1024 * 1024), b''):
++            digest.update(block)
++    return digest.hexdigest()
++
++
++def classify_options(argv, arch='x86_64'):
++    """Certified policy, not arbitrary compiler-option replay; consume operands."""
++    if arch not in CERTIFIED_OPTIMIZATION:
++        raise ValueError('uncertified architecture: '+arch)
++    rows, optimizations, dwarfs, contractions = [], [], [], []
++    switches = {key: [] for key in ('function-sections', 'data-sections',
++                                  'unique-section-names', 'addrsig')}
++    operand_options = {'-D', '-I', '-isystem', '-resource-dir', '-o', '-MT', '-MF', '-x'}
++    exact_ir = {'-fomit-frame-pointer', '-fno-omit-frame-pointer', '-fexceptions',
++                '-fno-exceptions', '-fasynchronous-unwind-tables', '-funwind-tables',
++                '-fno-asynchronous-unwind-tables', '-fno-unwind-tables', '-fno-common',
++                '-ftrapping-math', '-m64', '-fPIC', '-fPIE', '-fpic', '-fpie',
++                '-fno-pic', '-fno-pie', '-fno-semantic-interposition'}
++    exact_ir.update({'-fvisibility-inlines-hidden', '-fno-visibility-inlines-hidden'})
++    index = 0
++    while index < len(argv):
++        token = argv[index]
++        category, reason = None, None
++        if index == 0 and re.fullmatch(r'clang(?:\+\+)?(?:-22)?', Path(token).name):
++            category, reason = 'irrelevant', 'original driver path'
++        elif token in operand_options:
++            if index+1 == len(argv) or argv[index+1].startswith('-'):
++                raise ValueError('missing operand for '+token)
++            category, reason = 'irrelevant', 'preprocessing, driver resource, output or language operand'
++            rows.append(dict(index=index, token=token, category=category, reason=reason))
++            index += 1
++            rows.append(dict(index=index, token=argv[index], category=category, reason='operand of '+token))
++            index += 1
++            continue
++        elif re.fullmatch(r'-O(?:[0-3szg]|fast)', token):
++            category, reason = 'ir', 'original IR pipeline; certified last optimization is also replayed'
++            optimizations.append(token)
++        elif re.fullmatch(r'-gdwarf-\d+', token):
++            category, reason = 'restore', 'debug emission version'
++            dwarfs.append(token)
++        elif token.startswith('-ffp-contract='):
++            category, reason = 'restore', 'backend FP fusion policy'
++            contractions.append(token.split('=', 1)[1])
++        elif any(token in ('-f'+key, '-fno-'+key) for key in switches):
++            category, reason = 'restore', 'backend section/symbol emission policy'
++            for key in switches:
++                if token in ('-f'+key, '-fno-'+key):
++                    switches[key].append(token == '-f'+key)
++        elif (token in exact_ir or re.fullmatch(r'-fvisibility=(?:default|hidden|protected)', token)
++              or re.fullmatch(r'-g(?:[0-3]|line-tables-only|line-directives-only)?', token)
++              or re.fullmatch(r'-march=[A-Za-z0-9_.+-]+', token)
++              or re.fullmatch(r'-m(?:sse|avx)[A-Za-z0-9_.-]*', token)
++              or re.fullmatch(r'-mfpmath=(?:sse|387|sse,387|387,sse)', token)
++              or token in ('-frecord-command-line', '-frecord-gcc-switches')
++              or token.startswith('-std=')):
++            category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
++        elif token == '-flto=thin':
++            category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
++        elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
++                               '-fdiagnostics-color=')) or token in
++              ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
++               '-pedantic', '-pipe', '-c', '-MD', '--driver-mode=g++')):
++            category, reason = 'irrelevant', 'diagnostics, preprocessing or driver action'
++        elif not token.startswith('-') and re.search(r'\.(?:c|cc|cpp|cxx|C|ii|i|bc|ll|o|obj|s|S)$', token):
++            category, reason = 'irrelevant', 'input/output path'
++        if category is None:
++            raise ValueError('unclassified original command token: '+token)
++        rows.append(dict(index=index, token=token, category=category, reason=reason))
++        index += 1
++    if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
++        raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
++    if not dwarfs or dwarfs[-1] != '-gdwarf-4':
++        raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
++    effective = {}
++    for key, values in switches.items():
++        effective[key] = values[-1] if values else DEFAULTS.get(key, False)
++        if not effective[key]:
++            raise ValueError('original command does not enable '+key)
++    contraction = contractions[-1] if contractions else DEFAULTS['fp-contract']
++    if contraction not in ('on', 'off', 'fast'):
++        raise ValueError('uncertified FP contraction value: '+contraction)
++    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1],
++                switches=effective, fp_contract=contraction,
++                fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
++
++
++def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
++    """Read LLVM 22 textual metadata/attributes without modifying input IR."""
++    retained, metadata = [], {}
++    triple, command_id = None, None
++    levels, cpus, features = {}, set(), set()
++    for line in lines:
++        # Intrinsic references, not string literals in LLVM's own implementation.
++        for intrinsic in ('llvm.type.test', 'llvm.public.type.test'):
++            if re.search(r'@'+re.escape(intrinsic)+r'(?:\.|\s*\()', line):
++                raise ValueError('unsupported type metadata/intrinsic: '+intrinsic)
++        if re.search(r'!vcall_visibility\b', line):
++            raise ValueError('unsupported type metadata: !vcall_visibility')
++        if re.search(r'!"EnableSplitLTOUnit"\s*,\s*i32\s+1\b', line):
++            raise ValueError('unsupported type metadata: EnableSplitLTOUnit=1')
++        if line.startswith('!llvm.commandline = '):
++            match = re.fullmatch(r'!llvm.commandline = !\{!(\d+)\}\s*', line)
++            if not match or command_id is not None:
++                raise ValueError('exactly one recorded command is required')
++            command_id = match[1]
++        match = re.fullmatch(r'!(\d+) = !\{!"(.*)"\}\s*', line)
++        if match:
++            metadata[match[1]] = match[2]
++        if line.startswith('target triple = '):
++            value = line.split('"')[1]
++            if triple is not None:
++                raise ValueError('multiple IR triples')
++            triple = value; retained.append(line.rstrip())
++        if line.startswith('attributes #'):
++            retained.append(line.rstrip())
++            cpus.update(re.findall(r'"target-cpu"="([^"]+)"', line))
++            features.update(re.findall(r'"target-features"="([^"]+)"', line))
++        if line.startswith('!') and any('"'+n+'"' in line for n in ('PIC Level', 'PIE Level', 'Code Model')):
++            retained.append(line.rstrip())
++            match = re.search(r'!"(PIC Level|PIE Level|Code Model)", i32 (\d+)', line)
++            if not match:
++                raise ValueError('unrecognized relocation flag: '+line.rstrip())
++            key, value = match.groups()
++            if key in levels and levels[key] != int(value):
++                raise ValueError('conflicting relocation flags')
++            levels[key] = int(value)
++    if triple not in CERTIFIED_TRIPLES.get(arch, set()):
++        raise ValueError('uncertified '+arch+' IR triple: '+str(triple))
++    pic, pie = levels.get('PIC Level', 0), levels.get('PIE Level', 0)
++    if pic not in (0, 1, 2) or pie not in (0, 1, 2) or (pie and pie != pic):
++        raise ValueError('unsupported PIC/PIE flags')
++    if 'Code Model' in levels:
++        raise ValueError('explicit code model requires separate certification')
++    if command_id not in metadata:
++        raise ValueError('missing original command: backend policy cannot be certified')
++    recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
++        lambda match: chr(int(match[1], 16)), metadata[command_id]))
++    policy = classify_options(recorded_command, arch)
++    flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
++             *BACKEND_FLAGS, '-ffp-contract='+policy['fp_contract'], '-c']
++    flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
++              [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
++    return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
++                target_features=sorted(features), flags=flags, evidence=retained,
++                recorded_command=recorded_command, policy=policy)
++
++
++def pic_relocations(data):
++    """Reject absolute relocations in read-only allocated x86_64 sections.
++
++    Debug relocations are excluded. Absolute 32-bit relocations against
++    non-absolute symbols are also rejected in writable allocated sections.
++    PC-relative relocations are not all forbidden: e.g. hidden symbols and
++    .eh_frame legitimately use them. A consumer GNU ld -shared check follows.
++    """
++    if member_kind(data) != 'machine' or data[4:6] != b'\x02\x01' or struct.unpack_from('<H', data, 18)[0] != 62:
++        raise ValueError('not x86_64 ELF64 little-endian ET_REL')
++    off = struct.unpack_from('<Q', data, 40)[0]
++    stride, count = struct.unpack_from('<HH', data, 58)
++    if not count:
++        count = struct.unpack_from('<IIQQQQIIQQ', data, off)[5]
++    sections = [struct.unpack_from('<IIQQQQIIQQ', data, off+i*stride) for i in range(count)]
++    checked, forbidden = 0, []
++    for section in sections:
++        if section[1] not in (4, 9):
++            continue
++        target = sections[section[7]]
++        if not target[2] & 2:  # SHF_ALLOC; excludes all debug sections
++            continue
++        symbols = sections[section[6]]
++        for pos in range(section[4], section[4]+section[5], section[9]):
++            _, info = struct.unpack_from('<QQ', data, pos)
++            kind, symbol_index = info & 0xffffffff, info >> 32
++            symbol = struct.unpack_from('<IBBHQQ', data, symbols[4]+symbol_index*symbols[9])
++            checked += 1
++            # SHN_ABS references do not need runtime relocation.
++            if symbol[3] != 0xfff1 and (kind in (10, 11) or (kind == 1 and not target[2] & 1)):
++                forbidden.append(dict(type=kind, target_section=section[7], symbol_index=symbol_index))
++    return dict(checked=checked, forbidden=forbidden)
++
++
++
++def atomic_json(path, value):
++    path = Path(path)
++    fd, name = tempfile.mkstemp(prefix='.'+path.name+'.', dir=path.parent)
++    try:
++        with os.fdopen(fd, 'w') as stream:
++            json.dump(value, stream, indent=2)
++            stream.write('\n')
++        os.replace(name, path)
++    finally:
++        if os.path.exists(name):
++            os.unlink(name)
++
++
++class Commands:
++    def __init__(self, address_space_bytes=4*1024**3, timeout=600):
++        self.stop = threading.Event()
++        self.lock = threading.Lock()
++        self.children = set()
++        self.address_space_bytes = address_space_bytes
++        self.timeout = timeout
++        self.signal_received = None
++        self.cancelled_at = None
++        self.failure_reason = None
++
++    def interrupted(self, sig, frame):
++        # Python handlers run in the main thread: never acquire a worker lock here.
++        self.signal_received = sig
++
++    def cancel(self, reason=None):
++        with self.lock:
++            if reason is not None and self.failure_reason is None:
++                self.failure_reason = reason
++            if self.cancelled_at is None:
++                self.cancelled_at = time.monotonic()
++            self.stop.set()
++            for child in self.children:
++                try:
++                    os.killpg(child.pid, signal.SIGTERM)
++                except ProcessLookupError:
++                    pass
++
++    def check(self):
++        if self.signal_received is not None:
++            self.cancel()
++            raise RuntimeError('cancelled by signal '+str(self.signal_received))
++        if self.stop.is_set():
++            raise RuntimeError('cancelled after: '+self.failure_reason if self.failure_reason else 'cancelled after command failure')
++
++    def run(self, argv, prefix, stdout=None):
++        self.check()
++        prefix = Path(prefix)
++        timing, log = prefix.with_suffix('.time'), prefix.with_suffix('.log')
++        command = ['/usr/bin/prlimit', '--as='+str(self.address_space_bytes), '--core=0',
++                   '--', *map(str, argv)]
++        start = time.monotonic()
++        reason, status, usage, reaped = None, None, None, False
++        with log.open('wb') as err:
++            with self.lock:
++                if self.stop.is_set() or self.signal_received is not None:
++                    raise RuntimeError('cancelled before process launch')
++                child = subprocess.Popen(command, stdout=stdout if stdout is not None else err,
++                                         stderr=err, start_new_session=True)
++                self.children.add(child)
++            try:
++                while True:
++                    now = time.monotonic()
++                    if self.signal_received is not None:
++                        reason = 'signal '+str(self.signal_received)
++                        self.cancel(reason)
++                    if now-start >= self.timeout and not reaped:
++                        reason = 'command timeout after '+str(self.timeout)+' s'
++                        self.cancel(reason)
++                    if self.stop.is_set():
++                        reason = reason or 'cancelled after command failure'
++                        if now-self.cancelled_at >= 3:
++                            try:
++                                os.killpg(child.pid, signal.SIGKILL)
++                            except ProcessLookupError:
++                                pass
++                    if not reaped:
++                        pid, child_status, child_usage = os.wait4(child.pid, os.WNOHANG)
++                        if pid:
++                            status, usage, reaped = child_status, child_usage, True
++                            child.returncode = os.waitstatus_to_exitcode(status)
++                            if child.returncode:
++                                reason = reason or 'command failed'
++                                self.cancel(reason)  # Includes descendants after the leader exits.
++                    if reaped and (not self.stop.is_set() or now-self.cancelled_at >= 3):
++                        break
++                    time.sleep(0.05)
++            finally:
++                if not reaped:
++                    self.cancel()
++                    remaining = 3-(time.monotonic()-self.cancelled_at)
++                    if remaining > 0:
++                        time.sleep(remaining)
++                    try:
++                        os.killpg(child.pid, signal.SIGKILL)
++                    except ProcessLookupError:
++                        pass
++                    _, status, usage = os.wait4(child.pid, 0)
++                    child.returncode = os.waitstatus_to_exitcode(status)
++                with self.lock:
++                    self.children.discard(child)
++        elapsed, rc = time.monotonic()-start, child.returncode
++        record = dict(argv=list(map(str, argv)), bounded_argv=command, pid=child.pid,
++                      elapsed_seconds=elapsed, exit=rc, wall=elapsed,
++                      user=usage.ru_utime, sys=usage.ru_stime, max_rss_kib=usage.ru_maxrss,
++                      accounting='os.wait4(WNOHANG); Linux ru_maxrss is KiB',
++                      timeout_seconds=self.timeout, failure_reason=reason,
++                      stderr=log.read_text(errors='replace'))
++        record['time_raw'] = f"{elapsed:.9f} {usage.ru_utime:.9f} {usage.ru_stime:.9f} {usage.ru_maxrss} {rc}\n"
++        timing.write_text(record['time_raw'])
++        atomic_json(prefix.with_suffix('.json'), record)
++        if rc or reason:
++            self.cancel()
++            raise RuntimeError(f'{reason or "command failed"} ({rc}): {argv}; see {log}')
++        self.check()
++        return record
++
++
++def parse_nm(text):
++    result = []
++    for line in text.splitlines():
++        if not line.strip():
++            continue
++        match = re.fullmatch(r'\s*(?:[0-9A-Fa-f-]+\s+)?([A-Za-z?])\s+(.+)', line)
++        if not match:
++            raise ValueError('unrecognized llvm-nm output: '+line)
++        result.append((match[1], match[2]))
++    return result
++
++
++def compare_symbols(before, after):
++    native_names = {name for kind, name in after}
++    missing = [(kind, name) for kind, name in before if name not in native_names]
++    strong_missing = [(kind, name) for kind, name in missing
++                      if kind not in ('W', 'V', 'U', 'w', 'v', 'u') and not kind.islower()]
++    return dict(before_count=len(before), after_count=len(after),
++                missing_by_type=dict(Counter(kind for kind, name in missing)),
++                missing=missing, strong_missing=strong_missing)
++
++
++def check_symbols(nm, source, target, command):
++    rows = []
++    for label, path in [('bitcode', source), ('native', target)]:
++        output = source.parent/(label+'-symbols.txt')
++        with output.open('wb') as stream:
++            command.run([nm, '--defined-only', '--extern-only', str(path)],
++                        source.parent/(label+'-nm'), stdout=stream)
++        rows.append(parse_nm(output.read_text()))
++    result = compare_symbols(*rows)
++    atomic_json(source.parent/'symbols.json', dict(result, bitcode_symbols=rows[0], native_symbols=rows[1]))
++    if result['strong_missing']:
++        raise ValueError('strong defined symbols missing after conversion: '+repr(result['strong_missing']))
++    return result
++
++
++def validate_archive(archive):
++    if archive.is_symlink():
++        raise ValueError('archive symlink not certified: '+str(archive))
++    data = inspect(archive)
++    if data['thin']:
++        raise ValueError('thin archive is not supported: '+str(archive))
++    if data['other']:
++        raise ValueError('other-format archive members are not supported: '+str(archive))
++    return data
++
++
++def validate_tools(build, compiler, disassembler, nm, command, output):
++    if not (build/'CMakeCache.txt').is_file():
++        raise ValueError('missing CMakeCache.txt under --build: '+str(build))
++    for label, tool in [('compiler', compiler), ('disassembler', disassembler), ('nm', nm)]:
++        if not tool.is_file() or not os.access(tool, os.X_OK):
++            raise ValueError('missing or non-executable --'+label+': '+str(tool))
++    version = output/'compiler-version.txt'
++    with version.open('wb') as stream:
++        command.run([compiler, '--version'], output/'compiler-version-command', stdout=stream)
++    text = version.read_text()
++    match = re.search(r'clang version (\d+)\.', text)
++    if not match or int(match[1]) != CERTIFIED_LLVM_MAJOR:
++        raise ValueError('uncertified compiler major (required 22): '+text.strip())
++    return dict(compiler=str(compiler), version=text, compiler_sha256=sha(compiler),
++                disassembler=str(disassembler), nm=str(nm))
++
++
++def reset_evidence(root, output, build):
++    root, output, build = root.resolve(), output.resolve(), build.resolve()
++    if (root == Path('/') or not root.is_dir() or not build.is_dir() or
++            output == build or build.is_relative_to(output) or root.is_relative_to(output)
++            or output.is_relative_to(root)):
++        raise ValueError('unsafe or overlapping install/build/evidence directories')
++    if output.exists():
++        shutil.rmtree(output)
++    output.mkdir(parents=True)
++
++
++def atomic_install(candidate, destination, expected_sha):
++    mode = stat.S_IMODE(destination.stat().st_mode)
++    fd, name = tempfile.mkstemp(prefix='.'+destination.name+'.native-', dir=destination.parent)
++    os.close(fd)
++    try:
++        shutil.copyfile(candidate, name)
++        if sha(name) != expected_sha:
++            raise ValueError('temporary archive copy SHA mismatch: '+str(destination))
++        os.chmod(name, mode)
++        os.replace(name, destination)
++        if sha(destination) != expected_sha:
++            raise ValueError('installed archive SHA mismatch: '+str(destination))
++    finally:
++        if os.path.exists(name):
++            os.unlink(name)
++
++
++def cleanup_evidence(output):
++    archives = output/'archives'
++    if archives.exists():
++        shutil.rmtree(archives)
++    # Keep JSON audit records, not bitcode/ELF/text-IR/nm/command-log payloads.
++    for path in output.rglob('*'):
++        if path.is_file() and path.suffix != '.json':
++            path.unlink()
++
++def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
++            address_space_bytes=4*1024**3, command=None):
++    root, output, build = Path(root).resolve(), Path(output).resolve(), Path(build).resolve()
++    if arch not in CERTIFIED_OPTIMIZATION or jobs < 1 or address_space_bytes < 1:
++        raise ValueError('invalid architecture or resource parameters')
++    reset_evidence(root, output, build)
++    command = command or Commands(address_space_bytes)
++    summary = dict(started=time.time(), input_root=str(root), output_root=str(output),
++                   arch=arch, workers=jobs, as_bytes=address_space_bytes, archives=[],
++                   status='CONVERTING', missing_symbols_by_type={})
++    def save():
++        atomic_json(output/'summary.json', summary)
++    save()
++    old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
++    try:
++        summary['tools'] = validate_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output)
++        archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
++        summary['scanned_archives'] = len(archives)
++        summary['native_archives_skipped'] = sum(not data['bitcode'] for archive, data in archives)
++        for archive, before in archives:
++            command.check()
++            if not before['bitcode']:
++                continue
++            rel = archive.relative_to(root)
++            work = output/'members'/rel
++            work.mkdir(parents=True)
++            atomic_json(work/'before.json', before)
++            paths = []
++            with archive.open('rb') as stream:
++                for member in before['members']:
++                    if Path(member['name']).name != member['name'] or member['name'] in ('.', '..'):
++                        raise ValueError('unsafe archive member name')
++                    folder = work/f"{member['ordinal']:05d}"
++                    folder.mkdir()
++                    source = folder/'input.bc'
++                    target = folder/member['name']
++                    if target == source:
++                        raise ValueError('reserved input name collision')
++                    stream.seek(member['offset'])
++                    payload = stream.read(member['size'])
++                    if hashlib.sha256(payload).hexdigest() != member['sha256']:
++                        raise ValueError('extracted member SHA mismatch')
++                    (source if member['kind'] == 'bitcode' else target).write_bytes(payload)
++                    paths.append((member, source, target))
++            def process(item):
++                member, source, target = item
++                command.check()
++                if member['kind'] == 'machine':
++                    if sha(target) != member['sha256']:
++                        raise ValueError('native member changed')
++                    relocs = pic_relocations(target.read_bytes())
++                    atomic_json(source.parent/'relocations.json', relocs)
++                    return dict(ordinal=member['ordinal'], name=member['name'], preserved=True,
++                                relocation_check=relocs)
++                text_ir = source.with_suffix('.ll')
++                with text_ir.open('wb') as out:
++                    command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
++                with text_ir.open() as lines:
++                    settings = ir_settings(lines, arch=arch)
++                atomic_json(source.parent/'ir-settings.json', settings)
++                text_ir.unlink()
++                record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
++                data = target.read_bytes()
++                relocs = pic_relocations(data)
++                atomic_json(source.parent/'relocations.json', relocs)
++                if settings['pic_level'] and relocs['forbidden']:
++                    raise ValueError('non-PIC relocation in '+str(target))
++                symbols = check_symbols(nm, source, target, command)
++                return dict(ordinal=member['ordinal'], name=member['name'], preserved=False,
++                            settings=settings, conversion=record, symbols=symbols, sha256=sha(target))
++            results = []
++            iterator = iter(paths)
++            with ThreadPoolExecutor(max_workers=jobs) as pool:
++                pending = {pool.submit(process, item) for item in list(next(iterator, None) for _ in range(jobs)) if item is not None}
++                try:
++                    while pending:
++                        command.check()
++                        done, pending = wait(pending, timeout=0.05, return_when=FIRST_COMPLETED)
++                        for future in done:
++                            results.append(future.result())
++                        for _ in done:
++                            item = next(iterator, None)
++                            if item is not None:
++                                pending.add(pool.submit(process, item))
++                except BaseException:
++                    command.cancel()
++                    for future in pending:
++                        future.cancel()
++                    raise
++            target_archive = output/'archives'/rel
++            target_archive.parent.mkdir(parents=True, exist_ok=True)
++            command.run(['/usr/bin/ar', 'qcDS', str(target_archive), *[str(t) for _, _, t in paths]], work/'pack')
++            command.run(['/usr/bin/ar', 'sD', str(target_archive)], work/'index')
++            after = inspect(target_archive)
++            atomic_json(work/'after.json', after)
++            if [(m['name'], m['occurrence']) for m in before['members']] != [(m['name'], m['occurrence']) for m in after['members']]:
++                raise ValueError('member identity or order changed')
++            if after['bitcode'] or after['other'] or not after['index_equals_machine_symbols']:
++                raise ValueError('output format/index mismatch')
++            for old, new in zip(before['members'], after['members']):
++                if old['kind'] == 'machine' and old['sha256'] != new['sha256']:
++                    raise ValueError('native member not preserved in archive')
++            missing = Counter()
++            for result in results:
++                missing.update(result.get('symbols', {}).get('missing_by_type', {}))
++            record = dict(path=str(rel), before_sha256=before['sha256'], after_sha256=after['sha256'],
++                          before_bytes=before['bytes'], after_bytes=after['bytes'], members=before['member_count'],
++                          converted=before['bitcode'], preserved=before['machine'], index_entries=after['index_entries'],
++                          debug_members=sum(bool(m['debug_sections']) for m in after['members']),
++                          missing_symbols_by_type=dict(missing), results=sorted(results, key=lambda x:x['ordinal']))
++            summary['archives'].append(record)
++            total_missing = Counter(summary['missing_symbols_by_type']); total_missing.update(missing)
++            summary['missing_symbols_by_type'] = dict(total_missing)
++            save()
++            print(json.dumps({k:v for k,v in record.items() if k!='results'}), flush=True)
++            for _, source, target in paths:
++                if source.exists():
++                    source.unlink()
++                target.unlink()
++        command.check()
++        summary['status'] = 'CONVERTED'
++        return summary
++    except BaseException as error:
++        command.cancel()
++        summary.update(status='FAILED', reason=str(error))
++        raise
++    finally:
++        try:
++            summary['elapsed_seconds'] = time.time()-summary['started']
++            cancelled = summary['status'] == 'CONVERTED' and command.signal_received is not None
++            if cancelled:
++                command.cancel()
++                summary.update(status='FAILED', reason='signal '+str(command.signal_received))
++            save()
++            if cancelled:
++                raise RuntimeError(summary['reason'])
++        finally:
++            for sig, handler in old_handlers.items():
++                signal.signal(sig, handler)
++
++
++def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
++            address_space_bytes=4*1024**3):
++    root, output = Path(root).resolve(), Path(output).resolve()
++    command = Commands(address_space_bytes)
++    old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
++    result = None
++    try:
++        print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
++        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command)
++        command.check()
++        result['status'] = 'INSTALLING'
++        atomic_json(output/'summary.json', result)
++        for record in result['archives']:
++            command.check()
++            destination, candidate = root/record['path'], output/'archives'/record['path']
++            if sha(destination) != record['before_sha256'] or sha(candidate) != record['after_sha256']:
++                raise ValueError('archive identity changed before atomic installation')
++            atomic_install(candidate, destination, record['after_sha256'])
++            record['installed'] = True
++            atomic_json(output/'summary.json', result)
++            print('NATIVE_ARCHIVE_INSTALLED', json.dumps({k:v for k,v in record.items() if k!='results'}), flush=True)
++        command.check()
++        cleanup_evidence(output)
++        result.update(status='PASS', install_finished=time.time(), large_files_deleted=True)
++        atomic_json(output/'summary.json', result)
++        if not result['archives']:
++            print('NATIVE_ARCHIVES_SKIP all archives already native', flush=True)
++        command.check()
++        print('NATIVE_ARCHIVES_END', time.time(), 'PASS', len(result['archives']), flush=True)
++        return result
++    except BaseException as error:
++        command.cancel()
++        if result is not None:
++            result.update(status='INSTALL_FAILED', reason=str(error))
++            atomic_json(output/'summary.json', result)
++        raise
++    finally:
++        for sig, handler in old_handlers.items():
++            signal.signal(sig, handler)
++
++
++def install_main():
++    parser = argparse.ArgumentParser(description='Convert certified x86_64 ThinLTO archives before standard RPM stripping')
++    parser.add_argument('--root', type=Path, required=True)
++    parser.add_argument('--build', type=Path, required=True)
++    parser.add_argument('--evidence', type=Path, required=True)
++    parser.add_argument('--arch', choices=['x86_64'], required=True)
++    parser.add_argument('--compiler', type=Path, required=True)
++    parser.add_argument('--disassembler', type=Path, required=True)
++    parser.add_argument('--nm', type=Path, required=True)
++    parser.add_argument('--jobs', type=int, default=4)
++    parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
++    args = parser.parse_args()
++    install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
++            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes)
++
++
++if __name__ == '__main__':
++    install_main()
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 64705188b67c..8240282641a3 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -44,6 +44,11 @@ Source1001: llvm.manifest
+ Source1002: mlgo_arm_model.tar.gz
+ Source1003: mlgo_aarch_model.tar.gz
+ Source1004: mlgo_x86_model.tar.gz
++Source1005: llvm-static-archives-native.py
++
++%ifarch x86_64
++BuildRequires: util-linux
++%endif
+ 
+ %{!?mlgo_build_jobs: %define mlgo_build_jobs 6}
+ %{!?mlgo_verify_configure_only: %define mlgo_verify_configure_only 0}
+@@ -421,6 +426,20 @@ rm -rf %{buildroot}%{_libdir}/debug/*
+ rm -rf %{buildroot}/usr/lib/libear/*
+ rm -rf %{buildroot}/usr/lib/libscanbuild/*
+ 
++%ifarch x86_64
++# Run after compilation has finished; these workers do not overlap build jobs.
++# Preserve the standard RPM post-processing, including archive strip -g.
++rm -rf "%{_builddir}/%{buildsubdir}/build/native-archive-conversion"
++python3 %{SOURCE1005} --root "%{buildroot}" \
++    --build "%{_builddir}/%{buildsubdir}/build" \
++    --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
++    --arch x86_64 \
++    --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
++    --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
++    --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
++    --jobs 4 --address-space-bytes 4294967296 || exit 1
++%endif
++
+ %post -n clang -p /sbin/ldconfig
+ %postun -n clang -p /sbin/ldconfig
+ 
+-- 
+cgit v1.2.3
+

@@ -1,0 +1,122 @@
+COMMAND: readelf -W -h /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_x86_64_clang/usr/bin/clang-22
+EXIT: 0
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              DYN (Position-Independent Executable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x278ab80
+  Start of program headers:          64 (bytes into file)
+  Start of section headers:          139927416 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           56 (bytes)
+  Number of program headers:         12
+  Size of section headers:           64 (bytes)
+  Number of section headers:         32
+  Section header string table index: 31
+
+STDERR:
+
+COMMAND: readelf -W -S /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_x86_64_clang/usr/bin/clang-22
+EXIT: 0
+There are 32 section headers, starting at offset 0x8571f78:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [ 1] .interp           PROGBITS        00000000000002e0 0002e0 00001c 00   A  0   0  1
+  [ 2] .note.ABI-tag     NOTE            00000000000002fc 0002fc 000020 00   A  0   0  4
+  [ 3] .dynsym           DYNSYM          0000000000000320 000320 17e458 18   A  7   1  8
+  [ 4] .gnu.version      VERSYM          000000000017e778 17e778 01fdb2 02   A  3   0  2
+  [ 5] .gnu.version_r    VERNEED         000000000019e52c 19e52c 000310 00   A  7   6  4
+  [ 6] .gnu.hash         GNU_HASH        000000000019e840 19e840 06f258 00   A  3   0  8
+  [ 7] .dynstr           STRTAB          000000000020da98 20da98 4b08c7 00   A  0   0  1
+  [ 8] .rela.dyn         RELA            00000000006be360 6be360 575e08 18   A  3   0  8
+  [ 9] .rela.plt         RELA            0000000000c34168 c34168 001fb0 18  AI  3  28  8
+  [10] .rodata           PROGBITS        0000000000c36140 c36140 12c3440 00 AMS  0   0 64
+  [11] .gcc_except_table PROGBITS        0000000001ef9580 1ef9580 0000d6 00   A  0   0  4
+  [12] .eh_frame_hdr     PROGBITS        0000000001ef9658 1ef9658 119f24 00   A  0   0  4
+  [13] .eh_frame         PROGBITS        0000000002013580 2013580 7765f0 00   A  0   0  8
+  [14] .text             PROGBITS        000000000278ab80 2789b80 5affa8f 00  AX  0   0 64
+  [15] .init             PROGBITS        000000000828a610 8289610 000017 00  AX  0   0  4
+  [16] .fini             PROGBITS        000000000828a628 8289628 000009 00  AX  0   0  4
+  [17] .plt              PROGBITS        000000000828a640 8289640 001530 00  AX  0   0 16
+  [18] .tdata            PROGBITS        000000000828cb70 828ab70 000004 00 WAT  0   0  4
+  [19] .tbss             NOBITS          000000000828cb78 828ab74 000039 00 WAT  0   0  8
+  [20] .fini_array       FINI_ARRAY      000000000828cb78 828ab78 000008 08  WA  0   0  8
+  [21] .init_array       INIT_ARRAY      000000000828cb80 828ab80 000f20 00  WA  0   0  8
+  [22] .data.rel.ro      PROGBITS        000000000828daa0 828baa0 2dbf88 00  WA  0   0 16
+  [23] .dynamic          DYNAMIC         0000000008569a28 8567a28 000220 10  WA  7   0  8
+  [24] .got              PROGBITS        0000000008569c48 8567c48 000610 00  WA  0   0  8
+  [25] .relro_padding    NOBITS          000000000856a258 8568258 000da8 00  WA  0   0  1
+  [26] .data             PROGBITS        000000000856b260 8568260 009128 00  WA  0   0 16
+  [27] .tm_clone_table   PROGBITS        0000000008574388 8571388 000000 00  WA  0   0  8
+  [28] .got.plt          PROGBITS        0000000008574388 8571388 000aa8 00  WA  0   0  8
+  [29] .bss              NOBITS          0000000008574e30 8571e30 08645a 00 WAo  0   0 16
+  [30] .gnu_debuglink    PROGBITS        0000000000000000 8571e30 000014 00      0   0  4
+  [31] .shstrtab         STRTAB          0000000000000000 8571e44 000131 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  D (mbind), l (large), p (processor specific)
+
+STDERR:
+
+COMMAND: readelf -W -d /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_x86_64_clang/usr/bin/clang-22
+EXIT: 0
+
+Dynamic section at offset 0x8567a28 contains 34 entries:
+  Tag        Type                         Name/Value
+ 0x000000000000001d (RUNPATH)            Library runpath: [$ORIGIN/../lib64]
+ 0x0000000000000001 (NEEDED)             Shared library: [librt.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libdl.so.2]
+ 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libz.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libstdc++.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]
+ 0x000000006ffffffb (FLAGS_1)            Flags: PIE
+ 0x0000000000000015 (DEBUG)              0x0
+ 0x0000000000000007 (RELA)               0x6be360
+ 0x0000000000000008 (RELASZ)             5725704 (bytes)
+ 0x0000000000000009 (RELAENT)            24 (bytes)
+ 0x000000006ffffff9 (RELACOUNT)          229353
+ 0x0000000000000017 (JMPREL)             0xc34168
+ 0x0000000000000002 (PLTRELSZ)           8112 (bytes)
+ 0x0000000000000003 (PLTGOT)             0x8574388
+ 0x0000000000000014 (PLTREL)             RELA
+ 0x0000000000000006 (SYMTAB)             0x320
+ 0x000000000000000b (SYMENT)             24 (bytes)
+ 0x0000000000000005 (STRTAB)             0x20da98
+ 0x000000000000000a (STRSZ)              4917447 (bytes)
+ 0x000000006ffffef5 (GNU_HASH)           0x19e840
+ 0x0000000000000019 (INIT_ARRAY)         0x828cb80
+ 0x000000000000001b (INIT_ARRAYSZ)       3872 (bytes)
+ 0x000000000000001a (FINI_ARRAY)         0x828cb78
+ 0x000000000000001c (FINI_ARRAYSZ)       8 (bytes)
+ 0x000000000000000c (INIT)               0x828a610
+ 0x000000000000000d (FINI)               0x828a628
+ 0x000000006ffffff0 (VERSYM)             0x17e778
+ 0x000000006ffffffe (VERNEED)            0x19e52c
+ 0x000000006fffffff (VERNEEDNUM)         6
+ 0x0000000000000000 (NULL)               0x0
+
+STDERR:
+
+COMMAND: readelf -W -n /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_x86_64_clang/usr/bin/clang-22
+EXIT: 0
+
+Displaying notes found in: .note.ABI-tag
+  Owner                Data size 	Description
+  GNU                  0x00000010	NT_GNU_ABI_TAG (ABI version tag)	    OS: Linux, ABI: 3.2.0
+
+STDERR:
+

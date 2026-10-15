@@ -1,0 +1,117 @@
+COMMAND: readelf -W -h /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/old_armv7l_clang-accel-x86_64-armv7l/emul/usr/bin/clang-reorder-fields
+EXIT: 0
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              DYN (Position-Independent Executable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0xbc30
+  Start of program headers:          64 (bytes into file)
+  Start of section headers:          126272 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           56 (bytes)
+  Number of program headers:         12
+  Size of section headers:           64 (bytes)
+  Number of section headers:         29
+  Section header string table index: 25
+
+STDERR:
+
+COMMAND: readelf -W -S /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/old_armv7l_clang-accel-x86_64-armv7l/emul/usr/bin/clang-reorder-fields
+EXIT: 0
+There are 29 section headers, starting at offset 0x1ed40:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [ 1] .gnu.version      VERSYM          0000000000001b90 001b90 00020e 02   A 26   0  2
+  [ 2] .gnu.version_r    VERNEED         0000000000001da0 001da0 000100 00   A  4   4  4
+  [ 3] .gnu.hash         GNU_HASH        0000000000001ea0 001ea0 000200 00   A 26   0  8
+  [ 4] .dynstr           STRTAB          00000000000020a0 0020a0 003e01 00   A  0   0  1
+  [ 5] .rela.dyn         RELA            0000000000005ea8 005ea8 001560 18   A 26   0  8
+  [ 6] .rela.plt         RELA            0000000000007408 007408 000de0 18  AI 26  22  8
+  [ 7] .rodata           PROGBITS        00000000000081f0 0081f0 000c94 00 AMS  0   0 16
+  [ 8] .eh_frame_hdr     PROGBITS        0000000000008e84 008e84 000574 00   A  0   0  4
+  [ 9] .eh_frame         PROGBITS        00000000000093f8 0093f8 00182c 00   A  0   0  8
+  [10] .text             PROGBITS        000000000000bc30 00ac30 0127df 00  AX  0   0 16
+  [11] .init             PROGBITS        000000000001e410 01d410 000017 00  AX  0   0  4
+  [12] .fini             PROGBITS        000000000001e428 01d428 000009 00  AX  0   0  4
+  [13] .plt              PROGBITS        000000000001e440 01d440 000950 00  AX  0   0 16
+  [14] .fini_array       FINI_ARRAY      000000000001fd90 01dd90 000008 08  WA  0   0  8
+  [15] .init_array       INIT_ARRAY      000000000001fd98 01dd98 000010 00  WA  0   0  8
+  [16] .data.rel.ro      PROGBITS        000000000001fda8 01dda8 0006f0 00  WA  0   0  8
+  [17] .dynamic          DYNAMIC         0000000000020498 01e498 000200 10  WA  4   0  8
+  [18] .got              PROGBITS        0000000000020698 01e698 0000b0 00  WA  0   0  8
+  [19] .relro_padding    NOBITS          0000000000020748 01e748 0008b8 00  WA  0   0  1
+  [20] .tm_clone_table   PROGBITS        0000000000021748 01e748 000000 00  WA  0   0  8
+  [21] .data             PROGBITS        0000000000021748 01e748 000008 00  WA  0   0  8
+  [22] .got.plt          PROGBITS        0000000000021750 01e750 0004b8 00  WA  0   0  8
+  [23] .bss              NOBITS          0000000000021c08 01ec08 0002c0 00  WA  0   0  8
+  [24] .gnu_debuglink    PROGBITS        0000000000000000 01ec08 000020 00      0   0  4
+  [25] .shstrtab         STRTAB          0000000000000000 01ec28 000112 00      0   0  1
+  [26] .dynsym           DYNSYM          0000000000022000 020000 0018a8 18   A  4   1  8
+  [27] .interp           PROGBITS        00000000000238a8 0218a8 000025 00   A  0   0  8
+  [28] .note.ABI-tag     NOTE            00000000000238d0 0218d0 000020 00   A  0   0  4
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  D (mbind), l (large), p (processor specific)
+
+STDERR:
+
+COMMAND: readelf -W -d /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/old_armv7l_clang-accel-x86_64-armv7l/emul/usr/bin/clang-reorder-fields
+EXIT: 0
+
+Dynamic section at offset 0x1e498 contains 32 entries:
+  Tag        Type                         Name/Value
+ 0x000000000000001d (RUNPATH)            Library runpath: [$ORIGIN/../lib64]
+ 0x0000000000000001 (NEEDED)             Shared library: [libclang-cpp.so.22.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libLLVM.so.22.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libstdc++.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x000000006ffffffb (FLAGS_1)            Flags: PIE
+ 0x0000000000000015 (DEBUG)              0x0
+ 0x0000000000000007 (RELA)               0x5ea8
+ 0x0000000000000008 (RELASZ)             5472 (bytes)
+ 0x0000000000000009 (RELAENT)            24 (bytes)
+ 0x000000006ffffff9 (RELACOUNT)          158
+ 0x0000000000000017 (JMPREL)             0x7408
+ 0x0000000000000002 (PLTRELSZ)           3552 (bytes)
+ 0x0000000000000003 (PLTGOT)             0x21750
+ 0x0000000000000014 (PLTREL)             RELA
+ 0x0000000000000006 (SYMTAB)             0x22000
+ 0x000000000000000b (SYMENT)             24 (bytes)
+ 0x0000000000000005 (STRTAB)             0x20a0
+ 0x000000000000000a (STRSZ)              15873 (bytes)
+ 0x000000006ffffef5 (GNU_HASH)           0x1ea0
+ 0x0000000000000019 (INIT_ARRAY)         0x1fd98
+ 0x000000000000001b (INIT_ARRAYSZ)       16 (bytes)
+ 0x000000000000001a (FINI_ARRAY)         0x1fd90
+ 0x000000000000001c (FINI_ARRAYSZ)       8 (bytes)
+ 0x000000000000000c (INIT)               0x1e410
+ 0x000000000000000d (FINI)               0x1e428
+ 0x000000006ffffff0 (VERSYM)             0x1b90
+ 0x000000006ffffffe (VERNEED)            0x1da0
+ 0x000000006fffffff (VERNEEDNUM)         4
+ 0x0000000000000000 (NULL)               0x0
+
+STDERR:
+
+COMMAND: readelf -W -n /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/old_armv7l_clang-accel-x86_64-armv7l/emul/usr/bin/clang-reorder-fields
+EXIT: 0
+
+Displaying notes found in: .note.ABI-tag
+  Owner                Data size 	Description
+  GNU                  0x00000010	NT_GNU_ABI_TAG (ABI version tag)	    OS: Linux, ABI: 3.2.0
+
+STDERR:
+

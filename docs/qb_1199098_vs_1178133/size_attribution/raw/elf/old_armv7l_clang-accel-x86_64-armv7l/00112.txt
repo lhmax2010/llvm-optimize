@@ -1,0 +1,110 @@
+COMMAND: readelf -W -h /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/old_armv7l_clang-accel-x86_64-armv7l/emul/usr/lib64/LLVMgold.so
+EXIT: 0
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              DYN (Shared object file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x0
+  Start of program headers:          64 (bytes into file)
+  Start of section headers:          74808 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           56 (bytes)
+  Number of program headers:         9
+  Size of section headers:           64 (bytes)
+  Number of section headers:         28
+  Section header string table index: 27
+
+STDERR:
+
+COMMAND: readelf -W -S /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/old_armv7l_clang-accel-x86_64-armv7l/emul/usr/lib64/LLVMgold.so
+EXIT: 0
+There are 28 section headers, starting at offset 0x12438:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [ 1] .dynsym           DYNSYM          0000000000000238 000238 000b88 18   A  6   1  8
+  [ 2] .gnu.version      VERSYM          0000000000000dc0 000dc0 0000f6 02   A  1   0  2
+  [ 3] .gnu.version_d    VERDEF          0000000000000eb8 000eb8 000038 00   A  6   2  4
+  [ 4] .gnu.version_r    VERNEED         0000000000000ef0 000ef0 0000e0 00   A  6   3  4
+  [ 5] .gnu.hash         GNU_HASH        0000000000000fd0 000fd0 000020 00   A  1   0  8
+  [ 6] .dynstr           STRTAB          0000000000000ff0 000ff0 00175d 00   A  0   0  1
+  [ 7] .rela.dyn         RELA            0000000000002750 002750 000408 18   A  1   0  8
+  [ 8] .rela.plt         RELA            0000000000002b58 002b58 0009d8 18  AI  1  24  8
+  [ 9] .rodata           PROGBITS        0000000000003530 003530 000b4c 00 AMS  0   0 16
+  [10] .eh_frame_hdr     PROGBITS        000000000000407c 00407c 000214 00   A  0   0  4
+  [11] .eh_frame         PROGBITS        0000000000004290 004290 000a34 00   A  0   0  8
+  [12] .init             PROGBITS        0000000000005cc4 004cc4 000017 00  AX  0   0  4
+  [13] .fini             PROGBITS        0000000000005cdc 004cdc 000009 00  AX  0   0  4
+  [14] .text             PROGBITS        0000000000005cf0 004cf0 00c8ab 00  AX  0   0 16
+  [15] .plt              PROGBITS        00000000000125a0 0115a0 0006a0 00  AX  0   0 16
+  [16] .fini_array       FINI_ARRAY      0000000000013c40 011c40 000008 08  WA  0   0  8
+  [17] .init_array       INIT_ARRAY      0000000000013c48 011c48 000010 00  WA  0   0  8
+  [18] .data.rel.ro      PROGBITS        0000000000013c58 011c58 0000f0 00  WA  0   0  8
+  [19] .dynamic          DYNAMIC         0000000000013d48 011d48 0001e0 10  WA  6   0  8
+  [20] .got              PROGBITS        0000000000013f28 011f28 000058 00  WA  0   0  8
+  [21] .relro_padding    NOBITS          0000000000013f80 011f80 000080 00  WA  0   0  1
+  [22] .tm_clone_table   PROGBITS        0000000000014f80 011f80 000000 00  WA  0   0  8
+  [23] .data             PROGBITS        0000000000014f80 011f80 000030 00  WA  0   0  8
+  [24] .got.plt          PROGBITS        0000000000014fb0 011fb0 000360 00  WA  0   0  8
+  [25] .bss              NOBITS          0000000000015310 012310 00033d 00  WA  0   0  8
+  [26] .gnu_debuglink    PROGBITS        0000000000000000 012310 000018 00      0   0  4
+  [27] .shstrtab         STRTAB          0000000000000000 012328 00010b 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  D (mbind), l (large), p (processor specific)
+
+STDERR:
+
+COMMAND: readelf -W -d /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/old_armv7l_clang-accel-x86_64-armv7l/emul/usr/lib64/LLVMgold.so
+EXIT: 0
+
+Dynamic section at offset 0x11d48 contains 30 entries:
+  Tag        Type                         Name/Value
+ 0x000000000000001d (RUNPATH)            Library runpath: [$ORIGIN/../lib64]
+ 0x0000000000000001 (NEEDED)             Shared library: [libLLVM.so.22.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libstdc++.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x000000006ffffffb (FLAGS_1)            Flags: NODELETE
+ 0x0000000000000007 (RELA)               0x2750
+ 0x0000000000000008 (RELASZ)             1032 (bytes)
+ 0x0000000000000009 (RELAENT)            24 (bytes)
+ 0x000000006ffffff9 (RELACOUNT)          21
+ 0x0000000000000017 (JMPREL)             0x2b58
+ 0x0000000000000002 (PLTRELSZ)           2520 (bytes)
+ 0x0000000000000003 (PLTGOT)             0x14fb0
+ 0x0000000000000014 (PLTREL)             RELA
+ 0x0000000000000006 (SYMTAB)             0x238
+ 0x000000000000000b (SYMENT)             24 (bytes)
+ 0x0000000000000005 (STRTAB)             0xff0
+ 0x000000000000000a (STRSZ)              5981 (bytes)
+ 0x000000006ffffef5 (GNU_HASH)           0xfd0
+ 0x0000000000000019 (INIT_ARRAY)         0x13c48
+ 0x000000000000001b (INIT_ARRAYSZ)       16 (bytes)
+ 0x000000000000001a (FINI_ARRAY)         0x13c40
+ 0x000000000000001c (FINI_ARRAYSZ)       8 (bytes)
+ 0x000000000000000c (INIT)               0x5cc4
+ 0x000000000000000d (FINI)               0x5cdc
+ 0x000000006ffffff0 (VERSYM)             0xdc0
+ 0x000000006ffffffc (VERDEF)             0xeb8
+ 0x000000006ffffffd (VERDEFNUM)          2
+ 0x000000006ffffffe (VERNEED)            0xef0
+ 0x000000006fffffff (VERNEEDNUM)         3
+ 0x0000000000000000 (NULL)               0x0
+
+STDERR:
+
+COMMAND: readelf -W -n /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/old_armv7l_clang-accel-x86_64-armv7l/emul/usr/lib64/LLVMgold.so
+EXIT: 0
+
+STDERR:
+

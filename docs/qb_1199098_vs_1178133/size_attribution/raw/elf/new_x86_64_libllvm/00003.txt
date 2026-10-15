@@ -1,0 +1,120 @@
+COMMAND: readelf -W -h /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_x86_64_libllvm/usr/lib64/libLLVM.so.22.1
+EXIT: 0
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              DYN (Shared object file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x0
+  Start of program headers:          64 (bytes into file)
+  Start of section headers:          90736504 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           56 (bytes)
+  Number of program headers:         10
+  Size of section headers:           64 (bytes)
+  Number of section headers:         31
+  Section header string table index: 30
+
+STDERR:
+
+COMMAND: readelf -W -S /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_x86_64_libllvm/usr/lib64/libLLVM.so.22.1
+EXIT: 0
+There are 31 section headers, starting at offset 0x5688778:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [ 1] .dynsym           DYNSYM          0000000000000270 000270 0f71d0 18   A  6   1  8
+  [ 2] .gnu.version      VERSYM          00000000000f7440 0f7440 01497c 02   A  1   0  2
+  [ 3] .gnu.version_d    VERDEF          000000000010bdbc 10bdbc 000038 00   A  6   2  4
+  [ 4] .gnu.version_r    VERNEED         000000000010bdf4 10bdf4 000340 00   A  6   6  4
+  [ 5] .gnu.hash         GNU_HASH        000000000010c138 10c138 042f78 00   A  1   0  8
+  [ 6] .dynstr           STRTAB          000000000014f0b0 14f0b0 2c5f4a 00   A  0   0  1
+  [ 7] .rela.dyn         RELA            0000000000415000 415000 285930 18   A  1   0  8
+  [ 8] .rela.plt         RELA            000000000069a930 69a930 0021d8 18  AI  1  27  8
+  [ 9] .rodata           PROGBITS        000000000069cb40 69cb40 11b2460 00 AMS  0   0 64
+  [10] .gcc_except_table PROGBITS        000000000184efa0 184efa0 0000d6 00   A  0   0  4
+  [11] .eh_frame_hdr     PROGBITS        000000000184f078 184f078 0a5ae4 00   A  0   0  4
+  [12] .eh_frame         PROGBITS        00000000018f4b60 18f4b60 41db7c 00   A  0   0  8
+  [13] .init             PROGBITS        0000000001d136dc 1d126dc 000017 00  AX  0   0  4
+  [14] .fini             PROGBITS        0000000001d136f4 1d126f4 000009 00  AX  0   0  4
+  [15] .text             PROGBITS        0000000001d13700 1d12700 383547e 00  AX  0   0 64
+  [16] .plt              PROGBITS        0000000005548b80 5547b80 0016a0 00  AX  0   0 16
+  [17] .tdata            PROGBITS        000000000554b220 5549220 000004 00 WAT  0   0  4
+  [18] .tbss             NOBITS          000000000554b228 5549224 000038 00 WAT  0   0  8
+  [19] .fini_array       FINI_ARRAY      000000000554b228 5549228 000008 08  WA  0   0  8
+  [20] .init_array       INIT_ARRAY      000000000554b230 5549230 000f70 00  WA  0   0  8
+  [21] .data.rel.ro      PROGBITS        000000000554c1a0 554a1a0 136da0 00  WA  0   0 16
+  [22] .dynamic          DYNAMIC         0000000005682f40 5680f40 000250 10  WA  6   0  8
+  [23] .got              PROGBITS        0000000005683190 5681190 0038d8 00  WA  0   0  8
+  [24] .relro_padding    NOBITS          0000000005686a68 5684a68 000598 00  WA  0   0  1
+  [25] .tm_clone_table   PROGBITS        0000000005687a68 5684a68 000000 00  WA  0   0  8
+  [26] .data             PROGBITS        0000000005687a70 5684a70 003060 00  WA  0   0 16
+  [27] .got.plt          PROGBITS        000000000568aad0 5687ad0 000b60 00  WA  0   0  8
+  [28] .bss              NOBITS          000000000568b630 5688630 08a6ea 00 WAo  0   0 16
+  [29] .gnu_debuglink    PROGBITS        0000000000000000 5688630 00001c 00      0   0  4
+  [30] .shstrtab         STRTAB          0000000000000000 568864c 00012a 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  D (mbind), l (large), p (processor specific)
+
+STDERR:
+
+COMMAND: readelf -W -d /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_x86_64_libllvm/usr/lib64/libLLVM.so.22.1
+EXIT: 0
+
+Dynamic section at offset 0x5680f40 contains 37 entries:
+  Tag        Type                         Name/Value
+ 0x000000000000001d (RUNPATH)            Library runpath: [$ORIGIN/../lib64]
+ 0x0000000000000001 (NEEDED)             Shared library: [librt.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libdl.so.2]
+ 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libz.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libxml2.so.16]
+ 0x0000000000000001 (NEEDED)             Shared library: [libstdc++.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]
+ 0x000000000000000e (SONAME)             Library soname: [libLLVM.so.22.1]
+ 0x000000006ffffffb (FLAGS_1)            Flags: NODELETE
+ 0x0000000000000007 (RELA)               0x415000
+ 0x0000000000000008 (RELASZ)             2644272 (bytes)
+ 0x0000000000000009 (RELAENT)            24 (bytes)
+ 0x000000006ffffff9 (RELACOUNT)          89278
+ 0x0000000000000017 (JMPREL)             0x69a930
+ 0x0000000000000002 (PLTRELSZ)           8664 (bytes)
+ 0x0000000000000003 (PLTGOT)             0x568aad0
+ 0x0000000000000014 (PLTREL)             RELA
+ 0x0000000000000006 (SYMTAB)             0x270
+ 0x000000000000000b (SYMENT)             24 (bytes)
+ 0x0000000000000005 (STRTAB)             0x14f0b0
+ 0x000000000000000a (STRSZ)              2907978 (bytes)
+ 0x000000006ffffef5 (GNU_HASH)           0x10c138
+ 0x0000000000000019 (INIT_ARRAY)         0x554b230
+ 0x000000000000001b (INIT_ARRAYSZ)       3952 (bytes)
+ 0x000000000000001a (FINI_ARRAY)         0x554b228
+ 0x000000000000001c (FINI_ARRAYSZ)       8 (bytes)
+ 0x000000000000000c (INIT)               0x1d136dc
+ 0x000000000000000d (FINI)               0x1d136f4
+ 0x000000006ffffff0 (VERSYM)             0xf7440
+ 0x000000006ffffffc (VERDEF)             0x10bdbc
+ 0x000000006ffffffd (VERDEFNUM)          2
+ 0x000000006ffffffe (VERNEED)            0x10bdf4
+ 0x000000006fffffff (VERNEEDNUM)         6
+ 0x0000000000000000 (NULL)               0x0
+
+STDERR:
+
+COMMAND: readelf -W -n /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_x86_64_libllvm/usr/lib64/libLLVM.so.22.1
+EXIT: 0
+
+STDERR:
+

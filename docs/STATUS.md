@@ -4,7 +4,9 @@
 
 **长期署名规则（2026-10-15 PM 裁决，优先于历史署名约定）**：作者、提交者及 Signed-off-by 使用本机全局身份 `liushanshan <ss0217.liu@samsung.com>`，或显式使用 `Hao Lin <hao.lin@samsung.com>`；任何后续提交、提交说明和交付文档均不再使用旧别名。不修改全局 Git 配置。详见 §4。
 
-**当前任务（Quickbuild 1199098 vs 1178133 证据采集）已完成采集与缺口登记**：两个 Unified/standard/armv7l 的页面、数据接口和完整 Rust 日志已存 raw；共同包版本及源码提交映射一致，Quickbuild 总时长差与 Profiling 跨度差分别保留。关联 Base 快照三架构 LLVM 日志、精确提交 spec/补丁、下游实际安装/链接器记录及六个 llvm-static-devel RPM 的逐归档扫描完成。x86_64/aarch64 Unified Rust 日志、实际 checkout 分支参数和 Base 整体时序未获取，原因见 [FINDINGS](qb_1199098_vs_1178133/FINDINGS.md)。所有数字附 raw 来源及行号；只记录事实，不归因。RPM/解包归档只在 temp；未编译、改产品代码或提交 Gerrit。
+**当前任务（Base LLVM / clang-accel RPM 体积逐文件取证）已完成**：两快照指定 RPM 的目录/头字段、全路径大小/SHA256、ELF 动态依赖/节表和源码区间提交/完整 diff 均已保存。逐文件配对、排行、互斥与重叠分类金额及 clang-accel 来源匹配见 [SIZE_FINDINGS](qb_1199098_vs_1178133/size_attribution/SIZE_FINDINGS.md) 和同目录 CSV；数字均附 raw 文件行号。qemu-accel 端点 diff 与正向/反向提交集合分开记录；无匹配不当作源码变化证明，分类占比不当作因果比例。指定包取证与交叉核验完成，build-id 未列出及单项优化/压缩贡献不可分离的边界已注明。RPM 仅留 temp/qb_size，逐包解包目录均已删除；未编译、改产品代码或提交 Gerrit。
+
+**上一任务（Quickbuild 1199098 vs 1178133 证据采集）已完成采集与缺口登记**：两个 Unified/standard/armv7l 的页面、数据接口和完整 Rust 日志已存 raw；共同包版本及源码提交映射一致，Quickbuild 总时长差与 Profiling 跨度差分别保留。关联 Base 快照三架构 LLVM 日志、精确提交 spec/补丁、下游实际安装/链接器记录及六个 llvm-static-devel RPM 的逐归档扫描完成。x86_64/aarch64 Unified Rust 日志、实际 checkout 分支参数和 Base 整体时序未获取，原因见 [FINDINGS](qb_1199098_vs_1178133/FINDINGS.md)。所有数字附 raw 来源及行号；只记录事实，不归因。RPM/解包归档只在 temp；未编译、改产品代码或提交 Gerrit。
 
 **上一任务（356949 PS2说明修订）已完成**：唯一授权Gerrit push上传PS2 `a18ce53708d3b6ef596dcd27d0b51e18ce1db282`，状态NEW，Gerrit `NO_CODE_CHANGE`；tree `480be0836bc470dd027f73882b4082d0ce0e5000`、parent、Change-Id及补丁diff正文不变，远端说明同字节。只读1a–1f支持发布零-g预期；53对限定为ELF规则比较，7对后端归因；GNU ld及addrsig措辞按实证收窄；补明全量构建使用clang-22、别名验证边界。见[docs/50 §11](50_archive_followup_review.md#11-ps2-提交说明修订)。未改Source/spec，未构建/转换，未进入BOLT或交接树；发布完整打包及addrsig独立修复仍挂账。
 

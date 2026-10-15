@@ -1,0 +1,120 @@
+COMMAND: readelf -W -h /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_armv7l_clang-accel-x86_64-armv7l/emul/usr/bin/llvm-ifs
+EXIT: 0
+ELF Header:
+  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              DYN (Position-Independent Executable file)
+  Machine:                           Advanced Micro Devices X86-64
+  Version:                           0x1
+  Entry point address:               0x163120
+  Start of program headers:          64 (bytes into file)
+  Start of section headers:          4794904 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               64 (bytes)
+  Size of program headers:           56 (bytes)
+  Number of program headers:         13
+  Size of section headers:           64 (bytes)
+  Number of section headers:         30
+  Section header string table index: 26
+
+STDERR:
+
+COMMAND: readelf -W -S /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_armv7l_clang-accel-x86_64-armv7l/emul/usr/bin/llvm-ifs
+EXIT: 0
+There are 30 section headers, starting at offset 0x492a18:
+
+Section Headers:
+  [Nr] Name              Type            Address          Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            0000000000000000 000000 000000 00      0   0  0
+  [ 1] .gnu.version      VERSYM          0000000000001580 001580 000188 02   A 27   0  2
+  [ 2] .gnu.version_r    VERNEED         0000000000001708 001708 000220 00   A  4   5  4
+  [ 3] .gnu.hash         GNU_HASH        0000000000001928 001928 000020 00   A 27   0  8
+  [ 4] .dynstr           STRTAB          0000000000001948 001948 001411 00   A  0   0  1
+  [ 5] .rela.dyn         RELA            0000000000002d60 002d60 022a88 18   A 27   0  8
+  [ 6] .rela.plt         RELA            00000000000257e8 0257e8 000fd8 18  AI 27  23  8
+  [ 7] .rodata           PROGBITS        00000000000267c0 0267c0 0ea870 00 AMS  0   0 16
+  [ 8] .eh_frame_hdr     PROGBITS        0000000000111030 111030 00a6ec 00   A  0   0  4
+  [ 9] .eh_frame         PROGBITS        000000000011b720 11b720 046a00 00   A  0   0  8
+  [10] .text             PROGBITS        0000000000163120 162120 31fb1f 00  AX  0   0 16
+  [11] .init             PROGBITS        0000000000482c40 481c40 000017 00  AX  0   0  4
+  [12] .fini             PROGBITS        0000000000482c58 481c58 000009 00  AX  0   0  4
+  [13] .plt              PROGBITS        0000000000482c70 481c70 000aa0 00  AX  0   0 16
+  [14] .tbss             NOBITS          0000000000483710 482710 000018 00 WAT  0   0  8
+  [15] .fini_array       FINI_ARRAY      0000000000484710 482710 000008 08  WA  0   0  8
+  [16] .init_array       INIT_ARRAY      0000000000484718 482718 0000d0 00  WA  0   0  8
+  [17] .data.rel.ro      PROGBITS        00000000004847f0 4827f0 00f818 00  WA  0   0 16
+  [18] .dynamic          DYNAMIC         0000000000494008 492008 000220 10  WA  4   0  8
+  [19] .got              PROGBITS        0000000000494228 492228 0000f0 00  WA  0   0  8
+  [20] .relro_padding    NOBITS          0000000000494318 492318 000ce8 00  WA  0   0  1
+  [21] .tm_clone_table   PROGBITS        0000000000495318 492318 000000 00  WA  0   0  8
+  [22] .data             PROGBITS        0000000000495318 492318 000070 00  WA  0   0  8
+  [23] .got.plt          PROGBITS        0000000000495388 492388 000560 00  WA  0   0  8
+  [24] .bss              NOBITS          00000000004958f0 4928e8 0045b8 00  WA  0   0 16
+  [25] .gnu_debuglink    PROGBITS        0000000000000000 4928e8 000014 00      0   0  4
+  [26] .shstrtab         STRTAB          0000000000000000 4928fc 000118 00      0   0  1
+  [27] .dynsym           DYNSYM          000000000049a000 494000 001260 18   A  4   1  8
+  [28] .interp           PROGBITS        000000000049b260 495260 000025 00   A  0   0  8
+  [29] .note.ABI-tag     NOTE            000000000049b288 495288 000020 00   A  0   0  4
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  D (mbind), l (large), p (processor specific)
+
+STDERR:
+
+COMMAND: readelf -W -d /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_armv7l_clang-accel-x86_64-armv7l/emul/usr/bin/llvm-ifs
+EXIT: 0
+
+Dynamic section at offset 0x492008 contains 34 entries:
+  Tag        Type                         Name/Value
+ 0x000000000000001d (RUNPATH)            Library runpath: [$ORIGIN/../lib64]
+ 0x0000000000000001 (NEEDED)             Shared library: [librt.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libdl.so.2]
+ 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libz.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libstdc++.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [ld-linux-x86-64.so.2]
+ 0x000000006ffffffb (FLAGS_1)            Flags: PIE
+ 0x0000000000000015 (DEBUG)              0x0
+ 0x0000000000000007 (RELA)               0x2d60
+ 0x0000000000000008 (RELASZ)             141960 (bytes)
+ 0x0000000000000009 (RELAENT)            24 (bytes)
+ 0x000000006ffffff9 (RELACOUNT)          5453
+ 0x0000000000000017 (JMPREL)             0x257e8
+ 0x0000000000000002 (PLTRELSZ)           4056 (bytes)
+ 0x0000000000000003 (PLTGOT)             0x495388
+ 0x0000000000000014 (PLTREL)             RELA
+ 0x0000000000000006 (SYMTAB)             0x49a000
+ 0x000000000000000b (SYMENT)             24 (bytes)
+ 0x0000000000000005 (STRTAB)             0x1948
+ 0x000000000000000a (STRSZ)              5137 (bytes)
+ 0x000000006ffffef5 (GNU_HASH)           0x1928
+ 0x0000000000000019 (INIT_ARRAY)         0x484718
+ 0x000000000000001b (INIT_ARRAYSZ)       208 (bytes)
+ 0x000000000000001a (FINI_ARRAY)         0x484710
+ 0x000000000000001c (FINI_ARRAYSZ)       8 (bytes)
+ 0x000000000000000c (INIT)               0x482c40
+ 0x000000000000000d (FINI)               0x482c58
+ 0x000000006ffffff0 (VERSYM)             0x1580
+ 0x000000006ffffffe (VERNEED)            0x1708
+ 0x000000006fffffff (VERNEEDNUM)         5
+ 0x0000000000000000 (NULL)               0x0
+
+STDERR:
+
+COMMAND: readelf -W -n /home/toolchain/Desktop/tmp_hfy/qb_analysis/llvm-optimize/temp/qb_size/extract/new_armv7l_clang-accel-x86_64-armv7l/emul/usr/bin/llvm-ifs
+EXIT: 0
+
+Displaying notes found in: .note.ABI-tag
+  Owner                Data size 	Description
+  GNU                  0x00000010	NT_GNU_ABI_TAG (ABI version tag)	    OS: Linux, ABI: 3.2.0
+
+STDERR:
+
