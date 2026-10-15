@@ -60,17 +60,17 @@ SHA绑定普通7df0ff90…与候选4ec07159…；readelf完整原文（含全部
 |---|---|---|---|
 |ELF类型|DYN/PIE(3)|DYN/PIE(3)|相同|
 |PT_INTERP|/lib64/ld-linux-x86-64.so.2|同左|相同|
-|GNU_RELRO|vaddr0x828cb70/filesz0x2dd6e8/memsz0x2de490/R|同左|相同|
+|GNU_RELRO flags/vaddr/filesz/memsz|R(4)/0x828cb70/0x2dd6e8/0x2de490|同左|续跑十二新门禁逐值相同；续跑十仅readelf范围记录|
 |GNU_STACK|RW(6)|RW(6)|相同，无执行权限|
 |PT_GNU_PROPERTY/.note.gnu.property|均无|均无|相同；不声称有IBT/SHSTK|
 |DT_FLAGS|无|无|相同|
 |DT_FLAGS_1|PIE/0x08000000|同左|相同|
 |DT_NEEDED|librt,libdl,libm,libz,libstdc++,libgcc_s,libc,ld-linux-x86-64（完整SONAME见原文）|同序列|相同|
-|.dynsym名称/绑定/可见性|65241条|65241条|逐条相同|
-|.gnu.version|65241个符号版本绑定|同左|相同|
+|.dynsym名称/绑定/类型/可见性/定义类别|65241条|65241条|续跑十二五元组逐条相同；原续跑十仅名称/绑定/可见性|
+|.gnu.version|65241个五元组与(提供文件,版本名)/hidden绑定|同左|续跑十二逐条相同|
 |.gnu.version_r|43条需求|同左|相同|
 
-helper新增security_properties/security_compare与security CLI，流水线strip-all之后及post启用，属性不符报具体类别；地址/大小不作比较。原始节/段范围及动态/字符串/版本表边界均失败关闭。返回属性与重符号数据的条数/SHA避免巨大构建日志。
+helper新增security_properties/security_compare与security CLI，流水线strip-all之后及post启用，属性不符报具体类别；续跑十当时未比较地址/大小。续跑十二新增RELRO flags/vaddr/filesz/memsz及范围检查；dynsym保留原始st_shndx，以名称/绑定/类型/可见性/定义类别比较，忽略符号地址/大小/所在代码节名；版本含提供文件名与hidden，另比DT_BIND_NOW存在和W+X LOAD。更新表格采用22真实复测，不追溯声称旧helper已比较新增字段。原始节/段范围及动态/字符串/版本表边界均失败关闭。返回属性与重符号数据的条数/SHA避免巨大构建日志。
 
 新增6个安全夹具（保持、删除GNU property、改栈权限、删除导出、改绑定、改可见性）全部PASS。全套146/146；比本轮开工138新增8，比原103累计新增43。一次旧post夹具输入修正：placeholder文件名fixture改为其identity已生成的真实before ELF，未mock掉新门禁；首次失败原文保留，修正后通过。本轮产品准备修正目前仅此一类一次。所有4GiB scopes已回收。
 
@@ -212,3 +212,20 @@ CPU2 / Intel(R) Core(TM) Ultra 7 265，intel_pstate/powersave，策略800000–5
 两目标各300次、共600次原样本，无删样或重跑；主判据均严格<0.98。ARM与x86_64相近，AArch64的候选/普通比更低。20独立源的两训练cohort重复输入合并全部10样本，留出每侧5样本；原30条目统计保持三组各10的权重，不混用口径。两目标分时测量，CPU/策略/方法与20相同，完整边界频率和负载原文均保存。
 
 收尾：60输入SHA再次相同；普通clang/4ec候选、22RPM全SHA/大小、归档证据及原源码元数据、禁用cache/ninja SHA不变，原缓存47987文件/96881772832B。源HEAD仍b7e61fb92b34795868230e4f9cee8e3ec65496f6、spec/helper SHA不变且tracked clean。没有LLVM源码修改、Gerrit查询/推送、原树CMake/Ninja/-P、链接/重写、ARM树访问或全构建。两段锁分别约28.7/28.4分钟，全部释放，proc/scope回收；资源详情在target-perf-resources，磁盘底线通过。没有产品准备错误；公开driver仅修正EOF空白格式告警，未改运行脚本/参数或重测。
+
+## 续跑十二：表述修正与变基上传验收补充
+
+续跑十二d08b54da276102c2b607fbddd07966111f5147cd父b7e61fb；作者、提交者、Signed-off-by均Hao Lin <hao.lin@samsung.com>，全局配置未改。202项及历史候选新安全/tiny/post通过，overlay无权限NOT RUN，第七步采集入口第二次准备失败STOP；没有推sandbox。详情22，不以小根测试冒充完整树演练。
+
+取消的首次/暖配置对照实验没有补做：已认证的是文本门禁证明相关变化的技术影响为零，内容与首次/暖配置差异一致；不是差异来源因果归因已经实证。历史PM判断和技术证明应区分记录。
+
+以下为周五变基及上传的验收补充；本轮没有执行的内容一律待验证，不能以已有材料名称代替实物认证：
+
+- 记录变基父提交、树、源码/spec/helper/profile/工具/候选各身份及author/committer/Signed-off-by；若tizen_base合入归档修复，处理spec冲突后重证受影响项。
+- 保存现场完整dry-run、tool-plan/真实构建复核JSON、工具版本、原RPM PATH/which和执行顺序日志；TF成对出现时保存归档前后SHA与预编译输入证据。第六步本次缺失，仍待验证。
+- 解开全套Quickbuild RPM，逐包复查实体/别名/缺失debug与debugsource的既定例外、无BOLT产物及导出残留；普通后处理一次、尾检最后执行。比较debugsource上一快照，本轮只有22普通RPM的CMake内容审计，非新全包认证。
+- 实测新增各阶段wall、cgroup峰、进程VmHWM、磁盘高水位，并测下游并发编译的总内存；本轮小门禁资源不能代替Quickbuild或下游并发。
+- 对accel实际抽取、patchelf、重打包链取证，确认worker实际执行文件路径/最终SHA、默认配置与clang/clang++/clang-cl/clang-cpp及三元组driver入口，避免测试了另一实体。
+- 建立最终SHA到BOLT前/后符号资料映射，保留pre-strip身份链和日志，做一次函数级崩溃定位演练；完全strip实体不声称有源码级调试能力。此端到端调试演练仍待验证。
+- 发布模式完整LLVM构建、新树/Quickbuild目标性能与可重现性均待验证；历史十一B ARM/AArch64性能已有，但不替代变基/Quickbuild实物重测。发布mini仅证明后处理机制，不替代全构建。
+- 变基若改变链接输入、profile、BOLT参数/工具、候选安全字段或后处理链，重新认证对应匹配、安全、对象、性能和RPM清单/post证据；本轮stop后的缺项不能被“文本没冲突”自动关闭。

@@ -8,7 +8,7 @@
   "tree_equal": true,
   "helper_mirror_equal": true,
   "gerrit_pushed": false,
-  "qualification": "PASS_STEPS1_TO5_PENDING_OVERLAY_AND_POST_SCRIPTS",
+  "qualification": "STOP_CAPTURE_PREPARATION; STEPS1_TO5_PASS; OVERLAY_NOT_RUN; POST_SCRIPT_CERTIFICATION_INCOMPLETE",
   "fixtures": 202,
   "files": [
     {
@@ -43,5 +43,10 @@
   "local_candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
   "candidate_route": "historical llvm-bolt fallback; unchanged generation parameters and profile; no regeneration",
   "sandbox_branch": "sandbox/lhmax2025/bolt_pgo",
-  "sandbox_push_this_task": false
+  "sandbox_push_this_task": false,
+  "sandbox_remote_observed": "b7e61fb92b34795868230e4f9cee8e3ec65496f6",
+  "sandbox_query": "git ls-remote origin refs/heads/sandbox/lhmax2025/bolt_pgo; read-only, no push",
+  "overlay_rehearsal": "NOT RUN: sudo: a password is required",
+  "post_script_certification": "NOT RUN: capture-entry second preparation failure",
+  "source_worktree_clean": true
 }

@@ -1,0 +1,29 @@
+{
+  "status": "STOP_SECOND_CAPTURE_PREPARATION_ERROR",
+  "certification": "NOT RUN: incomplete two-mode captured post comparison",
+  "source_commit": "d08b54da276102c2b607fbddd07966111f5147cd",
+  "baseline_script_saved": true,
+  "source_and_candidate_not_changed": true,
+  "attempts": [
+    {
+      "name": "post-scripts",
+      "kind": "missing Source preparation",
+      "result": "Source0 absent before shell starts; one correction created links to existing Source inputs"
+    },
+    {
+      "name": "post-scripts-corrected",
+      "kind": "capture entry selection",
+      "result": "__spec_install_shell changes script shebang only; actual __spec_install_cmd uses ___build_cmd and ran own prelude until missing dummy buildsubdir; one correction switched actual command"
+    },
+    {
+      "name": "post-scripts-final",
+      "kind": "capture entry return contract (same capture preparation class, second failure)",
+      "result": "wrapper successfully saved baseline script and returned0; rpmbuild continued package file validation and returned1 for deliberately absent installed files; harness required overall0 before accepting capture, stopped without further retry"
+    }
+  ],
+  "no_real_install_post_execution": true,
+  "no_CMake_or_Ninja_called": true,
+  "debug_new_source_script": "NOT RUN",
+  "release_scripts": "NOT RUN",
+  "sandbox_push": "NOT RUN: step6 and step7 not PASS"
+}

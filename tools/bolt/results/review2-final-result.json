@@ -1,0 +1,51 @@
+{
+  "status": "STOP_SECOND_CAPTURE_PREPARATION_ERROR",
+  "source_commit": "d08b54da276102c2b607fbddd07966111f5147cd",
+  "source_tree": "40a569a2e001dcf11f5cf5e9239211001be9d7a3",
+  "sandbox_pushed": false,
+  "sandbox_remote": "b7e61fb92b34795868230e4f9cee8e3ec65496f6",
+  "step6_actual_execution": false,
+  "step6": "NOT RUN: overlay mount requires password",
+  "steps1_to5": "PASS",
+  "step7_capture": "FAIL_PREPARATION",
+  "step7_certification": "NOT RUN",
+  "tests": 202,
+  "candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
+  "remaining": [
+    "real overlay rpmbuild install/tool build/pipeline/post evidence",
+    "complete actual post script comparison for debug/release",
+    "optional new-tree 120 objects",
+    "conditional sandbox push"
+  ],
+  "protection": "PASS",
+  "scope_cleanup_all": true,
+  "corrections": {
+    "lookup_only_not_product_retries": [
+      "Historical ignored temp files: rg default omitted them; scoped --no-ignore located them.",
+      "docs/35 guessed filename: rg --files located 35_archive_fix_v2_final.md.",
+      "review-finish guessed directory spelling: find -maxdepth 1 located reviewfinish.",
+      "docs/21 guessed filename: rg --files located 21_review_gate_repairs.md.",
+      "manifest.json guessed after listing: actual file is draft-manifest.json."
+    ],
+    "search_scope_deviation": "One rg --files --no-ignore over W/temp was too broad; interrupted on consumer-lld root permission messages. No ARM command or write was made, but this discovery walk was not restricted to bolt-v4-*; do not claim it proved no directory traversal outside the allowed trees. Later searches were bounded to own bolt-v4 directories.",
+    "product_preparation": [
+      {
+        "name": "post-scripts",
+        "kind": "missing Source preparation",
+        "result": "Source0 absent before shell starts; one correction created links to existing Source inputs"
+      },
+      {
+        "name": "post-scripts-corrected",
+        "kind": "capture entry selection",
+        "result": "__spec_install_shell changes script shebang only; actual __spec_install_cmd uses ___build_cmd and ran own prelude until missing dummy buildsubdir; one correction switched actual command"
+      },
+      {
+        "name": "post-scripts-final",
+        "kind": "capture entry return contract (same capture preparation class, second failure)",
+        "result": "wrapper successfully saved baseline script and returned0; rpmbuild continued package file validation and returned1 for deliberately absent installed files; harness required overall0 before accepting capture, stopped without further retry"
+      }
+    ],
+    "stop": "second failure in capture-entry preparation after one correction; no further product experiment",
+    "not_a_product_gate_relaxation": true
+  }
+}
