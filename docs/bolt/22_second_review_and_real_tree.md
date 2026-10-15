@@ -30,3 +30,11 @@
 22RPM逐个SHA绑定、实际查询文件列表并与20保存包头相同，共47个.cmake：clang5、libomp-devel1、llvm-devel41，其他0。逐个提取内容SHA同包头。旧大写BOLT规则0命中，新大小写敏感LLVMBOLT/llvm-bolt/perf2bolt/llvm-boltdiff/merge-fdata规则0命中。本基准不能声称b7 post会误拒普通CMake；新定向规则仍按PM实现。完整清单/内容在review2-rpm-cmake-result与first-evidence。
 
 查找记录：第一次rg默认受ignore影响未列历史temp，随后按docs/15定位目录使用--no-ignore；一次docs/35文件名误猜，已先rg定位真实35_archive_fix_v2_final.md。均为产品操作前查找更正，不计准备纠正次数。本轮产品准备错误0。
+
+## 2–3 实现与夹具 PASS
+
+202/202（原146方法全部保留，新增56），2.463秒；4GiB scope 3.526秒。独立review-tool-descriptions JSON核对白名单，不从生产常量造全集。真实历史流按时间戳/包装器和旧配置外任务预期拒绝；toy三个真实输出亦绑定断言。TF成对计划112任务，配置刷新2，BOLT102对象+7库+1可执行；真实构建复核允许警告与restat总数缩小，保持批准清单、连续f和TF归档SHA不变。描述、返回值与进度错误均有负例。
+
+call改waitid WNOWAIT保持组长、killpg后10秒清组/1秒非阻塞回收、SIGCHLD恢复默认、proc namespace自检/枚举及读取失败关闭、Z/X多线程视为活；原错标签先于清理错，成功回收后读日志失败不杀组，KBI/SystemExit保持。测试在返回时立即判后代已退出，随后两个心跳周期不再更新。RELRO现编小程序字节移动/缩小/清零拒绝，dynsym五元组/原始shndx定义类别、版本提供者、DT_BIND_NOW/W+X与NOBITS等负例通过。post复用不算SHA的失败关闭遍历与定向串，根内链接正常、悬空/错误/特殊文件拒绝。@rsp立即拒绝。
+
+旧断言改动逐项理由见review2-implementation-result.json，原有146方法无删减。debug/release各18段，BOLT关闭时均与cb679968展开逐字节相同；canonical mini与源spec追加片段逐字相同且位于install/files之后。此处尚不是第七步实际post脚本证据。rpmspec无--without选项，沿用已认证的rpmbuild实际宏值兼容方式。源与B镜像逐字相同；源尚未提交，第五步前待真实安全门禁。

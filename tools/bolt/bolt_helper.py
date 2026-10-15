@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Tizen clang BOLT draft. Every command fails closed; Python >= 3.9, POSIX sh."""
 import argparse
+import collections
+import shlex
 import hashlib
 import json
 import lzma
@@ -48,67 +50,110 @@ def save(path, value):
     tmp.write_text(json.dumps(value, ensure_ascii=False, indent=2) + '\n')
     os.replace(tmp, path)
 
+def proc_stat(path):
+    text = Path(path).read_text()
+    try:
+        pid = int(text.split(' ', 1)[0])
+        fields = text.rsplit(')', 1)[1].split()
+        require(len(fields) >= 18, 'short process stat: '+str(path))
+        return pid, fields[0], int(fields[2]), int(fields[17])
+    except (ValueError, IndexError) as error:
+        raise GateError('malformed process stat: '+str(path)) from error
+
 def live_group_members(group):
+    require(proc_stat('/proc/self/stat')[0] == os.getpid(), 'PID namespace mismatch in /proc/self/stat')
     members = []
-    for path in Path('/proc').glob('[0-9]*/stat'):
-        try:
-            # comm may contain spaces and parentheses; the final ')' delimits it.
-            fields = path.read_text().rsplit(')', 1)[1].split()
-        except (FileNotFoundError, ProcessLookupError):
-            continue
-        except (OSError, IndexError) as error:
-            raise GateError('cannot inspect process group member: '+str(path)) from error
-        require(len(fields) >= 3, 'malformed process stat: '+str(path))
-        if int(fields[2]) == group and fields[0] not in ('Z', 'X'):
-            members.append((int(path.parent.name), fields[0]))
+    try:
+        with os.scandir('/proc') as entries:
+            for entry in entries:
+                if not entry.name.isdecimal():
+                    continue
+                try:
+                    pid, state, pgrp, threads = proc_stat('/proc/'+entry.name+'/stat')
+                except (FileNotFoundError, ProcessLookupError):
+                    continue
+                if pgrp == group and (state not in ('Z', 'X') or threads > 1):
+                    members.append((pid, state))
+    except OSError as error:
+        raise GateError('cannot enumerate/read process group: '+str(error)) from error
     return sorted(members)
 
 def wait_group_exit(group, timeout=10):
-    deadline = time.monotonic() + timeout
+    deadline = time.monotonic()+timeout
     while True:
         members = live_group_members(group)
         if not members:
             return
-        require(time.monotonic() < deadline,
-                'process group %d still alive after %s seconds: %s' %
-                (group, timeout, ', '.join('%d:%s' % item for item in members)))
-        time.sleep(0.02)
+        require(time.monotonic() < deadline, 'process group %d still alive: %s' %
+                (group, ', '.join('%d:%s' % item for item in members)))
+        time.sleep(.02)
+
+def peek_child_exit(process, timeout):
+    deadline = time.monotonic()+timeout
+    while True:
+        status = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+        if status is not None:
+            return status.si_status if status.si_code == os.CLD_EXITED else -status.si_status
+        if time.monotonic() >= deadline:
+            raise subprocess.TimeoutExpired(str(process.pid), timeout)
+        time.sleep(.01)
+
+def reap_child(process, timeout=1):
+    deadline = time.monotonic()+timeout
+    while True:
+        pid, status = os.waitpid(process.pid, os.WNOHANG)
+        if pid:
+            process.returncode = os.waitstatus_to_exitcode(status)
+            return process.returncode
+        require(time.monotonic() < deadline, 'leader %d was not reaped before deadline' % process.pid)
+        time.sleep(.01)
 
 def call(argv, log, cwd=None, timeout=300):
-    log = Path(log)
-    log.parent.mkdir(parents=True, exist_ok=True)
-    with log.with_suffix(log.suffix + '.argv.json').open('w') as f:
-        json.dump({'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None}, f)
-    process = None
+    log = Path(log); log.parent.mkdir(parents=True, exist_ok=True)
+    process = None; reaped = False; primary = None
     try:
-        with log.open('wb') as f:
-            process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=f,
+        previous = signal.getsignal(signal.SIGCHLD)
+        if previous != signal.SIG_DFL:
+            signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+        save(log.with_suffix(log.suffix+'.argv.json'),
+             {'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None,
+              'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+        with log.open('wb') as output:
+            process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
                                        stderr=subprocess.STDOUT, start_new_session=True)
-            rc = process.wait(timeout=timeout)
-            require(rc == 0, 'COMMAND_FAILED rc=%s: %s' % (rc, argv[0]))
+            rc = peek_child_exit(process, timeout)
+            if rc != 0:
+                primary = 'COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
+                raise GateError(primary)
+            require(reap_child(process) == rc, 'child exit status changed while reaping')
+            reaped = True
         return log.read_text(errors='replace')
     except BaseException as error:
-        cleanup_error = None
-        if process is not None:
+        if primary is None:
+            primary = ('TIMEOUT: ' if isinstance(error, subprocess.TimeoutExpired) else 'COMMAND_ERROR: ')+str(error)
+        cleanup = []
+        if process is not None and not reaped:
+            # Keep the un-reaped leader as a PGID anchor until group cleanup ends.
             try:
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                try:
-                    process.wait()
-                finally:
-                    wait_group_exit(process.pid)
-            except Exception as cleanup:
-                cleanup_error = cleanup
-        if cleanup_error is not None:
-            raise GateError('%s; original error: %s (see %s)' %
-                            (cleanup_error, error, log)) from error
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            except Exception as failure:
+                cleanup.append(str(failure))
+            try:
+                wait_group_exit(process.pid, 10)
+            except Exception as failure:
+                cleanup.append(str(failure))
+            try:
+                reap_child(process, 1)
+            except Exception as failure:
+                cleanup.append(str(failure))
         if isinstance(error, (KeyboardInterrupt, SystemExit)):
             raise
-        raise GateError('%s: %s (see %s)' %
-                        ('TIMEOUT' if isinstance(error, subprocess.TimeoutExpired) else 'COMMAND_ERROR',
-                         error, log)) from error
+        message = primary+' (see '+str(log)+')'
+        if cleanup:
+            message += '; cleanup error: '+'; '.join(cleanup)
+        raise GateError(message) from error
 
 def profile_unpack(source, output):
     output = Path(output)
@@ -133,6 +178,8 @@ def replay_script(original, output, dependency, cache=None):
     require('\n' not in original and original.startswith(': && ') and original.endswith(' && :'),
             'unexpected link edge framing')
     body = original[5:-5]
+    require(not any(arg.startswith('@') for arg in shlex.split(body)),
+            'link edge uses a response file; rsp auditing is not implemented')
     require('&&' not in body and ';' not in body and '`' not in body and '$(' not in body,
             'unsupported shell syntax in link edge')
     require(not re.search(r'(?<!\\)\$', body), 'unknown shell substitution')
@@ -229,7 +276,7 @@ class ELF:
             name, info, other, shndx, value, size = self.unpack('<IBBHQQ', off)
             require(shndx != 65535, 'XINDEX not supported')
             target = self.names[shndx] if shndx < len(self.names) else 'RESERVED:%d' % shndx
-            result.append((self.string(strings[4], strings[5], name), info, other, target, value, size))
+            result.append((self.string(strings[4], strings[5], name), info, other, target, value, size, shndx))
         return result
     def audit(self, final=False):
         require(self.machine == 62 and self.loads, 'not executable native x86_64 ELF')
@@ -247,6 +294,7 @@ def security_properties(path):
     e = ELF(path)
     try:
         def content(section):
+            require(section[1] != 8, 'NOBITS section cannot contain security metadata')
             return bytes(e.mm[section[4]:section[4]+section[5]])
         def headers(kind):
             return [p for p in e.phdrs if p[0] == kind]
@@ -254,13 +302,16 @@ def security_properties(path):
             values = []
             for p in headers(kind):
                 value = {'flags': p[1]}
+                if kind == 0x6474e552:
+                    require(p[5] <= p[6], 'RELRO filesz exceeds memsz');e.range(p[2], p[5])
+                    value.update(vaddr=p[3], filesz=p[5], memsz=p[6])
                 if payload:
                     e.range(p[2], p[5])
                     value['content_hex'] = bytes(e.mm[p[2]:p[2]+p[5]]).hex()
                 values.append(value)
             return values
         interp = [e.string(p[2], p[5], 0) for p in headers(3)]
-        dynamic = e.by_name.get('.dynamic'); needed = []; flags = {}
+        dynamic = e.by_name.get('.dynamic'); needed = []; flags = {}; bind_now = False
         if dynamic:
             require(dynamic[1] == 6 and dynamic[9] == 16 and dynamic[5] % 16 == 0 and dynamic[6] < len(e.sections), 'invalid dynamic table')
             strings = e.sections[dynamic[6]]
@@ -271,6 +322,8 @@ def security_properties(path):
                 if tag == 0:
                     terminated = True
                     break
+                if tag == 24:
+                    bind_now = True
                 if tag == 1:
                     needed.append(e.string(strings[4], strings[5], value))
                 if tag in (30, 0x6ffffffb):
@@ -281,7 +334,7 @@ def security_properties(path):
         vers = e.by_name.get('.gnu.version')
         require(not vers or (vers[1] == 0x6fffffff and vers[5] % 2 == 0), 'invalid versym table')
         version_values = list(struct.unpack('<'+'H'*(vers[5]//2), content(vers))) if vers else []
-        verneed = e.by_name.get('.gnu.version_r'); needs = []; version_names = {0: 'LOCAL', 1: 'GLOBAL'}
+        verneed = e.by_name.get('.gnu.version_r'); needs = []; version_names = {0: ('', 'LOCAL'), 1: ('', 'GLOBAL')}
         if verneed:
             require(verneed[1] == 0x6ffffffe and verneed[6] < len(e.sections), 'invalid verneed table')
             strings = e.sections[verneed[6]]
@@ -298,7 +351,7 @@ def security_properties(path):
                     require(0 <= position <= verneed[5]-16, 'bad vernaux record')
                     value_hash, value_flags, other, name, next_aux = e.unpack('<IHHII', verneed[4]+position)
                     name = e.string(strings[4], strings[5], name)
-                    version_names[other & 0x7fff] = name
+                    version_names[other & 0x7fff] = (filename, name)
                     needs.append((filename, name, value_flags, value_hash))
                     if index+1 < count:
                         require(next_aux > 0, 'truncated vernaux chain')
@@ -308,14 +361,18 @@ def security_properties(path):
                 cursor += following
         require(not version_values or len(version_values) == len(syms), 'versym/dynsym count mismatch')
         require(all((value & 0x7fff) in version_names for value in version_values), 'unknown symbol version')
-        named_versions = sorted((syms[i][0], version_names[value & 0x7fff], bool(value & 0x8000))
+        def interface(symbol):
+            shndx = symbol[6]
+            definition = 'UND' if shndx == 0 else 'ABS' if shndx == 0xfff1 else 'COMMON' if shndx == 0xfff2 else 'DEF'
+            return symbol[0], symbol[1] >> 4, symbol[1] & 15, symbol[2] & 3, definition
+        named_versions = sorted((interface(syms[i]), version_names[value & 0x7fff], bool(value & 0x8000))
                                 for i, value in enumerate(version_values))
         return {'elf_type': e.elf_type, 'PT_INTERP': interp,
                 'PT_GNU_RELRO': header_values(0x6474e552), 'PT_GNU_STACK': header_values(0x6474e551),
                 'PT_GNU_PROPERTY': header_values(0x6474e553, True),
                 '.note.gnu.property': content(e.by_name['.note.gnu.property']).hex() if '.note.gnu.property' in e.by_name else None,
-                'DT_FLAGS_FLAGS1': flags, 'DT_NEEDED': needed,
-                '.dynsym': sorted((s[0], s[1] >> 4, s[2] & 3) for s in syms),
+                'DT_FLAGS_FLAGS1': flags, 'DT_BIND_NOW': bind_now, 'W_X_LOAD': any(p[1] & 3 == 3 for p in e.loads), 'DT_NEEDED': needed,
+                '.dynsym': sorted(interface(symbol) for symbol in syms),
                 '.gnu.version': named_versions, '.gnu.version_r': sorted(needs)}
     finally:
         e.close()
@@ -323,7 +380,17 @@ def security_properties(path):
 def security_compare(ordinary, candidate):
     before, after = security_properties(ordinary), security_properties(candidate)
     differences = [key for key in before if before[key] != after[key]]
-    require(not differences, 'ELF security attributes differ: '+', '.join(differences))
+    if differences:
+        details = []
+        for key in differences:
+            if key in ('.dynsym', '.gnu.version', '.gnu.version_r'):
+                old = collections.Counter(json.dumps(row, sort_keys=True) for row in before[key])
+                new = collections.Counter(json.dumps(row, sort_keys=True) for row in after[key])
+                details.append('%s before_count=%d after_count=%d first_removed=%r first_added=%r' %
+                               (key, len(before[key]), len(after[key]), list((old-new).elements())[:5], list((new-old).elements())[:5]))
+            else:
+                details.append('%s before=%r after=%r' % (key, before[key], after[key]))
+        raise GateError('ELF security attributes differ: '+'; '.join(details))
     heavy = ('.dynsym', '.gnu.version', '.gnu.version_r')
     return {'security_preserved': True,
             'ordinary_sha256': digest(ordinary), 'candidate_sha256': digest(candidate),
@@ -355,7 +422,7 @@ def tiny_gate(ordinary, candidate, work, resource_dir=None):
         require(row['byte_equal'], 'tiny object differs: '+triple)
     return rows
 
-def inventory(root):
+def inventory(root, hash_files=True):
     root = Path(root).absolute(); files = {}
     require(root.is_dir() and not root.is_symlink(), 'inventory root must be a non-symlink directory: '+str(root))
     def traversal_error(error):
@@ -366,7 +433,7 @@ def inventory(root):
             if stat.S_ISLNK(st.st_mode):
                 files[key] = {'type': 'symlink', 'target': os.readlink(p)}
             elif stat.S_ISREG(st.st_mode):
-                files[key] = {'type': 'file', 'mode': stat.S_IMODE(st.st_mode), 'bytes': st.st_size, 'sha256': digest(p)}
+                files[key] = {'type': 'file', 'mode': stat.S_IMODE(st.st_mode), 'bytes': st.st_size, **({'sha256': digest(p)} if hash_files else {})}
             elif stat.S_ISDIR(st.st_mode):
                 files[key] = {'type': 'dir'}
             else:
@@ -488,19 +555,27 @@ def certified_version(text):
     return lines[0]
 
 def no_bolt_products(root):
-    root = Path(root)
+    root = Path(root).absolute()
     for name in ('llvm-bolt', 'perf2bolt', 'llvm-boltdiff', 'merge-fdata'):
-        p = root/'usr/bin'/name
-        require(not p.exists() and not p.is_symlink(), 'BOLT tool in buildroot: '+str(p))
-    require(not list((root/'usr/lib64').glob('libLLVMBOLT*.a')), 'BOLT static library in buildroot')
-    # Inventory fails closed on traversal errors; inspect all installed CMake files,
-    # a superset of exports including LLVMConfig.cmake and nested export metadata.
-    for key, item in inventory(root)['files'].items():
+        path = root/'usr/bin'/name
+        require(not path.exists() and not path.is_symlink(), 'BOLT tool in buildroot: '+str(path))
+    tokens = (b'LLVMBOLT', b'llvm-bolt', b'perf2bolt', b'llvm-boltdiff', b'merge-fdata')
+    # Reuse fail-closed inventory traversal without hashing package payloads.
+    files = inventory(root, hash_files=False)['files']
+    for key, item in files.items():
+        path = root/key
+        if item['type'] == 'symlink':
+            target = rooted_resolve(root, path)
+            require(target.exists(), 'dangling buildroot link: '+key)
+        require(not (key.startswith('usr/lib64/libLLVMBOLT') and key.endswith('.a')),
+                'BOLT static library in buildroot: '+key)
         if key.lower().endswith('.cmake'):
-            p = rooted_resolve(root, root/key)
-            require(p.is_file(), 'unreadable CMake metadata: '+key)
-            require(b'BOLT' not in p.read_bytes().upper(), 'BOLT CMake export: '+key)
-    return {'no_bolt_products': True}
+            path = rooted_resolve(root, path)
+            require(path.is_file(), 'unreadable CMake metadata: '+key)
+            content = path.read_bytes()
+            for token in tokens:
+                require(token not in content, 'BOLT CMake export: '+key+' matched '+token.decode())
+    return {'no_bolt_products': True, 'paths_checked': len(files), 'cmake_tokens': [v.decode() for v in tokens]}
 
 def rewrite(bolt, profile, input_elf, output, work):
     work = Path(work); work.mkdir(parents=True, exist_ok=True)
@@ -523,23 +598,85 @@ def rewrite(bolt, profile, input_elf, output, work):
 
 BOLT_TASK_DESCRIPTIONS = frozenset(('Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/AddressMap.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryBasicBlock.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryContext.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryData.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryEmitter.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryFunction.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryFunctionCallGraph.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryFunctionProfile.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinarySection.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/CallGraph.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/CallGraphWalker.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/DIEBuilder.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/DebugData.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/DebugNames.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/DynoStats.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/Exceptions.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/FunctionLayout.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/GDBIndex.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/HashUtilities.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/JumpTable.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/MCInstUtils.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/MCPlusBuilder.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/ParallelUtilities.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/Relocation.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/AArch64RelaxationPass.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/Aligner.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/AllocCombiner.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/AsmDump.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/BinaryPasses.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/CMOVConversion.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/CacheMetrics.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/DataflowAnalysis.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/DataflowInfoManager.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/FixRISCVCallsPass.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/FixRelaxationPass.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/FrameAnalysis.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/FrameOptimizer.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/HFSort.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/Hugify.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/IdenticalCodeFolding.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/IndirectCallPromotion.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/Inliner.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/Instrumentation.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/JTFootprintReduction.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/LivenessAnalysis.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/LongJmp.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/LoopInversionPass.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/MCF.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PAuthGadgetScanner.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PLTCall.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PatchEntries.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PettisAndHansen.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PointerAuthCFIAnalyzer.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PointerAuthCFIFixup.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ProfileQualityStats.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/RegAnalysis.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/RegReAssign.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ReorderAlgorithm.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ReorderData.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ReorderFunctions.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/RetpolineInsertion.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ShrinkWrapping.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/SplitFunctions.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/StackAllocationAnalysis.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/StackAvailableExpressions.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/StackPointerTracking.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/StackReachingUses.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/StokeInfo.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/TailDuplication.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ThreeWayBranch.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ValidateInternalCalls.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ValidateMemRefs.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/VeneerElimination.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/BoltAddressTranslation.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/DataAggregator.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/DataReader.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/Heatmap.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/StaleProfileMatching.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/YAMLProfileReader.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/YAMLProfileWriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/BinaryPassManager.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/BoltDiff.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/BuildIDRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/DWARFRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/ExecutableFileMemoryManager.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/GNUPropertyRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/JITLinkLinker.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/LinuxKernelRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/MachORewriteInstance.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/MetadataManager.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/PseudoProbeRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/RSeqRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/RewriteInstance.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/SDTRewriter.cpp.o', 'Building CXX object tools/bolt/lib/RuntimeLibs/CMakeFiles/LLVMBOLTRuntimeLibs.dir/HugifyRuntimeLibrary.cpp.o', 'Building CXX object tools/bolt/lib/RuntimeLibs/CMakeFiles/LLVMBOLTRuntimeLibs.dir/InstrumentationRuntimeLibrary.cpp.o', 'Building CXX object tools/bolt/lib/RuntimeLibs/CMakeFiles/LLVMBOLTRuntimeLibs.dir/RuntimeLibrary.cpp.o', 'Building CXX object tools/bolt/lib/Target/X86/CMakeFiles/LLVMBOLTTargetX86.dir/X86MCPlusBuilder.cpp.o', 'Building CXX object tools/bolt/lib/Target/X86/CMakeFiles/LLVMBOLTTargetX86.dir/X86MCSymbolizer.cpp.o', 'Building CXX object tools/bolt/lib/Utils/CMakeFiles/LLVMBOLTUtils.dir/CommandLineOpts.cpp.o', 'Building CXX object tools/bolt/lib/Utils/CMakeFiles/LLVMBOLTUtils.dir/Utils.cpp.o', 'Building CXX object tools/bolt/tools/driver/CMakeFiles/llvm-bolt.dir/llvm-bolt.cpp.o', 'Linking CXX executable bin/llvm-bolt', 'Linking CXX static library lib64/libLLVMBOLTCore.a', 'Linking CXX static library lib64/libLLVMBOLTPasses.a', 'Linking CXX static library lib64/libLLVMBOLTProfile.a', 'Linking CXX static library lib64/libLLVMBOLTRewrite.a', 'Linking CXX static library lib64/libLLVMBOLTRuntimeLibs.a', 'Linking CXX static library lib64/libLLVMBOLTTargetX86.a', 'Linking CXX static library lib64/libLLVMBOLTUtils.a'))
 
+TF_REFRESH_DESCRIPTIONS = frozenset((
+    'Building C object lib64/tf_runtime/CMakeFiles/tf_xla_runtime.dir/tf_xla_runtime_dummy.c.o',
+    'Linking C static library lib64/libtf_xla_runtime.a'))
+
 def tool_plan(text):
-    counts = {'objects': 0, 'static_libraries': 0, 'executables': 0}
     lines = text.splitlines()
+    while lines and not lines[-1].strip():
+        lines.pop()
+    counts = {'objects': 0, 'static_libraries': 0, 'executables': 0}
+    if lines == ['ninja: no work to do.']:
+        return {'plan_type': 'up-to-date', 'tasks': 0, 'categories': counts,
+                'configuration_refresh_tasks': 0, 'descriptions': []}
     require(bool(lines), 'empty BOLT tool plan')
+    if len(lines) == 1 and re.fullmatch(r'\[\d+/\d+\] Re-running CMake\.\.\.', lines[0]):
+        raise GateError('BOLT 追加配置后 build.ninja 仍需重生成，dry-run 看不到真实计划')
     descriptions = []
-    for line in lines:
+    for index, line in enumerate(lines, 1):
         match = re.fullmatch(r'\[([0-9]+)/([0-9]+)\] (.+)', line)
         require(match is not None, 'non-progress line in BOLT tool plan: '+line)
-        require(0 < int(match[1]) <= int(match[2]), 'invalid progress counters: '+line)
+        require(int(match[1]) == index and int(match[2]) == len(lines), 'non-contiguous or truncated BOLT plan: '+line)
         body = match[3]
-        require(body in BOLT_TASK_DESCRIPTIONS, 'unapproved BOLT task: '+body)
+        require(body not in descriptions, 'duplicate BOLT task: '+body)
+        require(body in BOLT_TASK_DESCRIPTIONS or body in TF_REFRESH_DESCRIPTIONS, 'unapproved BOLT task: '+body)
         descriptions.append(body)
-        category = ('objects' if body.startswith('Building CXX object ') else
-                    'static_libraries' if body.startswith('Linking CXX static library ') else 'executables')
-        counts[category] += 1
+        if body in BOLT_TASK_DESCRIPTIONS:
+            category = ('objects' if body.startswith('Building CXX object ') else
+                        'static_libraries' if body.startswith('Linking CXX static library ') else 'executables')
+            counts[category] += 1
+    tf = set(descriptions) & TF_REFRESH_DESCRIPTIONS
+    require(not tf or tf == TF_REFRESH_DESCRIPTIONS, 'TF configuration refresh tasks must appear together')
     require('Linking CXX executable bin/llvm-bolt' in descriptions, 'missing llvm-bolt executable link')
-    return {'tasks': len(lines), 'categories': counts, 'ordinary_compile_link_tasks': 0}
+    return {'plan_type': 'build', 'tasks': len(lines), 'categories': counts,
+            'configuration_refresh_tasks': len(tf), 'descriptions': descriptions}
+
+def tool_prepare(build, plan, state_path):
+    build = Path(build)
+    value = {'configuration_refresh_tasks': plan['configuration_refresh_tasks']}
+    if value['configuration_refresh_tasks']:
+        archive = build/'lib64/libtf_xla_runtime.a'
+        require(archive.is_file(), 'missing TF archive before build')
+        value['archive_path'] = str(archive); value['before_sha256'] = digest(archive)
+        # Only evidence: do not turn an optional graph inference into a gate.
+        graph = (build/'build.ninja').read_text()
+        match = re.search(r'^build lib64/libtf_xla_runtime\.a:[^\n]*(?:\n  [^\n]*)*', graph, re.M)
+        paths = set(re.findall(r'/[^\s\"\';]+/libtf_xla_runtime_prebuilt\.a', match[0] if match else ''))
+        value['prebuilt_evidence'] = {'inferred_paths': sorted(paths)}
+        if len(paths) == 1:
+            source = Path(next(iter(paths)))
+            if source.is_file():
+                sha = digest(source)
+                value['prebuilt_evidence'].update(sha256=sha, archive_equal=sha == value['before_sha256'])
+    save(state_path, value)
+    return value
+
+def tool_verify(build, plan, text, state):
+    descriptions = []; counters = []
+    for line in text.splitlines():
+        match = re.fullmatch(r'\[(\d+)/(\d+)\] (.+)', line)
+        if match is None:
+            continue
+        f, t, body = int(match[1]), int(match[2]), match[3]
+        require(f == len(descriptions)+1 and f <= t, 'invalid real build progress: '+line)
+        require(body in plan['descriptions'], 'real build task outside approved plan: '+body)
+        require(body not in descriptions, 'duplicate real build task: '+body)
+        descriptions.append(body); counters.append([f, t])
+    require(plan['plan_type'] != 'up-to-date' or not descriptions, 'up-to-date build unexpectedly ran tasks')
+    executable = Path(build)/'bin/llvm-bolt'
+    require(executable.is_file() and not executable.is_symlink() and os.access(executable, os.X_OK),
+            'llvm-bolt is not a regular executable')
+    require(state['configuration_refresh_tasks'] == plan['configuration_refresh_tasks'], 'TF snapshot does not match plan')
+    tf = dict(state)
+    if plan['configuration_refresh_tasks']:
+        archive = Path(build)/'lib64/libtf_xla_runtime.a'
+        require(archive.is_file(), 'missing TF archive after build')
+        tf['after_sha256'] = digest(archive)
+        require(tf['after_sha256'] == state['before_sha256'], 'TF archive SHA changed during build')
+    return {'tool_build_verified': True, 'tasks': len(descriptions), 'descriptions': descriptions,
+            'progress_counters': counters, 'TF_archive': tf, 'executable': str(executable)}
+
 
 GIB = 1024**3
 LARGE_WRITE = 10 * GIB
@@ -719,6 +856,8 @@ def package_compare(ordinary, candidate, mode, proof):
 def main():
     p = argparse.ArgumentParser(description=__doc__); sub = p.add_subparsers(dest='cmd',required=True)
     s=sub.add_parser('security');s.add_argument('ordinary');s.add_argument('candidate')
+    s=sub.add_parser('tool-prepare');s.add_argument('build');s.add_argument('plan');s.add_argument('state')
+    s=sub.add_parser('tool-verify');s.add_argument('build');s.add_argument('plan');s.add_argument('log');s.add_argument('state');s.add_argument('result')
     s=sub.add_parser('tool-plan');s.add_argument('input')
     s=sub.add_parser('pipeline');s.add_argument('build');s.add_argument('work');s.add_argument('tool');s.add_argument('--cache-dir');s.add_argument('--planned-write-bytes',type=int,default=STAGE_WRITE_BUDGET)
     s=sub.add_parser('disk-preflight');s.add_argument('destination');s.add_argument('planned_bytes',type=int);s.add_argument('--reserve-bytes',type=int,default=0)
@@ -735,6 +874,9 @@ def main():
     s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
     a=p.parse_args()
     if a.cmd=='security':result=security_compare(a.ordinary,a.candidate)
+    elif a.cmd=='tool-prepare':result=tool_prepare(a.build,json.loads(Path(a.plan).read_text()),a.state)
+    elif a.cmd=='tool-verify':
+        result=tool_verify(a.build,json.loads(Path(a.plan).read_text()),Path(a.log).read_text(),json.loads(Path(a.state).read_text()));save(a.result,result)
     elif a.cmd=='tool-plan':result=tool_plan(Path(a.input).read_text())
     elif a.cmd=='pipeline':result=pipeline(a.build,a.work,a.tool,a.cache_dir,a.planned_write_bytes)
     elif a.cmd=='disk-preflight':result=disk_preflight(a.destination,a.planned_bytes,a.reserve_bytes)

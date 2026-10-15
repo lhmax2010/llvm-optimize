@@ -13,29 +13,20 @@ class ProcessGroupTests(Base):
         with self.assertRaisesRegex(h.GateError,'TIMEOUT.*see'):
             h.call(['/bin/sh',str(script)],self.d/'timeout.log',timeout=1)
         ids=list(map(int,pids.read_text().split()));self.assertEqual(len(ids),3)
-        deadline=time.monotonic()+10
-        while True:
-            live=[]
-            for pid in ids:
-                status=Path('/proc')/str(pid)/'stat'
-                try:state=status.read_text().rsplit(')',1)[1].split()[0]
-                except FileNotFoundError:state=None
-                if state not in (None,'Z','X'):live.append((pid,state))
-            if not live:break
-            self.assertLess(time.monotonic(),deadline,str(live));time.sleep(.02)
+        for pid in ids:
+            status=Path('/proc')/str(pid)/'stat'
+            try:state=status.read_text().rsplit(')',1)[1].split()[0]
+            except FileNotFoundError:state=None
+            self.assertIn(state,(None,'Z','X'),str(pid))
         size=heartbeat.stat().st_size;time.sleep(.15);self.assertEqual(heartbeat.stat().st_size,size)
     def test_stubborn_member_reports_pid_and_original_error(self):
-        with patch.object(h,'live_group_members',return_value=[(424242,'R')]),patch.object(h.time,'monotonic',side_effect=[0,11]):
-            with self.assertRaisesRegex(h.GateError,r'424242:R.*original error.*see'):
+        with patch.object(h,'wait_group_exit',side_effect=h.GateError('424242:R')):
+            with self.assertRaisesRegex(h.GateError,r'COMMAND_FAILED rc=7.*see.*cleanup error.*424242:R'):
                 h.call(['/bin/sh','-c','exit 7'],self.d/'stubborn.log')
     def test_zombie_and_absent_group_exit(self):
         with patch.object(h,'live_group_members',return_value=[]):h.wait_group_exit(424242)
     def test_exception_kills_group_and_reports_log(self):
-        real_wait=subprocess.Popen.wait;calls=[]
-        def wait(p,*a,**kw):
-            if not calls:calls.append(1);raise OSError('injected wait error')
-            return real_wait(p,*a,**kw)
-        with patch.object(subprocess.Popen,'wait',wait),self.assertRaisesRegex(h.GateError,'injected wait error.*see'):
+        with patch.object(h,'peek_child_exit',side_effect=OSError('injected wait error')),self.assertRaisesRegex(h.GateError,'COMMAND_ERROR.*injected wait error.*see'):
             h.call(['/bin/sh','-c','sleep 60'],self.d/'exception.log')
 
 class ReviewTinyTests(Base):

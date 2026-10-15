@@ -234,7 +234,7 @@ class ToolPlanTests(unittest.TestCase):
     def test_empty_unrecognized_stops(self):
         with self.assertRaises(h.GateError):h.tool_plan('')
     def test_no_work(self):
-        with self.assertRaises(h.GateError):h.tool_plan('ninja: no work to do.\n')
+        self.assertEqual(h.tool_plan('ninja: no work to do.\n')['tasks'],0)
 
 class CacheTests(Base):
     def test_only_three_paths_and_flags_change(self):
