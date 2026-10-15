@@ -355,10 +355,10 @@ git push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm AUDITED_C
 
 15临时配置PASS但原树恢复FAIL；16历史后备候选4ec07159…门禁PASS，安装遗漏STOP；17修成单次安装/compare-root，103夹具及封套PASS，文本门禁STOP。详见15–17，原树禁CMake/Ninja；未来临时配置专用cache。
 
-### v4.1-15至17 最新执行记录（2026-10-15）
+### v4.1-15至17 历史执行记录（2026-10-15）
 
-18曾因phony许可STOP；19 PM扩充簿记语句对后7439文本/双模式展开PASS，但路径查询错误STOP。20续跑八按新查找规则继续：120完整对象PASS，debug/release mini的compare-root/install/单次原post尾检/SHA/三目标/alias PASS；133调试ELF（其他132）穷尽来源与CRC证明，自身.debug及5exclusive源为debug缺失例外、无build-id链接可删，其他文件/目录严格保持、无BOLT新增。
+18/19文本门禁与展开最终PASS；20的120对象/双模式mini/DWARF清单/x86性能0.855890085 PASS，sandbox更新a141父cb。完整历史见20与053fe704版设计；周四实物六项仍待，发布完整构建挂账。
 
-30份x86资产各侧5次，固定CPU2/并行1/交替顺序，geom0.855890085<0.98 PASS。保护审计后，sandbox由cb679968更新至a1410e3d14b8836e3f9be5a1b4380f914dc2e705并核对；源父cb/无归档补丁，本地候选历史后备4ec07159…。
+### v4.1-18 外部评审修复（续跑九）
 
-周四核QB统计同量级/双5%、tool-plan、compare-root、自身性能、debugsource实物清单；不比较local/QB SHA，父目录不自动允许删除。发布完整构建仍挂账；周五若tizen_base合归档补丁再变基解spec冲突。所有锁/proc/scope回收，无原树配置/Ninja/cache写入或ARM根/完整LLVM构建。细节20/STATUS，原大证据留E。
+PM保持x86默认开启，QB回退只能提交spec改bcond_with；新源父a141，本轮禁Gerrit。tool-plan离线110任务全集精确白名单，109夹具PASS。其余健壮性修改未认证：最终138夹具137通过，后代退出观察第二次错误STOP；安全属性/宏链OFF基线对比/ARM-A64性能/真实新门禁均NOT RUN，不生成新源提交。4ec候选不变；未完成patch另存。详21与STATUS，不用本次未认证helper替代已发a141。所有scope回收，无原树配置/重锁/proc/cache写入或ARM根。

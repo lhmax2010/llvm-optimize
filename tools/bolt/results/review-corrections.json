@@ -1,0 +1,41 @@
+{
+  "lookup_corrections": [
+    {
+      "error": "Relative robust-fixtures.txt under B instead of W/E",
+      "correction": "Use already-located absolute E path; report read only"
+    },
+    {
+      "error": "final-audit.py spelling from prior context; actual filename final_audit.py",
+      "correction": "Locate actual file with rg --files before using it for read-only protection audit"
+    }
+  ],
+  "preparatory_corrections": [
+    {
+      "class": "edit script cwd",
+      "corrections": 1,
+      "error": "Relative E script path under B/tools/bolt did not exist; command sequenced unittest anyway, so initial old-helper regression output was not a valid corrected-helper certification",
+      "correction": "Use located absolute path; subsequent109 tests PASS"
+    },
+    {
+      "class": "ELF negative fixture header offset",
+      "corrections": 1,
+      "error": "filesz/memsz offsets in two new fixtures were wrong",
+      "correction": "Use Elf64_Phdr p_filesz offset32 and p_memsz40; both corrected fixtures PASS"
+    },
+    {
+      "class": "legacy exception assertion",
+      "corrections": 1,
+      "error": "Old missing compiler test expected OSError, call now wraps it in GateError with log path",
+      "correction": "Update assertion to GateError; PASS"
+    },
+    {
+      "class": "descendant exit observation",
+      "corrections": 1,
+      "first_error": "/proc status disappeared between exists and read",
+      "correction": "Treat FileNotFoundError as exited",
+      "second_error": "Corrected run observed R for pid1199507 immediately after helper returned",
+      "action": "STOP; no further retry or implementation change; process absent at later read-only audit"
+    }
+  ],
+  "development_regression": "Initial new tool tests ran against old helper because edit command failed; old behavior reproduced. Full robust fixture first and corrected failures are preserved, not treated as PASS."
+}

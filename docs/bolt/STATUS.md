@@ -257,24 +257,12 @@ PM确认追加bolt后第二次完整安装创建两个未登记manifest的BOLT�
 
 7439文本/当前a141两模式展开PASS，120输入SHA准备PASS；两次辅助脚本路径查询错误触发当时准备STOP，后续对象等未跑。完整人工裁决/路径错误/资源/保护见19及GitHub dd7053a中的本STATUS。续跑八PM已调整查找错误规则，此历史状态被后续执行覆盖，原证据保留。
 
-## 2026-10-15 续跑八：从对象继续（进行中）
+## 2026-10-15 续跑八（历史完成）
 
-PM确认7439文本/两模式展开/120输入准备已经结束，不重做；只按要求复核保存输入SHA。查询已有脚本/证据/配置必须先rg --files或find；产品操作前改正的查找路径不计准备错误但逐项报告；产品用错输入/env/参数仍每类修正一次，第二次或产品门禁失败即停。a1410e3d父cb和历史后备候选4ec07159…不改。本轮禁止新CMake，原树cmake/ninja/-P仍禁。
-
-120输入SHA复核PASS，共901204757B；新E=bolt-v4-20261015-validation，根内同名专用目录。六段单锁16GiB/swap0/nice15/ionice3/单编译进程，普通与候选同一实体路径及inode、相同argv/cwd/input/output，完整.o不删.GCC.command.line。随后双模式小spec、22RPM/DWARF预期清单、30×5性能geom<0.98才推sandbox。路径查找更正/准备性修正目前0；既有输入不再复制。
-
-续跑八步骤1 PASS：120/120（历史30+资产90），240次同一实体路径/inode编译，完整.o含.GCC.command.line同字节；六段scope共1380.133s/最大峰2.829GiB，16GiB资源/锁≤60m/单编译进程，锁/proc/scope回收。详见20/validation-objects；开始双模式小spec。查找更正/产品准备修正目前0，原树禁用继续。
-
-续跑八步骤2双模式小spec PASS：a141 compare-root/install/单次原post+尾检，两RPM候选SHA4ec07159…保持，原链ctrl处理/clang未strip，前后各三目标与alias通过；debug/release scope32.628/34.612s，详细资源和trace见20/validation-dual-mode。原树/原cache未写；报告判据与scopeCLI各修正一次，产品未重跑。步骤3逐包/DWARF预期清单继续。
-
-续跑八步骤3预期清单/证据PASS：22RPM绑定，133debug ELF来源穷尽、其他132清单SHA；GNUdebuglink CRC绑定clang自身debug；只clang实体+6alias变化、自身.debug删除、5个exclusive源缺失（详细20/expected JSON）。当前基线自身build-id链接0；无任何新增BOLT产物/非clang变化。父目录不自动允许删除，周四按基线逐项核。发布仅(a)规则模拟，不替代完整发布构建。16/20GiB解包写入均磁盘预检与写后≥30G，单锁/proc/scope回收。准备修正两类各一次/产品未重跑，查找更正0。接下来30份x86资产5轮固定核性能；geom<0.98才sandbox。
-
-续跑八步骤4性能PASS：30份x86资产各侧5次，固定CPU2/并行1/角色交替，geom 0.855890085（阈值<0.98），load1 1.37–2.54。scope1704.017s/峰4.343GiB，锁/proc/scope回收；完整逐项中位数/原样本/条件见20/validation-performance。未拿本地性能替代QB性能。
-
-续跑八最终PASS（2026-10-15T02:24:43.219484+08:00）：sandbox从cb67996861d070d68fec2b4c623eed7d20ba2e23直接更新至a1410e3d14b8836e3f9be5a1b4380f914dc2e705，远端前后核对PASS；不推refs/for/tizen_base、未force/重基。120对象/双模式mini/22RPM-DWARF预期清单/性能geom0.855890085全部PASS，候选历史后备4ec07159…；保护审计和120输入再次SHA PASS，所有锁/proc/scope回收。原cache47987/96881772832B不变，无CMake/Ninja/ARM根/完整LLVM/W tracked修改。查找更正0；报告debug brp条件与scope CLI返回值各修正一次，同一RPM与trace未重跑，详见20/validation-preparatory-corrections；进度计数消息误报已纠正，原300样本正确。周四六项QA与源父目录严格核对保持，发布完整构建/周五若新tizen_base合归档补丁再变基仍挂账。20和validation-final-result给全部结果，Raw索引最后更新。
-
-收尾补充：四类準备修正各一次（post计数、scopeCLI、报告百分号、报告模块搜索路径）；产品/推送未重跑，完整记录与原文公开，查找路径更正0。
+120完整对象、双模式mini、22RPM/DWARF预期清单、x86性能geom0.855890085 PASS；sandbox已更新并核对a1410e3d父cb，历史后备候选4ec保持。完整进度/资源/保护/四类准备修正见20及GitHub 053fe704中的STATUS。原证据不删；该资格不代表续跑九门禁认证。
 
 ## 2026-10-15 续跑九（进行中）
 
 PM裁决及本轮边界见21：修门禁不改生成参数/4ec候选，源父a141；仅push bolt-v4，禁止Gerrit。QB默认开关保持开启；回退需新spec提交改bcond_with，不能改QB配置。第一步离线闭包1911边（普通1792/command1715、新增phony9、实际BOLT110=102对象+7库+1链接），精确描述白名单及固定NINJA_STATUS，109/109夹具PASS。准备入口cwd修正一次，详见21；后续待。
+
+续跑九STOP_PROCESS_TIMEOUT_FIXTURE_SECOND_ERROR：健壮性修改后的138夹具137通过1失败，进程后代退出观察修正一次后仍见R，按第二次错误立即停，不再试。安全属性/宏链开关OFF比对/ARM与AArch64性能/真实新门禁全部NOT RUN，不能生成合格源提交。候选4ec、普通clang、禁用cache/ninja未变；22RPM/归档/源码保护PASS、原cache47987/96881772832B；scope已回收，无重锁/proc/CMake/Ninja/ARM树/Gerrit动作。源HEAD仍a141，未完成修复及manifest单独保存；生产prune移除，rsp证据无@不改代码。35新增测试方法；准备/查找错误、初次109单测未纳入cgroup偏差详见21及review-corrections/resources。保持QB默认开启，回退需新spec提交改bcond_with，正式说明必须注明。

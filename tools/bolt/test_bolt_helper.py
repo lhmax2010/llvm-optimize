@@ -172,15 +172,6 @@ class BuildrootUnchangedTests(Base):
 class InstallTests(Base):
     def root(self):
         r=self.d/'root';(r/'usr/bin').mkdir(parents=True);elf(r/'usr/bin/clang-22');return r
-    def test_manifest_delta_deletes_every_registered_addition(self):
-        r=self.root();before=h.inventory(r);(r/'usr/lib').mkdir();(r/'usr/lib/first.a').write_bytes(b'a');(r/'usr/lib/new-tool').symlink_to('../bin/clang-22')
-        result=h.prune_install(r,before,[r/'usr/lib/first.a',r/'usr/lib/new-tool']);self.assertTrue(result['file_list_equal'])
-    def test_unknown_addition_stops(self):
-        r=self.root();before=h.inventory(r);(r/'usr/bin/unknown').write_bytes(b'x')
-        with self.assertRaises(h.GateError):h.prune_install(r,before,[])
-    def test_removed_ordinary_file_stops(self):
-        r=self.root();before=h.inventory(r);(r/'usr/bin/clang-22').unlink()
-        with self.assertRaises(h.GateError):h.prune_install(r,before,[])
     def test_absolute_alias_resolves_inside_root(self):
         r=self.root();(r/'usr/bin/clang').symlink_to('/usr/bin/clang-22')
         self.assertEqual(h.rooted_resolve(r,r/'usr/bin/clang'),r/'usr/bin/clang-22')
@@ -232,7 +223,7 @@ class TinyTests(Base):
     def test_difference_fails(self):
         with self.assertRaises(h.GateError):h.tiny_gate(self.compiler('a'),self.compiler('b',True),self.d/'gate')
     def test_missing_compiler_fails(self):
-        with self.assertRaises(OSError):h.tiny_gate('missing','missing',self.d/'gate')
+        with self.assertRaises(h.GateError):h.tiny_gate('missing','missing',self.d/'gate')
 
 class ToolPlanTests(unittest.TestCase):
     def test_bolt_only(self):self.assertEqual(h.tool_plan('[1/2] '+next(x for x in h.BOLT_TASK_DESCRIPTIONS if x.startswith('Building '))+'\n[2/2] Linking CXX executable bin/llvm-bolt\n')['tasks'],2)

@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import signal
 import stat
 import struct
 import subprocess
@@ -51,14 +52,26 @@ def call(argv, log, cwd=None, timeout=300):
     log.parent.mkdir(parents=True, exist_ok=True)
     with log.with_suffix(log.suffix + '.argv.json').open('w') as f:
         json.dump({'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None}, f)
-    with log.open('wb') as f:
-        try:
-            p = subprocess.run(list(map(str, argv)), cwd=cwd, stdout=f, stderr=subprocess.STDOUT,
-                               timeout=timeout)
-        except subprocess.TimeoutExpired as e:
-            raise GateError('TIMEOUT: ' + str(argv[0])) from e
-    require(p.returncode == 0, 'COMMAND_FAILED rc=%s: %s (see %s)' % (p.returncode, argv[0], log))
-    return log.read_text(errors='replace')
+    process = None
+    try:
+        with log.open('wb') as f:
+            process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=f,
+                                       stderr=subprocess.STDOUT, start_new_session=True)
+            rc = process.wait(timeout=timeout)
+            require(rc == 0, 'COMMAND_FAILED rc=%s: %s' % (rc, argv[0]))
+        return log.read_text(errors='replace')
+    except BaseException as error:
+        if process is not None:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait()
+        if isinstance(error, (KeyboardInterrupt, SystemExit)):
+            raise
+        raise GateError('%s: %s (see %s)' %
+                        ('TIMEOUT' if isinstance(error, subprocess.TimeoutExpired) else 'COMMAND_ERROR',
+                         error, log)) from error
 
 def profile_unpack(source, output):
     output = Path(output)
@@ -127,23 +140,34 @@ class ELF:
     """ELF64 little-endian reader. No whole-file loads; semantic symbol/relocation records."""
     def __init__(self, path):
         self.path = Path(path); self.f = self.path.open('rb')
+        if os.fstat(self.f.fileno()).st_size < 64:
+            self.f.close(); raise GateError('truncated ELF header')
         self.mm = mmap.mmap(self.f.fileno(), 0, access=mmap.ACCESS_READ)
         try:
             require(self.mm[:6] == b'\x7fELF\x02\x01', 'expected ELF64 little endian')
             h = self.unpack('<16sHHIQQQIHHHHHH', 0)
-            self.machine = h[2]; self.entry = h[4]
+            require(h[0][6] == 1 and h[3] == 1 and h[8] == 64, 'invalid ELF header version/size')
+            require(h[1] in (2, 3), 'expected executable or shared ELF type')
+            self.elf_type = h[1]; self.machine = h[2]; self.entry = h[4]
             phoff, shoff, phentsize, phnum, shentsize, shnum, stridx = h[5], h[6], h[9], h[10], h[11], h[12], h[13]
             require(shentsize == 64 and shnum > 0 and stridx < shnum, 'unsupported section numbering')
             self.sections = [self.unpack('<IIQQQQIIQQ', shoff + i * 64) for i in range(shnum)]
+            for section in self.sections:
+                if section[1] != 8:
+                    self.range(section[4], section[5])
             names = self.sections[stridx]
+            require(names[1] == 3, 'section name table is not STRTAB')
             self.names = [self.string(names[4], names[5], s[0]) for s in self.sections]
             self.by_name = dict(zip(self.names, self.sections))
             require(len(self.by_name) == len(self.names), 'duplicate section name')
-            self.loads = []
+            self.loads = []; self.phdrs = []
             for i in range(phnum):
                 require(phentsize == 56, 'unsupported program header')
                 p = self.unpack('<IIQQQQQQ', phoff + i * phentsize)
+                self.phdrs.append(p)
                 if p[0] == 1:
+                    require(p[5] <= p[6], 'LOAD filesz exceeds memsz')
+                    self.range(p[2], p[5])
                     self.loads.append(p)
         except Exception:
             self.close(); raise
@@ -152,15 +176,18 @@ class ELF:
     def unpack(self, fmt, pos):
         require(pos >= 0 and pos + struct.calcsize(fmt) <= len(self.mm), 'ELF range error')
         return struct.unpack_from(fmt, self.mm, pos)
+    def range(self, offset, size):
+        require(0 <= offset <= len(self.mm) and 0 <= size <= len(self.mm)-offset, 'ELF content range error')
     def string(self, offset, size, start):
-        require(start < size, 'ELF string index error')
+        self.range(offset, size)
+        require(0 <= start < size, 'ELF string index error')
         end = self.mm.find(b'\0', offset + start, offset + size)
         require(end >= 0, 'unterminated ELF string')
         return self.mm[offset + start:end].decode('utf-8', errors='surrogateescape')
     def symbols(self, index):
         sec = self.sections[index]; require(sec[1] in (2, 11), 'not a symbol table')
         require(sec[9] == 24 and sec[5] % 24 == 0 and sec[6] < len(self.sections), 'bad symtab')
-        strings = self.sections[sec[6]]; result = []
+        strings = self.sections[sec[6]]; require(strings[1] == 3, 'symbol names are not STRTAB'); result = []
         for off in range(sec[4], sec[4] + sec[5], 24):
             name, info, other, shndx, value, size = self.unpack('<IBBHQQ', off)
             require(shndx != 65535, 'XINDEX not supported')
@@ -169,7 +196,7 @@ class ELF:
         return result
     def audit(self, final=False):
         require(self.machine == 62 and self.loads, 'not executable native x86_64 ELF')
-        require(any(p[1] & 1 and p[3] <= self.entry < p[3] + p[6] for p in self.loads),
+        require(any(p[1] & 1 and p[3] <= self.entry < p[3] + p[5] for p in self.loads),
                 'entry not inside executable LOAD')
         require(not any('debug' in n.lower() for n in self.names), 'BOLT clang contains a debug section')
         require('.gdb_index' not in self.by_name, 'BOLT clang contains a debug index')
@@ -187,10 +214,14 @@ def tiny_gate(ordinary, candidate, work, resource_dir=None):
     for triple in TRIPLES:
         row = {'target': triple, 'outputs': []}
         for label, cc in [('ordinary', ordinary), ('candidate', candidate)]:
-            argv = [cc, '--target='+triple, '-c', '-O2', str(source), '-o', str(out)]
+            argv = [cc, '--no-default-config', '--target='+triple, '-c', '-O2', str(source), '-o', str(out)]
             if resource_dir:
                 argv[1:1] = ['-resource-dir', resource_dir]
+            if out.exists() or out.is_symlink():
+                out.unlink()
             call(argv, work/(triple+'-'+label+'.log'), cwd=work, timeout=60)
+            require(out.is_file() and not out.is_symlink() and out.stat().st_size > 0,
+                    'tiny compiler did not produce a nonempty regular file: '+label+' '+triple)
             dest = work/(triple+'.'+label+'.o'); shutil.copyfile(out, dest)
             row['outputs'].append({'path': str(dest), 'sha256': digest(dest), 'bytes': dest.stat().st_size})
         row['byte_equal'] = (work/(triple+'.ordinary.o')).read_bytes() == (work/(triple+'.candidate.o')).read_bytes()
@@ -200,10 +231,12 @@ def tiny_gate(ordinary, candidate, work, resource_dir=None):
 
 def inventory(root):
     root = Path(root).absolute(); files = {}
-    for folder, dirs, names in os.walk(root, followlinks=False):
+    require(root.is_dir() and not root.is_symlink(), 'inventory root must be a non-symlink directory: '+str(root))
+    def traversal_error(error):
+        raise GateError('inventory traversal failed: '+str(error)) from error
+    for folder, dirs, names in os.walk(root, followlinks=False, onerror=traversal_error):
         for name in sorted(dirs + names):
             p = Path(folder)/name; key = p.relative_to(root).as_posix(); st = p.lstat()
-            require(not (stat.S_ISLNK(st.st_mode) and p in [root]), 'symlink root')
             if stat.S_ISLNK(st.st_mode):
                 files[key] = {'type': 'symlink', 'target': os.readlink(p)}
             elif stat.S_ISREG(st.st_mode):
@@ -245,21 +278,6 @@ def compare_root(root, baseline, after_path):
             'buildroot permissions/metadata differ: .')
     return {'buildroot_unchanged': True, 'entries': len(new)}
 
-def prune_install(root, baseline, installed_paths):
-    root = Path(root).absolute(); before = baseline['files']; after = inventory(root)['files']
-    require(before.keys() <= after.keys(), 'ordinary install file removed before BOLT cleanup')
-    added = set(after) - set(before)
-    allowed = {Path(p).relative_to(root).as_posix() for p in installed_paths}
-    for key in sorted(added, key=lambda x: (x.count('/'), x), reverse=True):
-        path = root/key
-        require(after[key]['type'] == 'dir' or key in allowed, 'unregistered install addition: '+key)
-        if after[key]['type'] == 'dir':
-            path.rmdir()
-        else:
-            path.unlink()
-    now = inventory(root)['files']; require(now == before, 'install file list/type/mode differs after cleanup')
-    return {'removed': sorted(added), 'file_list_equal': True}
-
 def rooted_resolve(root, path):
     root = Path(root).absolute(); rel = Path(path).relative_to(root); todo = list(rel.parts)
     done = []; seen = set()
@@ -293,7 +311,7 @@ def alias_group(root):
             aliases.append(p)
         elif p.is_file() and not p.is_symlink() and p.stat().st_size == base.st_size and digest(p) == digest(entity):
             aliases.append(p)
-        elif p.name in ['clang', 'clang++', 'clang++-22'] or p.name.endswith(('-clang','-clang++')):
+        elif p.name in ['clang', 'clang++', 'clang++-22', 'clang-cl', 'clang-cpp'] or p.name.endswith(('-clang','-clang++')):
             raise GateError('clang family alias points to different content: '+str(p))
     return entity, aliases
 
@@ -332,15 +350,36 @@ def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
     finally:
         e.close()
     require(digest(entity) == state['identity']['after_sha256'], 'final installed SHA differs from stripped candidate')
+    no_bolt_products(root)
     rows = tiny_gate(ordinary, str(entity), candidate_work, resource_dir)
     return {'sha_unchanged': True, 'aliases_pass': True, 'elf': elf, 'tiny': rows,
             'strip_identity_pass': True}
+
+def certified_version(text):
+    lines = re.findall(r'^\s*(LLVM version[^\n]*)$', text, re.M)
+    require(lines == ['LLVM version 22.1.8'], 'uncertified BOLT tool version')
+    return lines[0]
+
+def no_bolt_products(root):
+    root = Path(root)
+    for name in ('llvm-bolt', 'perf2bolt', 'llvm-boltdiff', 'merge-fdata'):
+        p = root/'usr/bin'/name
+        require(not p.exists() and not p.is_symlink(), 'BOLT tool in buildroot: '+str(p))
+    require(not list((root/'usr/lib64').glob('libLLVMBOLT*.a')), 'BOLT static library in buildroot')
+    # Inventory fails closed on traversal errors; inspect all installed CMake files,
+    # a superset of exports including LLVMConfig.cmake and nested export metadata.
+    for key, item in inventory(root)['files'].items():
+        if key.lower().endswith('.cmake'):
+            p = rooted_resolve(root, root/key)
+            require(p.is_file(), 'unreadable CMake metadata: '+key)
+            require(b'BOLT' not in p.read_bytes().upper(), 'BOLT CMake export: '+key)
+    return {'no_bolt_products': True}
 
 def rewrite(bolt, profile, input_elf, output, work):
     work = Path(work); work.mkdir(parents=True, exist_ok=True)
     require(digest(profile) == PROFILE_SHA, 'profile SHA mismatch')
     version = call([bolt, '--version'], work/'bolt-version.log')
-    require('LLVM version 22.1.8' in version, 'uncertified BOLT tool version')
+    certified_version(version)
     disk_preflight(Path(output).parent,4*Path(input_elf).stat().st_size)
     argv = [bolt, input_elf, '-o', output, '-data='+str(profile)] + OPTIONS
     text = call(argv, work/'bolt.log', timeout=1800)
@@ -563,7 +602,6 @@ def main():
     s=sub.add_parser('tiny');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('work');s.add_argument('--resource-dir')
     s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
     s=sub.add_parser('compare-root');s.add_argument('root');s.add_argument('baseline');s.add_argument('after')
-    s=sub.add_parser('prune');s.add_argument('root');s.add_argument('before');s.add_argument('install_manifest');s.add_argument('result')
     s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
     s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
     a=p.parse_args()
@@ -582,8 +620,6 @@ def main():
     elif a.cmd=='tiny':result=tiny_gate(a.ordinary,a.candidate,a.work,a.resource_dir)
     elif a.cmd=='snapshot':result=root_snapshot(a.root);save(a.output,result)
     elif a.cmd=='compare-root':result=compare_root(a.root,json.loads(Path(a.baseline).read_text()),a.after)
-    elif a.cmd=='prune':
-        result=prune_install(a.root,json.loads(Path(a.before).read_text()),Path(a.install_manifest).read_text().splitlines());save(a.result,result)
     elif a.cmd=='install':result=install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()))
     elif a.cmd=='post':
         result=post_gate(a.root,json.loads(Path(a.state).read_text()),a.ordinary,a.work,

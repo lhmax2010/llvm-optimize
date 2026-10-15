@@ -21,3 +21,25 @@ helper 用全集的精确字符串白名单。每行必须完整匹配 `[f/t] �
 准备记录：执行编辑脚本时 cwd 指向 tools/bolt，误用了相对的 E 路径；改成已定位的绝对路径一次。该次未编辑 helper，随后新回归夹具对旧 helper 报错；修正入口后109项通过。属本轮一次命令工作目录准备修正，不隐藏失败记录。
 
 后续步骤尚待，源提交与文本补丁暂不生成最终版。
+
+## 第二步：部分实现，停止认证
+
+已编辑但未认证：call 使用 Popen/start_new_session、异常/超时 killpg(SIGKILL)+wait 并附日志；tiny 每次删除旧输出、要求非空普通非链接文件、双方禁默认配置；inventory 验证根并对 walk 错误失败；ELF 类型/版本/头大小/节范围/字符串表/LOAD范围及filesz入口检查；clang-cl/cpp 异常别名；版本行精确校验；post 禁工具/静态库/所有CMake文件内BOLT；spec把debug路径检查移到BOLT动作前；生产prune函数/CLI删除，其三个历史夹具单独保存不随Source发布。候选生成参数未改。
+
+rsp检查：保存的 link.original SHA256 `352a6f57fdc617c20f3e616a0f49ad113d1d5f057e44dcad0afa88c63a9a68cf`，4890字符；shlex分词后没有任何以 `@` 开头的参数。完整命令在 review-rsp-evidence.json，按裁决不增加rsp代码。
+
+新增35个测试方法（tool-plan6、健壮性29），连同原103共138。第一次全套执行有夹具字段/异常契约及进程观察错误；各项一次修正后，最终 **137/138 PASS、1 FAIL**。其中ELF文件范围、入口、字符串、目录访问错误、tiny无输出/空/链接、别名、版本、反向检查的夹具通过；不能称全部夹具PASS。
+
+失败项 `ProcessGroupTests.test_timeout_kills_descendants_and_heartbeat`：第一次 exists/read 的 `/proc` 竞态已修正；第二次在 helper 返回后，读取后代1199507状态为 `R`，不是消失或Z。未完成后代全部退出与心跳停止的证明，立即停止，不再修正/重跑。killpg已发送不等于已证明整个进程组退出；仅等待直接子进程不足以提供此证据。以后应先明确后代退出/回收的等待契约，再修复并重测，不在本轮追加尝试。后续只读审计该PID已不存在，两个失败scope均已回收。
+
+历史prune三项只移位未删除证据；生产Source只有helper/spec/profile，不包含历史测试。新helper/spec仅为未完成工作副本，**没有生成新源提交**。未完成差异及SHA单独置 review-repairs-incomplete.patch/manifest，旧a141文本补丁/manifest未冒充本轮资格。
+
+## 停止后状态
+
+安全属性对比（ELF类型、INTERP、RELRO、STACK、PROPERTY/notes、动态flags/needed、dynsym、版本集合）全部 **NOT RUN**，不声称保持；因此安全属性门禁尚未实现。宏链逐字证据、debug/release开关OFF与cb基线比对全部NOT RUN。ARM/AArch64 30条各5次、20独立源与留出组性能全部NOT RUN，几何平均比未知。真实候选上的新tiny/security/post/compare-root及构造dry-run联合认证NOT RUN。旧20的x86性能不代替本轮目标性能。
+
+候选仍 `4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9`；普通clang与禁用原树cache/ninja SHA未变。22RPM全SHA/大小、归档证据元数据、原源码元数据比对PASS，原ThinLTO仍47987文件/96881772832B；本轮无CMake/Ninja/链接/候选重写/原cache写入/共享锁/proc挂载/ARM根/LLVM构建。全部实验4GiB/swap0/nice19/ionice3 scope已回收；初次109项短单测直接执行，未纳入cgroup，该资源执行偏差如实登记。无>10GiB写入。
+
+新源提交：**未生成**；源HEAD仍a1410e3d，修复在工作副本保留。本轮Gerrit任何分支均未查询或推送。GitHub阶段提交3e7141f已发布tool-plan；停止记录与未认证修复另提交bolt-v4。
+
+准备修正与查找更正逐条见review-corrections.json；两份完整失败日志均公开。初次编辑脚本cwd错误后测试了旧helper，作为旧行为回归复现而非新实现认证；后续109项才是正确实现PASS。停止时没有继续产品步骤。
