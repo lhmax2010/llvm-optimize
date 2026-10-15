@@ -1,10 +1,10 @@
 # 10 Raw 续表：续跑十四B
 
-本地认证PASS；源506dc25c86e4e2154150796d10b77b71d71ad6bb，父67619ec8bbbac7238a6cfc33a481ccfbcd12206f。材料先公开，sandbox推送结果另见本页后续记录。QB与真实树演练仍由用户在PM审完后启动。
+本地认证PASS；源506dc25c86e4e2154150796d10b77b71d71ad6bb，父67619ec8bbbac7238a6cfc33a481ccfbcd12206f。材料先公开后，新sandbox已推并前后核对，结果见页末。QB与真实树演练仍由用户在PM审完后启动。
 
 使用保全rpms-docs35的22包，逐一符合docs35附录A；旧路径实际为docs38包。两者均不是67619ec8新构建物。完整合并根17722路径/47cmake PASS；257项测试、OFF/ON展开、四post、真实安全/tiny/双根post全部PASS。测试stdout实际为2609字节/5条夹具JSON，旧2600字节同类输出也按原文纠正，不能称为空。
 
-本表材料pin为`6cce921c1e127e73548a21b254bbde4d7922d86a`。0000是显式--no-binary文本format-patch，profile Source另附；完整含二进制补丁本地保留，静态apply/tree一致。原始RPM脚本、测试输出与patch空白全部保留。
+下表SHA/字节对应钉版，分支版状态文件随收尾更新。先发材料pin为`6cce921c1e127e73548a21b254bbde4d7922d86a`。0000是显式--no-binary文本format-patch，profile Source另附；完整含二进制补丁本地保留，静态apply/tree一致。原始RPM脚本、测试输出与patch空白全部保留。
 
 |文件|分支 raw|钉提交 raw|字节|SHA256|
 |---|---|---|---:|---|
@@ -70,3 +70,22 @@
 |tools/bolt/results/review4b-tests.stderr.txt|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4b-tests.stderr.txt)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/6cce921c1e127e73548a21b254bbde4d7922d86a/tools/bolt/results/review4b-tests.stderr.txt)|24597|2fefb1ba30c1319f52fde5494b660125017e6e899858013dfbe129c8c0b0c7c4|
 |tools/bolt/results/review4b-tests.stdout.txt|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4b-tests.stdout.txt)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/6cce921c1e127e73548a21b254bbde4d7922d86a/tools/bolt/results/review4b-tests.stdout.txt)|2609|0b0f3d7a9c7bceac54bfe7dc1fb9065b14cb88fb1a460e4bce36a2d79b3ce553|
 |tools/bolt/test_fourth_review_b.py|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/test_fourth_review_b.py)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/6cce921c1e127e73548a21b254bbde4d7922d86a/tools/bolt/test_fourth_review_b.py)|2094|65c7bc0e0785403fc4229fa184ee381b14392092fac592d030e8df965e36a921|
+
+## 最终推送结果 raw
+
+PASS；新分支推前为空，推后为506dc25c86e4e2154150796d10b77b71d71ad6bb，无force；Gerrit仅说明长度警告。最终状态/原文pin为`2dfd598f65509b60d523aef25867590008d55e4a`。QB与真实树演练未启动。
+
+|文件|分支 raw|钉提交 raw|字节|SHA256|
+|---|---|---|---:|---|
+|docs/bolt/24_rebase_recertification.md|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/docs/bolt/24_rebase_recertification.md)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/docs/bolt/24_rebase_recertification.md)|15464|abea3d44b42da2648f2d80a0ef92fd559add083910ba956f4ba3f448cb34f3e4|
+|docs/bolt/STATUS.md|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/docs/bolt/STATUS.md)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/docs/bolt/STATUS.md)|49652|e5e110438bb953050cd53a9ee33e1d0e071f00ad5a5c4d549dea59a149773513|
+|patches/bolt/draft-manifest.json|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/patches/bolt/draft-manifest.json)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/patches/bolt/draft-manifest.json)|4109|d4fd68e7c9676bca1c8520d10b1d4b60d5f13bf040aeb723252003a0afead5be|
+|tools/bolt/results/review4b-sandbox-result.json|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4b-sandbox-result.json)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/tools/bolt/results/review4b-sandbox-result.json)|1129|200c7082196677ec858d22897b68af5ca6e62a137b411b89ba4df3ecc2c8f384|
+|tools/bolt/results/review4b-publication-verified.json|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4b-publication-verified.json)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/tools/bolt/results/review4b-publication-verified.json)|36114|5ca20c6baaef08249f52f7da87620902b17a132530fd01a018cfaa2b33c77196|
+|tools/bolt/results/review4b-final-resources.json|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4b-final-resources.json)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/tools/bolt/results/review4b-final-resources.json)|11839|41893dc4db1233a16fe33b9c4705fcfa5cf1fd8fd0ed4958461914ee346789c8|
+|tools/bolt/results/review4b-sandbox-before.stdout.txt|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4b-sandbox-before.stdout.txt)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/tools/bolt/results/review4b-sandbox-before.stdout.txt)|0|e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855|
+|tools/bolt/results/review4b-sandbox-before.stderr.txt|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4b-sandbox-before.stderr.txt)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/tools/bolt/results/review4b-sandbox-before.stderr.txt)|0|e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855|
+|tools/bolt/results/review4b-sandbox-push.stdout.txt|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4b-sandbox-push.stdout.txt)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/tools/bolt/results/review4b-sandbox-push.stdout.txt)|0|e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855|
+|tools/bolt/results/review4b-sandbox-push.stderr.txt|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4b-sandbox-push.stderr.txt)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/tools/bolt/results/review4b-sandbox-push.stderr.txt)|435|6dd8f90e4180fb8ec45d0fc670ad33b5e12478619f6576b8189d34e13b8c34d0|
+|tools/bolt/results/review4b-sandbox-after.stdout.txt|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4b-sandbox-after.stdout.txt)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/tools/bolt/results/review4b-sandbox-after.stdout.txt)|82|0e1157effdfdf19ecf6b2a1a15c88749592d41b2e3f290b615178627096d0a02|
+|tools/bolt/results/review4b-sandbox-after.stderr.txt|[branch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review4b-sandbox-after.stderr.txt)|[pinned](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/2dfd598f65509b60d523aef25867590008d55e4a/tools/bolt/results/review4b-sandbox-after.stderr.txt)|0|e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855|
