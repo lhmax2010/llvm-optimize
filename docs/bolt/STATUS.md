@@ -267,16 +267,14 @@ PM裁决及本轮边界见21：修门禁不改生成参数/4ec候选，源父a14
 
 续跑九STOP_PROCESS_TIMEOUT_FIXTURE_SECOND_ERROR：健壮性修改后的138夹具137通过1失败，进程后代退出观察修正一次后仍见R，按第二次错误立即停，不再试。安全属性/宏链开关OFF比对/ARM与AArch64性能/真实新门禁全部NOT RUN，不能生成合格源提交。候选4ec、普通clang、禁用cache/ninja未变；22RPM/归档/源码保护PASS、原cache47987/96881772832B；scope已回收，无重锁/proc/CMake/Ninja/ARM树/Gerrit动作。源HEAD仍a141，未完成修复及manifest单独保存；生产prune移除，rsp证据无@不改代码。35新增测试方法；准备/查找错误、初次109单测未纳入cgroup偏差详见21及review-corrections/resources。保持QB默认开启，回退需新spec提交改bcond_with，正式说明必须注明。
 
-## 2026-10-15 续跑十（进行中）
+## 2026-10-15 续跑十（历史完成）
 
-PM：上轮为真实退出证明缺口，按SIGKILL/直接回收/扫描pgrp等待非Z-X成员清空（10s上限、列存活PID状态）修复；rsp无@关闭；110描述tool-plan已认证不重做；生成参数不改、4ec候选变化即停。原树禁cmake/ninja/-P，禁止任何Gerrit动作；资源/保护/准备修正规则继续。工作副本继续使用，源父a141。步骤1 140/140夹具PASS，比上轮138新增2项；真实shell/子/孙心跳停止、持续存活mock报PID及原错误/日志通过，4GiB scope已回收，无准备修正。安全属性等后续待，详细21。
-
-续跑十步骤2 PASS：两真实ELF安全属性全部保持（均无GNU property），65241动态符号/版本、43需求相同；helper流水线strip-all后及post新增比较。6新安全夹具、全套146/146 PASS；旧post夹具placeholder改真实ELF一次准备修正，原文保留。原/候选SHA不变；原文/表/资源见21与reviewfinish-security-*。宏链及真实门禁待。
-
-续跑十步骤3 PASS：当前canonical双模式小spec复用源override完整原文、同处install/files之后（历史20为路径适配，非原文相同，已澄清）；小spec只展开未重跑RPM。源条件块空白移入BOLT分支，OFF debug/release所有相关段与cb逐字节相同。rpmspec无--without，依rpmbuild实证的_without_clang_bolt字符串与已安装bcond宏作等价展开；选项兼容及宏值报告各准备修正一次，原文保留。累计三类各一次，具体21。
-
-续跑十最终PASS_LOCAL_GATES_STOP_BEFORE_PUSH：真实tiny/security、20双模式根副本完整post/反向检查/compare-root、110计划正反例全PASS；146夹具。新源97c060a10bf0d19cea4b163853ceb873ed431478父a141，patch0002静态apply/整树PASS，spec/helper SHA见21与manifest；profile及4ec候选不变。没有Gerrit查询/推送，按授权停在推送前。三类准备修正各一次、两macro采集错误原因不同均保留；原22RPM/归档/源码/坏配置/cache审计PASS；所有4GiB scopes/proc回收，无重锁/CMake/Ninja/ARM/完整构建。
+146夹具、安全属性、宏链18段OFF字节相同、真实tiny/post反向/compare-root/tool-plan全部PASS，生成本地源97c060a父a141；未推Gerrit，后续十一A修署名并推。原4ec候选/参数不变、保护/资源回收PASS。三类准备修正各一次，详细原文见21和949734c版STATUS；不把canonical小spec展开冒充新RPM执行。
 
 ## 2026-10-15 续跑十一A：署名与sandbox
 
 源仓库user.name/email均来自global /home/linhao/.gitconfig：liushanshan / ss0217.liu@samsung.com，未修改配置。单次-c amend/reset-author后，新源b7e61fb92b34795868230e4f9cee8e3ec65496f6，author/committer均FatTank <hao.lin@samsung.com>；父a1410e3d，tree ea70ea066dd16430b23c238d9654e1667479b960与97c060a相同，spec df1198d1…/helper4590b337…不变。文本补丁/manifest同步。sandbox查询前a1410e3d→无force快进推送→查询后b7e61fb92b34795868230e4f9cee8e3ec65496f6，确认成功；Gerrit仅提示subject>50字符警告，原文在manifest。未推评审/tizen_base，未做其他验证步骤。
+
+## 2026-10-15 续跑十一B：ARM/AArch64性能（进行中）
+
+沿用20方法：CPU2、单并行、同一编译器实体路径/inode、五轮角色先后交替，每侧5次，全部样本保留；普通7df/候选4ec不改。60资产SHA/原参数预检PASS，目标armv7l-tizen-linux-gnueabi与aarch64-tizen-linux-gnu；每目标30条/20独立源，重复源SHA相同。独立20统计合并每源全部5/10样本后取每侧中位数，等权20比值；另报留出10。每目标单独16GiB/swap0/nice15/ionice3及共享锁≤60m，准入MemAvailable≥12G、运行<3G终止，磁盘预算16G后仍≥30G。ARM测量先行；不改LLVM源码/参数、不进ARM树、不操作Gerrit。

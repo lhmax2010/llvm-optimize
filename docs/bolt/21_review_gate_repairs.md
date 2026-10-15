@@ -108,3 +108,13 @@ OPTIONS与PROFILE_SHA常量和父提交相同；候选最终SHA仍4ec07159aeb4f9
 收尾保护审计PASS：22RPM完整SHA/大小、归档证据元数据、原源码元数据、禁用cache/ninja SHA不变，原ThinLTO仍47987/96881772832B。本轮没有原树CMake/Ninja/-P、链接/重写、重锁、ARM树或完整LLVM构建；所有实验4GiB/swap0/nice19/ionice3且scope回收，proc挂载仅本轮临时proc并在finally卸载，无宿主bind/namespace。没有单次>10GiB写入。详细资源、原文、三类各一次准备修正见reviewfinish-resources/corrections/final-result。
 
 本轮只完成提示要求的本地修复/安全/宏链/真实门禁认证，停止在推送前。历史20性能与对象证据不因本轮而重测；前轮尚缺ARM/AArch64性能不冒充已补。Quickbuild仍须现场tool-plan/compare-root/security/post、自身clang性能及debugsource实物核对；不要求local/QB clang SHA相等。
+
+## 续跑十一B：目标性能方法与输入
+
+20性能方法原样用于ARM/AArch64：固定CPU2，单并行，编译器在本轮专用槽位覆盖且inode不变；round0/2/4 ordinary→candidate，round1/3 candidate→ordinary；每侧5次，不删异常样本。只计taskset+clang子进程墙钟，拷贝/SHA/环境前导/chroot在计时外；记录每次前后负载/频率，保留原RPM PATH和which输出。频率策略不修改。
+
+普通SHA7df0ff90…、候选4ec07159…，60份既有.ii SHA及大小逐项相同。三元组严格取资产armv7l-tizen-linux-gnueabi/aarch64-tizen-linux-gnu，所有参数逐字保留，仅换本轮统一编译器槽位与输出。输入仍在此前专用目录，不重新预处理或进入ARM树。完整预检/原记录SHA在target-perf-preflight，实验driver公开。
+
+每目标30条=arm-training10、arm-holdout10、aarch64-training10；两个训练cohort是同10源且输入SHA相同，共20独立源。主判据仍30条每侧5次的中位比几何平均严格<0.98；独立20按源汇总全部5/10样本再中位/比值/等权几何平均，留出组10另算。额外保存按entry中位数比值先在源内几何平均再等权20的结果，明确不同口径，不用去重删除任何原样本。
+
+两目标分开重锁与16GiB/swap0/nice15/ionice3，单锁≤60m，MemAvailable准入12G/运行底线3G。磁盘16GiB预检预计剩36,421,627,904B，≥30GiB。准备性错误目前0；未改LLVM源码、未操作Gerrit。结果待。
