@@ -278,14 +278,20 @@ PM裁决及本轮边界见21：修门禁不改生成参数/4ec候选，源父a14
 
 ARM/AArch64性能均PASS：geom30 0.856351167/0.847699213；独立20与留出10、600样本/条件/保护见21及95a2955版STATUS。无源码/Gerrit动作，锁/proc/scope回收。
 
-## 2026-10-15 续跑十二：STOP（详情22）
+## 2026-10-15 续跑十二（历史STOP）
 
-PM第二轮以b7e61fb为基线，本轮author/committer/Signed-off-by统一Hao Lin，单次-c不改全局；全PASS才推sandbox。保持profile/生成参数/4ec。原树禁CMake/Ninja，overlay新授权不可用则NOT RUN不复制替代。
+202夹具与真实历史候选新门禁PASS，d08父b7；overlay权限不足NOT RUN，第七步采集准备第二次失败STOP，未推sandbox。完整人工裁决/过程/保护与源码SHA见22和858c114版STATUS；PM材料补发ac299f4。十三A重新授权捕获计次，明确本轮不含真实树演练，故不以十二缺项阻塞本轮授权推送；历史证据不删。
 
-1a历史128行/126连续恒t任务含TF2，原流有时间戳/包装器，不能当新白名单实际计划；1b toy重新生成实为[0/1]且看不到后续，fileWRITE重编；1c22RPM/47.cmake新旧规则均0命中，不宣称旧post实测误拒。修复tool-plan/真实构建复核/日志锚点、call WNOWAIT与有界清理/严格proc、RELRO与dynsym五元组/提供者/DT_BIND_NOW/W+X、无SHA定向反向检查/@rsp。202/202（原146保留+56），两模式OFF各18段同cb、canonical片段同字节；真实7df与4ec新安全/tiny/双根post/compare-root全部PASS。
+## 2026-10-15 续跑十三A：PASS，sandbox已推；QB未启动
 
-新本地源d08b54da276102c2b607fbddd07966111f5147cd父b7，tree40a569a2e001dcf11f5cf5e9239211001be9d7a3；0003静态apply/tree PASS，spec04bc88f9…/helper42a4659f…镜像相同。第六步仅空own目录权限探针，sudo: a password is required，NOT RUN；未进入下层/复制树/启动实际LLVM工具构建或pipeline。锁释放，无overlay遗留。
+PM审完0003后指定两修复：解析输出去|/||并归一cmake_ninja_workdir双写，唯一VCSVersion.inc false→true，新描述111；no_bolt_products仅解析.cmake链接，普通悬空/越界链接允许，遍历失败关闭及BOLT路径/导出检查保持。原树仍禁cmake/ninja/-P，不做overlay/真实树演练；作者/提交者/Signed-off-by均Hao Lin，单次-c不改全局。
 
-第七步采集：漏备Source0修正一次；捕获入口只改shebang而未拦实际shell，修正一次；修正后已保存baseline debug脚本，但rpmbuild继续校验未安装文件，驱动仍以总rc0为采集前提，同类第二次准备失败STOP。完整双模式实际post链认证NOT RUN；不放宽判据、不再试。仅继续保护/文档/raw发布。查找更正5及一次广域rg中断范围偏差详22和corrections。
+闭包1911，仅1边变类，111=102对象+7库+1可执行+1generated；外部文件只有TF锚点fileWRITE刷新、两个模型configure_file COPYONLY保持，另.为目录。历史126=111BOLT+2TF+8runtime+2merge-fdata+3AArch64，未归因0，筛选重编号113行通过。旧110JSON/旧闭包不改。
 
-sandbox仅只读查仍b7e61fb，本轮未推，不能把d08交付QB。保护PASS：普通/4ec、22RPM、归档证据、原源码和坏cache/ninja身份不变；原缓存47987/96881772832B，无>10GiB写入；root free50448162816B。W tracked仅原gbs改动。scope/proc/锁回收。21已收窄RELRO/dynsym和首次/暖配置表述，追加变基上传验收补充；第六/七缺项、Quickbuild实物/发布完整构建等继续待验证。
+214/214（原202保留+12），22RPM完整新合并根17722路径/47cmake新版PASS，d08同根也PASS，无实测误拒。全解包约497s、锁约497s/16GiB，最低样本free371802681344B。ordinary7df/4ec重跑安全/tiny/双根post/compare-root PASS，候选及profile/生成参数不变。spec SHA04bc88f9…与d08相同，关闭开关两模式逐字证据沿用；helper6bea2346…镜像相同。
+
+四份post真实生成脚本PASS：debug含FD、不含brp-strip，release相反；平台段1446/879B逐字节同cb，只尾追加BOLT post/anchor且最后。捕获后每次仅105条BUILDROOT文件缺失为预期；两类准备各一次修正（错误边界标记、初始release宏链实为debug），原文/错误模式/专用宏副本保留，原平台和用户宏未改；首条实际平台命令定界并保留以下原始字节。初始release PASS表述撤回，最终以release-corrected结果为准。
+
+源d08直接amend为ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8，父b7e61fb，tree62748a008e606fe4c234bc742626c2f76bfd9a3c；0003相对b7静态apply/tree PASS。34项材料先GitHub 0ac1113e8b3bbb66340c0c9573458f0f57a3e64e（68 raw核验），然后sandbox只读查b7→无force快进ad8→只读查ad8。未推评审/tizen_base。docs23/本STATUS/raw索引在推后补。软件包platform/upstream/llvm@ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8；QB仅用户在PM审核后启动，不因sandbox推送自动启动。
+
+保护审计PASS：22RPM/归档证据/原源码/禁用配置/原缓存47987/96881772832B保持，scope/proc/锁回收，W跟踪文件未改。完整执行、原文、资源、纠正及长期待验项见23和review3系列。真实树演练另发prompt；QB现场工具/流水线/清单/性能仍需验证。
