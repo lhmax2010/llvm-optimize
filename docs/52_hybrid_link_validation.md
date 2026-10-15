@@ -1,270 +1,358 @@
-# 混合链接完整构建验证指南（交组员执行）
+# 混合链接组员验证指南 v2
 
-状态：**本机仅配置级核对完成；以下构建、安装和运行命令尚未执行，先等 PM review。**
-精确基线 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`；补丁与配置证据见 [52_hybrid_link_tizen_base.md](52_hybrid_link_tizen_base.md)。本轮不包含 356949。以下命令中的用户名为本机示例；异机应整体替换工作区前缀，并在报告中记录，不混用他人的现有构建根。
+状态（2026-10-15）：**PM 已通过补丁 cef4d90；本版只修订指南、期望表与检查脚本。Quickbuild 为主路径，本地 GBS 仅作可选正确性验证。** 本轮没有运行构建或新 RPM 验收。补丁 tree 保持 `80a6fd231c4564a3b762f4ec288cf2c41f9d2e20`，配置级证据见 [设计报告](52_hybrid_link_tizen_base.md)。
 
-## 1. 应用与构建输入
+本版文件身份和检查摘要见 [validation-v2-checks.json](52_hybrid_link_evidence/validation-v2-checks.json)；原 `delivery-manifest.json` 保留为 v1 交付记录，不用于核对本版指南的 SHA。
 
-在组员的独立 checkout 执行，不在原 `W/llvm` 或其他会话的树上操作：
+## 0. 一次填写的变量块
+
+在组员验证终端执行；切换到验证 worker 时，将同一块中的路径改成该机的挂载位置并重新导出。账号、工作目录、仓库、日志与产物位置集中在这里维护，正文不再另设一套。尖括号值必须替换后执行。Base/Unified 默认值取自对照 QB 的日志，**不是 latest**；选择规则与失效处理见 §3。Quickbuild 新构建的输入/输出快照也要回填到本块和结果表。
 
 ```bash
 set -euo pipefail
-W=/home/linhao/Toolchain/development/llvm-optimize
-S=$W/temp/llvm-hybrid52-team
-BASE=67619ec8bbbac7238a6cfc33a481ccfbcd12206f
-PATCH=$W/docs/52_hybrid_link.patch
-sha256sum "$PATCH"
-# 预期 30e90aa305dd1e5ae237adaa19b27996a722b53ef481aa8ba53f510cb3f9c678
+export W="$HOME/Toolchain/development/llvm-optimize"
+# 本机工作目录示例：/home/linhao/Toolchain/development/llvm-optimize
+export GERRIT_USER='<组员自己的 Gerrit 账号>'
+# 本机账号示例：lhmax2025；不得直接照抄为组员账号。
+export GERRIT_REPO="ssh://${GERRIT_USER}@review.tizen.org:29418/platform/upstream/llvm"
+export SANDBOX_BRANCH="sandbox/${GERRIT_USER}/hybrid_link"
+export BOLT_BRANCH='sandbox/lhmax2025/bolt_pgo' # 风险登记用；不检出、不修改。
+export BASE=67619ec8bbbac7238a6cfc33a481ccfbcd12206f
+export EXPECTED_TREE=80a6fd231c4564a3b762f4ec288cf2c41f9d2e20
+export PATCH="$W/docs/52_hybrid_link.patch"
+export PATCH_SHA=30e90aa305dd1e5ae237adaa19b27996a722b53ef481aa8ba53f510cb3f9c678
+export EVIDENCE="$W/docs/52_hybrid_link_evidence"
+export EXPECTATIONS="$EVIDENCE/needed-expectations-v2.json"
+export QB_REF="$W/docs/qb_1199098_vs_1178133"
+export S="$W/temp/llvm-hybrid52-team"
+export G=/var/tmp/llvm-hybrid52-team-build
+export LOG="$W/temp/hybrid52-team-validation-v2"
+export INPUT_CONFIG="$W/gbs_llvm.conf"
+export CONFIG="$LOG/inputs/gbs-hybrid.conf"
+export BC="$LOG/inputs/project-buildconfig.conf" # 从本次 QB 项目导出的完整 buildconfig
+export BASE_SNAPSHOT=tizen-base-toolchain_20261015.022255
+export UNIFIED_SNAPSHOT=tizen-unified-toolchain_20260917.132101
+export BASE_REPO="http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/${BASE_SNAPSHOT}/repos/standard/packages/"
+export UNIFIED_REPO="http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/${UNIFIED_SNAPSHOT}/repos/standard/packages/"
+export QB_LLVM_PROJECT='Tizen-Base-Toolchain/standard'
+export QB_DOWNSTREAM_PROJECT='Tizen-Unified-Toolchain/standard'
+export CONTROL_QB=1199098
+export NEW_QB='<本次 QB ID>'
+export NEW_BASE_SNAPSHOT='<重建 llvm 和 accel 后发布的具体 Base 快照>'
+export NEW_UNIFIED_SNAPSHOT='<本次下游使用的具体 Unified 快照>'
+export RPM_DIR="$LOG/rpms/x86_64" # QB 下载到这里；本地构建时改为 G 下的 RPMS/x86_64
+export N="$LOG/extracted-llvm" # 22 包解包目录，只作文件检查，不能充当完整运行根
+export TEST_ROOT='<已安装本次 RPM 和运行依赖的独立 x86_64 测试根>'
+export SMOKE=/tmp/llvm52-smoke # 测试根内目录
+export ARM_SYSROOT=/srv/tizen-sysroots/armv7l
+export A64_SYSROOT=/srv/tizen-sysroots/aarch64
+export ARM_GCC=/srv/tizen-cross/armv7l
+export A64_GCC=/srv/tizen-cross/aarch64
+export ACCEL_ARCH=armv7l # §6 分别改成 armv7l / aarch64，完整执行两遍
+export ACCEL_RPM='<本次 clang-accel 对应架构 RPM 的绝对路径>'
+export ACCEL_EXTRACT="$LOG/accel-${ACCEL_ARCH}"
+export EMUL=/emul # 新 Base worker 的实际 accel 根
+export ACCEL_LOADER="$EMUL/lib64/ld-linux-x86-64.so.2"
+export ACCEL_LIBPATH="$EMUL/lib64:$EMUL/usr/lib64"
+export HEAVY_LOCK="$W/../heavy-stage.lock"
+export UNIT=llvm-hybrid52-team-v2
+mkdir -p "$LOG/inputs"
+```
 
-git clone --no-checkout \
-  ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm "$S"
+`BASE_REPO`/`UNIFIED_REPO` 来源是 [1199098 quickbuild 原文 338–347 行](qb_1199098_vs_1178133/raw/1199098_quickbuild.txt#L338)。日志中 Unified 是注释掉的参考仓库，不据此声称它参与了每个包的依赖解析；运行时有效仓库集合以所选项目导出配置为准。Base LLVM 的 **29864 秒**来自关联 Base 构建日志，而非 Unified 的 llvm 重建，项目/版本/源码对应见 [llvm_builds.csv 第 2 行](qb_1199098_vs_1178133/llvm_builds.csv#L2)。
+
+## 1. 应用补丁与身份
+
+使用组员已有的 Git 身份，不在命令中覆盖作者或提交者。`git am` 保留补丁里的作者 Hao Lin，提交者取组员自己的 Git 配置。组员以自己的账号推 sandbox 时，提交者与账号不一致可能被 Gerrit 拒收；若身份未配置，先用组员本人姓名/邮箱配置该 checkout，不能套用补丁作者身份。
+
+```bash
+test "$GERRIT_USER" != '<组员自己的 Gerrit 账号>'
+printf '%s  %s\n' "$PATCH_SHA" "$PATCH" | sha256sum -c -
+test ! -e "$S"
+git clone --no-checkout "$GERRIT_REPO" "$S"
 git -C "$S" switch -c hybrid_link "$BASE"
+git -C "$S" var GIT_COMMITTER_IDENT
 git -C "$S" apply --check "$PATCH"
-git -C "$S" -c user.name='Hao Lin' -c user.email=hao.lin@samsung.com am "$PATCH"
-test "$(git -C "$S" rev-parse HEAD^{tree})" = 80a6fd231c4564a3b762f4ec288cf2c41f9d2e20
+git -C "$S" am "$PATCH"
+test "$(git -C "$S" rev-parse HEAD^{tree})" = "$EXPECTED_TREE"
 test -z "$(git -C "$S" status --porcelain)"
-git -C "$S" show --stat --oneline HEAD
+git -C "$S" show -s --format=fuller HEAD | tee "$LOG/applied-commit.txt"
+git -C "$S" rev-parse HEAD^{tree} | tee "$LOG/applied-tree.txt"
 ```
 
-应用后的 commit 时间可能不同，**tree 必须相同**。补丁原提交为 `cef4d90b478597e20ff105591af3c5f4417363f1`。七文件清单/摘要见 [patch-identity.json](52_hybrid_link_evidence/patch-identity.json)。两份已上传的归档修复补丁无需再叠加；356627 已在 BASE 中。
+提交者与提交时间不同会改变 commit SHA，**tree 校验不变**。原补丁身份及七文件摘要见 [patch-identity.json](52_hybrid_link_evidence/patch-identity.json)，干净应用记录见 [fresh-apply.json](52_hybrid_link_evidence/fresh-apply.json)。356627 已在基线中；不重复叠加。遇到更新的配方先走 §8 变基核对，不能跳过 tree 门禁后继续冒用本表。
 
-### 仓库预检（必须先通过）
+## 2. 主路径：Quickbuild 逐步清单
 
-本轮实读 W/gbs_llvm.conf 的 Base 20261001.092726 已 404；Unified 20260814.092727 为 200。**不能直接用当前配置启动成功的完整构建**。由组员/PM 确定可用的具体 Base 快照并更新其构建配置后，再执行下面预检和构建；本指南不自行指定替换仓库，也不把配置生成结果当成新快照验证。若走 Quickbuild，则使用该项目的仓库并记录项目/快照。
+以下推送与 QB 操作由组员执行。本轮文档任务没有代为推送 Gerrit/sandbox。
+
+1. **推个人 sandbox**。核对 §1 身份和 tree 后执行下面模板，记录远端分支与 commit。
+
+   ```bash
+   git -C "$S" push origin "HEAD:refs/heads/$SANDBOX_BRANCH"
+   git -C "$S" ls-remote origin "refs/heads/$SANDBOX_BRANCH" | tee "$LOG/sandbox-head.txt"
+   ```
+
+2. **构建 x86_64 llvm**。在 `$QB_LLVM_PROJECT` 中选择 `$SANDBOX_BRANCH`，以与 `$CONTROL_QB` 关联的 Base llvm 构建相同的项目/仓库启动。核对所选 spec 为 `packaging/llvm.spec`，完整保存项目导出配置、buildconfig、实际源码 commit、输入仓库快照、RPM 版本和 worker 信息。记录总耗时、`%build` 与 `%install` 阶段耗时、转换 BEGIN–END；QB 能看到构建机峰值内存时记录数值/单位/口径，看不到则写“未获取”。总耗时与 **29864 秒**对照，并同时写两次输入及产出快照。阶段时间取阶段边界日志，不能把下载/准备时间算进 `%build`，也不能用总时长反推峰值内存。旧完整日志：[1199098 Base x86_64 llvm](qb_1199098_vs_1178133/raw/1199098_base_x86_64_llvm.txt)，阶段依据及旧 5686 秒见 [llvm_builds.csv](qb_1199098_vs_1178133/llvm_builds.csv)。下载本次 22 个 RPM，执行 §4–§5。
+3. **重建两个 accel**。把该 llvm 产物提供给 qemu-accel 的 x86_64 工具输入，分别生成 armv7l、aarch64 的 clang-accel；保存 qemu-accel 构建日志中所消费的 llvm/clang/libllvm NEVRA、仓库 URL 和 SHA，不能只凭版本主号认定用了新包。记录 clang-accel 的 RPM 文件字节数、RPM 头 `FILESIZES` 合计、解包 `du -sB1` 与 `du -sb`，命令见 §6。与 [SIZE_FINDINGS.md](qb_1199098_vs_1178133/size_attribution/SIZE_FINDINGS.md)、[package_summary.csv](qb_1199098_vs_1178133/size_attribution/package_summary.csv) 同口径比较；当前逐文件基线只有 armv7l，aarch64 不填写伪造基线。
+4. **下游六格验证**。以新 Base/accel，在 armv7l、aarch64 各构建 zlib、libpng、libinput，锁定旧日志同一源码/配方，记录差异。zlib 对照来自 Base，libpng/libinput 来自 Unified，保持各自项目。每格记录成功/失败、实际安装的 clang/accel 版本、buildroot 准备时间、包构建时间及日志行号。准备时间定义为日志开始到第一条 `%prep`，包构建时间为 `%prep` 到 finished，另保留 started–finished 总时长；新旧按同一边界重新取数，不能把页面 Profiling 时长直接当准备时间。旧日志分秒时间戳的精度为秒，缺边界则“未获取”。
+
+   | 包 | armv7l 对照 | aarch64 对照 |
+   |---|---|---|
+   | zlib | `raw/{1199098,1178133}_base_armv7l_zlib.txt` | `raw/{1199098,1178133}_base_aarch64_zlib.txt` |
+   | libpng | `raw/{1199098,1178133}_armv7l_libpng-1.6.44-0.txt` | 未获取；既有这批 Unified 只有 armv7l，仍须做新 aarch64 验证 |
+   | libinput | `raw/{1199098,1178133}_armv7l_libinput-1.31.3-0.txt` | 未获取；同上 |
+
+   表中路径均相对 `$QB_REF`。来源范围见 [FINDINGS.md](qb_1199098_vs_1178133/FINDINGS.md)“下游实际使用的编译器与链接器”“两次构建是否同条件”。为每一格保存 `arch,package,source_commit,base_snapshot,unified_snapshot,accel_nevra,result,root_prepare_s,package_build_s,total_s,peak_memory,log_evidence`，未获取项注明原因。
+5. **accel 依赖闭合**。在两种架构的新 worker 上分别执行 §6，检查所有实际 accel ELF，包括工具与 DSO。不能只检查 clang，也不能只以包内存在同名共享库判闭合。依赖缺失、下游构建失败或待分析项未闭合，均不能提交“全项 PASS”。
+
+QB 网页/API 的启动方式由团队现有流程操作；本仓库没有可验证的通用启动 CLI，故没有编造命令。回传原始页面/完整日志，不能只报耗时汇总。
+
+## 3. 可选：本地 GBS 正确性验证
+
+### 3.1 仓库和 buildconfig 必须与对照项目一致
+
+`BASE_REPO` 使用对照 QB 日志记录的具体 Base 快照；本版默认已经填好，不能留空或自动改 latest。对照若改为另一次 QB，先从那次完整日志提取 Base/Unified URL、快照名和实际启用仓库，再统一更新 §0。本地记录输入快照，与新产出快照分开。**404 或任一非 200 直接退出，不换源重试**；这表示无法复现该输入，需报告。旧工作区配置的 Base 曾 404，不能直接拿它构建。
+
+从 `$QB_LLVM_PROJECT` 导出本次完整 buildconfig 到 `$BC`，保存导出项目、时间、URL/页面证据和 SHA。不得使用 9 月历史 buildconfig 或空文件。下面只生成验证用配置副本，不改 `$INPUT_CONFIG`；若实际项目仓库集合与两仓库模板不一致，停止并按项目导出配置核对后再登记。
 
 ```bash
+test -s "$BC"
+sha256sum "$BC" "$INPUT_CONFIG" | tee "$LOG/inputs/input-sha.txt"
 python3 - <<'PY'
-import configparser, urllib.request, hashlib
-c = configparser.ConfigParser()
-c.read('/home/linhao/Toolchain/development/llvm-optimize/gbs_llvm.conf')
-for name in ['repo.base-standard', 'repo.unified-standard']:
-    url = c[name]['url'].rstrip('/') + '/repodata/repomd.xml'
-    with urllib.request.urlopen(url, timeout=30) as r:
-        assert r.status == 200
-        data = r.read()
-    print(name, url, hashlib.sha256(data).hexdigest())
+import configparser, hashlib, json, os, pathlib, urllib.request
+out=pathlib.Path(os.environ['LOG'])/'inputs'
+c=configparser.ConfigParser(interpolation=None)
+assert c.read(os.environ['INPUT_CONFIG']), 'missing input config'
+records=[]
+for section, env in [('repo.base-standard','BASE_REPO'),('repo.unified-standard','UNIFIED_REPO')]:
+    assert section in c, 'project/config section mismatch: '+section
+    base=os.environ[env].rstrip('/')+'/'
+    assert 'latest' not in base and '_20' in base, 'require concrete snapshot'
+    url=base+'repodata/repomd.xml'
+    # HTTPError (including 404), timeout, or non-200 aborts this command and shell.
+    with urllib.request.urlopen(url,timeout=30) as r:
+        assert r.status==200,(url,r.status)
+        data=r.read(); final_url=r.url
+    (out/(section+'-repomd.xml')).write_bytes(data)
+    records.append(dict(repo=section,url=url,final_url=final_url,status=200,
+                        sha256=hashlib.sha256(data).hexdigest()))
+    c[section]['url']=base
+profile=c['general']['profile']
+assert profile in c, 'missing selected profile: '+profile
+c[profile]['buildconf']=os.environ['BC']
+with open(os.environ['CONFIG'],'w') as f: c.write(f)
+(out/'repository-preflight.json').write_text(json.dumps(records,indent=2)+'\n')
 PY
-sha256sum "$W/gbs_llvm.conf"
+# diff 的退出码 1 表示有差异，>1 才是错误；逐项确认只涉及上述仓库/buildconfig。
+diff -u "$INPUT_CONFIG" "$CONFIG" > "$LOG/inputs/config.diff" || test "$?" -eq 1
+sha256sum "$CONFIG" "$BC" | tee "$LOG/inputs/build-input-sha.txt"
 ```
 
-历史宏配置可取本工作区 `temp/hybrid-trial-20260922/run/buildconfig.conf`，SHA `1e7610b6a922d27b80eb59c1c78bdf716f7de2e8e24700e0ee7c62522739ed52`（docs/22）。异机拿不到此文件应从所选项目导出实际 buildconfig 并记录差异，不能创建假的空文件。
+### 3.2 独立根与资源
 
-## 2. x86_64 完整构建命令
-
-沿用 9 月命令结构：GBS x86_64、独立 `-B`、threads=1、debuginfo `_smp_mflags -j4`、明确 buildconfig，补显式 `--spec llvm.spec` 防止误选 libcxx-runtimes。**当前补丁仍保留最新 spec 的 Ninja 6、compile pool 6、link pool 2**，9 月的 4/4/1 不作为本次产物配置冒用。本机历史 6/6/2 曾撞内存保护（docs/49_x86_build_round2_result.md），团队应在满足容量的服务器验证；不得无记录改变配方。
+本地仅证明正确性；与 QB 的机器、并发、缓存不同，不作耗时收益结论。配方仍为 Ninja 6 / compile pool 6 / link pool 2，不能无记录换成 9 月的 4/4/1。沿用独立根、显式 llvm.spec、debuginfo `-j4` 命令结构。准入 MemAvailable ≥16 GiB；构建文件系统可用 ≥263.758319 GiB，且扣除历史预算 219.798599 GiB 后仍 ≥30 GiB。18 GiB cap、swap0，nice19/ionice3；历史 6/6/2 撞峰见 [docs/49 第二轮报告](49_x86_build_round2_result.md)。不足则用 QB，不改门槛硬跑。
 
 ```bash
-W=/home/linhao/Toolchain/development/llvm-optimize
-S=$W/temp/llvm-hybrid52-team
-G=/var/tmp/llvm-hybrid52-team-build
-LOG=$W/temp/hybrid52-team-validation
-BC=$W/temp/hybrid-trial-20260922/run/buildconfig.conf
-mkdir -p "$LOG"
 test ! -e "$G"
-test "$(sha256sum "$BC" | cut -d' ' -f1)" = \
-  1e7610b6a922d27b80eb59c1c78bdf716f7de2e8e24700e0ee7c62522739ed52
-# 准入：MemAvailable >=16GiB；构建所在文件系统按既有全构建预算
-# 219.798599GiB×1.2=263.758319GiB，且预计写完仍 >=30GiB。
-python3 - <<'PY_ADMISSION'
-import os, pathlib
-m=int(next(x.split()[1] for x in pathlib.Path('/proc/meminfo').read_text().splitlines()
-           if x.startswith('MemAvailable:')))*1024
-v=os.statvfs('/var/tmp'); free=v.f_bavail*v.f_frsize
+exec 9>"$HEAVY_LOCK"
+flock 9
+python3 - <<'PY'
+import os,pathlib
+m=int(next(s.split()[1] for s in pathlib.Path('/proc/meminfo').read_text().splitlines()
+           if s.startswith('MemAvailable:')))*1024
+v=os.statvfs(pathlib.Path(os.environ['G']).parent); free=v.f_bavail*v.f_frsize
 assert m>=16*1024**3, ('MemAvailable',m)
-assert free>=263.758319*1024**3 and free-219.798599*1024**3>=30*1024**3,('disk',free)
+assert free>=263.758319*1024**3 and free-219.798599*1024**3>=30*1024**3, ('disk',free)
 print('ADMISSION_PASS',m,free)
-PY_ADMISSION
-free -b | tee "$LOG/memory-before.txt"
-df -B1 /var/tmp | tee "$LOG/disk-before.txt"
-
+PY
+# 先在另一个终端启动下方监控（同一变量块），再执行构建。
 set +e
 /usr/bin/time -v -o "$LOG/time-v.txt" \
-  systemd-run --user --scope --unit=llvm-hybrid52-team \
-    -p MemoryMax=18G -p MemorySwapMax=0 \
-  nice -n 19 ionice -c3 \
-  gbs -c "$W/gbs_llvm.conf" build -A x86_64 \
-    -B "$G" --threads 1 --include-all --spec llvm.spec \
-    --define '_smp_mflags -j4' -D "$BC" "$S" \
-  2>&1 | tee "$LOG/build.log"
+ systemd-run --user --scope --unit="$UNIT" -p MemoryMax=18G -p MemorySwapMax=0 \
+ nice -n 19 ionice -c3 \
+ gbs -c "$CONFIG" build -A x86_64 -B "$G" --threads 1 --include-all \
+ --spec llvm.spec --define '_smp_mflags -j4' -D "$BC" "$S" \
+ 2>&1 | tee "$LOG/build.log"
 rc=(${PIPESTATUS[@]})
 set -e
 printf 'build=%s tee=%s\n' "${rc[0]}" "${rc[1]}" | tee "$LOG/exit.txt"
 test "${rc[0]}" -eq 0 && test "${rc[1]}" -eq 0
+flock -u 9
 ```
 
-服务器上可按团队批准的资源规则运行。若仍在本机执行，应先启动下方监控终端再启动上述命令，并必须持 `/home/linhao/Toolchain/development/heavy-stage.lock`，并用既有守护器每 2 秒采样：MemAvailable<2GiB 或目标文件系统可用<30GiB 时终止整个 scope；不能只依赖 MemoryMax。需要同时记录 cgroup `memory.peak/memory.events`、进程 VmHWM、磁盘最低值；`time -v` 只作为进程口径，不能替代 cgroup 峰值。监控中读到的 memory.peak 是截至采样点的内核高水位；若退出前最终值未能取得，须标记“最后采样值”而非捏造最终峰值。下面为可直接包住上述命令的本机监控流程（在启动构建之前开一个终端；构建完成后 Ctrl-C，保留日志）：
+监控每 2 秒记录 cgroup 峰值、进程 VmHWM、磁盘；宿主可用内存 <2 GiB 或磁盘 <30 GiB 则终止整个 scope。构建结束退出；启动失败没有产生 scope 时 Ctrl-C 收尾。退出前未取到最终 `memory.peak` 时只报“最后采样值”，`time -v` 不替代 cgroup 峰值。
 
 ```bash
-# 先在构建终端持锁：exec 9>/home/linhao/Toolchain/development/heavy-stage.lock; flock 9
 python3 - <<'PY'
-import json, pathlib, subprocess, time, os
-log=pathlib.Path('/home/linhao/Toolchain/development/llvm-optimize/temp/hybrid52-team-validation/resources.jsonl')
-log.parent.mkdir(parents=True, exist_ok=True)
+import json,os,pathlib,subprocess,time
 seen=False
 while True:
-    p=subprocess.run(['systemctl','--user','show','llvm-hybrid52-team.scope',
-                      '-p','ControlGroup','--value'],capture_output=True,text=True)
-    cg=p.stdout.strip()
-    if not cg:
+    q=subprocess.run(['systemctl','--user','show',os.environ['UNIT']+'.scope',
+        '-p','ControlGroup','--value'],capture_output=True,text=True)
+    cg=q.stdout.strip(); root=pathlib.Path('/sys/fs/cgroup'+cg) if cg else None
+    if not root or not root.exists():
         if seen: break
-        time.sleep(1); continue
-    root=pathlib.Path('/sys/fs/cgroup'+cg)
-    if not root.exists():
-        if seen: break
-        time.sleep(1); continue
+        time.sleep(2); continue
     seen=True
-    mem=int(next(x.split()[1] for x in pathlib.Path('/proc/meminfo').read_text().splitlines()
-                 if x.startswith('MemAvailable:')))*1024
-    st=os.statvfs('/var/tmp'); disk=st.f_bavail*st.f_frsize
-    sample={'time':time.time(),'MemAvailable':mem,'disk_available':disk}
-    for name in ['memory.current','memory.peak','memory.events']:
-        try: sample[name]=(root/name).read_text()
+    m=int(next(s.split()[1] for s in pathlib.Path('/proc/meminfo').read_text().splitlines()
+               if s.startswith('MemAvailable:')))*1024
+    v=os.statvfs(pathlib.Path(os.environ['G']).parent); free=v.f_bavail*v.f_frsize
+    row=dict(time=time.time(),MemAvailable=m,disk_available=free,processes=[])
+    for key in ['memory.current','memory.peak','memory.events']:
+        try: row[key]=(root/key).read_text()
         except FileNotFoundError: pass
-    sample['processes']=[]
     for f in root.rglob('cgroup.procs'):
         try: pids=f.read_text().split()
         except FileNotFoundError: continue
         for pid in pids:
             try:
                 lines=pathlib.Path('/proc',pid,'status').read_text().splitlines()
-                sample['processes'].append({'pid':pid,'status':[s for s in lines
-                    if s.startswith(('Name:','VmHWM:','VmRSS:','VmPeak:'))]})
+                row['processes'].append(dict(pid=pid,status=[s for s in lines
+                    if s.startswith(('Name:','VmRSS:','VmHWM:'))]))
             except FileNotFoundError: pass
-    with log.open('a') as f: f.write(json.dumps(sample)+'\n')
-    if mem<2*1024**3 or disk<30*1024**3:
-        subprocess.run(['systemctl','--user','kill','--kill-whom=all',
-                        '--signal=TERM','llvm-hybrid52-team.scope'],check=True)
-        raise SystemExit('RESOURCE_FLOOR_ABORT: retain evidence; do not retry')
+    with open(pathlib.Path(os.environ['LOG'])/'resources.jsonl','a') as f:
+        f.write(json.dumps(row)+'\n')
+    if m<2*1024**3 or free<30*1024**3:
+        subprocess.run(['systemctl','--user','kill','--signal=SIGTERM',os.environ['UNIT']+'.scope'])
+        time.sleep(3)
+        subprocess.run(['systemctl','--user','kill','--signal=SIGKILL',os.environ['UNIT']+'.scope'])
+        raise SystemExit('RESOURCE_FLOOR_ABORT')
     time.sleep(2)
 PY
 ```
 
-如走 Quickbuild，先在 PM 批准后由**组员用自己的账号**推其 sandbox，随后在 Quickbuild 选择该分支启动 x86_64 LLVM，再重建 qemu-accel/镜像。这里仅提供模板，本任务没有执行：
+## 4. 新 RPM、NEEDED 与归档检查（QB / 本地通用）
+
+### 4.1 22 包及解包清单
+
+把本次产物放到 `$RPM_DIR`，不同架构/旧版本不得混入。命令在验证宿主执行；解包根 `$N` 必须全新。
 
 ```bash
-# 在独立 S 中；替换为组员自己的 Gerrit 账号和 sandbox 分支
-GERRIT_USER=your_account
-BRANCH=sandbox/your_account/llvm-hybrid-link
-git -C "$S" push "ssh://$GERRIT_USER@review.tizen.org:29418/platform/upstream/llvm" \
-  "HEAD:refs/heads/$BRANCH"
-```
-
-## 3. RPM 完整性、链接方式与依赖
-
-```bash
-R=$G/local/BUILD-ROOTS/scratch.x86_64.0
-B=$R/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build
-P=$R/home/abuild/rpmbuild/RPMS/x86_64
-N=$LOG/unpacked
-mkdir -p "$N"
-mapfile -t rpms < <(find "$P" -maxdepth 1 -name '*.rpm' -type f | sort)
+mapfile -t rpms < <(find "$RPM_DIR" -maxdepth 1 -type f -name '*.rpm' | sort)
 test "${#rpms[@]}" -eq 22
 rpm -qp --qf '%{NAME}\n' "${rpms[@]}" | sort > "$LOG/rpm-names.txt"
-diff -u "$W/docs/52_hybrid_link_evidence/expected-rpm-names.txt" "$LOG/rpm-names.txt"
+diff -u "$EVIDENCE/expected-rpm-names.txt" "$LOG/rpm-names.txt"
 sha256sum "${rpms[@]}" > "$LOG/rpms.sha256"
-stat -c '%s %n' "${rpms[@]}" > "$LOG/rpms.bytes"
-for rpmfile in "${rpms[@]}"; do
-  # 保留逐包文件表；解包到合并根，重复文件必须记录而非静默当作新增。
-  rpm -qpl "$rpmfile" > "$LOG/$(basename "$rpmfile").files"
-  (cd "$N"; rpm2cpio "$rpmfile" | cpio -idm --quiet)
+stat -Lc '%s %n' "${rpms[@]}" > "$LOG/rpms-bytes.txt"
+rpm -qp --qf '%{NEVRA}\n' "${rpms[@]}" > "$LOG/rpms-nevra.txt"
+test ! -e "$N"
+mkdir -p "$N"
+for f in "${rpms[@]}"; do
+  (cd "$N"; rpm2cpio "$f" | cpio -idm --quiet)
 done
+rpm -qpl "${rpms[@]}" | sort -u > "$LOG/rpm-paths.txt"
 ```
 
-22 个名字详见 [expected-rpm-names.txt](52_hybrid_link_evidence/expected-rpm-names.txt)，不是根据版本发行号字符串猜测。%files 未变，基准来自 docs/35 附录 A；数量变化必须解释，不能直接忽略。
+PASS：包名集与 [22 包名单](52_hybrid_link_evidence/expected-rpm-names.txt) 完全一致，记录各 RPM 字节数与 SHA。Source/静态归档转换保留不变，不能只看有 RPM 就宣称通过。
 
-在**新测试 chroot**安装本次 RPM 后查 NEEDED/运行，勿把宿主 libLLVM 混入。可以用组员本次构建根作测试根（构建已结束），在 `gbs chroot --root "$R"` 中以 root 安装该根自己的 RPMS/x86_64 非 debuginfo 包；不要在宿主安装。安装失败/依赖缺失即 FAIL，不使用 `--nodeps`：
+### 4.2 配置图驱动的 NEEDED 期望
+
+[期望表](52_hybrid_link_evidence/needed-expectations-v2.json) 对 [a-all-link-targets.json](52_hybrid_link_evidence/a-all-link-targets.json) 的 **188 个链接目标逐个登记**。从 `link_libraries` 解析共享输入并与已有布尔列交叉核对，结合 [CMake 别名表](52_hybrid_link_evidence/aliases.json)、[安装别名证据](52_hybrid_link_evidence/install-aliases.txt)、[spec 安装动作](52_hybrid_link_evidence/x86_64-hybrid-install.txt#L6) 及 [展开后的 RPM 路径模式](52_hybrid_link_evidence/rpm-install-paths.txt) 映射安装文件；LLDB 的 SDK 搬移/复制也纳入。每行保存图行号、规则、安装路径和两种共享库期望。
+
+| 类别 | 图目标数 | 直接 NEEDED 期望 | 示例/边界 |
+|---|---:|---|---|
+| 静态三组 `static_three_groups` | 3 | 两者均无 | clang-22、lld、llvm-ar；别名映射到同一目标 |
+| 上游静态例外 `upstream_static_exceptions` | 5 | 两者均无 | llvm-tblgen、clang-tblgen、lldb-tblgen、llvm-config、llvm-exegesis |
+| 两种共享库都不链 `neither_shared_library` | 29 | 两者均无 | obj2yaml/yaml2obj **若实际安装也按此类**；另含非安装构建工具、运行库和共享库生产者，不等于“零组件 .a” |
+| 动态 LLVM `dynamic_llvm` | 108 | libLLVM 有、libclang-cpp 无 | opt、llc、lli、llvm-objcopy 等 |
+| 动态 LLVM+clang-cpp `dynamic_llvm_clang_cpp` | 43 | 两者均有 | clang-repl/check/tidy、clangd 等 |
+
+188 是配置图目标数，不是安装可执行文件数；没有安装路径的目标也保留，不把缺少这些 RPM 文件当失败。自检覆盖 188/188、无遗漏/重复，158 条显式安装路径（其中 `/usr/bin` 133），证据 [self-check.json](52_hybrid_link_evidence/needed-expectations-v2-self-check.json)。`obj2yaml/yaml2obj` 当前不在显式 `%files` 表中，未来若出现实际文件仍能按图映射；未知 ELF 硬报错，不默认为动态。
 
 ```bash
-# 以下在测试 chroot 中执行；RPMS 在根内已存在
-set -eu
-find /home/abuild/rpmbuild/RPMS/x86_64 -maxdepth 1 -name '*.rpm' \
-  ! -name '*-debuginfo-*' ! -name '*-debugsource-*' -print0 |
-  xargs -0 rpm -Uvh --replacepkgs
-rpm -ql llvm clang llvm-devel clang-devel lldb lldb-devel |
-  sort -u | awk '/^\/usr\/bin\// {print}' > /tmp/llvm52-tools.txt
+python3 "$W/tools/check_hybrid_link_needed.py" self-check \
+ --graph "$EVIDENCE/a-all-link-targets.json" --aliases "$EVIDENCE/aliases.json" \
+ --rpm-paths "$EVIDENCE/rpm-install-paths.txt" --table "$EXPECTATIONS" \
+ --output "$LOG/needed-table-self-check.json"
+# 从真实 RPM 清单取全部 /usr/bin 项，以及图中共享库及 SDK 位置；不包含 debuginfo 副本。
+awk '/^\/usr\/bin\// || /^\/usr\/lib64\/.*\.so/ || /\/sdk_tools\/lldb\/(bin|lib64)\//' \
+ "$LOG/rpm-paths.txt" > "$LOG/needed-paths.txt"
+set +e
+python3 "$W/tools/check_hybrid_link_needed.py" check --table "$EXPECTATIONS" \
+ --root "$N" --paths "$LOG/needed-paths.txt" --require-declared --output "$LOG/needed-results.json"
+needed_rc=$?
+set -e
+printf 'needed_exit=%s\n' "$needed_rc" | tee "$LOG/needed-exit.txt"
+test "$needed_rc" -eq 0
+```
+
+检查器仅运行 `readelf -dW`，不执行被检 ELF；绝对软链接在 `$N` 内解析，避免误读宿主同名文件。逐文件保存完整 readelf 命令/输出及实际 NEEDED。`--require-declared` 还检查期望表的安装路径没有从输入清单漏掉。退出码：0 PASS；1 意外共享依赖（FAIL）；2 输入、映射、文件或 readelf 错误；**3 待分析：期望共享输入却没有对应 NEEDED**，可能被 `--as-needed` 删除，必须分析链接行/传递依赖，不能直接记 PASS。有记录的脚本/配置文件可记非 ELF；应为目标的文件却不是 ELF 则报错。脚本覆盖测试见 [21 项结果](52_hybrid_link_evidence/needed-checker-v2-tests.txt)。
+
+在 `$TEST_ROOT` 安装新 RPM 与全部依赖后，按 `needed-results.json` 中成功识别的 ELF 路径逐个运行根内 `ldd`，保存全文；动态 ELF 的返回码须 0 且无 `not found`，不能把解包根内有库文件当运行闭合。三组“静态”仅指 LLVM 组件，通常仍有 libc 等 NEEDED。
+
+```bash
 python3 - <<'PY'
-import pathlib,subprocess,re
-static={'clang-22','lld','llvm-ar'}
-exceptions={'llvm-config','llvm-exegesis','llvm-tblgen','clang-tblgen','lldb-tblgen'}
-for name in pathlib.Path('/tmp/llvm52-tools.txt').read_text().splitlines():
-    p=pathlib.Path(name)
-    assert p.exists(), name
-    if not p.is_file(): continue
-    with p.open('rb') as f: magic=f.read(4)
-    if magic != b'\x7fELF': continue       # 脚本不应强行套 ELF NEEDED 判据
-    real=p.resolve().name
-    d=subprocess.check_output(['readelf','-dW',name],text=True)
-    needed=re.findall(r'\(NEEDED\).*?\[(.*?)\]',d)
-    print(name, '->',p.resolve(),needed)
-    shared=any(s.startswith(('libLLVM.so','libclang-cpp.so')) for s in needed)
-    assert shared == (real not in static|exceptions),(name,needed)
-    if real in {'clang-tidy','clangd','clang-repl','clang-check','lldb'}:
-        assert any(s.startswith('libclang-cpp.so') for s in needed),(name,needed)
-    v=subprocess.run(['ldd',name],text=True,capture_output=True)
-    assert v.returncode==0 and 'not found' not in v.stdout+v.stderr,(name,v.stdout,v.stderr)
-for name in ['/usr/lib64/libLTO.so','/usr/lib64/LLVMgold.so','/usr/lib64/liblldb.so']:
-    d=subprocess.check_output(['readelf','-dW',name],text=True)
-    assert 'libLLVM.so.22.1' in d,(name,d)
-    v=subprocess.run(['ldd',name],text=True,capture_output=True)
-    assert v.returncode==0 and 'not found' not in v.stdout+v.stderr
+import json,os,pathlib,subprocess
+log=pathlib.Path(os.environ['LOG'])
+checked=json.loads((log/'needed-results.json').read_text())
+assert checked['status']=='PASS',checked['status']
+rows=[]; failed=False
+for item in checked['results']:
+    if item['status']!='PASS': continue
+    if not item['needed']:
+        rows.append({'path':item['path'],'status':'NO_NEEDED'}); continue
+    argv=['sudo','chroot',os.environ['TEST_ROOT'],'ldd',item['path']]
+    r=subprocess.run(argv,capture_output=True,text=True,timeout=30)
+    ok=r.returncode==0 and 'not found' not in r.stdout+r.stderr
+    rows.append(dict(path=item['path'],argv=argv,exit=r.returncode,
+                     stdout=r.stdout,stderr=r.stderr,status='PASS' if ok else 'FAIL'))
+    failed |= not ok
+(log/'ldd-results.json').write_text(json.dumps(rows,indent=2)+'\n')
+assert rows and not failed,'ldd dependency closure failed'
 PY
+```
+
+另检查以下别名仍是链接并解析到相应实体：
+
+```bash
 for f in clang clang++ clang-cpp clang-cl ld.lld ld64.lld lld-link wasm-ld llvm-ranlib llvm-lib llvm-dlltool; do
-  test -L "/usr/bin/$f"
-  readlink "/usr/bin/$f"
-  readlink -f "/usr/bin/$f"
+  sudo chroot "$TEST_ROOT" test -L "/usr/bin/$f"
+  sudo chroot "$TEST_ROOT" readlink "/usr/bin/$f"
+  sudo chroot "$TEST_ROOT" readlink -f "/usr/bin/$f"
 done
 ```
 
-PASS：三组及五个上游例外不依赖 LLVM/clang-cpp 共享库；其余 LLVM 工具依赖共享 LLVM，指定 clang 工具依赖 clang-cpp；全部传递依赖可解析。静态在这里仅指 LLVM 组件，不是静态 glibc。若链接器 `--as-needed` 改变直接依赖，必须保留 readelf/ldd 全文分析，不能擅自改 PASS 表。clangd/tidy 私有 `.a`、opt 的 LLVMOptDriver 不否定其动态 LLVM 选择，见报告 §4。
-
-## 4. 归档与包范围
-
-宿主对每个 RPM 做文件名检查，compiler-rt 运行库例外单列；普通包不得包含 LLVM 开发 `.a`：
+### 4.3 常规包与静态开发包
 
 ```bash
 for f in "${rpms[@]}"; do
   name=$(rpm -qp --qf '%{NAME}' "$f")
   rpm -qpl "$f" | awk '/\.a$/ {print}' > "$LOG/$name.archives"
   case "$name" in
-    *devel*|compiler-rt) ;; # compiler-rt 的 45 个运行库保留
+    *devel*|compiler-rt) ;; # compiler-rt 的 45 个运行库保留，不是 LLVM 开发库
     *) test ! -s "$LOG/$name.archives" ;;
   esac
 done
-```
-
-沿用 356627 验收工具按 archive header offset/成员序号处理同名成员，检查完整符号→成员多重集合，不能只检查 armap 非空。在宿主执行：
-
-```bash
-export W N LOG
 PYTHONDONTWRITEBYTECODE=1 python3 - <<'PY'
 import os,sys,pathlib,json
-w=pathlib.Path(os.environ['W']);n=pathlib.Path(os.environ['N'])
-sys.path.insert(0,str(w/'tools'))
+sys.path.insert(0,str(pathlib.Path(os.environ['W'])/'tools'))
 from inspect_llvm_archives import inspect
-paths=(pathlib.Path(os.environ['LOG'])/'llvm-static-devel.archives').read_text().splitlines()
+log=pathlib.Path(os.environ['LOG']); root=pathlib.Path(os.environ['N'])
+paths=(log/'llvm-static-devel.archives').read_text().splitlines()
 assert len(paths)==225,len(paths)
-for name in paths:
-    r=inspect(n/name.lstrip('/'))
-    assert not r['thin'] and r['bitcode']==0 and r['other']==0,r['path']
-    assert r['machine']==r['member_count'],r['path']
-    assert r['index_equals_machine_symbols'],r['path']
-    assert all(not x['debug_sections'] for x in r['members']),r['path']
-    with (pathlib.Path(os.environ['LOG'])/'archives.jsonl').open('a') as f:
+with (log/'archives.jsonl').open('w') as f:
+    for name in paths:
+        r=inspect(root/name.lstrip('/'))
+        assert not r['thin'] and r['bitcode']==0 and r['other']==0,r['path']
+        assert r['machine']==r['member_count'] and r['index_equals_machine_symbols'],r['path']
+        assert all(not m['debug_sections'] for m in r['members']),r['path']
         f.write(json.dumps(r)+'\n')
 print('225 native archives / full index / no debug: PASS')
 PY
 ```
 
-同时核对 `libomp-devel` 中 libarcher_static.a 与 static-devel 对应内容一致，compiler-rt 仍为 45 个 `.a`。构建日志须含完整 NATIVE_ARCHIVES_BEGIN/END/PASS（或当前 Source 的对应状态）、转换无失败、标准 brp 后处理无 bitcode 格式错误。Source 未改变，可沿用 docs/35 的成员身份/次序、强符号与消费者验收方法。已知 `.llvm_addrsig` 后处理边界见 docs/51；此补丁没有宣称修复它。
+完整符号→成员索引按 header offset/序号区分同名成员，不用“armap 非空”替代。核对 libomp-devel 的 libarcher_static.a 与 static-devel 双归属文件一致，compiler-rt 为 45 个 `.a`；检查完整 NATIVE_ARCHIVES BEGIN/END、转换成功与标准 brp 后处理无格式错误。归档转换 Source 未改变；`.llvm_addrsig` 已知边界仍见 [docs/51](51_gnu_strip_merged_validation.md)，本补丁没有宣称修复该问题。
 
-## 5. 实际编译、链接和运行
+## 5. 实际编译、链接、运行
 
-先在新测试 x86_64 chroot（已安装本次 RPM）执行；保存命令与输出：
+在安装新 RPM 的 `$TEST_ROOT` 内运行；`SMOKE` 取 §0，保存完整输出和退出码：
 
 ```bash
-set -eu
-mkdir -p /tmp/llvm52-smoke
-cd /tmp/llvm52-smoke
+sudo chroot "$TEST_ROOT" /usr/bin/env SMOKE="$SMOKE" /bin/bash -eux <<'SH' \
+  > "$LOG/native-smoke.txt" 2>&1
+mkdir -p "$SMOKE"
+cd "$SMOKE"
 printf '#include <stdio.h>\nint main(void){puts("hello");return 0;}\n' > hello.c
 printf '#include <iostream>\nint main(){std::cout<<"hello\\n";}\n' > hello.cc
 clang -c hello.c -o hello.o
@@ -283,91 +371,108 @@ readelf -h answer-linked.o
 opt --version
 llc --version
 clang-tidy --version
+SH
 ```
 
-交叉 hello **必须使用同一快照完整目标 sysroot**（含 libc crt、libstdc++ 头/库及 GCC runtime），不可拿 x86 根当 ARM sysroot。在有本次 x86 工具与 ARM sysroot 的验证机执行；以下变量是固定挂载约定，缺失即记录未验证，不能只编 `.o` 后声称链接 PASS：
+交叉验证环境须安装本次 x86_64 clang/clang++，并提供与新快照对应、含 libc crt、libstdc++ 头/库与 GCC runtime 的两目标 sysroot。在该环境执行下列命令（同一变量块、已有 hello 源码），保存日志；缺 sysroot 记未验证，不能仅产出 `.o` 冒充链接成功。
 
 ```bash
-ARM_SYSROOT=/srv/tizen-sysroots/armv7l
-A64_SYSROOT=/srv/tizen-sysroots/aarch64
-# GCC_TOOLCHAIN 指包含相应 target 的 lib/gcc 与 target/include 的工具链前缀。
-ARM_GCC=/srv/tizen-cross/armv7l
-A64_GCC=/srv/tizen-cross/aarch64
+cd "$SMOKE"
 for dir in "$ARM_SYSROOT" "$A64_SYSROOT" "$ARM_GCC" "$A64_GCC"; do test -d "$dir"; done
-for triple in armv7l-tizen-linux-gnueabi aarch64-tizen-linux-gnu; do
-  case "$triple" in
-    armv7l*) sysroot=$ARM_SYSROOT; gcc=$ARM_GCC ;;
-    aarch64*) sysroot=$A64_SYSROOT; gcc=$A64_GCC ;;
-  esac
-  clang --target="$triple" --sysroot="$sysroot" --gcc-toolchain="$gcc" \
-    -fuse-ld=lld hello.c -o "hello-$triple"
-  clang++ --target="$triple" --sysroot="$sysroot" --gcc-toolchain="$gcc" \
-    -fuse-ld=lld hello.cc -o "hello-cxx-$triple"
-  readelf -h "hello-$triple"
-  readelf -h "hello-cxx-$triple"
+for lang in c cc; do
+  driver=clang; test "$lang" = c || driver=clang++
+  "$driver" --target=armv7l-tizen-linux-gnueabi --sysroot="$ARM_SYSROOT" \
+    --gcc-toolchain="$ARM_GCC" -fuse-ld=lld "hello.$lang" -o "hello-armv7l-$lang"
+  "$driver" --target=aarch64-tizen-linux-gnu --sysroot="$A64_SYSROOT" \
+    --gcc-toolchain="$A64_GCC" -fuse-ld=lld "hello.$lang" -o "hello-aarch64-$lang"
+  readelf -h "hello-armv7l-$lang" "hello-aarch64-$lang"
 done
 ```
 
-PASS：编译/链接退出 0，ELF Machine 为对应目标；在 ARM 设备或已配置好的 qemu 环境中运行，输出均为 hello、exit 0（若没有运行环境，明确仅链接通过、运行未验证）。记录 `clang -###`、sysroot/工具链 RPM 版本，防止 bundled 或系统旧 clang 混用。任何实际失败必须保存原文，不直接降级为“配置正确”。
+把产物交对应 ARM worker 执行，C/C++ 均输出 `hello`、退出 0；记录 ELF Machine、实际工具路径、sysroot 身份与运行日志。zlib/libpng/libinput 六格构建是主路径的真实负载验证，不能由这里的 hello 替代。
 
-## 6. accel 与总结果记录
+## 6. 两架构 accel 体积与全部 ELF 依赖闭合
 
-新的 LLVM RPM 必须经过 qemu-accel 重建后再检查；旧静态 accel 中没有 libLLVM/clang-cpp，不能直接塞入动态工具。对新 accel：
+每种架构分别设置 §0 的 `ACCEL_ARCH`、`ACCEL_RPM`、`ACCEL_EXTRACT`，重复以下命令，不得重用上一架构的解包目录。
 
 ```bash
-# 将服务器实际产物保存为此路径；不在这里构建 accel
-ACCEL_RPM=/srv/llvm52-results/clang-accel-x86_64-armv7l.rpm
-stat -c '%s %n' "$ACCEL_RPM"
-sha256sum "$ACCEL_RPM"
-mkdir -p /srv/llvm52-results/accel-unpacked
-(cd /srv/llvm52-results/accel-unpacked; rpm2cpio "$ACCEL_RPM" | cpio -idm --quiet)
-du -sb /srv/llvm52-results/accel-unpacked
-rpm -qpl "$ACCEL_RPM" | tee /srv/llvm52-results/accel-files.txt
+test ! -e "$ACCEL_EXTRACT"
+mkdir -p "$ACCEL_EXTRACT"
+stat -Lc '%s %n' "$ACCEL_RPM" | tee "$LOG/accel-$ACCEL_ARCH-rpm-bytes.txt"
+sha256sum "$ACCEL_RPM" > "$LOG/accel-$ACCEL_ARCH-rpm.sha256"
+rpm -qp --qf '%{NEVRA}\n' "$ACCEL_RPM" > "$LOG/accel-$ACCEL_ARCH-nevra.txt"
+rpm -qp --qf '[%{FILENAMES}\t%{FILESIZES}\n]' "$ACCEL_RPM" > "$LOG/accel-$ACCEL_ARCH-filesizes.tsv"
+awk -F '\t' '{s+=$2} END {printf "%.0f\n",s}' "$LOG/accel-$ACCEL_ARCH-filesizes.tsv" \
+  | tee "$LOG/accel-$ACCEL_ARCH-filesizes-total.txt"
+(cd "$ACCEL_EXTRACT"; rpm2cpio "$ACCEL_RPM" | cpio -idm --quiet)
+du -sB1 "$ACCEL_EXTRACT" | tee "$LOG/accel-$ACCEL_ARCH-du-blocks.txt"
+du -sb "$ACCEL_EXTRACT" | tee "$LOG/accel-$ACCEL_ARCH-du-apparent.txt"
 ```
 
-`du -sb` 与 QB 的“文件路径长度合计”不是完全相同的统计口径，比较时同时提供 RPM 头 FILESIZES 合计：
+三种体积口径分开：RPM 压缩文件、头 `FILESIZES` 合计、解包 du。历史 path-bytes 合计是 regular+链接文本（目录不计），不能充当历史 du 或未经复算的 FILESIZES。本次从既有逐文件记录复算的头 FILESIZES 合计为旧 **239,912,044 B**、新 **2,756,647,372 B**，恰与这两个样本的 path-bytes 相等，计算来源和条目数见 [估算文件的 historical_rpm_filesizes_totals](52_hybrid_link_evidence/accel-alias-savings-estimate.json)。历史头原始值可从 [old tsv](qb_1199098_vs_1178133/size_attribution/raw/old_armv7l_clang-accel-x86_64-armv7l_rpm_files.tsv)、[new tsv](qb_1199098_vs_1178133/size_attribution/raw/new_armv7l_clang-accel-x86_64-armv7l_rpm_files.tsv) 复算，保留表头和字段定义。
+
+在**实际新 Base worker** 上执行依赖闭合（本机解释器须能执行 x86_64 accel，不能把宿主 `/usr/lib` 当作 accel 的库）：
 
 ```bash
-rpm -qp --qf '[%{FILENAMES}\t%{FILESIZES}\n]' "$ACCEL_RPM" > /srv/llvm52-results/accel-path-bytes.tsv
-awk -F '\t' '{s+=$2} END {printf "%.0f\n",s}' /srv/llvm52-results/accel-path-bytes.tsv
-```
-
-在**新 Base worker 的真实 `/emul` 环境**逐个 ELF 查询 NEEDED 与依赖，不在宿主直接执行旧快照 loader：
-
-```bash
-# 在 worker 上；只有确认 /emul 中 x86_64 loader 存在时执行
-python3 - <<'PY'
-import pathlib,subprocess
-loader='/emul/lib64/ld-linux-x86-64.so.2'
-assert pathlib.Path(loader).exists()
-for p in sorted(pathlib.Path('/emul/usr/bin').iterdir()):
+python3 - <<'PY' > "$LOG/accel-$ACCEL_ARCH-closure.json"
+import json,os,pathlib,subprocess
+root=pathlib.Path(os.environ['EMUL']); loader=os.environ['ACCEL_LOADER']
+assert pathlib.Path(loader).is_file(),loader
+rows=[]; failed=False
+for p in sorted(root.rglob('*')):
     if not p.is_file(): continue
     with p.open('rb') as f: magic=f.read(4)
     if magic!=b'\x7fELF': continue
-    h=subprocess.check_output(['readelf','-hW',str(p)],text=True)
-    assert 'Advanced Micro Devices X86-64' in h,(str(p),h)
-    print(str(p),subprocess.check_output(['readelf','-dW',str(p)],text=True))
-    r=subprocess.run([loader,'--library-path','/emul/lib64:/emul/usr/lib64',
-                      '--list',str(p)],capture_output=True,text=True)
-    print(r.stdout,r.stderr)
-    assert r.returncode==0 and 'not found' not in r.stdout+r.stderr,str(p)
+    row={'path':str(p)}
+    h=subprocess.run(['readelf','-hW',str(p)],capture_output=True,text=True)
+    d=subprocess.run(['readelf','-dW',str(p)],capture_output=True,text=True)
+    row.update(header=h.stdout,dynamic=d.stdout,readelf_errors=h.stderr+d.stderr)
+    if h.returncode or d.returncode:
+        row['status']='FAIL_READELF'; failed=True
+    elif 'Advanced Micro Devices X86-64' not in h.stdout:
+        row['status']='ANALYSIS_PENDING_OTHER_MACHINE'; failed=True
+    elif '(NEEDED)' not in d.stdout:
+        row['status']='NO_NEEDED' # 静态 ELF/无依赖 DSO；仍有 header/dynamic 证据
+    else:
+        r=subprocess.run([loader,'--library-path',os.environ['ACCEL_LIBPATH'],'--list',str(p)],
+                         capture_output=True,text=True,timeout=30)
+        row.update(exit=r.returncode,stdout=r.stdout,stderr=r.stderr)
+        # 已解析到 /emul 外的库也须分析，不能让宿主库掩盖缺包。
+        resolved=[line.split('=>',1)[1].strip().split()[0]
+                  for line in r.stdout.splitlines() if '=>' in line and 'not found' not in line]
+        outside=[s for s in resolved if s.startswith('/') and
+                 not os.path.realpath(s).startswith(str(root.resolve())+'/')]
+        row['outside_emul']=outside
+        row['status']='PASS' if r.returncode==0 and 'not found' not in r.stdout+r.stderr and not outside else 'FAIL_CLOSURE'
+        failed |= row['status']!='PASS'
+    rows.append(row)
+assert rows,'no ELF inspected'
+print(json.dumps({'status':'FAIL' if failed else 'PASS','elf_paths':len(rows),'results':rows},indent=2))
+raise SystemExit(1 if failed else 0)
 PY
 ```
 
-对照报告 [accel-tool-map.csv](52_hybrid_link_evidence/accel-tool-map.csv) 的 107 个路径（含别名）；必须覆盖静态三组、92 个预计动态路径及两个上游例外。新旧清单有增减时全部列出；同时检查 libLTO/LLVMgold 的 ldd closure。两库必须出现在对应 accel/基础加速包集合中，loader/RUNPATH 可找到；不能仅以包内有同名文件判通过。aarch64 accel 同样执行，现有 QB 清单只涵盖 armv7l。
+保存全部 ELF 清单与旧 [107 工具路径映射](52_hybrid_link_evidence/accel-tool-map.csv) 对照，增删逐项解释。脚本遍历整个 `$EMUL`，因此包含 libLTO/LLVMgold、libLLVM/libclang-cpp 及其他加速包的 DSO；额外架构或无法解析的依赖不自动豁免。新混合工具应能从 accel 包集合找到所需 libLLVM/libclang-cpp，并由实际 loader/RUNPATH 解析。来源包/NEVRA 可用 worker 的 `rpm -qf <路径>` 留证。已有旧动态时期的两库路径与 qemu-accel 自动收依赖逻辑见 [设计报告 §6](52_hybrid_link_tizen_base.md#6-clang-accel-影响)，不能替代本次闭合检查。
 
-## 7. 预期结果与回传模板
+## 7. 预期结果和回传
 
-| 项目 | 本次配置级结论 / 待完整构建 PASS | 参考证据（禁止当本次实测） |
-| --- | --- | --- |
-| clang/lld/ar 及别名 | 链接图无 libLLVM/clang-cpp；实际 NEEDED 仍需确认 | docs/22 §5 三组静态，旧源码参考 |
-| 其他 14 个指定目标 | 共享 LLVM，clang 工具/LLDB 还有 clang-cpp；私有 `.a` 明列 | 本次 a-selected-commands.json，仅配置 |
-| 开关 OFF | 188 个 link edge 与原版动态配置相同 | 本次 switch-off-control.json |
-| ARM 配方 | build/install 同字节 | 本次 macro-comparison.json |
-| RPM 与归档 | 22 包；225 开发归档 native/完整索引；45 compiler-rt | 名单来自 docs/35；本次尚未打包 |
-| 编译正确性 | 上述三目标 hello、lld/ar 与动态工具全部通过 | docs/22 曾 30/30 TU 同字节，**旧源码参考，不是本次实测** |
-| 旧混合构建容量 | 不作为本次准入认证 | docs/22：5040.295秒，scope达18GiB；旧源码参考 |
-| QB x86 LLVM wall | 本次记录同口径总耗时与阶段耗时 | llvm_builds.csv：5686→29864秒，跨快照参考 |
-| QB accel RPM / 路径总字节 | 本次记录实际值，不承诺比例 | SIZE_FINDINGS.md：54,806,369→659,624,309；239,912,044→2,756,647,372 字节 |
+| 检查 | 本次预期 / 已有证据 | 性质与来源 |
+|---|---|---|
+| 补丁身份 | cef4d90，tree 80a6fd23…，7 文件 | 本次配置级 [patch identity](52_hybrid_link_evidence/patch-identity.json) |
+| 图与 NEEDED | 188 目标，五类 3/5/29/108/43；缺预期 NEEDED 待分析 | 本次配置图与 v2 自检；新 RPM 实际 NEEDED 待组员执行 |
+| 架构隔离 | 两 ARM `%build/%install` 与基线同字节 | [macro-comparison.json](52_hybrid_link_evidence/macro-comparison.json) |
+| 包/正确性 | 22 RPM；归档 native/full index；工具与下游正常 | 9 月试构建 22 RPM、30/30 TU 同字节，[docs/22 §4](22_hybrid_link_trial.md)；**旧源码参考，不是本次实测** |
+| LLVM 构建耗时 | 旧 5686 s，1199098 关联 Base 29864 s；本次填实测 | [llvm_builds.csv](qb_1199098_vs_1178133/llvm_builds.csv)；输入/机器不同，只作参考 |
+| armv7l accel RPM | 54,806,369 → 659,624,309 B；本次填实测 | [package_summary.csv](qb_1199098_vs_1178133/size_attribution/package_summary.csv) |
+| armv7l accel path-bytes | 239,912,044 → 2,756,647,372 B | 同上；不是 du，也不替代 FILESIZES 合计 |
+| 准备/包时长 | 六格逐项填，缺旧 aarch64 Unified 日志记未获取 | §2 第 4 步对应日志；不得用包耗时解释全部准备耗时 |
+| 峰值内存 | 填 QB 可见口径/本地 cgroup 采样；不可见写未获取 | 本次尚未构建，无预测数值 |
 
-回传：准确 Git commit/tree/patch SHA、Base/Unified URL+repomd SHA、实际包版本、CMakeCache、完整 build.log 与 exit/tee 状态、总/阶段耗时、cgroup/进程内存和磁盘数据、22 RPM 清单与 SHA、NEEDED/ldd/链接类型、归档 JSON、smoke 原始命令/输出、accel 清单/大小/依赖闭合；每项 PASS/FAIL/未获取单列。所有 FAIL 先报告，不能用 9 月结果代替本轮验证。PM review 前不在本机启动完整构建。
+回传目录至少包含：应用身份、QB ID/项目/源码和快照/buildconfig、完整构建日志、阶段时间及内存口径、22 RPM 清单/字节/SHA、全部 NEEDED 结果及待分析处置、归档 JSON、别名/ldd/smoke 日志、两 accel 体积和闭合、六格下游对照。任何失败保留原文与退出码，不填推测结果。配置级证据、历史实测、新构建实测分开写。
+
+## 8. 风险与后续边界
+
+- **BOLT 与 356949 合并顺序**：变量块的 `$BOLT_BRANCH` 尚未合入，它与本补丁修改同一段 x86_64 CMake 参数；谁后合入谁变基。在混合配置上必须重新认证 BOLT 的 dry-run 任务白名单，因为 llvm-bolt 与 libLLVM.so 相关构建图会变化。356949 合入后同样须变基、检查配方/宏/Source 组合并重新核对。本指南登记风险，不访问或修改该会话资产。
+- **accel 别名可选优化**：qemu-accel 的 `cp -aL` 展开 lld/ld.lld 与 llvm-ar/llvm-ranlib/llvm-lib/llvm-dlltool，末尾只恢复 clang 组软链接；证据为 [spec 第 382 行](qb_1199098_vs_1178133/size_attribution/raw/qemu-accel_new_armv7l_retry.spec#L382)、[第 617–643 行](qb_1199098_vs_1178133/size_attribution/raw/qemu-accel_new_armv7l_retry.spec#L617)。`%fdupes` 没有使此清单中的六项变成硬链接：每项 nlink=1、不同 RPM inode，同组 SHA 相同。[估算及逐文件来源](52_hybrid_link_evidence/accel-alias-savings-estimate.json)：保留 lld、llvm-ar 两份实体，将余下四项改成相对软链接，冗余 regular 字节为 `84,409,520 + 3×14,832,464 = 128,906,912`；扣除链接文本 `3+3×7=24`，**按现有 armv7l accel 清单估算可减少 128,906,888 B（122.94 MiB）path-bytes**。这是后续改 qemu-accel 的可选优化，**不在混合补丁中**；不预测压缩 RPM/磁盘块节省，aarch64 未取得相同清单，新混合产物还需重算。
+- 动态 LLVM 目标仍可能链接工具私有 `.a`，共享库生产者也会消费组件 `.a`；两者均不能机械地按“链接行出现 .a”判失败。按共享输入/NEEDED 和包范围分别检查。
+- QB/本地快照、硬件、并发和缓存不同会影响耗时；本轮没有运行构建，不承诺体积或耗时降低的数值。只有 §2–§6 新产物验证完成后才能交付该次验证结论。

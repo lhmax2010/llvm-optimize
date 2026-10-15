@@ -4,7 +4,7 @@
 
 **长期署名规则（2026-10-15 PM 裁决，优先于历史署名约定）**：作者、提交者及 Signed-off-by 使用本机全局身份 `liushanshan <ss0217.liu@samsung.com>`，或显式使用 `Hao Lin <hao.lin@samsung.com>`；任何后续提交、提交说明和交付文档均不再使用旧别名。不修改全局 Git 配置。详见 §4。
 
-**当前任务（docs/52，x86_64混合链接）完成至配置级，待PM review**：最新tizen_base=67619ec8（356627已合入，356949仍NEW）。独立hybrid_link提交cef4d90b、tree80a6fd23；七文件补丁干净git am/tree核对PASS。三组CMake生成PASS，额外原版动态对照PASS；188个链接目标仅clang-22/lld/llvm-ar三组改变，其余185项与动态对照一致。两ARM build/install宏展开同字节，static-devel/转换Source不变。工具私有.a及共享库生产者仍存在，未把“动态LLVM”冒充“链接行零.a”。QB accel107路径已逐项映射，现有收依赖逻辑支持动态库但新包闭合待实测。工作区Base URL当前404；组员完整构建前需解决仓库可用性。只做CMake配置/探针与文本分析，无LLVM target构建、GBS构建或Gerrit推送；未访问BOLT资产、未改原工作区源码。见[docs/52报告](52_hybrid_link_tizen_base.md)、[验证指南](52_hybrid_link_validation.md)、[补丁](52_hybrid_link.patch)。
+**当前任务（docs/52 验证指南 v2）完成，待组员 Quickbuild 验证**：PM 已通过 cef4d90b / tree 80a6fd23 混合补丁，补丁字节未改。指南以 Quickbuild 为主、本地 GBS 为可选；集中变量，组员用自己的提交者身份。配置图期望表覆盖全部 188 目标（五类 3/5/29/108/43，158 条安装路径），NEEDED 检查器将缺少预期共享依赖列为待分析；21 项测试 PASS。Base/Unified 选取与项目 buildconfig、404 停止、六格下游验证、BOLT/356949 变基风险已写入。accel 别名去重按现有清单估算省 128,906,888 B path-bytes，不是新 RPM 实测。只改文档/检查脚本，未构建、未推 Gerrit、未访问 BOLT 资产；原 gbs_llvm.conf 用户修改保留。见[指南 v2](52_hybrid_link_validation.md)、[188 目标期望表](52_hybrid_link_evidence/needed-expectations-v2.json)。
 
 **上一任务（Base LLVM / clang-accel RPM 体积逐文件取证）已完成**：两快照指定 RPM 的目录/头字段、全路径大小/SHA256、ELF 动态依赖/节表和源码区间提交/完整 diff 均已保存。逐文件配对、排行、互斥与重叠分类金额及 clang-accel 来源匹配见 [SIZE_FINDINGS](qb_1199098_vs_1178133/size_attribution/SIZE_FINDINGS.md) 和同目录 CSV；数字均附 raw 文件行号。qemu-accel 端点 diff 与正向/反向提交集合分开记录；无匹配不当作源码变化证明，分类占比不当作因果比例。指定包取证与交叉核验完成，build-id 未列出及单项优化/压缩贡献不可分离的边界已注明。RPM 仅留 temp/qb_size，逐包解包目录均已删除；未编译、改产品代码或提交 Gerrit。
 
@@ -127,7 +127,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 ## 2. 进度
 
-2026-10-15｜本提交（父6b0ac03）｜docs/52_hybrid_link_evidence/{a,b,c,d}-configure.log、STATUS｜补齐被通用*.log忽略规则排除的四份原始CMake日志，内容与交付manifest一致；补丁/配置结论不变。
+2026-10-15｜本提交（父10a2f1c）｜docs/52_hybrid_link_validation.md、期望表/自检证据、NEEDED 检查器与测试、STATUS｜六项 PM 指南修订完成；188/188 图目标覆盖，21 项检查器测试 PASS；补丁 SHA 保持 30e90aa3…；无构建/Gerrit 推送。
+
+2026-10-15｜10a2f1c（父6b0ac03）｜docs/52_hybrid_link_evidence/{a,b,c,d}-configure.log、STATUS｜补齐被通用*.log忽略规则排除的四份原始CMake日志，内容与交付manifest一致；补丁/配置结论不变。
 
 2026-10-15｜6b0ac03（父88349f6）；LLVM候选cef4d90b｜docs/52三交付物、52_hybrid_link_evidence/、STATUS｜七文件补丁/git am与三架构展开PASS，三配置+上游动态对照PASS；只配置，不完整构建，待PM review。
 
@@ -281,6 +283,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 2026-10-14｜本提交｜docs/49_x86_build_resume_result.md §8｜独立-bi再次转换225档，before/after SHA与-ba全部相同；后处理尚在运行，BOLT未交接。
 
 ## 3. 已闭合结论
+
+- **硬证据，指南 v2**：188 个图目标分类为静态三组 3、上游例外 5、两库都不链 29、动态 LLVM 108、动态 LLVM+clang-cpp 43；安装映射 158 路径，其中 /usr/bin 133，obj2yaml/yaml2obj 不被误判为动态。证据 52_hybrid_link_evidence/needed-expectations-v2{,-self-check}.json、rpm-install-paths-provenance.json；21 测试结果见 needed-checker-v2-tests.txt。自检是图覆盖与脚本测试，不是新 RPM 运行验收。
+- **基于硬证据的估算，accel 别名**：现有 armv7l 清单 lld 两份、llvm-ar 四份均 regular/nlink=1，同组 SHA 相同；若保留实体并把四份副本恢复相对软链接，path-bytes 预计减少 128,906,888 B。证据 52_hybrid_link_evidence/accel-alias-savings-estimate.json；压缩 RPM/du/aarch64 节省未估算，未修改 qemu-accel。
 
 - **docs/52配置级硬证据**：三组目标静态LLVM，其余指定目标共享LLVM；a/c仅3个link edge不同，c/原版动态188项与rules同字节。两ARM宏展开同字节、Source和files不变；fresh git am tree=80a6fd231c4564a3b762f4ec288cf2c41f9d2e20。证据docs/52 §3–§5及52_hybrid_link_evidence/*.json。不是新RPM、运行或性能认证。
 
@@ -515,6 +520,8 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 4. 人工裁决前提
 
+- **2026-10-15 docs/52 v2 PM review**：cef4d90/tree80a6fd23 补丁通过且不改；只修文档/检查脚本。Quickbuild 主路径，本地 GBS 可选；组员 git am 保持 Hao Lin 作者、使用本人提交者推 sandbox。Base 必须来自对照 QB 的具体快照、预检 404 即停止；buildconfig 用对应项目导出。NEEDED 按图逐项判定，缺预期共享依赖为待分析；BOLT 与混合谁后合入谁变基，并在混合图上重认证 BOLT dry-run 白名单，356949 合入也需变基核对。accel 别名仅记后续可选优化。本轮只推 GitHub，以 git -c 使用 Hao Lin 署名，不改全局配置。
+
 - **2026-10-15 docs/52**：本任务替代旧配置级prompt；以最新tizen_base为基线，只改x86_64。clang/lld/llvm-ar三组静态；其他工具恢复上游动态方式，五个指定强制静态工具保留；ARM、现有优化、static-devel及356627转换不改。仅配置/文本分析，nice19/ionice3；不碰BOLT资产，不推Gerrit或sandbox，只推GitHub；署名显式Hao Lin，全局Git配置不改。本轮产物止于PM review，完整构建由组员后续执行。私有归档等超出字面“零.a”的配置结果如实报告，未擅改源码消除它们。
 
 - **2026-10-15 长期有效：提交署名规则（用户/PM直接裁决）**。作者与提交者可直接使用本机全局 Git 配置 `liushanshan <ss0217.liu@samsung.com>`，也可显式使用 `Hao Lin <hao.lin@samsung.com>`。任何后续提交、提交说明（包括 `Signed-off-by`）和交付文档都只使用上述身份，不再使用此前的旧别名；本条取代全部历史署名约定。不修改全局 Git 配置。若 Gerrit 因提交者与推送账号不一致而拒收，立即停止该次推送，保留并贴出拒绝原文，然后改用 `Hao Lin <hao.lin@samsung.com>` 重新提交。本次仅登记裁决，不重写历史提交、不追加 Gerrit 推送；后续操作仍须遵守对应任务的推送授权范围。
@@ -635,7 +642,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 5. 挂账
 
-- **docs/52当前挂账**：PM review七文件混合补丁及“上游动态仍链接私有.a”的边界；组员提供可用Base配置（当前20261001.092726为404）或用Quickbuild项目构建；完整x86_64编译、22RPM/NEEDED/运行/归档/accel闭合与容量按52_hybrid_link_validation.md执行。本次未运行，不以docs/22旧源码实测替代。356949若之后合入，需rebase并核对新基线；此任务不代为推送sandbox/Gerrit。
+- **docs/52 当前挂账**：补丁 PM 已通过；组员依 v2 指南执行 Quickbuild x86_64 LLVM → 两架构 accel → zlib/libpng/libinput 六格验证，记录阶段耗时、快照、体积、峰值、22 RPM/NEEDED/归档/运行与全部 accel ELF 依赖闭合；本轮未构建。aarch64 的旧 Unified libpng/libinput 日志未获取，不编造对照。若选本地，须用对应 QB 具体仓库和项目导出 buildconfig；404 停止。BOLT/356949 合入顺序的变基及混合图 dry-run 再认证仍待执行；qemu-accel 别名去重不在本补丁内。
 
 - **docs/50 §11.7**：ARM补丁带x86回归处理-g0/仅DWARF4、relocation链接类型及sh_info语义、dbg.cu对称门禁、BACKEND_FLAGS/错误/派生符号、平台宏漂移、多行asm；addrsig独立修复先keep-file-symbols探针，备选删节、Tizen ICF+fatal使用调查及sh_link回归；发布完整打包在正式启用前完成。本轮均未改/未运行。
 
