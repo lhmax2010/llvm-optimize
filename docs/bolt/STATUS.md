@@ -299,3 +299,9 @@ PM裁决：docs35原22包在W/temp/archive-fix-v2-final-20261009/rpms-docs35，�
 22RPM逐包身份PASS；完整合并根no_bolt_products 17722路径/47cmake，最终helper复查PASS。新压缩提交OFF debug20/release18段与新基线逐字相同，ON顺序snapshot<compare-root<转换<install且转换一次；四post平台段逐字一致、尾检最后；真实7df/4ec安全、tiny三目标、双根post/反向/compare-root、111计划正负例全PASS。4ec候选未重生成。受保护22RPM/归档证据/原坏配置/缓存/源码未变，锁/proc/scope回收。产品准备修正0次、产品门禁失败0次；发布准备三类各修正1次（stdout错误假设、忽略归档暂存、索引脚本目标路径），查找更正及完整原文见24。
 
 维护完整版见maintenance.md（四remedy、运行前提、升级与重训、锚点、资料保留/崩溃/回退）；23已明确静态图边界与stdout实际内容（2600/2609字节的夹具JSON）。上次GitHub ls-remote已补核PASS。材料先GitHub公开并核验126 raw/远端后，无force新建sandbox/lhmax2025/bolt_pgo_v2，前空/后查已等于该源提交，旧sandbox/refs-for/tizen_base不动。QB/真实树演练/发布全构建及accel-worker身份仍NOT RUN，用户在PM审完后启动。完整状态/资源/原文见24和review4b系列。
+
+## 2026-10-15 sandbox 收拢（长期人工裁决）
+
+BOLT 在 platform/upstream/llvm 只使用 sandbox/lhmax2025/bolt_pgo，后续不再新建 sandbox 分支。变基更新仅该分支允许 --force-with-lease，租约必须写明当前远端完整 SHA；其他分支一律不得强推。
+
+A PASS：以明确租约 ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8 更新 bolt_pgo 至 506dc25c86e4e2154150796d10b77b71d71ad6bb，推后核验一致；bolt_pgo_v2 已删除并查询确认不存在。其他六个分支只登记，不删除。未改源码、未推 refs/for 或 tizen_base。B 真实 overlay 安装演练另行记录在25；当前准备中。
