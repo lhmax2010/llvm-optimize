@@ -57,3 +57,7 @@ STOP；压缩源提交 `8be7348a6baf9d4b8b55c382b8a04dade712208d`，父 `67619ec
 ## 发布材料纠正
 
 发布脚本把默认 format-patch 误当作不含二进制；实际默认包含binary数据。cad1c935提交中0000为12,623,564字节，超过公开单文件10,000,000字节限制。这是可避免的发布准备错误；当前分支已改为显式 --no-binary，完整二进制补丁保留E，不重写已推历史，故cad1c935历史文件仍存在。不得将该历史提交作为符合大小约束的材料pin；最终索引指向纠正后的提交。完整原文与SHA见review4-publication-correction.json。产品认证此前已STOP，未因此恢复任何产品操作或推sandbox。
+
+## 最后发布核对
+
+96个branch/pinned raw URL的HTTP200和字节SHA检查已全部通过，之后独立git ls-remote查询GitHub失败：`Failure when receiving data from the peer`（exit128）。因此HTTP阶段PASS，完整发布核验不是PASS；此前bolt-v4各次push均返回成功。完整错误原文见review4-publication-check.json。查找该日志时曾把W下相对路径用于B工作目录，发现后按已定位的W绝对范围读取；只发生在查找阶段，未影响产品输入或门禁。
