@@ -2,6 +2,8 @@
 
 证据钉提交：`060532c58a8f7a61afefa758f25562441f817101`。分支链接随 bolt-v4 更新；钉提交链接固定。xz 为原文压缩件。
 
+本轮分表：[7](10_raw_links_part7.md)、[8](10_raw_links_part8.md)、[9](10_raw_links_part9.md)、[10](10_raw_links_part10.md)、[11](10_raw_links_part11.md)。
+
 | 文件 | 分支版 | 钉提交版 | 字节 | SHA256 |
 | --- | --- | --- | ---: | --- |
 | tools/bolt/results/install-rehearsal-20261015/askpass-environment-failure/scope.stderr | [bolt-v4](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/install-rehearsal-20261015/askpass-environment-failure/scope.stderr) | [060532c](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/060532c58a8f7a61afefa758f25562441f817101/tools/bolt/results/install-rehearsal-20261015/askpass-environment-failure/scope.stderr) | 99 | 0b0b2101adb61aa68f039421d540f40bedaf8134c846be08a610014233cfc0f2 |

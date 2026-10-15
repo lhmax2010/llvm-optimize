@@ -2,6 +2,8 @@
 
 证据钉提交：`060532c58a8f7a61afefa758f25562441f817101`。分支链接随 bolt-v4 更新；钉提交链接固定。xz 为原文压缩件。
 
+本轮分表：[7](10_raw_links_part7.md)、[8](10_raw_links_part8.md)、[9](10_raw_links_part9.md)、[10](10_raw_links_part10.md)、[11](10_raw_links_part11.md)。
+
 | 文件 | 分支版 | 钉提交版 | 字节 | SHA256 |
 | --- | --- | --- | ---: | --- |
 | docs/bolt/25_real_install_rehearsal.md | [bolt-v4](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/docs/bolt/25_real_install_rehearsal.md) | [060532c](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/060532c58a8f7a61afefa758f25562441f817101/docs/bolt/25_real_install_rehearsal.md) | 9642 | 9bd92c34066dbbc069e46f34e0953a785191f010b6adcc2c9c344d91d4d731d8 |

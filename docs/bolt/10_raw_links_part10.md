@@ -2,6 +2,8 @@
 
 证据钉提交：`060532c58a8f7a61afefa758f25562441f817101`。分支链接随 bolt-v4 更新；钉提交链接固定。xz 为原文压缩件。
 
+本轮分表：[7](10_raw_links_part7.md)、[8](10_raw_links_part8.md)、[9](10_raw_links_part9.md)、[10](10_raw_links_part10.md)、[11](10_raw_links_part11.md)。
+
 | 文件 | 分支版 | 钉提交版 | 字节 | SHA256 |
 | --- | --- | --- | ---: | --- |
 | tools/bolt/results/install-rehearsal-20261015/sandbox-delete-v2.txt | [bolt-v4](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/install-rehearsal-20261015/sandbox-delete-v2.txt) | [060532c](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/060532c58a8f7a61afefa758f25562441f817101/tools/bolt/results/install-rehearsal-20261015/sandbox-delete-v2.txt) | 223 | a8be125eb1bba3121f51792d1f5bd0d6f6680c785d6135c5219b76a492bd9881 |
