@@ -90,3 +90,21 @@ helper新增security_properties/security_compare与security CLI，流水线strip
 根内rpmspec不支持--without：第一次采集参数错误修正一次，改用rpmbuild实际设置的_without_clang_bolt定义。单独rpmbuild --without clang_bolt --eval证明其实际值为字符串--without-clang_bolt；最初报告误期待整数1，属另一类报告判据错误，修正一次。安装macros中bcond_without只检查该变量是否存在；rpmspec传实际同一字符串。两类原文均保存，未将不支持的CLI冒充成功，最终展开PASS。本轮累计准备修正三类各一次：旧post夹具输入、rpmspec选项兼容、宏值报告判据；无同类第二次。
 
 所有调用在原RPM前导，PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin，which clang=/bin/clang、clang++=/bin/clang++；argv/环境与mount前中后原文保存。轻scope已回收/proc已卸载，不取重锁，无CMake/Ninja。真实产物门禁下一步。
+
+## 续跑十真实产物及源提交：PASS，停在推送前
+
+不重新生成候选。ordinary7df与candidate4ec执行新的tiny（两边--no-default-config、每次清理输出、非空非链接）三目标完整.o相同，安全属性比较再次PASS。只复制20已解包的debug/release小RPM根到本轮专用目录：各执行post反向检查、故意加入llvm-bolt被拒并移除、compare-root文件/类型/权限/大小/SHA/链接逐项保持、完整post的SHA/alias/ELF/security/三目标全部PASS。原20证据不改。110任务全集构造dry-run返回102对象/7静态库/1可执行任务，加入普通lib/Support任务明确被拒。
+
+新本地源提交 **97c060a10bf0d19cea4b163853ceb873ed431478**，父 **a1410e3d14b8836e3f9be5a1b4380f914dc2e705**，tree ea70ea066dd16430b23c238d9654e1667479b960；仅修改packaging/llvm.spec与clang-bolt-helper.py，profile保持。源tracked工作副本干净。文本补丁0002对父提交静态apply与整树write-tree相同，manifest已更新，旧a141 manifest单独保存。不推任何Gerrit分支，也不查询远端；不是已更新sandbox的声明。
+
+|文件|字节|SHA256|
+|---|---:|---|
+|llvm.spec|24571|df1198d1567af520b12064fca6fe8342ab55c8859eebaec011d2e5ac3dd90620|
+|clang-bolt-helper.py|52707|4590b337247749e76962801167a96a10f61ef5cbe9c993fba25ef462d87b9970|
+|profile.xz（不变）|9735212|52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f|
+
+OPTIONS与PROFILE_SHA常量和父提交相同；候选最终SHA仍4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9。source提交说明写明QB参数/项目不可改，x86默认开启；回退提交把bcond_without改bcond_with。
+
+收尾保护审计PASS：22RPM完整SHA/大小、归档证据元数据、原源码元数据、禁用cache/ninja SHA不变，原ThinLTO仍47987/96881772832B。本轮没有原树CMake/Ninja/-P、链接/重写、重锁、ARM树或完整LLVM构建；所有实验4GiB/swap0/nice19/ionice3且scope回收，proc挂载仅本轮临时proc并在finally卸载，无宿主bind/namespace。没有单次>10GiB写入。详细资源、原文、三类各一次准备修正见reviewfinish-resources/corrections/final-result。
+
+本轮只完成提示要求的本地修复/安全/宏链/真实门禁认证，停止在推送前。历史20性能与对象证据不因本轮而重测；前轮尚缺ARM/AArch64性能不冒充已补。Quickbuild仍须现场tool-plan/compare-root/security/post、自身clang性能及debugsource实物核对；不要求local/QB clang SHA相等。

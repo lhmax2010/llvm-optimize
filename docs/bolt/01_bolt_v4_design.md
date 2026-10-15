@@ -359,6 +359,6 @@ git push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm AUDITED_C
 
 18/19文本门禁与展开最终PASS；20的120对象/双模式mini/DWARF清单/x86性能0.855890085 PASS，sandbox更新a141父cb。完整历史见20与053fe704版设计；周四实物六项仍待，发布完整构建挂账。
 
-### v4.1-18 外部评审修复（续跑九）
+### v4.1-18/19 外部评审修复（续跑九/十）
 
-PM保持x86默认开启，QB回退只能提交spec改bcond_with；新源父a141，本轮禁Gerrit。tool-plan离线110任务全集精确白名单，109夹具PASS。其余健壮性修改未认证：最终138夹具137通过，后代退出观察第二次错误STOP；安全属性/宏链OFF基线对比/ARM-A64性能/真实新门禁均NOT RUN，不生成新源提交。4ec候选不变；未完成patch另存。详21与STATUS，不用本次未认证helper替代已发a141。所有scope回收，无原树配置/重锁/proc/cache写入或ARM根。
+21记录续跑九后代退出证明失败而STOP；续跑十按10秒pgrp非Z/X退出约定修复，146夹具/两真实ELF安全属性/两模式18段OFF字节相同/当前mini原文/真实tiny-post反向-compare-root-tool-plan全部PASS。历史mini为路径适配，当前canonical仅展开、不冒充重跑RPM。源97c060a10bf0d19cea4b163853ceb873ed431478父a141，补丁整树PASS；4ec候选与参数不变，禁止Gerrit并停在推送前。QB默认开启，回退须新spec提交改bcond_with；现场仍核tool-plan/compare-root/security/post、QB自身性能/debugsource。保护与资源回收PASS，三类准备修正各一次详21。

@@ -1,43 +1,43 @@
 {
-  "draft_commit": "a1410e3d14b8836e3f9be5a1b4380f914dc2e705",
-  "base": "cb67996861d070d68fec2b4c623eed7d20ba2e23",
-  "tree": "33b4e9f84cec3336878501d55fe243b41c092c80",
+  "draft_commit": "97c060a10bf0d19cea4b163853ceb873ed431478",
+  "base": "a1410e3d14b8836e3f9be5a1b4380f914dc2e705",
+  "tree": "ea70ea066dd16430b23c238d9654e1667479b960",
   "apply_check": true,
   "tree_equal": true,
-  "gerrit_pushed": true,
-  "public_envelope_tree": "33b4e9f84cec3336878501d55fe243b41c092c80",
-  "public_envelope_tree_equal": true,
-  "source_git_blob": "0c7860cfc46b7b10f04ac87cc70b12bc48f3de3c",
+  "gerrit_pushed": false,
+  "qualification": "PASS_THIS_TASK_LOCAL_GATES; STOP_BEFORE_GERRIT_PUSH",
   "files": [
     {
-      "file": "0001-clang-bolt-draft-review.patch",
-      "bytes": 39727,
-      "sha256": "6f3c7c90cc33dde66ac38e4d8954802343d38e747124b81e95cb7c2f98377cdd"
+      "path": "packaging/llvm.spec",
+      "bytes": 24571,
+      "sha256": "df1198d1567af520b12064fca6fe8342ab55c8859eebaec011d2e5ac3dd90620"
     },
     {
-      "file": "clang-bolt-v2.fdata.xz",
+      "path": "packaging/clang-bolt-helper.py",
+      "bytes": 52707,
+      "sha256": "4590b337247749e76962801167a96a10f61ef5cbe9c993fba25ef462d87b9970"
+    },
+    {
+      "path": "packaging/clang-bolt-v2.fdata.xz",
       "bytes": 9735212,
       "sha256": "52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f"
     }
   ],
-  "full_patch_local": {
-    "path": "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261014-no-reinstall/0001-clang-bolt-draft.patch",
-    "sha256": "6fddbfa27af0450d2620d9e8e4e5527c8ff198f5a0ae57111821a128c809da82",
-    "bytes": 12587359
+  "patch": {
+    "file": "0002-clang-bolt-gate-repairs.patch",
+    "bytes": 39498,
+    "sha256": "b72835377bb8d5fe58bc611bcd56d1eb9f7591616299b407cfe78e9f44cf2ce2"
   },
-  "spec_sha256": "14d17a60369a2c05661037583740b410f0fd710aef2c0c78de08175a57bb6c0c",
-  "helper_sha256": "7614228b5da020fd1ae08eaef0ebaf096c317f21a370e249285ee632711888e7",
-  "fixtures": 103,
-  "qualification": "PASS_LOCAL_VALIDATION_AND_SANDBOX_PUSH; Quickbuild/full release validation remains",
-  "debug_release_expansion": "PASS; current a1410e3d spec, identical BOLT blocks, one ordinary install, no ordinary-exports/prune, compare-root correct order",
-  "instructions": "Apply review.patch to base, copy fdata.xz to packaging/clang-bolt-v2.fdata.xz, git add packaging, then write-tree. Do not git am text-only patch as the complete commit.",
-  "sandbox_branch": "sandbox/lhmax2025/bolt_pgo",
-  "remote_before": "cb67996861d070d68fec2b4c623eed7d20ba2e23",
-  "remote_after": "a1410e3d14b8836e3f9be5a1b4380f914dc2e705",
+  "fixtures": 146,
+  "source_parent_chain": [
+    "cb67996861d070d68fec2b4c623eed7d20ba2e23",
+    "a1410e3d14b8836e3f9be5a1b4380f914dc2e705",
+    "97c060a10bf0d19cea4b163853ceb873ed431478"
+  ],
+  "instructions": "Apply 0002 with git am to a1410e3d. For a cb679968 checkout, first apply historical0001 review patch and restore unchanged profile as documented in a1410e3d-historical-manifest.json, then apply0002. Static index apply matches full new tree. No Gerrit push performed.",
+  "quickbuild_default": "x86_64 BOLT enabled; rollback requires new spec commit changing bcond_without to bcond_with",
+  "candidate_route": "historical llvm-bolt fallback; no regeneration",
   "local_candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
-  "candidate_route": "historical tool fallback",
-  "objects_pairs": 120,
-  "dual_mode_smoke": "PASS",
-  "expected_debug_RPM_diff": "PASS with per-path DWARF proof",
-  "performance_geometric_mean_ratio": 0.8558900849814584
+  "current_task_scope": "process groups/security/macro evidence/real gates; ARM-AArch64 performance not part of this task, still pending from previous task",
+  "historical_x86_performance_ratio": 0.8558900849814584
 }

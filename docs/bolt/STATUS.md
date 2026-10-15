@@ -274,3 +274,5 @@ PM：上轮为真实退出证明缺口，按SIGKILL/直接回收/扫描pgrp等�
 续跑十步骤2 PASS：两真实ELF安全属性全部保持（均无GNU property），65241动态符号/版本、43需求相同；helper流水线strip-all后及post新增比较。6新安全夹具、全套146/146 PASS；旧post夹具placeholder改真实ELF一次准备修正，原文保留。原/候选SHA不变；原文/表/资源见21与reviewfinish-security-*。宏链及真实门禁待。
 
 续跑十步骤3 PASS：当前canonical双模式小spec复用源override完整原文、同处install/files之后（历史20为路径适配，非原文相同，已澄清）；小spec只展开未重跑RPM。源条件块空白移入BOLT分支，OFF debug/release所有相关段与cb逐字节相同。rpmspec无--without，依rpmbuild实证的_without_clang_bolt字符串与已安装bcond宏作等价展开；选项兼容及宏值报告各准备修正一次，原文保留。累计三类各一次，具体21。
+
+续跑十最终PASS_LOCAL_GATES_STOP_BEFORE_PUSH：真实tiny/security、20双模式根副本完整post/反向检查/compare-root、110计划正反例全PASS；146夹具。新源97c060a10bf0d19cea4b163853ceb873ed431478父a141，patch0002静态apply/整树PASS，spec/helper SHA见21与manifest；profile及4ec候选不变。没有Gerrit查询/推送，按授权停在推送前。三类准备修正各一次、两macro采集错误原因不同均保留；原22RPM/归档/源码/坏配置/cache审计PASS；所有4GiB scopes/proc回收，无重锁/CMake/Ninja/ARM/完整构建。

@@ -1,0 +1,26 @@
+{
+  "path_lookup_corrections": [],
+  "preparatory_corrections": [
+    {
+      "class": "old post fixture input",
+      "count": 1,
+      "error": "Old fixture passed a placeholder instead of a real ELF",
+      "correction": "Use its existing identity before ELF;146 tests PASS"
+    },
+    {
+      "class": "rpmspec CLI option compatibility",
+      "count": 1,
+      "error": "Installed rpmspec rejects --without",
+      "correction": "Use installed bcond macro and exact rpmbuild-created _without_clang_bolt definition; do not rerun unsupported option"
+    },
+    {
+      "class": "macro-effect report expected value",
+      "count": 1,
+      "error": "Expected literal1, actual rpmbuild value is --without-clang_bolt",
+      "correction": "Assert actual documented output and pass identical string to rpmspec; final macro gate PASS"
+    }
+  ],
+  "other_publication_note": "New .tar.xz evidence is ignored by repository defaults; explicitly git add -f after first add omitted it. Product evidence and gates were not rerun for this publication detail.",
+  "code_preparation_note": "Generated security-reader extraction was reformatted before syntax/testing; no malformed reader was used for a product operation.",
+  "stop_rule": "No corrected class failed a second time; no actual product gate failed. Two macro capture failures had distinct causes, unsupported option vs wrong literal report expectation, and are both preserved."
+}
