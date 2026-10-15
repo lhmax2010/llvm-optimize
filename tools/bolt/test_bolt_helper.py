@@ -235,14 +235,15 @@ class TinyTests(Base):
         with self.assertRaises(OSError):h.tiny_gate('missing','missing',self.d/'gate')
 
 class ToolPlanTests(unittest.TestCase):
-    def test_bolt_only(self):self.assertEqual(h.tool_plan('[1/2] Building CXX object tools/bolt/Core/a.o\n[2/2] Linking CXX executable bin/llvm-bolt\n')['tasks'],2)
+    def test_bolt_only(self):self.assertEqual(h.tool_plan('[1/2] '+next(x for x in h.BOLT_TASK_DESCRIPTIONS if x.startswith('Building '))+'\n[2/2] Linking CXX executable bin/llvm-bolt\n')['tasks'],2)
     def test_ordinary_compile_stops(self):
         with self.assertRaises(h.GateError):h.tool_plan('[1/1] Building CXX object lib/Support/a.o\n')
     def test_ordinary_link_stops(self):
         with self.assertRaises(h.GateError):h.tool_plan('[1/1] Linking CXX executable bin/clang-22\n')
     def test_empty_unrecognized_stops(self):
         with self.assertRaises(h.GateError):h.tool_plan('')
-    def test_no_work(self):self.assertEqual(h.tool_plan('ninja: no work to do.\n')['tasks'],0)
+    def test_no_work(self):
+        with self.assertRaises(h.GateError):h.tool_plan('ninja: no work to do.\n')
 
 class CacheTests(Base):
     def test_only_three_paths_and_flags_change(self):

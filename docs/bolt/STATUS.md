@@ -274,3 +274,7 @@ PM确认7439文本/两模式展开/120输入准备已经结束，不重做；只
 续跑八最终PASS（2026-10-15T02:24:43.219484+08:00）：sandbox从cb67996861d070d68fec2b4c623eed7d20ba2e23直接更新至a1410e3d14b8836e3f9be5a1b4380f914dc2e705，远端前后核对PASS；不推refs/for/tizen_base、未force/重基。120对象/双模式mini/22RPM-DWARF预期清单/性能geom0.855890085全部PASS，候选历史后备4ec07159…；保护审计和120输入再次SHA PASS，所有锁/proc/scope回收。原cache47987/96881772832B不变，无CMake/Ninja/ARM根/完整LLVM/W tracked修改。查找更正0；报告debug brp条件与scope CLI返回值各修正一次，同一RPM与trace未重跑，详见20/validation-preparatory-corrections；进度计数消息误报已纠正，原300样本正确。周四六项QA与源父目录严格核对保持，发布完整构建/周五若新tizen_base合归档补丁再变基仍挂账。20和validation-final-result给全部结果，Raw索引最后更新。
 
 收尾补充：四类準备修正各一次（post计数、scopeCLI、报告百分号、报告模块搜索路径）；产品/推送未重跑，完整记录与原文公开，查找路径更正0。
+
+## 2026-10-15 续跑九（进行中）
+
+PM裁决及本轮边界见21：修门禁不改生成参数/4ec候选，源父a141；仅push bolt-v4，禁止Gerrit。QB默认开关保持开启；回退需新spec提交改bcond_with，不能改QB配置。第一步离线闭包1911边（普通1792/command1715、新增phony9、实际BOLT110=102对象+7库+1链接），精确描述白名单及固定NINJA_STATUS，109/109夹具PASS。准备入口cwd修正一次，详见21；后续待。
