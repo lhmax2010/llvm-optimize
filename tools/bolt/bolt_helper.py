@@ -243,6 +243,95 @@ class ELF:
             require('.note.bolt_info' in self.by_name, 'missing BOLT note')
         return {'entry': self.entry, 'loads': self.loads, 'bolt_sections': [n for n in self.names if '.bolt' in n]}
 
+def security_properties(path):
+    e = ELF(path)
+    try:
+        def content(section):
+            return bytes(e.mm[section[4]:section[4]+section[5]])
+        def headers(kind):
+            return [p for p in e.phdrs if p[0] == kind]
+        def header_values(kind, payload=False):
+            values = []
+            for p in headers(kind):
+                value = {'flags': p[1]}
+                if payload:
+                    e.range(p[2], p[5])
+                    value['content_hex'] = bytes(e.mm[p[2]:p[2]+p[5]]).hex()
+                values.append(value)
+            return values
+        interp = [e.string(p[2], p[5], 0) for p in headers(3)]
+        dynamic = e.by_name.get('.dynamic'); needed = []; flags = {}
+        if dynamic:
+            require(dynamic[1] == 6 and dynamic[9] == 16 and dynamic[5] % 16 == 0 and dynamic[6] < len(e.sections), 'invalid dynamic table')
+            strings = e.sections[dynamic[6]]
+            require(strings[1] == 3, 'dynamic strings are not STRTAB')
+            terminated = False
+            for offset in range(dynamic[4], dynamic[4]+dynamic[5], 16):
+                tag, value = e.unpack('<qQ', offset)
+                if tag == 0:
+                    terminated = True
+                    break
+                if tag == 1:
+                    needed.append(e.string(strings[4], strings[5], value))
+                if tag in (30, 0x6ffffffb):
+                    require(str(tag) not in flags, 'duplicate dynamic flags')
+                    flags[str(tag)] = value
+            require(terminated, 'unterminated dynamic table')
+        syms = e.symbols(e.names.index('.dynsym')) if '.dynsym' in e.names else []
+        vers = e.by_name.get('.gnu.version')
+        require(not vers or (vers[1] == 0x6fffffff and vers[5] % 2 == 0), 'invalid versym table')
+        version_values = list(struct.unpack('<'+'H'*(vers[5]//2), content(vers))) if vers else []
+        verneed = e.by_name.get('.gnu.version_r'); needs = []; version_names = {0: 'LOCAL', 1: 'GLOBAL'}
+        if verneed:
+            require(verneed[1] == 0x6ffffffe and verneed[6] < len(e.sections), 'invalid verneed table')
+            strings = e.sections[verneed[6]]
+            require(strings[1] == 3, 'verneed names are not STRTAB')
+            cursor = 0; seen = set()
+            while True:
+                require(cursor not in seen and 0 <= cursor <= verneed[5]-16, 'bad verneed record')
+                seen.add(cursor)
+                version, count, filename, auxiliary, following = e.unpack('<HHIII', verneed[4]+cursor)
+                require(version == 1, 'unsupported verneed version')
+                filename = e.string(strings[4], strings[5], filename)
+                position = cursor+auxiliary
+                for index in range(count):
+                    require(0 <= position <= verneed[5]-16, 'bad vernaux record')
+                    value_hash, value_flags, other, name, next_aux = e.unpack('<IHHII', verneed[4]+position)
+                    name = e.string(strings[4], strings[5], name)
+                    version_names[other & 0x7fff] = name
+                    needs.append((filename, name, value_flags, value_hash))
+                    if index+1 < count:
+                        require(next_aux > 0, 'truncated vernaux chain')
+                        position += next_aux
+                if not following:
+                    break
+                cursor += following
+        require(not version_values or len(version_values) == len(syms), 'versym/dynsym count mismatch')
+        require(all((value & 0x7fff) in version_names for value in version_values), 'unknown symbol version')
+        named_versions = sorted((syms[i][0], version_names[value & 0x7fff], bool(value & 0x8000))
+                                for i, value in enumerate(version_values))
+        return {'elf_type': e.elf_type, 'PT_INTERP': interp,
+                'PT_GNU_RELRO': header_values(0x6474e552), 'PT_GNU_STACK': header_values(0x6474e551),
+                'PT_GNU_PROPERTY': header_values(0x6474e553, True),
+                '.note.gnu.property': content(e.by_name['.note.gnu.property']).hex() if '.note.gnu.property' in e.by_name else None,
+                'DT_FLAGS_FLAGS1': flags, 'DT_NEEDED': needed,
+                '.dynsym': sorted((s[0], s[1] >> 4, s[2] & 3) for s in syms),
+                '.gnu.version': named_versions, '.gnu.version_r': sorted(needs)}
+    finally:
+        e.close()
+
+def security_compare(ordinary, candidate):
+    before, after = security_properties(ordinary), security_properties(candidate)
+    differences = [key for key in before if before[key] != after[key]]
+    require(not differences, 'ELF security attributes differ: '+', '.join(differences))
+    heavy = ('.dynsym', '.gnu.version', '.gnu.version_r')
+    return {'security_preserved': True,
+            'ordinary_sha256': digest(ordinary), 'candidate_sha256': digest(candidate),
+            'properties': {key: value for key, value in before.items() if key not in heavy},
+            'symbol_version_evidence': {key: {'entries': len(before[key]),
+                'sha256': hashlib.sha256(json.dumps(before[key], sort_keys=True).encode()).hexdigest()}
+                for key in heavy}}
+
 def tiny_gate(ordinary, candidate, work, resource_dir=None):
     work = Path(work); work.mkdir(parents=True, exist_ok=True)
     source = work/'tiny.c'; source.write_text(TINY); out = work/'same.o'; rows = []
@@ -388,9 +477,10 @@ def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
         e.close()
     require(digest(entity) == state['identity']['after_sha256'], 'final installed SHA differs from stripped candidate')
     no_bolt_products(root)
+    security = security_compare(ordinary, str(entity))
     rows = tiny_gate(ordinary, str(entity), candidate_work, resource_dir)
     return {'sha_unchanged': True, 'aliases_pass': True, 'elf': elf, 'tiny': rows,
-            'strip_identity_pass': True}
+            'strip_identity_pass': True, 'security': security}
 
 def certified_version(text):
     lines = re.findall(r'^\s*(LLVM version[^\n]*)$', text, re.M)
@@ -497,8 +587,9 @@ def pipeline(build, work, bolt, cache=None, planned_write_bytes=STAGE_WRITE_BUDG
     result = rewrite(str(bolt),str(work/'profile.fdata'),str(reference),str(work/'clang.bolt'),work/'rewrite')
     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.bolt'),work/'prestrip-gate',str(build/'lib64/clang/22'))
     identity = strip_all(str(build/'bin/llvm-strip'),work/'clang.bolt',work/'clang.candidate',work/'identity.json')
+    security = security_compare(str(work/'ordinary-clang-22'), str(work/'clang.candidate'))
     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.candidate'),work/'preinstall-gate',str(build/'lib64/clang/22'))
-    result.update(identity=identity, input_policy='emit-relocs-then-strip-debug',
+    result.update(identity=identity, security=security, input_policy='emit-relocs-then-strip-debug',
                   cache_policy='original-in-place' if cache is None else 'explicit-copy',
                   disk_admission=admission)
     save(work/'pipeline-result.json',result)
@@ -627,6 +718,7 @@ def package_compare(ordinary, candidate, mode, proof):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__); sub = p.add_subparsers(dest='cmd',required=True)
+    s=sub.add_parser('security');s.add_argument('ordinary');s.add_argument('candidate')
     s=sub.add_parser('tool-plan');s.add_argument('input')
     s=sub.add_parser('pipeline');s.add_argument('build');s.add_argument('work');s.add_argument('tool');s.add_argument('--cache-dir');s.add_argument('--planned-write-bytes',type=int,default=STAGE_WRITE_BUDGET)
     s=sub.add_parser('disk-preflight');s.add_argument('destination');s.add_argument('planned_bytes',type=int);s.add_argument('--reserve-bytes',type=int,default=0)
@@ -642,7 +734,8 @@ def main():
     s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
     s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
     a=p.parse_args()
-    if a.cmd=='tool-plan':result=tool_plan(Path(a.input).read_text())
+    if a.cmd=='security':result=security_compare(a.ordinary,a.candidate)
+    elif a.cmd=='tool-plan':result=tool_plan(Path(a.input).read_text())
     elif a.cmd=='pipeline':result=pipeline(a.build,a.work,a.tool,a.cache_dir,a.planned_write_bytes)
     elif a.cmd=='disk-preflight':result=disk_preflight(a.destination,a.planned_bytes,a.reserve_bytes)
     elif a.cmd=='strip-all':result=strip_all(a.tool,a.before,a.after,a.identity)

@@ -51,3 +51,25 @@ rsp检查：保存的 link.original SHA256 `352a6f57fdc617c20f3e616a0f49ad113d1d
 真实shell→子→孙，孙每30ms写心跳；按同样10秒约定观察所有后代退出/僵尸后，再等待150ms（超过两个周期）确认心跳不增。持续存活mock负例报告424242:R、原错误和日志。全套140/140 PASS，新增2方法（累计比原103新增37），reviewfinish-process-tests给原文/资源；4GiB/swap0/nice19/ionice3 scope回收。本轮尚无准备修正。
 
 rsp不加代码、tool-plan闭包及白名单不重做；全套单测包含原有tool-plan回归。候选生成步骤/参数不改；源父a141，本轮不推sandbox或任何Gerrit分支。后续按安全属性→宏链→真实门禁顺序，任一产品失败即停。
+
+## 续跑十安全属性：全部保持
+
+SHA绑定普通7df0ff90…与候选4ec07159…；readelf完整原文（含全部动态符号/版本）以xz公开，security-probe完整结构与生产helper再次提取相同。未改变生成参数或重新生成候选。
+
+|属性|普通|候选|判定|
+|---|---|---|---|
+|ELF类型|DYN/PIE(3)|DYN/PIE(3)|相同|
+|PT_INTERP|/lib64/ld-linux-x86-64.so.2|同左|相同|
+|GNU_RELRO|vaddr0x828cb70/filesz0x2dd6e8/memsz0x2de490/R|同左|相同|
+|GNU_STACK|RW(6)|RW(6)|相同，无执行权限|
+|PT_GNU_PROPERTY/.note.gnu.property|均无|均无|相同；不声称有IBT/SHSTK|
+|DT_FLAGS|无|无|相同|
+|DT_FLAGS_1|PIE/0x08000000|同左|相同|
+|DT_NEEDED|librt,libdl,libm,libz,libstdc++,libgcc_s,libc,ld-linux-x86-64（完整SONAME见原文）|同序列|相同|
+|.dynsym名称/绑定/可见性|65241条|65241条|逐条相同|
+|.gnu.version|65241个符号版本绑定|同左|相同|
+|.gnu.version_r|43条需求|同左|相同|
+
+helper新增security_properties/security_compare与security CLI，流水线strip-all之后及post启用，属性不符报具体类别；地址/大小不作比较。原始节/段范围及动态/字符串/版本表边界均失败关闭。返回属性与重符号数据的条数/SHA避免巨大构建日志。
+
+新增6个安全夹具（保持、删除GNU property、改栈权限、删除导出、改绑定、改可见性）全部PASS。全套146/146；比本轮开工138新增8，比原103累计新增43。一次旧post夹具输入修正：placeholder文件名fixture改为其identity已生成的真实before ELF，未mock掉新门禁；首次失败原文保留，修正后通过。本轮产品准备修正目前仅此一类一次。所有4GiB scopes已回收。

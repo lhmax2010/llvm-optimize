@@ -204,7 +204,7 @@ class InstallTests(Base):
     def test_post_with_fixed_fixture_compiler(self):
         r=self.root();elf(self.d/'candidate');state=h.install_candidate(r,self.d/'candidate',self.d/'state.json',self.identity())
         with patch.object(h,'tiny_gate',return_value=[{'byte_equal':True}]):
-            result=h.post_gate(r,state,'fixture',self.d/'gate')
+            result=h.post_gate(r,state,self.d/'before',self.d/'gate')
         self.assertTrue(result['strip_identity_pass'])
     def test_identity_wrong_final_sha(self):
         r=self.root();elf(self.d/'candidate');identity=self.identity();identity['after_sha256']='bad'
@@ -380,13 +380,13 @@ class PipelineTests(Base):
             events.append(label)
             if failure==label:raise h.GateError('tiny gate failed')
             return [{'byte_equal':True}]*3
-        with patch.object(h,'call',side_effect=command),patch.object(h,'rewrite',side_effect=rewrite),patch.object(h,'tiny_gate',side_effect=tiny),patch.object(h,'cache_copy',side_effect=AssertionError('no automatic cache copy')):
+        with patch.object(h,'call',side_effect=command),patch.object(h,'rewrite',side_effect=rewrite),patch.object(h,'tiny_gate',side_effect=tiny),patch.object(h,'cache_copy',side_effect=AssertionError('no automatic cache copy')),patch.object(h,'security_compare',side_effect=lambda *args: events.append('security') or {'security_preserved':True}):
             if failure:
                 with self.assertRaises(h.GateError):h.pipeline(build,work,'fixture-bolt','copied/cache' if override else None)
                 if failure in ('rewrite','prestrip'):self.assertNotIn('strip-all',events)
                 self.assertFalse((work/'pipeline-result.json').exists());return
             result=h.pipeline(build,work,'fixture-bolt','copied/cache' if override else None)
-        self.assertEqual(events,['relink','strip-debug','rewrite','prestrip','strip-all','final'])
+        self.assertEqual(events,['relink','strip-debug','rewrite','prestrip','strip-all','security','final'])
         self.assertEqual(result['identity']['after_sha256'],h.digest(work/'clang.candidate'))
         self.assertFalse((work/'lto-cache').exists());self.assertFalse((work/'strip-equivalence.json').exists())
         return result
