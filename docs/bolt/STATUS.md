@@ -263,4 +263,12 @@ PM裁决：docs35原22包在W/temp/archive-fix-v2-final-20261009/rpms-docs35，�
 
 BOLT 在 platform/upstream/llvm 只使用 sandbox/lhmax2025/bolt_pgo，后续不再新建 sandbox 分支。变基更新仅该分支允许 --force-with-lease，租约必须写明当前远端完整 SHA；其他分支一律不得强推。
 
-A PASS：以明确租约 ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8 更新 bolt_pgo 至 506dc25c86e4e2154150796d10b77b71d71ad6bb，推后核验一致；bolt_pgo_v2 已删除并查询确认不存在。其他六个分支只登记，不删除。未改源码、未推 refs/for 或 tizen_base。B 真实 overlay 安装演练另行记录在25；当前准备中。
+A PASS：以明确租约 ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8 更新 bolt_pgo 至 506dc25c86e4e2154150796d10b77b71d71ad6bb，推后核验一致；bolt_pgo_v2 已删除并查询确认不存在。其他六个分支只登记，不删除。未改源码、未推 refs/for 或 tizen_base。B真实overlay安装演练见25及下文最终状态。
+
+## 2026-10-15/16 真实树安装演练：时限中止
+
+A PASS：bolt_pgo最终506dc25，v2删除，六个其他分支只列出，长期仅bolt_pgo规则已登记。B已运行但未完成：普通安装、preflight/certified、路径/proc、真实111 BOLT+2 TF计划和实际构建/tool-verify PASS；新llvm-bolt SHA34686c3362e736763cf0a1a6a44bb54b4d2e5cc34e58322477f2fa63696259fc，本次产出，TF前后同f15c565d…。
+
+55分钟计算截止时clang emit-relocs重链仍在运行，监护按“shared lock 3300-second deadline, leaving 300 seconds for cleanup/audit”终止六个abuild进程，存活0；rpmbuild=-9。未观察到产品门禁失败，不能据此断言QB失败。匹配度/新候选/strip/tiny/security/compare-root/转换/后处理/post/no-work均NOT RUN。原缓存仅61文件14,977,512B，历史温缓存条件不等同。
+
+持锁3374.417秒（56.240分钟）<60；18GiB/swap0/nice15/ionice3，scope峰11.102GiB、最大观测VmHWM10.410GiB，宿主最低可用5.581GiB、disk最低free236.253GiB，内存事件全0。卸载/进程/锁/scope全部回收；下层240,718路径清单和六SHA前后完全一致。上层完整保留至周五待用户处置，无源码/Gerrit评审/tizen_base/QB操作。准备估算与askpass环境各修正1次，首次只读准备未设cgroup偏差如实在25登记；图形实际输入一次。原始日志/分阶段采样/完整脚本、dry-run、tool-plan/tool-verify、TF与下层审计全部公开于25对应raw，Source父676不变。
