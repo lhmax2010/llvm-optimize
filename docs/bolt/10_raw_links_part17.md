@@ -1,6 +1,6 @@
 # Raw 续表：Source 顺序修复与 RPM 解析（17）
 
-证据钉提交：`efb591178a7f52cf61d2e0719235d6858603a031`。包括真实 stderr、展开后 Source/Patch 清单和准备错误原件。所有条目提供分支版与固定提交版。
+证据钉提交：`efb591178a7f52cf61d2e0719235d6858603a031`。包括真实 stderr、展开后 Source/Patch 清单和准备错误原件。所有条目提供分支版与固定提交版。SHA和字节数对应钉提交，分支版随后续更新；最终发布结论见19末尾。
 
 本轮索引：[12](10_raw_links_part12.md)、[13](10_raw_links_part13.md)、[14](10_raw_links_part14.md)、[15](10_raw_links_part15.md)、[16](10_raw_links_part16.md)、[17](10_raw_links_part17.md)、[18](10_raw_links_part18.md)、[19](10_raw_links_part19.md)。
 
