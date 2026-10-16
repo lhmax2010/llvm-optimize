@@ -143,3 +143,10 @@ sha256sum "$BOLT_AARCH64_COLLECTION/merged-v2.fdata" "$BOLT_STAGE/clang-bolt-v2.
 区分四件事：同一次构建中的SHA身份链；固定输入/工具/参数的重写可重现性；整个LLVM构建可重现性；两个环境的性能可比性。它们互不等价，不能要求不同Quickbuild配方和本地clang的SHA相同。Quickbuild核对匹配统计同量级且双门禁PASS，并对自己的clang做性能复核。
 
 回退是提交x86_64的一行 bcond_without clang_bolt → bcond_with clang_bolt；关闭时Source1200/1201和BOLT相关BuildRequires同时失效，ON/OFF展开须重新对新基线证明。回退还需撤换accel/worker实际实体并同步恢复仓库快照/包版本，核对部署后的SHA与Build-ID；只改spec而继续使用旧accel或旧快照不能视作已回退。
+
+
+## Source 声明与 QB 导出解析（长期规则，2026-10-16）
+
+spec 的 Source 行一律无条件声明。gbs 会把自动生成的 Patch 声明插在最后一个 Source 后；Source 条件块可能连带屏蔽 Patch。BOLT 专用 BuildRequires 与实际执行步骤仍按架构/开关保护。
+
+每次提交 QB 前必须先 gbs export，再解析导出的 spec：x86_64（BOLT 开/关）、armv7l、aarch64，确认 Patch0–Patch6 均可见；另测一行 bcond_without → bcond_with 回退。不能只解析仓库内尚无自动 Patch 的原 spec。

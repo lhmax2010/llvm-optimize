@@ -1,0 +1,14 @@
+[
+  {
+    "class": "commit-message serialization",
+    "count": 1,
+    "cause": "git show --format=%B adds a presentation newline; caught before final verification and push",
+    "correction": "Use raw git cat-file commit body; exact bytes outside requested sentence verified. Interrupted the preliminary after-export and restarted for corrected final SHA."
+  },
+  {
+    "class": "nested-repository patch verification",
+    "count": 1,
+    "cause": "git apply invoked below W treated paths outside its prefix as skipped, returning 0 without editing fixture; SHA check caught it",
+    "correction": "GNU patch --dry-run then apply in dedicated fixture, full spec SHA/bytes verified; W tracked files unchanged"
+  }
+]

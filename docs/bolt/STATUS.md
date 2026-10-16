@@ -272,3 +272,10 @@ A PASS：bolt_pgo最终506dc25，v2删除，六个其他分支只列出，长期
 55分钟计算截止时clang emit-relocs重链仍在运行，监护按“shared lock 3300-second deadline, leaving 300 seconds for cleanup/audit”终止六个abuild进程，存活0；rpmbuild=-9。未观察到产品门禁失败，不能据此断言QB失败。匹配度/新候选/strip/tiny/security/compare-root/转换/后处理/post/no-work均NOT RUN。原缓存仅61文件14,977,512B，历史温缓存条件不等同。
 
 持锁3374.417秒（56.240分钟）<60；18GiB/swap0/nice15/ionice3，scope峰11.102GiB、最大观测VmHWM10.410GiB，宿主最低可用5.581GiB、disk最低free236.253GiB，内存事件全0。卸载/进程/锁/scope全部回收；下层240,718路径清单和六SHA前后完全一致。上层完整保留至周五待用户处置，无源码/Gerrit评审/tizen_base/QB操作。准备估算与askpass环境各修正1次，首次只读准备未设cgroup偏差如实在25登记；图形实际输入一次。原始日志/分阶段采样/完整脚本、dry-run、tool-plan/tool-verify、TF与下层审计全部公开于25对应raw，Source父676不变。
+
+
+## 2026-10-16：QB Source 条件屏蔽 Patch 修复（进行中）
+
+长期规则：spec 的 Source 行一律无条件声明；每次提交 QB 前先 gbs export，再对 x86_64（BOLT 开/关）、armv7l、aarch64 解析导出的 spec。
+
+gbs 实际导出已复现：旧506dc25的 Patch0–6处于 x86_64/BOLT 条件块，七条 patch 命令无条件。仅移动两行 Source，源提交 `af82efed1a688ba0877a4b4ca723922abbc96d20`，父67619ec8/Change-Id保持；helper/profile均未变。两份五项 rpm 认证与 sandbox 更新待完成。QB三份日志尚未收到。见 [26](26_source_order_parse_fix.md)。

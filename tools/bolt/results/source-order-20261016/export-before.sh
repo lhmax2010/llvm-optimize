@@ -1,0 +1,3 @@
+#!/bin/sh
+set -eu
+exec gbs export --spec llvm.spec --commit 506dc25c86e4e2154150796d10b77b71d71ad6bb --upstream-branch sandbox/fangyu.he/llvm_optmize --upstream-tag upstream/22.1.8 --outdir-directly -o /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/export-before /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261013/v41/llvm-source

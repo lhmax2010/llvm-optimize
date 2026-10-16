@@ -1,0 +1,24 @@
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 56b141bec5cd..2c9b72b126a1 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -52,17 +52,13 @@ Source1002: mlgo_arm_model.tar.gz
+ Source1003: mlgo_aarch_model.tar.gz
+ Source1004: mlgo_x86_model.tar.gz
+ Source1005: llvm-static-archives-native.py
++Source1200: clang-bolt-v2.fdata.xz
++Source1201: clang-bolt-helper.py
+ 
+ %ifarch x86_64
+ BuildRequires: util-linux
+ %endif
+ 
+-%ifarch x86_64
+-%if %{with clang_bolt}
+-Source1200: clang-bolt-v2.fdata.xz
+-Source1201: clang-bolt-helper.py
+-%endif
+-%endif
+ 
+ %{!?mlgo_build_jobs: %define mlgo_build_jobs 6}
+ %{!?mlgo_verify_configure_only: %define mlgo_verify_configure_only 0}

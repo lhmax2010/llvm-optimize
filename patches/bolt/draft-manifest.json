@@ -1,17 +1,17 @@
 {
-  "draft_commit": "506dc25c86e4e2154150796d10b77b71d71ad6bb",
+  "draft_commit": "af82efed1a688ba0877a4b4ca723922abbc96d20",
   "base": "67619ec8bbbac7238a6cfc33a481ccfbcd12206f",
-  "tree": "e278b629c99e22712ab5d5c60097252ae5c9d784",
+  "tree": "f82d94e9a69255e339187a2fb63c7df6989e6a49",
   "author": "Hao Lin <hao.lin@samsung.com>",
   "committer": "Hao Lin <hao.lin@samsung.com>",
   "Signed-off-by": "Hao Lin <hao.lin@samsung.com>",
   "helper_mirror_equal": true,
-  "qualification": "PASS_ALL_14B_LOCAL_GATES_AND_NEW_SANDBOX_VERIFIED",
+  "qualification": "SOURCE_ORDER_FIX_PENDING_TIZEN_RPM_MATRIX",
   "files": [
     {
       "path": "packaging/llvm.spec",
-      "sha256": "5fb99b761b1de26aebdf6c7d47f303acbdb91acd38dab76c2b9da934f5070e92",
-      "bytes": 26530
+      "sha256": "65cacd90573b6ac3e8001c119c5c4b2441517e5524f943bd3cbd6e0934edcb8a",
+      "bytes": 26478
     },
     {
       "path": "packaging/clang-bolt-helper.py",
@@ -26,7 +26,7 @@
   ],
   "patch": {
     "file": "0000-clang-bolt-squashed.patch",
-    "sha256": "92d4d69467b4f02c0766ebc248dd3060a5d4276eb3c2fa530bc757cd09054d14",
+    "sha256": "61db3d866e61d46f0c5d1db7939b1edb973c76fe557021d4a317a7d6992b04ee",
     "complete_binary_format_patch": false,
     "binary_source_separate": "clang-bolt-v2.fdata.xz",
     "full_binary_patch_local_only": "complete binary patch retained locally; public text patch plus separately tracked binary Source"
@@ -40,7 +40,7 @@
   "Quickbuild_start": "QB is controlled by the user; no QB action performed in this task",
   "publication_order": "Historical 14B material-first publication retained; current A consolidated bolt_pgo by exact force-with-lease and removed v2; B overlay evidence published by milestone",
   "real_tree_rehearsal": "INCOMPLETE_RESOURCE_DEADLINE: emit-relocs relink interrupted at 55-minute compute deadline; no observed source product gate failure",
-  "sandbox_pushed": true,
+  "sandbox_pushed": false,
   "previous_sandbox_pushed": true,
   "gerrit_review_pushed": false,
   "commit_chain": [
@@ -50,7 +50,7 @@
     "ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8",
     "91f2ab3618900bb828a228c274d19004681e6d4d"
   ],
-  "squashed_commit": "506dc25c86e4e2154150796d10b77b71d71ad6bb",
+  "squashed_commit": "af82efed1a688ba0877a4b4ca723922abbc96d20",
   "squashed_parent": "67619ec8bbbac7238a6cfc33a481ccfbcd12206f",
   "final_squashed_tests": "257/257 PASS on 506dc25c86e4e2154150796d10b77b71d71ad6bb",
   "disabled_macro_proof": "review4b-macro-result.json",
@@ -64,14 +64,14 @@
     "current_recertification": false
   },
   "publication_correction": "Historical oversized artifact retained in old cad1c935; current public patch explicitly --no-binary; full binary patch only local",
-  "amended_from": "8be7348a6baf9d4b8b55c382b8a04dade712208d",
+  "amended_from": "506dc25c86e4e2154150796d10b77b71d71ad6bb",
   "Change_Id": "Ic98eab90cc017f127a66e1729b44fab8b8e8fb41",
   "post_proof": "review4b-post-capture-result.json",
   "real_product_proof": "review4b-real-gates.json",
   "source_comparison": "Source1005 equal; spec differences limited to build; %install and later text byte equal",
   "maintenance_notes": "packaging/clang-bolt-helper.py header",
   "internal_maintenance_guide": "docs/bolt/maintenance.md",
-  "remote_before": "ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8",
+  "remote_before": "506dc25c86e4e2154150796d10b77b71d71ad6bb",
   "remote_before_raw": "ad8a2606ec3c9e53b657f3f8261be9f7d63b23c8\trefs/heads/sandbox/lhmax2025/bolt_pgo\n",
   "remote_after": "506dc25c86e4e2154150796d10b77b71d71ad6bb",
   "remote_after_raw": "506dc25c86e4e2154150796d10b77b71d71ad6bb\trefs/heads/sandbox/lhmax2025/bolt_pgo\n",
@@ -91,5 +91,13 @@
   "real_tree_rehearsal_lower_unchanged": true,
   "real_tree_rehearsal_held_seconds": 3374.416650487983,
   "real_tree_rehearsal_scope_peak_bytes": 11920756736,
-  "real_tree_rehearsal_evidence": "tools/bolt/results/install-rehearsal-20261015"
+  "real_tree_rehearsal_evidence": "tools/bolt/results/install-rehearsal-20261015",
+  "source_order_fix": {
+    "previous_commit": "506dc25c86e4e2154150796d10b77b71d71ad6bb",
+    "delta_patch": "0005-unconditional-bolt-sources.patch",
+    "new_spec_sha256": "65cacd90573b6ac3e8001c119c5c4b2441517e5524f943bd3cbd6e0934edcb8a",
+    "helper_profile_unchanged": true,
+    "parse_matrix": "PENDING",
+    "evidence": "tools/bolt/results/source-order-20261016"
+  }
 }

@@ -1,0 +1,18 @@
+--- 506dc25-message
++++ new-message
+@@ -6,8 +6,13 @@
+ strip all, compare-root, native archive conversion, candidate replacement,
+ and one unchanged platform post chain followed by the final identity gate.
+ Other architectures retain the baseline behavior. Roll back in Quickbuild
+-with the one-line bcond_without -> bcond_with change; Source1200/1201 and
+-BOLT-specific BuildRequires are guarded by that same x86_64 BOLT condition.
++with the one-line bcond_without -> bcond_with change; Source1200/1201 are declared
++unconditionally because gbs inserts generated Patch declarations after the
++last Source line, and conditional Sources would hide those declarations on
++other architectures and when BOLT is disabled. BOLT-specific BuildRequires
++remain guarded by the same x86_64 BOLT condition, leaving binary packages on
++other architectures unchanged while adding these two files to the source
++package.
+ --without clang_bolt is available for local builds. Only enabled %build
+ adds -d keeprsp. No project configuration change is required.
+ 
