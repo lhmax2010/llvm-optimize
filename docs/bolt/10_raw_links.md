@@ -134,3 +134,8 @@ sandbox/lhmax2025/bolt_pgo远端由cb67996861d070d68fec2b4c623eed7d20ba2e23更�
 续跑九/十：[完整 Raw 续表](10_raw_links_part2.md)。
 
 [12](10_raw_links_part3.md)
+
+
+## 2026-10-16：Source 声明顺序与跨架构解析修复
+
+[12](10_raw_links_part12.md)、[13](10_raw_links_part13.md)、[14](10_raw_links_part14.md)、[15](10_raw_links_part15.md)、[16](10_raw_links_part16.md)、[17](10_raw_links_part17.md)、[18](10_raw_links_part18.md)、[19](10_raw_links_part19.md)；完整认证材料钉提交 `efb591178a7f52cf61d2e0719235d6858603a031`，共 218 项，每项均有分支版与固定 raw。26号报告后续 sandbox 发布结论另见其末尾。
