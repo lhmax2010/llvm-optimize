@@ -10,5 +10,29 @@
     "count": 1,
     "cause": "git apply invoked below W treated paths outside its prefix as skipped, returning 0 without editing fixture; SHA check caught it",
     "correction": "GNU patch --dry-run then apply in dedicated fixture, full spec SHA/bytes verified; W tracked files unchanged"
+  },
+  {
+    "class": "rpm version identity display",
+    "count": 1,
+    "cause": "CLI reports RPM version 4.14.1, package version 4.14.1.1; first wrapper exited before parsing",
+    "correction": "rpm -q package identity verification; complete graphical sudo -A wrapper retry, no -n or alternate elevation. Original unmount/audit PASS."
+  },
+  {
+    "class": "archive root-owned overlay directories",
+    "count": 1,
+    "cause": "unprivileged rename of root-owned overlay upper to a subdirectory denied; subsequent shell command lacked set -e and invoked the unchanged wrapper; one-use askpass marker refused another prompt so no root/product execution occurred",
+    "correction": "Retain root-owned prior upper/work untouched; archive owned evidence files only; fresh upper-final/work-final/merged-final; set -eu in shell orchestration. No password error or cancellation."
+  },
+  {
+    "class": "rpm parser CLI arguments",
+    "count": 1,
+    "cause": "Tizen rpmspec -P rejects --without before parsing spec; wrapper labelled this generic failure as PRODUCT GATE but no valid product parse occurred",
+    "correction": "Primary matrix uses rpmbuild -bp --nodeps --nobuild with exact --without flag after checking local --help supports both options; secondary rpmspec -P uses equivalent _without_clang_bolt macro only to collect Source/Patch headers. Preserved original unsupported-option stderr. Fresh overlay, same sudo -A, no -n/alternate elevation."
+  },
+  {
+    "class": "prep transcript parsing",
+    "count": 1,
+    "cause": "Regex scanned stdout+stderr and counted both Patch #N output and shell + echo lines, marking successful arm prep rc0 as FAIL",
+    "correction": "Anchored ^Patch #N on stdout only; re-audited retained raw (rc0, exactly 0..6). Extra rerun invocation never entered root because graphical authentication remained unanswered; agent closed it. No claim of a new prep run."
   }
 ]

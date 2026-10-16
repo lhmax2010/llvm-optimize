@@ -1,0 +1,27 @@
++ umask 022
++ cd /home/abuild/bolt26/BUILD
++ cd /home/abuild/bolt26/BUILD
++ rm -rf llvm-22.1.8
++ /bin/gzip -dc /home/abuild/bolt26/export-after/llvm-22.1.8.tar.gz
++ /bin/tar -xof -
++ STATUS=0
++ '[' 0 -ne 0 ']'
++ cd llvm-22.1.8
++ /bin/chmod -Rf a+rX,u+w,g-w,o-w .
++ echo 'Patch #0 (0001-Add-support-for-Tizen-toolchain-vendor.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #1 (0002-Link-libclang_rt.asan.so-against-libatomic-when-nece.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #2 (0003-Fix-armv7l-build-when-compiler-is-clang.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #3 (0004-clang-add-support-for-LLVM-gold-plugin-in-case-of-ac.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #4 (0005-Merge-MLGO-AOT-compilation-support-and-optimization-.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #5 (0006-libcxxabi-declare-__gnu_unwind_frame-in-cxa_personal.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #6 (0007-libcxx-backport-EH-ABI-forced-unwind-handling.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ mkdir -p mlgo_verify_assets
++ tar -C mlgo_verify_assets -xzf /home/abuild/bolt26/export-after/mlgo_arm_model.tar.gz
++ exit 0

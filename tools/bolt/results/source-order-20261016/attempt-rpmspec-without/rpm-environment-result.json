@@ -1,0 +1,24 @@
+{
+  "name": "rpm-environment",
+  "argv": [
+    "/usr/sbin/chroot",
+    "--userspec=1000:1000",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/merged-final",
+    "/usr/bin/env",
+    "-i",
+    "HOME=/home/abuild",
+    "USER=abuild",
+    "LOGNAME=abuild",
+    "SHELL=/bin/sh",
+    "PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+    "LC_ALL=C",
+    "LANG=C",
+    "/bin/sh",
+    "-c",
+    "printf \"PATH=%s\\n\" \"$PATH\"; command -v clang; command -v clang++; rpm --eval \"%{_toolchain} %{_target_cpu} %{_target_os}\""
+  ],
+  "rc": 0,
+  "seconds": 0.20261561500956304,
+  "timeout": false,
+  "resource_abort": null
+}

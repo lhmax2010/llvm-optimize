@@ -3,7 +3,7 @@ import subprocess,os,json,time,sys,signal
 E=Path(__file__).resolve().parent;cg=Path('/sys/fs/cgroup'+Path('/proc/self/cgroup').read_text().strip().split('::')[1]);env=dict(os.environ,SUDO_ASKPASS=str(E/'askpass.sh'))
 avail=int(next(x.split()[1] for x in Path('/proc/meminfo').read_text().splitlines() if x.startswith('MemAvailable:')))*1024
 assert avail>=6*1024**3
-argv=['sudo','-A','-k','/usr/bin/python3',str(E/'root_parse.py')];(E/'sudo-argv.json').write_text(json.dumps(argv,indent=2)+'\n')
+argv=['sudo','-A','/usr/bin/python3',str(E/'root_parse.py')];(E/'sudo-argv.json').write_text(json.dumps(argv,indent=2)+'\n')
 with (E/'sudo.stdout').open('w') as out,(E/'sudo.stderr').open('w') as err:
  p=subprocess.Popen(argv,env=env,stdout=out,stderr=err,start_new_session=True);ts=time.monotonic()
  while p.poll() is None:

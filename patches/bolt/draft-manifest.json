@@ -6,7 +6,7 @@
   "committer": "Hao Lin <hao.lin@samsung.com>",
   "Signed-off-by": "Hao Lin <hao.lin@samsung.com>",
   "helper_mirror_equal": true,
-  "qualification": "SOURCE_ORDER_FIX_PENDING_TIZEN_RPM_MATRIX",
+  "qualification": "PASS_GBS_EXPORT_AND_ALL_10_TIZEN_RPM_PARSE_CHECKS_ARM_PREP_PASS_AARCH64_PREP_NOT_RUN",
   "files": [
     {
       "path": "packaging/llvm.spec",
@@ -32,8 +32,8 @@
     "full_binary_patch_local_only": "complete binary patch retained locally; public text patch plus separately tracked binary Source"
   },
   "fixtures": 257,
-  "post_capture": "PASS fresh baseline/candidate debug/release on final squashed commit; original platform bytes equal; BOLT tail last",
-  "disabled_macro_proof_reused": false,
+  "post_capture": "Historical final 506dc25 evidence reused; post/build/install bytes unchanged by Source-only fix",
+  "disabled_macro_proof_reused": true,
   "local_candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
   "candidate_route": "historical llvm-bolt fallback, not regenerated",
   "sandbox_branch": "sandbox/lhmax2025/bolt_pgo",
@@ -52,7 +52,7 @@
   ],
   "squashed_commit": "af82efed1a688ba0877a4b4ca723922abbc96d20",
   "squashed_parent": "67619ec8bbbac7238a6cfc33a481ccfbcd12206f",
-  "final_squashed_tests": "257/257 PASS on 506dc25c86e4e2154150796d10b77b71d71ad6bb",
+  "final_squashed_tests": "Spec source-order regression: 10/10 expected results + armv7l prep PASS, aarch64 prep NOT RUN on af82efed1a688ba0877a4b4ca723922abbc96d20; helper unchanged, historical 257 fixtures retained on 506dc25 (not rerun)",
   "disabled_macro_proof": "review4b-macro-result.json",
   "payload_check": "PASS preserved docs35 22 identities and complete root; final helper 17722 paths/47 cmake",
   "apply_check": true,
@@ -97,7 +97,17 @@
     "delta_patch": "0005-unconditional-bolt-sources.patch",
     "new_spec_sha256": "65cacd90573b6ac3e8001c119c5c4b2441517e5524f943bd3cbd6e0934edcb8a",
     "helper_profile_unchanged": true,
-    "parse_matrix": "PENDING",
-    "evidence": "tools/bolt/results/source-order-20261016"
+    "parse_matrix": "PASS 10/10: old expected 1 PASS + 4 No patch number 0, new 5 PASS",
+    "evidence": "tools/bolt/results/source-order-20261016",
+    "rpm_package": "4.14.1.1-1.4",
+    "optional_prep": "armv7l PASS seven patches; aarch64 NOT RUN additional GUI authentication unanswered",
+    "spec_only_delta_applies": true,
+    "commit_message_other_bytes_equal": true,
+    "delta_patch_bytes": 4573,
+    "delta_patch_sha256": "7dc38e6858c416a3a7daca93cb5ba3a89327f851a4a7d436cf4b52eddc30f861",
+    "required_certification": "tools/bolt/results/source-order-20261016/verification-summary.json",
+    "source_delta_full": "tools/bolt/results/source-order-20261016/source.diff",
+    "commit_message_delta_full": "tools/bolt/results/source-order-20261016/commit-message.diff",
+    "raw_parser_provenance": "attempt-prep-count contains actual Tizen matrix and arm prep; certification-result re-audits the stdout counter; optional aarch64 prep not run"
   }
 }

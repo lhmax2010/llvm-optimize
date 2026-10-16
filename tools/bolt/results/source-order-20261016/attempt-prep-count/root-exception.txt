@@ -1,0 +1,56 @@
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/root_parse.py", line 125, in <module>
+    if row['status']=='FAIL':raise RuntimeError('PRODUCT GATE optional prep failed: '+name+' '+text[-2500:])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: PRODUCT GATE optional prep failed: prep-armv7l cpp
+Patch #1 (0002-Link-libclang_rt.asan.so-against-libatomic-when-nece.patch):
+patching file compiler-rt/lib/asan/CMakeLists.txt
+Patch #2 (0003-Fix-armv7l-build-when-compiler-is-clang.patch):
+patching file compiler-rt/cmake/base-config-ix.cmake
+Patch #3 (0004-clang-add-support-for-LLVM-gold-plugin-in-case-of-ac.patch):
+patching file clang/include/clang/Driver/Driver.h
+patching file clang/lib/Driver/Driver.cpp
+patching file clang/lib/Driver/ToolChains/CommonArgs.cpp
+Patch #4 (0005-Merge-MLGO-AOT-compilation-support-and-optimization-.patch):
+patching file llvm/CMakeLists.txt
+patching file llvm/cmake/modules/TensorFlowCompile.cmake
+Patch #5 (0006-libcxxabi-declare-__gnu_unwind_frame-in-cxa_personal.patch):
+patching file libcxxabi/src/cxa_personality.cpp
+Patch #6 (0007-libcxx-backport-EH-ABI-forced-unwind-handling.patch):
+patching file libcxx/include/__ostream/basic_ostream.h
+patching file libcxx/include/future
+patching file libcxx/include/istream
+patching file libcxx/include/string
+patching file libcxx/src/future.cpp
+patching file libcxx/src/ios.cpp
+patching file libcxxabi/include/cxxabi.h
+patching file libcxxabi/src/cxa_exception.cpp
+patching file libcxxabi/src/cxa_personality.cpp
++ umask 022
++ cd /home/abuild/bolt26/BUILD
++ cd /home/abuild/bolt26/BUILD
++ rm -rf llvm-22.1.8
++ /bin/gzip -dc /home/abuild/bolt26/export-after/llvm-22.1.8.tar.gz
++ /bin/tar -xof -
++ STATUS=0
++ '[' 0 -ne 0 ']'
++ cd llvm-22.1.8
++ /bin/chmod -Rf a+rX,u+w,g-w,o-w .
++ echo 'Patch #0 (0001-Add-support-for-Tizen-toolchain-vendor.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #1 (0002-Link-libclang_rt.asan.so-against-libatomic-when-nece.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #2 (0003-Fix-armv7l-build-when-compiler-is-clang.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #3 (0004-clang-add-support-for-LLVM-gold-plugin-in-case-of-ac.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #4 (0005-Merge-MLGO-AOT-compilation-support-and-optimization-.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #5 (0006-libcxxabi-declare-__gnu_unwind_frame-in-cxa_personal.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ echo 'Patch #6 (0007-libcxx-backport-EH-ABI-forced-unwind-handling.patch):'
++ /bin/patch --no-backup-if-mismatch -p1 --fuzz=2
++ mkdir -p mlgo_verify_assets
++ tar -C mlgo_verify_assets -xzf /home/abuild/bolt26/export-after/mlgo_arm_model.tar.gz
++ exit 0
+

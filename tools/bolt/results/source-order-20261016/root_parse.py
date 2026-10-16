@@ -1,6 +1,6 @@
 import os,sys,json,time,subprocess,hashlib,stat,shutil,lzma,signal,fcntl,traceback
 from pathlib import Path
-E=Path(__file__).resolve().parent;W=E.parents[1];L=W/'temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0';M=E/'merged';G=1024**3
+E=Path(__file__).resolve().parent;W=E.parents[1];L=W/'temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0';M=E/'merged-certified';G=1024**3
 mounts=[];result={'status':'NOT RUN','matrix':[],'prep':[]};lock=None;project=None;child=None;started=time.monotonic()
 def save(n,v):(E/n).write_text(json.dumps(v,indent=2)+'\n')
 def sha(p):
@@ -65,9 +65,9 @@ try:
  free=shutil.disk_usage(E).free;save('admission.json',{'MemAvailable':avail,'disk_free':free,'max_write_budget':20*G,'projected_free':free-20*G,'minimum_free':30*G,'memory_cap':4*G,'swap_cap':0,'nice':19,'ionice':3})
  assert free-20*G>=30*G
  before=snapshot('lower-before')
- for name in ['upper','work','merged']:(E/name).mkdir()
+ for name in ['upper-certified','work-certified','merged-certified']:(E/name).mkdir()
  (E/'mountinfo-before.txt').write_text(Path('/proc/self/mountinfo').read_text())
- cmd(['mount','-t','overlay','overlay','-o',f'lowerdir={L},upperdir={E}/upper,workdir={E}/work',M]);mounts.append(M)
+ cmd(['mount','-t','overlay','overlay','-o',f'lowerdir={L},upperdir={E}/upper-certified,workdir={E}/work-certified',M]);mounts.append(M)
  cmd(['mount','-t','proc','proc',M/'proc']);mounts.append(M/'proc')
  cmd(['mount','-t','tmpfs','-o','mode=755,nosuid','bolt26-dev',M/'dev']);mounts.append(M/'dev')
  for n,major,minor in [('null',1,3),('zero',1,5),('full',1,7),('random',1,8),('urandom',1,9),('tty',5,0)]:
@@ -86,14 +86,24 @@ try:
   os.chown(d,1000,1000)
   for n in fs:os.chown(Path(d)/n,1000,1000)
  version=run('tizen-rpm-version',['/usr/bin/rpm','--version']);assert version['rc']==0
- assert '4.14.1.1' in (E/'tizen-rpm-version.stdout').read_text()
+ pkg=run('tizen-rpm-package-version',['/usr/bin/rpm','-q','--qf','%{NAME} %{VERSION}-%{RELEASE}\n','rpm','rpm-build'])
+ assert pkg['rc']==0
+ assert all(line.split()[1].startswith('4.14.1.1-') for line in (E/'tizen-rpm-package-version.stdout').read_text().splitlines())
  run('rpm-environment',['/bin/sh','-c','printf "PATH=%s\\n" "$PATH"; command -v clang; command -v clang++; rpm --eval "%{_toolchain} %{_target_cpu} %{_target_os}"'])
+ help_row=run('rpmbuild-help',['/usr/bin/rpmbuild','--help'])
+ help_text=(E/'rpmbuild-help.stdout').read_text()
+ assert help_row['rc']==0 and '--nobuild' in help_text and '--without' in help_text
  cases=[('x86-default','x86_64-tizen-linux',[],False),('x86-without','x86_64-tizen-linux',['--without','clang_bolt'],False),('x86-rollback','x86_64-tizen-linux',[],True),('armv7l','armv7l-tizen-linux',[],False),('aarch64','aarch64-tizen-linux',[],False)]
  for label in ['before','after']:
   for case,target,extra,rollback in cases:
    name=label+'-'+case;spec=f'/home/abuild/bolt26/export-{label}/'+('llvm-rollback.spec' if rollback else 'llvm.spec')
    common=['--target',target,'--define',f'_sourcedir /home/abuild/bolt26/export-{label}','--define','_builddir /home/abuild/bolt26/BUILD','--define','_buildrootdir /home/abuild/bolt26/BUILDROOT']+extra
-   row=run(name,['/usr/bin/rpmspec','-P']+common+[spec]);stderr=(E/(name+'.stderr')).read_text();stdout=(E/(name+'.stdout')).read_text()
+   row=run(name,['/usr/bin/rpmbuild','-bp','--nodeps','--nobuild']+common+[spec]);stderr=(E/(name+'.stderr')).read_text()
+   # rpmspec has no --without option in this Tizen build. Use its documented bcond macro for a separate Source/Patch listing; primary rpmbuild above uses the exact --without argv.
+   expand_common=common[:-len(extra)] if extra else common.copy()
+   if extra:expand_common+=['--define','_without_clang_bolt 1']
+   expansion=run(name+'-expanded',['/usr/bin/rpmspec','-P']+expand_common+[spec]);row['source_patch_expansion']=expansion
+   stdout=(E/(name+'-expanded.stdout')).read_text()
    import re
    row['source_patch_list']=[l for l in stdout.splitlines() if re.match(r'^(Source|Patch)\d*:',l)]
    if label=='before' and case in ['armv7l','aarch64'] and 'No patch number 0' not in stderr:
@@ -109,7 +119,7 @@ try:
   if remaining<=0:result['prep'].append({'name':name,'status':'NOT RUN','reason':'20-minute time budget exhausted'});continue
   row=run(name,['/usr/bin/rpmbuild','-bp','--nodeps','--target',target,'--define','_sourcedir /home/abuild/bolt26/export-after','--define','_builddir /home/abuild/bolt26/BUILD','--define','_buildrootdir /home/abuild/bolt26/BUILDROOT','/home/abuild/bolt26/export-after/llvm.spec'],remaining)
   text=(E/(name+'.stdout')).read_text()+(E/(name+'.stderr')).read_text()
-  row['applied_patch_numbers']=re.findall(r'Patch #(\d+)',text)
+  row['applied_patch_numbers']=re.findall(r'^Patch #(\d+)\b',(E/(name+'.stdout')).read_text(),re.M)
   row['status']='NOT RUN' if row['timeout'] else ('PASS' if row['rc']==0 and row['applied_patch_numbers']==list(map(str,range(7))) else 'FAIL')
   result['prep'].append(row);save('parse-results.json',result)
   if row['status']=='FAIL':raise RuntimeError('PRODUCT GATE optional prep failed: '+name+' '+text[-2500:])
@@ -137,7 +147,7 @@ finally:
  if errors or result.get('lower_unchanged') is False:result['status']='STOP'
  save('parse-results.json',result)
  for d,ds,fs in os.walk(E):
-  if Path(d)==E/'upper' or Path(d)==E/'work' or Path(d)==E/'merged':ds[:]=[];continue
+  if Path(d).name in ('upper','work','merged','upper-final','work-final','merged-final','upper-parse','work-parse','merged-parse','upper-certified','work-certified','merged-certified'):ds[:]=[];continue
   os.chown(d,1000,1000)
   for n in fs:os.chown(Path(d)/n,1000,1000)
 sys.exit(0 if result['status']=='PASS' else 1)
