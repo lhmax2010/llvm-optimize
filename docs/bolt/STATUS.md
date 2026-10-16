@@ -274,8 +274,10 @@ A PASS：bolt_pgo最终506dc25，v2删除，六个其他分支只列出，长期
 持锁3374.417秒（56.240分钟）<60；18GiB/swap0/nice15/ionice3，scope峰11.102GiB、最大观测VmHWM10.410GiB，宿主最低可用5.581GiB、disk最低free236.253GiB，内存事件全0。卸载/进程/锁/scope全部回收；下层240,718路径清单和六SHA前后完全一致。上层完整保留至周五待用户处置，无源码/Gerrit评审/tizen_base/QB操作。准备估算与askpass环境各修正1次，首次只读准备未设cgroup偏差如实在25登记；图形实际输入一次。原始日志/分阶段采样/完整脚本、dry-run、tool-plan/tool-verify、TF与下层审计全部公开于25对应raw，Source父676不变。
 
 
-## 2026-10-16：QB Source 条件屏蔽 Patch 修复（本地认证 PASS，待推 sandbox）
+## 2026-10-16：QB Source 条件屏蔽 Patch 修复（必需认证 PASS，sandbox 已更新）
 
 长期规则：spec 的 Source 行一律无条件声明；每次提交 QB 前先 gbs export，再对 x86_64（BOLT 开/关）、armv7l、aarch64 解析导出的 spec。
 
-gbs 实际导出已复现：旧506dc25的 Patch0–6处于 x86_64/BOLT 条件块，七条 patch 命令无条件。仅移动两行 Source，源提交 `af82efed1a688ba0877a4b4ca723922abbc96d20`，父67619ec8/Change-Id保持；helper/profile均未变。两份五项 Tizen rpm 认证全部符合预期（旧1过4失败，新5过），ARM实际 prep 0退出/七补丁全部应用，AArch64可选prep因额外认证未完成记NOT RUN，helper/profile均不变；sandbox 更新待完成。QB三份日志尚未收到。见 [26](26_source_order_parse_fix.md)。
+gbs 实际导出已复现：旧506dc25的 Patch0–6处于 x86_64/BOLT 条件块，七条 patch 命令无条件。仅移动两行 Source，源提交 `af82efed1a688ba0877a4b4ca723922abbc96d20`，父67619ec8/Change-Id保持；helper/profile均未变。两份五项 Tizen rpm 认证全部符合预期（旧1过4失败，新5过），ARM实际 prep 0退出/七补丁全部应用，AArch64可选prep因额外认证未完成记NOT RUN，helper/profile均不变；sandbox 已按506dc25精确租约更新为af82efed1a688ba0877a4b4ca723922abbc96d20，推后指向一致；无 refs/for、QB操作或新分支。QB三份日志尚未收到。见 [26](26_source_order_parse_fix.md)。
+
+发布材料固定于efb591178a7f52cf61d2e0719235d6858603a031，raw索引12–19；436个URL全量SHA核验PASS。完整diff、提交说明diff、准备错误/多次图形输入偏差均在26中公开；不得把通用包装器的CLI/计数器误报当作产品失败，也不得掩盖它们。

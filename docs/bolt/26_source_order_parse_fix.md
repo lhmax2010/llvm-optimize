@@ -120,6 +120,19 @@ index 56b141bec5cd..2c9b72b126a1 100644
 
 ## sandbox 与 raw
 
-认证材料先推 GitHub，待本报告后续发布记录补入指定租约的远端前后核对。QB 仍由用户控制，本任务没有操作 QB 或 refs/for/tizen_base，没有新建分支。
+认证材料先推 GitHub：efb591178a7f52cf61d2e0719235d6858603a031；全部218项材料共436个 raw URL（分支版+钉提交版）SHA核验 PASS，索引发布于fe08dbb6c7a20c78fad6678b403381f24b6b1c54。随后按指定租约成功更新既有分支，推前/后原文：
+
+```text
+506dc25c86e4e2154150796d10b77b71d71ad6bb	refs/heads/sandbox/lhmax2025/bolt_pgo
+af82efed1a688ba0877a4b4ca723922abbc96d20	refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+实际 push 退出码0，未拒收；服务器有提交说明长度警告，按“其余说明一字不改”要求原样保留说明，没有另改内容。原始 stdout/stderr、完整 push argv 保存于 sandbox-* 与 push_sandbox.py。仅强推此已授权分支，未新建分支。
+
+供 QB 使用：`platform/upstream/llvm@af82efed1a688ba0877a4b4ca723922abbc96d20`。
+
+完整源码 diff 与提交说明 diff 已在上文贴全。新提交五项解析全部通过；armv7l可选prep通过，aarch64可选prep未运行，不将它冒作通过。QB日志未收到，无法独立摘录x86门禁数字；用户交接的第332行锚点已单独标明证据来源。
+
+全部raw索引：[12](10_raw_links_part12.md)、[13](10_raw_links_part13.md)、[14](10_raw_links_part14.md)、[15](10_raw_links_part15.md)、[16](10_raw_links_part16.md)、[17](10_raw_links_part17.md)、[18](10_raw_links_part18.md)、[19](10_raw_links_part19.md)，每条都有分支版及固定提交地址。收尾发布结果在19末尾补充。QB 仍由用户控制，本任务没有操作 QB 或 refs/for/tizen_base，没有新建分支。
 
 查找更正补记：整理证据时曾在 B 工作目录中按 W 的相对路径查找 E，首次读取即报文件不存在；产品操作前改为已经定位的绝对路径，不计准备性错误。
