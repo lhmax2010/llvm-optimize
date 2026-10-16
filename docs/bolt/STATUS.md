@@ -281,3 +281,10 @@ A PASS：bolt_pgo最终506dc25，v2删除，六个其他分支只列出，长期
 gbs 实际导出已复现：旧506dc25的 Patch0–6处于 x86_64/BOLT 条件块，七条 patch 命令无条件。仅移动两行 Source，源提交 `af82efed1a688ba0877a4b4ca723922abbc96d20`，父67619ec8/Change-Id保持；helper/profile均未变。两份五项 Tizen rpm 认证全部符合预期（旧1过4失败，新5过），ARM实际 prep 0退出/七补丁全部应用，AArch64可选prep因额外认证未完成记NOT RUN，helper/profile均不变；sandbox 已按506dc25精确租约更新为af82efed1a688ba0877a4b4ca723922abbc96d20，推后指向一致；无 refs/for、QB操作或新分支。QB三份日志尚未收到。见 [26](26_source_order_parse_fix.md)。
 
 发布材料固定于efb591178a7f52cf61d2e0719235d6858603a031，raw索引12–19；436个URL全量SHA核验PASS。完整diff、提交说明diff、准备错误/多次图形输入偏差均在26中公开；不得把通用包装器的CLI/计数器误报当作产品失败，也不得掩盖它们。
+
+
+## 2026-10-16：仅重排提交说明，消除 Gerrit 长度警告
+
+当前源提交 `e2463165829cc91b0a1d60a3e0f915a587865f70`，父 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`；与 af82efed 的 tree 同为 `f82d94e9a69255e339187a2fb63c7df6989e6a49`，源码 diff 为空，五项解析认证直接沿用 af82efed。正文去掉标题后空白归一完全一致，标题42字符、全文每行≤72字符，文件路径仅在逗号后折行，Change-Id/Signed-off-by原样保留。作者/提交者Hao Lin，未改全局配置。
+
+指定租约af82efed更新bolt_pgo成功，推后为新提交，返回中没有warning；没有refs/for、QB操作或新分支。0000文本补丁仅更新元数据，diff载荷保持；完整cat-file、验证、远端原文见26末节与 tools/bolt/results/message-wrap-20261016。

@@ -136,3 +136,100 @@ af82efed1a688ba0877a4b4ca723922abbc96d20	refs/heads/sandbox/lhmax2025/bolt_pgo
 全部raw索引：[12](10_raw_links_part12.md)、[13](10_raw_links_part13.md)、[14](10_raw_links_part14.md)、[15](10_raw_links_part15.md)、[16](10_raw_links_part16.md)、[17](10_raw_links_part17.md)、[18](10_raw_links_part18.md)、[19](10_raw_links_part19.md)，每条都有分支版及固定提交地址。收尾发布结果在19末尾补充。QB 仍由用户控制，本任务没有操作 QB 或 refs/for/tizen_base，没有新建分支。
 
 查找更正补记：整理证据时曾在 B 工作目录中按 W 的相对路径查找 E，首次读取即报文件不存在；产品操作前改为已经定位的绝对路径，不计准备性错误。
+
+
+## 2026-10-16：仅重排提交说明（当前提交）
+
+新提交 `e2463165829cc91b0a1d60a3e0f915a587865f70`；父仍为 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`。作者、提交者、Signed-off-by 为 Hao Lin <hao.lin@samsung.com>，单次git -c配置，不改全局。
+
+- 新旧 tree 同为 `f82d94e9a69255e339187a2fb63c7df6989e6a49`；git diff af82efed..新提交为空，没有修改源码文件。
+- 去掉标题后归一所有空白，正文逐字相同；归一正文SHA256 `2a96268f6e0a59c8a37aa8d603ad20412a9f9a5ce8050667de7b9c9f8aac5d9c`。
+- 标题42字符，每行最长72字符；路径未从中间断开，路径列表换行仅在逗号后。Change-Id 与 Signed-off-by 原文保留。
+- af82efed 的五项解析认证直接沿用，没有重新运行构建、解析或QB。
+- 指定force-with-lease成功，推前 `af82efed1a688ba0877a4b4ca723922abbc96d20`，推后 `e2463165829cc91b0a1d60a3e0f915a587865f70`，push退出码0、warnings为空，两条Gerrit长度警告均已消失。
+- 0000文本版已重新生成，patch的diff载荷逐字相同。manifest与STATUS已更新，旧0005保持为历史Source修复增量。
+
+实际远端返回原文（stdout为空，stderr如下）：
+
+```text
+remote: 
+remote: Processing changes: refs: 1        
+remote: Processing changes: refs: 1, done            
+To ssh://review.tizen.org:29418/platform/upstream/llvm
+ + af82efed1a68...e2463165829c e2463165829cc91b0a1d60a3e0f915a587865f70 -> sandbox/lhmax2025/bolt_pgo (forced update)
+```
+
+供 QB 使用：`platform/upstream/llvm@e2463165829cc91b0a1d60a3e0f915a587865f70`。本任务没有操作QB。
+
+以下为 git cat-file commit 提取的新说明全文，原始提交对象（含tree/parent/作者和提交者元数据）另存 new.commit：
+
+```text
+packaging: optimize x86_64 clang with BOLT
+
+Enable BOLT by default on x86_64: ordinary install, snapshot, append
+bolt configuration, certify the dry-run and serial llvm-bolt build,
+relink clang with emit-relocs, strip debug, rewrite, check
+profile/security/tiny targets, strip all, compare-root, native archive
+conversion, candidate replacement, and one unchanged platform post chain
+followed by the final identity gate. Other architectures retain the
+baseline behavior. Roll back in Quickbuild with the one-line
+bcond_without -> bcond_with change; Source1200/1201 are declared
+unconditionally because gbs inserts generated Patch declarations after
+the last Source line, and conditional Sources would hide those
+declarations on other architectures and when BOLT is disabled.
+BOLT-specific BuildRequires remain guarded by the same x86_64 BOLT
+condition, leaving binary packages on other architectures unchanged
+while adding these two files to the source package. --without clang_bolt
+is available for local builds. Only enabled %build adds -d keeprsp. No
+project configuration change is required.
+
+The binary Source is the existing profile v2, trained on 13 ARM plus 10
+AArch64 source files. Compressed size 9,735,212 bytes; SHA256
+52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f.
+Uncompressed SHA256:
+d9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326.
+Certify 111 BOLT task descriptions plus two TF refresh tasks: CMake
+rewrites the TF anchor, while its archive is restored from the prebuilt
+artifact and must retain its SHA. Unknown work fails closed.
+R=(S+U)/(N+U) and S/N must each be <=5%, without infer-stale; profile
+coverage N/M is about 16%.
+
+Preserve ELF type/interpreter, RELRO coverage and flags, GNU_STACK
+flags, GNU_PROPERTY/note contents, dynamic flags/BIND_NOW,
+RPATH/RUNPATH, NEEDED, W+X status, dynsym interfaces and symbol
+versions. Both qualification ELFs lack .note.gnu.property: this build
+did not enable CET independently of BOLT. The local qualification
+candidate uses the historical same-source llvm-bolt; delivery builds its
+own llvm-bolt in the tree.
+
+LLVM C++ -O3 single-file qualification uses 30 rows from 20 distinct
+sources, five samples per side, alternating roles at the same compiler
+path/inode. Candidate/ordinary geometric mean: x86_64 0.855890085, ARM
+0.856351167, AArch64 0.847699213. ARM independent-20/holdout-10:
+0.858165628/0.868458776; AArch64 independent-20/holdout-10:
+0.847858623/0.847902567. These results cover this LLVM workload, not
+general application or runtime performance. The packaged clang grows by
+43,293,584 bytes (+31.0%).
+
+The final clang has no .symtab, debug sections or BOLT identity note.
+clang-debuginfo omits clang-22.debug and its build-id link; debugsource
+omits these five clang-exclusive sources (ordinary DWARF proof
+retained):
+build/tools/clang/tools/driver/clang-driver.cpp,
+clang/tools/driver/cc1_main.cpp, clang/tools/driver/cc1as_main.cpp,
+clang/tools/driver/cc1gen_reproducer_main.cpp,
+clang/tools/driver/driver.cpp.
+Crash localization requires retained build-side identity/rewrite
+records, the pre-strip BOLT ELF, matching ordinary ELF, tool and profile
+identities.
+
+Still open: full release-mode build; accel/worker identity; first real
+%install execution; cleanup cannot be guaranteed without matching /proc;
+performance outside LLVM workloads. ninja -j1 does not cap linker
+memory. Maintenance notes: header of packaging/clang-bolt-helper.py
+
+Change-Id: Ic98eab90cc017f127a66e1729b44fab8b8e8fb41
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+```
+
+完整原文与校验JSON见 tools/bolt/results/message-wrap-20261016，raw索引在20续表提供分支版及固定提交版。
