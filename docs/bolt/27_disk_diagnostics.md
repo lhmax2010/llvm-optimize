@@ -265,7 +265,7 @@ spec 每步由 bolt_checked/bolt_step/bolt_capture 捕获同一步的原始输�
 
 PM结论：RPM用`/bin/sh -e`执行脚本段，普通命令失败已有停止机制。e97171ff包装普通LLVM ninja、基线安装和平台post，会使长阶段输出延迟到命令结束，并改变已认证平台链。撤回这些包装，不推e97171ff。
 
-本次直接在BASE `e2463165829cc91b0a1d60a3e0f915a587865f70` 上amend，最终源 `9e5675f57d122549997caffa39b655dfefc46fee`，父仍 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`，不是在e97171ff上叠加；Hao Lin作者/提交者/Signed-off-by及原Change-Id保留，说明每行≤72。profile、BOLT生成参数、既有4ec候选不变。当前为全部认证PASS、待按精确租约推sandbox；发布结果在后续收尾节登记。
+本次直接在BASE `e2463165829cc91b0a1d60a3e0f915a587865f70` 上amend，最终源 `9e5675f57d122549997caffa39b655dfefc46fee`，父仍 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`，不是在e97171ff上叠加；Hao Lin作者/提交者/Signed-off-by及原Change-Id保留，说明每行≤72。profile、BOLT生成参数、既有4ec候选不变。全部认证与sandbox更新均PASS；先发布材料，再按精确租约推送，原文见本节收尾。
 
 长期规则：**rpm 以 sh -e 执行脚本段；BOLT 改动不得改写普通构建、基线 %install 步骤和平台后处理链的执行方式**。本地资源/锁/磁盘规则仅用于本地执行，不进入发布代码。
 
@@ -482,3 +482,18 @@ index 2c9b72b126a1..ef2f87843968 100644
 ```
 
 完整helper/spec总diff见本轮source.diff；0007为e2463165到本修订的真正增量（不是676父提交的全量），独立patch -p1后两文件逐字节等于新提交；0000文本版与profile分开交付。提交说明完整原文和message.diff也一并公开。
+
+
+### 收窄修订推送结果
+
+第一至第三步全PASS后，以BASE e2463165的完整SHA作为唯一分支租约推送，远端从 `e2463165829cc91b0a1d60a3e0f915a587865f70` 更新为 `9e5675f57d122549997caffa39b655dfefc46fee`，推后查询一致，rc0。没有refs/for、tizen_base、QB或新分支操作；e971未推。材料先发布于 `de32b57d6add455018519fc88a1fe957733aa6ba`，304个raw URL在推送前字节/SHA核验PASS。完整argv、stdout/stderr与两次查询见push-result.json、push-before/after.stdout，Gerrit原文如下：
+
+```text
+remote: 
+remote: Processing changes: refs: 1        
+remote: Processing changes: refs: 1, done            
+To ssh://review.tizen.org:29418/platform/upstream/llvm
+ + e2463165829c...9e5675f57d12 9e5675f57d122549997caffa39b655dfefc46fee -> sandbox/lhmax2025/bolt_pgo (forced update)
+```
+
+供后续使用的软件包标识：`platform/upstream/llvm@9e5675f57d122549997caffa39b655dfefc46fee`。这里仅记录分支更新，未启动QB。收窄修订的SHA、范围、289测试与五项解析认证取代本页前半未采用e971的结论；前半作为历史证据保留。
