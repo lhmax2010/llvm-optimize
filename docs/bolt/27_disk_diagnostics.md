@@ -497,3 +497,5 @@ To ssh://review.tizen.org:29418/platform/upstream/llvm
 ```
 
 供后续使用的软件包标识：`platform/upstream/llvm@9e5675f57d122549997caffa39b655dfefc46fee`。这里仅记录分支更新，未启动QB。收窄修订的SHA、范围、289测试与五项解析认证取代本页前半未采用e971的结论；前半作为历史证据保留。
+
+收尾材料路径记录：补存close_results.py时首次用了相对路径的错误父目录，rg定位后按绝对工作目录修正；只影响附加脚本复制，未影响产品操作、289测试、五项解析或已保存推送原文，不重跑这些步骤。
