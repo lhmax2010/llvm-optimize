@@ -254,3 +254,8 @@ spec 每步由 bolt_checked/bolt_step/bolt_capture 捕获同一步的原始输�
 ```
 
 原候选4ec07159及profile未重生成。原树未运行cmake/ninja/-P，未对ARM树执行构建、安装或写入操作；没有新的产品二进制验证或Quickbuild执行。源码最终本地提交已保留，材料在bolt-v4发布供复核，**不能把未推的草案写成远端交付**。后续仍须获可用单次图形授权完成Tizen五项，然后按当时远端SHA复核精确租约；本轮不重试。单次认证失败是当前唯一发布阻塞，非产品门禁FAIL。
+
+
+## GitHub 材料发布收尾
+
+本轮材料137项固定于 `67b022739befcee5f2d671246d9382498e28385a`；raw续表21–25同时列分支与钉提交。274个raw URL逐个字节数与SHA256核验PASS。完整校验明细 raw-verification.json 与 closing-check.json 随本次索引提交公开。没有sandbox推送尝试；当前远端仍BASE，待Tizen认证完成后方可继续。发布代码/source diff --check PASS；0000历史完整format-patch的空白上下文保留原文，不为消除证据文件的空白提示而修改发布源码。
