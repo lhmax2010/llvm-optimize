@@ -1,0 +1,146 @@
+{
+  "PASS": true,
+  "checks": {
+    "build": {
+      "argv": [
+        "cmp",
+        "--",
+        "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/base-build.txt",
+        "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/new-build.txt"
+      ],
+      "rc": 0,
+      "bytes": 9331,
+      "sha256": "b5459ba1e1f511f72dd58e0d9c5e6f9c680c564da8d5fc8a33043ad714d27bac",
+      "stdout": "",
+      "stderr": ""
+    },
+    "install-baseline": {
+      "argv": [
+        "cmp",
+        "--",
+        "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/base-install-baseline.txt",
+        "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/new-install-baseline.txt"
+      ],
+      "rc": 0,
+      "bytes": 1895,
+      "sha256": "0888cd4b4bc0c71b6c52c6998934b3f0b30967640de9d6a137aa5f60b0fd9ef1",
+      "stdout": "",
+      "stderr": ""
+    },
+    "post-tail-allowed-edits-only": {
+      "argv": [
+        "cmp",
+        "--",
+        "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/base-post-tail-allowed-edits-only.txt",
+        "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/new-post-tail-allowed-edits-only.txt"
+      ],
+      "rc": 0,
+      "bytes": 489,
+      "sha256": "7e35c407f58cde7aa5b0b9fcd75a0306e46d6ad3cf63e3b61e1499e71d4bb36b",
+      "stdout": "",
+      "stderr": ""
+    },
+    "base-capture": {
+      "argv": [
+        "rpmbuild",
+        "-bi",
+        "--short-circuit",
+        "--nodeps",
+        "--define",
+        "_toolchain clang",
+        "--define",
+        "_topdir /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture",
+        "--define",
+        "_builddir /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/BUILD",
+        "--define",
+        "_buildrootdir /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/BUILDROOT",
+        "--define",
+        "_tmppath /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/tmp",
+        "--define",
+        "_sourcedir /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261013/v41/llvm-source/packaging",
+        "--define",
+        "__spec_install_cmd /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/copy-shell.sh %{___build_args}",
+        "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/base-llvm.spec"
+      ],
+      "rc": 1,
+      "syntax_rc": 0,
+      "product_script_executed": false,
+      "expected_filelist_failure": true
+    },
+    "new-capture": {
+      "argv": [
+        "rpmbuild",
+        "-bi",
+        "--short-circuit",
+        "--nodeps",
+        "--define",
+        "_toolchain clang",
+        "--define",
+        "_topdir /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture",
+        "--define",
+        "_builddir /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/BUILD",
+        "--define",
+        "_buildrootdir /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/BUILDROOT",
+        "--define",
+        "_tmppath /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/tmp",
+        "--define",
+        "_sourcedir /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261013/v41/llvm-source/packaging",
+        "--define",
+        "__spec_install_cmd /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/copy-shell.sh %{___build_args}",
+        "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261013/v41/llvm-source/packaging/llvm.spec"
+      ],
+      "rc": 1,
+      "syntax_rc": 0,
+      "product_script_executed": false,
+      "expected_filelist_failure": true
+    },
+    "platform-post": {
+      "argv": [
+        "cmp",
+        "--",
+        "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/base-platform-post.txt",
+        "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/new-platform-post.txt"
+      ],
+      "rc": 0,
+      "bytes": 304,
+      "sha256": "bf24d7477f0aac92351e73ac26110d45c182ff9bf2a99994f0efabb9d1e7b242",
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  "wrapped_BOLT_actions": [
+    {
+      "line": 465,
+      "text": "bolt_step manifest-copy cp install_manifest.txt \"$BOLT_WORK/install-manifest-before.txt\""
+    },
+    {
+      "line": 466,
+      "text": "bolt_step ordinary-copy cp -p bin/clang-22 \"$BOLT_WORK/ordinary-clang-22\""
+    },
+    {
+      "line": 467,
+      "text": "bolt_checked link-command \"$BOLT_WORK/link-command.log\" python3 -B %{SOURCE1201} run-step link-command \"$BOLT_WORK/link-command.log\" --output \"$BOLT_WORK/link.original\" -- ninja -t commands -s bin/clang-22"
+    },
+    {
+      "line": 469,
+      "text": "bolt_step configure cmake -S ../llvm -B . \\"
+    },
+    {
+      "line": 474,
+      "text": "bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN"
+    },
+    {
+      "line": 475,
+      "text": "LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-dry-run \"$BOLT_WORK/tool-dry-run.log\" python3 -B %{SOURCE1201} run-step tool-dry-run \"$BOLT_WORK/tool-dry-run.log\" --output \"$BOLT_WORK/tool-dry-run.txt\" -- ninja -n llvm-bolt"
+    },
+    {
+      "line": 476,
+      "text": "bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END"
+    },
+    {
+      "line": 480,
+      "text": "LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-build \"$BOLT_WORK/tool-build.txt\" python3 -B %{SOURCE1201} run-step tool-build \"$BOLT_WORK/tool-build.txt\" --success-marker BOLT_NINJA_EXIT_0 -- ninja -j 1 llvm-bolt"
+    }
+  ],
+  "no_ordinary_wrappers": true
+}

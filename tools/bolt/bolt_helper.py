@@ -45,7 +45,6 @@ Retain ordinary/pre-strip BOLT ELFs, rewrite/identity records, final RPM/accel
 SHA and Build-ID for crash localization; the shipped clang is fully stripped.
 """
 import argparse
-import threading
 import collections
 import shlex
 import hashlib
@@ -176,8 +175,6 @@ def wait_group_exit(group, timeout=10):
 def peek_child_exit(process, timeout):
     deadline = time.monotonic()+timeout if timeout is not None else None
     while True:
-        errors = getattr(process, "_bolt_output_errors", [])
-        if errors: raise errors[0]
         status = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
         if status is not None:
             return status.si_status if status.si_code == os.CLD_EXITED else -status.si_status
@@ -197,42 +194,27 @@ def reap_child(process, timeout=1):
 
 def call(argv, log, cwd=None, timeout=300):
     log = Path(log); log.parent.mkdir(parents=True, exist_ok=True)
-    process = None; reaped = False; primary = None; reader = None
+    process = None; reaped = False; primary = None
     try:
         previous = signal.getsignal(signal.SIGCHLD)
         if previous != signal.SIG_DFL:
             signal.signal(signal.SIGCHLD, signal.SIG_DFL)
-        invocation = {'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None,
-                      'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL}
-        save(log.with_suffix(log.suffix+'.argv.json'), invocation)
+        save(log.with_suffix(log.suffix+'.argv.json'),
+             {'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None,
+              'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
         with log.open('wb') as output:
-            process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=subprocess.PIPE,
+            process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
                                        stderr=subprocess.STDOUT, start_new_session=True)
-            process._bolt_output_errors = []
-            def drain():
-                try:
-                    while True:
-                        chunk = process.stdout.read1(65536)
-                        if not chunk: break
-                        require(output.write(chunk) == len(chunk), 'short command-log write: '+str(log))
-                        output.flush()
-                except BaseException as failure:
-                    process._bolt_output_errors.append(failure)
-            reader = threading.Thread(target=drain,daemon=True);reader.start()
             rc = peek_child_exit(process, timeout)
             if rc != 0:
                 primary = 'COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
                 raise GateError(primary)
-            reader.join(10)
-            require(not reader.is_alive(), 'command log pipe did not close')
-            if process._bolt_output_errors: raise process._bolt_output_errors[0]
-            process.stdout.close()
-            output.flush(); os.fsync(output.fileno())
             require(reap_child(process) == rc, 'child exit status changed while reaping')
             reaped = True
         text = log.read_text(errors='replace')
-        require(not disk_evidence(log), 'COMMAND_ERROR: disk write error in successful command log')
-        save(log.with_suffix(log.suffix+'.argv.json'), dict(invocation,completed=True,rc=0))
+        metadata = log.with_suffix(log.suffix+'.argv.json')
+        invocation = json.loads(metadata.read_text())
+        save(metadata, dict(invocation,completed=True,rc=0))
         return text
     except BaseException as error:
         if primary is None:
@@ -254,18 +236,14 @@ def call(argv, log, cwd=None, timeout=300):
                 reap_child(process, 1)
             except Exception as failure:
                 cleanup.append(str(failure))
-        if reader is not None:
-            reader.join(1)
-        if process is not None and process.stdout is not None:
-            process.stdout.close()
         if isinstance(error, (KeyboardInterrupt, SystemExit)):
             raise
         message = primary+' (see '+str(log)+')'
         if cleanup:
             message += '; cleanup error: '+'; '.join(cleanup)
-        failure = GateError(message); failure.bolt_log = str(log)
-        stream_errors = getattr(process,'_bolt_output_errors',[]) if process is not None else []
-        raise failure from (stream_errors[0] if stream_errors else error)
+        failure = GateError(message)
+        failure.bolt_log = str(log)
+        raise failure from error
 
 def profile_unpack(source, output):
     output = Path(output)
@@ -951,7 +929,15 @@ def disk_report(stage, build=None, work=None, root=None):
     return value
 
 
-def disk_evidence(log, error=None):
+def disk_failure_log(log):
+    try:
+        text = Path(log).read_text(errors='replace') if log and str(log) != '-' else ''
+        return text, bool(text.strip())
+    except (OSError, ValueError):
+        return '', False
+
+
+def disk_evidence(log, error=None, log_text=None):
     evidence = []; seen = set()
     while error is not None and id(error) not in seen:
         seen.add(id(error))
@@ -962,10 +948,8 @@ def disk_evidence(log, error=None):
             messages='\n'.join(str(row[2]) for row in error.args[0] if isinstance(row, (list,tuple)) and len(row)==3)
             evidence += ['copytree:'+pattern for pattern in DISK_LOG_MATCHES if re.search(pattern,messages,re.I)]
         error = error.__cause__ or error.__context__
-    try:
-        text = Path(log).read_text(errors='replace') if log and str(log) != '-' else ''
-        evidence += [pattern for pattern in DISK_LOG_MATCHES if re.search(pattern, text, re.I)]
-    except Exception: pass
+    text = disk_failure_log(log)[0] if log_text is None else log_text
+    evidence += [pattern for pattern in DISK_LOG_MATCHES if re.search(pattern, text, re.I)]
     return evidence
 
 
@@ -1086,17 +1070,22 @@ def disk_prediction(build, work, root, measured, baseline, device):
 
 def disk_diagnose(step, log, error=None, build=None, work=None, root=None):
     """Read-only, failure evidence only; failures here never replace the error."""
-    cause = 'disk' if disk_evidence(log, error) else 'not-disk'
+    text, available = disk_failure_log(log)
+    evidence = disk_evidence(log,error,log_text=text)
+    cause = 'disk' if evidence else ('not-disk' if available else 'unknown')
     value = {'cause': cause, 'step': step, 'free_bytes': None}
+    if cause == 'unknown':
+        value.update(used_bytes=None,reason='日志不可用，无法判定原因')
     try:
         build, work, root = disk_context(build, work, root)
         target = root/'usr/bin' if root and step == 'install' else work
         value.update(free_bytes=filesystem(target)['free_bytes'])
-        if cause == 'disk':
-            value.update(filesystem_device=filesystem(target)['device'],
-                         evidence=disk_evidence(log,error),
-                         estimate_note='估计值，依据本次构建实际文件大小',
-                         errno_messages=[os.strerror(int(item.split('=')[1])) for item in disk_evidence(log,error) if item.startswith('errno=')])
+        if cause in ('disk','unknown'):
+            device=filesystem(target)['device']
+            if cause == 'disk':
+                value.update(filesystem_device=device, evidence=evidence,
+                             estimate_note='估计值，依据本次构建实际文件大小',
+                             errno_messages=[os.strerror(int(item.split('=')[1])) for item in evidence if item.startswith('errno=')])
             baseline = None
             try:
                 baseline=json.loads((work/'disk-baseline.json').read_text())
@@ -1107,10 +1096,11 @@ def disk_diagnose(step, log, error=None, build=None, work=None, root=None):
                     baseline=None
             except (OSError, ValueError): pass
             measured = disk_measure(build,work,baseline)
-            device=value['filesystem_device']
             value['used_bytes']=measured['owned_filesystem_bytes'].get(device,0)
-            value['cache_delta_known']=measured['cache_delta_known']
-            if baseline is None:
+            if cause == 'disk': value['cache_delta_known']=measured['cache_delta_known']
+            if cause == 'unknown':
+                pass
+            elif baseline is None:
                 value.update(degraded='records unavailable: only current free and owned allocation are reliable')
             else:
                 value.update(disk_prediction(build,work,root,measured,baseline,device))
@@ -1130,7 +1120,7 @@ def disk_diagnose(step, log, error=None, build=None, work=None, root=None):
                 if any('122' in item or 'quota' in item.lower() for item in value['evidence']):
                     value['quota_headroom_unknown']=True
     except Exception as failure:
-        if cause == 'disk':
+        if cause in ('disk','unknown'):
             value['degraded']=str(failure)
     try: print('BOLT_DISK_DIAGNOSIS '+json.dumps(value,ensure_ascii=False),flush=True)
     except Exception: pass

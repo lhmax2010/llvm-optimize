@@ -1,0 +1,219 @@
+%if 0%{llvm_release_build}
+# Not to build debug info
+RELCFLAGS=$(echo $CFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+export CFLAGS=${RELCFLAGS}
+RELCXXFLAGS=$(echo $CXXFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+export CXXFLAGS=${RELCXXFLAGS}
+RELFFLAGS=$(echo $FFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\)|dwarf-[[:digit:]]\\?* *g')
+export FFLAGS=${RELFFLAGS}
+%endif
+
+cp %{SOURCE1001} .
+%{?asan:%gcc_unforce_options}
+
+%ifarch armv7l
+export QEMU_RESERVED_VA=0x100000000
+%endif
+
+%ifarch x86_64
+# Strip pre-existing optimization flags and remove performance-harming flags, then force -O3 + ThinLTO
+OPTFLAGS_CFLAGS=$(echo "$CFLAGS" | sed \
+    -e 's/\-O[0-9sz]//g' \
+    -e 's/\-Ofast//g' \
+    -e 's/\-fstack-protector-strong//g' \
+    -e 's/\-fstack-protector-all//g' \
+    -e 's/\-fstack-protector//g' \
+    -e 's/\-fno-inline-functions//g' \
+    -e 's/\-fno-omit-frame-pointer//g' \
+    -e 's/\-momit-leaf-frame-pointer//g')
+OPTFLAGS_CXXFLAGS=$(echo "$CXXFLAGS" | sed \
+    -e 's/\-O[0-9sz]//g' \
+    -e 's/\-Ofast//g' \
+    -e 's/\-fstack-protector-strong//g' \
+    -e 's/\-fstack-protector-all//g' \
+    -e 's/\-fstack-protector//g' \
+    -e 's/\-fno-inline-functions//g' \
+    -e 's/\-fno-omit-frame-pointer//g' \
+    -e 's/\-momit-leaf-frame-pointer//g')
+export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+%endif
+
+# Set up MLGO AOT model paths from bundled verify assets
+%if %{with mlgo}
+MLGO_AOT_DIR="$PWD/mlgo_verify_assets"
+MLGO_BUILD_DIR="$PWD/build"
+MLGO_RUNTIME_OBJECTS="${MLGO_AOT_DIR}/xla_runtime_objects/xla_compiled_cpu_function.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/cpu_function_runtime.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/custom_call_status.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/executable_run_options.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o"
+MLGO_REQUIRED_RUNTIME_OBJECTS="xla_compiled_cpu_function.cc.o cpu_function_runtime.cc.o custom_call_status.cc.o executable_run_options.cc.o runtime_single_threaded_matmul_f32.cc.o"
+%endif
+
+mkdir -p build
+cd build
+cmake \
+    -G Ninja \
+    -DTIZEN=1 \
+%ifarch x86_64
+    -DCMAKE_C_COMPILER=clang \
+    -DCMAKE_CXX_COMPILER=clang++ \
+%else
+    -DCMAKE_C_COMPILER=%__cc \
+    -DCMAKE_CXX_COMPILER=%__cxx \
+%endif
+    -DLLVM_HOST_TRIPLE=%{_host} \
+    -DLLVM_DEFAULT_TARGET_TRIPLE=%{_host} \
+    -DLLVM_TARGET_TRIPLE_ENV=%{_host} \
+    -DCMAKE_ASM_FLAGS="$CFLAGS" \
+    -DCMAKE_C_FLAGS="$CFLAGS" \
+    -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
+%if %{defined _toolchain}
+    -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+    -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+    -DLLVM_USE_LINKER=lld \
+    -DLLVM_ENABLE_LTO=Thin \
+    -DCMAKE_RANLIB=%{_bindir}/llvm-ranlib \
+    -DCMAKE_AR=%{_bindir}/llvm-ar \
+%endif
+    -DLLVM_ENABLE_ASSERTIONS=No \
+    -DLLVM_ENABLE_RTTI=ON \
+%ifarch x86_64 i686
+    -DCMAKE_BUILD_TYPE=Release \
+    -DLLVM_TARGETS_TO_BUILD='X86;ARM;AArch64;BPF' \
+%endif
+%ifarch armv7l
+    -DCMAKE_BUILD_TYPE=MinSizeRel \
+    -DLLVM_TARGETS_TO_BUILD='ARM;BPF' \
+    -DLLVM_TARGET_ARCH="ARM" \
+%endif
+%ifarch aarch64
+    -DCMAKE_BUILD_TYPE=Release \
+    -DLLVM_TARGETS_TO_BUILD='AArch64;BPF' \
+    -DLLVM_TARGET_ARCH="AArch64" \
+%endif
+%ifarch riscv64
+    -DCMAKE_BUILD_TYPE=Release \
+    -DLLVM_TARGETS_TO_BUILD='RISCV;BPF' \
+%endif
+    -DCLANG_ENABLE_ARCMT=OFF \
+    -DLLVM_BUILD_LLVM_DYLIB=ON \
+    -DCLANG_BUILD_CLANG_DYLIB=ON \
+%ifarch x86_64
+    -DLLVM_LINK_LLVM_DYLIB=OFF \
+    -DCLANG_LINK_CLANG_DYLIB=OFF \
+%else
+%if %{defined _toolchain}
+    -DLLVM_LINK_LLVM_DYLIB=ON \
+    -DCLANG_LINK_CLANG_DYLIB=ON \
+%endif
+%endif
+    -DLLVM_ENABLE_PROJECTS="clang;lldb;clang-tools-extra;lld;compiler-rt;openmp" \
+    -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
+    -DLLVM_BUILD_EXAMPLES=OFF \
+    -DLLVM_INCLUDE_EXAMPLES=OFF \
+    -DLLVM_BUILD_TESTS=OFF \
+    -DLLVM_INCLUDE_TESTS=OFF \
+    -DLLVM_ENABLE_DOXYGEN=OFF \
+    -DLLVM_BUILD_DOCS=OFF \
+    -DLLVM_INCLUDE_DOCS=OFF \
+    -DLLVM_OPTIMIZED_TABLEGEN=ON \
+    -DCMAKE_INSTALL_PREFIX=%{_prefix} \
+    -DLLVM_LIBDIR_SUFFIX=`echo %{_lib} | sed s/lib//g` \
+    -DCLANG_RESOURCE_DIR="../%{_lib}/clang/%{llvm_version}" \
+    -DLLVM_BINUTILS_INCDIR=/usr/include \
+    -DLLVM_PARALLEL_COMPILE_JOBS=6 \
+    -DLLVM_PARALLEL_LINK_JOBS=2 \
+%if %{with mlgo}
+%ifarch armv7l aarch64 x86_64
+    -DTENSORFLOW_AOT_PATH="${MLGO_AOT_DIR}/mlgo_sysroot" \
+    -DLLVM_MLGO_EXPORT_TF_XLA_RUNTIME=OFF \
+    -DLLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS="${MLGO_RUNTIME_OBJECTS}" \
+    -DLLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL="${MLGO_AOT_DIR}/InlinerSizeModel.h" \
+    -DLLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL="${MLGO_AOT_DIR}/InlinerSizeModel.o" \
+    -DLLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL="${MLGO_AOT_DIR}/RegAllocEvictModel.h" \
+    -DLLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL="${MLGO_AOT_DIR}/RegAllocEvictModel.o" \
+%else
+    -DLLVM_INLINER_MODEL_PATH=none \
+    -DLLVM_RAEVICT_MODEL_PATH=none \
+%endif
+%else
+    -DLLVM_INLINER_MODEL_PATH=none \
+    -DLLVM_RAEVICT_MODEL_PATH=none \
+%endif
+    ../llvm
+
+%if 0%{mlgo_verify_configure_only}
+  # ---- configure-only probe: guard against §0 traps; check sentinels, GBS exit code non-0 is expected ----
+  # Note: %%build does not guarantee set -e, so each assertion explicitly uses '|| { ...; exit 1; }'
+  # Assertion 0: MLGO_BUILD_DIR is correct (fail immediately with clear error if wrong)
+  test -f CMakeCache.txt || \
+    { echo "FATAL: MLGO_BUILD_DIR wrong (CMakeCache.txt not found in $(pwd))"; exit 1; }
+%if %{with mlgo}
+  # Assertion 1: override actually took effect (COPYONLY artifacts exist from configure stage)
+  test -f lib/Analysis/InlinerSizeModel.h || \
+    { echo "FATAL: Missing InlinerSizeModel.h (override not effective, likely trap 1: silent fallback to none)"; exit 1; }
+  test -f lib/Analysis/InlinerSizeModel.o || \
+    { echo "FATAL: Missing InlinerSizeModel.o (override not effective)"; exit 1; }
+  test -f lib/CodeGen/RegAllocEvictModel.h || \
+    { echo "FATAL: Missing RegAllocEvictModel.h(regalloc override not effective)"; exit 1; }
+  test -f lib/CodeGen/RegAllocEvictModel.o || \
+    { echo "FATAL: Missing RegAllocEvictModel.o(regalloc override not effective)"; exit 1; }
+  for mlgo_runtime_object in ${MLGO_REQUIRED_RUNTIME_OBJECTS}; do
+    test -f "${MLGO_AOT_DIR}/xla_runtime_objects/${mlgo_runtime_object}" || \
+        { echo "FATAL: missing MLGO runtime object: ${mlgo_runtime_object}"; exit 1; }
+  done
+  # Assertion 1b: bundled objects must match the target arch.
+%ifarch armv7l
+  MLGO_EXPECT_MACHINE="ARM"
+%endif
+%ifarch aarch64
+  MLGO_EXPECT_MACHINE="AArch64"
+%endif
+%ifarch x86_64
+  MLGO_EXPECT_MACHINE="X86-64"
+%endif
+  for mlgo_obj in lib/Analysis/InlinerSizeModel.o lib/CodeGen/RegAllocEvictModel.o; do
+    readelf -h "${mlgo_obj}" | grep -q "Machine:.*${MLGO_EXPECT_MACHINE}" || \
+      { echo "FATAL: ${mlgo_obj} arch mismatch (expected ${MLGO_EXPECT_MACHINE})"; exit 1; }
+  done
+  for mlgo_runtime_object in ${MLGO_REQUIRED_RUNTIME_OBJECTS}; do
+    mlgo_obj="${MLGO_AOT_DIR}/xla_runtime_objects/${mlgo_runtime_object}"
+    readelf -h "${mlgo_obj}" | grep -q "Machine:.*${MLGO_EXPECT_MACHINE}" || \
+      { echo "FATAL: ${mlgo_obj} arch mismatch (expected ${MLGO_EXPECT_MACHINE})"; exit 1; }
+  done
+  # Assertion 2: did not fall into autogenerate mock. Use && short-circuit: file missing => FATAL, don't let '! grep' pass
+  test -f CMakeCache.txt && \
+    ! grep -qE 'LLVM_INLINER_MODEL_PATH(:[^=]+)?=autogenerate' CMakeCache.txt || \
+    { echo "FATAL: Fell into autogenerate mock or CMakeCache missing (trap 2)"; exit 1; }
+  test -f CMakeCache.txt && \
+    ! grep -qE 'LLVM_RAEVICT_MODEL_PATH(:[^=]+)?=autogenerate' CMakeCache.txt || \
+    { echo "FATAL: regalloc fell into autogenerate mock"; exit 1; }
+  # Assertion 3: MLGO runtime is embedded and tf_xla_runtime is not exported.
+  grep -q '^LLVM_MLGO_EXPORT_TF_XLA_RUNTIME:BOOL=OFF$' "${MLGO_BUILD_DIR}/CMakeCache.txt" || \
+    { echo "FATAL: MLGO TensorFlow runtime export is not disabled"; exit 1; }
+  for mlgo_runtime_object in ${MLGO_REQUIRED_RUNTIME_OBJECTS}; do
+    grep -q "xla_runtime_objects/${mlgo_runtime_object}" "${MLGO_BUILD_DIR}/CMakeCache.txt" || \
+      { echo "FATAL: MLGO runtime object is not embedded: ${mlgo_runtime_object}"; exit 1; }
+  done
+  cmake --build . --target tf_xla_runtime || \
+    { echo "FATAL: tf_xla_runtime build failed"; exit 1; }
+  MLGO_PROBE_ROOT="$PWD/mlgo_probe_root"
+  rm -rf "${MLGO_PROBE_ROOT}"
+  mkdir -p "${MLGO_PROBE_ROOT}"
+  DESTDIR="${MLGO_PROBE_ROOT}" cmake --install . \
+    --prefix /usr --component tf_xla_runtime --verbose
+  ! find "${MLGO_PROBE_ROOT}" -name libtf_xla_runtime.a | grep -q . || \
+    { echo "FATAL: tf_xla_runtime archive should not be installed"; exit 1; }
+%endif
+  echo MLGO_VERIFY_CONFIGURE_PASS
+  exit 86
+%endif
+
+# Full build using ninja (already in build/ directory after cd build)
+%ifarch x86_64
+%if %{with clang_bolt}
+ninja -d keeprsp -j %{mlgo_build_jobs} || exit 1
+%else
+ninja -j %{mlgo_build_jobs}
+%endif
+%else
+ninja -j %{mlgo_build_jobs}
+%endif

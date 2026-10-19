@@ -1,0 +1,47 @@
+cd build
+cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
+ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
+
+ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
+ln -sf clang++ %{buildroot}%{_prefix}/bin/%{_host}-clang++
+# Use host triple and resource dir by default via <lang>.cfg
+cat >> %{buildroot}/%{_prefix}/bin/clang.cfg << EOF
+-target %{_host}
+-resource-dir %{_prefix}/%{_lib}/clang/%{llvm_version}
+EOF
+ln -sf clang.cfg %{buildroot}/%{_prefix}/bin/clang++.cfg
+
+# copy lldb for sdk
+mkdir -p %{buildroot}%{sdk_bin_dir}
+mkdir -p %{buildroot}%{sdk_lib_dir}
+
+mv %{buildroot}%{_prefix}/bin/lldb %{buildroot}%{sdk_bin_dir}
+mv %{buildroot}%{_prefix}/bin/lldb-argdumper %{buildroot}%{sdk_bin_dir}
+mv %{buildroot}%{_prefix}/bin/lldb-server %{buildroot}%{sdk_bin_dir}
+
+ln -sf %{sdk_bin_dir}/lldb %{buildroot}%{_prefix}/bin/
+
+cp -P %{buildroot}%{_libdir}/liblldb.so* %{buildroot}%{sdk_lib_dir}/
+
+# Install the clang python bits
+mkdir -p %{buildroot}%{python3_sitelib}
+cp -a ../clang/bindings/python/clang %{buildroot}%{python3_sitelib}/
+
+rm -rf %{buildroot}%{_libdir}/debug/*
+rm -rf %{buildroot}/usr/lib/libear/*
+rm -rf %{buildroot}/usr/lib/libscanbuild/*
+
+%ifarch x86_64
+# Run after compilation has finished; these workers do not overlap build jobs.
+# Preserve the standard RPM post-processing, including archive strip -g.
+rm -rf "%{_builddir}/%{buildsubdir}/build/native-archive-conversion"
+python3 %{SOURCE1005} --root "%{buildroot}" \
+    --build "%{_builddir}/%{buildsubdir}/build" \
+    --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
+    --arch x86_64 \
+    --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+    --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+    --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+    --jobs 4 --address-space-bytes 4294967296 || exit 1
+%endif
+

@@ -1,0 +1,7 @@
+%global __bolt_original_spec_install_post %{__spec_install_post}
+%define __spec_install_post \
+    %{__bolt_original_spec_install_post} \
+    python3 %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
+    echo BOLT_POST_GATE_PASS
+%endif
+%endif

@@ -259,3 +259,226 @@ spec 每步由 bolt_checked/bolt_step/bolt_capture 捕获同一步的原始输�
 ## GitHub 材料发布收尾
 
 本轮材料137项固定于 `67b022739befcee5f2d671246d9382498e28385a`；raw续表21–25同时列分支与钉提交。274个raw URL逐个字节数与SHA256核验PASS。完整校验明细 raw-verification.json 与 closing-check.json 随本次索引提交公开。没有sandbox推送尝试；当前远端仍BASE，待Tizen认证完成后方可继续。发布代码/source diff --check PASS；0000历史完整format-patch的空白上下文保留原文，不为消除证据文件的空白提示而修改发布源码。
+
+
+## 收窄修订（2026-10-19；e97171ff不采用）
+
+PM结论：RPM用`/bin/sh -e`执行脚本段，普通命令失败已有停止机制。e97171ff包装普通LLVM ninja、基线安装和平台post，会使长阶段输出延迟到命令结束，并改变已认证平台链。撤回这些包装，不推e97171ff。
+
+本次直接在BASE `e2463165829cc91b0a1d60a3e0f915a587865f70` 上amend，最终源 `9e5675f57d122549997caffa39b655dfefc46fee`，父仍 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`，不是在e97171ff上叠加；Hao Lin作者/提交者/Signed-off-by及原Change-Id保留，说明每行≤72。profile、BOLT生成参数、既有4ec候选不变。当前为全部认证PASS、待按精确租约推sandbox；发布结果在后续收尾节登记。
+
+长期规则：**rpm 以 sh -e 执行脚本段；BOLT 改动不得改写普通构建、基线 %install 步骤和平台后处理链的执行方式**。本地资源/锁/磁盘规则仅用于本地执行，不进入发布代码。
+
+### 撤回与保留
+
+- `%build`普通ninja行和全部条件分支恢复BASE；删除BOLT_BUILD_OUTPUT内存捕获，主构建正常即时输出。
+- 普通cmake install、所有ln/clang.cfg heredoc/mkdir/mv/cp/rm及静态库转换调用恢复BASE；删除__bolt_disk_reporting全套前缀和宏。
+- 平台post恢复原宏原样执行一次，删除platform-post的run-step、内存捕获及嵌套shell/heredoc。BOLT尾检保留原结构，仅helper加-B及最后附一行disk-report post。
+- BOLT helper子命令保持BASE直接`python3 ... || exit 1`，只加-B；失败由自身cli先诊断再rc1，不另包一层run-step。
+- 只包装下面8个BOLT动作（六类命令加BEGIN/END两个标记）。spec完整diff见下，人工复核差异仅用户1a–e允许范围；普通基线没有新增函数调用。
+- call恢复BASE：Popen stdout=日志文件、stderr=STDOUT，无管道/线程，成功不扫描日志字样。只保留成功completed=True侧记录和失败bolt_log。atomic_text/save、临时clang fsync/SHA/最终rename及磁盘实际大小公式保留。
+
+|新spec行|BOLT命令|
+|---|---|
+|465|`bolt_step manifest-copy cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt"`|
+|466|`bolt_step ordinary-copy cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22"`|
+|467|`bolt_checked link-command "$BOLT_WORK/link-command.log" python3 -B %{SOURCE1201} run-step link-command "$BOLT_WORK/link-command.log" --output "$BOLT_WORK/link.original" -- ninja -t commands -s bin/clang-22`|
+|469|`bolt_step configure cmake -S ../llvm -B . \`|
+|474|`bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN`|
+|475|`LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- ninja -n llvm-bolt`|
+|476|`bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END`|
+|480|`LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- ninja -j 1 llvm-bolt`|
+
+### 三态原因判定
+
+直接errno28/122，或本步骤日志匹配四类磁盘字样 => disk；日志可读、非空且无磁盘迹象 => not-disk；日志不存在、为空或不可读 => unknown。unknown只报当前free/used，说明“日志不可用，无法判定原因”，不做需求推算。/dev/stdin只读取一次，分类和证据复用同一份文本，避免第二次读取空流造成错误判定。成功命令即使日志出现ENOSPC文本也不失败。
+
+unknown CLI故障注入原文（free4096为夹具值）：
+
+```text
+BOLT_DISK_DIAGNOSIS {"cause": "unknown", "step": "snapshot", "free_bytes": 4096, "used_bytes": 69632, "reason": "日志不可用，无法判定原因"}
+```
+
+### 逐字节结构比较
+
+`python3 -B structure_check.py`：完整脚本及提取结果随证据公开。%build取`%build`至`%install`全部字节；%install保留BOLT架构/开关双块以外的全部行（包括普通x86静态库转换块）；平台链从两次RPM真正生成但只复制的脚本提取，宏路径完全相同。post尾检另外仅撤销被允许的-B和新增观测后比较，不能声称含允许差异的尾检全文原始字节相同。
+
+|cmp项目|字节|退出码|结论|
+|---|---:|---:|---|
+|build|9331|0|逐字节相同|
+|install-baseline|1895|0|逐字节相同|
+|platform-post|304|0|逐字节相同|
+|post-tail-allowed-edits-only|489|0|逐字节相同|
+
+实际比较命令和结果（完整argv也见structure-result.json）：
+
+```sh
+cmp -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/base-build.txt /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/new-build.txt
+# exit 0; stdout/stderr empty
+cmp -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/base-install-baseline.txt /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/new-install-baseline.txt
+# exit 0; stdout/stderr empty
+cmp -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/base-platform-post.txt /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/new-platform-post.txt
+# exit 0; stdout/stderr empty
+cmp -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/base-post-tail-allowed-edits-only.txt /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/new-post-tail-allowed-edits-only.txt
+# exit 0; stdout/stderr empty
+```
+
+Host两个capture的rpmbuild退出1是copy-only包装之后空BUILDROOT的文件清单失败，不是执行安装失败；两个生成脚本都`/bin/sh -n`通过。没有执行其中任何cmake/ninja命令。完整平台链原文分别见base-platform-post.txt/new-platform-post.txt。
+
+### 本次全部验证
+
+|项目|结果|
+|---|---|
+|既有测试按新行为更新+新增unknown等|289/289 PASS（49.103秒）|
+|ENOSPC复制/JSON/子进程/安装|PASS，rc1，磁盘判定及字段保持；安装原clang SHA不变|
+|非磁盘失败|PASS，非空可读本步骤日志，not-disk，原始错误不变|
+|诊断自身异常|PASS，原始错误/rc1不变|
+|unknown缺失/空/不可读日志|PASS，仅free/used与说明，无推算|
+|成功日志含ENOSPC|PASS，命令成功不变成失败|
+|/dev/stdin日志一次读取|PASS，分类和evidence保持一致|
+|sh -e +仅BOLT函数+失败命令|PASS，诊断后rc1，不运行SHOULD_NOT_RUN|
+|结构cmp与完整spec diff|PASS，范围符合用户1a–e|
+|gbs export新提交|PASS，命令/版本/导出spec全部保存|
+|Tizen rpm x86-default|PASS，主解析rc0，7个Patch，Source/Patch清单保存|
+|Tizen rpm x86-without|PASS，主解析rc0，7个Patch，Source/Patch清单保存|
+|Tizen rpm x86-rollback|PASS，主解析rc0，7个Patch，Source/Patch清单保存|
+|Tizen rpm armv7l|PASS，主解析rc0，7个Patch，Source/Patch清单保存|
+|Tizen rpm aarch64|PASS，主解析rc0，7个Patch，Source/Patch清单保存|
+|下层完整清单与六SHA|前后完全一致，锁持有171.380秒，卸载错误0|
+
+构建根rpm包版本 `rpm 4.14.1.1-1.4; rpm-build 4.14.1.1-1.4`，CLI显示4.14.1；主解析用rpmbuild -bp --nodeps --nobuild，关闭项确用--without clang_bolt。辅助Source/Patch清单用rpmspec -P，因该rpmspec不支持--without，清单项用等效宏，不替代主解析。五个目标均在同一x86根的rpm完成，不进入ARM树。唯一一次图形认证成功，一次sudo完成overlay/proc/dev挂载、abuild解析、卸载；下层仅只读，未运行原树cmake/ninja/-P。
+
+准备记录：图形包装的启动比gbs导出完成稍早；在任何根内产品操作之前加导出完成等待与rc0核对，实际root-entry发生在最终导出成功之后。没有重复图形认证，没有产品输入/环境重试。既有“线程日志ENOSPC”用例改为直接打开日志ENOSPC，符合恢复后的直接输出方式；非磁盘用例提供真实非空步骤日志，缺失日志另列unknown。其余原测试保留，新增4项，总数从285到289。前半的25处宽泛包装审计属于未采用e971历史方案，不再代表本修订；本修订普通步骤依赖原RPM sh-e停止机制。
+
+### 两份spec完整diff（BASE→本次）
+
+```diff
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 2c9b72b126a1..ef2f87843968 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -426,54 +426,68 @@ cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
+ case $(printf '%s' '%{buildroot}' | LC_ALL=C tr '[:upper:]' '[:lower:]') in
+   *debug*) echo 'BOLT buildroot absolute path contains debug' >&2; exit 1 ;;
+ esac
++BOLT_BUILD="$PWD"
++BOLT_WORK="$PWD/clang-bolt"
++BOLT_INSTALL_ROOT="%{buildroot}"
++BOLT_PROFILE_SOURCE="%{SOURCE1200}"
++export BOLT_BUILD BOLT_WORK BOLT_INSTALL_ROOT BOLT_PROFILE_SOURCE
++bolt_fail() {
++  python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || true
++  exit 1
++}
++bolt_checked() {
++  bolt_stage=$1
++  bolt_log=$2
++  shift 2
++  if bolt_output=$("$@" 2>&1); then
++    printf '%%s\n' "$bolt_output" || bolt_fail "$bolt_stage-output" -
++  else
++    printf '%%s\n' "$bolt_output" || true
++    printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || true
++    exit 1
++  fi
++}
++bolt_step() {
++  bolt_stage=$1
++  shift
++  bolt_checked "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" python3 -B %{SOURCE1201} run-step "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" -- "$@"
++}
++python3 -B %{SOURCE1201} disk-report begin
+ echo "BOLT_BUILDROOT_OK %{buildroot}"
+-python3 %{SOURCE1201} preflight || exit 1
+-python3 %{SOURCE1201} certified || exit 1
++python3 -B %{SOURCE1201} preflight || exit 1
++python3 -B %{SOURCE1201} certified || exit 1
+ if [ -r /proc/self/stat ]; then echo BOLT_PROC_OK; else echo BOLT_PROC_MISSING; fi
+ # One relink: emit-relocs, then LLVM strip-debug, BOLT and full strip.
+ # The handed-off build owns its original ThinLTO cache; do not duplicate it.
+-# Default 16 GiB BOLT-stage write budget must leave 30 GiB on this filesystem.
+-BOLT_WORK="$PWD/clang-bolt"
+ mkdir -p "$BOLT_WORK" || exit 1
+-python3 %{SOURCE1201} disk-preflight "$BOLT_WORK" 17179869184 || exit 1
+ # File-list baseline is the actual ordinary CMake install, not a name whitelist.
+-python3 %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
+-cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt" || exit 1
+-cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22" || exit 1
+-ninja -t commands -s bin/clang-22 > "$BOLT_WORK/link.original" || exit 1
+-python3 %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || exit 1
+-cmake -S ../llvm -B . \
++python3 -B %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
++bolt_step manifest-copy cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt"
++bolt_step ordinary-copy cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22"
++bolt_checked link-command "$BOLT_WORK/link-command.log" python3 -B %{SOURCE1201} run-step link-command "$BOLT_WORK/link-command.log" --output "$BOLT_WORK/link.original" -- ninja -t commands -s bin/clang-22
++python3 -B %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || exit 1
++bolt_step configure cmake -S ../llvm -B . \
+   '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' \
+   -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \
+-  -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86 || exit 1
++  -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
+ # Only certified BOLT tasks and the paired configure-refreshed TF anchor.
+-if LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -n llvm-bolt > "$BOLT_WORK/tool-dry-run.txt" 2>&1; then
+-  echo BOLT_TOOL_DRY_RUN_BEGIN
+-  cat "$BOLT_WORK/tool-dry-run.txt"
+-  echo BOLT_TOOL_DRY_RUN_END
+-else
+-  cat "$BOLT_WORK/tool-dry-run.txt"
+-  exit 1
+-fi
+-python3 %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
++bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
++LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- ninja -n llvm-bolt
++bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
++python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
+ cat "$BOLT_WORK/tool-plan.json"
+-python3 %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
+-python3 %{SOURCE1201} disk-preflight "$PWD" 17179869184 || exit 1
+-if LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -j 1 llvm-bolt > "$BOLT_WORK/tool-build.txt" 2>&1; then
+-  echo BOLT_NINJA_EXIT_0 >> "$BOLT_WORK/tool-build.txt"
+-  cat "$BOLT_WORK/tool-build.txt"
+-else
+-  cat "$BOLT_WORK/tool-build.txt"
+-  exit 1
+-fi
+-python3 %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
++python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
++LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- ninja -j 1 llvm-bolt
++python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+ cat "$BOLT_WORK/tool-build-verification.json"
+-python3 %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
++python3 -B %{SOURCE1201} disk-report tool-built
++python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
+ echo BOLT_PIPELINE_PASS
++python3 -B %{SOURCE1201} disk-report pipeline
+ # BOLT configuration/build/rewrite must not change the ordinary installation.
+ # Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
+-python3 %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
++python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
+   "$BOLT_WORK/install-after-pipeline.json" || exit 1
+ echo BOLT_COMPARE_ROOT_PASS
+ # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
+@@ -527,7 +541,7 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+ %ifarch x86_64
+ %if %{with clang_bolt}
+ # Candidate is fully stripped before the one unchanged platform post-processing chain.
+-python3 %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
++python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
+   "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || exit 1
+ 
+ %endif
+@@ -769,7 +783,8 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %global __bolt_original_spec_install_post %{__spec_install_post}
+ %define __spec_install_post \
+     %{__bolt_original_spec_install_post} \
+-    python3 %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
+-    echo BOLT_POST_GATE_PASS
++    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
++    echo BOLT_POST_GATE_PASS \
++    python3 -B %{SOURCE1201} disk-report post
+ %endif
+ %endif
+```
+
+完整helper/spec总diff见本轮source.diff；0007为e2463165到本修订的真正增量（不是676父提交的全量），独立patch -p1后两文件逐字节等于新提交；0000文本版与profile分开交付。提交说明完整原文和message.diff也一并公开。

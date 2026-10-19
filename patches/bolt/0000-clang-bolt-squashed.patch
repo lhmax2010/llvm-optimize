@@ -1,6 +1,6 @@
-From e97171ff28b085a200ad1dbe69c1292e42b28ec7 Mon Sep 17 00:00:00 2001
+From 9e5675f57d122549997caffa39b655dfefc46fee Mon Sep 17 00:00:00 2001
 From: Hao Lin <hao.lin@samsung.com>
-Date: Mon, 19 Oct 2026 14:14:41 +0800
+Date: Mon, 19 Oct 2026 14:36:29 +0800
 Subject: [PATCH] packaging: optimize x86_64 clang with BOLT
 
 Enable BOLT by default on x86_64: ordinary install, snapshot, append
@@ -24,6 +24,8 @@ No disk-space thresholds are imposed; each stage records free space.
 If a step fails because its disk is full, stop before replacing the
 packaged clang and report current free space, estimated requirements
 and shortfall from actual file sizes measured in this build.
+If a failed step's log is unavailable, report unknown rather than
+guessing its cause.
 
 The binary Source is the existing profile v2, trained on 13 ARM plus 10
 AArch64 source files. Compressed size 9,735,212 bytes; SHA256
@@ -74,19 +76,19 @@ memory. Maintenance notes: header of packaging/clang-bolt-helper.py
 Change-Id: Ic98eab90cc017f127a66e1729b44fab8b8e8fb41
 Signed-off-by: Hao Lin <hao.lin@samsung.com>
 ---
- packaging/clang-bolt-helper.py   | 1391 ++++++++++++++++++++++++++++++
+ packaging/clang-bolt-helper.py   | 1381 ++++++++++++++++++++++++++++++
  packaging/clang-bolt-v2.fdata.xz |  Bin 0 -> 9735212 bytes
- packaging/llvm.spec              |  178 +++-
- 3 files changed, 1548 insertions(+), 21 deletions(-)
+ packaging/llvm.spec              |  117 +++
+ 3 files changed, 1498 insertions(+)
  create mode 100644 packaging/clang-bolt-helper.py
  create mode 100644 packaging/clang-bolt-v2.fdata.xz
 
 diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
 new file mode 100644
-index 000000000000..96d00505f13a
+index 000000000000..1cfc11143670
 --- /dev/null
 +++ b/packaging/clang-bolt-helper.py
-@@ -0,0 +1,1391 @@
+@@ -0,0 +1,1381 @@
 +#!/usr/bin/env python3
 +"""Tizen clang BOLT gates. Python >= 3.9; shell commands use POSIX sh.
 +
@@ -134,7 +136,6 @@ index 000000000000..96d00505f13a
 +SHA and Build-ID for crash localization; the shipped clang is fully stripped.
 +"""
 +import argparse
-+import threading
 +import collections
 +import shlex
 +import hashlib
@@ -265,8 +266,6 @@ index 000000000000..96d00505f13a
 +def peek_child_exit(process, timeout):
 +    deadline = time.monotonic()+timeout if timeout is not None else None
 +    while True:
-+        errors = getattr(process, "_bolt_output_errors", [])
-+        if errors: raise errors[0]
 +        status = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
 +        if status is not None:
 +            return status.si_status if status.si_code == os.CLD_EXITED else -status.si_status
@@ -286,42 +285,27 @@ index 000000000000..96d00505f13a
 +
 +def call(argv, log, cwd=None, timeout=300):
 +    log = Path(log); log.parent.mkdir(parents=True, exist_ok=True)
-+    process = None; reaped = False; primary = None; reader = None
++    process = None; reaped = False; primary = None
 +    try:
 +        previous = signal.getsignal(signal.SIGCHLD)
 +        if previous != signal.SIG_DFL:
 +            signal.signal(signal.SIGCHLD, signal.SIG_DFL)
-+        invocation = {'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None,
-+                      'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL}
-+        save(log.with_suffix(log.suffix+'.argv.json'), invocation)
++        save(log.with_suffix(log.suffix+'.argv.json'),
++             {'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None,
++              'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
 +        with log.open('wb') as output:
-+            process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=subprocess.PIPE,
++            process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
 +                                       stderr=subprocess.STDOUT, start_new_session=True)
-+            process._bolt_output_errors = []
-+            def drain():
-+                try:
-+                    while True:
-+                        chunk = process.stdout.read1(65536)
-+                        if not chunk: break
-+                        require(output.write(chunk) == len(chunk), 'short command-log write: '+str(log))
-+                        output.flush()
-+                except BaseException as failure:
-+                    process._bolt_output_errors.append(failure)
-+            reader = threading.Thread(target=drain,daemon=True);reader.start()
 +            rc = peek_child_exit(process, timeout)
 +            if rc != 0:
 +                primary = 'COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
 +                raise GateError(primary)
-+            reader.join(10)
-+            require(not reader.is_alive(), 'command log pipe did not close')
-+            if process._bolt_output_errors: raise process._bolt_output_errors[0]
-+            process.stdout.close()
-+            output.flush(); os.fsync(output.fileno())
 +            require(reap_child(process) == rc, 'child exit status changed while reaping')
 +            reaped = True
 +        text = log.read_text(errors='replace')
-+        require(not disk_evidence(log), 'COMMAND_ERROR: disk write error in successful command log')
-+        save(log.with_suffix(log.suffix+'.argv.json'), dict(invocation,completed=True,rc=0))
++        metadata = log.with_suffix(log.suffix+'.argv.json')
++        invocation = json.loads(metadata.read_text())
++        save(metadata, dict(invocation,completed=True,rc=0))
 +        return text
 +    except BaseException as error:
 +        if primary is None:
@@ -343,18 +327,14 @@ index 000000000000..96d00505f13a
 +                reap_child(process, 1)
 +            except Exception as failure:
 +                cleanup.append(str(failure))
-+        if reader is not None:
-+            reader.join(1)
-+        if process is not None and process.stdout is not None:
-+            process.stdout.close()
 +        if isinstance(error, (KeyboardInterrupt, SystemExit)):
 +            raise
 +        message = primary+' (see '+str(log)+')'
 +        if cleanup:
 +            message += '; cleanup error: '+'; '.join(cleanup)
-+        failure = GateError(message); failure.bolt_log = str(log)
-+        stream_errors = getattr(process,'_bolt_output_errors',[]) if process is not None else []
-+        raise failure from (stream_errors[0] if stream_errors else error)
++        failure = GateError(message)
++        failure.bolt_log = str(log)
++        raise failure from error
 +
 +def profile_unpack(source, output):
 +    output = Path(output)
@@ -1040,7 +1020,15 @@ index 000000000000..96d00505f13a
 +    return value
 +
 +
-+def disk_evidence(log, error=None):
++def disk_failure_log(log):
++    try:
++        text = Path(log).read_text(errors='replace') if log and str(log) != '-' else ''
++        return text, bool(text.strip())
++    except (OSError, ValueError):
++        return '', False
++
++
++def disk_evidence(log, error=None, log_text=None):
 +    evidence = []; seen = set()
 +    while error is not None and id(error) not in seen:
 +        seen.add(id(error))
@@ -1051,10 +1039,8 @@ index 000000000000..96d00505f13a
 +            messages='\n'.join(str(row[2]) for row in error.args[0] if isinstance(row, (list,tuple)) and len(row)==3)
 +            evidence += ['copytree:'+pattern for pattern in DISK_LOG_MATCHES if re.search(pattern,messages,re.I)]
 +        error = error.__cause__ or error.__context__
-+    try:
-+        text = Path(log).read_text(errors='replace') if log and str(log) != '-' else ''
-+        evidence += [pattern for pattern in DISK_LOG_MATCHES if re.search(pattern, text, re.I)]
-+    except Exception: pass
++    text = disk_failure_log(log)[0] if log_text is None else log_text
++    evidence += [pattern for pattern in DISK_LOG_MATCHES if re.search(pattern, text, re.I)]
 +    return evidence
 +
 +
@@ -1175,17 +1161,22 @@ index 000000000000..96d00505f13a
 +
 +def disk_diagnose(step, log, error=None, build=None, work=None, root=None):
 +    """Read-only, failure evidence only; failures here never replace the error."""
-+    cause = 'disk' if disk_evidence(log, error) else 'not-disk'
++    text, available = disk_failure_log(log)
++    evidence = disk_evidence(log,error,log_text=text)
++    cause = 'disk' if evidence else ('not-disk' if available else 'unknown')
 +    value = {'cause': cause, 'step': step, 'free_bytes': None}
++    if cause == 'unknown':
++        value.update(used_bytes=None,reason='日志不可用，无法判定原因')
 +    try:
 +        build, work, root = disk_context(build, work, root)
 +        target = root/'usr/bin' if root and step == 'install' else work
 +        value.update(free_bytes=filesystem(target)['free_bytes'])
-+        if cause == 'disk':
-+            value.update(filesystem_device=filesystem(target)['device'],
-+                         evidence=disk_evidence(log,error),
-+                         estimate_note='估计值，依据本次构建实际文件大小',
-+                         errno_messages=[os.strerror(int(item.split('=')[1])) for item in disk_evidence(log,error) if item.startswith('errno=')])
++        if cause in ('disk','unknown'):
++            device=filesystem(target)['device']
++            if cause == 'disk':
++                value.update(filesystem_device=device, evidence=evidence,
++                             estimate_note='估计值，依据本次构建实际文件大小',
++                             errno_messages=[os.strerror(int(item.split('=')[1])) for item in evidence if item.startswith('errno=')])
 +            baseline = None
 +            try:
 +                baseline=json.loads((work/'disk-baseline.json').read_text())
@@ -1196,10 +1187,11 @@ index 000000000000..96d00505f13a
 +                    baseline=None
 +            except (OSError, ValueError): pass
 +            measured = disk_measure(build,work,baseline)
-+            device=value['filesystem_device']
 +            value['used_bytes']=measured['owned_filesystem_bytes'].get(device,0)
-+            value['cache_delta_known']=measured['cache_delta_known']
-+            if baseline is None:
++            if cause == 'disk': value['cache_delta_known']=measured['cache_delta_known']
++            if cause == 'unknown':
++                pass
++            elif baseline is None:
 +                value.update(degraded='records unavailable: only current free and owned allocation are reliable')
 +            else:
 +                value.update(disk_prediction(build,work,root,measured,baseline,device))
@@ -1219,7 +1211,7 @@ index 000000000000..96d00505f13a
 +                if any('122' in item or 'quota' in item.lower() for item in value['evidence']):
 +                    value['quota_headroom_unknown']=True
 +    except Exception as failure:
-+        if cause == 'disk':
++        if cause in ('disk','unknown'):
 +            value['degraded']=str(failure)
 +    try: print('BOLT_DISK_DIAGNOSIS '+json.dumps(value,ensure_ascii=False),flush=True)
 +    except Exception: pass
@@ -1483,7 +1475,7 @@ new file mode 100644
 index 000000000000..0c7860cfc46b
 Binary files /dev/null and b/packaging/clang-bolt-v2.fdata.xz differ
 diff --git a/packaging/llvm.spec b/packaging/llvm.spec
-index 8240282641a3..7ea937bbdb6a 100644
+index 8240282641a3..ef2f87843968 100644
 --- a/packaging/llvm.spec
 +++ b/packaging/llvm.spec
 @@ -1,3 +1,10 @@
@@ -1525,19 +1517,13 @@ index 8240282641a3..7ea937bbdb6a 100644
  
  %if %{undefined _toolchain}
  %ifarch x86_64
-@@ -390,47 +406,139 @@ cmake \
+@@ -390,11 +406,93 @@ cmake \
  %endif
  
  # Full build using ninja (already in build/ directory after cd build)
 +%ifarch x86_64
 +%if %{with clang_bolt}
-+if BOLT_BUILD_OUTPUT=$(ninja -d keeprsp -j %{mlgo_build_jobs} 2>&1); then
-+  printf '%%s\n' "$BOLT_BUILD_OUTPUT" || exit 1
-+else
-+  printf '%%s\n' "$BOLT_BUILD_OUTPUT" || true
-+  printf '%%s\n' "$BOLT_BUILD_OUTPUT" | python3 -B %{SOURCE1201} disk-diagnose ordinary-build /dev/stdin || true
-+  exit 1
-+fi
++ninja -d keeprsp -j %{mlgo_build_jobs} || exit 1
 +%else
 +ninja -j %{mlgo_build_jobs}
 +%endif
@@ -1547,14 +1533,10 @@ index 8240282641a3..7ea937bbdb6a 100644
  
  %install
  cd build
--cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
--ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
--
--ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
--ln -sf clang++ %{buildroot}%{_prefix}/bin/%{_host}-clang++
+ cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
 +%ifarch x86_64
 +%if %{with clang_bolt}
-+%global __bolt_disk_reporting 1
++
 +# Reject debug-named buildroots before any BOLT action.
 +case $(printf '%s' '%{buildroot}' | LC_ALL=C tr '[:upper:]' '[:lower:]') in
 +  *debug*) echo 'BOLT buildroot absolute path contains debug' >&2; exit 1 ;;
@@ -1576,7 +1558,6 @@ index 8240282641a3..7ea937bbdb6a 100644
 +    printf '%%s\n' "$bolt_output" || bolt_fail "$bolt_stage-output" -
 +  else
 +    printf '%%s\n' "$bolt_output" || true
-+    # The step transcript remains available in memory if its log cannot be written.
 +    printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || true
 +    exit 1
 +  fi
@@ -1586,129 +1567,66 @@ index 8240282641a3..7ea937bbdb6a 100644
 +  shift
 +  bolt_checked "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" python3 -B %{SOURCE1201} run-step "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" -- "$@"
 +}
-+bolt_capture() {
-+  bolt_stage=$1
-+  bolt_output=$2
-+  shift 2
-+  bolt_checked "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" python3 -B %{SOURCE1201} run-step "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" --output "$bolt_output" -- "$@"
-+}
-+# Observability only: sizes vary with this build, so no disk admission budget.
 +python3 -B %{SOURCE1201} disk-report begin
-+%endif
-+%endif
-+%{?__bolt_disk_reporting:bolt_step ordinary-install }cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
-+%ifarch x86_64
-+%if %{with clang_bolt}
-+echo "BOLT_BUILDROOT_OK %{buildroot}" || bolt_fail buildroot-output -
-+bolt_step preflight python3 -B %{SOURCE1201} preflight
-+bolt_step certified python3 -B %{SOURCE1201} certified
++echo "BOLT_BUILDROOT_OK %{buildroot}"
++python3 -B %{SOURCE1201} preflight || exit 1
++python3 -B %{SOURCE1201} certified || exit 1
 +if [ -r /proc/self/stat ]; then echo BOLT_PROC_OK; else echo BOLT_PROC_MISSING; fi
 +# One relink: emit-relocs, then LLVM strip-debug, BOLT and full strip.
-+# The package build owns its original ThinLTO cache; do not duplicate it.
++# The handed-off build owns its original ThinLTO cache; do not duplicate it.
++mkdir -p "$BOLT_WORK" || exit 1
 +# File-list baseline is the actual ordinary CMake install, not a name whitelist.
-+bolt_step snapshot python3 -B %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json"
++python3 -B %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
 +bolt_step manifest-copy cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt"
 +bolt_step ordinary-copy cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22"
-+bolt_capture link-command "$BOLT_WORK/link.original" ninja -t commands -s bin/clang-22
-+bolt_step unpack python3 -B %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata"
-+bolt_step configure cmake -S ../llvm -B .   '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt'   -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF   -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
++bolt_checked link-command "$BOLT_WORK/link-command.log" python3 -B %{SOURCE1201} run-step link-command "$BOLT_WORK/link-command.log" --output "$BOLT_WORK/link.original" -- ninja -t commands -s bin/clang-22
++python3 -B %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || exit 1
++bolt_step configure cmake -S ../llvm -B . \
++  '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' \
++  -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \
++  -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
 +# Only certified BOLT tasks and the paired configure-refreshed TF anchor.
-+echo BOLT_TOOL_DRY_RUN_BEGIN || bolt_fail dry-run-output -
-+LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_capture tool-dry-run "$BOLT_WORK/tool-dry-run.txt" ninja -n llvm-bolt
-+echo BOLT_TOOL_DRY_RUN_END || bolt_fail dry-run-output -
-+bolt_capture tool-plan "$BOLT_WORK/tool-plan.json" python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt"
-+bolt_step tool-prepare python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json"
++bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
++LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- ninja -n llvm-bolt
++bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
++python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
++cat "$BOLT_WORK/tool-plan.json"
++python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
 +LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- ninja -j 1 llvm-bolt
-+bolt_step tool-verify python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt"   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json"
++python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
++  "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
++cat "$BOLT_WORK/tool-build-verification.json"
 +python3 -B %{SOURCE1201} disk-report tool-built
-+bolt_step pipeline python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt"
-+echo BOLT_PIPELINE_PASS || bolt_fail pipeline-output -
++python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
++echo BOLT_PIPELINE_PASS
 +python3 -B %{SOURCE1201} disk-report pipeline
 +# BOLT configuration/build/rewrite must not change the ordinary installation.
 +# Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
-+bolt_step compare-root python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json"   "$BOLT_WORK/install-after-pipeline.json"
-+echo BOLT_COMPARE_ROOT_PASS || bolt_fail compare-root-output -
++python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
++  "$BOLT_WORK/install-after-pipeline.json" || exit 1
++echo BOLT_COMPARE_ROOT_PASS
 +# Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
 +%endif
 +%endif
-+%{?__bolt_disk_reporting:bolt_step install-write-1 }ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
-+
-+%{?__bolt_disk_reporting:bolt_step install-write-2 }ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
-+%{?__bolt_disk_reporting:bolt_step install-write-3 }ln -sf clang++ %{buildroot}%{_prefix}/bin/%{_host}-clang++
- # Use host triple and resource dir by default via <lang>.cfg
--cat >> %{buildroot}/%{_prefix}/bin/clang.cfg << EOF
-+%{?__bolt_disk_reporting:bolt_step clang-config /bin/sh -c 'cat >> "$1"' sh %{buildroot}/%{_prefix}/bin/clang.cfg}%{!?__bolt_disk_reporting:cat >> %{buildroot}/%{_prefix}/bin/clang.cfg} << EOF
- -target %{_host}
- -resource-dir %{_prefix}/%{_lib}/clang/%{llvm_version}
- EOF
--ln -sf clang.cfg %{buildroot}/%{_prefix}/bin/clang++.cfg
-+%{?__bolt_disk_reporting:bolt_step install-write-4 }ln -sf clang.cfg %{buildroot}/%{_prefix}/bin/clang++.cfg
+ ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
  
- # copy lldb for sdk
--mkdir -p %{buildroot}%{sdk_bin_dir}
--mkdir -p %{buildroot}%{sdk_lib_dir}
-+%{?__bolt_disk_reporting:bolt_step install-write-5 }mkdir -p %{buildroot}%{sdk_bin_dir}
-+%{?__bolt_disk_reporting:bolt_step install-write-6 }mkdir -p %{buildroot}%{sdk_lib_dir}
- 
--mv %{buildroot}%{_prefix}/bin/lldb %{buildroot}%{sdk_bin_dir}
--mv %{buildroot}%{_prefix}/bin/lldb-argdumper %{buildroot}%{sdk_bin_dir}
--mv %{buildroot}%{_prefix}/bin/lldb-server %{buildroot}%{sdk_bin_dir}
-+%{?__bolt_disk_reporting:bolt_step install-write-7 }mv %{buildroot}%{_prefix}/bin/lldb %{buildroot}%{sdk_bin_dir}
-+%{?__bolt_disk_reporting:bolt_step install-write-8 }mv %{buildroot}%{_prefix}/bin/lldb-argdumper %{buildroot}%{sdk_bin_dir}
-+%{?__bolt_disk_reporting:bolt_step install-write-9 }mv %{buildroot}%{_prefix}/bin/lldb-server %{buildroot}%{sdk_bin_dir}
- 
--ln -sf %{sdk_bin_dir}/lldb %{buildroot}%{_prefix}/bin/
-+%{?__bolt_disk_reporting:bolt_step install-write-10 }ln -sf %{sdk_bin_dir}/lldb %{buildroot}%{_prefix}/bin/
- 
--cp -P %{buildroot}%{_libdir}/liblldb.so* %{buildroot}%{sdk_lib_dir}/
-+%{?__bolt_disk_reporting:bolt_step install-write-11 }cp -P %{buildroot}%{_libdir}/liblldb.so* %{buildroot}%{sdk_lib_dir}/
- 
- # Install the clang python bits
--mkdir -p %{buildroot}%{python3_sitelib}
--cp -a ../clang/bindings/python/clang %{buildroot}%{python3_sitelib}/
-+%{?__bolt_disk_reporting:bolt_step install-write-12 }mkdir -p %{buildroot}%{python3_sitelib}
-+%{?__bolt_disk_reporting:bolt_step install-write-13 }cp -a ../clang/bindings/python/clang %{buildroot}%{python3_sitelib}/
- 
--rm -rf %{buildroot}%{_libdir}/debug/*
--rm -rf %{buildroot}/usr/lib/libear/*
--rm -rf %{buildroot}/usr/lib/libscanbuild/*
-+%{?__bolt_disk_reporting:bolt_step install-write-14 }rm -rf %{buildroot}%{_libdir}/debug/*
-+%{?__bolt_disk_reporting:bolt_step install-write-15 }rm -rf %{buildroot}/usr/lib/libear/*
-+%{?__bolt_disk_reporting:bolt_step install-write-16 }rm -rf %{buildroot}/usr/lib/libscanbuild/*
- 
- %ifarch x86_64
- # Run after compilation has finished; these workers do not overlap build jobs.
- # Preserve the standard RPM post-processing, including archive strip -g.
--rm -rf "%{_builddir}/%{buildsubdir}/build/native-archive-conversion"
--python3 %{SOURCE1005} --root "%{buildroot}" \
-+%{?__bolt_disk_reporting:bolt_step install-write-17 }rm -rf "%{_builddir}/%{buildsubdir}/build/native-archive-conversion"
-+%{?__bolt_disk_reporting:bolt_step install-write-18 }python3 %{SOURCE1005} --root "%{buildroot}" \
-     --build "%{_builddir}/%{buildsubdir}/build" \
-     --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
-     --arch x86_64 \
-@@ -440,6 +548,21 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+ ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
+@@ -440,6 +538,14 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
      --jobs 4 --address-space-bytes 4294967296 || exit 1
  %endif
  
 +%ifarch x86_64
 +%if %{with clang_bolt}
 +# Candidate is fully stripped before the one unchanged platform post-processing chain.
-+# Capture in memory: a full work filesystem must not break logging after commit.
-+if BOLT_INSTALL_OUTPUT=$(python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
-+  "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" 2>&1); then
-+  printf '%%s\n' "$BOLT_INSTALL_OUTPUT" || bolt_fail install-output -
-+else
-+  printf '%%s\n' "$BOLT_INSTALL_OUTPUT" || true
-+  printf '%%s\n' "$BOLT_INSTALL_OUTPUT" | python3 -B %{SOURCE1201} disk-diagnose install /dev/stdin || true
-+  exit 1
-+fi
++python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
++  "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || exit 1
 +
 +%endif
 +%endif
  %post -n clang -p /sbin/ldconfig
  %postun -n clang -p /sbin/ldconfig
  
-@@ -671,3 +794,16 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+@@ -671,3 +777,14 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
  
  %files -n python-clang
  %{python3_sitelib}/clang
@@ -1717,11 +1635,9 @@ index 8240282641a3..7ea937bbdb6a 100644
 +
 +%global __bolt_original_spec_install_post %{__spec_install_post}
 +%define __spec_install_post \
-+    bolt_checked platform-post "%{_builddir}/%{buildsubdir}/build/clang-bolt/platform-post.log" python3 -B %{SOURCE1201} run-step platform-post "%{_builddir}/%{buildsubdir}/build/clang-bolt/platform-post.log" -- /bin/sh -e <<'BOLT_PLATFORM_POST' \
 +    %{__bolt_original_spec_install_post} \
-+BOLT_PLATFORM_POST \
-+    bolt_checked post "%{_builddir}/%{buildsubdir}/build/clang-bolt/post.log" python3 -B %{SOURCE1201} run-step post "%{_builddir}/%{buildsubdir}/build/clang-bolt/post.log" -- python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" \
-+    echo BOLT_POST_GATE_PASS || exit 1 \
++    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
++    echo BOLT_POST_GATE_PASS \
 +    python3 -B %{SOURCE1201} disk-report post
 +%endif
 +%endif

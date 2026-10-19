@@ -42,18 +42,11 @@ def fault_driver(kind, root):
         args=['run-step','fault-command',str(work/'process.log'),'--','/bin/sh','-c','printf "No space left on device\\n" >&2; exit 9']
     elif kind=='subprocess-log':
         log=work/'process.log';real=Path.open
-        class FullLog:
-            def __init__(self,f):self.f=f
-            def __enter__(self):return self
-            def __exit__(self,*a):self.f.close()
-            def write(self,data):raise OSError(errno.ENOSPC,'No space left on device')
-            def flush(self):self.f.flush()
-            def fileno(self):return self.f.fileno()
         def opening(p,*a,**kw):
-            value=real(p,*a,**kw)
-            return FullLog(value) if p==log and a and a[0]=='wb' else value
+            if p==log and a and a[0]=='wb':raise OSError(errno.ENOSPC,'No space left on device')
+            return real(p,*a,**kw)
         manager=patch.object(Path,'open',opening)
-        args=['run-step','fault-log',str(log),'--',sys.executable,'-B','-c','print("child output",flush=True); import time; time.sleep(30)']
+        args=['run-step','fault-log',str(log),'--',sys.executable,'-B','-c','print("not started")']
     elif kind.startswith('install'):
         candidate=work/'candidate';before_bolt=work/'before-bolt';elf(candidate,stripped=True);elf(before_bolt)
         identity={'before_path':str(before_bolt),'before_sha256':h.digest(before_bolt),'bolt_note_before':True,'after_sha256':h.digest(candidate)}
@@ -79,7 +72,10 @@ def fault_driver(kind, root):
                 if Path(dst)==entity:raise OSError(errno.ENOSPC,'No space left on device')
                 return real(src,dst)
             manager=patch.object(h.os,'replace',replace)
-    elif kind in ('not-disk','diagnostic-exception'):
+    elif kind in ('not-disk','diagnostic-exception','unknown'):
+        log=work/'gate.log'
+        if kind!='unknown':log.write_text('fixture original gate failure\n')
+        os.environ['BOLT_STEP_LOG']=str(log)
         manager=patch.object(h,'root_snapshot',side_effect=h.GateError('fixture original gate failure'))
     else:raise ValueError(kind)
     with manager,patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':4096})()),patch.object(sys,'argv',['helper']+args):
@@ -126,13 +122,18 @@ class DiskFaultTests(Base):
     def test_copy_enospc(self):self.disk_fault('copy')
     def test_json_enospc(self):self.assertTrue(self.disk_fault('json')[2]['old_json_preserved'])
     def test_subprocess_enospc(self):self.assertIn('COMMAND_FAILED rc=9',self.disk_fault('subprocess')[0].stderr)
-    def test_parent_log_enospc_kills_child(self):self.disk_fault('subprocess-log')
+    def test_log_open_enospc_stops_before_subprocess(self):self.disk_fault('subprocess-log')
     def test_install_copy_enospc_preserves_entity(self):self.disk_fault('install')
     def test_install_state_enospc_preserves_entity(self):self.disk_fault('install-state')
     def test_install_alias_enospc_preserves_entity(self):self.disk_fault('install-alias')
     def test_install_rename_enospc_preserves_entity(self):self.disk_fault('install-rename')
     def test_non_disk_original_error(self):
         p,rows,state=self.run_fault('not-disk');self.assertEqual(len(rows),1);self.assertEqual(rows[0]['cause'],'not-disk');self.assertNotIn('estimated_total_bytes',rows[0]);self.assertEqual(p.stderr,'BOLT_GATE_FAILED: fixture original gate failure\n')
+    def test_missing_log_unknown_cli(self):
+        p,rows,state=self.run_fault('unknown');self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['cause'],'unknown');self.assertEqual(rows[0]['reason'],'日志不可用，无法判定原因')
+        self.assertIn('used_bytes',rows[0]);self.assertIn('free_bytes',rows[0]);self.assertNotIn('estimated_total_bytes',rows[0])
+        self.assertEqual(p.stderr,'BOLT_GATE_FAILED: fixture original gate failure\n')
     def test_diagnosis_exception_preserves_exit_and_error(self):
         p,rows,state=self.run_fault('diagnostic-exception');self.assertEqual(rows,[]);self.assertEqual(p.stderr,'BOLT_GATE_FAILED: fixture original gate failure\n')
     def test_disk_error_survives_diagnosis_exception(self):
@@ -170,12 +171,35 @@ class DiskObservationTests(Base):
             self.assertEqual(value['cause'],'disk')
     def test_low_free_is_not_a_cause(self):
         build,work,root=fixture(self.d)
-        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':0})()),contextlib.redirect_stdout(io.StringIO()):value=h.disk_diagnose('step','-',build=build,work=work)
+        log=work/'ordinary.log';log.write_text('ordinary gate failure\n')
+        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':0})()),contextlib.redirect_stdout(io.StringIO()):value=h.disk_diagnose('step',log,build=build,work=work)
         self.assertEqual(value,{'cause':'not-disk','step':'step','free_bytes':0})
     def test_unrelated_log_and_error_text_are_not_evidence(self):
         build,work,root=fixture(self.d);(work/'other.log').write_text('ENOSPC')
         with contextlib.redirect_stdout(io.StringIO()):value=h.disk_diagnose('step','-',h.GateError('No space left on device'),build,work)
-        self.assertEqual(value['cause'],'not-disk')
+        self.assertEqual(value['cause'],'unknown')
+    def test_empty_and_unreadable_log_are_unknown(self):
+        build,work,root=fixture(self.d);log=work/'empty.log';log.write_text('')
+        with contextlib.redirect_stdout(io.StringIO()):value=h.disk_diagnose('empty',log,build=build,work=work)
+        self.assertEqual(value['cause'],'unknown');self.assertIn('used_bytes',value)
+        original=Path.read_text
+        def reading(path,*a,**kw):
+            if path==log:raise PermissionError('fixture unreadable log')
+            return original(path,*a,**kw)
+        with patch.object(Path,'read_text',reading),contextlib.redirect_stdout(io.StringIO()):value=h.disk_diagnose('unreadable',log,build=build,work=work)
+        self.assertEqual(value['cause'],'unknown');self.assertIn('used_bytes',value);self.assertNotIn('formulas',value)
+    def test_successful_log_text_does_not_fail_call(self):
+        log=self.d/'success.log'
+        self.assertEqual(h.call(['/bin/sh','-c','printf ENOSPC'],log),'ENOSPC')
+        self.assertTrue(json.loads((self.d/'success.log.argv.json').read_text())['completed'])
+    def test_stdin_failure_log_consumed_once(self):
+        build,work,root=fixture(self.d);real=Path.read_text;count=[]
+        def reading(path,*a,**kw):
+            if path==Path('/dev/stdin'):
+                count.append(1);return 'Disk quota exceeded' if len(count)==1 else ''
+            return real(path,*a,**kw)
+        with patch.object(Path,'read_text',reading),contextlib.redirect_stdout(io.StringIO()):value=h.disk_diagnose('stdin','/dev/stdin',build=build,work=work)
+        self.assertEqual(value['cause'],'disk');self.assertEqual(value['evidence'],['Disk quota exceeded']);self.assertEqual(len(count),1)
     def test_diagnose_performs_no_file_writes(self):
         build,work,root=fixture(self.d);log=work/'failure.log';log.write_text('ENOSPC');real=Path.open
         def guard(p,*args,**kwargs):

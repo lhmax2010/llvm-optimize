@@ -294,4 +294,10 @@ gbs 实际导出已复现：旧506dc25的 Patch0–6处于 x86_64/BOLT 条件块
 
 长期规则：发布代码不设磁盘空间门槛，只记录剩余空间；磁盘失败的诊断值必须在失败后由本次构建实际数据计算。本地开发机的资源、锁、磁盘规则只约束本地操作，不得进入发布代码。
 
-本地源 `e97171ff28b085a200ad1dbe69c1292e42b28ec7`（父67619ec8，Hao Lin/原Change-Id），BASE与远端仍e2463165。删除spec两处及helper五处磁盘准入、预算常量与CLI；四阶段disk-report永远rc0，disk-diagnose只读按本步骤errno/原文判磁盘，实际大小推算并明确未知/降级。25处显式检查或提交顺序加固，临时clang经SHA核对再最终rename。285测试PASS：ENOSPC、非磁盘、诊断自身异常、原clang保持、公式及非磁盘AST均覆盖。gbs export PASS；主机rpm4.18.2补充5/5 PASS，**不等于Tizen认证**。唯一图形密码认证失败，不重试；包装器未启动，Tizen4.14.1.1五项与真实tmpfs NOT RUN，因此sandbox未推。QB日志未收到；未操作QB/refs-for/新分支/保护树。完整审计、diff、原始失败与最终测试见[27](27_disk_diagnostics.md)，当前manifest明确sandbox_pushed=false。
+历史未采用草案e97171ff：本地285测试PASS，唯一图形认证失败，Tizen五项NOT RUN，未推sandbox。其普通步骤包装与25处审计已被下节收窄修订取代；原文保留在27前半和67b0227材料钉提交。
+
+## 2026-10-19：收窄磁盘诊断范围（认证PASS，待推）
+
+长期规则：rpm 以 sh -e 执行脚本段；BOLT 改动不得改写普通构建、基线 %install 步骤和平台后处理链的执行方式。
+
+直接在e2463165 amend为 `9e5675f57d122549997caffa39b655dfefc46fee`（父67619ec8，Hao Lin/原Change-Id），不叠加e971。%build全段9331B、基线install1895B、实际平台链304B逐字节相同；只允许尾检-B及末尾report，8个BOLT shell动作包装。call恢复直接日志，无线程/管道、不检查成功日志文本；诊断disk/not-disk/unknown，日志不可用不猜测。289测试、三类加unknown、sh-e rc1、gbs export及构建根Tizen五项全部PASS。一次图形认证，锁171.4秒，overlay/proc/dev卸载完、下层清单及六SHA不变；未运行原树cmake/ninja/-P。材料先GitHub，随后按e246精确租约更新唯一bolt_pgo；推送结果另记收尾。详见27末节和narrow-disk-20261019。
