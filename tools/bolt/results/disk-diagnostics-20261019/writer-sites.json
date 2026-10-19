@@ -1,0 +1,224 @@
+[
+  {
+    "function": "atomic_text",
+    "line": 119,
+    "operation": "mkdir",
+    "source": "path.parent.mkdir(parents=True, exist_ok=True)"
+  },
+  {
+    "function": "atomic_text",
+    "line": 122,
+    "operation": "open",
+    "source": "tmp.open('w',encoding='utf-8')"
+  },
+  {
+    "function": "atomic_text",
+    "line": 123,
+    "operation": "write",
+    "source": "stream.write(text)"
+  },
+  {
+    "function": "atomic_text",
+    "line": 124,
+    "operation": "fsync",
+    "source": "os.fsync(stream.fileno())"
+  },
+  {
+    "function": "atomic_text",
+    "line": 125,
+    "operation": "replace",
+    "source": "os.replace(tmp,path)"
+  },
+  {
+    "function": "atomic_text",
+    "line": 130,
+    "operation": "unlink",
+    "source": "tmp.unlink()"
+  },
+  {
+    "function": "call",
+    "line": 199,
+    "operation": "mkdir",
+    "source": "log.parent.mkdir(parents=True, exist_ok=True)"
+  },
+  {
+    "function": "call",
+    "line": 208,
+    "operation": "open",
+    "source": "log.open('wb')"
+  },
+  {
+    "function": "call",
+    "line": 217,
+    "operation": "write",
+    "source": "output.write(chunk)"
+  },
+  {
+    "function": "call",
+    "line": 230,
+    "operation": "fsync",
+    "source": "os.fsync(output.fileno())"
+  },
+  {
+    "function": "profile_unpack",
+    "line": 273,
+    "operation": "mkdir",
+    "source": "output.parent.mkdir(parents=True, exist_ok=True)"
+  },
+  {
+    "function": "profile_unpack",
+    "line": 275,
+    "operation": "open",
+    "source": "output.open('xb')"
+  },
+  {
+    "function": "profile_unpack",
+    "line": 280,
+    "operation": "unlink",
+    "source": "output.unlink()"
+  },
+  {
+    "function": "quote",
+    "line": 287,
+    "operation": "replace",
+    "source": "str(value).replace(\"'\", \"'\\\\''\")"
+  },
+  {
+    "function": "replay_script",
+    "line": 310,
+    "operation": "replace",
+    "source": "body.replace('--thinlto-cache-dir='+caches[0], '--thinlto-cache-dir='+quote(cache), 1)"
+  },
+  {
+    "function": "replay_script",
+    "line": 311,
+    "operation": "replace",
+    "source": "body.replace(old_out, '-o ' + quote(output) + ' ', 1)"
+  },
+  {
+    "function": "replay_script",
+    "line": 312,
+    "operation": "replace",
+    "source": "body.replace(old_dep, '--dependency-file=' + quote(dependency), 1)"
+  },
+  {
+    "function": "tiny_gate",
+    "line": 522,
+    "operation": "mkdir",
+    "source": "work.mkdir(parents=True, exist_ok=True)"
+  },
+  {
+    "function": "tiny_gate",
+    "line": 523,
+    "operation": "write_text",
+    "source": "source.write_text(TINY)"
+  },
+  {
+    "function": "tiny_gate",
+    "line": 533,
+    "operation": "unlink",
+    "source": "out.unlink()"
+  },
+  {
+    "function": "tiny_gate",
+    "line": 537,
+    "operation": "copyfile",
+    "source": "shutil.copyfile(out, dest)"
+  },
+  {
+    "function": "install_candidate",
+    "line": 645,
+    "operation": "copyfile",
+    "source": "shutil.copyfile(candidate,tmp)"
+  },
+  {
+    "function": "install_candidate",
+    "line": 646,
+    "operation": "chmod",
+    "source": "tmp.chmod(stat.S_IMODE(st.st_mode))"
+  },
+  {
+    "function": "install_candidate",
+    "line": 647,
+    "operation": "open",
+    "source": "tmp.open('rb')"
+  },
+  {
+    "function": "install_candidate",
+    "line": 647,
+    "operation": "fsync",
+    "source": "os.fsync(stream.fileno())"
+  },
+  {
+    "function": "install_candidate",
+    "line": 654,
+    "operation": "symlink_to",
+    "source": "link.symlink_to('clang-22')"
+  },
+  {
+    "function": "install_candidate",
+    "line": 660,
+    "operation": "replace",
+    "source": "os.replace(link,path)"
+  },
+  {
+    "function": "install_candidate",
+    "line": 661,
+    "operation": "replace",
+    "source": "os.replace(tmp,entity)"
+  },
+  {
+    "function": "install_candidate",
+    "line": 665,
+    "operation": "unlink",
+    "source": "path.unlink()"
+  },
+  {
+    "function": "rewrite",
+    "line": 717,
+    "operation": "mkdir",
+    "source": "work.mkdir(parents=True, exist_ok=True)"
+  },
+  {
+    "function": "run_step",
+    "line": 1146,
+    "operation": "open",
+    "source": "Path(log).open('a')"
+  },
+  {
+    "function": "run_step",
+    "line": 1147,
+    "operation": "fsync",
+    "source": "os.fsync(stream.fileno())"
+  },
+  {
+    "function": "run_step",
+    "line": 1147,
+    "operation": "write",
+    "source": "stream.write(success_marker+'\\n')"
+  },
+  {
+    "function": "cache_copy",
+    "line": 1201,
+    "operation": "mkdir",
+    "source": "destination.parent.mkdir(parents=True, exist_ok=True)"
+  },
+  {
+    "function": "cache_copy",
+    "line": 1202,
+    "operation": "copytree",
+    "source": "shutil.copytree(source, destination, copy_function=shutil.copy2)"
+  },
+  {
+    "function": "strip_all",
+    "line": 1239,
+    "operation": "copy2",
+    "source": "shutil.copy2(before, after)"
+  },
+  {
+    "function": "main",
+    "line": 1362,
+    "operation": "chmod",
+    "source": "Path(a.script).chmod(0o755)"
+  }
+]

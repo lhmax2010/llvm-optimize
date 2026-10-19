@@ -1,0 +1,49 @@
+{
+  "helper_calls_and_definition": [
+    {
+      "line": 595,
+      "source": "disk_preflight(tmp.parent,Path(candidate).stat().st_size)"
+    },
+    {
+      "line": 656,
+      "source": "disk_preflight(Path(output).parent,4*Path(input_elf).stat().st_size)"
+    },
+    {
+      "line": 774,
+      "source": "def disk_preflight(destination, planned_bytes, reserve_bytes=0):"
+    },
+    {
+      "line": 803,
+      "source": "admission = disk_preflight(work, max(planned_write_bytes,"
+    },
+    {
+      "line": 847,
+      "source": "admission = disk_preflight(destination.parent,before['bytes'],4*GIB)"
+    },
+    {
+      "line": 885,
+      "source": "disk_preflight(after.parent,before.stat().st_size)"
+    },
+    {
+      "line": 973,
+      "source": "elif a.cmd=='disk-preflight':result=disk_preflight(a.destination,a.planned_bytes,a.reserve_bytes)"
+    }
+  ],
+  "spec_calls": [
+    {
+      "line": 438,
+      "source": "python3 %{SOURCE1201} disk-preflight \"$BOLT_WORK\" 17179869184 || exit 1"
+    },
+    {
+      "line": 461,
+      "source": "python3 %{SOURCE1201} disk-preflight \"$PWD\" 17179869184 || exit 1"
+    }
+  ],
+  "removed_cli": true,
+  "removed_constants": [
+    "DISK_FLOOR",
+    "LARGE_WRITE",
+    "STAGE_WRITE_BUDGET"
+  ],
+  "no_production_local_budget": true
+}

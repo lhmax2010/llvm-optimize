@@ -1,0 +1,71 @@
+test_copy_enospc (test_disk_diagnostics.DiskFaultTests.test_copy_enospc) ... FAIL
+test_corrupt_records_degrade_without_throwing (test_disk_diagnostics.DiskFaultTests.test_corrupt_records_degrade_without_throwing) ... ok
+test_diagnosis_exception_preserves_exit_and_error (test_disk_diagnostics.DiskFaultTests.test_diagnosis_exception_preserves_exit_and_error) ... ok
+test_install_alias_enospc_preserves_entity (test_disk_diagnostics.DiskFaultTests.test_install_alias_enospc_preserves_entity) ... ok
+test_install_copy_enospc_preserves_entity (test_disk_diagnostics.DiskFaultTests.test_install_copy_enospc_preserves_entity) ... ok
+test_install_rename_enospc_preserves_entity (test_disk_diagnostics.DiskFaultTests.test_install_rename_enospc_preserves_entity) ... ok
+test_install_state_enospc_preserves_entity (test_disk_diagnostics.DiskFaultTests.test_install_state_enospc_preserves_entity) ... ok
+test_json_enospc (test_disk_diagnostics.DiskFaultTests.test_json_enospc) ... ok
+test_non_disk_original_error (test_disk_diagnostics.DiskFaultTests.test_non_disk_original_error) ... ok
+test_parent_log_enospc_kills_child (test_disk_diagnostics.DiskFaultTests.test_parent_log_enospc_kills_child) ... ERROR
+test_subprocess_enospc (test_disk_diagnostics.DiskFaultTests.test_subprocess_enospc) ... ok
+test_failed_task_not_counted_completed (test_disk_diagnostics.DiskFormulaTests.test_failed_task_not_counted_completed) ... ok
+test_known_sizes_and_tool_average (test_disk_diagnostics.DiskFormulaTests.test_known_sizes_and_tool_average) ... ok
+test_zero_completed_does_not_fabricate_average (test_disk_diagnostics.DiskFormulaTests.test_zero_completed_does_not_fabricate_average) ... ok
+test_cache_pruning_does_not_hide_new_allocations (test_disk_diagnostics.DiskObservationTests.test_cache_pruning_does_not_hide_new_allocations) ... ok
+test_diagnose_internal_exception_cli_still_zero (test_disk_diagnostics.DiskObservationTests.test_diagnose_internal_exception_cli_still_zero) ... ok
+test_diagnose_performs_no_file_writes (test_disk_diagnostics.DiskObservationTests.test_diagnose_performs_no_file_writes) ... ok
+test_errno_28_and_122_direct (test_disk_diagnostics.DiskObservationTests.test_errno_28_and_122_direct) ... ok
+test_full_matching_table (test_disk_diagnostics.DiskObservationTests.test_full_matching_table) ... ok
+test_hardlinks_are_not_double_counted (test_disk_diagnostics.DiskObservationTests.test_hardlinks_are_not_double_counted) ... ok
+test_low_free_is_not_a_cause (test_disk_diagnostics.DiskObservationTests.test_low_free_is_not_a_cause) ... ok
+test_report_existing_and_missing_cli_return_zero (test_disk_diagnostics.DiskObservationTests.test_report_existing_and_missing_cli_return_zero) ... ok
+test_report_internal_exception_cli_still_zero (test_disk_diagnostics.DiskObservationTests.test_report_internal_exception_cli_still_zero) ... ok
+test_report_save_enospc_returns_normally (test_disk_diagnostics.DiskObservationTests.test_report_save_enospc_returns_normally) ... ok
+test_unrelated_log_and_error_text_are_not_evidence (test_disk_diagnostics.DiskObservationTests.test_unrelated_log_and_error_text_are_not_evidence) ... ok
+
+======================================================================
+ERROR: test_parent_log_enospc_kills_child (test_disk_diagnostics.DiskFaultTests.test_parent_log_enospc_kills_child)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_disk_diagnostics.py", line 119, in test_parent_log_enospc_kills_child
+    def test_parent_log_enospc_kills_child(self):self.disk_fault('subprocess-log')
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_disk_diagnostics.py", line 109, in disk_fault
+    p,rows,state=self.run_fault(kind);self.assertTrue(rows)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_disk_diagnostics.py", line 97, in run_fault
+    root=self.d/kind;root.mkdir();p=subprocess.run([sys.executable,'-B',__file__,'--fault',kind,str(root)],capture_output=True,text=True,timeout=30)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 550, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 1209, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 2116, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+  File "/usr/lib/python3.12/subprocess.py", line 1253, in _check_timeout
+    raise TimeoutExpired(
+subprocess.TimeoutExpired: Command '['/usr/bin/python3', '-B', '/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_disk_diagnostics.py', '--fault', 'subprocess-log', '/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-disk-diagnostics/tmp/tmp0dmwdka6/subprocess-log']' timed out after 30 seconds
+
+======================================================================
+FAIL: test_copy_enospc (test_disk_diagnostics.DiskFaultTests.test_copy_enospc)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_disk_diagnostics.py", line 116, in test_copy_enospc
+    def test_copy_enospc(self):self.disk_fault('copy')
+                               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_disk_diagnostics.py", line 109, in disk_fault
+    p,rows,state=self.run_fault(kind);self.assertTrue(rows)
+                 ^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_disk_diagnostics.py", line 103, in run_fault
+    self.assertEqual(p.returncode,1,p.stdout+p.stderr)
+AssertionError: 2 != 1 : usage: helper cache-copy [-h] edge destination result
+helper cache-copy: error: the following arguments are required: result
+
+
+----------------------------------------------------------------------
+Ran 25 tests in 34.724s
+
+FAILED (failures=1, errors=1)

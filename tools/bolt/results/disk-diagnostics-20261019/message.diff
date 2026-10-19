@@ -1,0 +1,26 @@
+--- BASE message
++++ new message
+@@ -16,6 +16,11 @@
+ while adding these two files to the source package. --without clang_bolt
+ is available for local builds. Only enabled %build adds -d keeprsp. No
+ project configuration change is required.
++
++No disk-space thresholds are imposed; each stage records free space.
++If a step fails because its disk is full, stop before replacing the
++packaged clang and report current free space, estimated requirements
++and shortfall from actual file sizes measured in this build.
+ 
+ The binary Source is the existing profile v2, trained on 13 ARM plus 10
+ AArch64 source files. Compressed size 9,735,212 bytes; SHA256
+@@ -57,8 +62,9 @@
+ records, the pre-strip BOLT ELF, matching ordinary ELF, tool and profile
+ identities.
+ 
+-Still open: full release-mode build; accel/worker identity; first real
+-%install execution; cleanup cannot be guaranteed without matching /proc;
++Quickbuild x86_64 completed %install on this same implementation before
++the Source-order fix. Still open: full release-mode build; accel/worker
++identity; cleanup cannot be guaranteed without matching /proc;
+ performance outside LLVM workloads. ninja -j1 does not cap linker
+ memory. Maintenance notes: header of packaging/clang-bolt-helper.py
+ 

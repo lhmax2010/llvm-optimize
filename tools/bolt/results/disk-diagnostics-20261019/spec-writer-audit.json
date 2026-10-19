@@ -1,0 +1,272 @@
+[
+  {
+    "file": "packaging/llvm.spec",
+    "line": 411,
+    "source": "if BOLT_BUILD_OUTPUT=$(ninja -d keeprsp -j %{mlgo_build_jobs} 2>&1); then",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 459,
+    "source": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B %{SOURCE1201} run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 465,
+    "source": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B %{SOURCE1201} run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" --output \"$bolt_output\" -- \"$@\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 468,
+    "source": "python3 -B %{SOURCE1201} disk-report begin",
+    "handling": "best effort rc0"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 471,
+    "source": "%{?__bolt_disk_reporting:bolt_step ordinary-install }cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 475,
+    "source": "bolt_step preflight python3 -B %{SOURCE1201} preflight",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 476,
+    "source": "bolt_step certified python3 -B %{SOURCE1201} certified",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 481,
+    "source": "bolt_step snapshot python3 -B %{SOURCE1201} snapshot \"%{buildroot}\" \"$BOLT_WORK/install-before.json\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 482,
+    "source": "bolt_step manifest-copy cp install_manifest.txt \"$BOLT_WORK/install-manifest-before.txt\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 483,
+    "source": "bolt_step ordinary-copy cp -p bin/clang-22 \"$BOLT_WORK/ordinary-clang-22\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 484,
+    "source": "bolt_capture link-command \"$BOLT_WORK/link.original\" ninja -t commands -s bin/clang-22",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 485,
+    "source": "bolt_step unpack python3 -B %{SOURCE1201} unpack %{SOURCE1200} \"$BOLT_WORK/profile.fdata\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 486,
+    "source": "bolt_step configure cmake -S ../llvm -B .   '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt'   -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF   -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 489,
+    "source": "LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_capture tool-dry-run \"$BOLT_WORK/tool-dry-run.txt\" ninja -n llvm-bolt",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 491,
+    "source": "bolt_capture tool-plan \"$BOLT_WORK/tool-plan.json\" python3 -B %{SOURCE1201} tool-plan \"$BOLT_WORK/tool-dry-run.txt\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 492,
+    "source": "bolt_step tool-prepare python3 -B %{SOURCE1201} tool-prepare \"$PWD\" \"$BOLT_WORK/tool-plan.json\" \"$BOLT_WORK/tool-before.json\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 493,
+    "source": "LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-build \"$BOLT_WORK/tool-build.txt\" python3 -B %{SOURCE1201} run-step tool-build \"$BOLT_WORK/tool-build.txt\" --success-marker BOLT_NINJA_EXIT_0 -- ninja -j 1 llvm-bolt",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 494,
+    "source": "bolt_step tool-verify python3 -B %{SOURCE1201} tool-verify \"$PWD\" \"$BOLT_WORK/tool-plan.json\" \"$BOLT_WORK/tool-build.txt\"   \"$BOLT_WORK/tool-before.json\" \"$BOLT_WORK/tool-build-verification.json\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 495,
+    "source": "python3 -B %{SOURCE1201} disk-report tool-built",
+    "handling": "best effort rc0"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 496,
+    "source": "bolt_step pipeline python3 -B %{SOURCE1201} pipeline \"$PWD\" \"$BOLT_WORK\" \"$PWD/bin/llvm-bolt\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 498,
+    "source": "python3 -B %{SOURCE1201} disk-report pipeline",
+    "handling": "best effort rc0"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 501,
+    "source": "bolt_step compare-root python3 -B %{SOURCE1201} compare-root \"%{buildroot}\" \"$BOLT_WORK/install-before.json\"   \"$BOLT_WORK/install-after-pipeline.json\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 506,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-1 }ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 508,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-2 }ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 509,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-3 }ln -sf clang++ %{buildroot}%{_prefix}/bin/%{_host}-clang++",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 511,
+    "source": "%{?__bolt_disk_reporting:bolt_step clang-config /bin/sh -c 'cat >> \"$1\"' sh %{buildroot}/%{_prefix}/bin/clang.cfg}%{!?__bolt_disk_reporting:cat >> %{buildroot}/%{_prefix}/bin/clang.cfg} << EOF",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 515,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-4 }ln -sf clang.cfg %{buildroot}/%{_prefix}/bin/clang++.cfg",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 518,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-5 }mkdir -p %{buildroot}%{sdk_bin_dir}",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 519,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-6 }mkdir -p %{buildroot}%{sdk_lib_dir}",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 521,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-7 }mv %{buildroot}%{_prefix}/bin/lldb %{buildroot}%{sdk_bin_dir}",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 522,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-8 }mv %{buildroot}%{_prefix}/bin/lldb-argdumper %{buildroot}%{sdk_bin_dir}",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 523,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-9 }mv %{buildroot}%{_prefix}/bin/lldb-server %{buildroot}%{sdk_bin_dir}",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 525,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-10 }ln -sf %{sdk_bin_dir}/lldb %{buildroot}%{_prefix}/bin/",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 527,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-11 }cp -P %{buildroot}%{_libdir}/liblldb.so* %{buildroot}%{sdk_lib_dir}/",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 530,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-12 }mkdir -p %{buildroot}%{python3_sitelib}",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 531,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-13 }cp -a ../clang/bindings/python/clang %{buildroot}%{python3_sitelib}/",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 533,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-14 }rm -rf %{buildroot}%{_libdir}/debug/*",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 534,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-15 }rm -rf %{buildroot}/usr/lib/libear/*",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 535,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-16 }rm -rf %{buildroot}/usr/lib/libscanbuild/*",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 540,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-17 }rm -rf \"%{_builddir}/%{buildsubdir}/build/native-archive-conversion\"",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 541,
+    "source": "%{?__bolt_disk_reporting:bolt_step install-write-18 }python3 %{SOURCE1005} --root \"%{buildroot}\" \\",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 555,
+    "source": "if BOLT_INSTALL_OUTPUT=$(python3 -B %{SOURCE1201} install \"%{buildroot}\" \"$BOLT_WORK/clang.candidate\" \\",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 802,
+    "source": "    bolt_checked platform-post \"%{_builddir}/%{buildsubdir}/build/clang-bolt/platform-post.log\" python3 -B %{SOURCE1201} run-step platform-post \"%{_builddir}/%{buildsubdir}/build/clang-bolt/platform-post.log\" -- /bin/sh -e <<'BOLT_PLATFORM_POST' \\",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 805,
+    "source": "    bolt_checked post \"%{_builddir}/%{buildsubdir}/build/clang-bolt/post.log\" python3 -B %{SOURCE1201} run-step post \"%{_builddir}/%{buildsubdir}/build/clang-bolt/post.log\" -- python3 -B %{SOURCE1201} post \"%{buildroot}\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate\" --resource-dir \"%{buildroot}%{_libdir}/clang/%{llvm_version}\" \\",
+    "handling": "checked; failed step diagnostic then exit1"
+  },
+  {
+    "file": "packaging/llvm.spec",
+    "line": 807,
+    "source": "    python3 -B %{SOURCE1201} disk-report post",
+    "handling": "best effort rc0"
+  }
+]

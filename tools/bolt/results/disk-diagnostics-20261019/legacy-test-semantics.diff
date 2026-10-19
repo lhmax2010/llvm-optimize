@@ -1,0 +1,131 @@
+diff --git a/tools/bolt/test_bolt_helper.py b/tools/bolt/test_bolt_helper.py
+index 70bc5b9..bd0516d 100644
+--- a/tools/bolt/test_bolt_helper.py
++++ b/tools/bolt/test_bolt_helper.py
+@@ -245,13 +245,12 @@ class CacheTests(Base):
+         got=h.replay_script(EDGE,'out','dep').splitlines()[-1]
+         expected=EDGE[5:-5].replace('-o bin/clang-22 ',"-o 'out' ").replace('--dependency-file=tools/clang/tools/driver/CMakeFiles/clang.dir/link.d',"--dependency-file='dep'")+' -Wl,--emit-relocs'
+         self.assertEqual(got,expected)
+-    def test_large_cache_copy_rejected_before_any_copy(self):
++    def test_large_cache_copy_not_refused_by_free_space(self):
+         cache=self.d/'cache';cache.mkdir()
+         fake={'files':[], 'count':47770, 'bytes':98248402280, 'samples':{}}
+-        with patch.object(h,'cache_manifest',return_value=fake),patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':103902519296})()),patch.object(h.shutil,'copytree') as copy:
+-            with self.assertRaisesRegex(h.GateError,'SKIP_DISK'):h.cache_copy('--thinlto-cache-dir='+str(cache),self.d/'copy',self.d/'state.json')
+-            copy.assert_not_called()
+-        self.assertFalse((self.d/'copy').exists())
++        with patch.object(h,'cache_manifest',return_value=fake),patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':1})()),patch.object(h.shutil,'copytree') as copy:
++            h.cache_copy('--thinlto-cache-dir='+str(cache),self.d/'copy',self.d/'state.json')
++            copy.assert_called_once()
+     def test_no_cache(self):
+         with self.assertRaises(h.GateError):h.replay_script(EDGE.replace('--thinlto-cache-dir=/original/cache',''),'out','dep','cache')
+     def test_duplicate_cache(self):
+@@ -267,10 +266,10 @@ class CacheTests(Base):
+         with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':20*1024**3})()):
+             state=h.cache_copy('--thinlto-cache-dir='+str(cache),self.d/'copy',self.d/'copy.json')
+         self.assertEqual(state['before'],state['copied']);self.assertTrue(h.cache_unchanged(state))
+-    def test_disk_admission(self):
++    def test_cache_copy_has_no_disk_admission(self):
+         cache=self.d/'cache';cache.mkdir()
+         with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':1})()):
+-            with self.assertRaises(h.GateError):h.cache_copy('--thinlto-cache-dir='+str(cache),self.d/'copy',self.d/'copy.json')
++            self.assertEqual(h.cache_copy('--thinlto-cache-dir='+str(cache),self.d/'copy',self.d/'copy.json')['copied']['count'],0)
+ 
+ class StripTests(Base):
+     def strip(self,argv,log,**kw):
+@@ -332,28 +331,17 @@ class PackageTests(unittest.TestCase):
+         self.assertTrue(self.parse('release')['pass'])
+ 
+ class DiskTests(Base):
+-    def test_large_exact_floor(self):
+-        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':41*h.GIB})()):
+-            self.assertEqual(h.disk_preflight(self.d,11*h.GIB)['projected_free_bytes'],30*h.GIB)
+-    def test_large_one_byte_short(self):
+-        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':41*h.GIB-1})()):
+-            with self.assertRaisesRegex(h.GateError,'SKIP_DISK'):h.disk_preflight(self.d,11*h.GIB)
+-    def test_reserve_counts_against_floor(self):
+-        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':41*h.GIB})()):
+-            with self.assertRaises(h.GateError):h.disk_preflight(self.d,11*h.GIB,1)
+-    def test_exact_ten_gib_is_not_large(self):
+-        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':11*h.GIB})()):
+-            self.assertEqual(h.disk_preflight(self.d,10*h.GIB)['required_free_after_bytes'],h.GIB)
+-    def test_over_ten_gib_activates_floor(self):
+-        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':40*h.GIB})()):
+-            with self.assertRaises(h.GateError):h.disk_preflight(self.d,10*h.GIB+1)
+-    def test_small_write_still_needs_space(self):
+-        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':1})()):
+-            with self.assertRaises(h.GateError):h.disk_preflight(self.d,2)
+-    def test_negative_budget(self):
+-        with self.assertRaises(h.GateError):h.disk_preflight(self.d,-1)
+-    def test_nonexistent_destination_uses_existing_parent(self):
+-        self.assertGreaterEqual(h.disk_preflight(self.d/'new'/'dir',1)['free_before_bytes'],1)
++    def report(self,free=0,path=None):
++        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':free})()):
++            return h.disk_report('begin',build=self.d,work=path or self.d/'work')
++    def test_zero_free_does_not_reject(self):self.assertEqual(self.report()['free_bytes'],0)
++    def test_one_free_does_not_reject(self):self.assertEqual(self.report(1)['free_bytes'],1)
++    def test_large_free_records_exact_value(self):self.assertEqual(self.report(41*1024**3)['free_bytes'],41*1024**3)
++    def test_no_disk_admission_symbol(self):self.assertFalse(hasattr(h,'disk_preflight'))
++    def test_no_stage_budget_symbol(self):self.assertFalse(hasattr(h,'STAGE_WRITE_BUDGET'))
++    def test_no_floor_symbol(self):self.assertFalse(hasattr(h,'DISK_FLOOR'))
++    def test_records_are_written(self):self.report();self.assertTrue((self.d/'work/disk-begin.json').is_file())
++    def test_nonexistent_destination(self):self.assertEqual(self.report(0,self.d/'new'/'work')['free_bytes'],0)
+ 
+ class PipelineTests(Base):
+     def run_pipeline(self, failure=None, override=False):
+@@ -390,12 +378,9 @@ class PipelineTests(Base):
+         self.assertEqual(result['identity']['after_sha256'],h.digest(work/'clang.candidate'))
+         self.assertFalse((work/'lto-cache').exists());self.assertFalse((work/'strip-equivalence.json').exists())
+         return result
+-    def test_pipeline_disk_failure_stops_before_link(self):
+-        build=self.d/'build';build.mkdir();work=self.d/'work';work.mkdir()
+-        (work/'link.original').write_text(EDGE);(work/'ordinary-clang-22').write_bytes(b'ordinary')
+-        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':45*h.GIB})()),patch.object(h,'call') as command:
+-            with self.assertRaisesRegex(h.GateError,'SKIP_DISK'):h.pipeline(build,work,'bolt')
+-            command.assert_not_called()
++    def test_pipeline_has_no_disk_admission(self):
++        with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':0})()):
++            self.assertEqual(self.run_pipeline()['cache_policy'],'original-in-place')
+     def test_single_route_original_cache(self):self.assertEqual(self.run_pipeline()['cache_policy'],'original-in-place')
+     def test_explicit_copy_override(self):self.assertEqual(self.run_pipeline(override=True)['cache_policy'],'explicit-copy')
+     def test_matching_failure_stops(self):self.run_pipeline('rewrite')
+diff --git a/tools/bolt/test_fourth_review.py b/tools/bolt/test_fourth_review.py
+index 6130e68..eeb8172 100644
+--- a/tools/bolt/test_fourth_review.py
++++ b/tools/bolt/test_fourth_review.py
+@@ -70,10 +70,11 @@ class FourthPrereqTests(Base):
+             del h.os.waitid
+             with self.assertRaisesRegex(h.GateError,'missing.*waitid'):h.preflight()
+     def test_small_disk_pass(self):
+-        with patch.object(h.shutil,'disk_usage',return_value=SimpleNamespace(free=h.GIB+100)):
+-            self.assertEqual(h.disk_preflight(self.d,100)['projected_free_bytes'],h.GIB)
++        with patch.object(h.shutil,'disk_usage',return_value=SimpleNamespace(free=100)):
++            self.assertEqual(h.disk_report('begin',build=self.d,work=self.d/'work')['free_bytes'],100)
+     def test_small_disk_fail(self):
+-        with patch.object(h.shutil,'disk_usage',return_value=SimpleNamespace(free=h.GIB+99)),self.assertRaises(h.GateError):h.disk_preflight(self.d,100)
++        with patch.object(h.shutil,'disk_usage',return_value=SimpleNamespace(free=0)):
++            self.assertEqual(h.disk_report('begin',build=self.d,work=self.d/'work')['free_bytes'],0)
+     def test_profile_remedy(self):
+         p=self.d/'profile';p.write_text('wrong')
+         with self.assertRaisesRegex(h.GateError,'actual=.*expected=.*remedy: first verify the Source'):h.profile_identity(p)
+diff --git a/tools/bolt/test_fourth_review_b.py b/tools/bolt/test_fourth_review_b.py
+index 73a86fd..821b469 100644
+--- a/tools/bolt/test_fourth_review_b.py
++++ b/tools/bolt/test_fourth_review_b.py
+@@ -22,7 +22,15 @@ class FourthReviewBTests(unittest.TestCase):
+             self.assertIsInstance(module.body[0].value,ast.Constant)
+             module.body=module.body[1:]
+             return ast.dump(module,include_attributes=False)
+-        self.assertEqual(program(previous.read_text()),program(Path(h.__file__).read_text()))
++        self.assertEqual(program(previous.read_text()),program((Path(__file__).parent/'results/review4b-final-helper.py').read_text()))
++    def test_non_disk_gates_unchanged(self):
++        previous=ast.parse((Path(__file__).parent/'results/review4b-final-helper.py').read_text())
++        current=ast.parse(Path(h.__file__).read_text())
++        for name in ('ELF','security_properties','security_compare','match_counts','replay_script','tiny_gate','no_bolt_products','tool_prepare','tool_plan','tool_verify'):
++            with self.subTest(name=name):
++                a=next(n for n in previous.body if getattr(n,'name',None)==name)
++                b=next(n for n in current.body if getattr(n,'name',None)==name)
++                self.assertEqual(ast.dump(a,include_attributes=False),ast.dump(b,include_attributes=False))
+     def test_diagnostics_count_matches_preserved_warning_lines(self):
+         warnings=['ninja: warning: first','ninja: warning: second']
+         for body in ('ninja: no work to do.','[1/1] '+LINK):

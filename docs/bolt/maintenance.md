@@ -11,15 +11,16 @@
 |计划含未批准任务或不完整|完整 dry-run、CMake 配置、dirty 来源、规则与依赖图、是否仅见 Re-running CMake...|remedy: 查明普通任务或新增任务来源；必要时离线重生成描述集合并重新认证。禁止运行时自动扩白名单，也不在看不到真实计划时继续。|
 |匹配 R 或 S/N 超过5%|普通ELF/重链ELF、编译/链接配方、工具与profile身份、N/M/S/U/Q原文|remedy: 核对输入身份后重训 profile 或关闭 BOLT。禁止提高阈值、启用 infer-stale 或忽略失败。|
 
-其他门禁（安全属性、tiny、compare-root、post身份、TF归档SHA、磁盘/环境）失败均停止。错误保留实际值、期望值、日志路径与英文 remedy，不把准备错误或来源变化称作新的产品缺陷。
+其他门禁（安全属性、tiny、compare-root、post身份、TF归档SHA、环境）失败均停止；实际写入失败也停止，磁盘观测与诊断自身不作门禁。错误保留实际值、期望值、日志路径与英文 remedy，不把准备错误或来源变化称作新的产品缺陷。
 
 ## 运行前提与资源
 
 - Python >=3.9，且具有 os.waitid、waitstatus_to_exitcode、P_PID、WEXITED、WNOHANG、WNOWAIT、CLD_EXITED。先运行 helper preflight 和 certified，保存原文。
 - /proc 必须与执行命令的 PID 命名空间一致，进程组清理才有保证。BOLT_PROC_OK/MISSING 只作诊断，不是构建准入门禁；缺少匹配 /proc 时不能声称子孙进程清理已保证。
 - buildroot 的绝对路径不得包含 debug（不区分大小写）。这是 find-debuginfo 路径选择器的实测前提，须在任何 BOLT 动作前检查，不通过改平台宏或权限绕过。
-- disk-preflight 检查声明的写入上界、额外预留和写后剩余空间。单次计划写入 >10GiB，写后至少30GiB；<=10GiB，写后至少1GiB。16GiB默认BOLT阶段预算来自本地热缓存估计，不能当作冷缓存增长上限。必须把缓存增长和临时文件计入预算。
-- ninja -j1 只限制Ninja同时调度的任务数，不限制链接器内部并行或内存。当前本地重阶段16GiB/swap0，nice15/ionice3，入口MemAvailable>=12GiB，运行<3GiB终止；共享锁每段<=60分钟、等锁<=2小时。轻阶段4GiB，nice19/ionice3，入口>=6GiB。
+- 长期规则：发布代码不设磁盘空间门槛，只记录剩余空间；磁盘失败的诊断值必须在失败后由本次构建实际数据计算。profile、BOLT、clang 变化会改变用量，不能把旧预算当准入依据。disk-report 永远 rc0；disk-diagnose 只读 stdout，以本步骤 errno28/122 或四类日志文本判定，不以 free 大小判定。实际写入失败仍 rc1，原 clang 通过临时文件+SHA+最终 rename 保护。公式、降级与完整审计见27。
+- 长期规则：本地开发机的资源、锁、磁盘规则只约束本地操作，不得进入发布代码。本地单次 >10GiB 写入后保留 >=30GiB 仍适用，不能写入 helper/spec。
+- ninja -j1 只限制Ninja同时调度的任务数，不限制链接器内部并行或内存。以下仅约束本地开发操作：当前本地重阶段16GiB/swap0，nice15/ionice3，入口MemAvailable>=12GiB，运行<3GiB终止；共享锁每段<=60分钟、等锁<=2小时。轻阶段4GiB，nice19/ionice3，入口>=6GiB。
 - cmake/ninja/链接须保留原RPM环境前导（PATH及全部CFLAGS/CXXFLAGS/LDFLAGS等）。记录 PATH 和 which clang/clang++，避免 /bin 与 /usr/bin 路径拼写变化触发CMake删缓存。已禁用的原树不能用任何CMake/Ninja命令重新探测。
 
 ## 升级 LLVM 与重新认证

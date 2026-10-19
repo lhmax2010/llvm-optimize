@@ -288,3 +288,10 @@ gbs 实际导出已复现：旧506dc25的 Patch0–6处于 x86_64/BOLT 条件块
 当前源提交 `e2463165829cc91b0a1d60a3e0f915a587865f70`，父 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`；与 af82efed 的 tree 同为 `f82d94e9a69255e339187a2fb63c7df6989e6a49`，源码 diff 为空，五项解析认证直接沿用 af82efed。正文去掉标题后空白归一完全一致，标题42字符、全文每行≤72字符，文件路径仅在逗号后折行，Change-Id/Signed-off-by原样保留。作者/提交者Hao Lin，未改全局配置。
 
 指定租约af82efed更新bolt_pgo成功，推后为新提交，返回中没有warning；没有refs/for、QB操作或新分支。0000文本补丁仅更新元数据，diff载荷保持；完整cat-file、验证、远端原文见26末节与 tools/bolt/results/message-wrap-20261016。
+
+
+## 2026-10-19：去掉磁盘门槛，诊断与原子安装；发布暂停
+
+长期规则：发布代码不设磁盘空间门槛，只记录剩余空间；磁盘失败的诊断值必须在失败后由本次构建实际数据计算。本地开发机的资源、锁、磁盘规则只约束本地操作，不得进入发布代码。
+
+本地源 `e97171ff28b085a200ad1dbe69c1292e42b28ec7`（父67619ec8，Hao Lin/原Change-Id），BASE与远端仍e2463165。删除spec两处及helper五处磁盘准入、预算常量与CLI；四阶段disk-report永远rc0，disk-diagnose只读按本步骤errno/原文判磁盘，实际大小推算并明确未知/降级。25处显式检查或提交顺序加固，临时clang经SHA核对再最终rename。285测试PASS：ENOSPC、非磁盘、诊断自身异常、原clang保持、公式及非磁盘AST均覆盖。gbs export PASS；主机rpm4.18.2补充5/5 PASS，**不等于Tizen认证**。唯一图形密码认证失败，不重试；包装器未启动，Tizen4.14.1.1五项与真实tmpfs NOT RUN，因此sandbox未推。QB日志未收到；未操作QB/refs-for/新分支/保护树。完整审计、diff、原始失败与最终测试见[27](27_disk_diagnostics.md)，当前manifest明确sandbox_pushed=false。

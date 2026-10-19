@@ -1,0 +1,278 @@
+# These are package-owned measurement scopes, not admission limits.
+BOLT_OWNED_PATHS = ('clang-bolt/**', 'tools/bolt/**', 'lib64/libLLVMBOLT*.a',
+                    'bin/llvm-bolt', 'ThinLTO cache positive allocation delta')
+DISK_LOG_MATCHES = (r'No space left on device', r'Disk quota exceeded',
+                    r'\bENOSPC\b', r'\bEDQUOT\b')
+_DISK_CONTEXT = {}
+
+
+def disk_context(build=None, work=None, root=None):
+    build = Path(build or _DISK_CONTEXT.get('build') or os.environ.get('BOLT_BUILD') or Path.cwd()).absolute()
+    work = Path(work or _DISK_CONTEXT.get('work') or os.environ.get('BOLT_WORK') or build/'clang-bolt').absolute()
+    root = root or _DISK_CONTEXT.get('root') or os.environ.get('BOLT_INSTALL_ROOT')
+    return build, work, Path(root).absolute() if root else None
+
+
+def filesystem(path):
+    path = Path(path).absolute()
+    while not path.exists():
+        path = path.parent
+    if not path.is_dir():
+        path = path.parent
+    return {'path': str(path), 'device': path.stat().st_dev,
+            'free_bytes': shutil.disk_usage(path).free, 'time_ns': time.time_ns()}
+
+
+def disk_entries(root):
+    """lstat allocation, including directories; never follow symlinks."""
+    root = Path(root)
+    if not root.exists() and not root.is_symlink():
+        return {}
+    result = {}
+    def add(path):
+        s = path.lstat()
+        result[path.relative_to(root).as_posix()] = {
+            'device': s.st_dev, 'inode': s.st_ino, 'bytes': s.st_size,
+            'allocated_bytes': s.st_blocks*512, 'mode': s.st_mode}
+    add(root)
+    if root.is_dir() and not root.is_symlink():
+        def failed(error): raise error
+        for directory, dirs, files in os.walk(root, followlinks=False, onerror=failed):
+            for name in dirs+files:
+                add(Path(directory)/name)
+    return result
+
+
+def disk_cache(build, work):
+    edge = work/'link.original'
+    if edge.is_file():
+        matches = re.findall(r'--thinlto-cache-dir=([^\s]+)', edge.read_text())
+        if len(matches) == 1:
+            return Path(matches[0].strip("'\""))
+    return build/'lto.cache'
+
+
+def disk_measure(build, work, baseline=None):
+    scopes = [('work', work), ('tool_objects', build/'tools/bolt'),
+              ('tool_executable', build/'bin/llvm-bolt')]
+    scopes += [('tool_library', p) for p in sorted((build/'lib64').glob('libLLVMBOLT*.a'))]
+    owned = {}; groups = []; seen = set()
+    for category, path in scopes:
+        entries = disk_entries(path); allocated = logical = 0
+        for rel, item in entries.items():
+            key = (item['device'], item['inode'])
+            if key in seen: continue
+            seen.add(key); allocated += item['allocated_bytes']
+            if stat.S_ISREG(item['mode']): logical += item['bytes']
+            owned[str(path/rel)] = item
+        groups.append({'category': category, 'path': str(path),
+                       'allocated_bytes': allocated, 'logical_file_bytes': logical})
+    cache = disk_cache(build, work); current = disk_entries(cache)
+    old = (baseline or {}).get('cache_entries', {})
+    same_cache = baseline is not None and baseline.get('cache_path') == str(cache)
+    cache_delta = cache_logical = 0
+    if same_cache:
+        for rel, item in current.items():
+            previous = old.get(rel)
+            delta = item['allocated_bytes'] if previous is None else max(0, item['allocated_bytes']-previous['allocated_bytes'])
+            logical = item['bytes'] if previous is None else max(0, item['bytes']-previous['bytes'])
+            cache_delta += delta
+            if stat.S_ISREG(item['mode']): cache_logical += logical
+    per_device = collections.defaultdict(int)
+    for item in owned.values(): per_device[item['device']] += item['allocated_bytes']
+    if same_cache:
+        for rel, item in current.items():
+            previous = old.get(rel)
+            per_device[item['device']] += item['allocated_bytes'] if previous is None else max(0, item['allocated_bytes']-previous['allocated_bytes'])
+    return {'owned_paths': groups, 'owned_filesystem_bytes': dict(per_device),
+            'used_bytes': sum(per_device.values()), 'cache_path': str(cache),
+            'cache_entries': current, 'cache_delta_known': same_cache,
+            'cache_delta_allocated_bytes': cache_delta, 'cache_delta_logical_bytes': cache_logical,
+            'cache_net_allocation_delta_bytes': sum(x['allocated_bytes'] for x in current.values())-sum(x['allocated_bytes'] for x in old.values()) if same_cache else None}
+
+
+def disk_report(stage, build=None, work=None, root=None):
+    """Best effort only: no space-based decisions, and no propagated exception."""
+    value = {'stage': stage, 'time_ns': time.time_ns(), 'recorded': False}
+    try:
+        build, work, root = disk_context(build, work, root)
+        baseline_path = work/'disk-baseline.json'
+        baseline = None
+        if stage != 'begin' and baseline_path.is_file():
+            baseline = json.loads(baseline_path.read_text())
+        measured = disk_measure(build, work, baseline)
+        value.update(filesystem(work), build=str(build), work=str(work),
+                     root=str(root) if root else None, scopes=list(BOLT_OWNED_PATHS), **measured)
+        if stage == 'begin':
+            baseline = {'time_ns': value['time_ns'], 'cache_path': measured['cache_path'],
+                        'cache_entries': measured['cache_entries']}
+            save(baseline_path, baseline)
+        record = dict(value); record.pop('cache_entries', None); record['recorded'] = True
+        save(work/('disk-'+stage+'.json'), record)
+        value = record
+    except Exception as error:
+        value['report_error'] = str(error)
+    try: print('BOLT_DISK_REPORT '+json.dumps(value, ensure_ascii=False), flush=True)
+    except Exception: pass
+    return value
+
+
+def disk_evidence(log, error=None):
+    evidence = []; seen = set()
+    while error is not None and id(error) not in seen:
+        seen.add(id(error))
+        if isinstance(error, OSError) and error.errno in (28, 122):
+            evidence.append('errno='+str(error.errno))
+        error = error.__cause__ or error.__context__
+    try:
+        text = Path(log).read_text(errors='replace') if log and str(log) != '-' else ''
+        evidence += [pattern for pattern in DISK_LOG_MATCHES if re.search(pattern, text, re.I)]
+    except Exception: pass
+    return evidence
+
+
+def task_output(build, description):
+    for prefix in ('Building CXX object ', 'Linking CXX static library ', 'Linking CXX executable '):
+        if description.startswith(prefix): return build/description[len(prefix):]
+    if description == 'Generating VCSVersion.inc': return build/'tools/bolt/lib/Utils/VCSVersion.inc'
+    if description.startswith('Building CXX object '): return build/description.split('Building CXX object ', 1)[1]
+    return None
+
+
+def disk_prediction(build, work, root, measured, baseline, device):
+    formulas = []; unknown = []; growth = peak = 0
+    def file_size(path): return path.stat().st_size if path.is_file() else 0
+    def allocation(path): return path.stat().st_blocks*512 if path.is_file() else 0
+    def completed(log):
+        path = log.with_suffix(log.suffix+'.argv.json')
+        try:
+            value = json.loads(path.read_text())
+            return value.get('completed') is True and path.stat().st_mtime_ns >= baseline['time_ns']
+        except (OSError, ValueError): return False
+    def add(name, expected, present, destination, temporary=False):
+        nonlocal growth, peak
+        need = max(0, expected-present)
+        relevant = filesystem(destination)['device'] == device
+        formulas.append({'item': name, 'formula': 'max(expected_output_bytes - present_allocated_bytes, 0)',
+                         'expected_output_bytes': expected, 'present_allocated_bytes': present,
+                         'additional_bytes': need, 'temporary': temporary,
+                         'filesystem_device': filesystem(destination)['device']})
+        if relevant:
+            if temporary: peak = max(peak, growth+need)
+            else: growth += need; peak = max(peak, growth)
+    plan_path = work/'tool-plan.json'; tool_log = work/'tool-build.txt'
+    try:
+        plan = json.loads(plan_path.read_text()); descriptions = plan['descriptions']
+        done = []; previous = None
+        for line in tool_log.read_text(errors='replace').splitlines() if tool_log.is_file() else []:
+            match = re.fullmatch(r'\[\d+/\d+\] (.+)', line)
+            if match:
+                previous = match[1]
+                if previous in descriptions and previous not in done: done.append(previous)
+            elif line.startswith('FAILED:') and previous in done: done.remove(previous)
+        outputs = [task_output(build, d) for d in done]
+        if any(p is None or not p.is_file() for p in outputs):
+            unknown.append('some completed tool tasks have no measurable output')
+        elif done:
+            total = sum(file_size(p) for p in set(outputs)); remaining = len(descriptions)-len(done)
+            predicted = (total*remaining+len(done)-1)//len(done)
+            partial = sum(allocation(p) for d in descriptions if d not in done for p in [task_output(build,d)] if p is not None)
+            formulas.append({'item': 'tool-build', 'formula': 'ceil(completed_output_bytes / completed_tasks * remaining_tasks)',
+                             'completed_output_bytes': total, 'completed_tasks': len(done),
+                             'remaining_tasks': remaining, 'predicted_output_bytes': predicted})
+            add('tool-build remaining', predicted, partial, build)
+        elif descriptions: unknown.append('tool completed_tasks=0: no measured per-task size; cannot divide by zero')
+    except (OSError, ValueError, KeyError, TypeError): unknown.append('tool plan unavailable; no fabricated tool budget')
+    ordinary = work/'ordinary-clang-22'; source = build/'bin/clang-22'
+    ordinary_size = file_size(source) or file_size(ordinary)
+    if not ordinary_size: unknown.append('ordinary-clang-22 size unavailable')
+    formulas.append({'item': 'ordinary-input', 'formula': 'actual ordinary clang file size',
+                     'build_clang_bytes': file_size(source), 'saved_ordinary_bytes': file_size(ordinary)})
+    add('ordinary-copy', ordinary_size, allocation(ordinary), work)
+    reference = work/'reference-relocs-clang-22'; rewritten = work/'clang.bolt'; candidate = work/'clang.candidate'
+    relink_size = max(ordinary_size, file_size(reference))
+    if not completed(work/'reference-relocs.log'):
+        formulas.append({'item':'relink-size', 'formula':'max(ordinary_bytes, observed_reference_bytes)',
+                         'ordinary_bytes':ordinary_size, 'observed_reference_bytes':file_size(reference)})
+        add('relink', relink_size, allocation(reference), work)
+    reference_size = file_size(reference) or relink_size
+    if not completed(work/'reference-strip.log'):
+        add('strip-debug temporary', reference_size, 0, work, temporary=True)
+    rewrite_size = file_size(rewritten) if completed(work/'rewrite/bolt.log') else max(reference_size, file_size(rewritten))
+    if not completed(work/'rewrite/bolt.log'):
+        formulas.append({'item':'rewrite-size', 'formula':'max(observed_input_bytes, observed_partial_output_bytes)',
+                         'observed_input_bytes':reference_size, 'observed_partial_output_bytes':file_size(rewritten)})
+        add('BOLT rewrite', rewrite_size, allocation(rewritten), work)
+    if not completed(work/'identity.strip.log'):
+        predicted_candidate = max(rewrite_size, file_size(candidate))
+        add('strip-all candidate copy', predicted_candidate, allocation(candidate), work)
+        add('strip-all temporary', predicted_candidate, 0, work, temporary=True)
+    install_size = file_size(candidate) or rewrite_size
+    if root:
+        entity = root/'usr/bin/clang-22'
+        try: installed = file_size(candidate)>0 and digest(entity)==digest(candidate)
+        except OSError: installed=False
+        if not installed:
+            add('atomic install temporary', install_size, allocation(entity.with_name('.clang-bolt.new')), entity.parent, temporary=True)
+    cache_delta = measured['cache_delta_allocated_bytes']
+    formulas.append({'item':'ThinLTO observed cache allocation', 'formula':'sum(max(current_allocation - baseline_allocation, 0)) per retained cache entry; new entries use current allocation',
+                     'observed_bytes':cache_delta, 'already_in_used_bytes':True,
+                     'additional_prediction_bytes':0, 'note':'Observed growth is retained once; future unobserved cache growth cannot be predicted from file sizes.'})
+    if not measured['cache_delta_known']: unknown.append('cache baseline path mismatch')
+    return {'estimated_remaining_bytes':peak, 'estimated_total_bytes':measured['owned_filesystem_bytes'].get(device,0)+peak,
+            'formulas':formulas, 'incomplete_estimate':bool(unknown), 'unknown_components':unknown,
+            'requirement_scope':'failure filesystem, retained outputs plus peak temporary allocation; lower bound when components are unknown'}
+
+
+def disk_diagnose(step, log, error=None, build=None, work=None, root=None):
+    """Read-only, failure evidence only; failures here never replace the error."""
+    cause = 'disk' if disk_evidence(log, error) else 'not-disk'
+    value = {'cause': cause, 'step': step, 'free_bytes': None}
+    try:
+        build, work, root = disk_context(build, work, root)
+        target = root/'usr/bin' if root and step == 'install' else work
+        value.update(free_bytes=filesystem(target)['free_bytes'])
+        if cause == 'disk':
+            value.update(filesystem_device=filesystem(target)['device'],
+                         evidence=disk_evidence(log,error),
+                         estimate_note='估计值，依据本次构建实际文件大小')
+            baseline = None
+            try: baseline=json.loads((work/'disk-baseline.json').read_text())
+            except (OSError, ValueError): pass
+            measured = disk_measure(build,work,baseline)
+            device=value['filesystem_device']
+            value['used_bytes']=measured['owned_filesystem_bytes'].get(device,0)
+            if baseline is None:
+                value.update(degraded='records unavailable: only current free and owned allocation are reliable')
+            else:
+                value.update(disk_prediction(build,work,root,measured,baseline,device))
+                value['shortfall_bytes']=max(0,value['estimated_remaining_bytes']-value['free_bytes'])
+    except Exception as failure:
+        if cause == 'disk':
+            value['degraded']=str(failure)
+    try: print('BOLT_DISK_DIAGNOSIS '+json.dumps(value,ensure_ascii=False),flush=True)
+    except Exception: pass
+    return value
+
+
+def diagnose_safely(step, log, error=None):
+    try: return disk_diagnose(step,log,error)
+    except Exception: return None
+
+
+def run_step(step, log, argv, output=None, success_marker=None):
+    os.environ['BOLT_STEP_LOG'] = str(log)
+    try:
+        text = call(argv,log,timeout=None)
+        if success_marker:
+            with Path(log).open('a') as stream:
+                stream.write(success_marker+'\n');stream.flush();os.fsync(stream.fileno())
+            text += success_marker+'\n'
+        if output: atomic_text(output,text)
+        print(text,end='',flush=True)
+        return {'step':step,'log':str(log),'output':str(output) if output else None}
+    except BaseException as error:
+        # Preserve the failed command's actual output even when its exit is nonzero.
+        try: print(Path(log).read_text(errors='replace'),end='',flush=True)
+        except Exception: pass
+        raise

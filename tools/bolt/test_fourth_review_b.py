@@ -22,7 +22,15 @@ class FourthReviewBTests(unittest.TestCase):
             self.assertIsInstance(module.body[0].value,ast.Constant)
             module.body=module.body[1:]
             return ast.dump(module,include_attributes=False)
-        self.assertEqual(program(previous.read_text()),program(Path(h.__file__).read_text()))
+        self.assertEqual(program(previous.read_text()),program((Path(__file__).parent/'results/review4b-final-helper.py').read_text()))
+    def test_non_disk_gates_unchanged(self):
+        previous=ast.parse((Path(__file__).parent/'results/review4b-final-helper.py').read_text())
+        current=ast.parse(Path(h.__file__).read_text())
+        for name in ('ELF','security_properties','security_compare','match_counts','replay_script','tiny_gate','no_bolt_products','tool_prepare','tool_plan','tool_verify'):
+            with self.subTest(name=name):
+                a=next(n for n in previous.body if getattr(n,'name',None)==name)
+                b=next(n for n in current.body if getattr(n,'name',None)==name)
+                self.assertEqual(ast.dump(a,include_attributes=False),ast.dump(b,include_attributes=False))
     def test_diagnostics_count_matches_preserved_warning_lines(self):
         warnings=['ninja: warning: first','ninja: warning: second']
         for body in ('ninja: no work to do.','[1/1] '+LINK):

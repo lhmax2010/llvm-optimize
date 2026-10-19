@@ -70,10 +70,11 @@ class FourthPrereqTests(Base):
             del h.os.waitid
             with self.assertRaisesRegex(h.GateError,'missing.*waitid'):h.preflight()
     def test_small_disk_pass(self):
-        with patch.object(h.shutil,'disk_usage',return_value=SimpleNamespace(free=h.GIB+100)):
-            self.assertEqual(h.disk_preflight(self.d,100)['projected_free_bytes'],h.GIB)
+        with patch.object(h.shutil,'disk_usage',return_value=SimpleNamespace(free=100)):
+            self.assertEqual(h.disk_report('begin',build=self.d,work=self.d/'work')['free_bytes'],100)
     def test_small_disk_fail(self):
-        with patch.object(h.shutil,'disk_usage',return_value=SimpleNamespace(free=h.GIB+99)),self.assertRaises(h.GateError):h.disk_preflight(self.d,100)
+        with patch.object(h.shutil,'disk_usage',return_value=SimpleNamespace(free=0)):
+            self.assertEqual(h.disk_report('begin',build=self.d,work=self.d/'work')['free_bytes'],0)
     def test_profile_remedy(self):
         p=self.d/'profile';p.write_text('wrong')
         with self.assertRaisesRegex(h.GateError,'actual=.*expected=.*remedy: first verify the Source'):h.profile_identity(p)

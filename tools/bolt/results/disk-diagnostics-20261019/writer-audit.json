@@ -1,0 +1,429 @@
+[
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 119,
+    "function": "atomic_text",
+    "source": "path.parent.mkdir(parents=True, exist_ok=True)",
+    "handling": "strict length/flush/fsync then atomic rename; errors retain original exception; temporary cleanup best effort"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 122,
+    "function": "atomic_text",
+    "source": "tmp.open('w',encoding='utf-8')",
+    "handling": "strict length/flush/fsync then atomic rename; errors retain original exception; temporary cleanup best effort"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 123,
+    "function": "atomic_text",
+    "source": "stream.write(text)",
+    "handling": "strict length/flush/fsync then atomic rename; errors retain original exception; temporary cleanup best effort"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 124,
+    "function": "atomic_text",
+    "source": "os.fsync(stream.fileno())",
+    "handling": "strict length/flush/fsync then atomic rename; errors retain original exception; temporary cleanup best effort"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 125,
+    "function": "atomic_text",
+    "source": "os.replace(tmp,path)",
+    "handling": "strict length/flush/fsync then atomic rename; errors retain original exception; temporary cleanup best effort"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 130,
+    "function": "atomic_text",
+    "source": "tmp.unlink()",
+    "handling": "failure cleanup only; suppress cleanup error to preserve primary rc1"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 136,
+    "function": "save",
+    "source": "atomic_text(path, json.dumps(value, ensure_ascii=False, indent=2)+'\\n')",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 199,
+    "function": "call",
+    "source": "log.parent.mkdir(parents=True, exist_ok=True)",
+    "handling": "parent checked writes/flush/fsync; kill and reap process group before error rc1"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 207,
+    "function": "call",
+    "source": "save(log.with_suffix(log.suffix+'.argv.json'), invocation)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 208,
+    "function": "call",
+    "source": "log.open('wb')",
+    "handling": "parent checked writes/flush/fsync; kill and reap process group before error rc1"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 217,
+    "function": "call",
+    "source": "output.write(chunk)",
+    "handling": "parent checked writes/flush/fsync; kill and reap process group before error rc1"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 230,
+    "function": "call",
+    "source": "os.fsync(output.fileno())",
+    "handling": "parent checked writes/flush/fsync; kill and reap process group before error rc1"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 235,
+    "function": "call",
+    "source": "save(log.with_suffix(log.suffix+'.argv.json'), dict(invocation,completed=True,rc=0))",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 273,
+    "function": "profile_unpack",
+    "source": "output.parent.mkdir(parents=True, exist_ok=True)",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 275,
+    "function": "profile_unpack",
+    "source": "output.open('xb')",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 276,
+    "function": "profile_unpack",
+    "source": "shutil.copyfileobj(src, dst, 1024 * 1024)",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 280,
+    "function": "profile_unpack",
+    "source": "output.unlink()",
+    "handling": "failure cleanup only; suppress cleanup error to preserve primary rc1"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 522,
+    "function": "tiny_gate",
+    "source": "work.mkdir(parents=True, exist_ok=True)",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 523,
+    "function": "tiny_gate",
+    "source": "source.write_text(TINY)",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 525,
+    "function": "tiny_gate",
+    "source": "call([cc, '--version'], work/(label+'-version.log'), timeout=30)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 533,
+    "function": "tiny_gate",
+    "source": "out.unlink()",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 534,
+    "function": "tiny_gate",
+    "source": "call(argv, work/(triple+'-'+label+'.log'), cwd=work, timeout=60)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 537,
+    "function": "tiny_gate",
+    "source": "shutil.copyfile(out, dest)",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 540,
+    "function": "tiny_gate",
+    "source": "save(work/'result.json', rows)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 579,
+    "function": "compare_root",
+    "source": "save(after_path, current)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 645,
+    "function": "install_candidate",
+    "source": "shutil.copyfile(candidate,tmp)",
+    "handling": "staged copy, mode/fsync/SHA; state and staged aliases before final clang rename; failure preserves old clang"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 646,
+    "function": "install_candidate",
+    "source": "tmp.chmod(stat.S_IMODE(st.st_mode))",
+    "handling": "staged copy, mode/fsync/SHA; state and staged aliases before final clang rename; failure preserves old clang"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 647,
+    "function": "install_candidate",
+    "source": "os.fsync(stream.fileno())",
+    "handling": "staged copy, mode/fsync/SHA; state and staged aliases before final clang rename; failure preserves old clang"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 654,
+    "function": "install_candidate",
+    "source": "link.symlink_to('clang-22')",
+    "handling": "staged copy, mode/fsync/SHA; state and staged aliases before final clang rename; failure preserves old clang"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 658,
+    "function": "install_candidate",
+    "source": "save(state,result)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 660,
+    "function": "install_candidate",
+    "source": "os.replace(link,path)",
+    "handling": "staged copy, mode/fsync/SHA; state and staged aliases before final clang rename; failure preserves old clang"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 661,
+    "function": "install_candidate",
+    "source": "os.replace(tmp,entity)",
+    "handling": "staged copy, mode/fsync/SHA; state and staged aliases before final clang rename; failure preserves old clang"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 665,
+    "function": "install_candidate",
+    "source": "path.unlink()",
+    "handling": "failure cleanup only; suppress cleanup error to preserve primary rc1"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 717,
+    "function": "rewrite",
+    "source": "work.mkdir(parents=True, exist_ok=True)",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 719,
+    "function": "rewrite",
+    "source": "call([bolt, '--version'], work/'bolt-version.log')",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 722,
+    "function": "rewrite",
+    "source": "call(argv, work/'bolt.log', timeout=1800)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 732,
+    "function": "rewrite",
+    "source": "save(work/'rewrite-result.json', result)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 793,
+    "function": "tool_prepare",
+    "source": "save(state_path, value)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 942,
+    "function": "disk_report",
+    "source": "save(baseline_path, baseline)",
+    "handling": "best effort observation rc0"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 944,
+    "function": "disk_report",
+    "source": "save(work/('disk-'+stage+'.json'), record)",
+    "handling": "best effort observation rc0"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1148,
+    "function": "run_step",
+    "source": "call(argv,log,timeout=None)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1150,
+    "function": "run_step",
+    "source": "Path(log).open('a')",
+    "handling": "checked marker length/flush/fsync; errors rc1 and original transcript preserved"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1151,
+    "function": "run_step",
+    "source": "os.fsync(stream.fileno())",
+    "handling": "checked marker length/flush/fsync; errors rc1 and original transcript preserved"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1151,
+    "function": "run_step",
+    "source": "stream.write(success_marker+'\\n')",
+    "handling": "checked marker length/flush/fsync; errors rc1 and original transcript preserved"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1153,
+    "function": "run_step",
+    "source": "atomic_text(output,text)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1169,
+    "function": "pipeline",
+    "source": "atomic_text(script,replay_script(edge,reference,work/'reference-relocs.d',cache))",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1170,
+    "function": "pipeline",
+    "source": "call(['/bin/sh',str(script)],work/'reference-relocs.log',cwd=build,timeout=1800)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1171,
+    "function": "pipeline",
+    "source": "call([str(build/'bin/llvm-strip'),'--strip-debug',str(reference)],work/'reference-strip.log',timeout=600)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1179,
+    "function": "pipeline",
+    "source": "save(work/'pipeline-result.json',result)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1205,
+    "function": "cache_copy",
+    "source": "destination.parent.mkdir(parents=True, exist_ok=True)",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1206,
+    "function": "cache_copy",
+    "source": "shutil.copytree(source, destination, copy_function=shutil.copy2)",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1211,
+    "function": "cache_copy",
+    "source": "save(result, value)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1243,
+    "function": "strip_all",
+    "source": "shutil.copy2(before, after)",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1244,
+    "function": "strip_all",
+    "source": "call([str(tool), '--strip-all', str(after)], Path(result).with_suffix('.strip.log'), timeout=600)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1249,
+    "function": "strip_all",
+    "source": "save(result, identity)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1356,
+    "function": "main",
+    "source": "save(a.result,result)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1362,
+    "function": "main",
+    "source": "save(a.result,result)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1366,
+    "function": "main",
+    "source": "Path(a.script).chmod(0o755)",
+    "handling": "fail-closed: uncaught error reaches cli rc1; diagnostic does not override error"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1366,
+    "function": "main",
+    "source": "atomic_text(a.script,script)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1369,
+    "function": "main",
+    "source": "save(a.output,result)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  },
+  {
+    "file": "packaging/clang-bolt-helper.py",
+    "line": 1375,
+    "function": "main",
+    "source": "save(Path(a.work)/'post-result.json',result)",
+    "handling": "atomic/checked writer; exception propagates to rc1 before candidate commit"
+  }
+]
