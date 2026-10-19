@@ -147,3 +147,10 @@ sandbox/lhmax2025/bolt_pgo远端由cb67996861d070d68fec2b4c623eed7d20ba2e23更�
 ## 2026-10-19：无磁盘门槛的本地草案（未推 sandbox）
 
 285本地测试与gbs export PASS；唯一一次图形密码失败，Tizen4.14.1.1五项认证及真实tmpfs写满NOT RUN，远端仍e2463165。完整源码/说明diff、写入审计、所有早期与最终测试原文及诊断见[27](27_disk_diagnostics.md)。新材料钉提交 `67b022739befcee5f2d671246d9382498e28385a`，137项，分支与固定raw见[21](10_raw_links_part21.md)、[22](10_raw_links_part22.md)、[23](10_raw_links_part23.md)、[24](10_raw_links_part24.md)、[25](10_raw_links_part25.md)。
+
+
+## 2026-10-19：收窄修订全部PASS，sandbox已更新
+
+源 `9e5675f57d122549997caffa39b655dfefc46fee`（直接amend e246，父676），唯一bolt_pgo已按e246精确租约更新并推后核对。289测试、基线构建/安装/平台链逐字节比较、sh-e诊断后rc1、Tizen4.14.1.1五项解析全部PASS。一次图形认证、下层前后不变；没有QB/refs-for/新分支操作。完整spec diff、撤回清单、unknown原文及推送原文见27末节。
+
+全部164项材料钉于 `c93f17f335fab1334f98c471a34dc3776e6b31f7`，分支与固定raw见[26](10_raw_links_part26.md)、[27](10_raw_links_part27.md)、[28](10_raw_links_part28.md)、[29](10_raw_links_part29.md)、[30](10_raw_links_part30.md)、[31](10_raw_links_part31.md)。推送前304 raw核验PASS；收尾328 URL核验PASS，其中STATUS分支初次HTTP200为旧缓存，原URL以no-cache重验通过。初次与重验原文随本索引提交公开于tools/bolt/results/narrow-disk-20261019/closing-verification-initial.json、status-cache-check.json和closing-verification.json，未把缓存延迟当作产品门禁失败。
