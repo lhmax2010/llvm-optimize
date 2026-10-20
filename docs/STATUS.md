@@ -4,7 +4,7 @@
 
 **长期署名规则（2026-10-15 PM 裁决，优先于历史署名约定）**：作者、提交者及 Signed-off-by 使用本机全局身份 `liushanshan <ss0217.liu@samsung.com>`，或显式使用 `Hao Lin <hao.lin@samsung.com>`；任何后续提交、提交说明和交付文档均不再使用旧别名。不修改全局 Git 配置。详见 §4。
 
-**当前任务（内网可续传源码包）停止：STOP_EXPORT_NATIVE_FALLBACK**。按要求新建 depth=50 浅克隆，补 upstream 和 upstream/22.1.8 tag，HEAD 6e9d4f2b、tree 80a6fd23、origin URL 与干净状态全部 PASS。但唯一一次 GBS export 因 HEAD 与 origin/upstream 在浅历史中无共同祖先而自动 native；实际 spec SHA `a6008e338c390322f4eed84b08ae46b042aca866a2763647d4b862c97995eebd`，不等于指定 `1da77fe8…`，8 个生成 patch 全缺失。上轮完整克隆相同 refs 可找到共同祖先 f2ccf801…，本轮 tag 的可达性不能替代 GBS 分支祖先检查。按第 2 步停止，不自行加深历史/改导出规则。**Release/tag 未创建，整包未生成，0 片（无各片 SHA），回下与再次 export 未执行，下载脚本未交付**；不是 GitHub 登录问题。只提交 [内网源码包停止报告](llvm_optimize_intranet_fetch.md) 与本 STATUS；项目锁和 scope 已回收，无构建、Gerrit push 或 BOLT 资产访问。
+**当前任务（内网源码包续做）停止：STOP_PATCH_BYTES_DIFFER**。按用户裁决删除浅克隆的本地 origin/upstream 引用，建立 local upstream 指向标签提交 ca7933e4；merge-base、HEAD 6e9d4f2b、tree 80a6fd23、origin 和干净状态 PASS。一次原参数 GBS export 不再 native，spec SHA 1da77fe8… 同字节；但 8 个 patch 均不同，仅 29 行 index 对象 ID 从参考 12 位缩为浅克隆 9 位，其余字节相同，严格门禁仍 FAIL。按规则停止，不改导出选项、不加深、不重试。完整克隆只读测量 f2ccf801..HEAD / ..origin/upstream 分别 59,531 / 401 提交、842,118 / 4,520 对象，当前存储大小 1,084,457,989 / 4,713,417 B（不是下载或独立打包体积）。**Release/tag 未创建，整包未生成、0 片，第 6 步回下及再导出未执行，下载脚本未交付**。详见[本轮报告](llvm_optimize_intranet_fetch.md)；上轮 native 停止记录保留于 7bab0df。只提交报告和 STATUS，锁/scope 已回收，未构建、未推 Gerrit、未访问 BOLT 资产。
 
 **上一任务（统一混合 sandbox + 指南 v3）A/B 完成，待服务器构建**：Gerrit 仅创建 `sandbox/lhmax2025/llvm_optimize`，提交 `6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2`，tree `80a6fd231c4564a3b762f4ec288cf2c41f9d2e20`，parent `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`，Change-Id `I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06`。原补丁 SHA 30e90aa3… 不变，作者/提交者 Hao Lin；远端分支原先不存在，唯一 push 后回读及新克隆身份 PASS，GBS 导出的 8 条 Patch/8 条 %patch 全部无条件。指南 v3 改为只读检出统一分支，移除本机资源规则，给出真实 GBS 测试根准备及两个 accel RPM 合并解包/本地 emul 闭合方法；归档按对照 RPM 路径清单比较。B5 重建触发机制证据不足，已明确需向 QB 管理员确认。补丁和 188 目标期望表未改；未构建、未推 refs/for、未访问 BOLT 资产/交接树；用户 gbs_llvm.conf 修改保留。见 [指南 v3](52_hybrid_link_validation.md)、[分支/导出/清单证据](52_hybrid_sandbox_evidence/README.md)。
 
@@ -131,7 +131,9 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 ## 2. 进度
 
-2026-10-20｜本提交（父9a458b6）｜docs/llvm_optimize_intranet_fetch.md、STATUS｜浅克隆身份 PASS，GBS 因浅历史祖先检查退回 native，spec/8 patch 导出一致性 FAIL；按规则停止，无包/切片/Release/回下验证，原始证据 temp/llvm-optimize-intranet-20261020/。
+2026-10-20｜本提交（父7bab0df；git log -1 -- docs/llvm_optimize_intranet_fetch.md）｜docs/llvm_optimize_intranet_fetch.md、STATUS｜本地 upstream/tag 与 merge-base PASS；export 不再 native、spec 同字节，8 patch 的 29 行 index 缩写差异导致严格门禁 FAIL；停止打包/Release，完成指定两范围只读体积测量，未加深或重试。
+
+2026-10-20｜7bab0df（父9a458b6）｜docs/llvm_optimize_intranet_fetch.md、STATUS｜浅克隆身份 PASS，GBS 因浅历史祖先检查退回 native，spec/8 patch 导出一致性 FAIL；按规则停止，无包/切片/Release/回下验证，原始证据 temp/llvm-optimize-intranet-20261020/。
 
 2026-10-19｜9a458b6（父8eb5b0a）；Gerrit sandbox 6e9d4f2b｜docs/52_hybrid_link_validation.md、52_hybrid_sandbox_evidence/、STATUS｜统一分支创建/回读/tree/parent/export PASS，指南 v3 六项修订完成；补丁与期望表未改，188/188 自检及 21 测试 PASS；无构建、无评审推送。
 
@@ -292,7 +294,8 @@ docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，�
 
 ## 3. 已闭合结论
 
-- **硬证据，2026-10-20 浅历史导出边界**：同一 HEAD 6e9d4f2b、origin/upstream aadaa00d、22.1.8 tag 解引用 ca7933e4，本次浅克隆 `merge-base HEAD origin/upstream` exit1/空输出，旧完整克隆 exit0/f2ccf80136a01ca69f766becafb329db6c54c0c8；两者 HEAD 与 tag 均可找到 ca7933e4。GBS cmd_export.py:165–172 因分支祖先检查失败切 native，导出退出0不代表标准补丁门禁通过。证据：temp/llvm-optimize-intranet-20261020/{ancestry-diagnosis.json,first-export.log,export-gate-final.json,export-spec.diff}；报告 §2–§3。
+- **硬证据，2026-10-20 续做导出差异**：local upstream 与 merge-base 均 ca7933e4；标准 export 不含 native，spec 1da77fe8… 全同，8 patch 仅 29 行 index 的两端 ID 各由 12 位缩为 9 位（共少174 B），其余字节相同。不能据此替代逐字节门禁，仍 FAIL；未改 core.abbrev 或重试。完整克隆两范围提交数/对象尺寸见报告 §4；尺寸是当前对象表示，非下载预算。证据 temp/llvm-optimize-intranet-20261020/{resume-upstream-identity.json,tag-export-comparison.json,tag-export-full.diff,resume-export-gate.json,full-history-measurement.json}。
+- **硬证据，2026-10-20 浅历史导出边界**：同一 HEAD 6e9d4f2b、origin/upstream aadaa00d、22.1.8 tag 解引用 ca7933e4，本次浅克隆 `merge-base HEAD origin/upstream` exit1/空输出，旧完整克隆 exit0/f2ccf80136a01ca69f766becafb329db6c54c0c8；两者 HEAD 与 tag 均可找到 ca7933e4。GBS cmd_export.py:165–172 因分支祖先检查失败切 native，导出退出0不代表标准补丁门禁通过。证据：temp/llvm-optimize-intranet-20261020/{ancestry-diagnosis.json,first-export.log,export-gate-final.json,export-spec.diff}；历史报告 7bab0df §2–§3。
 
 - **硬证据，2026-10-19 统一分支**：Gerrit `refs/heads/sandbox/lhmax2025/llvm_optimize` 已为 `6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2`；parent 67619ec8、tree 80a6fd23、Change-Id I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06，作者/提交者 Hao Lin。新克隆同身份且干净；GBS patch-export 的 8 条 Patch 声明与 8 条 %patch 均不在条件块内。证据：52_hybrid_sandbox_evidence/{a1-identity,a3-fresh-clone-identity,a3-export-conditions}.json；不等于新源码完整构建 PASS。
 - **硬证据，v3 对照清单**：对照 1199098 的 llvm-static-devel-22.1.8-3.1.x86_64 RPM 重下载 SHA d20ac388… 与原 fetch_manifest:66 一致，rpm -qpl 生成逐路径归档表 SHA da78f24c…；指南不再以固定数量代替清单一致。证据：52_hybrid_sandbox_evidence/baseline-static-devel-provenance.json、expected-static-devel-archives.txt。
@@ -544,6 +547,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 4. 人工裁决前提
 
+- **2026-10-20 内网源码续做裁决**：允许删浅克隆本地 refs/remotes/origin/upstream，并将 local upstream 指向 upstream/22.1.8 标签提交 ca7933e4；不加深历史，仍以 spec 与 8 patch 逐字节相同为发布前提。该本地分支只供 GBS 祖先检查，不要 fetch 覆盖；以后只拉 sandbox 分支。若失败，只读测量完整克隆 f2ccf801 两侧提交数/对象体积。下载脚本未来须新增 UPSTREAM OK 并在回下仓库再导出同字节；本轮门禁失败，后续未执行。
 - **2026-10-20 内网源码交付**：用户指定 depth=50 clone/fetch 与固定 HEAD/tree/origin；标准 GBS 导出 spec 和 8 patch 必须与上轮同字节，不同即停止、不打包。仅通过后才允许只打包 .git、100M 切片，并用 gh 创建 GitHub Release/tag `src-llvm-optimize-6e9d4f2`；不得大文件入分支、不推 Gerrit、不新增远端分支。本轮在导出门禁失败，发布授权的前提未满足；未自行改深度或选其他上游。下载脚本须实物 URL/大小/SHA 与回下验证支撑，失败时只交停止记录，不编造可用脚本。
 
 - **2026-10-19 长期有效：混合链接单分支规则**：Gerrit 只使用 `sandbox/lhmax2025/llvm_optimize` 这一个混合链接 sandbox，以后仅在该分支更新，不再新建其他 sandbox；BOLT 分支及其资产不属于本线。此次用户明确授权创建该 heads 分支，不是 refs/for 评审提交。原补丁和期望表冻结，作者/提交者按本轮要求用 `git -c` 指定 Hao Lin，全局配置不改。组员只读克隆、直接在 QB 选择统一分支，不提交、不推送；取代 v2 的个人 sandbox 流程。
@@ -671,7 +675,7 @@ v2修订阶段新增证据：docs/32 §1–§2、`temp/archive-fix-v2-20260929/f
 
 ## 5. 挂账
 
-- **内网源码包**：计划 Release/tag `src-llvm-optimize-6e9d4f2` 尚未创建，无下载地址、整包/切片摘要或回下结果。需先裁决浅历史与 GBS upstream 祖先检查的兼容处理，再重新执行导出比对；当前浅克隆原件/失败导出与日志保留，未打包，不建议发送给用户冒充已验证交付物。报告 docs/llvm_optimize_intranet_fetch.md。
+- **内网源码包**：Release/tag `src-llvm-optimize-6e9d4f2` 仍未创建，无下载脚本/资产/摘要或回下结果。local upstream 标签方案已解决 native；剩余严格字节门禁失败来自 8 patch 的 29 行 Git 对象 ID 缩写长度（12→9）。需 PM 决定下一轮是否允许固定缩写长度或加深；本轮不自行执行。完整克隆只读测量已补，见报告 §4；它不等于实际下载量。浅克隆、两轮导出与全部证据保留。
 
 - **docs/52 当前挂账**：补丁 PM 已通过、统一分支已建；accel 具体触发方法待 QB 管理员确认；组员依 v3 指南、固定统一 sandbox 提交 6e9d4f2b 执行 Quickbuild x86_64 LLVM → 两架构 accel → zlib/libpng/libinput 六格验证，记录阶段耗时、快照、体积、峰值、22 RPM/NEEDED/归档/运行与全部 accel ELF 依赖闭合；本轮未构建。aarch64 的旧 Unified libpng/libinput 日志未获取，不编造对照。若选本地，须用对应 QB 具体仓库和项目导出 buildconfig；404 停止。BOLT/356949 合入顺序的变基及混合图 dry-run 再认证仍待执行；qemu-accel 别名去重不在本补丁内。
 
