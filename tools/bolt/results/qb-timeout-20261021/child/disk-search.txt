@@ -1,0 +1,69 @@
+Case-insensitive full-input search; C log: 20939 lines.
+Per-architecture LLVM logs: NOT ACQUIRED, so their counts are NA, not zero.
+
+pattern	child_total_log_hits	armv7l_llvm_hits	aarch64_llvm_hits	x86_64_llvm_hits
+No space left	2	NA	NA	NA
+ENOSPC	0	NA	NA	NA
+Disk quota	0	NA	NA	NA
+EDQUOT	0	NA	NA	NA
+write error	0	NA	NA	NA
+cpio: write	0	NA	NA	NA
+Unable to write	0	NA	NA	NA
+Input/output error	0	NA	NA	NA
+failed to write	0	NA	NA	NA
+short write	0	NA	NA	NA
+Bad exit status	0	NA	NA	NA
+Terminated	0	NA	NA	NA
+Killed	0	NA	NA	NA
+BOLT_DISK_REPORT	0	NA	NA	NA
+BOLT_DISK_DIAGNOSIS	0	NA	NA	NA
+
+== Every matching child-log occurrence ==
+architecture=unattributed QB logger; phase=terminal BuildLogger.close; patterns=["No space left"]
+C:L20922:     Caused by: java.lang.RuntimeException: java.io.IOException: No space left on device
+architecture=unattributed QB logger; phase=terminal BuildLogger.close; patterns=["No space left"]
+C:L20929:     Caused by: java.io.IOException: No space left on device
+
+== Complete error stack context ==
+C:L20910: 07:17:53,525 ERROR - Build is failed.
+C:L20911:     java.lang.RuntimeException: Error executing step execution job.
+C:L20912:     	at com.pmease.quickbuild.stepsupport.StepExecutionTask.reduce(StepExecutionTask.java:29)
+C:L20913:     	at com.pmease.quickbuild.stepsupport.StepExecutionTask.reduce(StepExecutionTask.java:19)
+C:L20914:     	at com.pmease.quickbuild.grid.GridTaskFuture.get(GridTaskFuture.java:168)
+C:L20915:     	at com.pmease.quickbuild.DefaultBuildEngine.run(DefaultBuildEngine.java:645)
+C:L20916:     	at com.pmease.quickbuild.DefaultBuildEngine.process(DefaultBuildEngine.java:482)
+C:L20917:     	at com.pmease.quickbuild.DefaultBuildEngine.access$000(DefaultBuildEngine.java:156)
+C:L20918:     	at com.pmease.quickbuild.DefaultBuildEngine$2.run(DefaultBuildEngine.java:1333)
+C:L20919:     	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1149)
+C:L20920:     	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+C:L20921:     	at java.lang.Thread.run(Thread.java:750)
+C:L20922:     Caused by: java.lang.RuntimeException: java.io.IOException: No space left on device
+C:L20923:     	at com.pmease.quickbuild.log.BuildLogger.close(BuildLogger.java:67)
+C:L20924:     	at com.pmease.quickbuild.BuildAwareJob.execute(BuildAwareJob.java:81)
+C:L20925:     	at com.pmease.quickbuild.grid.GridJob.run(GridJob.java:131)
+C:L20926:     	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+C:L20927:     	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+C:L20928:     	... 3 more
+C:L20929:     Caused by: java.io.IOException: No space left on device
+C:L20930:     	at java.io.FileOutputStream.writeBytes(Native Method)
+C:L20931:     	at java.io.FileOutputStream.write(FileOutputStream.java:326)
+C:L20932:     	at java.io.BufferedOutputStream.flushBuffer(BufferedOutputStream.java:82)
+C:L20933:     	at java.io.BufferedOutputStream.write(BufferedOutputStream.java:126)
+C:L20934:     	at java.io.ObjectOutputStream$BlockDataOutputStream.drain(ObjectOutputStream.java:1877)
+C:L20935:     	at java.io.ObjectOutputStream$BlockDataOutputStream.writeByte(ObjectOutputStream.java:1915)
+C:L20936:     	at java.io.ObjectOutputStream.writeFatalException(ObjectOutputStream.java:1576)
+C:L20937:     	at java.io.ObjectOutputStream.writeObject(ObjectOutputStream.java:351)
+C:L20938:     	at com.pmease.quickbuild.log.BuildLogger.close(BuildLogger.java:65)
+C:L20939:     	... 7 more
+
+== Timeout/killing evidence ==
+timeout 8h/9h, Terminated, Killed: no match in C; LLVM package logs unavailable.
+Explicit exit/status 124: no match; bare 124 occurs in timestamps/package counters and is not an exit code.
+
+== BOLT disk-report trend ==
+phase	available_bytes	used_bytes	line
+begin	NA	NA	NOT ACQUIRED
+tool-built	NA	NA	NOT ACQUIRED
+pipeline	NA	NA	NOT ACQUIRED
+post	NA	NA	NOT ACQUIRED
+No latest BOLT_DISK_REPORT exists in the acquired C log; no claim about absent package-log content.
