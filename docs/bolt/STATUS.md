@@ -328,3 +328,12 @@ gbs 实际导出已复现：旧506dc25的 Patch0–6处于 x86_64/BOLT 条件块
 P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.py:4读取；P3仍由validation/expected.py:22/28/49/50读取，无法通过“没有其他脚本依赖”的前置条件。历史可重建性不替代本次条件，未修改这些脚本来绕过检查。
 
 /home可用从229,374,218,240B增到279,041,572,864B（259.878GiB），实测释放49,667,354,624B（46.256GiB）；未达到三项预计135.85GiB，因为P2/P3的89.595GiB保留。三个父目录其余1878个普通文件的SHA/元数据逐项相同，P4、原RPM、.ii输入、其他构建根保持。未构建、提权、改权限、新建分支或访问Gerrit。详见 [31 执行记录](31_build_root_inventory.md#7-执行记录用户批准三项删除-p1跳过-p2p32026-10-22) 与 tools/bolt/results/approved-root-cleanup-20261022/；本轮结束，等下一步指令。
+
+
+## 2026-10-22：用户豁免历史脚本引用，P2/P3已删除
+
+用户确认review4b/real_gates.py、install-rehearsal/disk_budget.py、validation/expected.py均为已完成的一次性脚本，不会再运行；仅对P2/P3豁免无脚本依赖条件，重跑前须先从保留的原始22RPM重新解包。脚本本身未修改、移动或运行。其他前置条件重新检查全部PASS：realpath精确一致、本身及父目录非链接、/dev/sda1、lsof/fuser无命中、mountinfo与overlay无引用。
+
+20:07普通用户分别对review4b/payload-merged、validation/baseline-extract执行精确范围的 `rm -rf --one-file-system --`，均rc0且无残留。实测释放96,201,940,992B（89.595GiB）；/home从278,610,055,168B增至374,811,996,160B可用（349.071GiB）。连同P1，三项分次实测释放135.851GiB。父目录其余1574个普通文件及三个历史脚本的SHA/元数据全部保持，P4 upper仍未批准且未动，原RPM和.ii保留。无构建、提权、权限修改、Gerrit或新分支操作。
+
+详见 [31号文档7.4](31_build_root_inventory.md#74-用户豁免历史脚本依赖后执行-p2p32026-10-22) 与 tools/bolt/results/approved-root-cleanup-p2-p3-20261022/。本轮完成，等待下一步指令。

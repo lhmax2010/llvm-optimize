@@ -272,3 +272,51 @@ rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/tem
 报告、脚本、日志、120份.ii输入、原始RPM均未删除；P4 upper、/var/tmp、其他GBS根、main线目录及其他项目没有写入或删除操作。没有构建、cmake/ninja、sudo、chmod、Gerrit或新分支操作。
 
 原始证据：[approved-root-cleanup-20261022](../../tools/bolt/results/approved-root-cleanup-20261022/)。入口为 `per-item-results.json`、`execution.json`、`space-summary.json`、`remaining-parents-summary.json`；`before/after-P*-parent-inventory.json` 保留逐文件SHA与元数据，`collect.py`只采集，`execute-approved.py`记录本次受限命令与即时检查。下一步等待用户对P2/P3依赖和其他目录另行裁决，本轮不继续删除。
+
+
+### 7.4 用户豁免历史脚本依赖后执行 P2/P3（2026-10-22）
+
+**批准人：用户（本会话明确裁决）。** 用户已知晓7.1所列直接引用，确认它们是已结束的评审/演练的一次性脚本，结论已经保存在20、24、25号等文档中，不会再运行。因此仅对P2/P3豁免“无其他脚本依赖”这一项；其余路径、设备、进程、mountinfo及overlay检查照常执行。P4旧演练upper仍未批准；本次没有操作P1、P4或任何其他构建目录。
+
+受影响的脚本清单如下，**全部标注：重跑前须先从原始 RPM 重新解包**。原始22RPM继续保留；本次未修改、移动或运行这些脚本。
+
+| 现存脚本（W/temp下） | 引用行 | 重跑要求 |
+|---|---|---|
+| `bolt-v4-20261015-review4b/real_gates.py` | 46 | 重跑前须先从原始 RPM 重新解包 |
+| `bolt-v4-20261015-install-rehearsal/disk_budget.py` | 4 | 重跑前须先从原始 RPM 重新解包 |
+| `bolt-v4-20261015-validation/expected.py` | 22、28、49、50 | 重跑前须先从原始 RPM 重新解包 |
+
+重新检查结果：
+
+| 项目 | realpath完全一致；本身及父目录非软链接 | 文件系统 | lsof / fuser | mountinfo与overlay | 删除前du字节 | 删除结果 |
+|---|---|---|---|---|---:|---|
+| P2 `W/temp/bolt-v4-20261015-review4b/payload-merged` | PASS | `/dev/sda1`，`/home` | 无命中 | 无引用 | 49,713,123,328 | rc0，无错误、无残留 |
+| P3 `W/temp/bolt-v4-20261015-validation/baseline-extract` | PASS | `/dev/sda1`，`/home` | 无命中 | 无引用 | 46,488,936,448 | rc0，无错误、无残留 |
+
+初查读取451份 `/proc/*/mountinfo`，每次删除紧前又读取446份；各次读取错误0，目标挂载点、overlay lowerdir/upperdir/workdir引用0。每项的 `lsof -nP +D <完整路径>` 与 `fuser -v <完整路径>` 均无stdout/stderr、退出1（无命中）；删除紧前再次检查realpath、inode、设备及上述进程/挂载条件。所有操作使用普通用户UID1000，没有sudo或权限修改；扫描/删除在4GiB、swap0、nice19/ionice3轻任务scope中进行。
+
+实际仅执行下面两条删除命令：
+
+```sh
+rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-review4b/payload-merged
+rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-validation/baseline-extract
+```
+
+P2于20:07:01–20:07:09 +08:00执行，耗时7.989秒；P3于20:07:10–20:07:18执行，耗时8.321秒。两条命令均退出0，stdout/stderr为空，指定路径均已不存在；没有跳过项、Permission denied或剩余文件。
+
+| `/home`（`/dev/sda1`） | 可用字节 | 可用GiB |
+|---|---:|---:|
+| 本次删除紧前 `df -B1 -T /home` | 278,610,055,168 | 259.476 |
+| 本次删除紧后 `df -B1 -T /home` | **374,811,996,160** | **349.071** |
+| 本次实测增加 | **96,201,940,992** | **89.595** |
+
+两项du合计96,202,059,776B；df增加比du小118,784B。df包含整个文件系统的同期写入，不是孤立删除计数；没有用旧的P1结束时df替代本次新采样。加上7.2的P1释放量，三项分次实测释放合计145,869,295,616B（135.851GiB），与原预计135.85GiB相符。
+
+父目录其余条目按7.3相同方法比对：类型、权限、属主、大小、mtime、inode、软链接目标和普通文件SHA全部相同；父目录inode、权限、属主保持，删除子项导致父目录mtime变化不列作内容变化。两个父目录其余1574个普通文件（330 + 1244）全部保留；另外独立核对上述三个脚本的SHA与元数据，全部相同。
+
+| 删除后父目录（W/temp下） | 后代路径数 | 普通文件数 | 普通文件总字节 | du实际字节 |
+|---|---:|---:|---:|---:|
+| `bolt-v4-20261015-review4b` | 350 | 330 | 45,619,795 | 46,522,368 |
+| `bolt-v4-20261015-validation` | 1323 | 1244 | 483,987,839 | 487,247,872 |
+
+P4、原始RPM、120份.ii、其他树及项目未修改或删除。未构建、运行历史脚本、访问Gerrit或创建分支。原始证据：[approved-root-cleanup-p2-p3-20261022](../../tools/bolt/results/approved-root-cleanup-p2-p3-20261022/)，入口为 `before.json`、`execution.json`、`space-summary.json`；父目录逐文件SHA与元数据在 `before/after-P2/P3-parent-inventory.json`，所有lsof/fuser、df、du和rm返回原文一并保留。本轮完成，停下等待下一步指令。
