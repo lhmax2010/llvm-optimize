@@ -38,6 +38,7 @@ try:
     with (E/'service.stdout').open('w') as out,(E/'service.stderr').open('w') as err:
         child=subprocess.Popen(argv,stdout=out,stderr=err)
         subprocess.run(['systemd-run','--user','--unit=bolt-cache-guard-'+label,'-p','MemoryMax=4G','-p','MemorySwapMax=0','-p','Nice=19','-p','IOSchedulingClass=idle','python3','-B',str(D/'guard-unlimited.py'),label],check=True)
+        subprocess.run(['systemd-run','--user','--unit=bolt-cache-diskfree-'+label,'-p','MemoryMax=4G','-p','MemorySwapMax=0','-p','Nice=19','-p','IOSchedulingClass=idle','python3','-B',str(D/'diskfree-watch.py'),label],check=True)
         while child.poll() is None:
             if time.monotonic()-started>=3200:
                 ctl('freeze',unit);frozen=True

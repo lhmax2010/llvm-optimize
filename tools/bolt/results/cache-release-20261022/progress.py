@@ -2,7 +2,8 @@ import json,sys,datetime
 from pathlib import Path
 D=Path(__file__).resolve().parent;run=sys.argv[1] if len(sys.argv)>1 else 'baseline-resume2';label=sys.argv[2] if len(sys.argv)>2 else 'baseline';E=D/run
 print(datetime.datetime.now().astimezone().isoformat())
-log=E/'build.log'
+log=E/'rpm-build.log'
+if not log.exists():log=E/'build.log'
 if log.exists():print('last_log',log.read_text(errors='replace').splitlines()[-1][:900])
 p=D/(label+'-root')/'local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/native-archive-conversion/summary.json'
 if p.exists():

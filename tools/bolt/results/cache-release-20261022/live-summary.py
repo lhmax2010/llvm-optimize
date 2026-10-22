@@ -30,7 +30,8 @@ if p.exists():
   except ValueError:pass
 markers=['Executing(%prep)','Executing(%build)','Executing(%install)','BOLT_DISK_REPORT','BOLT_PIPELINE_PASS','BOLT_COMPARE_ROOT_PASS','BOLT_CACHE_RELEASE','BOLT_POST_GATE_PASS','BOLT_GATE_FAILED','BOLT_DISK_DIAGNOSIS','find-debuginfo','llvm-static-archives-native.py','Processing files:','Wrote:','Bad exit status']
 anchors=[]
-p=E/'build.log'
+p=E/'rpm-build.log'
+if not p.exists():p=E/'build.log'
 if p.exists():
  for n,line in enumerate(p.read_text(errors='replace').splitlines(),1):
   hits=[x for x in markers if x in line]

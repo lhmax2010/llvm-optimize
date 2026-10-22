@@ -367,3 +367,6 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 9e5675f首轮rpmbuild rc0，22二进制RPM+1源码RPM；真实工具计划/执行113项、pipeline、compare-root、225静态库转换、post全部PASS。candidate为历史同一4ec07159完整SHA。BOLT四次报告自有占用0/3.762/4.345/4.346GiB；完整chroot已观测峰值224.718GiB在静态库归档安装阶段，du缺口/长扫描限制明确保留。
 
 全部23RPM和关键二进制/报告已逐文件SHA保全（28009文件，11.96GB）。仅清理本次首轮新根的lto.cache腾空间，其余树和历史目录不动；/home可用354.50GB，足够第二轮。/proc因用户VS Code PID4237句柄暂未能正常卸载，未强制卸载/终止编辑器；devpts、devshm已卸载。该挂载清理待用户释放，第二轮不依赖删除它。详见32第10节。新源仍d20e873b，仅本地；299测试/五项解析PASS，双轮比较尚未完成，无Gerrit/QB操作。
+
+
+2026-10-23 07:38：第二轮d20e873b在独立revised-root完成普通构建7634/7634，进入%install；固定输入SHA已核对。全程无内存上限/准入/低内存冻结，两次共享锁续租成功。首轮已保全，第二轮缓存释放、候选/RPM和峰值比较待完成；详见32第11节。

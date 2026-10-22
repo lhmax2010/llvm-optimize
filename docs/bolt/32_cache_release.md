@@ -1,6 +1,6 @@
 # ThinLTO 缓存释放与双轮本地测量（2026-10-22）
 
-最新状态（2026-10-23 05:21）：**第一轮9e5675f完整构建PASS（22个二进制RPM+1个源码RPM）；候选SHA与历史4ec07159相同；全部产物已保全。第二轮准备启动，完整双轮比较尚未完成。**
+最新状态（2026-10-23 07:38）：**第一轮完整构建PASS并已保全；第二轮d20e873b普通构建7634/7634完成，现进入%install。双轮候选/RPM与峰值比较仍待第二轮完成。**
 
 以下为2026-10-22停止快照，当前续跑见第9节。 第一次未改 9e5675f 的构建停在普通 LLVM 链接；分段暂停后，等待内存准入达到 60 分钟上限。BOLT 实际增量尚未测得；释放后的整轮峰值及后处理降幅尚未测得；clang 与 RPM 一致性尚未验证。不得用历史 97 GB 缓存代替本次测量。
 
@@ -194,3 +194,13 @@ RuntimeError: memory admission timeout
 用户已授权保全后清理本次第一轮新根。采取更小范围：仅删除该新根`build/lto.cache`，其余树、RPM与被占用的/proc全部保留。删除前核对保全成功、23RPM、关键报告、realpath/非软链、/dev/sda1、无缓存句柄及缓存下无挂载；普通用户执行`rm -rf --one-file-system -- <本次baseline-root内的build/lto.cache>`，rc0，无残留。这是**第一轮测量结束后的本地腾空间**，不是新helper在生产流水线中的验证。原始命令、文件数、du、df与释放量见baseline-space-recovery/cleanup.json；清理后/home可用354,500,767,744B（约330.15GiB）。未删除任何历史目录。
 
 第二轮将在独立revised-root用原固定快照/宏及d20e873b开始；不设本地内存上限/准入/低内存冻结条件，保留swap0、低优先级、共享锁时限及本地磁盘规则。源码/发布代码没有资源门槛变化。完整双轮峰值降幅与RPM逐文件一致性仍待第二轮，不能把第一轮成功代替它。
+
+## 11. 第二轮普通构建完成（2026-10-23 07:38进行中）
+
+使用同一固定快照/build.conf/三个宏，以d20e873b在本任务独立revised-root从零运行GBS；四个SOURCES逐文件SHA与修订导出一致，见revised-run/input-identities.json。05:24:56启动；原生日志第10848行 `[7967s] [7634/7634] Linking CXX executable bin/opt`，第10850行 `[7968s] Executing(%install): /bin/sh -e ...`。GBS自身控制台日志较少，直接逐字节跟随根内.build.log保存为rpm-build.log，阶段观察时间另存rpm-phase-observed.jsonl。
+
+第二轮从开始即MemoryMax=infinity、swap0，不设内存准入或运行中低内存停止；nice15/idle IO和共享锁规则不变。前两段持锁3201.526、3200.788秒，均先确认冻结后释放，约一秒后重新取锁并恢复；没有重启构建。与首轮分段恢复及16→20GiB→无上限的资源历史不同，不能把两轮耗时差全部归因于缓存释放。
+
+完整根目前最高采样173872345088B（161.93GiB），已开始普通安装；不是整轮峰值。ThinLTO临时文件消失导致的du rc1逐条保留，最终完整峰值只采用rc0记录。尚未运行cache-release、未生成第二轮candidate/RPM。只读定位脚本时一次rg搜索误遍历新根的proc并报权限错误；没有产品操作或输入变化，随后改为限定深度的查找，见lookup-note.json。
+
+本次中间归档一次使用相对脚本路径，systemd-run工作目录为/home/linhao而非调用目录，启动即rc2；改为绝对路径后归档成功。未影响产品构建，原文见archive-launch-correction.json。

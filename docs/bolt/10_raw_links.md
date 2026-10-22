@@ -215,3 +215,11 @@ sandbox/lhmax2025/bolt_pgo远端由cb67996861d070d68fec2b4c623eed7d20ba2e23更�
 - [首轮结束后仅缓存空间回收](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/baseline-space-recovery/cleanup.json)
 - [pipeline身份与门禁](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/baseline-resume2-evidence/bolt-work/pipeline-result.json)
 - [post尾检](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/baseline-resume2-evidence/bolt-work/post-gate/post-result.json)
+
+
+### cache-release 第二轮普通构建完成（2026-10-23）
+
+- [第二轮原生RPM日志](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/revised-run/rpm-build.log.gz)
+- [第二轮完整根采样](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/revised-run/du-root-complete.jsonl)
+- [第二轮输入身份](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/revised-run/input-identities.json)
+- [第二轮锁续租](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/revised-run/leases.jsonl)

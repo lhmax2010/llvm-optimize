@@ -5,7 +5,9 @@ D=Path(__file__).resolve().parent;label=sys.argv[1];run=sys.argv[2]
 R=D/(label+'-root')/'local/BUILD-ROOTS/scratch.x86_64.0';rpm=R/'home/abuild/rpmbuild';work=rpm/'BUILD/llvm-22.1.8/build/clang-bolt'
 out=D/(label+'-products');assert not out.exists(),out
 result=json.loads((D/run/'result.json').read_text());assert result['exit_code']==0,result
-log=(D/run/'build.log').read_text(errors='replace')
+logpath=D/run/'rpm-build.log'
+if not logpath.exists():logpath=D/run/'build.log'
+log=logpath.read_text(errors='replace')
 for marker in ('BOLT_PIPELINE_PASS','BOLT_COMPARE_ROOT_PASS','BOLT_POST_GATE_PASS'):assert marker in log,marker
 identity=json.loads((work/'identity.json').read_text())
 def sha(p):
