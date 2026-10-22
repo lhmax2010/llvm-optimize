@@ -337,3 +337,8 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 20:07普通用户分别对review4b/payload-merged、validation/baseline-extract执行精确范围的 `rm -rf --one-file-system --`，均rc0且无残留。实测释放96,201,940,992B（89.595GiB）；/home从278,610,055,168B增至374,811,996,160B可用（349.071GiB）。连同P1，三项分次实测释放135.851GiB。父目录其余1574个普通文件及三个历史脚本的SHA/元数据全部保持，P4 upper仍未批准且未动，原RPM和.ii保留。无构建、提权、权限修改、Gerrit或新分支操作。
 
 详见 [31号文档7.4](31_build_root_inventory.md#74-用户豁免历史脚本依赖后执行-p2p32026-10-22) 与 tools/bolt/results/approved-root-cleanup-p2-p3-20261022/。本轮完成，等待下一步指令。
+
+
+## 2026-10-22：cache-release 实现通过，本地双轮测量进行中
+
+本地 amend d20e873b2c7dfac10fab9235e2b781dad08dc4c7，父67619ec8/Change-Id保留，未推Gerrit、不新建分支。spec仅compare-root后新增三行；helper新增安全限定路径、尽力释放且预期错误返回0的新命令。299测试（新增10）及五项Tizen RPM解析PASS，disk-report/diagnose无需修改。9e5675f基线在/home本次新根开始普通编译，修订轮尚未开始；实测峰值、候选/RPM一致性仍未确认。首次tar模式缺少预导出已按准备性规则修正一次，原始失败保留。完整状态见32；不得将此在跑状态当作完整构建认证。

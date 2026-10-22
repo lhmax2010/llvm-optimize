@@ -1,0 +1,75 @@
+packaging: optimize x86_64 clang with BOLT
+
+Enable BOLT by default on x86_64: ordinary install, snapshot, append
+bolt configuration, certify the dry-run and serial llvm-bolt build,
+relink clang with emit-relocs, strip debug, rewrite, check
+profile/security/tiny targets, strip all, compare-root, native archive
+conversion, candidate replacement, and one unchanged platform post chain
+followed by the final identity gate. Other architectures retain the
+baseline behavior. Roll back in Quickbuild with the one-line
+bcond_without -> bcond_with change; Source1200/1201 are declared
+unconditionally because gbs inserts generated Patch declarations after
+the last Source line, and conditional Sources would hide those
+declarations on other architectures and when BOLT is disabled.
+BOLT-specific BuildRequires remain guarded by the same x86_64 BOLT
+condition, leaving binary packages on other architectures unchanged
+while adding these two files to the source package. --without clang_bolt
+is available for local builds. Only enabled %build adds -d keeprsp. No
+project configuration change is required.
+
+No disk-space thresholds are imposed; each stage records free space.
+If a step fails because its disk is full, stop before replacing the
+packaged clang and report current free space, estimated requirements
+and shortfall from actual file sizes measured in this build.
+If a failed step's log is unavailable, report unknown rather than
+guessing its cause.
+Release the in-tree ThinLTO cache after the compare-root gate passes.
+
+The binary Source is the existing profile v2, trained on 13 ARM plus 10
+AArch64 source files. Compressed size 9,735,212 bytes; SHA256
+52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f.
+Uncompressed SHA256:
+d9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326.
+Certify 111 BOLT task descriptions plus two TF refresh tasks: CMake
+rewrites the TF anchor, while its archive is restored from the prebuilt
+artifact and must retain its SHA. Unknown work fails closed.
+R=(S+U)/(N+U) and S/N must each be <=5%, without infer-stale; profile
+coverage N/M is about 16%.
+
+Preserve ELF type/interpreter, RELRO coverage and flags, GNU_STACK
+flags, GNU_PROPERTY/note contents, dynamic flags/BIND_NOW,
+RPATH/RUNPATH, NEEDED, W+X status, dynsym interfaces and symbol
+versions. Both qualification ELFs lack .note.gnu.property: this build
+did not enable CET independently of BOLT. The local qualification
+candidate uses the historical same-source llvm-bolt; delivery builds its
+own llvm-bolt in the tree.
+
+LLVM C++ -O3 single-file qualification uses 30 rows from 20 distinct
+sources, five samples per side, alternating roles at the same compiler
+path/inode. Candidate/ordinary geometric mean: x86_64 0.855890085, ARM
+0.856351167, AArch64 0.847699213. ARM independent-20/holdout-10:
+0.858165628/0.868458776; AArch64 independent-20/holdout-10:
+0.847858623/0.847902567. These results cover this LLVM workload, not
+general application or runtime performance. The packaged clang grows by
+43,293,584 bytes (+31.0%).
+
+The final clang has no .symtab, debug sections or BOLT identity note.
+clang-debuginfo omits clang-22.debug and its build-id link; debugsource
+omits these five clang-exclusive sources (ordinary DWARF proof
+retained):
+build/tools/clang/tools/driver/clang-driver.cpp,
+clang/tools/driver/cc1_main.cpp, clang/tools/driver/cc1as_main.cpp,
+clang/tools/driver/cc1gen_reproducer_main.cpp,
+clang/tools/driver/driver.cpp.
+Crash localization requires retained build-side identity/rewrite
+records, the pre-strip BOLT ELF, matching ordinary ELF, tool and profile
+identities.
+
+Quickbuild x86_64 completed %install on this same implementation before
+the Source-order fix. Still open: full release-mode build; accel/worker
+identity; cleanup cannot be guaranteed without matching /proc;
+performance outside LLVM workloads. ninja -j1 does not cap linker
+memory. Maintenance notes: header of packaging/clang-bolt-helper.py
+
+Change-Id: Ic98eab90cc017f127a66e1729b44fab8b8e8fb41
+Signed-off-by: Hao Lin <hao.lin@samsung.com>

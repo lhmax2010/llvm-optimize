@@ -853,6 +853,60 @@ def disk_entries(root):
     return result
 
 
+def cache_release(build, work):
+    """Best-effort release of the certified in-tree cache after compare-root."""
+    build, work = Path(build), Path(work)
+    path = build/'lto.cache'
+    started = time.monotonic()
+    result = {'status': 'skipped', 'path': str(path)}
+    def emit(message):
+        try: print('BOLT_CACHE_RELEASE '+message, flush=True)
+        except OSError: pass
+    try:
+        original = (work/'link.original').read_text()
+        # Validate the original edge with the exact replay syntax/cache rules.
+        replay_script(original, work/'unused-output', work/'unused-dependency')
+        paths = re.findall(r'--thinlto-cache-dir=([^\s]+)', original.strip()[5:-5])
+        path = Path(paths[0])
+        result['path'] = str(path)
+        if path.is_symlink():
+            reason = 'symlink'
+        elif path.resolve() != (build/'lto.cache').resolve():
+            reason = 'outside-build-cache'
+        elif not path.is_dir():
+            reason = 'not-a-directory-or-missing'
+        else:
+            entries = disk_entries(path)
+            result.update(files=sum(stat.S_ISREG(x['mode']) for x in entries.values()),
+                          allocated_bytes=sum(x['allocated_bytes'] for x in entries.values()))
+            try:
+                shutil.rmtree(path)
+            except OSError as error:
+                try:
+                    remaining = sum(stat.S_ISREG(x['mode']) for x in disk_entries(path).values())
+                except OSError:
+                    remaining = 'unknown'
+                result.update(status='partial', error=str(error), remaining_files=remaining)
+                emit('partial error='+str(error)+' remaining_files='+str(remaining))
+            else:
+                result.update(status='removed', seconds=time.monotonic()-started)
+                emit('removed path='+str(path)+' files='+str(result['files'])+
+                     ' allocated_bytes='+str(result['allocated_bytes'])+
+                     ' seconds='+str(result['seconds']))
+            reason = None
+        if reason:
+            result['reason'] = reason
+            emit('skipped reason='+reason+' path='+str(path))
+    except (OSError, ValueError, GateError, RuntimeError) as error:
+        result['reason'] = str(error)
+        emit('skipped reason='+str(error)+' path='+str(path))
+    try:
+        save(work/'cache-release.json', result)
+    except (OSError, ValueError) as error:
+        emit('record-unavailable error='+str(error)+' path='+str(work/'cache-release.json'))
+    return result
+
+
 def disk_cache(build, work):
     edge = work/'link.original'
     if edge.is_file():
@@ -1297,6 +1351,7 @@ def main():
     s=sub.add_parser('tool-plan');s.add_argument('input')
     s=sub.add_parser('pipeline');s.add_argument('build');s.add_argument('work');s.add_argument('tool');s.add_argument('--cache-dir')
     s=sub.add_parser('strip-all');s.add_argument('tool');s.add_argument('before');s.add_argument('after');s.add_argument('identity')
+    s=sub.add_parser('cache-release');s.add_argument('build');s.add_argument('work')
     s=sub.add_parser('cache-copy');s.add_argument('edge');s.add_argument('destination');s.add_argument('result')
     s=sub.add_parser('package-compare');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('mode',choices=['debug','release']);s.add_argument('proof');s.add_argument('result')
     s=sub.add_parser('unpack');s.add_argument('source');s.add_argument('output')
@@ -1320,6 +1375,8 @@ def main():
             cache_paths=re.findall(r'--thinlto-cache-dir=([^\s]+)',Path(a.edge).read_text())
             if len(cache_paths)==1:_DISK_CONTEXT.update(copy_source=cache_paths[0],copy_destination=a.destination)
         except OSError:pass
+    if a.cmd=='cache-release':
+        cache_release(a.build,a.work);return
     if a.cmd in ('disk-report','disk-diagnose'):
         try:
             if a.cmd=='disk-report':disk_report(a.stage,a.build,a.work,a.root)

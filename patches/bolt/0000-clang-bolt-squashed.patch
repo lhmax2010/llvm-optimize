@@ -1,6 +1,6 @@
-From 9e5675f57d122549997caffa39b655dfefc46fee Mon Sep 17 00:00:00 2001
+From d20e873b2c7dfac10fab9235e2b781dad08dc4c7 Mon Sep 17 00:00:00 2001
 From: Hao Lin <hao.lin@samsung.com>
-Date: Mon, 19 Oct 2026 14:36:29 +0800
+Date: Thu, 22 Oct 2026 20:52:59 +0800
 Subject: [PATCH] packaging: optimize x86_64 clang with BOLT
 
 Enable BOLT by default on x86_64: ordinary install, snapshot, append
@@ -26,6 +26,7 @@ packaged clang and report current free space, estimated requirements
 and shortfall from actual file sizes measured in this build.
 If a failed step's log is unavailable, report unknown rather than
 guessing its cause.
+Release the in-tree ThinLTO cache after the compare-root gate passes.
 
 The binary Source is the existing profile v2, trained on 13 ARM plus 10
 AArch64 source files. Compressed size 9,735,212 bytes; SHA256
@@ -76,19 +77,19 @@ memory. Maintenance notes: header of packaging/clang-bolt-helper.py
 Change-Id: Ic98eab90cc017f127a66e1729b44fab8b8e8fb41
 Signed-off-by: Hao Lin <hao.lin@samsung.com>
 ---
- packaging/clang-bolt-helper.py   | 1381 ++++++++++++++++++++++++++++++
+ packaging/clang-bolt-helper.py   | 1438 ++++++++++++++++++++++++++++++
  packaging/clang-bolt-v2.fdata.xz |  Bin 0 -> 9735212 bytes
- packaging/llvm.spec              |  117 +++
- 3 files changed, 1498 insertions(+)
+ packaging/llvm.spec              |  120 +++
+ 3 files changed, 1558 insertions(+)
  create mode 100644 packaging/clang-bolt-helper.py
  create mode 100644 packaging/clang-bolt-v2.fdata.xz
 
 diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
 new file mode 100644
-index 000000000000..1cfc11143670
+index 000000000000..d3e2217a1081
 --- /dev/null
 +++ b/packaging/clang-bolt-helper.py
-@@ -0,0 +1,1381 @@
+@@ -0,0 +1,1438 @@
 +#!/usr/bin/env python3
 +"""Tizen clang BOLT gates. Python >= 3.9; shell commands use POSIX sh.
 +
@@ -944,6 +945,60 @@ index 000000000000..1cfc11143670
 +    return result
 +
 +
++def cache_release(build, work):
++    """Best-effort release of the certified in-tree cache after compare-root."""
++    build, work = Path(build), Path(work)
++    path = build/'lto.cache'
++    started = time.monotonic()
++    result = {'status': 'skipped', 'path': str(path)}
++    def emit(message):
++        try: print('BOLT_CACHE_RELEASE '+message, flush=True)
++        except OSError: pass
++    try:
++        original = (work/'link.original').read_text()
++        # Validate the original edge with the exact replay syntax/cache rules.
++        replay_script(original, work/'unused-output', work/'unused-dependency')
++        paths = re.findall(r'--thinlto-cache-dir=([^\s]+)', original.strip()[5:-5])
++        path = Path(paths[0])
++        result['path'] = str(path)
++        if path.is_symlink():
++            reason = 'symlink'
++        elif path.resolve() != (build/'lto.cache').resolve():
++            reason = 'outside-build-cache'
++        elif not path.is_dir():
++            reason = 'not-a-directory-or-missing'
++        else:
++            entries = disk_entries(path)
++            result.update(files=sum(stat.S_ISREG(x['mode']) for x in entries.values()),
++                          allocated_bytes=sum(x['allocated_bytes'] for x in entries.values()))
++            try:
++                shutil.rmtree(path)
++            except OSError as error:
++                try:
++                    remaining = sum(stat.S_ISREG(x['mode']) for x in disk_entries(path).values())
++                except OSError:
++                    remaining = 'unknown'
++                result.update(status='partial', error=str(error), remaining_files=remaining)
++                emit('partial error='+str(error)+' remaining_files='+str(remaining))
++            else:
++                result.update(status='removed', seconds=time.monotonic()-started)
++                emit('removed path='+str(path)+' files='+str(result['files'])+
++                     ' allocated_bytes='+str(result['allocated_bytes'])+
++                     ' seconds='+str(result['seconds']))
++            reason = None
++        if reason:
++            result['reason'] = reason
++            emit('skipped reason='+reason+' path='+str(path))
++    except (OSError, ValueError, GateError, RuntimeError) as error:
++        result['reason'] = str(error)
++        emit('skipped reason='+str(error)+' path='+str(path))
++    try:
++        save(work/'cache-release.json', result)
++    except (OSError, ValueError) as error:
++        emit('record-unavailable error='+str(error)+' path='+str(work/'cache-release.json'))
++    return result
++
++
 +def disk_cache(build, work):
 +    edge = work/'link.original'
 +    if edge.is_file():
@@ -1388,6 +1443,7 @@ index 000000000000..1cfc11143670
 +    s=sub.add_parser('tool-plan');s.add_argument('input')
 +    s=sub.add_parser('pipeline');s.add_argument('build');s.add_argument('work');s.add_argument('tool');s.add_argument('--cache-dir')
 +    s=sub.add_parser('strip-all');s.add_argument('tool');s.add_argument('before');s.add_argument('after');s.add_argument('identity')
++    s=sub.add_parser('cache-release');s.add_argument('build');s.add_argument('work')
 +    s=sub.add_parser('cache-copy');s.add_argument('edge');s.add_argument('destination');s.add_argument('result')
 +    s=sub.add_parser('package-compare');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('mode',choices=['debug','release']);s.add_argument('proof');s.add_argument('result')
 +    s=sub.add_parser('unpack');s.add_argument('source');s.add_argument('output')
@@ -1411,6 +1467,8 @@ index 000000000000..1cfc11143670
 +            cache_paths=re.findall(r'--thinlto-cache-dir=([^\s]+)',Path(a.edge).read_text())
 +            if len(cache_paths)==1:_DISK_CONTEXT.update(copy_source=cache_paths[0],copy_destination=a.destination)
 +        except OSError:pass
++    if a.cmd=='cache-release':
++        cache_release(a.build,a.work);return
 +    if a.cmd in ('disk-report','disk-diagnose'):
 +        try:
 +            if a.cmd=='disk-report':disk_report(a.stage,a.build,a.work,a.root)
@@ -1475,7 +1533,7 @@ new file mode 100644
 index 000000000000..0c7860cfc46b
 Binary files /dev/null and b/packaging/clang-bolt-v2.fdata.xz differ
 diff --git a/packaging/llvm.spec b/packaging/llvm.spec
-index 8240282641a3..ef2f87843968 100644
+index 8240282641a3..78ffaf2bb27b 100644
 --- a/packaging/llvm.spec
 +++ b/packaging/llvm.spec
 @@ -1,3 +1,10 @@
@@ -1517,7 +1575,7 @@ index 8240282641a3..ef2f87843968 100644
  
  %if %{undefined _toolchain}
  %ifarch x86_64
-@@ -390,11 +406,93 @@ cmake \
+@@ -390,11 +406,96 @@ cmake \
  %endif
  
  # Full build using ninja (already in build/ directory after cd build)
@@ -1605,13 +1663,16 @@ index 8240282641a3..ef2f87843968 100644
 +python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
 +  "$BOLT_WORK/install-after-pipeline.json" || exit 1
 +echo BOLT_COMPARE_ROOT_PASS
++# No subsequent step consumes this ThinLTO cache.
++# Release it only inside the enabled x86_64 BOLT block.
++python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK"
 +# Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
 +%endif
 +%endif
  ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
  
  ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
-@@ -440,6 +538,14 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+@@ -440,6 +541,14 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
      --jobs 4 --address-space-bytes 4294967296 || exit 1
  %endif
  
@@ -1626,7 +1687,7 @@ index 8240282641a3..ef2f87843968 100644
  %post -n clang -p /sbin/ldconfig
  %postun -n clang -p /sbin/ldconfig
  
-@@ -671,3 +777,14 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+@@ -671,3 +780,14 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
  
  %files -n python-clang
  %{python3_sitelib}/clang
@@ -1641,3 +1702,6 @@ index 8240282641a3..ef2f87843968 100644
 +    python3 -B %{SOURCE1201} disk-report post
 +%endif
 +%endif
+-- 
+2.43.0
+
