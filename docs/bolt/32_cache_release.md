@@ -134,3 +134,15 @@ RuntimeError: memory admission timeout
 后续裁决（2026-10-23）：用户先批准“仅冻结续跑使用3GiB准入”，01:57:59已重新取锁、恢复同一现场；第一次持锁3200.515秒，冻结/释放均成功。随后用户明确要求“解除内存限制，所以目前不考虑准入内存和冻结内存，你跑你的”，01:59:18已将MemoryMax设为infinity；第二轮本地入口取消内存上限和准入等待。原始命令/返回值见memory-unlimited.json，控制器交接见controller-handoff.json。源码和构建参数不变；锁与磁盘规则继续执行。原运行采样器仍包含运行中<3GiB的紧急停止检查（并非启动准入，未在本次续跑触发），没有为热替换采样器而重启LLVM链接。
 
 02:03左右普通libclang-cpp链接完成，进度恢复到138/356；该时点cgroup峰值26,155,147,264B（约24.4GiB），oom/oom_kill仍0。普通clang仍在链接，尚不能填写BOLT实测增量。
+
+### 9.1 普通构建与 BOLT 工具完成（03:49 进行中快照）
+
+本次续跑日志第2351行 `[8487.851s] [356/356] Linking CXX executable bin/opt`，第2353行 `[8488.817s] Executing(%install): /bin/sh -e ...`。普通安装完成后，begin报告时间为03:35:08，完整根采样226,526,859,264B（210.97GiB），BUILDROOT约49.03GiB。安装快照、preflight/certified和proc检查通过。
+
+实际tool-plan为113项：111个BOLT任务（102对象、7静态库、1可执行文件、1生成文件）和2个TF刷新；ninja_diagnostics为空。实际-j1构建113/113，打印BOLT_NINJA_EXIT_0；tool-verify确认本次生成llvm-bolt且TF归档SHA保持。tool-built报告used_bytes=4,039,049,216（3.762GiB），其中cache正增量1,202,872,320B（1.120GiB）。这只是工具完成时点，不是完整BOLT峰值。当前进入reference重链，candidate、后处理和RPM尚未产生，第二轮未开始。
+
+03:41:43续租前冻结全组，持锁3200.228秒后释放；约1秒后重新取得并恢复，minimum=null，没有内存准入等待。后续新轮次的本地采样器也移除低内存停止条件；锁时限和本地30GiB磁盘底线保留。已运行的第一轮Python采样器未热替换，原有运行中3GiB检查尚在，未触发。
+
+全根du采样器曾因ThinLTO临时文件恰好消失而rc1退出，约01:17至02:08存在完整根采样缺口；原始记录保留。修正后的du-root2仅对全部报错均为“No such file or directory”的扫描竞态继续采样，其他错误仍停止采样器；每条rc/stderr保留。常规分项du和资源记录继续，但不能补造缺失的完整根读数。此前把过期读数误称为仍在扫描，发现服务inactive后已更正。详见du-sampler-correction.json。查找证据索引时误在任务临时目录执行rg，随后在B定位，未影响产品输入。
+
+本节材料为进行中快照，不能视为整轮认证；下一次归档将保留完整后续日志。

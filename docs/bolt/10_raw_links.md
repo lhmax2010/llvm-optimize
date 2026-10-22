@@ -195,3 +195,14 @@ sandbox/lhmax2025/bolt_pgo远端由cb67996861d070d68fec2b4c623eed7d20ba2e23更�
 - [全部盘点文件SHA索引](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/root-inventory-20261022/SHA256SUMS)
 
 本次只有建议，未执行删除。完整raw文件均在该目录，固定版本使用本次Git提交号替换URL中的bolt-v4。
+
+
+## 2026-10-23：cache-release 双轮测量续跑（进行中）
+
+- [32 当前执行记录](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/docs/bolt/32_cache_release.md)
+- [续跑完整日志（进行中快照）](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/baseline-resume2/build.log.gz)
+- [完整根 du 采样](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/baseline-resume2/du-root-complete.jsonl)
+- [工具计划113项](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/baseline-resume2-evidence/bolt-work/tool-plan.json)
+- [原始证据SHA索引](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/build-evidence-provenance.json)
+
+尚未完成两轮；不能把进行中采样当作最终认证。固定版本使用该文件所在提交SHA替换URL中的bolt-v4。

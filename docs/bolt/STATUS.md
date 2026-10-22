@@ -357,3 +357,6 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 用户释放内存后，第一轮9e5675f在本任务新根baseline-root恢复；普通构建尚未完成。01:45:30 CST用户明确批准本次两轮本地测量使用20GiB cgroup上限（原16GiB），已调整本轮并为第二轮使用同一限额。swap0、运行中MemAvailable<3GiB停止、锁与其他本地规则不变；不进入发布代码。源提交仍为d20e873b；既有299测试/五项解析PASS，不代表双轮完整构建认证。详见32第9节，当前进行中。
 
 同日后续用户裁决覆盖上面的20GiB上限：取消本次测量的cgroup内存上限与内存准入等待，已设置MemoryMax=infinity；冻结续租已恢复，同一普通链接现场继续。锁/磁盘/代码边界不变，详见32第9节及memory-unlimited.json。
+
+
+2026-10-23 03:49进度：第一轮普通构建356/356和普通安装完成，BOLT实际tool-plan/执行均113项（111BOLT+2TF），工具实物复核通过。tool-built BOLT自有占用3.762GiB（含cache新增1.120GiB）；正在重链，尚无完整candidate/RPM，不能宣称完整增量或释放收益。MemoryMax=infinity、无内存准入续租；最新持锁3200.228秒后冻结/释放/恢复成功。全根du历史竞态缺口、修正和原始读数均存证，见32第9.1节。未访问Gerrit/QB，未删除任何构建根。
