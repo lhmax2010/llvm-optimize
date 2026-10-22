@@ -342,3 +342,12 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 ## 2026-10-22：cache-release 实现通过，本地双轮测量进行中
 
 本地 amend d20e873b2c7dfac10fab9235e2b781dad08dc4c7，父67619ec8/Change-Id保留，未推Gerrit、不新建分支。spec仅compare-root后新增三行；helper新增安全限定路径、尽力释放且预期错误返回0的新命令。299测试（新增10）及五项Tizen RPM解析PASS，disk-report/diagnose无需修改。9e5675f基线在/home本次新根开始普通编译，修订轮尚未开始；实测峰值、候选/RPM一致性仍未确认。首次tar模式缺少预导出已按准备性规则修正一次，原始失败保留。完整状态见32；不得将此在跑状态当作完整构建认证。
+
+
+## 2026-10-22 23:23：cache-release 双轮测量因内存准入超时停止
+
+源提交仍为 d20e873b2c7dfac10fab9235e2b781dad08dc4c7，仅本地，未推Gerrit；299测试及五项Tizen RPM解析PASS。第一轮9e5675f只完成到普通LLVM链接，最后3275/3534，未进入BOLT或install；第二轮未启动，candidate/RPM一致性和实际磁盘降幅均未验证。
+
+续跑段持锁3203.387秒后确认cgroup冻结并释放锁；冻结保留约14.1GiB内存。随后60分钟的准入采样仅约7.56–9.89GiB可用，未达12GiB，按规则停止。cgroup峰值16GiB，oom/oom_kill均0；此前LLD有文件页I/O等待。所有本次构建/监视进程退出，新根5个挂载已卸载、无残留；完整新根和对象保留，没有删除任何历史根或缓存。
+
+完整chroot最高局部采样27.383GiB只是未完成普通构建的读数；单次du最长1008秒，不能称为整轮/连续峰值。详见[32_cache_release.md](32_cache_release.md)及cache-release-20261022原始日志。暂停/直接RPM续跑与不中断GBS有差异，均已记录；本轮停止，不以未完成基线启动第二轮。

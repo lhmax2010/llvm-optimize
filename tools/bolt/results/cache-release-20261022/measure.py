@@ -42,10 +42,14 @@ def watch():
         if now>=due:
             sample();due=now+60
         stop.wait(5)
-save('launch.json',{'argv':command,'root':str(root),'unit':unit,'cgroup':str(cg),'time_ns':time.time_ns(),'memory_limit':16*1024**3,'swap_limit':0,'nice':15,'ionice':3,'segment_limit_seconds':3400})
+save('launch.json',{'argv':command,'root':str(root),'unit':unit,'cgroup':str(cg),'time_ns':time.time_ns(),'memory_limit':16*1024**3,'swap_limit':0,'nice':15,'ionice':3,'lease_metadata':str(E/'controller-command.json')})
 t=threading.Thread(target=watch);t.start()
 try:
-    with (E/'build.log').open('wb') as log:r=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT,stdin=subprocess.DEVNULL)
+    with (E/'build.log').open('wb') as log:
+        child=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,stdin=subprocess.DEVNULL)
+        for line in iter(child.stdout.readline,b''):
+            log.write(('[%8.3fs] ' % (time.monotonic()-start)).encode()+line);log.flush()
+        child.wait();r=child
     save('result.json',{'exit_code':r.returncode,'seconds':time.monotonic()-start,'time_ns':time.time_ns()})
 finally:stop.set();t.join();sample()
 sys.exit(r.returncode)
