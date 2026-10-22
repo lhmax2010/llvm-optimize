@@ -1,0 +1,1362 @@
+
+### source/packaging/llvm.spec:48-63
+
+48: # Bundled MLGO AOT assets for the inliner and regalloc models.
+49: # These override build-time AOT compilation, avoiding the need for TensorFlow
+50: # Python in GBS.
+51: Source1002: mlgo_arm_model.tar.gz
+52: Source1003: mlgo_aarch_model.tar.gz
+53: Source1004: mlgo_x86_model.tar.gz
+54: Source1005: llvm-static-archives-native.py
+55: Source1200: clang-bolt-v2.fdata.xz
+56: Source1201: clang-bolt-helper.py
+57: 
+58: %ifarch x86_64
+59: BuildRequires: util-linux
+60: %endif
+61: 
+62: 
+63: %{!?mlgo_build_jobs: %define mlgo_build_jobs 6}
+
+### source/packaging/llvm.spec:236-250
+
+236: export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+237: export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+238: %endif
+239: 
+240: # Set up MLGO AOT model paths from bundled verify assets
+241: %if %{with mlgo}
+242: MLGO_AOT_DIR="$PWD/mlgo_verify_assets"
+243: MLGO_BUILD_DIR="$PWD/build"
+244: MLGO_RUNTIME_OBJECTS="${MLGO_AOT_DIR}/xla_runtime_objects/xla_compiled_cpu_function.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/cpu_function_runtime.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/custom_call_status.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/executable_run_options.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o"
+245: MLGO_REQUIRED_RUNTIME_OBJECTS="xla_compiled_cpu_function.cc.o cpu_function_runtime.cc.o custom_call_status.cc.o executable_run_options.cc.o runtime_single_threaded_matmul_f32.cc.o"
+246: %endif
+247: 
+248: mkdir -p build
+249: cd build
+250: cmake \
+
+### source/packaging/llvm.spec:266-273
+
+266: %if %{defined _toolchain}
+267:     -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+268:     -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+269:     -DLLVM_USE_LINKER=lld \
+270:     -DLLVM_ENABLE_LTO=Thin \
+271:     -DCMAKE_RANLIB=%{_bindir}/llvm-ranlib \
+272:     -DCMAKE_AR=%{_bindir}/llvm-ar \
+273: %endif
+
+### source/packaging/llvm.spec:408-433
+
+408: # Full build using ninja (already in build/ directory after cd build)
+409: %ifarch x86_64
+410: %if %{with clang_bolt}
+411: ninja -d keeprsp -j %{mlgo_build_jobs} || exit 1
+412: %else
+413: ninja -j %{mlgo_build_jobs}
+414: %endif
+415: %else
+416: ninja -j %{mlgo_build_jobs}
+417: %endif
+418: 
+419: %install
+420: cd build
+421: cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
+422: %ifarch x86_64
+423: %if %{with clang_bolt}
+424: 
+425: # Reject debug-named buildroots before any BOLT action.
+426: case $(printf '%s' '%{buildroot}' | LC_ALL=C tr '[:upper:]' '[:lower:]') in
+427:   *debug*) echo 'BOLT buildroot absolute path contains debug' >&2; exit 1 ;;
+428: esac
+429: BOLT_BUILD="$PWD"
+430: BOLT_WORK="$PWD/clang-bolt"
+431: BOLT_INSTALL_ROOT="%{buildroot}"
+432: BOLT_PROFILE_SOURCE="%{SOURCE1200}"
+433: export BOLT_BUILD BOLT_WORK BOLT_INSTALL_ROOT BOLT_PROFILE_SOURCE
+
+### source/packaging/llvm.spec:455-495
+
+455: python3 -B %{SOURCE1201} disk-report begin
+456: echo "BOLT_BUILDROOT_OK %{buildroot}"
+457: python3 -B %{SOURCE1201} preflight || exit 1
+458: python3 -B %{SOURCE1201} certified || exit 1
+459: if [ -r /proc/self/stat ]; then echo BOLT_PROC_OK; else echo BOLT_PROC_MISSING; fi
+460: # One relink: emit-relocs, then LLVM strip-debug, BOLT and full strip.
+461: # The handed-off build owns its original ThinLTO cache; do not duplicate it.
+462: mkdir -p "$BOLT_WORK" || exit 1
+463: # File-list baseline is the actual ordinary CMake install, not a name whitelist.
+464: python3 -B %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
+465: bolt_step manifest-copy cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt"
+466: bolt_step ordinary-copy cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22"
+467: bolt_checked link-command "$BOLT_WORK/link-command.log" python3 -B %{SOURCE1201} run-step link-command "$BOLT_WORK/link-command.log" --output "$BOLT_WORK/link.original" -- ninja -t commands -s bin/clang-22
+468: python3 -B %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || exit 1
+469: bolt_step configure cmake -S ../llvm -B . \
+470:   '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' \
+471:   -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \
+472:   -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
+473: # Only certified BOLT tasks and the paired configure-refreshed TF anchor.
+474: bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
+475: LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- ninja -n llvm-bolt
+476: bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
+477: python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
+478: cat "$BOLT_WORK/tool-plan.json"
+479: python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
+480: LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- ninja -j 1 llvm-bolt
+481: python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+482:   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+483: cat "$BOLT_WORK/tool-build-verification.json"
+484: python3 -B %{SOURCE1201} disk-report tool-built
+485: python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
+486: echo BOLT_PIPELINE_PASS
+487: python3 -B %{SOURCE1201} disk-report pipeline
+488: # BOLT configuration/build/rewrite must not change the ordinary installation.
+489: # Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
+490: python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
+491:   "$BOLT_WORK/install-after-pipeline.json" || exit 1
+492: echo BOLT_COMPARE_ROOT_PASS
+493: # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
+494: %endif
+495: %endif
+
+### source/packaging/llvm.spec:527-548
+
+527: %ifarch x86_64
+528: # Run after compilation has finished; these workers do not overlap build jobs.
+529: # Preserve the standard RPM post-processing, including archive strip -g.
+530: rm -rf "%{_builddir}/%{buildsubdir}/build/native-archive-conversion"
+531: python3 %{SOURCE1005} --root "%{buildroot}" \
+532:     --build "%{_builddir}/%{buildsubdir}/build" \
+533:     --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
+534:     --arch x86_64 \
+535:     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+536:     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+537:     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+538:     --jobs 4 --address-space-bytes 4294967296 || exit 1
+539: %endif
+540: 
+541: %ifarch x86_64
+542: %if %{with clang_bolt}
+543: # Candidate is fully stripped before the one unchanged platform post-processing chain.
+544: python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
+545:   "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || exit 1
+546: 
+547: %endif
+548: %endif
+
+### source/packaging/llvm.spec:679-696
+
+679: %files static-devel
+680: %manifest %{name}.manifest
+681: %defattr(-,root,root,-)
+682: %{_libdir}/lib*.a
+683: 
+684: %files -n libllvm
+685: %manifest %{name}.manifest
+686: %defattr(-,root,root,-)
+687: %{_libdir}/libLLVM*.so*
+688: 
+689: %files -n clang
+690: %manifest %{name}.manifest
+691: %defattr(-,root,root,-)
+692: %{_prefix}/bin/clang
+693: %{_prefix}/bin/clang++
+694: %{_prefix}/bin/%{_host}-clang
+695: %{_prefix}/bin/%{_host}-clang++
+696: %{_prefix}/bin/clang-%{llvm_version}
+
+### source/packaging/llvm.spec:780-790
+
+780: %ifarch x86_64
+781: %if %{with clang_bolt}
+782: 
+783: %global __bolt_original_spec_install_post %{__spec_install_post}
+784: %define __spec_install_post \
+785:     %{__bolt_original_spec_install_post} \
+786:     python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
+787:     echo BOLT_POST_GATE_PASS \
+788:     python3 -B %{SOURCE1201} disk-report post
+789: %endif
+790: %endif
+
+### source/packaging/clang-bolt-helper.py:195-218
+
+195: def call(argv, log, cwd=None, timeout=300):
+196:     log = Path(log); log.parent.mkdir(parents=True, exist_ok=True)
+197:     process = None; reaped = False; primary = None
+198:     try:
+199:         previous = signal.getsignal(signal.SIGCHLD)
+200:         if previous != signal.SIG_DFL:
+201:             signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+202:         save(log.with_suffix(log.suffix+'.argv.json'),
+203:              {'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None,
+204:               'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+205:         with log.open('wb') as output:
+206:             process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
+207:                                        stderr=subprocess.STDOUT, start_new_session=True)
+208:             rc = peek_child_exit(process, timeout)
+209:             if rc != 0:
+210:                 primary = 'COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
+211:                 raise GateError(primary)
+212:             require(reap_child(process) == rc, 'child exit status changed while reaping')
+213:             reaped = True
+214:         text = log.read_text(errors='replace')
+215:         metadata = log.with_suffix(log.suffix+'.argv.json')
+216:         invocation = json.loads(metadata.read_text())
+217:         save(metadata, dict(invocation,completed=True,rc=0))
+218:         return text
+
+### source/packaging/clang-bolt-helper.py:248-262
+
+248: def profile_unpack(source, output):
+249:     output = Path(output)
+250:     require(not output.exists(), 'profile output must be new')
+251:     output.parent.mkdir(parents=True, exist_ok=True)
+252:     try:
+253:         with lzma.open(source, 'rb') as src, output.open('xb') as dst:
+254:             shutil.copyfileobj(src, dst, 1024 * 1024)
+255:         profile_identity(output)
+256:     except Exception:
+257:         if output.exists():
+258:             try: output.unlink()
+259:             except OSError: pass
+260:         raise
+261:     return {'sha256': PROFILE_SHA, 'bytes': output.stat().st_size,
+262:             'compressed_sha256': digest(source)}
+
+### source/packaging/clang-bolt-helper.py:267-292
+
+267: def replay_script(original, output, dependency, cache=None):
+268:     original = original.strip()
+269:     require('\n' not in original and original.startswith(': && ') and original.endswith(' && :'),
+270:             'unexpected link edge framing')
+271:     body = original[5:-5]
+272:     args = shlex.split(body)
+273:     require(not any(arg.startswith('@') or (arg.startswith('-Wl,') and any(part.startswith('@') for part in arg[4:].split(','))) for arg in args),
+274:             'link edge uses a response file; rsp auditing is not implemented')
+275:     require(not any(c in body for c in ';`|&<>') and '$(' not in body,
+276:             'unsupported shell syntax in link edge')
+277:     require(not re.search(r'(?<!\\)\$', body), 'unknown shell substitution')
+278:     require('--emit-relocs' not in body and '--strip-debug' not in body, 'edge already has BOLT flags')
+279:     old_out = '-o bin/clang-22 '
+280:     old_dep = '--dependency-file=tools/clang/tools/driver/CMakeFiles/clang.dir/link.d'
+281:     require(body.count(old_out) == 1 and body.count(old_dep) == 1, 'non-unique clang output/depfile')
+282:     require(not any(x in body for x in ['--Map', '-Map', '--save-temps', '--time-trace']),
+283:             'unregistered additional linker output')
+284:     caches = re.findall(r'--thinlto-cache-dir=([^\s]+)', body)
+285:     require(len(caches) == 1 and caches[0].startswith('/') and not any(c in caches[0] for c in '\"\'`$'), 'non-unique or unsupported ThinLTO cache')
+286:     if cache is not None:
+287:         require(str(cache) != caches[0], 'explicit cache override must be isolated')
+288:         body = body.replace('--thinlto-cache-dir='+caches[0], '--thinlto-cache-dir='+quote(cache), 1)
+289:     body = body.replace(old_out, '-o ' + quote(output) + ' ', 1)
+290:     body = body.replace(old_dep, '--dependency-file=' + quote(dependency), 1)
+291:     flags = ' -Wl,--emit-relocs'
+292:     return '#!/bin/sh\nset -eu\n' + body + flags + '\n'
+
+### source/packaging/clang-bolt-helper.py:499-520
+
+499: def tiny_gate(ordinary, candidate, work, resource_dir=None):
+500:     work = Path(work); work.mkdir(parents=True, exist_ok=True)
+501:     source = work/'tiny.c'; source.write_text(TINY); out = work/'same.o'; rows = []
+502:     for label, cc in [('ordinary', ordinary), ('candidate', candidate)]:
+503:         call([cc, '--version'], work/(label+'-version.log'), timeout=30)
+504:     for triple in TRIPLES:
+505:         row = {'target': triple, 'outputs': []}
+506:         for label, cc in [('ordinary', ordinary), ('candidate', candidate)]:
+507:             argv = [cc, '--no-default-config', '--target='+triple, '-c', '-O2', str(source), '-o', str(out)]
+508:             if resource_dir:
+509:                 argv[1:1] = ['-resource-dir', resource_dir]
+510:             if out.exists() or out.is_symlink():
+511:                 out.unlink()
+512:             call(argv, work/(triple+'-'+label+'.log'), cwd=work, timeout=60)
+513:             require(out.is_file() and not out.is_symlink() and out.stat().st_size > 0,
+514:                     'tiny compiler did not produce a nonempty regular file: '+label+' '+triple)
+515:             dest = work/(triple+'.'+label+'.o'); shutil.copyfile(out, dest)
+516:             row['outputs'].append({'path': str(dest), 'sha256': digest(dest), 'bytes': dest.stat().st_size})
+517:         row['byte_equal'] = (work/(triple+'.ordinary.o')).read_bytes() == (work/(triple+'.candidate.o')).read_bytes()
+518:         rows.append(row); save(work/'result.json', rows)
+519:         require(row['byte_equal'], 'tiny object differs: '+triple)
+520:     return rows
+
+### source/packaging/clang-bolt-helper.py:540-569
+
+540: def root_snapshot(root):
+541:     """Packaging baseline, including directory and symlink permissions."""
+542:     root = Path(root).absolute()
+543:     result = inventory(root)
+544:     result['metadata'] = {}
+545:     for key in [''] + sorted(result['files']):
+546:         path = root/key
+547:         st = path.lstat()
+548:         item = {'mode': stat.S_IMODE(st.st_mode)}
+549:         if stat.S_ISLNK(st.st_mode):
+550:             item['bytes'] = st.st_size
+551:         result['metadata'][key] = item
+552:     return result
+553: 
+554: def compare_root(root, baseline, after_path):
+555:     """Reject any buildroot side effect before installing the candidate."""
+556:     current = root_snapshot(root)
+557:     save(after_path, current)
+558:     require(baseline.get('root') == current['root'], 'buildroot baseline belongs to a different root')
+559:     require('metadata' in baseline, 'buildroot baseline lacks complete permission metadata')
+560:     old, new = baseline['files'], current['files']
+561:     for key in sorted(old.keys() | new.keys()):
+562:         require(key in old, 'buildroot added: '+key)
+563:         require(key in new, 'buildroot removed: '+key)
+564:         require(old[key] == new[key], 'buildroot entry differs: '+key)
+565:         require(baseline['metadata'].get(key) == current['metadata'][key],
+566:                 'buildroot permissions/metadata differ: '+key)
+567:     require(baseline['metadata'].get('') == current['metadata'][''],
+568:             'buildroot permissions/metadata differ: .')
+569:     return {'buildroot_unchanged': True, 'entries': len(new)}
+
+### source/packaging/clang-bolt-helper.py:608-664
+
+608: def install_candidate(root, candidate, state, identity, announce=False):
+609:     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
+610:     e = ELF(candidate)
+611:     try:
+612:         elf = e.audit(final=True)
+613:     finally:
+614:         e.close()
+615:     validate_identity(identity, candidate)
+616:     entity, aliases = alias_group(root); changed = []
+617:     for p in aliases:
+618:         changed.append({'path': p.relative_to(root).as_posix(), 'old_type': 'symlink' if p.is_symlink() else 'file',
+619:                         'old_target': os.readlink(p) if p.is_symlink() else None})
+620:     st = entity.stat(); tmp = entity.with_name('.clang-bolt.new'); staged = []
+621:     require(not tmp.exists() and not tmp.is_symlink(), 'temporary candidate exists')
+622:     try:
+623:         shutil.copyfile(candidate,tmp)
+624:         tmp.chmod(stat.S_IMODE(st.st_mode))
+625:         with tmp.open('rb') as stream: os.fsync(stream.fileno())
+626:         actual = digest(tmp)
+627:         require(actual == identity['after_sha256'], 'temporary candidate SHA differs')
+628:         require(tmp.stat().st_size == Path(candidate).stat().st_size, 'temporary candidate size differs')
+629:         for path in aliases:
+630:             link = path.with_name('.'+path.name+'.bolt-link')
+631:             require(not link.exists() and not link.is_symlink(), 'temporary alias exists')
+632:             link.symlink_to('clang-22'); staged.append((link,path))
+633:         result = {'installed_sha256':actual, 'identity':identity, 'alias_changes':changed,
+634:                   'allowed_paths':['usr/bin/clang-22']+[p.relative_to(root).as_posix() for p in aliases], 'elf':elf}
+635:         # All file writes, state and output publication precede the final commit.
+636:         save(state,result)
+637:         if announce: print(json.dumps(result,ensure_ascii=False),flush=True)
+638:         for link,path in staged: os.replace(link,path)
+639:         os.replace(tmp,entity)
+640:         return result
+641:     except BaseException:
+642:         for path in [tmp]+[link for link,_ in staged]:
+643:             try: path.unlink()
+644:             except OSError: pass
+645:         raise
+646: 
+647: def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
+648:     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
+649:     entity = root/'usr/bin/clang-22'; require(digest(entity) == state['installed_sha256'], 'clang changed during RPM post-processing')
+650:     for change in state['alias_changes']:
+651:         p = root/change['path']
+652:         require(p.is_symlink() and os.readlink(p) == 'clang-22' and rooted_resolve(root,p) == entity,
+653:                 'alias stale or not normalized: '+str(p))
+654:     e = ELF(entity)
+655:     try:
+656:         elf = e.audit(final=True)
+657:     finally:
+658:         e.close()
+659:     require(digest(entity) == state['identity']['after_sha256'], 'final installed SHA differs from stripped candidate')
+660:     no_bolt_products(root)
+661:     security = security_compare(ordinary, str(entity))
+662:     rows = tiny_gate(ordinary, str(entity), candidate_work, resource_dir)
+663:     return {'sha_unchanged': True, 'aliases_pass': True, 'elf': elf, 'tiny': rows,
+664:             'strip_identity_pass': True, 'security': security}
+
+### source/packaging/clang-bolt-helper.py:694-710
+
+694: def rewrite(bolt, profile, input_elf, output, work):
+695:     work = Path(work); work.mkdir(parents=True, exist_ok=True)
+696:     profile_identity(profile)
+697:     version = call([bolt, '--version'], work/'bolt-version.log')
+698:     certified_version(version)
+699:     argv = [bolt, input_elf, '-o', output, '-data='+str(profile)] + OPTIONS
+700:     text = call(argv, work/'bolt.log', timeout=1800)
+701:     counters = match_counts(text, argv, True, True)
+702:     e = ELF(output)
+703:     try:
+704:         elf = e.audit()
+705:     finally:
+706:         e.close()
+707:     result = {'tool_sha256': digest(bolt), 'profile_sha256': PROFILE_SHA,
+708:               'input_sha256': digest(input_elf), 'output_sha256': digest(output), 'argv': argv,
+709:               'counts': counters, 'elf': elf}
+710:     save(work/'rewrite-result.json', result); return result
+
+### source/packaging/clang-bolt-helper.py:751-771
+
+751: def tool_prepare(build, plan, state_path):
+752:     build = Path(build)
+753:     executable = build/'bin/llvm-bolt'
+754:     exists = executable.exists()
+755:     value = {'configuration_refresh_tasks': plan['configuration_refresh_tasks'],
+756:              'executable_before': {'exists': exists, 'sha256': digest(executable) if exists and executable.is_file() else None}}
+757:     if value['configuration_refresh_tasks']:
+758:         archive = build/'lib64/libtf_xla_runtime.a'
+759:         require(archive.is_file(), 'missing TF archive before build')
+760:         value['archive_path'] = str(archive); value['before_sha256'] = digest(archive)
+761:         # Only evidence: do not turn an optional graph inference into a gate.
+762:         graph = (build/'build.ninja').read_text()
+763:         match = re.search(r'^build lib64/libtf_xla_runtime\.a:[^\n]*(?:\n  [^\n]*)*', graph, re.M)
+764:         paths = set(re.findall(r'/[^\s\"\';]+/libtf_xla_runtime_prebuilt\.a', match[0] if match else ''))
+765:         value['prebuilt_evidence'] = {'inferred_paths': sorted(paths)}
+766:         if len(paths) == 1:
+767:             source = Path(next(iter(paths)))
+768:             if source.is_file():
+769:                 sha = digest(source)
+770:                 value['prebuilt_evidence'].update(sha256=sha, archive_equal=sha == value['before_sha256'])
+771:     save(state_path, value)
+
+### source/packaging/clang-bolt-helper.py:774-808
+
+774: def tool_verify(build, plan, text, state):
+775:     lines = text.splitlines()
+776:     require(bool(lines) and lines[-1] == BUILD_SUCCESS and lines.count(BUILD_SUCCESS) == 1,
+777:             'missing, duplicate or non-final '+BUILD_SUCCESS)
+778:     descriptions = []; counters = []
+779:     for line in lines[:-1]:
+780:         match = re.fullmatch(r'\[(\d+)/(\d+)\] (.+)', line)
+781:         if match is None:
+782:             require(not re.match(r'\[\d', line), 'malformed real build progress: '+line)
+783:             continue
+784:         f, t, body = int(match[1]), int(match[2]), match[3]
+785:         require(f == len(descriptions)+1 and f <= t, 'invalid real build progress: '+line)
+786:         require(body in plan['descriptions'], 'real build task outside approved plan: '+body)
+787:         require(body not in descriptions, 'duplicate real build task: '+body)
+788:         descriptions.append(body); counters.append([f, t])
+789:     require(plan['plan_type'] != 'up-to-date' or not descriptions, 'up-to-date build unexpectedly ran tasks')
+790:     require(plan['plan_type'] != 'build' or bool(descriptions), 'build plan executed no tasks')
+791:     executable = Path(build)/'bin/llvm-bolt'
+792:     require(executable.is_file() and not executable.is_symlink() and os.access(executable, os.X_OK),
+793:             'llvm-bolt is not a regular executable')
+794:     require(state['configuration_refresh_tasks'] == plan['configuration_refresh_tasks'], 'TF snapshot does not match plan')
+795:     tf = dict(state)
+796:     if plan['configuration_refresh_tasks']:
+797:         archive = Path(build)/'lib64/libtf_xla_runtime.a'
+798:         require(archive.is_file(), 'missing TF archive after build')
+799:         tf['after_sha256'] = digest(archive)
+800:         require(tf['after_sha256'] == state['before_sha256'], 'TF archive SHA changed during build')
+801:     after_sha = digest(executable)
+802:     before = state['executable_before']
+803:     return {'planned_tasks': plan['tasks'], 'executed_tasks': len(descriptions),
+804:             'executable_before': before['exists'], 'executable_before_sha256': before['sha256'],
+805:             'executable_after_sha256': after_sha,
+806:             'executable_produced_by_this_build': 'Linking CXX executable bin/llvm-bolt' in descriptions,
+807:             'tool_build_verified': True, 'tasks': len(descriptions), 'descriptions': descriptions,
+808:             'progress_counters': counters, 'TF_archive': tf, 'executable': str(executable)}
+
+### source/packaging/clang-bolt-helper.py:811-929
+
+811: # These are package-owned measurement scopes, not admission limits.
+812: BOLT_OWNED_PATHS = ('clang-bolt/**', 'tools/bolt/**', 'lib64/libLLVMBOLT*.a',
+813:                     'bin/llvm-bolt', 'ThinLTO cache positive allocation delta')
+814: DISK_LOG_MATCHES = (r'No space left on device', r'Disk quota exceeded',
+815:                     r'\bENOSPC\b', r'\bEDQUOT\b')
+816: _DISK_CONTEXT = {}
+817: 
+818: 
+819: def disk_context(build=None, work=None, root=None):
+820:     build = Path(build or _DISK_CONTEXT.get('build') or os.environ.get('BOLT_BUILD') or Path.cwd()).absolute()
+821:     work = Path(work or _DISK_CONTEXT.get('work') or os.environ.get('BOLT_WORK') or build/'clang-bolt').absolute()
+822:     root = root or _DISK_CONTEXT.get('root') or os.environ.get('BOLT_INSTALL_ROOT')
+823:     return build, work, Path(root).absolute() if root else None
+824: 
+825: 
+826: def filesystem(path):
+827:     path = Path(path).absolute()
+828:     while not path.exists():
+829:         path = path.parent
+830:     if not path.is_dir():
+831:         path = path.parent
+832:     return {'path': str(path), 'device': path.stat().st_dev,
+833:             'free_bytes': shutil.disk_usage(path).free, 'time_ns': time.time_ns()}
+834: 
+835: 
+836: def disk_entries(root):
+837:     """lstat allocation, including directories; never follow symlinks."""
+838:     root = Path(root)
+839:     if not root.exists() and not root.is_symlink():
+840:         return {}
+841:     result = {}
+842:     def add(path):
+843:         s = path.lstat()
+844:         result[path.relative_to(root).as_posix()] = {
+845:             'device': s.st_dev, 'inode': s.st_ino, 'bytes': s.st_size,
+846:             'allocated_bytes': s.st_blocks*512, 'mode': s.st_mode}
+847:     add(root)
+848:     if root.is_dir() and not root.is_symlink():
+849:         def failed(error): raise error
+850:         for directory, dirs, files in os.walk(root, followlinks=False, onerror=failed):
+851:             for name in dirs+files:
+852:                 add(Path(directory)/name)
+853:     return result
+854: 
+855: 
+856: def disk_cache(build, work):
+857:     edge = work/'link.original'
+858:     if edge.is_file():
+859:         matches = re.findall(r'--thinlto-cache-dir=([^\s]+)', edge.read_text())
+860:         if len(matches) == 1:
+861:             return Path(matches[0].strip("'\""))
+862:     return build/'lto.cache'
+863: 
+864: 
+865: def disk_measure(build, work, baseline=None):
+866:     scopes = [('work', work), ('tool_objects', build/'tools/bolt'),
+867:               ('tool_executable', build/'bin/llvm-bolt')]
+868:     scopes += [('tool_library', p) for p in sorted((build/'lib64').glob('libLLVMBOLT*.a'))]
+869:     owned = {}; groups = []; seen = set()
+870:     for category, path in scopes:
+871:         entries = disk_entries(path); allocated = logical = 0
+872:         for rel, item in entries.items():
+873:             key = (item['device'], item['inode'])
+874:             if key in seen: continue
+875:             seen.add(key); allocated += item['allocated_bytes']
+876:             if stat.S_ISREG(item['mode']): logical += item['bytes']
+877:             owned[str(path/rel)] = item
+878:         groups.append({'category': category, 'path': str(path),
+879:                        'allocated_bytes': allocated, 'logical_file_bytes': logical})
+880:     cache = disk_cache(build, work); current = disk_entries(cache)
+881:     old = (baseline or {}).get('cache_entries', {})
+882:     same_cache = baseline is not None and baseline.get('cache_path') == str(cache)
+883:     cache_delta = cache_logical = 0
+884:     if same_cache:
+885:         for rel, item in current.items():
+886:             previous = old.get(rel)
+887:             delta = item['allocated_bytes'] if previous is None else max(0, item['allocated_bytes']-previous['allocated_bytes'])
+888:             logical = item['bytes'] if previous is None else max(0, item['bytes']-previous['bytes'])
+889:             cache_delta += delta
+890:             if stat.S_ISREG(item['mode']): cache_logical += logical
+891:     per_device = collections.defaultdict(int)
+892:     for item in owned.values(): per_device[item['device']] += item['allocated_bytes']
+893:     if same_cache:
+894:         for rel, item in current.items():
+895:             previous = old.get(rel)
+896:             per_device[item['device']] += item['allocated_bytes'] if previous is None else max(0, item['allocated_bytes']-previous['allocated_bytes'])
+897:     return {'owned_paths': groups, 'owned_filesystem_bytes': dict(per_device),
+898:             'used_bytes': sum(per_device.values()), 'cache_path': str(cache),
+899:             'cache_entries': current, 'cache_delta_known': same_cache,
+900:             'cache_delta_allocated_bytes': cache_delta, 'cache_delta_logical_bytes': cache_logical,
+901:             'cache_net_allocation_delta_bytes': sum(x['allocated_bytes'] for x in current.values())-sum(x['allocated_bytes'] for x in old.values()) if same_cache else None}
+902: 
+903: 
+904: def disk_report(stage, build=None, work=None, root=None):
+905:     """Best effort only: no space-based decisions, and no propagated exception."""
+906:     value = {'stage': stage, 'time_ns': time.time_ns(), 'recorded': False}
+907:     try:
+908:         build, work, root = disk_context(build, work, root)
+909:         baseline_path = work/'disk-baseline.json'
+910:         baseline = None
+911:         if stage != 'begin' and baseline_path.is_file():
+912:             baseline = json.loads(baseline_path.read_text())
+913:         measured = disk_measure(build, work, baseline)
+914:         value.update(filesystem(work), build=str(build), work=str(work),
+915:                      root=str(root) if root else None, scopes=list(BOLT_OWNED_PATHS), **measured)
+916:         value['filesystem_device']=value['device']
+917:         if stage == 'begin':
+918:             baseline = {'time_ns': value['time_ns'], 'cache_path': measured['cache_path'],
+919:                         'cache_entries': measured['cache_entries']}
+920:             save(baseline_path, baseline)
+921:         record = dict(value); record.pop('cache_entries', None); record['recorded'] = True
+922:         save(work/('disk-'+stage+'.json'), record)
+923:         value = record
+924:     except Exception as error:
+925:         value['report_error'] = str(error)
+926:     value.pop('cache_entries',None)
+927:     try: print('BOLT_DISK_REPORT '+json.dumps(value, ensure_ascii=False), flush=True)
+928:     except Exception: pass
+929:     return value
+
+### source/packaging/clang-bolt-helper.py:964-973
+
+964: def disk_prediction(build, work, root, measured, baseline, device):
+965:     formulas = []; unknown = []; growth = peak = 0
+966:     def file_size(path): return path.stat().st_size if path.is_file() else 0
+967:     def allocation(path): return path.stat().st_blocks*512 if path.is_file() else 0
+968:     def completed(log):
+969:         path = log.with_suffix(log.suffix+'.argv.json')
+970:         try:
+971:             value = json.loads(path.read_text())
+972:             return value.get('completed') is True and path.stat().st_mtime_ns >= baseline['time_ns']
+973:         except (OSError, ValueError): return False
+
+### source/packaging/clang-bolt-helper.py:991-1068
+
+991:         add('cache-copy remaining',expected,present,copy_destination)
+992:     plan_path = work/'tool-plan.json'; tool_log = work/'tool-build.txt'
+993:     try:
+994:         plan = json.loads(plan_path.read_text()); descriptions = plan['descriptions']
+995:         done = []; previous = None
+996:         for line in tool_log.read_text(errors='replace').splitlines() if tool_log.is_file() else []:
+997:             match = re.fullmatch(r'\[\d+/\d+\] (.+)', line)
+998:             if match:
+999:                 previous = match[1]
+1000:                 if previous in descriptions and previous not in done: done.append(previous)
+1001:             elif line.startswith('FAILED:') and previous in done: done.remove(previous)
+1002:         outputs = [task_output(build, d) for d in done]
+1003:         if any(p is None or not p.is_file() for p in outputs):
+1004:             unknown.append('some completed tool tasks have no measurable output')
+1005:         elif done:
+1006:             total = sum(file_size(p) for p in set(outputs)); remaining = len(descriptions)-len(done)
+1007:             predicted = (total*remaining+len(done)-1)//len(done)
+1008:             partial = sum(allocation(p) for d in descriptions if d not in done for p in [task_output(build,d)] if p is not None)
+1009:             formulas.append({'item': 'tool-build', 'formula': 'ceil(completed_output_bytes / completed_tasks * remaining_tasks)',
+1010:                              'completed_output_bytes': total, 'completed_tasks': len(done),
+1011:                              'remaining_tasks': remaining, 'predicted_output_bytes': predicted})
+1012:             add('tool-build remaining', predicted, partial, build)
+1013:         elif descriptions: unknown.append('tool completed_tasks=0: no measured per-task size; cannot divide by zero')
+1014:     except (OSError, ValueError, KeyError, TypeError): unknown.append('tool plan unavailable; no fabricated tool budget')
+1015:     ordinary = work/'ordinary-clang-22'; source = build/'bin/clang-22'
+1016:     ordinary_size = file_size(source) or file_size(ordinary)
+1017:     if not ordinary_size: unknown.append('ordinary-clang-22 size unavailable')
+1018:     formulas.append({'item': 'ordinary-input', 'formula': 'actual ordinary clang file size',
+1019:                      'build_clang_bytes': file_size(source), 'saved_ordinary_bytes': file_size(ordinary)})
+1020:     add('ordinary-copy', ordinary_size, allocation(ordinary), work)
+1021:     profile = work/'profile.fdata'
+1022:     if not completed(work/'unpack.log'):
+1023:         source_name = os.environ.get('BOLT_PROFILE_SOURCE')
+1024:         if source_name:
+1025:             try:
+1026:                 profile_bytes = 0
+1027:                 with lzma.open(source_name,'rb') as stream:
+1028:                     for chunk in iter(lambda: stream.read(1024*1024),b''): profile_bytes += len(chunk)
+1029:                 formulas.append({'item':'profile-size','formula':'stream-count actual decompressed Source bytes without writing a file',
+1030:                                  'source':source_name,'decompressed_bytes':profile_bytes})
+1031:                 add('profile unpack',profile_bytes,allocation(profile),work)
+1032:             except (OSError,lzma.LZMAError): unknown.append('profile Source cannot be measured')
+1033:         elif not profile.is_file(): unknown.append('profile Source size unavailable')
+1034:     reference = work/'reference-relocs-clang-22'; rewritten = work/'clang.bolt'; candidate = work/'clang.candidate'
+1035:     relink_size = max(ordinary_size, file_size(reference))
+1036:     if not completed(work/'reference-relocs.log'):
+1037:         formulas.append({'item':'relink-size', 'formula':'max(ordinary_bytes, observed_reference_bytes)',
+1038:                          'ordinary_bytes':ordinary_size, 'observed_reference_bytes':file_size(reference)})
+1039:         add('relink', relink_size, allocation(reference), work)
+1040:     reference_size = (file_size(reference) or relink_size) if completed(work/'reference-relocs.log') else relink_size
+1041:     if not completed(work/'reference-strip.log'):
+1042:         add('strip-debug temporary', reference_size, 0, work, temporary=True)
+1043:     rewrite_size = file_size(rewritten) if completed(work/'rewrite/bolt.log') else max(reference_size, file_size(rewritten))
+1044:     if not completed(work/'rewrite/bolt.log'):
+1045:         formulas.append({'item':'rewrite-size', 'formula':'max(observed_input_bytes, observed_partial_output_bytes)',
+1046:                          'observed_input_bytes':reference_size, 'observed_partial_output_bytes':file_size(rewritten)})
+1047:         add('BOLT rewrite', rewrite_size, allocation(rewritten), work)
+1048:     if not completed(work/'identity.strip.log'):
+1049:         predicted_candidate = max(rewrite_size, file_size(candidate))
+1050:         add('strip-all candidate copy', predicted_candidate, allocation(candidate), work)
+1051:         add('strip-all temporary', predicted_candidate, 0, work, temporary=True)
+1052:     install_size = file_size(candidate) or rewrite_size
+1053:     if root:
+1054:         entity = root/'usr/bin/clang-22'
+1055:         try: installed = file_size(candidate)>0 and digest(entity)==digest(candidate)
+1056:         except OSError: installed=False
+1057:         if not installed:
+1058:             add('atomic install temporary', install_size, allocation(entity.with_name('.clang-bolt.new')), entity.parent, temporary=True)
+1059:     cache_delta = measured['cache_delta_allocated_bytes']
+1060:     formulas.append({'item':'ThinLTO observed cache allocation', 'formula':'sum(max(current_allocation - baseline_allocation, 0)) per retained cache entry; new entries use current allocation',
+1061:                      'observed_bytes':cache_delta, 'already_in_used_bytes':True,
+1062:                      'additional_prediction_bytes':0, 'note':'Observed growth is retained once; future unobserved cache growth cannot be predicted from file sizes.'})
+1063:     if not measured['cache_delta_known']: unknown.append('cache baseline path mismatch')
+1064:     if not completed(work/'reference-relocs.log'):
+1065:         unknown.append('future ThinLTO growth is unobserved; measured retained cache delta is included once in used bytes')
+1066:     return {'estimated_remaining_bytes':peak, 'estimated_total_bytes':measured['owned_filesystem_bytes'].get(device,0)+peak,
+1067:             'formulas':formulas, 'incomplete_estimate':bool(unknown), 'unknown_components':unknown,
+1068:             'requirement_scope':'failure filesystem, retained outputs plus peak temporary allocation; lower bound when components are unknown'}
+
+### source/packaging/clang-bolt-helper.py:1071-1105
+
+1071: def disk_diagnose(step, log, error=None, build=None, work=None, root=None):
+1072:     """Read-only, failure evidence only; failures here never replace the error."""
+1073:     text, available = disk_failure_log(log)
+1074:     evidence = disk_evidence(log,error,log_text=text)
+1075:     cause = 'disk' if evidence else ('not-disk' if available else 'unknown')
+1076:     value = {'cause': cause, 'step': step, 'free_bytes': None}
+1077:     if cause == 'unknown':
+1078:         value.update(used_bytes=None,reason='日志不可用，无法判定原因')
+1079:     try:
+1080:         build, work, root = disk_context(build, work, root)
+1081:         target = root/'usr/bin' if root and step == 'install' else work
+1082:         value.update(free_bytes=filesystem(target)['free_bytes'])
+1083:         if cause in ('disk','unknown'):
+1084:             device=filesystem(target)['device']
+1085:             if cause == 'disk':
+1086:                 value.update(filesystem_device=device, evidence=evidence,
+1087:                              estimate_note='估计值，依据本次构建实际文件大小',
+1088:                              errno_messages=[os.strerror(int(item.split('=')[1])) for item in evidence if item.startswith('errno=')])
+1089:             baseline = None
+1090:             try:
+1091:                 baseline=json.loads((work/'disk-baseline.json').read_text())
+1092:                 if not (isinstance(baseline,dict) and isinstance(baseline.get('time_ns'),int)
+1093:                         and isinstance(baseline.get('cache_entries'),dict)
+1094:                         and all(isinstance(x,dict) and isinstance(x.get('allocated_bytes'),int)
+1095:                                 and isinstance(x.get('bytes'),int) for x in baseline['cache_entries'].values())):
+1096:                     baseline=None
+1097:             except (OSError, ValueError): pass
+1098:             measured = disk_measure(build,work,baseline)
+1099:             value['used_bytes']=measured['owned_filesystem_bytes'].get(device,0)
+1100:             if cause == 'disk': value['cache_delta_known']=measured['cache_delta_known']
+1101:             if cause == 'unknown':
+1102:                 pass
+1103:             elif baseline is None:
+1104:                 value.update(degraded='records unavailable: only current free and owned allocation are reliable')
+1105:             else:
+
+### source/packaging/clang-bolt-helper.py:1135-1170
+
+1135: def run_step(step, log, argv, output=None, success_marker=None):
+1136:     os.environ['BOLT_STEP_LOG'] = str(log)
+1137:     try:
+1138:         text = call(argv,log,timeout=None)
+1139:         if success_marker:
+1140:             with Path(log).open('a') as stream:
+1141:                 require(stream.write(success_marker+'\n')==len(success_marker)+1,'short build-success marker write');stream.flush();os.fsync(stream.fileno())
+1142:             text += success_marker+'\n'
+1143:         if output: atomic_text(output,text)
+1144:         print(text,end='',flush=True)
+1145:         return {'step':step,'log':str(log),'output':str(output) if output else None}
+1146:     except BaseException as error:
+1147:         # Preserve the failed command's actual output even when its exit is nonzero.
+1148:         try: print(Path(log).read_text(errors='replace'),end='',flush=True)
+1149:         except Exception: pass
+1150:         raise
+1151: 
+1152: 
+1153: def pipeline(build, work, bolt, cache=None):
+1154:     build, work = Path(build).absolute(), Path(work).absolute()
+1155:     edge = (work/'link.original').read_text()
+1156:     reference = work/'reference-relocs-clang-22'
+1157:     require(not reference.exists(), 'relink output must be new')
+1158:     script = work/'reference-relocs.sh'
+1159:     atomic_text(script,replay_script(edge,reference,work/'reference-relocs.d',cache))
+1160:     call(['/bin/sh',str(script)],work/'reference-relocs.log',cwd=build,timeout=1800)
+1161:     call([str(build/'bin/llvm-strip'),'--strip-debug',str(reference)],work/'reference-strip.log',timeout=600)
+1162:     result = rewrite(str(bolt),str(work/'profile.fdata'),str(reference),str(work/'clang.bolt'),work/'rewrite')
+1163:     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.bolt'),work/'prestrip-gate',str(build/'lib64/clang/22'))
+1164:     identity = strip_all(str(build/'bin/llvm-strip'),work/'clang.bolt',work/'clang.candidate',work/'identity.json')
+1165:     security = security_compare(str(work/'ordinary-clang-22'), str(work/'clang.candidate'))
+1166:     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.candidate'),work/'preinstall-gate',str(build/'lib64/clang/22'))
+1167:     result.update(identity=identity, security=security, input_policy='emit-relocs-then-strip-debug',
+1168:                   cache_policy='original-in-place' if cache is None else 'explicit-copy')
+1169:     save(work/'pipeline-result.json',result)
+1170:     return result
+
+### source/packaging/clang-bolt-helper.py:1209-1241
+
+1209: def validate_identity(identity, candidate):
+1210:     require(identity.get('bolt_note_before') is True, 'unproven pre-strip BOLT identity')
+1211:     require(identity.get('before_sha256') == digest(identity['before_path']), 'pre-strip SHA changed')
+1212:     before = ELF(identity['before_path'])
+1213:     try:
+1214:         before.audit()
+1215:     finally:
+1216:         before.close()
+1217:     require(digest(candidate) == identity.get('after_sha256'), 'stripped candidate SHA mismatch')
+1218:     final = ELF(candidate)
+1219:     try:
+1220:         final.audit(final=True)
+1221:     finally:
+1222:         final.close()
+1223: 
+1224: def strip_all(tool, before, after, result):
+1225:     before, after = Path(before).absolute(), Path(after).absolute()
+1226:     require(not after.exists() and before != after, 'strip-all output must be new')
+1227:     e = ELF(before)
+1228:     try:
+1229:         audit = e.audit()
+1230:     finally:
+1231:         e.close()
+1232:     before_sha = digest(before)
+1233:     shutil.copy2(before, after)
+1234:     call([str(tool), '--strip-all', str(after)], Path(result).with_suffix('.strip.log'), timeout=600)
+1235:     identity = {'before_path': str(before), 'before_sha256': before_sha, 'bolt_note_before': True,
+1236:                 'bolt_sections_before': audit['bolt_sections'], 'after_path': str(after),
+1237:                 'after_sha256': digest(after), 'strip_tool_sha256': digest(tool)}
+1238:     validate_identity(identity, after)
+1239:     save(result, identity)
+1240:     print(json.dumps({'BOLT_STRIP_IDENTITY': identity}), flush=True)
+1241:     return identity
+
+### source/packaging/clang-bolt-helper.py:1359-1377
+
+1359:     elif a.cmd=='snapshot':result=root_snapshot(a.root);save(a.output,result)
+1360:     elif a.cmd=='compare-root':result=compare_root(a.root,json.loads(Path(a.baseline).read_text()),a.after)
+1361:     elif a.cmd=='install':
+1362:         install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()),announce=True);return
+1363:     elif a.cmd=='post':
+1364:         result=post_gate(a.root,json.loads(Path(a.state).read_text()),a.ordinary,a.work,
+1365:                          a.resource_dir);save(Path(a.work)/'post-result.json',result)
+1366:     print(json.dumps(result,ensure_ascii=False),flush=True)
+1367: 
+1368: def cli():
+1369:     try:
+1370:         main()
+1371:         return 0
+1372:     except (GateError, OSError, ValueError, lzma.LZMAError) as error:
+1373:         step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+1374:         log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+1375:         diagnose_safely(step,log,error)
+1376:         print('BOLT_GATE_FAILED: '+str(error),file=sys.stderr)
+1377:         return 1
+
+### source/packaging/llvm-static-archives-native.py:172-178
+
+172: CERTIFIED_LLVM_MAJOR = 22
+173: CERTIFIED_OPTIMIZATION = {'x86_64': '-O3'}
+174: CERTIFIED_TRIPLES = {'x86_64': {'x86_64-tizen-linux-gnu'}}
+175: BACKEND_FLAGS = ['-ffunction-sections', '-fdata-sections',
+176:                  '-funique-section-names', '-faddrsig', '-g', '-gdwarf-4']
+177: # LLVM 22 clang/Driver/ToolChains/Clang.cpp:2797, 6228, 7992-7999.
+178: DEFAULTS = {'unique-section-names': True, 'addrsig': True, 'fp-contract': 'on'}
+
+### source/packaging/llvm-static-archives-native.py:238-246
+
+238:               or token.startswith('-std=')):
+239:             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
+240:         elif token == '-flto=thin':
+241:             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+242:         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
+243:                                '-fdiagnostics-color=')) or token in
+244:               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+245:                '-pedantic', '-pipe', '-c', '-MD', '--driver-mode=g++')):
+246:             category, reason = 'irrelevant', 'diagnostics, preprocessing or driver action'
+
+### source/packaging/llvm-static-archives-native.py:319-328
+
+319:     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+320:         lambda match: chr(int(match[1], 16)), metadata[command_id]))
+321:     policy = classify_options(recorded_command, arch)
+322:     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+323:              *BACKEND_FLAGS, '-ffp-contract='+policy['fp_contract'], '-c']
+324:     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
+325:               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+326:     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
+327:                 target_features=sorted(features), flags=flags, evidence=retained,
+328:                 recorded_command=recorded_command, policy=policy)
+
+### source/packaging/llvm-static-archives-native.py:535-549
+
+535: def validate_tools(build, compiler, disassembler, nm, command, output):
+536:     if not (build/'CMakeCache.txt').is_file():
+537:         raise ValueError('missing CMakeCache.txt under --build: '+str(build))
+538:     for label, tool in [('compiler', compiler), ('disassembler', disassembler), ('nm', nm)]:
+539:         if not tool.is_file() or not os.access(tool, os.X_OK):
+540:             raise ValueError('missing or non-executable --'+label+': '+str(tool))
+541:     version = output/'compiler-version.txt'
+542:     with version.open('wb') as stream:
+543:         command.run([compiler, '--version'], output/'compiler-version-command', stdout=stream)
+544:     text = version.read_text()
+545:     match = re.search(r'clang version (\d+)\.', text)
+546:     if not match or int(match[1]) != CERTIFIED_LLVM_MAJOR:
+547:         raise ValueError('uncertified compiler major (required 22): '+text.strip())
+548:     return dict(compiler=str(compiler), version=text, compiler_sha256=sha(compiler),
+549:                 disassembler=str(disassembler), nm=str(nm))
+
+### source/packaging/llvm-static-archives-native.py:552-587
+
+552: def reset_evidence(root, output, build):
+553:     root, output, build = root.resolve(), output.resolve(), build.resolve()
+554:     if (root == Path('/') or not root.is_dir() or not build.is_dir() or
+555:             output == build or build.is_relative_to(output) or root.is_relative_to(output)
+556:             or output.is_relative_to(root)):
+557:         raise ValueError('unsafe or overlapping install/build/evidence directories')
+558:     if output.exists():
+559:         shutil.rmtree(output)
+560:     output.mkdir(parents=True)
+561: 
+562: 
+563: def atomic_install(candidate, destination, expected_sha):
+564:     mode = stat.S_IMODE(destination.stat().st_mode)
+565:     fd, name = tempfile.mkstemp(prefix='.'+destination.name+'.native-', dir=destination.parent)
+566:     os.close(fd)
+567:     try:
+568:         shutil.copyfile(candidate, name)
+569:         if sha(name) != expected_sha:
+570:             raise ValueError('temporary archive copy SHA mismatch: '+str(destination))
+571:         os.chmod(name, mode)
+572:         os.replace(name, destination)
+573:         if sha(destination) != expected_sha:
+574:             raise ValueError('installed archive SHA mismatch: '+str(destination))
+575:     finally:
+576:         if os.path.exists(name):
+577:             os.unlink(name)
+578: 
+579: 
+580: def cleanup_evidence(output):
+581:     archives = output/'archives'
+582:     if archives.exists():
+583:         shutil.rmtree(archives)
+584:     # Keep JSON audit records, not bitcode/ELF/text-IR/nm/command-log payloads.
+585:     for path in output.rglob('*'):
+586:         if path.is_file() and path.suffix != '.json':
+587:             path.unlink()
+
+### source/packaging/llvm-static-archives-native.py:643-658
+
+643:                 text_ir = source.with_suffix('.ll')
+644:                 with text_ir.open('wb') as out:
+645:                     command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
+646:                 with text_ir.open() as lines:
+647:                     settings = ir_settings(lines, arch=arch)
+648:                 atomic_json(source.parent/'ir-settings.json', settings)
+649:                 text_ir.unlink()
+650:                 record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
+651:                 data = target.read_bytes()
+652:                 relocs = pic_relocations(data)
+653:                 atomic_json(source.parent/'relocations.json', relocs)
+654:                 if settings['pic_level'] and relocs['forbidden']:
+655:                     raise ValueError('non-PIC relocation in '+str(target))
+656:                 symbols = check_symbols(nm, source, target, command)
+657:                 return dict(ordinal=member['ordinal'], name=member['name'], preserved=False,
+658:                             settings=settings, conversion=record, symbols=symbols, sha256=sha(target))
+
+### source/packaging/llvm-static-archives-native.py:678-707
+
+678:             target_archive = output/'archives'/rel
+679:             target_archive.parent.mkdir(parents=True, exist_ok=True)
+680:             command.run(['/usr/bin/ar', 'qcDS', str(target_archive), *[str(t) for _, _, t in paths]], work/'pack')
+681:             command.run(['/usr/bin/ar', 'sD', str(target_archive)], work/'index')
+682:             after = inspect(target_archive)
+683:             atomic_json(work/'after.json', after)
+684:             if [(m['name'], m['occurrence']) for m in before['members']] != [(m['name'], m['occurrence']) for m in after['members']]:
+685:                 raise ValueError('member identity or order changed')
+686:             if after['bitcode'] or after['other'] or not after['index_equals_machine_symbols']:
+687:                 raise ValueError('output format/index mismatch')
+688:             for old, new in zip(before['members'], after['members']):
+689:                 if old['kind'] == 'machine' and old['sha256'] != new['sha256']:
+690:                     raise ValueError('native member not preserved in archive')
+691:             missing = Counter()
+692:             for result in results:
+693:                 missing.update(result.get('symbols', {}).get('missing_by_type', {}))
+694:             record = dict(path=str(rel), before_sha256=before['sha256'], after_sha256=after['sha256'],
+695:                           before_bytes=before['bytes'], after_bytes=after['bytes'], members=before['member_count'],
+696:                           converted=before['bitcode'], preserved=before['machine'], index_entries=after['index_entries'],
+697:                           debug_members=sum(bool(m['debug_sections']) for m in after['members']),
+698:                           missing_symbols_by_type=dict(missing), results=sorted(results, key=lambda x:x['ordinal']))
+699:             summary['archives'].append(record)
+700:             total_missing = Counter(summary['missing_symbols_by_type']); total_missing.update(missing)
+701:             summary['missing_symbols_by_type'] = dict(total_missing)
+702:             save()
+703:             print(json.dumps({k:v for k,v in record.items() if k!='results'}), flush=True)
+704:             for _, source, target in paths:
+705:                 if source.exists():
+706:                     source.unlink()
+707:                 target.unlink()
+
+### source/packaging/llvm-static-archives-native.py:730-765
+
+730: def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+731:             address_space_bytes=4*1024**3):
+732:     root, output = Path(root).resolve(), Path(output).resolve()
+733:     command = Commands(address_space_bytes)
+734:     old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
+735:     result = None
+736:     try:
+737:         print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
+738:         result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command)
+739:         command.check()
+740:         result['status'] = 'INSTALLING'
+741:         atomic_json(output/'summary.json', result)
+742:         for record in result['archives']:
+743:             command.check()
+744:             destination, candidate = root/record['path'], output/'archives'/record['path']
+745:             if sha(destination) != record['before_sha256'] or sha(candidate) != record['after_sha256']:
+746:                 raise ValueError('archive identity changed before atomic installation')
+747:             atomic_install(candidate, destination, record['after_sha256'])
+748:             record['installed'] = True
+749:             atomic_json(output/'summary.json', result)
+750:             print('NATIVE_ARCHIVE_INSTALLED', json.dumps({k:v for k,v in record.items() if k!='results'}), flush=True)
+751:         command.check()
+752:         cleanup_evidence(output)
+753:         result.update(status='PASS', install_finished=time.time(), large_files_deleted=True)
+754:         atomic_json(output/'summary.json', result)
+755:         if not result['archives']:
+756:             print('NATIVE_ARCHIVES_SKIP all archives already native', flush=True)
+757:         command.check()
+758:         print('NATIVE_ARCHIVES_END', time.time(), 'PASS', len(result['archives']), flush=True)
+759:         return result
+760:     except BaseException as error:
+761:         command.cancel()
+762:         if result is not None:
+763:             result.update(status='INSTALL_FAILED', reason=str(error))
+764:             atomic_json(output/'summary.json', result)
+765:         raise
+
+### source/llvm/cmake/modules/HandleLLVMOptions.cmake:1307-1335
+
+1307: set(LLVM_THINLTO_CACHE_PATH "${PROJECT_BINARY_DIR}/lto.cache" CACHE STRING "Set ThinLTO cache path. This can be used when building LLVM from several different directiories.")
+1308: 
+1309: if(LLVM_ENABLE_LTO AND WIN32 AND NOT LINKER_IS_LLD_LINK AND NOT MINGW)
+1310:   message(FATAL_ERROR "When compiling for Windows, LLVM_ENABLE_LTO requires using lld as the linker (point CMAKE_LINKER at lld-link.exe)")
+1311: endif()
+1312: if(uppercase_LLVM_ENABLE_LTO STREQUAL "THIN")
+1313:   append("-flto=thin" CMAKE_CXX_FLAGS CMAKE_C_FLAGS)
+1314:   if(NOT LINKER_IS_LLD_LINK)
+1315:     append("-flto=thin" CMAKE_EXE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
+1316:   endif()
+1317:   # If the linker supports it, enable the lto cache. This improves initial build
+1318:   # time a little since we re-link a lot of the same objects, and significantly
+1319:   # improves incremental build time.
+1320:   # FIXME: We should move all this logic into the clang driver.
+1321:   if(APPLE)
+1322:     append("-Wl,-cache_path_lto,${LLVM_THINLTO_CACHE_PATH}"
+1323:            CMAKE_EXE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
+1324:   elseif("${CMAKE_SYSTEM_NAME}" MATCHES "AIX")
+1325:     append("-bplugin_opt:-legacy-thinlto-cache-dir=${LLVM_THINLTO_CACHE_PATH}"
+1326:            CMAKE_EXE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
+1327:   elseif((UNIX OR MINGW) AND LLVM_USE_LINKER STREQUAL "lld")
+1328:     append("-Wl,--thinlto-cache-dir=${LLVM_THINLTO_CACHE_PATH}"
+1329:            CMAKE_EXE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
+1330:   elseif(LLVM_USE_LINKER STREQUAL "gold")
+1331:     append("-Wl,--plugin-opt,cache-dir=${LLVM_THINLTO_CACHE_PATH}"
+1332:            CMAKE_EXE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
+1333:   elseif(LINKER_IS_LLD_LINK)
+1334:     append("/lldltocache:${LLVM_THINLTO_CACHE_PATH}"
+1335:            CMAKE_EXE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
+
+### source/llvm/include/llvm/Support/CachePruning.h:27-62
+
+27: /// Policy for the pruneCache() function. A default constructed
+28: /// CachePruningPolicy provides a reasonable default policy.
+29: struct CachePruningPolicy {
+30:   /// The pruning interval. This is intended to be used to avoid scanning the
+31:   /// directory too often. It does not impact the decision of which file to
+32:   /// prune. A value of 0 forces the scan to occur. A value of std::nullopt
+33:   /// disables pruning.
+34:   std::optional<std::chrono::seconds> Interval = std::chrono::seconds(1200);
+35: 
+36:   /// The expiration for a file. When a file hasn't been accessed for Expiration
+37:   /// seconds, it is removed from the cache. A value of 0 disables the
+38:   /// expiration-based pruning.
+39:   std::chrono::seconds Expiration = std::chrono::hours(7 * 24); // 1w
+40: 
+41:   /// The maximum size for the cache directory, in terms of percentage of the
+42:   /// available space on the disk. Set to 100 to indicate no limit, 50 to
+43:   /// indicate that the cache size will not be left over half the available disk
+44:   /// space. A value over 100 will be reduced to 100. A value of 0 disables the
+45:   /// percentage size-based pruning.
+46:   unsigned MaxSizePercentageOfAvailableSpace = 75;
+47: 
+48:   /// The maximum size for the cache directory in bytes. A value over the amount
+49:   /// of available space on the disk will be reduced to the amount of available
+50:   /// space. A value of 0 disables the absolute size-based pruning.
+51:   uint64_t MaxSizeBytes = 0;
+52: 
+53:   /// The maximum number of files in the cache directory. A value of 0 disables
+54:   /// the number of files based pruning.
+55:   ///
+56:   /// This defaults to 1000000 because with that many files there are
+57:   /// diminishing returns on the effectiveness of the cache. Some systems have a
+58:   /// limit on total number of files, and some also limit the number of files
+59:   /// per directory, such as Linux ext4, with the default setting (block size is
+60:   /// 4096 and large_dir disabled), there is a per-directory entry limit of
+61:   /// 508*510*floor(4096/(40+8))~=20M for average filename length of 40.
+62:   uint64_t MaxSizeFiles = 1000000;
+
+### source/llvm/lib/Support/CachePruning.cpp:280-319
+
+280:   if (Policy.MaxSizePercentageOfAvailableSpace > 0 || Policy.MaxSizeBytes > 0) {
+281:     auto ErrOrSpaceInfo = sys::fs::disk_space(Path);
+282:     if (!ErrOrSpaceInfo) {
+283:       auto EC = ErrOrSpaceInfo.getError();
+284:       report_fatal_error(Twine("Can't get available size for '") + Path.str() +
+285:                          "': " + EC.message());
+286:     }
+287:     sys::fs::space_info SpaceInfo = ErrOrSpaceInfo.get();
+288:     auto AvailableSpace = TotalSize + SpaceInfo.free;
+289: 
+290:     if (Policy.MaxSizePercentageOfAvailableSpace == 0)
+291:       Policy.MaxSizePercentageOfAvailableSpace = 100;
+292:     if (Policy.MaxSizeBytes == 0)
+293:       Policy.MaxSizeBytes = AvailableSpace;
+294:     auto TotalSizeTarget = std::min<uint64_t>(
+295:         AvailableSpace * Policy.MaxSizePercentageOfAvailableSpace / 100ull,
+296:         Policy.MaxSizeBytes);
+297: 
+298:     LLVM_DEBUG(dbgs() << "Occupancy: " << ((100 * TotalSize) / AvailableSpace)
+299:                       << "% target is: "
+300:                       << Policy.MaxSizePercentageOfAvailableSpace << "%, "
+301:                       << Policy.MaxSizeBytes << " bytes\n");
+302: 
+303:     size_t ActualSizes = 0;
+304:     for (const auto &File : Files)
+305:       if (File)
+306:         ActualSizes += File->getBufferSize();
+307: 
+308:     if (ActualSizes > TotalSizeTarget)
+309:       WithColor::warning()
+310:           << "ThinLTO cache pruning happens since the total size of the cache "
+311:              "files consumed by the current link job ("
+312:           << ActualSizes << "  bytes) exceeds maximum cache size ("
+313:           << TotalSizeTarget
+314:           << " bytes); consider adjusting --thinlto-cache-policy\n";
+315: 
+316:     // Remove the oldest accessed files first, till we get below the threshold.
+317:     while (TotalSize > TotalSizeTarget && FileInfo != FileInfos.end())
+318:       RemoveCacheFile();
+319:   }
+
+### source/lld/ELF/Driver.cpp:1568-1571
+
+1568:   ctx.arg.thinLTOCacheDir = args.getLastArgValue(OPT_thinlto_cache_dir);
+1569:   ctx.arg.thinLTOCachePolicy = CHECK(
+1570:       parseCachePruningPolicy(args.getLastArgValue(OPT_thinlto_cache_policy)),
+1571:       "--thinlto-cache-policy: invalid cache policy");
+
+### source/lld/ELF/LTO.cpp:328-336
+
+328:   // specified, configure LTO to use it as the cache directory.
+329:   FileCache cache;
+330:   if (!ctx.arg.thinLTOCacheDir.empty())
+331:     cache = check(localCache("ThinLTO", "Thin", ctx.arg.thinLTOCacheDir,
+332:                              [&](size_t task, const Twine &moduleName,
+333:                                  std::unique_ptr<MemoryBuffer> mb) {
+334:                                files[task] = std::move(mb);
+335:                                filenames[task] = moduleName.str();
+336:                              }));
+
+### source/lld/ELF/LTO.cpp:373-374
+
+373:   if (!ctx.arg.thinLTOCacheDir.empty())
+374:     pruneCache(ctx.arg.thinLTOCacheDir, ctx.arg.thinLTOCachePolicy, files);
+
+### source/llvm/lib/Support/Caching.cpp:40-74
+
+40:   auto Func = [=](unsigned Task, StringRef Key,
+41:                   const Twine &ModuleName) -> Expected<AddStreamFn> {
+42:     // This choice of file name allows the cache to be pruned (see pruneCache()
+43:     // in include/llvm/Support/CachePruning.h).
+44:     SmallString<64> EntryPath;
+45:     sys::path::append(EntryPath, CacheDirectoryPath, "llvmcache-" + Key);
+46:     // First, see if we have a cache hit.
+47:     SmallString<64> ResultPath;
+48:     Expected<sys::fs::file_t> FDOrErr = sys::fs::openNativeFileForRead(
+49:         Twine(EntryPath), sys::fs::OF_UpdateAtime, &ResultPath);
+50:     std::error_code EC;
+51:     if (FDOrErr) {
+52:       ErrorOr<std::unique_ptr<MemoryBuffer>> MBOrErr =
+53:           MemoryBuffer::getOpenFile(*FDOrErr, EntryPath,
+54:                                     /*FileSize=*/-1,
+55:                                     /*RequiresNullTerminator=*/false);
+56:       sys::fs::closeFile(*FDOrErr);
+57:       if (MBOrErr) {
+58:         AddBuffer(Task, ModuleName, std::move(*MBOrErr));
+59:         return AddStreamFn();
+60:       }
+61:       EC = MBOrErr.getError();
+62:     } else {
+63:       EC = errorToErrorCode(FDOrErr.takeError());
+64:     }
+65: 
+66:     // On Windows we can fail to open a cache file with a permission denied
+67:     // error. This generally means that another process has requested to delete
+68:     // the file while it is still open, but it could also mean that another
+69:     // process has opened the file without the sharing permissions we need.
+70:     // Since the file is probably being deleted we handle it in the same way as
+71:     // if the file did not exist at all.
+72:     if (EC != errc::no_such_file_or_directory && EC != errc::permission_denied)
+73:       return createStringError(EC, Twine("Failed to open cache file ") +
+74:                                        EntryPath + ": " + EC.message() + "\n");
+
+### source/llvm/cmake/modules/LLVMInstallSymlink.cmake:10-26
+
+10: function(install_symlink name target outdir link_or_copy)
+11:   # link_or_copy is the "command" to pass to cmake -E.
+12:   # It should be either "create_symlink" or "copy".
+13: 
+14:   set(DESTDIR $ENV{DESTDIR})
+15:   if(NOT IS_ABSOLUTE "${outdir}")
+16:     set(outdir "${CMAKE_INSTALL_PREFIX}/${outdir}")
+17:   endif()
+18:   set(outdir "${DESTDIR}${outdir}")
+19: 
+20:   message(STATUS "Creating ${name}")
+21: 
+22:   execute_process(
+23:     COMMAND "${CMAKE_COMMAND}" -E ${link_or_copy} "${target}" "${name}"
+24:     WORKING_DIRECTORY "${outdir}")
+25: 
+26: endfunction()
+
+### historical/build-CMakeCache.txt:1407-1407
+
+1407: LLVM_ENABLE_LTO:STRING=Thin
+
+### historical/build-CMakeCache.txt:1769-1769
+
+1769: LLVM_THINLTO_CACHE_PATH:STRING=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache
+
+### historical/build-CMakeCache.txt:2158-2158
+
+2158: LLVM_USE_LINKER:UNINITIALIZED=lld
+
+### historical/clang-cmake_install.cmake:48-80
+
+48:       "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/clang"
+49:       )
+50:     if(EXISTS "${file}" AND
+51:        NOT IS_SYMLINK "${file}")
+52:       file(RPATH_CHECK
+53:            FILE "${file}"
+54:            RPATH "\$ORIGIN/../lib64")
+55:     endif()
+56:   endforeach()
+57:   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" TYPE EXECUTABLE FILES
+58:     "/home/abuild/bolt-work/bolt-v4-20261014-fallback/config-install-temp/bin/clang-22"
+59:     "/home/abuild/bolt-work/bolt-v4-20261014-fallback/config-install-temp/bin/clang"
+60:     )
+61:   foreach(file
+62:       "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/clang-22"
+63:       "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/bin/clang"
+64:       )
+65:     if(EXISTS "${file}" AND
+66:        NOT IS_SYMLINK "${file}")
+67:       file(RPATH_CHANGE
+68:            FILE "${file}"
+69:            OLD_RPATH "\$ORIGIN/../lib64:"
+70:            NEW_RPATH "\$ORIGIN/../lib64")
+71:       if(CMAKE_INSTALL_DO_STRIP)
+72:         execute_process(COMMAND "/bin/llvm-strip" "${file}")
+73:       endif()
+74:     endif()
+75:   endforeach()
+76: endif()
+77: 
+78: if(CMAKE_INSTALL_COMPONENT STREQUAL "clang" OR NOT CMAKE_INSTALL_COMPONENT)
+79:   include("/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/cmake/modules/LLVMInstallSymlink.cmake")
+80: endif()
+
+### historical/9e-captured-install.sh:158-168
+
+158:     /usr/lib/rpm/brp-compress /usr 
+159:     /usr/lib/rpm/brp-elfperms 
+160:     /usr/lib/rpm/brp-strip /usr/bin/strip 
+161:     /usr/lib/rpm/brp-strip-static-archive /usr/bin/strip 
+162:     /usr/lib/rpm/brp-strip-comment-note /usr/bin/strip /usr/bin/objdump 
+163:     /usr/lib/rpm/brp-remove-la-files 
+164: 
+165:  
+166:     python3 -B /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261013/v41/llvm-source/packaging/clang-bolt-helper.py post "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/BUILDROOT/llvm-22.1.8-1.x86_64" "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json" "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22" "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/BUILD/llvm-22.1.8/build/clang-bolt/post-gate" --resource-dir "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261019-narrow-disk/capture/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22" || exit 1 
+167:     echo BOLT_POST_GATE_PASS 
+168:     python3 -B /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261013/v41/llvm-source/packaging/clang-bolt-helper.py disk-report post
+
+### historical/Tizen-debug-post-baseline.sh:83-112
+
+83:     /usr/lib/rpm/find-debuginfo.sh \
+84:     -j40 \
+85:      \
+86:      \
+87:      \
+88:      \
+89:     --build-id-seed "22.1.8-1" \
+90:      \
+91:     --unique-debug-src-base "llvm-22.1.8-1.x86_64" \
+92:      \
+93:      \
+94:      \
+95:      \
+96:     -S debugsourcefiles.list \
+97:     "/home/abuild/bolt-work/bolt-v4-20261015-review4b/post-capture/BUILD/llvm-22.1.8"\
+98:     
+99:    cp /usr/lib/rpm/debug.manifest /home/abuild/bolt-work/bolt-v4-20261015-review4b/post-capture/BUILD/llvm-22.1.8/llvm-debuginfo.manifest 
+100:    cp /usr/lib/rpm/debug.manifest /home/abuild/bolt-work/bolt-v4-20261015-review4b/post-capture/BUILD/llvm-22.1.8/llvm-debugsource.manifest 
+101:  
+102: 
+103:     /usr/lib/rpm/check-buildroot
+104:     
+105:     /usr/lib/rpm//brp-compress 
+106:     
+107:      
+108:     /usr/lib/rpm/brp-strip-static-archive /bin/strip 
+109: #    /usr/lib/rpm/brp-strip-comment-note /bin/strip /bin/objdump 
+110: 
+111:     /usr/lib/rpm/brp-python-hardlink 
+112:     /usr/lib/rpm/tizen/find-docs.sh /home/abuild/bolt-work/bolt-v4-20261015-review4b/post-capture/BUILDROOT 
+
+### historical/find-debuginfo.sh:431-448
+
+431:   echo "extracting debug info from $f"
+432:   # See also cpio SOURCEFILE copy. Directories must match up.
+433:   debug_base_name="$RPM_BUILD_DIR"
+434:   debug_dest_name="/usr/src/debug"
+435:   if [ ! -z "$unique_debug_src_base" ]; then
+436:     debug_base_name="$BUILDDIR"
+437:     debug_dest_name="/usr/src/debug/${unique_debug_src_base}"
+438:   fi
+439:   no_recompute=
+440:   if [ "$no_recompute_build_id" = "true" ]; then
+441:     no_recompute="-n"
+442:   fi
+443:   mode=$(stat -c %a "$f")
+444:   chmod +w "$f"
+445:   id=$(${lib_rpm_dir}/debugedit -b "$debug_base_name" -d "$debug_dest_name" \
+446: 			      $no_recompute -i \
+447: 			      ${build_id_seed:+--build-id-seed="$build_id_seed"} \
+448: 			      -l "$SOURCEFILE" "$f") || exit
+
+### historical/find-debuginfo.sh:646-667
+
+646: if [ -s "$SOURCEFILE" ]; then
+647:   # See also debugedit invocation. Directories must match up.
+648:   debug_base_name="$RPM_BUILD_DIR"
+649:   debug_dest_name="/usr/src/debug"
+650:   if [ ! -z "$unique_debug_src_base" ]; then
+651:     debug_base_name="$BUILDDIR"
+652:     debug_dest_name="/usr/src/debug/${unique_debug_src_base}"
+653:   fi
+654: 
+655:   mkdir -p "${RPM_BUILD_ROOT}${debug_dest_name}"
+656:   # Filter out anything compiler generated which isn't a source file.
+657:   # e.g. <internal>, <built-in>, <__thread_local_inner macros>.
+658:   # Some compilers generate them as if they are part of the working
+659:   # directory (which is why we match against ^ or /).
+660: 
+661:   # Get package name from directory and then filter out all files not
+662:   # starting with this name
+663:   #remove old patch: 6428714ec2f4a0aa2b3c3b2e1b81c2cedf06e8c6
+664:   #pn=$(basename "$BUILDDIR")
+665:   LC_ALL=C sort -z -u "$SOURCEFILE" | grep -E -v -z '(^|/)<[a-z _-]+>$' |
+666:   #grep -E -z "^${pn}" |
+667:   (cd "${debug_base_name}"; cpio -pd0mL "${RPM_BUILD_ROOT}${debug_dest_name}")
+
+### historical/brp-strip:14-21
+
+14: # Strip ELF binaries
+15: for f in `find "$RPM_BUILD_ROOT" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
+16:         grep -v "^${RPM_BUILD_ROOT}/\?usr/lib/debug"  | \
+17: 	grep -v ' shared object,' | \
+18: 	grep -v '/lib/modules/' | \
+19: 	sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped.*/\1/p'`; do
+20: 	$STRIP -g "$f" || :
+21: done
+
+### historical/brp-strip-static-archive:14-20
+
+14: # Strip static libraries.
+15: for f in `find "$RPM_BUILD_ROOT" -type f -a -exec file {} \; | \
+16:         grep -v "^${RPM_BUILD_ROOT}/\?usr/lib/debug"  | \
+17: 	grep 'current ar archive' | \
+18: 	sed -n -e 's/^\(.*\):[ 	]*current ar archive/\1/p'`; do
+19: 	$STRIP -g "$f"
+20: done
+
+### source/packaging/clang-bolt-helper.py:33-45
+33: Profile retraining is offline, never part of an RPM build: preserve a relinked
+34: emit-relocs/strip-debug input and matching BOLT/runtime identities, instrument
+35: with one BOLT thread and a fresh PID-suffixed profile prefix. Reuse the recorded
+36: 13 ARM workloads (A/B/C generator plus ten real TUs) and ten AArch64 TUs, their
+37: exact flags/sysroots/resource directory and input hashes; exclude holdouts.
+38: The existing collect_bolt_profile.py and extend_bolt_profile_aarch64.py scripts
+39: collect these 13+10 profiles and merge explicit paths with merge-fdata. Compress
+40: the new profile Source, update its SHA, then repeat matching, object, security,
+41: package and performance gates. Historical instrumentation requires
+42: resource planning outside package builds; local resource/lock rules never
+43: enter this release helper.
+44: Retain ordinary/pre-strip BOLT ELFs, rewrite/identity records, final RPM/accel
+45: SHA and Build-ID for crash localization; the shipped clang is fully stripped.
