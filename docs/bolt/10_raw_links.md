@@ -185,3 +185,13 @@ sandbox/lhmax2025/bolt_pgo远端由cb67996861d070d68fec2b4c623eed7d20ba2e23更�
 - [tools/bolt/results/disk-footprint-20261021/source-lifetime-excerpts.txt](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/source-lifetime-excerpts.txt)
 - [tools/bolt/results/disk-footprint-20261021/source-preservation.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/source-preservation.json)
 - [evidence-validation.txt](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/evidence-validation.txt)
+
+
+## 2026-10-22：只读构建根盘点
+
+- [31 盘点报告](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/docs/bolt/31_build_root_inventory.md)
+- [逐目录 TSV](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/root-inventory-20261022/inventory.tsv)
+- [回收方案与14文件SHA](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/root-inventory-20261022/reclaim-scenario.json)
+- [全部盘点文件SHA索引](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/root-inventory-20261022/SHA256SUMS)
+
+本次只有建议，未执行删除。完整raw文件均在该目录，固定版本使用本次Git提交号替换URL中的bolt-v4。

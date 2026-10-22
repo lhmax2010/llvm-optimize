@@ -1,0 +1,520 @@
+[
+  {
+    "repo": "main",
+    "path": "docs/35_archive_fix_v2_final.md",
+    "line": 208,
+    "text": "`/var/tmp/llvm-optimize-archivefix-v2-final-20261009/independent-install/install-root`。",
+    "file_sha256": "bef9f0229252d0097a814889f8e41f73069df9c845083ca5f547dab3ad16db68"
+  },
+  {
+    "repo": "main",
+    "path": "docs/36_archive_fix_tizen_consumers.md",
+    "line": 19,
+    "text": "| 新测试根父目录 | `/var/tmp/llvm-optimize-archivefix-v2-tizen-20261009`；两个新根后缀分别为`gbs-root-archive-consumer-v2-cached-bfd`和`-lld` |",
+    "file_sha256": "fcfa43a191ab258e5dabcbe3f24aec10b79aaff7044f9fd3ec03d5eee491ecfa"
+  },
+  {
+    "repo": "main",
+    "path": "docs/40_arm_archive_conversion_stage1.md",
+    "line": 874,
+    "text": "V10 = /var/tmp/llvm-optimize-arm-c1-20261010",
+    "file_sha256": "89272bf360bcdd0a49ffb50cc20700a316bb2db69a02381fab5599a1e0cb5c43"
+  },
+  {
+    "repo": "main",
+    "path": "docs/46_review_round3_package.md",
+    "line": 17,
+    "text": "| R32 | `/var/tmp/llvm-optimize-arm-c1-20261010/gbs-libraries-armv7l/local/BUILD-ROOTS/scratch.armv7l.0` |",
+    "file_sha256": "942eae8deaa9ffe15e1b56eaca99b3a1f99b0c85cc7843fc08e06f85c7fa605c"
+  },
+  {
+    "repo": "main",
+    "path": "docs/40_arm_archive_conversion_stage1.md",
+    "line": 628,
+    "text": "V9 = /var/tmp/llvm-optimize-arm-stage1-20261010",
+    "file_sha256": "89272bf360bcdd0a49ffb50cc20700a316bb2db69a02381fab5599a1e0cb5c43"
+  },
+  {
+    "repo": "main",
+    "path": "docs/40_arm_archive_conversion_stage1.md",
+    "line": 991,
+    "text": " source=Path('/var/tmp/llvm-optimize-arm-stage1-20261010/gbs-c0-armv7l/local/cache');copied=[]",
+    "file_sha256": "89272bf360bcdd0a49ffb50cc20700a316bb2db69a02381fab5599a1e0cb5c43"
+  },
+  {
+    "repo": "main",
+    "path": "docs/40_arm_archive_conversion_stage1.md",
+    "line": 2185,
+    "text": "ARM32阶段先以`256267b39a5639e0065a2b8c008c7ea5055a031e`提交并push，再启动本节。新根R64为`/var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/BUILD-ROOTS/scratch.aarch64.0`，B64为`R64/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`。B10、B64与两根GBS缓存均保留。本节证据仍为E12。",
+    "file_sha256": "89272bf360bcdd0a49ffb50cc20700a316bb2db69a02381fab5599a1e0cb5c43"
+  },
+  {
+    "repo": "main",
+    "path": "docs/46_review_round3_package.md",
+    "line": 18,
+    "text": "| R64 | `/var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/BUILD-ROOTS/scratch.aarch64.0` |",
+    "file_sha256": "942eae8deaa9ffe15e1b56eaca99b3a1f99b0c85cc7843fc08e06f85c7fa605c"
+  },
+  {
+    "repo": "main",
+    "path": "docs/38_llvm_strip_x86_64.md",
+    "line": 325,
+    "text": "两个新根在 `/var/tmp/llvm-optimize-llvm-strip-tizen-20261009/gbs-root-llvm-strip-consumer-{bfd,lld}`，不是 LLVM 构建根，也不覆盖 docs/30 测试根。",
+    "file_sha256": "b811ea0ca35637f531668868041678d433e531685f2b06b6f25af9f4d14fad67"
+  },
+  {
+    "repo": "main",
+    "path": "docs/49_x86_build_resume_result.md",
+    "line": 238,
+    "text": "交接冻结时间：2026-10-14T13:10:12.026995+08:00。完整构建结束时间：2026-10-14T06:49:10+08:00。**BOLT会话可在以下树原地使用缓存；本归档会话从交接起不再写这棵树。** 后续ARM验证使用其原有两棵ARM树/独立新输出，重任务继续共享flock排队。",
+    "file_sha256": "08eee2902611e5773d6987c2a6888ecbb99982f4ec06feb41759c82a1d5b09b2"
+  },
+  {
+    "repo": "bolt",
+    "path": "docs/bolt/16_fallback_and_config_install.md",
+    "line": 8,
+    "text": "2. 两次失败配置已刷新llvm-config.h、Targets.def、config.h等生成头；本周放弃原树恢复/树内工具路线。原树只读供已有重链输入与普通clang/strip/resource使用，禁止任何cmake/ninja（包括-n）；周五后决定恢复或废弃。",
+    "file_sha256": "3416d584315d95e4270b44dcaaff9ffa87178e929ec5c6f1e3d205b1c53c9a4f"
+  },
+  {
+    "repo": "main",
+    "path": "docs/49_x86_build_resume_result.md",
+    "line": 167,
+    "text": "证据：`new-rpm-consumers/`、`runtime-host/`、两个同名 scope。22 新 RPM 在同文件系统硬链接到 `/var/tmp/llvm-optimize-x86-archivefix-20261013-new-rpm-repo`，inode 一致，没有再复制 8.86GB。createrepo_c 成功，清单在 `new-rpm-identity.json`。Tizen bfd 于11:58:46启动，6GiB/swap0/≥8GiB准入、与原构建相同的冻结 Base/Unified 配置；根放在 `/home` 的新路径，后续 lld 串行，尚无结果。",
+    "file_sha256": "08eee2902611e5773d6987c2a6888ecbb99982f4ec06feb41759c82a1d5b09b2"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 139,
+    "text": "| `~/GBS-ROOT-TOOLCHAIN-LLVM-R4-RETRY-20260715` | 23.486† | 2026-07-15 13:17 | S03（报告+cwd关联）；GBS构建根/缓存/RPM | 非独立Git根；内嵌仓库未穷举 | ~/Toolchain/development/MLGO/llvm_optimize_docs/codex-verification-r4-results-20260714/REPORT.md:38 | **需用户判断**：存在历史引用或归属未明；根内特权路径有统计缺口，不能认定废弃 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 160,
+    "text": "| `~/Toolchain/development/llvm_inline_development/tmp/GBS-ROOT-TIZEN-UNIFIED-LLVM` | 29.312† | 2029-01-01 08:00 | S04；GBS根/验证载荷与证据 | 非独立Git根；内嵌仓库未穷举 | m1-c99-inline-handover-v16.md:3–5,49–80（关闭版仍列待办）；docs/README.md:40–53 | **需用户判断**：保留历史记录；载荷是否仍用于后续工作须项目负责人确认 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 204,
+    "text": "| `~/Toolchain/LLVM_Upgrade/llvm` | 14.674 | 2026-08-07 11:09 | S06（路径大小写迁移未确证）；LLVM源码/Git | 有：9已跟踪 / 22未跟踪项 | git-status.json：llvm有9项tracked+22项untracked；现存Gemini cwd | **保留**：保留历史记录；载荷是否仍用于后续工作须项目负责人确认 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 138,
+    "text": "| `~/Toolchain/development/MLGO/llvm_optimize_docs` | 53.603 | 2026-07-30 16:51 | S02/S03；源码、M0G/R3/R4等验证资产 | 非独立Git根；内嵌仓库未穷举 | MLGO/REPORT.md:10–19；llvm_optimize_docs/codex-verification-r4-results-20260714/REPORT.md:26–42 | **需用户判断**：保留历史记录；载荷是否仍用于后续工作须项目负责人确认 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/42_disk_cleanup.md",
+    "line": 64,
+    "text": "| `W/temp/archive-fix-rebind-20260923` | 5658 | 22.623360 | 663 | 0 | 663 | 0.000000 |",
+    "file_sha256": "36cf8fa3254d848104c39f2df56542aefe6d012723e0121ee1fa591f881b6839"
+  },
+  {
+    "repo": "main",
+    "path": "docs/35_archive_fix_v2_final.md",
+    "line": 23,
+    "text": "| E34 | `W/temp/archive-fix-v2-build-20260929`；U34=`E34/resume-20261008` |",
+    "file_sha256": "bef9f0229252d0097a814889f8e41f73069df9c845083ca5f547dab3ad16db68"
+  },
+  {
+    "repo": "main",
+    "path": "docs/38_llvm_strip_x86_64.md",
+    "line": 27,
+    "text": "| Rnew | `W/temp/gbs-root-x86_64-archivefix-v2` |",
+    "file_sha256": "b811ea0ca35637f531668868041678d433e531685f2b06b6f25af9f4d14fad67"
+  },
+  {
+    "repo": "bolt",
+    "path": "docs/bolt/24_rebase_recertification.md",
+    "line": 69,
+    "text": "PM确认上一轮不是产品问题：旧R/RPMS现存docs38试构建22包，6317baba符合docs38附录A；docs35原件在rpms-docs35，经docs38记录的rename保全。按新授权，逐一用docs35附录A核对保全22包大小/SHA，全部一致后完整合并解包。未读取docs38的RPM载荷，未称任何历史集为67619ec8新构建物。",
+    "file_sha256": "abea3d44b42da2648f2d80a0ef92fd559add083910ba956f4ba3f448cb34f3e4"
+  },
+  {
+    "repo": "main",
+    "path": "docs/50_archive_followup_review.md",
+    "line": 5,
+    "text": "证据E=`temp/archive-followup-review-20261014`；已验收最终树为`4c36e899dffee2869af9afd174346e3eb9a7d7ca`，生产Source SHA `c43523c0ce04fc3310e670ff97823db8260c21250dc3172575a18db56500082e`。既有Source、冻结候选补丁、W/gbs配置和已交接x86构建树不修改。本轮不处理ARM根内执行环境。",
+    "file_sha256": "d9a8d6b956d41aa916d28b115c1ecc50c4c33559695603e4cccd9fbcec391b40"
+  },
+  {
+    "repo": "main",
+    "path": "docs/50_archive_followup_review.md",
+    "line": 49,
+    "text": "- commit：`d4dd40da3b6ab28925b57d24d66bd992b4ad798c`",
+    "file_sha256": "d9a8d6b956d41aa916d28b115c1ecc50c4c33559695603e4cccd9fbcec391b40"
+  },
+  {
+    "repo": "main",
+    "path": "docs/35_archive_fix_v2_final.md",
+    "line": 28,
+    "text": "| H | `W/temp/archive-index-fix-rpm-20260923/baseline-rpm-extract`，docs/13基线 |",
+    "file_sha256": "bef9f0229252d0097a814889f8e41f73069df9c845083ca5f547dab3ad16db68"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 71,
+    "text": "| `W/temp/archive-index-fix-rpm-20260923` | 50.906 | 2026-09-23 23:15 | S01（关联；创建者未逐目录确证）；试验/报告证据（含载荷） | 产物/忽略目录；非独立Git根 | docs/STATUS.md:154；docs/38_llvm_strip_x86_64.md:31 | **保留**：包含H（唯一基线内容），用户指定保留 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/40_arm_archive_conversion_stage1.md",
+    "line": 55,
+    "text": "本轮证据目录 **E=`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010`**。原始输出只保存在本机。",
+    "file_sha256": "89272bf360bcdd0a49ffb50cc20700a316bb2db69a02381fab5599a1e0cb5c43"
+  },
+  {
+    "repo": "main",
+    "path": "docs/46_review_round3_package.md",
+    "line": 20,
+    "text": "| x86输入 E5/x86-input | `W/temp/arm-archive-stage1-20261010/x86-input` |",
+    "file_sha256": "942eae8deaa9ffe15e1b56eaca99b3a1f99b0c85cc7843fc08e06f85c7fa605c"
+  },
+  {
+    "repo": "main",
+    "path": "docs/40_arm_archive_conversion_stage1.md",
+    "line": 627,
+    "text": "E9 = W/temp/arm-archive-stage1-c-newrepo-20261010",
+    "file_sha256": "89272bf360bcdd0a49ffb50cc20700a316bb2db69a02381fab5599a1e0cb5c43"
+  },
+  {
+    "repo": "main",
+    "path": "docs/40_arm_archive_conversion_stage1.md",
+    "line": 772,
+    "text": "在 E9 的独立 Git clone 中检出 cb679968；原 W/llvm 只作为只读对象来源。",
+    "file_sha256": "89272bf360bcdd0a49ffb50cc20700a316bb2db69a02381fab5599a1e0cb5c43"
+  },
+  {
+    "repo": "main",
+    "path": "docs/46_review_round3_package.md",
+    "line": 22,
+    "text": "| AArch64输入 | `W/temp/arm-archive-tls-thumb-20261010/aarch64-input` |",
+    "file_sha256": "942eae8deaa9ffe15e1b56eaca99b3a1f99b0c85cc7843fc08e06f85c7fa605c"
+  },
+  {
+    "repo": "main",
+    "path": "docs/44_arm_source_review_round1.md",
+    "line": 27,
+    "text": "| AArch64输入 | `W/temp/arm-archive-tls-thumb-20261010/aarch64-input/usr/lib64`，212档；旧普查在同证据目录aarch64-ir-census |",
+    "file_sha256": "d1b7efe7b4faaaae052a547267e7c1a3f38f6c6209222d9d63d0b5529f208f56"
+  },
+  {
+    "repo": "main",
+    "path": "docs/46_review_round3_package.md",
+    "line": 19,
+    "text": "| E4（前轮证据） | `W/temp/arm-source-root-probes-20261010` |",
+    "file_sha256": "942eae8deaa9ffe15e1b56eaca99b3a1f99b0c85cc7843fc08e06f85c7fa605c"
+  },
+  {
+    "repo": "main",
+    "path": "docs/17_bolt_holdout.md",
+    "line": 22,
+    "text": "D1  = W/temp/bench_results/bolt-holdout-20260920/attempt1（失败校准）",
+    "file_sha256": "326f591953cad5418f335ede9b66a09029b5c214d69afc6d676fab03fb99169b"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 82,
+    "text": "| `W/temp/bench_results` | 7.284 | 2026-09-22 02:03 | S01（关联；创建者未逐目录确证）；试验/报告证据（含载荷） | 产物/忽略目录；非独立Git根 | docs/STATUS.md:132；docs/STATUS.md:134 | **保留**：真实TU、profile/基准JSON与诊断输入，不整目录删除 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "bolt",
+    "path": "docs/bolt/29_disk_footprint.md",
+    "line": 58,
+    "text": "| LLVM 自身并行 | 缺包日志，不能从 NGBS 变量推定 | 9e spec L63 默认 mlgo_build_jobs=6；L411 用该宏。最终展开和实际 argv 待启动后记录 |",
+    "file_sha256": "a3c76271b5dc4dc4eaef9fc0d4c8b016a8451190e5dd07223d82a1313c39c70d"
+  },
+  {
+    "repo": "bolt",
+    "path": "docs/bolt/25_real_install_rehearsal.md",
+    "line": 90,
+    "text": "卸载失败0；最终mountinfo中无本会话挂载，scope/cgroup已消失，abuild存活成员0。项目O_EXCL锁按拥有者匹配删除，flock释放。下层BUILD共240,718路径的类型/大小/mtime/链接目标清单前后完全一致，压缩清单SHA同为ee0e3adffe0c54a048236af45bebb4af1b2166edf16f5947371dbee00c856c19；CMakeCache/build.ninja/.ninja_log/.ninja_deps/clang-22/TF归档六个SHA逐项相同。",
+    "file_sha256": "9bd92c34066dbbc069e46f34e0953a785191f010b6adcc2c9c344d91d4d731d8"
+  },
+  {
+    "repo": "bolt",
+    "path": "docs/bolt/23_closure_post_certification.md",
+    "line": 47,
+    "text": "22个普通RPM逐个SHA与基线相同后解到全新合并根，rpm2cpio/cpio各自rc0，包头路径并集无缺失；检查17722路径、47个.cmake，PASS。同一根运行d08 helper也PASS，不能声称本基准实测旧版误拒；新增普通链接夹具证明本次语义放宽只在指定范围。根保留在E/payload-merged，不上传约50GB实物，仅上传清单结果/日志。",
+    "file_sha256": "c081f0026d5b20f062eec177ef9fe919449c5def07ffa29e34083a4192f3ea3a"
+  },
+  {
+    "repo": "bolt",
+    "path": "docs/bolt/20_object_validation_and_release.md",
+    "line": 28,
+    "text": "使用a1410e3d helper，普通clang/control先安装→snapshot/compare-root→候选install→原平台post一次→BOLT post尾检。没有第二次CMake安装或新配置。debug/release各一次rpmbuild-bb，execve证明helper post各1次、find-debuginfo仅debug1次、brp-strip脚本debug0次/release1次（原debug宏跳过该脚本）；debug control由eu-strip处理、release control由GNU strip处理，候选两边均未被strip/eu-strip处理。两RPM解包候选SHA保持4ec07159…，每边包装前尾检和包装后三目标对象全部PASS，clang家族链接归一clang-22。",
+    "file_sha256": "fcfb3247116a612136cee88d76c8ce0512ec320be8f1bbe3a891aac5c7dd3743"
+  },
+  {
+    "repo": "bolt",
+    "path": "docs/bolt/26_source_order_parse_fix.md",
+    "line": 1,
+    "text": "# QB 跨架构 spec 解析修复（2026-10-16）",
+    "file_sha256": "facf02fe8732a2ab20c859367a0c5240bb666448c02db037f9b6e3fbffd279c3"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 68,
+    "text": "| `W/temp/gbs-root-x86_64-archivefix` | 172.910† | 2026-09-29 13:25 | S01（关联；创建者未逐目录确证）；GBS构建根 | 产物/忽略目录；非独立Git根 | docs/30；docs/38 §0.2 第3类 | **只删大载荷保留日志**：docs/38尚未执行的候选；仅§4已量化二进制清单，日志/JSON/脚本/源码保留 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/35_archive_fix_v2_final.md",
+    "line": 55,
+    "text": "基线根/H、docs/30根及RPM、隔离旧混合根、docs/25–35历史证据均未清理。",
+    "file_sha256": "bef9f0229252d0097a814889f8e41f73069df9c845083ca5f547dab3ad16db68"
+  },
+  {
+    "repo": "main",
+    "path": "docs/52_hybrid_link_tizen_base.md",
+    "line": 49,
+    "text": "工具来自未交接的历史根 `temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`：Clang/LLD 22.1.8、CMake 3.31.2、Ninja 1.13.1，原构建环境包 clang/llvm 22.1.8-1.6；版本原文：[configuration-tools.txt](52_hybrid_link_evidence/configuration-tools.txt)。不以此证明最新快照完整构建。",
+    "file_sha256": "371c4be333b06daa681f4eecb8c854aaa1feb7658c938f653076777075c2cf73"
+  },
+  {
+    "repo": "bolt",
+    "path": "docs/bolt/02_inventory.md",
+    "line": 21,
+    "text": "R1=`W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0`；W为主工作区。历史clang/profile均来自f111162e配方，BOLT工具是docs/15在R1增量启用bolt项目的实验构建产物。RPM基线是docs/13最终RPM解包的clang，不是旧公开动态快照。历史带relocs ELF来自docs/14单clang重链；去debug输入来自docs/15。v1来自docs/16；v2来自docs/20附录D。",
+    "file_sha256": "13dc7906483d98ce25e9c22a3a14b00d9ce38c4ffc3ef7b87168538a90ca845b"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 69,
+    "text": "| `W/temp/gbs-root-x86_64-debuginfo-j4-v2` | 172.727† | 2026-09-18 12:40 | S01（关联；创建者未逐目录确证）；GBS构建根 | 产物/忽略目录；非独立Git根 | docs/13、docs/15；本任务保留边界 | **保留**：docs/13基线R0与RPM，后续比较依赖 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/52_hybrid_link_tizen_base.md",
+    "line": 8,
+    "text": "- 独立仓库 `temp/hybrid-link-20261015/source`，本地分支 **hybrid_link**；提交 `cef4d90b478597e20ff105591af3c5f4417363f1`，作者/提交者 Hao Lin `<hao.lin@samsung.com>`，使用命令级 `git -c`，全局配置未改。主工作区 `llvm/` 和另一个会话的资产未改。",
+    "file_sha256": "371c4be333b06daa681f4eecb8c854aaa1feb7658c938f653076777075c2cf73"
+  },
+  {
+    "repo": "main",
+    "path": "docs/52_hybrid_link_validation.md",
+    "line": 5,
+    "text": "固定身份：HEAD `6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2`；tree `80a6fd231c4564a3b762f4ec288cf2c41f9d2e20`；parent `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`；Change-Id `I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06`。原补丁 commit cef4d90 的 tree 相同，提交说明只重新折行。身份、推送原文、新克隆及 export 证据见 [本轮记录](52_hybrid_sandbox_evidence/README.md)。v1/v2 manifest 保留为历史，不用于核对 v3 指南 SHA。",
+    "file_sha256": "542ff8be70dd72372de4b371def184f4ca42ce5e2ad3b21b0501d08b7bae4a38"
+  },
+  {
+    "repo": "main",
+    "path": "docs/52_hybrid_sandbox_evidence/README.md",
+    "line": 19,
+    "text": "来源：[a1-identity.json](a1-identity.json)、[完整说明](a1-commit.txt)、[git am](a1-am.txt)、[折行 amend](a1-rewrap.txt)。准备目录为本任务新建的 `temp/hybrid-sandbox-20261019/prepare`，从已有非 BOLT LLVM 对象库新克隆、检出指定父提交后应用补丁。它不是对 W/llvm 的修改。",
+    "file_sha256": "06149dd4c971d9942139673f553ba87620fd4405aa057bb75ae1d229078e7165"
+  },
+  {
+    "repo": "main",
+    "path": "docs/22_hybrid_link_trial.md",
+    "line": 15,
+    "text": "源码试验工作树W/temp/llvm-hybrid-trial，分支hybrid-link-trial，HEAD=f111162e94aa48ed367c9d2c039456c70e7160ae。",
+    "file_sha256": "0c600f80c94bd8a76a405d83229d0c583175e4c3423be7141e47c5324d11ea02"
+  },
+  {
+    "repo": "main",
+    "path": "docs/llvm_optimize_intranet_fetch.md",
+    "line": 9,
+    "text": "上轮 8 个 patch 共有 29 行 `index` 缩写长度差异。前 5 处如下，每处列参考 12 位与浅克隆 9 位两行；原文来自 `temp/llvm-optimize-intranet-20261020/tag-export-full.diff`：",
+    "file_sha256": "26277d0a67b452cf83d40d159c160e292551c0170dcd81807d2c683af0f96420"
+  },
+  {
+    "repo": "main",
+    "path": "docs/STATUS.md",
+    "line": 7,
+    "text": "**当前任务（内网可续传源码包）完成：PASS**。按用户裁决仅将浅克隆局部 core.abbrev 固定为12，local upstream/merge-base 均 ca7933e4；HEAD 6e9d4f2b、tree 80a6fd23、origin 和干净状态不变。标准 GBS export 的 spec（1da77fe8…）及8 patch全部逐字节同参考；repack后只打包.git，整包 **425,114,069 B、5片**，SHA `cebfeb3cbda216be11f4e760336a2afc3a8d40ad26906482a849225559777f46`。已发布 [Release](https://github.com/lhmax2010/llvm-optimize/releases/tag/src-llvm-optimize-6e9d4f2)；从GitHub实际回下，HEAD/TREE/UPSTREAM/ABBREV全部PASS，再次export的spec和8patch仍同字节。可直接粘贴的脚本见[内网下载指南](llvm_optimize_intranet_fetch.md)。局部upstream与core.abbrev=12均须保留，未来只拉sandbox分支。无源码/配置配方修改、无构建、无Gerrit push；未访问BOLT资产；锁/scope/采样器已回收。",
+    "file_sha256": "9047c30b79506547a9f7755194919b728d3c7b15c493e86f7335e09f18d3ad67"
+  },
+  {
+    "repo": "main",
+    "path": "docs/42_disk_cleanup.md",
+    "line": 53,
+    "text": "| `W/temp/llvm-strip-alternative-20260929/bc-archives` | 225 | 5.106339 | 225 | 225 | 0 | 5.106339 |",
+    "file_sha256": "36cf8fa3254d848104c39f2df56542aefe6d012723e0121ee1fa591f881b6839"
+  },
+  {
+    "repo": "main",
+    "path": "docs/38_llvm_strip_x86_64.md",
+    "line": 22,
+    "text": "| E0 | `W/temp/llvm-strip-x86_64-20261009`，原磁盘 STOP 与宏链证据 |",
+    "file_sha256": "b811ea0ca35637f531668868041678d433e531685f2b06b6f25af9f4d14fad67"
+  },
+  {
+    "repo": "main",
+    "path": "docs/49_release_attribution.md",
+    "line": 15,
+    "text": "证据目录 E=`temp/release-attribution-20261013`。初始Source/补丁/spec/config与上轮冻结SHA一致，十项比较器与测试均同HEAD；工作树仅既有用户gbs_llvm.conf修改（E/initial-integrity.json）。双项目锁覆盖任务；重阶段共享heavy-stage.lock以flock排队最长2h。沿用docs/49 §1：轻/重准入6/10GiB，等待5min最长60min；18GiB cap、swap0、nice15/ionice3、30s采样、宿主可用<2GiB中止。不访问BOLT资产，不清理磁盘，不推Gerrit。",
+    "file_sha256": "939fd22bcc569fe39301134f455c4e2d7450ec57cab197ec53ad607cd686b5a8"
+  },
+  {
+    "repo": "main",
+    "path": "docs/49_release_attribution.md",
+    "line": 664,
+    "text": "PS3 spec相对已上传PS2只将转换器入口由build/bin/clang-22改成clang；Source换成已测试生产版c43523c0…，原W/llvm及其spec未改。PS2删除宏体中的停用注释行，改在宏上方标出tizen_macros:37停用状态，并保留平台宏来源34–38/rpm-build-4.14.1.1-1.4与未来同步要求；只替换archive strip，普通brp-strip仍用平台__strip，不全局覆盖__strip。提交说明明确覆盖本buildroot全部静态归档（含compiler-rt）；完整构建待补、发布模式完整打包尚未认证。未推Gerrit。",
+    "file_sha256": "939fd22bcc569fe39301134f455c4e2d7450ec57cab197ec53ad607cd686b5a8"
+  },
+  {
+    "repo": "main",
+    "path": "docs/49_x86_build_continuation.md",
+    "line": 12,
+    "text": "本页承接[发布模式认证与续四](49_release_attribution.md)，保留旧停止判定。发布模式60对认证、两条x86全量回归与PS3/PS2顺序apply/tree PASS沿用同SHA证据，不冒称新RPM认证。原始输出位于 E=`/home/linhao/Toolchain/development/llvm-optimize/temp/release-x86-full-build-20261013`，只存本机。",
+    "file_sha256": "a382fb8c91b012a5b256c33d6fe67d6eaa4cf2f1f93433ffb6bccf492ac60a69"
+  },
+  {
+    "repo": "bolt",
+    "path": "docs/bolt/29_disk_footprint.md",
+    "line": 70,
+    "text": "",
+    "file_sha256": "a3c76271b5dc4dc4eaef9fc0d4c8b016a8451190e5dd07223d82a1313c39c70d"
+  },
+  {
+    "repo": "main",
+    "path": "docs/46_review_round3_package.md",
+    "line": 9,
+    "text": "W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-round3-continue-20261012`。temp 证据只留本机。开场生产 Source 为 `6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557`，ARM 候选为 `e2c2ebfa7272c6549f9be977861985ff597d3564dd26caf72438155622e30e0d`；新 SHA 见§2.1。",
+    "file_sha256": "942eae8deaa9ffe15e1b56eaca99b3a1f99b0c85cc7843fc08e06f85c7fa605c"
+  },
+  {
+    "repo": "main",
+    "path": "docs/47_review_round4_package.md",
+    "line": 9,
+    "text": "W=`/home/linhao/Toolchain/development/llvm-optimize`；本轮 E=`W/temp/review-round4-20261012`，下述 temp 证据仅在本机。依用户裁决：轻量阶段准入6 GiB，全量转换10 GiB；不足每5分钟复查、最多60分钟。运行中scope 18 GiB、swap0、nice15/ionice3、30秒采样，宿主可用低于2 GiB即中止。Commands、356627 spec、W/llvm与配置不改；不做完整RPM构建、不推Gerrit。本轮只做四种小spec组合；另依辅助脚本条款对夹具修正重跑一次，实际调用数见§5。",
+    "file_sha256": "975881b6f3dbacfd70d4326ec0bd2d8c08f7e22d6efbecae46b1519a49f264e8"
+  },
+  {
+    "repo": "main",
+    "path": "docs/27_static_archive_native_conversion.md",
+    "line": 25,
+    "text": "| E | `W/temp/static-native-conversion-20260924`，本次全部新证据 |",
+    "file_sha256": "6946d44390b10f125e4c4aee5de158ac86e325d22cad09c67679a1737f61240a"
+  },
+  {
+    "repo": "main",
+    "path": "docs/35_archive_fix_v2_final.md",
+    "line": 29,
+    "text": "| N | `W/temp/toolchain-archivefix-v2-final`，本轮22个新RPM解包 |",
+    "file_sha256": "bef9f0229252d0097a814889f8e41f73069df9c845083ca5f547dab3ad16db68"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 73,
+    "text": "| `W/temp/toolchain-archivefix-v2-final` | 46.299 | 2026-10-09 15:09 | S01（关联；创建者未逐目录确证）；RPM解包/工具链 | 产物/忽略目录；非独立Git根 | docs/38_llvm_strip_x86_64.md:30；docs/36_archive_fix_tizen_consumers.md:17 | **保留**：N；非静态库逐字节对照基准 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/22_hybrid_link_trial.md",
+    "line": 171,
+    "text": "`W/temp/toolchain-hybrid-trial/`（H），没有安装到宿主，没有覆盖TC=`W/temp/toolchain-baseline/`。",
+    "file_sha256": "0c600f80c94bd8a76a405d83229d0c583175e4c3423be7141e47c5324d11ea02"
+  },
+  {
+    "repo": "main",
+    "path": "docs/38_llvm_strip_x86_64.md",
+    "line": 32,
+    "text": "| N38 | `W/temp/toolchain-llvm-strip`，本次新 RPM 解包目标 |",
+    "file_sha256": "b811ea0ca35637f531668868041678d433e531685f2b06b6f25af9f4d14fad67"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 74,
+    "text": "| `W/temp/toolchain-llvm-strip` | 46.256 | 2026-10-09 21:08 | S01（关联；创建者未逐目录确证）；RPM解包/工具链 | 产物/忽略目录；非独立Git根 | docs/38_llvm_strip_x86_64.md:32 | **保留**：N38；最新llvm-strip RPM解包 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/49_x86_build_resume_result.md",
+    "line": 163,
+    "text": "环境：LLVM 头文件/静态库/clang/opt 都来自本次 N=`temp/toolchain-release-x86-20261013`；C++ 与 libc 头文件、运行时 glibc/libstdc++ 来自宿主（编译 -v 和 loader --list 原文）；显式宿主 loader `/lib64/ld-linux-x86-64.so.2`，独立 Tizen libxml2 路径 `temp/toolchain-runtime-baseline/libxml2/usr/lib64`。编译 4 GiB AS，链接不设 AS、由 cgroup 控制；GNU ld 无 LTO/插件。参数名 baseline 在脚本中实际指向 N，不是旧 RPM。",
+    "file_sha256": "08eee2902611e5773d6987c2a6888ecbb99982f4ec06feb41759c82a1d5b09b2"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 198,
+    "text": "| `~/Toolchain/development/llvm_image_analysis/work/signature` | 7.524 | 2026-10-06 21:49 | S07；稀疏镜像/中间tar/压缩器实验 | 非独立Git根；内嵌仓库未穷举 | docs/status.md:1–15；docs/sparse_experiment.md:7–11：特意保留中间tar供核验 | **需用户判断**：保留历史记录；载荷是否仍用于后续工作须项目负责人确认 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 197,
+    "text": "| `~/Toolchain/development/llvm_image_analysis/work/sparse` | 7.708 | 2026-10-08 11:23 | S07；稀疏镜像/中间tar/压缩器实验 | 非独立Git根；内嵌仓库未穷举 | docs/status.md:1–15；docs/sparse_experiment.md:7–11：特意保留中间tar供核验 | **需用户判断**：保留历史记录；载荷是否仍用于后续工作须项目负责人确认 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 164,
+    "text": "| `~/Toolchain/development/llvm_inline_development/codes/llvm` | 6.874 | 2026-09-28 18:20 | S04；源码工作树 | UNKNOWN（Git超时/报错） | m1-c99-inline-handover-v16.md:3–5,49–80（关闭版仍列待办）；docs/README.md:40–53 | **需用户判断**：保留历史记录；载荷是否仍用于后续工作须项目负责人确认 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 162,
+    "text": "| `~/Toolchain/development/llvm_inline_development/docs/llvm_optimize_docs` | 20.186 | 2026-09-29 12:27 | S04；GBS根/验证载荷与证据 | 非独立Git根；内嵌仓库未穷举 | m1-c99-inline-handover-v16.md:3–5,49–80（关闭版仍列待办）；docs/README.md:40–53 | **需用户判断**：保留历史记录；载荷是否仍用于后续工作须项目负责人确认 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 161,
+    "text": "| `~/Toolchain/development/llvm_inline_development/tmp（不含上述独立子目录）` | 24.210† | 2029-01-01 08:00 | S04；GBS根/验证载荷与证据 | 非独立Git根；内嵌仓库未穷举 | m1-c99-inline-handover-v16.md:3–5,49–80（关闭版仍列待办）；docs/README.md:40–53 | **需用户判断**：同项目其余内容；每个已完成子目录均小于5GiB |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 234,
+    "text": "| `~/Toolchain/development/llvm_inline_development_second/codes` | 6.769 | 2026-08-25 21:20 | S12（Gemini仅元数据）；LLVM源码工作树 | 非独立Git根；内嵌仓库未穷举 | 现存Gemini cwd；主线关系和Git状态未完全确定 | **保留**：保留历史记录；载荷是否仍用于后续工作须项目负责人确认 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 191,
+    "text": "| `~/Toolchain/tizen-docs-release` | 20.866 | 2026-06-25 20:22 | UNKNOWN；Git仓库（Git历史约10.43GiB） | clean（含未跟踪检查） | Git clean；未查到STATUS/会话直接创建记录 | **需用户判断**：没有整目录作废依据；有Git改动/报告输入则优先保留 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "main",
+    "path": "docs/41_disk_inventory.md",
+    "line": 171,
+    "text": "| `~/clang-toolchains（不含llvm-build.swap）` | 7.819 | 2026-07-17 15:47 | UNKNOWN；clangd 21/22、源码、构建/日志 | 非独立Git根；内嵌仓库未穷举 | 直接目录元数据；未查到文档路径引用 | **需用户判断**：工具安装与未启用swap分开；未查到明确所属项目 |",
+    "file_sha256": "0b6b467256c4beeb3113d33a4c041c113f5e2365790f07de6e64cbd81b9aa683"
+  },
+  {
+    "repo": "bolt",
+    "path": "docs/bolt/15_rpm_environment_execution.md",
+    "line": 42,
+    "text": "普通clang仍7df0ff90…，22普通RPM全部不变，review49-independent-install元数据一致；源码树清单与任务前一致，W tracked仅既有gbs_llvm.conf改动、没有写W/llvm或进入ARM根。原地cache最终47,626文件/96,880,098,760B，比开工多519文件/2,288,400B；本轮配置可能执行测试链接，未复制cache，原地LLD写入/清理按交接授权允许，不声称cache冻结。文件系统free60,543,275,008B（56.39GiB）。没有任何>10GiB写入操作。",
+    "file_sha256": "7f9dab1f375cbcd28ac0da3d3c7bbfa29ebc468ce1cf87ac1996acc445ed8bb2"
+  },
+  {
+    "repo": "main",
+    "path": "docs/STATUS.md",
+    "line": 9,
+    "text": "**上一任务（统一混合 sandbox + 指南 v3）A/B 完成，待服务器构建**：Gerrit 仅创建 `sandbox/lhmax2025/llvm_optimize`，提交 `6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2`，tree `80a6fd231c4564a3b762f4ec288cf2c41f9d2e20`，parent `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`，Change-Id `I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06`。原补丁 SHA 30e90aa3… 不变，作者/提交者 Hao Lin；远端分支原先不存在，唯一 push 后回读及新克隆身份 PASS，GBS 导出的 8 条 Patch/8 条 %patch 全部无条件。指南 v3 改为只读检出统一分支，移除本机资源规则，给出真实 GBS 测试根准备及两个 accel RPM 合并解包/本地 emul 闭合方法；归档按对照 RPM 路径清单比较。B5 重建触发机制证据不足，已明确需向 QB 管理员确认。补丁和 188 目标期望表未改；未构建、未推 refs/for、未访问 BOLT 资产/交接树；用户 gbs_llvm.conf 修改保留。见 [指南 v3](52_hybrid_link_validation.md)、[分支/导出/清单证据](52_hybrid_sandbox_evidence/README.md)。",
+    "file_sha256": "9047c30b79506547a9f7755194919b728d3c7b15c493e86f7335e09f18d3ad67"
+  }
+]
