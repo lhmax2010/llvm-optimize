@@ -355,3 +355,5 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 ## 2026-10-23 cache-release双轮测量续跑与临时内存裁决
 
 用户释放内存后，第一轮9e5675f在本任务新根baseline-root恢复；普通构建尚未完成。01:45:30 CST用户明确批准本次两轮本地测量使用20GiB cgroup上限（原16GiB），已调整本轮并为第二轮使用同一限额。swap0、运行中MemAvailable<3GiB停止、锁与其他本地规则不变；不进入发布代码。源提交仍为d20e873b；既有299测试/五项解析PASS，不代表双轮完整构建认证。详见32第9节，当前进行中。
+
+同日后续用户裁决覆盖上面的20GiB上限：取消本次测量的cgroup内存上限与内存准入等待，已设置MemoryMax=infinity；冻结续租已恢复，同一普通链接现场继续。锁/磁盘/代码边界不变，详见32第9节及memory-unlimited.json。

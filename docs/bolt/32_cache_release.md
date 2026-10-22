@@ -130,3 +130,7 @@ RuntimeError: memory admission timeout
 16GiB限额下两路LLD几乎用满匿名内存，memory.events的max计数增加、I/O压力高，但oom/oom_kill均0。2026-10-23 01:45:30 CST，用户明确批准“允许本次两轮使用20GiB”，随即用systemctl set-property --runtime把本次构建MemoryMax调到21,474,836,480B；swap=0、nice15、ionice3、低于3GiB停止和锁时限不变。第二轮本地控制器使用同样20GiB上限。此裁决只适用于本次两轮本地测量，不改spec、helper或构建参数；第一轮调整前后分段记录，不能称为从头到尾统一资源条件。原始前后值与命令见baseline-resume2/memory-limit-adjustment.json。
 
 新增独立5秒进程采样，避免du阻塞时漏采VmHWM；du存在临时文件扫描竞态的读数标注rc1，不能称为完整精确值。未取得第一轮完整产物前不启动第二轮、不删除第一轮根。
+
+后续裁决（2026-10-23）：用户先批准“仅冻结续跑使用3GiB准入”，01:57:59已重新取锁、恢复同一现场；第一次持锁3200.515秒，冻结/释放均成功。随后用户明确要求“解除内存限制，所以目前不考虑准入内存和冻结内存，你跑你的”，01:59:18已将MemoryMax设为infinity；第二轮本地入口取消内存上限和准入等待。原始命令/返回值见memory-unlimited.json，控制器交接见controller-handoff.json。源码和构建参数不变；锁与磁盘规则继续执行。原运行采样器仍包含运行中<3GiB的紧急停止检查（并非启动准入，未在本次续跑触发），没有为热替换采样器而重启LLVM链接。
+
+02:03左右普通libclang-cpp链接完成，进度恢复到138/356；该时点cgroup峰值26,155,147,264B（约24.4GiB），oom/oom_kill仍0。普通clang仍在链接，尚不能填写BOLT实测增量。
