@@ -1,0 +1,58 @@
+{
+  "time": "2026-10-22T19:34:17.176443+08:00",
+  "uid": 1000,
+  "target": "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-review3/payload-merged",
+  "skipped": [
+    "P2",
+    "P3"
+  ],
+  "status": "P1_DELETED_P2_P3_SKIPPED",
+  "checks": {
+    "path_identity": true,
+    "filesystem": true,
+    "lsof": true,
+    "fuser": true,
+    "mountinfo": true,
+    "du": true,
+    "parent_evidence": true,
+    "dependency": true
+  },
+  "df_before": {
+    "argv": [
+      "df",
+      "-B1",
+      "-T",
+      "/home"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.004449129104614258,
+    "stdout": "Filesystem     Type     1B-blocks          Used    Available Use% Mounted on\n/dev/sda1      ext4 1967844950016 1638434119680 229374218240  88% /home\n",
+    "stderr": ""
+  },
+  "command": [
+    "rm",
+    "-rf",
+    "--one-file-system",
+    "--",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-review3/payload-merged"
+  ],
+  "started": "2026-10-22T19:34:18.043150+08:00",
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "",
+  "elapsed_seconds": 6.575760902000184,
+  "target_remaining": false,
+  "ended": "2026-10-22T19:34:24.619212+08:00",
+  "df_after": {
+    "argv": [
+      "df",
+      "-B1",
+      "-T",
+      "/home"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 0.0030841827392578125,
+    "stdout": "Filesystem     Type     1B-blocks          Used    Available Use% Mounted on\n/dev/sda1      ext4 1967844950016 1588766765056 279041572864  86% /home\n",
+    "stderr": ""
+  }
+}

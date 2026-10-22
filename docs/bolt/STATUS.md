@@ -319,3 +319,12 @@ gbs 实际导出已复现：旧506dc25的 Patch0–6处于 x86_64/BOLT 条件块
 待用户批准：P1/P2/P3三个可重建解包目录合计135.852GiB；P4旧演练upper为可选项，先保全14文件约2.360GiB，四项合计预计净释放194.022GiB。全部在/home；全采用时预计可用407.647GiB，/var/tmp仍约46.524GiB，不能相加。P4有root所有的0755目录，本轮没有提权/改权限。29的完整补测仍未启动。
 
 未删除、移动或修改任何构建树；未运行cmake/ninja/构建；未改源码/spec或QB、未访问Gerrit、未新建分支。只发布盘点与原始读数；下一步等用户逐项确认。证据目录 tools/bolt/results/root-inventory-20261022/，数据一致性检查全部PASS，不是产品构建认证。
+
+
+## 2026-10-22：批准目录清理——P1已删，P2/P3按前置条件跳过
+
+用户仅批准31号P1/P2/P3三个可重建解包目录，要求任一检查不满足就跳过；P4 upper未批准。普通用户复核realpath、父目录非链接、/dev/sda1、lsof/fuser和全量可读mountinfo后，P1检查通过，于19:34执行唯一一条 `rm -rf --one-file-system -- .../bolt-v4-20261015-review3/payload-merged`，rc0、无错误/残留。
+
+P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.py:4读取；P3仍由validation/expected.py:22/28/49/50读取，无法通过“没有其他脚本依赖”的前置条件。历史可重建性不替代本次条件，未修改这些脚本来绕过检查。
+
+/home可用从229,374,218,240B增到279,041,572,864B（259.878GiB），实测释放49,667,354,624B（46.256GiB）；未达到三项预计135.85GiB，因为P2/P3的89.595GiB保留。三个父目录其余1878个普通文件的SHA/元数据逐项相同，P4、原RPM、.ii输入、其他构建根保持。未构建、提权、改权限、新建分支或访问Gerrit。详见 [31 执行记录](31_build_root_inventory.md#7-执行记录用户批准三项删除-p1跳过-p2p32026-10-22) 与 tools/bolt/results/approved-root-cleanup-20261022/；本轮结束，等下一步指令。

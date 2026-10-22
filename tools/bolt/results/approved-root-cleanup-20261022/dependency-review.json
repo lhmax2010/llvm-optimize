@@ -1,0 +1,23 @@
+{
+  "rule": "Skip any target with another script depending on the existing unpacked directory; do not delete or modify that script.",
+  "items": [
+    {
+      "id": "P1",
+      "dependency_check": "PASS",
+      "decision": "eligible",
+      "reason": "docs31 R51 only reconstructible copy; full_payload.py:5 creates this directory before extraction and checks, so it is the producer, not a consumer requiring a pre-existing copy. Docs searches found no other consumer."
+    },
+    {
+      "id": "P2",
+      "dependency_check": "FAIL",
+      "decision": "SKIP",
+      "reason": "Existing real_gates.py:46 consumes payload-merged without re-extraction; install-rehearsal/disk_budget.py:4 asserts this other parent directory exists."
+    },
+    {
+      "id": "P3",
+      "dependency_check": "FAIL",
+      "decision": "SKIP",
+      "reason": "Existing expected.py:22/28/49/50 consumes baseline-extract/clang and clang-debuginfo without re-extraction."
+    }
+  ]
+}

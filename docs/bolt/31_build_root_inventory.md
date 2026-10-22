@@ -211,3 +211,64 @@ main 的 patch / hybrid 线最近使用 `T/hybrid-link-20261015`、`T/hybrid-san
 - lsof路径匹配草稿曾使用子串，会把`…/llvm`误匹配`…/llvm-optimize`；正式结果改为路径边界后，只剩ARM转换目录的VS Code读句柄。原树和任何产品数据未受影响。
 - 已有文件定位使用rg/find与文档路径。查找时读取尚未生成的`du-units.json`一次返回不存在，随后等待扫描写出；没有把不存在的报告当成已验证结果。两处文档简称已按实际文件名校正。
 - 所有删除建议都停在审批；旧报告“保留至周五”等日期已过去也不自动解除保护。后续实际删除前应再次核查进程/锁/挂载、确认提取文件SHA并复测df。此项留待用户逐项决定。
+
+
+## 7. 执行记录：用户批准三项，删除 P1，跳过 P2/P3（2026-10-22）
+
+**批准人：用户（本会话明确授权）。** 批准范围只有下面三个完整路径；任一前置条件不满足即跳过。P4 `bolt-v4-20261015-install-rehearsal/upper` 明确未批准，保持原样。上文是删除前的盘点快照，本节记录后续实际执行；没有扩大到父目录、同级目录或其他构建根。
+
+```text
+P1 /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-review3/payload-merged
+P2 /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-review4b/payload-merged
+P3 /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-validation/baseline-extract
+```
+
+### 7.1 逐项检查与跳过理由
+
+| 项目 | realpath完全相同；本身/父目录非软链接 | 设备与挂载点 | lsof / fuser | mountinfo / overlay引用 | 删除前du字节（GiB） | 无其他脚本依赖 | 结果 |
+|---|---|---|---|---|---:|---|---|
+| P1 | PASS | `/dev/sda1`，`/home` | 无命中 | 无引用 | 49,667,424,256（46.256） | PASS | **已删除** |
+| P2 | PASS | `/dev/sda1`，`/home` | 无命中 | 无引用 | 49,713,123,328（46.299） | **FAIL** | **跳过，完整保留** |
+| P3 | PASS | `/dev/sda1`，`/home` | 无命中 | 无引用 | 46,488,936,448（43.296） | **FAIL** | **跳过，完整保留** |
+
+每项执行 `lsof -nP +D <完整路径>`（递归后代）和 `fuser -v <完整路径>`；均退出1且stdout/stderr为空，含义为无命中。初次读取426份 `/proc/*/mountinfo`，21种快照，读取错误0、挂载点及overlay lowerdir/upperdir/workdir匹配0。P1删除前再次即时核对路径/inode、文件系统、lsof/fuser以及全部可读mountinfo，全部通过。检查在普通用户UID1000权限范围内；没有提权或改权限。
+
+对 bolt-v4 与 main 的 `docs` 同时执行完整绝对路径固定串搜索和 `payload-merged|baseline-extract|bolt-v4-20261015-(review3|review4b|validation)` 别名搜索。完整路径无命中；别名结果包括本篇R51/R53/R55、23号L47、24号L69–71与20号L35–37。它们证明是可重建的解包副本，**不证明所有历史脚本已经不依赖实存目录**。进一步只读检查现存脚本发现：
+
+- **P2**：`W/temp/bolt-v4-20261015-review4b/real_gates.py:46` 直接调用 `h.no_bolt_products(E/'payload-merged')`，没有先解包；另一个父目录中的 `W/temp/bolt-v4-20261015-install-rehearsal/disk_budget.py:4` 为 `p=E.parent/'bolt-v4-20261015-review4b/payload-merged';assert p.is_dir()`，随后遍历它计算载荷大小。因此不能通过“没有别的目录或脚本依赖”这一条件。
+- **P3**：`W/temp/bolt-v4-20261015-validation/expected.py:22,28,49,50` 直接读取 `baseline-extract/clang` 与 `baseline-extract/clang-debuginfo`，核对别名、debuglink CRC和链接归属，没有先重新解包。因此跳过。
+- **P1**：`full_payload.py:5` 自己 `root.mkdir()`，随后从原22RPM提取再检查，是该副本的生成脚本；未找到要求预先存在P1的独立消费脚本。父目录内的结果/日志均保留。
+
+这两项是本次新前置检查发现的限制；**没有运行、修改、迁移这些脚本，也没有把“以后可以重新解包”当成忽略失败条件的理由**。原始命中、源脚本SHA与行号在 `script-references.json`；文档搜索原文在 `docs-exact-path-search.*`、`docs-alias-search.*`。查找旧演练脚本时，`rg --files` 同时报 `work/work: Permission denied`，未绕过；可读的 `disk_budget.py` 足以确认P2依赖。该错误不是删除错误，也不影响P1检查。
+
+### 7.2 实际命令、空间变化
+
+2026-10-22 19:34:18–19:34:24 +08:00，只执行下面一条删除命令；普通用户UID1000，轻任务4GiB/swap0、nice19/ionice3。耗时6.576秒，退出0，stdout/stderr为空，删除后目标不存在；没有Permission denied或残留。P2/P3没有执行删除命令。
+
+```sh
+rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-review3/payload-merged
+```
+
+| `/home`（`/dev/sda1`） | 可用字节 | 可用GiB |
+|---|---:|---:|
+| 删除紧前 `df -B1 -T /home` | 229,374,218,240 | 213.621 |
+| 删除紧后 `df -B1 -T /home` | **279,041,572,864** | **259.878** |
+| 实测增加 | **49,667,354,624** | **46.256** |
+
+31号原预计三项合计145,869,484,032B（135.851543GiB，约135.85GiB）。本次只删P1；P2/P3合计96,202,059,776B（89.595GiB）仍在，因此未达到三项预计值。P1的du与df净增加相差69,632B；df是整个文件系统的可用空间变化，包含同期证据写入/其他活动，不能将这点差额归因于删除残留。完整前后df与命令返回在 `execution.json` 和 `immediate-*-df-home.*`，计算在 `space-summary.json`。
+
+### 7.3 父目录与其余文件保全
+
+删除前后均对三个父目录取清单，**只排除指定解包子目录**；比较所有其余条目的类型、权限、属主、大小、mtime、inode、软链接目标及普通文件SHA256，全部逐项相同。父目录inode/权限/属主相同；删除子项造成的父目录mtime变化不计作文件内容变化。共1878个其余普通文件（304 + 330 + 1244），没有丢失或改变。P2/P3解包目录仍存在，根inode与删除前相同；未对其内部内容执行任何写操作。
+
+下面是**执行后整个父目录**的数量和大小，P2/P3包含未删的解包子树；普通文件大小为逻辑字节，du为实际分配字节：
+
+| 父目录（W/temp下） | 全部后代路径 | 普通文件数 | 普通文件总字节 | 父目录du字节 |
+|---|---:|---:|---:|---:|
+| `bolt-v4-20261015-review3` | 327 | 304 | 91,371,057 | 92,250,112 |
+| `bolt-v4-20261015-review4b` | 18,073 | 16,727 | 49,717,689,642 | 49,759,645,696 |
+| `bolt-v4-20261015-validation` | 1,903 | 1,717 | 46,971,114,549 | 46,976,184,320 |
+
+报告、脚本、日志、120份.ii输入、原始RPM均未删除；P4 upper、/var/tmp、其他GBS根、main线目录及其他项目没有写入或删除操作。没有构建、cmake/ninja、sudo、chmod、Gerrit或新分支操作。
+
+原始证据：[approved-root-cleanup-20261022](../../tools/bolt/results/approved-root-cleanup-20261022/)。入口为 `per-item-results.json`、`execution.json`、`space-summary.json`、`remaining-parents-summary.json`；`before/after-P*-parent-inventory.json` 保留逐文件SHA与元数据，`collect.py`只采集，`execute-approved.py`记录本次受限命令与即时检查。下一步等待用户对P2/P3依赖和其他目录另行裁决，本轮不继续删除。
