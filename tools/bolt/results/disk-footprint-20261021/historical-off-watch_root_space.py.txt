@@ -1,0 +1,14 @@
+from pathlib import Path
+import subprocess,time,json,datetime,os
+E=Path(__file__).resolve().parent;R=Path('/var/tmp/llvm-optimize-x86-archivefix-20261013')
+(E/'root-space-watch-pid.json').write_text(json.dumps(dict(pid=os.getpid())))
+try:
+ with (E/'root-space-samples.jsonl').open('x') as f:
+  while True:
+   t=time.monotonic();r=subprocess.run(['du','-sx','-B1',str(R)],capture_output=True,text=True,timeout=50)
+   f.write(json.dumps(dict(time=datetime.datetime.now().astimezone().isoformat(),elapsed=time.monotonic()-t,exit=r.returncode,stdout=r.stdout,stderr=r.stderr))+'\n');f.flush()
+   if (E/'resume-scope/outcome.json').exists() or (E/'stop-root-space-watch').exists():break
+   for _ in range(45):
+    if (E/'resume-scope/outcome.json').exists() or (E/'stop-root-space-watch').exists():break
+    time.sleep(1)
+finally:(E/'root-space-watch-reaped.json').write_text(json.dumps(dict(pid=os.getpid(),time=datetime.datetime.now().astimezone().isoformat())))

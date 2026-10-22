@@ -301,3 +301,12 @@ gbs 实际导出已复现：旧506dc25的 Patch0–6处于 x86_64/BOLT 条件块
 长期规则：rpm 以 sh -e 执行脚本段；BOLT 改动不得改写普通构建、基线 %install 步骤和平台后处理链的执行方式。
 
 直接在e2463165 amend为 `9e5675f57d122549997caffa39b655dfefc46fee`（父67619ec8，Hao Lin/原Change-Id），不叠加e971。%build全段9331B、基线install1895B、实际平台链304B逐字节相同；只允许尾检-B及末尾report，8个BOLT shell动作包装。call恢复直接日志，无线程/管道、不检查成功日志文本；诊断disk/not-disk/unknown，日志不可用不猜测。289测试、三类加unknown、sh-e rc1、gbs export及构建根Tizen五项全部PASS。一次图形认证，锁171.4秒，overlay/proc/dev卸载完、下层清单及六SHA不变；未运行原树cmake/ninja/-P。材料de32b57先GitHub，304raw核验PASS后以e246精确租约更新唯一bolt_pgo，推后已等于该源SHA；无refs/for、QB或新分支操作。详见27末节和narrow-disk-20261019。
+
+
+## 2026-10-22 磁盘测量：输入准备完成，完整补测未启动
+
+用户已释放内存，准入采样 MemAvailable 约23.95GiB，满足准入。固定Base 20261013.024319的build.conf已下载并按repomd压缩前后SHA验证（解压e5187fd7…）；专用gbs_llvm_qb1202084.conf仅指定base packages/debug，原W/gbs_llvm.conf未改。源树仍干净9e5675f，尚未改清理逻辑、无新源提交/候选、无Gerrit/QB动作或新分支。
+
+历史无BOLT完整构建582份du采样最高236,149,145,600B（219.931GiB），三权限盲区及打包末段缺采，因此只是下界；不同于本次快照及开关OFF。25号中止演练当前工具+工作+cache上层条目12,247,695,360B（11.407GiB），不是完整BOLT增量峰值。旧upper约65GB还含普通安装，旧普通缓存约96.9GB也不能归给BOLT。ON/OFF净增峰值尚未知，未满足条件，不执行删除。
+
+目的盘当前可用229,464,346,624B；以历史OFF下界+本地30GiB保留量作准入参考需268,361,400,320B，差38,897,053,696B（36.225GiB），还未计BOLT/导出。该参考不是新快照精确需求；容量未覆盖参考，完整构建未启动，没有持重锁或编译进程。补测/清理/清理后全构建、RPM对比、五项解析全部NOT RUN。本地容量规则不进发布代码；旧树/保全证据不删。29及disk-footprint-20261021给原始采样副本、当前du、输入来源、缺项、生命周期边界与续测方法。

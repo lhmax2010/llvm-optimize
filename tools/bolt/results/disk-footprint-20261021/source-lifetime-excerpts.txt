@@ -1,0 +1,253 @@
+spec:L60: %endif
+spec:L61: 
+spec:L62: 
+spec:L63: %{!?mlgo_build_jobs: %define mlgo_build_jobs 6}
+spec:L64: %{!?mlgo_verify_configure_only: %define mlgo_verify_configure_only 0}
+spec:L401:   ! find "${MLGO_PROBE_ROOT}" -name libtf_xla_runtime.a | grep -q . || \
+spec:L402:     { echo "FATAL: tf_xla_runtime archive should not be installed"; exit 1; }
+spec:L403: %endif
+spec:L404:   echo MLGO_VERIFY_CONFIGURE_PASS
+spec:L405:   exit 86
+spec:L406: %endif
+spec:L407: 
+spec:L408: # Full build using ninja (already in build/ directory after cd build)
+spec:L409: %ifarch x86_64
+spec:L410: %if %{with clang_bolt}
+spec:L411: ninja -d keeprsp -j %{mlgo_build_jobs} || exit 1
+spec:L412: %else
+spec:L413: ninja -j %{mlgo_build_jobs}
+spec:L414: %endif
+spec:L415: %else
+spec:L416: ninja -j %{mlgo_build_jobs}
+spec:L417: %endif
+spec:L418: 
+spec:L419: %install
+spec:L420: cd build
+spec:L421: cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
+spec:L422: %ifarch x86_64
+spec:L423: %if %{with clang_bolt}
+spec:L424: 
+spec:L425: # Reject debug-named buildroots before any BOLT action.
+spec:L426: case $(printf '%s' '%{buildroot}' | LC_ALL=C tr '[:upper:]' '[:lower:]') in
+spec:L427:   *debug*) echo 'BOLT buildroot absolute path contains debug' >&2; exit 1 ;;
+spec:L428: esac
+spec:L429: BOLT_BUILD="$PWD"
+spec:L430: BOLT_WORK="$PWD/clang-bolt"
+spec:L431: BOLT_INSTALL_ROOT="%{buildroot}"
+spec:L432: BOLT_PROFILE_SOURCE="%{SOURCE1200}"
+spec:L433: export BOLT_BUILD BOLT_WORK BOLT_INSTALL_ROOT BOLT_PROFILE_SOURCE
+spec:L434: bolt_fail() {
+spec:L435:   python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || true
+spec:L436:   exit 1
+spec:L437: }
+spec:L438: bolt_checked() {
+spec:L439:   bolt_stage=$1
+spec:L440:   bolt_log=$2
+spec:L441:   shift 2
+spec:L442:   if bolt_output=$("$@" 2>&1); then
+spec:L443:     printf '%%s\n' "$bolt_output" || bolt_fail "$bolt_stage-output" -
+spec:L444:   else
+spec:L445:     printf '%%s\n' "$bolt_output" || true
+spec:L446:     printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || true
+spec:L447:     exit 1
+spec:L448:   fi
+spec:L449: }
+spec:L450: bolt_step() {
+spec:L451:   bolt_stage=$1
+spec:L452:   shift
+spec:L453:   bolt_checked "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" python3 -B %{SOURCE1201} run-step "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" -- "$@"
+spec:L454: }
+spec:L455: python3 -B %{SOURCE1201} disk-report begin
+spec:L456: echo "BOLT_BUILDROOT_OK %{buildroot}"
+spec:L457: python3 -B %{SOURCE1201} preflight || exit 1
+spec:L458: python3 -B %{SOURCE1201} certified || exit 1
+spec:L459: if [ -r /proc/self/stat ]; then echo BOLT_PROC_OK; else echo BOLT_PROC_MISSING; fi
+spec:L460: # One relink: emit-relocs, then LLVM strip-debug, BOLT and full strip.
+spec:L461: # The handed-off build owns its original ThinLTO cache; do not duplicate it.
+spec:L462: mkdir -p "$BOLT_WORK" || exit 1
+spec:L463: # File-list baseline is the actual ordinary CMake install, not a name whitelist.
+spec:L464: python3 -B %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
+spec:L465: bolt_step manifest-copy cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt"
+spec:L466: bolt_step ordinary-copy cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22"
+spec:L467: bolt_checked link-command "$BOLT_WORK/link-command.log" python3 -B %{SOURCE1201} run-step link-command "$BOLT_WORK/link-command.log" --output "$BOLT_WORK/link.original" -- ninja -t commands -s bin/clang-22
+spec:L468: python3 -B %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || exit 1
+spec:L469: bolt_step configure cmake -S ../llvm -B . \
+spec:L470:   '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' \
+spec:L471:   -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \
+spec:L472:   -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
+spec:L473: # Only certified BOLT tasks and the paired configure-refreshed TF anchor.
+spec:L474: bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
+spec:L475: LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- ninja -n llvm-bolt
+spec:L476: bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
+spec:L477: python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
+spec:L478: cat "$BOLT_WORK/tool-plan.json"
+spec:L479: python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
+spec:L480: LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- ninja -j 1 llvm-bolt
+spec:L481: python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+spec:L482:   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+spec:L483: cat "$BOLT_WORK/tool-build-verification.json"
+spec:L484: python3 -B %{SOURCE1201} disk-report tool-built
+spec:L485: python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
+spec:L486: echo BOLT_PIPELINE_PASS
+spec:L487: python3 -B %{SOURCE1201} disk-report pipeline
+spec:L488: # BOLT configuration/build/rewrite must not change the ordinary installation.
+spec:L489: # Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
+spec:L490: python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
+spec:L491:   "$BOLT_WORK/install-after-pipeline.json" || exit 1
+spec:L492: echo BOLT_COMPARE_ROOT_PASS
+spec:L493: # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
+spec:L494: %endif
+spec:L495: %endif
+spec:L496: ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
+spec:L497: 
+spec:L498: ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
+spec:L499: ln -sf clang++ %{buildroot}%{_prefix}/bin/%{_host}-clang++
+spec:L500: # Use host triple and resource dir by default via <lang>.cfg
+spec:L501: cat >> %{buildroot}/%{_prefix}/bin/clang.cfg << EOF
+spec:L502: -target %{_host}
+spec:L503: -resource-dir %{_prefix}/%{_lib}/clang/%{llvm_version}
+spec:L504: EOF
+spec:L505: ln -sf clang.cfg %{buildroot}/%{_prefix}/bin/clang++.cfg
+spec:L527: %ifarch x86_64
+spec:L528: # Run after compilation has finished; these workers do not overlap build jobs.
+spec:L529: # Preserve the standard RPM post-processing, including archive strip -g.
+spec:L530: rm -rf "%{_builddir}/%{buildsubdir}/build/native-archive-conversion"
+spec:L531: python3 %{SOURCE1005} --root "%{buildroot}" \
+spec:L532:     --build "%{_builddir}/%{buildsubdir}/build" \
+spec:L533:     --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
+spec:L534:     --arch x86_64 \
+spec:L535:     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+spec:L536:     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+spec:L537:     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+spec:L538:     --jobs 4 --address-space-bytes 4294967296 || exit 1
+spec:L539: %endif
+spec:L540: 
+spec:L541: %ifarch x86_64
+spec:L542: %if %{with clang_bolt}
+spec:L543: # Candidate is fully stripped before the one unchanged platform post-processing chain.
+spec:L544: python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
+spec:L545:   "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || exit 1
+spec:L546: 
+spec:L547: %endif
+spec:L548: %endif
+spec:L776: %{_libdir}/cmake/openmp/FindOpenMPTarget.cmake
+spec:L777: 
+spec:L778: %files -n python-clang
+spec:L779: %{python3_sitelib}/clang
+spec:L780: %ifarch x86_64
+spec:L781: %if %{with clang_bolt}
+spec:L782: 
+spec:L783: %global __bolt_original_spec_install_post %{__spec_install_post}
+spec:L784: %define __spec_install_post \
+spec:L785:     %{__bolt_original_spec_install_post} \
+spec:L786:     python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
+spec:L787:     echo BOLT_POST_GATE_PASS \
+spec:L788:     python3 -B %{SOURCE1201} disk-report post
+spec:L789: %endif
+spec:L790: %endif
+helper:L554: def compare_root(root, baseline, after_path):
+helper:L555:     """Reject any buildroot side effect before installing the candidate."""
+helper:L556:     current = root_snapshot(root)
+helper:L557:     save(after_path, current)
+helper:L558:     require(baseline.get('root') == current['root'], 'buildroot baseline belongs to a different root')
+helper:L559:     require('metadata' in baseline, 'buildroot baseline lacks complete permission metadata')
+helper:L560:     old, new = baseline['files'], current['files']
+helper:L561:     for key in sorted(old.keys() | new.keys()):
+helper:L562:         require(key in old, 'buildroot added: '+key)
+helper:L563:         require(key in new, 'buildroot removed: '+key)
+helper:L564:         require(old[key] == new[key], 'buildroot entry differs: '+key)
+helper:L565:         require(baseline['metadata'].get(key) == current['metadata'][key],
+helper:L566:                 'buildroot permissions/metadata differ: '+key)
+helper:L647: def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
+helper:L648:     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
+helper:L649:     entity = root/'usr/bin/clang-22'; require(digest(entity) == state['installed_sha256'], 'clang changed during RPM post-processing')
+helper:L650:     for change in state['alias_changes']:
+helper:L651:         p = root/change['path']
+helper:L652:         require(p.is_symlink() and os.readlink(p) == 'clang-22' and rooted_resolve(root,p) == entity,
+helper:L653:                 'alias stale or not normalized: '+str(p))
+helper:L654:     e = ELF(entity)
+helper:L655:     try:
+helper:L656:         elf = e.audit(final=True)
+helper:L657:     finally:
+helper:L658:         e.close()
+helper:L659:     require(digest(entity) == state['identity']['after_sha256'], 'final installed SHA differs from stripped candidate')
+helper:L660:     no_bolt_products(root)
+helper:L661:     security = security_compare(ordinary, str(entity))
+helper:L662:     rows = tiny_gate(ordinary, str(entity), candidate_work, resource_dir)
+helper:L663:     return {'sha_unchanged': True, 'aliases_pass': True, 'elf': elf, 'tiny': rows,
+helper:L664:             'strip_identity_pass': True, 'security': security}
+helper:L665: 
+helper:L666: def certified_version(text):
+helper:L667:     lines = re.findall(r'^\s*(LLVM version[^\n]*)$', text, re.M)
+helper:L668:     require(lines == [CERTIFIED['bolt_version']], 'uncertified BOLT tool version actual=%s expected=%s; remedy: update certified constants and recertify, or disable with --without clang_bolt / bcond_with' % (lines, CERTIFIED['bolt_version']))
+helper:L669:     return lines[0]
+helper:L670: 
+helper:L1153: def pipeline(build, work, bolt, cache=None):
+helper:L1154:     build, work = Path(build).absolute(), Path(work).absolute()
+helper:L1155:     edge = (work/'link.original').read_text()
+helper:L1156:     reference = work/'reference-relocs-clang-22'
+helper:L1157:     require(not reference.exists(), 'relink output must be new')
+helper:L1158:     script = work/'reference-relocs.sh'
+helper:L1159:     atomic_text(script,replay_script(edge,reference,work/'reference-relocs.d',cache))
+helper:L1160:     call(['/bin/sh',str(script)],work/'reference-relocs.log',cwd=build,timeout=1800)
+helper:L1161:     call([str(build/'bin/llvm-strip'),'--strip-debug',str(reference)],work/'reference-strip.log',timeout=600)
+helper:L1162:     result = rewrite(str(bolt),str(work/'profile.fdata'),str(reference),str(work/'clang.bolt'),work/'rewrite')
+helper:L1163:     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.bolt'),work/'prestrip-gate',str(build/'lib64/clang/22'))
+helper:L1164:     identity = strip_all(str(build/'bin/llvm-strip'),work/'clang.bolt',work/'clang.candidate',work/'identity.json')
+helper:L1165:     security = security_compare(str(work/'ordinary-clang-22'), str(work/'clang.candidate'))
+helper:L1166:     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.candidate'),work/'preinstall-gate',str(build/'lib64/clang/22'))
+helper:L1167:     result.update(identity=identity, security=security, input_policy='emit-relocs-then-strip-debug',
+helper:L1168:                   cache_policy='original-in-place' if cache is None else 'explicit-copy')
+helper:L1169:     save(work/'pipeline-result.json',result)
+helper:L1170:     return result
+helper:L1171: 
+helper:L1172: def cache_manifest(root):
+helper:L1173:     root = Path(root)
+helper:L1174:     require(root.is_dir(), 'ThinLTO cache directory missing')
+helper:L1175:     rows = []
+helper:L1176:     for p in sorted(root.rglob('*')):
+helper:L1177:         require(not p.is_symlink(), 'cache symlink is unsupported')
+helper:L1178:         if p.is_file():
+helper:L1179:             st = p.stat()
+helper:L1180:             rows.append({'path': p.relative_to(root).as_posix(), 'bytes': st.st_size,
+helper:L1181:                          'mtime_ns': st.st_mtime_ns})
+helper:L1182:         else:
+helper:L1183:             require(p.is_dir(), 'cache contains a special file')
+helper:L1184:     # Deterministic samples spanning the full sorted file list; timestamps are also frozen.
+helper:L1185:     indices = sorted(set([0, len(rows)-1] + list(range(0, len(rows), max(1,len(rows)//32))))) if rows else []
+helper:L1186:     samples = {rows[i]['path']: digest(root/rows[i]['path']) for i in indices}
+helper:L1187:     return {'files': rows, 'count': len(rows), 'bytes': sum(r['bytes'] for r in rows), 'samples': samples}
+helper:L1188: 
+helper:L1189: def cache_copy(edge, destination, result):
+helper:L1209: def validate_identity(identity, candidate):
+helper:L1210:     require(identity.get('bolt_note_before') is True, 'unproven pre-strip BOLT identity')
+helper:L1211:     require(identity.get('before_sha256') == digest(identity['before_path']), 'pre-strip SHA changed')
+helper:L1212:     before = ELF(identity['before_path'])
+helper:L1213:     try:
+helper:L1214:         before.audit()
+helper:L1215:     finally:
+helper:L1216:         before.close()
+helper:L1217:     require(digest(candidate) == identity.get('after_sha256'), 'stripped candidate SHA mismatch')
+helper:L1218:     final = ELF(candidate)
+helper:L1219:     try:
+helper:L1220:         final.audit(final=True)
+helper:L1221:     finally:
+helper:L1222:         final.close()
+helper:L1223: 
+helper:L1224: def strip_all(tool, before, after, result):
+helper:L1225:     before, after = Path(before).absolute(), Path(after).absolute()
+helper:L1226:     require(not after.exists() and before != after, 'strip-all output must be new')
+helper:L1227:     e = ELF(before)
+helper:L1228:     try:
+helper:L1229:         audit = e.audit()
+helper:L1230:     finally:
+helper:L1231:         e.close()
+helper:L1232:     before_sha = digest(before)
+helper:L1233:     shutil.copy2(before, after)
+helper:L1234:     call([str(tool), '--strip-all', str(after)], Path(result).with_suffix('.strip.log'), timeout=600)
+helper:L1235:     identity = {'before_path': str(before), 'before_sha256': before_sha, 'bolt_note_before': True,
+helper:L1236:                 'bolt_sections_before': audit['bolt_sections'], 'after_path': str(after),
+helper:L1237:                 'after_sha256': digest(after), 'strip_tool_sha256': digest(tool)}
+helper:L1238:     validate_identity(identity, after)
+helper:L1239:     save(result, identity)
+helper:L1240:     print(json.dumps({'BOLT_STRIP_IDENTITY': identity}), flush=True)

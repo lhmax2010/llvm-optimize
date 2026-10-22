@@ -154,3 +154,34 @@ sandbox/lhmax2025/bolt_pgo远端由cb67996861d070d68fec2b4c623eed7d20ba2e23更�
 源 `9e5675f57d122549997caffa39b655dfefc46fee`（直接amend e246，父676），唯一bolt_pgo已按e246精确租约更新并推后核对。289测试、基线构建/安装/平台链逐字节比较、sh-e诊断后rc1、Tizen4.14.1.1五项解析全部PASS。一次图形认证、下层前后不变；没有QB/refs-for/新分支操作。完整spec diff、撤回清单、unknown原文及推送原文见27末节。
 
 全部164项材料钉于 `c93f17f335fab1334f98c471a34dc3776e6b31f7`，分支与固定raw见[26](10_raw_links_part26.md)、[27](10_raw_links_part27.md)、[28](10_raw_links_part28.md)、[29](10_raw_links_part29.md)、[30](10_raw_links_part30.md)、[31](10_raw_links_part31.md)。推送前304 raw核验PASS；收尾328 URL核验PASS，其中STATUS分支初次HTTP200为旧缓存，原URL以no-cache重验通过。初次与重验原文随本索引提交公开于tools/bolt/results/narrow-disk-20261019/closing-verification-initial.json、status-cache-check.json和closing-verification.json，未把缓存延迟当作产品门禁失败。
+
+
+## 29：磁盘盘点与固定快照准备（完整补测未启动）
+
+当前分支链接如下；钉提交版本以本节所在提交 SHA 替换 bolt-v4，最终回复同时提供。历史采样与本轮端点均已明确标记，不代表同条件完整峰值。
+
+- [docs/bolt/29_disk_footprint.md](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/docs/bolt/29_disk_footprint.md)
+- [tools/bolt/results/disk-footprint-20261021/build-conf-verification.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/build-conf-verification.json)
+- [tools/bolt/results/disk-footprint-20261021/build.conf](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/build.conf)
+- [tools/bolt/results/disk-footprint-20261021/build.conf.gz](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/build.conf.gz)
+- [tools/bolt/results/disk-footprint-20261021/collect_historical.py](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/collect_historical.py)
+- [tools/bolt/results/disk-footprint-20261021/collection-result.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/collection-result.json)
+- [tools/bolt/results/disk-footprint-20261021/files.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/files.json)
+- [tools/bolt/results/disk-footprint-20261021/gbs_llvm_qb1202084.conf](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/gbs_llvm_qb1202084.conf)
+- [tools/bolt/results/disk-footprint-20261021/historical-off-root-space-samples.jsonl.gz](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/historical-off-root-space-samples.jsonl.gz)
+- [tools/bolt/results/disk-footprint-20261021/historical-off-samples.tsv](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/historical-off-samples.tsv)
+- [tools/bolt/results/disk-footprint-20261021/historical-off-summary.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/historical-off-summary.json)
+- [tools/bolt/results/disk-footprint-20261021/historical-off-watch_root_space.py.txt](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/historical-off-watch_root_space.py.txt)
+- [tools/bolt/results/disk-footprint-20261021/historical-rehearsal-current-du.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/historical-rehearsal-current-du.json)
+- [tools/bolt/results/disk-footprint-20261021/historical-rehearsal-endpoint.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/historical-rehearsal-endpoint.json)
+- [tools/bolt/results/disk-footprint-20261021/historical-relink-summary.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/historical-relink-summary.json)
+- [tools/bolt/results/disk-footprint-20261021/input-provenance.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/input-provenance.json)
+- [tools/bolt/results/disk-footprint-20261021/local-admission.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/local-admission.json)
+- [tools/bolt/results/disk-footprint-20261021/parent-build-command-excerpt.txt](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/parent-build-command-excerpt.txt)
+- [tools/bolt/results/disk-footprint-20261021/preparatory-corrections.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/preparatory-corrections.json)
+- [tools/bolt/results/disk-footprint-20261021/qb-config-excerpts.txt](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/qb-config-excerpts.txt)
+- [tools/bolt/results/disk-footprint-20261021/repodata-index.html](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/repodata-index.html)
+- [tools/bolt/results/disk-footprint-20261021/repomd.xml](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/repomd.xml)
+- [tools/bolt/results/disk-footprint-20261021/source-lifetime-excerpts.txt](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/source-lifetime-excerpts.txt)
+- [tools/bolt/results/disk-footprint-20261021/source-preservation.json](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/source-preservation.json)
+- [evidence-validation.txt](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/disk-footprint-20261021/evidence-validation.txt)
