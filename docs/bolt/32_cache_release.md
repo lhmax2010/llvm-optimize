@@ -1,6 +1,8 @@
 # ThinLTO 缓存释放与双轮本地测量（2026-10-22）
 
-状态：**实现、299 项测试、五项 Tizen RPM 解析 PASS；两轮完整构建认证未完成，已按本地资源规则停止。** 第一次未改 9e5675f 的构建停在普通 LLVM 链接；分段暂停后，等待内存准入达到 60 分钟上限。BOLT 实际增量尚未测得；释放后的整轮峰值及后处理降幅尚未测得；clang 与 RPM 一致性尚未验证。不得用历史 97 GB 缓存代替本次测量。
+最新状态（2026-10-23）：**用户释放内存后已恢复第一轮基线构建；实现、299 项测试、五项 Tizen RPM 解析 PASS，两轮完整构建认证仍未完成。**
+
+以下为2026-10-22停止快照，当前续跑见第9节。 第一次未改 9e5675f 的构建停在普通 LLVM 链接；分段暂停后，等待内存准入达到 60 分钟上限。BOLT 实际增量尚未测得；释放后的整轮峰值及后处理降幅尚未测得；clang 与 RPM 一致性尚未验证。不得用历史 97 GB 缓存代替本次测量。
 
 ## 1. 源码与边界
 
@@ -120,3 +122,11 @@ RuntimeError: memory admission timeout
 目录：[`tools/bolt/results/cache-release-20261022/`](../../tools/bolt/results/cache-release-20261022/)。源码、测试、解析为已完成材料；构建运行及停止记录已保存；见partial-measurement.json、timeline.tsv、各段完整压缩日志与JSONL。没有删除历史目录或任何真实构建缓存。
 
 原始RPM生成脚本保留4处行末空白，原始iostat保留EOF空行；git diff --check对此给出提示，未改写原文以消除提示。排除这两份原始证据后的文档/脚本差异检查通过；110份归档证据SHA复核通过，详见delivery-checks.json。
+
+## 9. 2026-10-23 内存释放后的续跑（进行中）
+
+用户明确要求继续后，01:01:51 CST重新取得共享锁。准入 MemAvailable=28,059,787,264B，/home可用427,441,000,448B；复核本次新根的四项SOURCES和固定build.conf身份未变。以原RPM入口继续完整 `rpmbuild -ba --noprep`，未触碰历史根。新计划356项；普通bugpoint、libLTO和liblldb先后完成，128/356后仍在同时链接普通clang-22与libclang-cpp.so.22.1，尚未进入BOLT。
+
+16GiB限额下两路LLD几乎用满匿名内存，memory.events的max计数增加、I/O压力高，但oom/oom_kill均0。2026-10-23 01:45:30 CST，用户明确批准“允许本次两轮使用20GiB”，随即用systemctl set-property --runtime把本次构建MemoryMax调到21,474,836,480B；swap=0、nice15、ionice3、低于3GiB停止和锁时限不变。第二轮本地控制器使用同样20GiB上限。此裁决只适用于本次两轮本地测量，不改spec、helper或构建参数；第一轮调整前后分段记录，不能称为从头到尾统一资源条件。原始前后值与命令见baseline-resume2/memory-limit-adjustment.json。
+
+新增独立5秒进程采样，避免du阻塞时漏采VmHWM；du存在临时文件扫描竞态的读数标注rc1，不能称为完整精确值。未取得第一轮完整产物前不启动第二轮、不删除第一轮根。
