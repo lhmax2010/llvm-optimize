@@ -6,7 +6,7 @@
   "committer": "Hao Lin <hao.lin@samsung.com>",
   "Signed-off-by": "Hao Lin <hao.lin@samsung.com>",
   "helper_mirror_equal": true,
-  "qualification": "CACHE_RELEASE_299_TESTS_FIVE_PARSES_PASS_FULL_BUILDS_INCOMPLETE_MEMORY_ADMISSION_TIMEOUT",
+  "qualification": "CACHE_RELEASE_299_TESTS_FIVE_PARSES_PASS_BASELINE_BUILD_PASS_REVISED_PENDING",
   "files": [
     {
       "path": "packaging/llvm.spec",
@@ -34,7 +34,7 @@
   "fixtures": 299,
   "post_capture": "Baseline and narrowed host scripts copied only; full platform chain byte-equal; no product execution",
   "disabled_macro_proof_reused": false,
-  "candidate_route": "No candidate generated in this cache-release validation attempt",
+  "candidate_route": "Baseline 9e5675f rebuilt llvm-bolt in task-owned tree; revised d20e873b candidate not yet generated",
   "sandbox_branch": "sandbox/lhmax2025/bolt_pgo",
   "Quickbuild_start": "QB is controlled by the user; no QB action performed in this task",
   "publication_order": "Local source only, no Gerrit access; evidence published to bolt-v4",
@@ -309,7 +309,7 @@
   "cache_release": {
     "source_commit": "d20e873b2c7dfac10fab9235e2b781dad08dc4c7",
     "tests_added": 10,
-    "full_builds": "baseline running",
+    "full_builds": "baseline PASS; revised pending",
     "evidence": "tools/bolt/results/cache-release-20261022/"
   },
   "historical_local_candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
@@ -318,10 +318,14 @@
   "cache_release_validation": {
     "tests": 299,
     "five_tizen_parses": "PASS",
-    "baseline_build": "INCOMPLETE ordinary linking; 60-minute memory admission timeout",
-    "revised_build": "NOT RUN",
+    "baseline_build": "PASS: rpmbuild exit0; 22 binary RPMs and 1 source RPM",
+    "revised_build": "PENDING",
     "candidate_rpm_comparison": "NOT RUN",
     "gerrit_pushed_in_this_task": false,
-    "report": "docs/bolt/32_cache_release.md"
+    "report": "docs/bolt/32_cache_release.md",
+    "baseline_source": "9e5675f57d122549997caffa39b655dfefc46fee",
+    "baseline_candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
+    "baseline_root_sampled_peak_bytes": 241288712192,
+    "baseline_preservation": "PASS; baseline-products/preserved.json"
   }
 }

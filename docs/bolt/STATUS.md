@@ -360,3 +360,10 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 
 
 2026-10-23 03:49进度：第一轮普通构建356/356和普通安装完成，BOLT实际tool-plan/执行均113项（111BOLT+2TF），工具实物复核通过。tool-built BOLT自有占用3.762GiB（含cache新增1.120GiB）；正在重链，尚无完整candidate/RPM，不能宣称完整增量或释放收益。MemoryMax=infinity、无内存准入续租；最新持锁3200.228秒后冻结/释放/恢复成功。全根du历史竞态缺口、修正和原始读数均存证，见32第9.1节。未访问Gerrit/QB，未删除任何构建根。
+
+
+## 2026-10-23 05:21：cache-release首轮完整构建PASS，第二轮待运行
+
+9e5675f首轮rpmbuild rc0，22二进制RPM+1源码RPM；真实工具计划/执行113项、pipeline、compare-root、225静态库转换、post全部PASS。candidate为历史同一4ec07159完整SHA。BOLT四次报告自有占用0/3.762/4.345/4.346GiB；完整chroot已观测峰值224.718GiB在静态库归档安装阶段，du缺口/长扫描限制明确保留。
+
+全部23RPM和关键二进制/报告已逐文件SHA保全（28009文件，11.96GB）。仅清理本次首轮新根的lto.cache腾空间，其余树和历史目录不动；/home可用354.50GB，足够第二轮。/proc因用户VS Code PID4237句柄暂未能正常卸载，未强制卸载/终止编辑器；devpts、devshm已卸载。该挂载清理待用户释放，第二轮不依赖删除它。详见32第10节。新源仍d20e873b，仅本地；299测试/五项解析PASS，双轮比较尚未完成，无Gerrit/QB操作。

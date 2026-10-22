@@ -1,0 +1,48 @@
+{
+  "time_ns": 1792703695355320302,
+  "build_state_before": "inactive",
+  "monitor_units_already_inactive": [
+    {
+      "unit": "bolt-cache-guard-baseline-resume2",
+      "rc": 0,
+      "stdout": "LoadState=not-found\nActiveState=inactive\nSubState=dead\n",
+      "stderr": ""
+    },
+    {
+      "unit": "bolt-cache-resume2-du2",
+      "rc": 0,
+      "stdout": "LoadState=not-found\nActiveState=inactive\nSubState=dead\n",
+      "stderr": ""
+    },
+    {
+      "unit": "bolt-cache-resume2-watch",
+      "rc": 0,
+      "stdout": "LoadState=not-found\nActiveState=inactive\nSubState=dead\n",
+      "stderr": ""
+    },
+    {
+      "unit": "bolt-cache-resume2-process-watch",
+      "rc": 0,
+      "stdout": "LoadState=not-found\nActiveState=inactive\nSubState=dead\n",
+      "stderr": ""
+    },
+    {
+      "unit": "bolt-cache-resume2-diskfree",
+      "rc": 0,
+      "stdout": "LoadState=not-found\nActiveState=inactive\nSubState=dead\n",
+      "stderr": ""
+    }
+  ],
+  "preparation_correction": {
+    "class": "monitor service cleanup",
+    "count": 1,
+    "error": "Initial stop asserted rc0 for already completed transient unit, raised AssertionError before killing any old controller.",
+    "correction": "Read LoadState/ActiveState. All five units were not-found/inactive after automatic collection; do not stop them again.",
+    "product_affected": false
+  },
+  "old_suspended_controller": {
+    "pid": 5452,
+    "command": "python3 -B temp/bolt-v4-20261022-cache-release/segmented.py baseline-resume2 temp/bolt-v4-20261022-cache-release/resume-command.json ",
+    "signal": "SIGKILL only after completed service inactive"
+  }
+}

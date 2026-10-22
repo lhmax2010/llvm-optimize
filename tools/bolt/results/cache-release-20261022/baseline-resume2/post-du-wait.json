@@ -1,0 +1,12 @@
+{
+  "time_ns": 1792701697853614016,
+  "observation": "sampler remains active; du is D state, host du wchan wait_on_buffer; not a completed zero-change reading",
+  "ps": [
+    "  11672    2558 SNs     9230 python3         poll_schedule_timeout.constp /usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/du-root2.py bolt-cache-baseline-resume2.service baseline-resume2 baseline-root",
+    "  59409    5455 DN       533 du              blk_mq_get_tag               du -sx -B1 /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root",
+    "  59426   11672 SN       530 sudo            -                            sudo -n /usr/sbin/chroot /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0 /bin/du -sx -B1 /",
+    "  59427   59426 DN       530 du              -                            /bin/du -sx -B1 /",
+    "  60927    4495 Ss         0 sh              do_wait                      /usr/bin/sh -lc python3 -B - <<'PY' from pathlib import Path import subprocess,json,time p=subprocess.run(['ps','-eo','pid,ppid,stat,etimes,comm,wchan:28,args'],capture_output=True,text=True) rows=[x for x in p.stdout.splitlines() if 'du -sx -B1' in x or 'du-root2.py' in x] Path('baseline-resume2/post-du-wait.json').write_text(json.dumps({'time_ns':time.time_ns(),'observation':'sampler remains active; du is D state, host du wchan wait_on_buffer; not a completed zero-change reading','ps':rows,'rc':p.returncode},indent=2)+'\\n') PY"
+  ],
+  "rc": 0
+}

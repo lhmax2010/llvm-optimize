@@ -1,0 +1,134 @@
+{
+  "completed_baseline_source": "9e5675f57d122549997caffa39b655dfefc46fee",
+  "result": {
+    "exit_code": 0,
+    "seconds": 15095.143733114,
+    "time_ns": 1792703606831878330
+  },
+  "complete_root_sampled_peak": {
+    "time_ns": 1792701047713093634,
+    "argv": [
+      "sudo",
+      "-n",
+      "/usr/sbin/chroot",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0",
+      "/bin/du",
+      "-sx",
+      "-B1",
+      "/"
+    ],
+    "stdout": "241288712192\t/\n",
+    "stderr": "",
+    "rc": 0,
+    "seconds": 0.3565037210009905
+  },
+  "full_root_peak_gib": 224.71762466430664,
+  "memory_peak_bytes": 30516629504,
+  "largest_observed_process_VmHWM": {
+    "pid": 16656,
+    "name": "ld.lld",
+    "state": "S",
+    "utime_ticks": 242523,
+    "stime_ticks": 1392,
+    "VmHWM_KiB": 18219596,
+    "VmRSS_KiB": 18219596
+  },
+  "disk_report_summaries": {
+    "begin": {
+      "time_ns": 1792697708361091219,
+      "free_bytes": 230329565184,
+      "used_bytes": 0,
+      "cache_delta_allocated_bytes": 0
+    },
+    "tool-built": {
+      "time_ns": 1792698374541545285,
+      "free_bytes": 226286432256,
+      "used_bytes": 4039049216,
+      "cache_delta_allocated_bytes": 1202872320
+    },
+    "pipeline": {
+      "time_ns": 1792698653753884759,
+      "free_bytes": 225628196864,
+      "used_bytes": 4665483264,
+      "cache_delta_allocated_bytes": 1202872320
+    },
+    "post": {
+      "time_ns": 1792702537943661392,
+      "free_bytes": 229362429952,
+      "used_bytes": 4667088896,
+      "cache_delta_allocated_bytes": 1202872320
+    }
+  },
+  "candidate_sha256": "4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9",
+  "counts": {
+    "N": 23592,
+    "M": 144032,
+    "S": 0,
+    "U": 1,
+    "Q": 383,
+    "R": 4.238545331242318e-05,
+    "S_over_N": 0.0
+  },
+  "preservation": {
+    "manifest": "../baseline-products/preserved.json",
+    "rpm_count": 22,
+    "srpm_count": 1,
+    "rc": 0
+  },
+  "post_measurement_space_recovery": {
+    "started_ns": 1792704009801061975,
+    "scope": "Only cache inside user-approved first new build root, after completed baseline and verified preservation; not production cache-release execution.",
+    "path": "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache",
+    "file_count_before": 47719,
+    "du_before": "98180825088\t/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache\n",
+    "allocated_bytes_before": 98180825088,
+    "df_device": "Filesystem     Mounted on\n/dev/sda1      /home\n",
+    "filesystem_free_before": 256320102400,
+    "checks": [
+      {
+        "argv": [
+          "lsof",
+          "-nP",
+          "+D",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache"
+        ],
+        "rc": 1,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "fuser",
+          "-v",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache"
+        ],
+        "rc": 1,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "preservation_file_count": 28009,
+    "preservation_bytes": 11963421755,
+    "retained_proc": "VS Code holds proc; leave mount and rest of first root untouched.",
+    "argv": [
+      "rm",
+      "-rf",
+      "--one-file-system",
+      "--",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": "",
+    "seconds": 37.133108015999824,
+    "remaining": false,
+    "filesystem_free_after": 354500767744
+  },
+  "limitations": [
+    "Baseline interrupted and resumed under original RPM environment; not uninterrupted GBS.",
+    "Memory cap changed16GiB->20GiB->infinity during first build. Revised round uses infinity.",
+    "Full root du gap from transient file race before corrected sampler; post scan took571s. Sampled peak, not continuous exact peak.",
+    "Post-measurement deletion only baseline cache is capacity cleanup, not revised helper execution.",
+    "Baseline proc mount retained because VS Code PID4237 holds it; no force/lazy unmount."
+  ]
+}

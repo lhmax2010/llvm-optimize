@@ -206,3 +206,12 @@ sandbox/lhmax2025/bolt_pgo远端由cb67996861d070d68fec2b4c623eed7d20ba2e23更�
 - [原始证据SHA索引](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/build-evidence-provenance.json)
 
 尚未完成两轮；不能把进行中采样当作最终认证。固定版本使用该文件所在提交SHA替换URL中的bolt-v4。
+
+
+### cache-release 第一轮完成（第二轮尚未完成）
+
+- [第一轮完整结果及采样峰值](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/baseline-resume2/completed-baseline-summary.json)
+- [全部23RPM和关键资产保全SHA](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/baseline-products/preserved.json)
+- [首轮结束后仅缓存空间回收](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/baseline-space-recovery/cleanup.json)
+- [pipeline身份与门禁](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/baseline-resume2-evidence/bolt-work/pipeline-result.json)
+- [post尾检](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/baseline-resume2-evidence/bolt-work/post-gate/post-result.json)
