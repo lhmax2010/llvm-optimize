@@ -871,3 +871,15 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 
 **当前任务（hybrid 本地完整构建）已完成，构建 PASS、验证部分通过**：干净6e9d4f2，固定QB1202084 Base20261013.024319，唯一完整GBS构建12737.276s、22+1 RPM。采样峰值66.696GiB（较全静态+BOLT基线少158.022GiB），结束缓存18.990GiB（少72.448GiB）；普通链接至%install初期有76.3分钟有效du空档，不能保证绝对峰值。22二进制RPM合计7.990→1.449GiB。三目标90/90完整对象、225/225归档、SDK/329导入文件、已安装170条ELF映射均PASS。188目标最终183PASS、4个非默认测试/fuzzer未产出、AnnotateFunctions一项NEEDED待分析；158入口144运行PASS、14脚本缺运行依赖，未发现缺共享库。记录其他会话并发I/O，不据耗时宣称加速。根temp/hybrid-local-20261023/gbs-root保留；源码/配置未改、无Gerrit/QB操作。见[完整报告](53_hybrid_local_validation.md)。
 
+
+### 2026-10-23 hybrid 本地验证 PM 裁决：PASS（附例外）
+
+1. 188 项预期表中 4 个未产出的目标（OpenMP 非默认测试缺 gtest、clang-fuzzer/clang-objc-fuzzer 编译错误）：不属于默认构建，也不进入 RPM，与 hybrid 链接方式无关。裁决为"不适用"，预期表在后续版本中把非安装的测试和示例目标移出验收范围。
+
+2. lib64/AnnotateFunctions.so 缺少 libLLVM 的 NEEDED：链接规则带 --as-needed，插件实测可以加载并正常工作。裁决为"接受，属于 --as-needed 例外"。
+
+3. 14 个脚本的运行依赖缺失（python、git、libscanbuild）：脚本内容与全静态基线 RPM 逐字节相同，是原有的运行环境限制，与 hybrid 无关。裁决为"非本改动问题，另行跟踪"。
+
+4. 总体：hybrid 6e9d4f2 本地验证裁决为 PASS（附上述例外），可以进入 QB。下一步由用户在 sandbox/lhmax2025/llvm_optimize 上启动三架构 QB。
+
+各项证据文件见 [53 第 7 节：PM 裁决](53_hybrid_local_validation.md#7-pm-裁决)。本次只追加文档，不修改源码、不运行构建、不推送 Gerrit、不操作 QB。

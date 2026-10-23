@@ -177,3 +177,24 @@ ninja: build stopped: subcommand failed.
 测量限制：60秒采样且存在50秒超时；基线含BOLT与中断链接遗留；本轮检测到其他会话并发I/O；不能从本次时长推导性能提升，也不能保证没有短暂更高峰值。各包体积差和缓存差以实测字节为准。
 
 原始证据均在 [53_hybrid_local_validation_evidence/](53_hybrid_local_validation_evidence/)，含完整命令、日志、采样、配置快照、188逐项结果、运行输出及对象/归档报告。大JSONL以gzip发布并保存原始字节SHA；本地原件保留。证据索引见 [evidence-manifest.json](53_hybrid_local_validation_evidence/evidence-manifest.json)。
+
+
+## 7. PM 裁决
+
+2026-10-23，以下为 PM 裁决原文；第 1–6 节保留裁决前的实测记录，本节给出最终验收结论。
+
+1. 188 项预期表中 4 个未产出的目标（OpenMP 非默认测试缺 gtest、clang-fuzzer/clang-objc-fuzzer 编译错误）：不属于默认构建，也不进入 RPM，与 hybrid 链接方式无关。裁决为"不适用"，预期表在后续版本中把非安装的测试和示例目标移出验收范围。
+
+   证据：[linkage-188-classification.json](53_hybrid_local_validation_evidence/linkage-188-classification.json)、[optional-target-build.log](53_hybrid_local_validation_evidence/optional-target-build.log)、[linkage-188-supplemental.json](53_hybrid_local_validation_evidence/linkage-188-supplemental.json)。
+
+2. lib64/AnnotateFunctions.so 缺少 libLLVM 的 NEEDED：链接规则带 --as-needed，插件实测可以加载并正常工作。裁决为"接受，属于 --as-needed 例外"。
+
+   证据：[annotate-link-edge.txt](53_hybrid_local_validation_evidence/annotate-link-edge.txt)、[annotate-analysis.json](53_hybrid_local_validation_evidence/annotate-analysis.json)、[annotate-plugin-smoke-corrected.json](53_hybrid_local_validation_evidence/annotate-plugin-smoke-corrected.json)。
+
+3. 14 个脚本的运行依赖缺失（python、git、libscanbuild）：脚本内容与全静态基线 RPM 逐字节相同，是原有的运行环境限制，与 hybrid 无关。裁决为"非本改动问题，另行跟踪"。
+
+   证据：[runtime-final.json](53_hybrid_local_validation_evidence/runtime-final.json)、[runtime-baseline-comparison.json](53_hybrid_local_validation_evidence/runtime-baseline-comparison.json)。
+
+4. 总体：hybrid 6e9d4f2 本地验证裁决为 PASS（附上述例外），可以进入 QB。下一步由用户在 sandbox/lhmax2025/llvm_optimize 上启动三架构 QB。
+
+   证据：[evidence-manifest.json](53_hybrid_local_validation_evidence/evidence-manifest.json)、[objects-result.json](53_hybrid_local_validation_evidence/objects-result.json)、[sdk-result.json](53_hybrid_local_validation_evidence/sdk-result.json)、[archives-result.json](53_hybrid_local_validation_evidence/archives-result.json)。
