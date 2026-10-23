@@ -400,6 +400,6 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 已用精确租约把 sandbox/lhmax2025/bolt_pgo 从9e5675f更新为新提交，推后ls-remote一致；没有推refs/for或操作QB。QB使用 `platform/upstream/llvm@3d3b4bf564fd8edec793e49e6de75b5fa7007d16`，由用户启动。详见[32第15节](32_cache_release.md#15-2026-10-23懒卸载cache-release-异常兜底修复与-sandbox-更新)和 tools/bolt/results/cache-release-fix-20261023/。
 
 
-## 2026-10-23：BOLT on hybrid 本地完整构建启动
+## 2026-10-24：BOLT on hybrid 本地完整构建与验证 PASS
 
-本地detached合并提交 `aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`（父6e9d4f2，cherry-pick3d3b4bf），无冲突，保留hybrid配置与BOLT门禁。GBS export与Tizen五项解析PASS，复制图clang重放预检查PASS；源码显示llvm-bolt及BOLT库禁用LLVM dylib，白名单不改。新根temp/bolt-on-hybrid-20261024/gbs-root按用户资源规则运行；尚待完整构建、profile/90对象/RPM与磁盘认证，无Gerrit推送。见33号文档。
+本地 detached 提交 `aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`（父6e9d4f2，cherry-pick3d3b4bf），无冲突、无源码额外修改，未推Gerrit。五项Tizen解析PASS；llvm-bolt仍静态链接LLVM，原111+2白名单实际planned/executed=113，无需改白名单。profile N23592/M144032/S0/U1/Q383，R0.004238545%，与静态参考相同；pipeline、安全属性、tiny、compare-root、post全部PASS；cache-release释放20.138GiB。22二进制RPM+1源码RPM，30TU×3目标完整.o 90/90相同。完整根已观测峰值64.055GiB（hybrid66.696、全静态+BOLT224.718；采样缺失与历史差异详见33）。本次根与products保留供性能测量；candidate SHA `8b799f18e2bc37269385db125c881609e8457de1dd179f5d9d0ff9f557b58d16`。资源按本次用户放宽规则，无OOM/冻结/重试；完成后停止。见[33号报告](33_bolt_on_hybrid.md)。

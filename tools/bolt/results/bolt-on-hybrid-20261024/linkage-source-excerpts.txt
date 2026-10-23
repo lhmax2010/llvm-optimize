@@ -1,0 +1,422 @@
+
+FILE bolt/tools/driver/CMakeLists.txt
+1: set(LLVM_LINK_COMPONENTS
+2:   ${BOLT_TARGETS_TO_BUILD}
+3:   MC
+4:   Object
+5:   Support
+6:   )
+7: 
+8: if (BOLT_ENABLE_RUNTIME)
+9:   set(BOLT_DRIVER_DEPS "bolt_rt")
+10: else()
+11:   set(BOLT_DRIVER_DEPS "")
+12: endif()
+13: 
+14: add_bolt_tool(llvm-bolt
+15:   llvm-bolt.cpp
+16: 
+17:   DISABLE_LLVM_LINK_LLVM_DYLIB
+18: 
+19:   DEPENDS
+20:   ${BOLT_DRIVER_DEPS}
+21:   )
+22: 
+23: target_link_libraries(llvm-bolt
+24:   PRIVATE
+25:   LLVMBOLTProfile
+26:   LLVMBOLTRewrite
+27:   LLVMBOLTUtils
+28:   )
+29: 
+30: add_bolt_tool_symlink(perf2bolt llvm-bolt)
+31: add_bolt_tool_symlink(llvm-boltdiff llvm-bolt)
+32: 
+33: add_dependencies(bolt llvm-bolt)
+34: 
+35: include_directories(${BOLT_SOURCE_DIR}/lib)
+
+FILE llvm/cmake/modules/AddLLVM.cmake
+740:     endif()
+741:   endif()
+742: 
+743:   if(ARG_STATIC)
+744:     set(libtype PUBLIC)
+745:   else()
+746:     # We can use PRIVATE since SO knows its dependent libs.
+747:     set(libtype PRIVATE)
+748:   endif()
+749: 
+750:   if(ARG_MODULE AND LLVM_EXPORT_SYMBOLS_FOR_PLUGINS AND ARG_PLUGIN_TOOL AND (WIN32 OR CYGWIN))
+751:     # On DLL platforms symbols are imported from the tool by linking against it.
+752:     set(llvm_libs ${ARG_PLUGIN_TOOL})
+753:   elseif (NOT ARG_COMPONENT_LIB)
+754:     if (LLVM_LINK_LLVM_DYLIB AND NOT ARG_DISABLE_LLVM_LINK_LLVM_DYLIB)
+755:       set(llvm_libs LLVM)
+756:     else()
+757:       if(ARG_DISABLE_LLVM_LINK_LLVM_DYLIB)
+758:         target_compile_definitions(${name} PRIVATE LLVM_BUILD_STATIC)
+759:       endif()
+760:       llvm_map_components_to_libnames(llvm_libs
+761:        ${ARG_LINK_COMPONENTS}
+762:        ${LLVM_LINK_COMPONENTS}
+763:        )
+764:     endif()
+765:   else()
+766:     # Components have not been defined explicitly in CMake, so add the
+767:     # dependency information for this library through their name, and let
+768:     # LLVMBuildResolveComponentsLink resolve the mapping.
+769:     #
+770:     # It would be nice to verify that we have the dependencies for this library
+771:     # name, but using get_property(... SET) doesn't suffice to determine if a
+772:     # property has been set to an empty value.
+773:     set_property(TARGET ${name} PROPERTY LLVM_LINK_COMPONENTS ${ARG_LINK_COMPONENTS} ${LLVM_LINK_COMPONENTS})
+774: 
+775:     # This property is an internal property only used to make sure the
+776:     # link step applied in LLVMBuildResolveComponentsLink uses the same
+777:     # property as the target_link_libraries call below.
+778:     set_property(TARGET ${name} PROPERTY LLVM_LIBTYPE ${libtype})
+779:   endif()
+780: 
+1130:       NOT ARG_EXPORT_SYMBOLS)
+1131:     if(LLVM_LINKER_SUPPORTS_NO_EXPORTED_SYMBOLS)
+1132:       set_property(TARGET ${name} APPEND_STRING PROPERTY
+1133:         LINK_FLAGS " -Wl,-no_exported_symbols")
+1134:     else()
+1135:       message(FATAL_ERROR
+1136:         "LLVM_ENABLE_EXPORTED_SYMBOLS_IN_EXECUTABLES cannot be disabled when linker does not support \"-no_exported_symbols\"")
+1137:     endif()
+1138:   endif()
+1139: 
+1140:   if (LLVM_LINK_LLVM_DYLIB AND NOT ARG_DISABLE_LLVM_LINK_LLVM_DYLIB)
+1141:     set(USE_SHARED USE_SHARED)
+1142:   endif()
+1143: 
+1144:   set(EXCLUDE_FROM_ALL OFF)
+1145:   set_output_directory(${name} BINARY_DIR ${LLVM_RUNTIME_OUTPUT_INTDIR} LIBRARY_DIR ${LLVM_LIBRARY_OUTPUT_INTDIR})
+1146:   llvm_config( ${name} ${USE_SHARED} ${LLVM_LINK_COMPONENTS} )
+1147:   if( LLVM_COMMON_DEPENDS )
+1148:     add_dependencies( ${name} ${LLVM_COMMON_DEPENDS} )
+1149:     foreach(objlib ${obj_name})
+1150:       add_dependencies(${objlib} ${LLVM_COMMON_DEPENDS})
+
+FILE bolt/lib/Core/CMakeLists.txt
+1: set(LLVM_LINK_COMPONENTS
+2:   DebugInfoDWARF
+3:   DebugInfoDWARFLowLevel
+4:   Demangle
+5:   MC
+6:   MCDisassembler
+7:   Object
+8:   Support
+9:   BinaryFormat
+10:   AsmPrinter
+11:   TargetParser
+12:   )
+13: 
+14: add_llvm_library(LLVMBOLTCore
+15:   AddressMap.cpp
+16:   BinaryBasicBlock.cpp
+17:   BinaryContext.cpp
+18:   BinaryData.cpp
+19:   BinaryEmitter.cpp
+20:   BinaryFunction.cpp
+21:   BinaryFunctionCallGraph.cpp
+22:   BinaryFunctionProfile.cpp
+23:   BinarySection.cpp
+24:   CallGraph.cpp
+25:   CallGraphWalker.cpp
+26:   DebugData.cpp
+27:   DebugNames.cpp
+28:   DIEBuilder.cpp
+29:   DynoStats.cpp
+30:   Exceptions.cpp
+31:   FunctionLayout.cpp
+32:   GDBIndex.cpp
+33:   HashUtilities.cpp
+34:   JumpTable.cpp
+35:   MCInstUtils.cpp
+36:   MCPlusBuilder.cpp
+37:   ParallelUtilities.cpp
+38:   Relocation.cpp
+39: 
+40:   NO_EXPORT
+41:   DISABLE_LLVM_LINK_LLVM_DYLIB
+42:   LINK_LIBS
+43:   ${LLVM_PTHREAD_LIB}
+44:   )
+45: 
+46: target_link_libraries(LLVMBOLTCore
+47:   PRIVATE
+48:   LLVMBOLTUtils
+49:   )
+
+FILE bolt/lib/Passes/CMakeLists.txt
+1: add_llvm_library(LLVMBOLTPasses
+2:   AArch64RelaxationPass.cpp
+3:   Aligner.cpp
+4:   AllocCombiner.cpp
+5:   AsmDump.cpp
+6:   BinaryPasses.cpp
+7:   CMOVConversion.cpp
+8:   CacheMetrics.cpp
+9:   DataflowAnalysis.cpp
+10:   DataflowInfoManager.cpp
+11:   FrameAnalysis.cpp
+12:   FrameOptimizer.cpp
+13:   FixRelaxationPass.cpp
+14:   FixRISCVCallsPass.cpp
+15:   HFSort.cpp
+16:   Hugify.cpp
+17:   IdenticalCodeFolding.cpp
+18:   IndirectCallPromotion.cpp
+19:   Inliner.cpp
+20:   Instrumentation.cpp
+21:   JTFootprintReduction.cpp
+22:   LongJmp.cpp
+23:   LoopInversionPass.cpp
+24:   LivenessAnalysis.cpp
+25:   MCF.cpp
+26:   PatchEntries.cpp
+27:   PAuthGadgetScanner.cpp
+28:   PettisAndHansen.cpp
+29:   PLTCall.cpp
+30:   PointerAuthCFIAnalyzer.cpp
+31:   PointerAuthCFIFixup.cpp
+32:   ProfileQualityStats.cpp
+33:   RegAnalysis.cpp
+34:   RegReAssign.cpp
+35:   ReorderAlgorithm.cpp
+36:   ReorderFunctions.cpp
+37:   ReorderData.cpp
+38:   ShrinkWrapping.cpp
+39:   SplitFunctions.cpp
+40:   StackAllocationAnalysis.cpp
+41:   StackAvailableExpressions.cpp
+42:   StackPointerTracking.cpp
+43:   StackReachingUses.cpp
+44:   StokeInfo.cpp
+45:   TailDuplication.cpp
+46:   ThreeWayBranch.cpp
+47:   ValidateInternalCalls.cpp
+48:   ValidateMemRefs.cpp
+49:   VeneerElimination.cpp
+50:   RetpolineInsertion.cpp
+51: 
+52:   NO_EXPORT
+53:   DISABLE_LLVM_LINK_LLVM_DYLIB
+54: 
+55:   LINK_LIBS
+56:   ${LLVM_PTHREAD_LIB}
+57: 
+58:   LINK_COMPONENTS
+59:   AsmPrinter
+60:   MC
+61:   Support
+62:   TargetParser
+63:   TransformUtils
+64:   )
+65: 
+66: target_link_libraries(LLVMBOLTPasses
+67:   PRIVATE
+68:   LLVMBOLTCore
+69:   LLVMBOLTUtils
+70:   )
+
+FILE bolt/lib/Profile/CMakeLists.txt
+1: add_llvm_library(LLVMBOLTProfile
+2:   BoltAddressTranslation.cpp
+3:   DataAggregator.cpp
+4:   DataReader.cpp
+5:   Heatmap.cpp
+6:   StaleProfileMatching.cpp
+7:   YAMLProfileReader.cpp
+8:   YAMLProfileWriter.cpp
+9: 
+10:   NO_EXPORT
+11:   DISABLE_LLVM_LINK_LLVM_DYLIB
+12: 
+13:   LINK_COMPONENTS
+14:   Demangle
+15:   MC
+16:   Support
+17:   TransformUtils
+18:   )
+19: 
+20: target_link_libraries(LLVMBOLTProfile
+21:   PRIVATE
+22:   LLVMBOLTCore
+23:   LLVMBOLTUtils
+24:   )
+
+FILE bolt/lib/Rewrite/CMakeLists.txt
+1: set(LLVM_LINK_COMPONENTS
+2:   Core
+3:   DebugInfoDWARF
+4:   DebugInfoDWARFLowLevel
+5:   JITLink
+6:   MC
+7:   Object
+8:   Support
+9:   DWARFLinker
+10:   DWARFLinkerClassic
+11:   AsmPrinter
+12:   TargetParser
+13:   )
+14: 
+15: add_llvm_library(LLVMBOLTRewrite
+16:   BinaryPassManager.cpp
+17:   BoltDiff.cpp
+18:   DWARFRewriter.cpp
+19:   ExecutableFileMemoryManager.cpp
+20:   JITLinkLinker.cpp
+21:   LinuxKernelRewriter.cpp
+22:   MachORewriteInstance.cpp
+23:   MetadataManager.cpp
+24:   BuildIDRewriter.cpp
+25:   PseudoProbeRewriter.cpp
+26:   RewriteInstance.cpp
+27:   RSeqRewriter.cpp
+28:   SDTRewriter.cpp
+29:   GNUPropertyRewriter.cpp
+30: 
+31:   NO_EXPORT
+32:   DISABLE_LLVM_LINK_LLVM_DYLIB
+33: 
+34:   LINK_LIBS
+35:   ${LLVM_PTHREAD_LIB}
+36:   )
+37: 
+38: target_link_libraries(LLVMBOLTRewrite
+39:   PRIVATE
+40:   LLVMBOLTCore
+41:   LLVMBOLTPasses
+42:   LLVMBOLTProfile
+43:   LLVMBOLTRuntimeLibs
+44:   LLVMBOLTUtils
+45:   )
+46: 
+47: foreach (tgt ${BOLT_TARGETS_TO_BUILD})
+48:   target_link_libraries(LLVMBOLTRewrite PRIVATE LLVMBOLTTarget${tgt})
+49:   string(TOUPPER "${tgt}" upper)
+50:   target_compile_definitions(LLVMBOLTRewrite PRIVATE ${upper}_AVAILABLE)
+51: endforeach()
+
+FILE bolt/lib/RuntimeLibs/CMakeLists.txt
+1: set(LLVM_LINK_COMPONENTS
+2:   BinaryFormat
+3:   JITLink
+4:   MC
+5:   Object
+6:   Support
+7:   )
+8: 
+9: add_llvm_library(LLVMBOLTRuntimeLibs
+10:   RuntimeLibrary.cpp
+11:   HugifyRuntimeLibrary.cpp
+12:   InstrumentationRuntimeLibrary.cpp
+13: 
+14:   NO_EXPORT
+15:   DISABLE_LLVM_LINK_LLVM_DYLIB
+16:   )
+17: 
+18: target_link_libraries(LLVMBOLTRuntimeLibs
+19:   PRIVATE
+20:   LLVMBOLTCore
+21:   LLVMBOLTPasses
+22:   LLVMBOLTUtils
+23:   )
+
+FILE bolt/lib/Utils/CMakeLists.txt
+1: find_first_existing_vc_file("${LLVM_MAIN_SRC_DIR}" llvm_vc)
+2: find_first_existing_vc_file("${BOLT_SOURCE_DIR}" bolt_vc)
+3: 
+4: # The VC revision include that we want to generate.
+5: set(version_inc "${CMAKE_CURRENT_BINARY_DIR}/VCSVersion.inc")
+6: 
+7: set(generate_vcs_version_script "${LLVM_CMAKE_DIR}/GenerateVersionFromVCS.cmake")
+8: 
+9: if(llvm_vc AND LLVM_APPEND_VC_REV)
+10:   set(llvm_source_dir ${LLVM_MAIN_SRC_DIR})
+11: endif()
+12: if(LLVM_VC_REPOSITORY AND LLVM_VC_REVISION)
+13:   set(llvm_source_dir ${LLVM_SOURCE_DIR})
+14:   set(llvm_vc_repository ${LLVM_VC_REPOSITORY})
+15:   set(llvm_vc_revision ${LLVM_VC_REVISION})
+16: endif()
+17: if(bolt_vc AND LLVM_APPEND_VC_REV)
+18:   set(bolt_source_dir ${BOLT_SOURCE_DIR})
+19: endif()
+20: 
+21: # Create custom target to generate the VC revision include.
+22: add_custom_command(OUTPUT "${version_inc}"
+23:   DEPENDS "${llvm_vc}" "${bolt_vc}" "${generate_vcs_version_script}"
+24:   COMMAND ${CMAKE_COMMAND} "-DNAMES=BOLT"
+25:                            "-DLLVM_SOURCE_DIR=${llvm_source_dir}"
+26:                            "-DBOLT_SOURCE_DIR=${bolt_source_dir}"
+27:                            "-DHEADER_FILE=${version_inc}"
+28:                            "-DLLVM_VC_REPOSITORY=${llvm_vc_repository}"
+29:                            "-DLLVM_VC_REVISION=${llvm_vc_revision}"
+30:                            "-DLLVM_FORCE_VC_REVISION=${LLVM_FORCE_VC_REVISION}"
+31:                            "-DLLVM_FORCE_VC_REPOSITORY=${LLVM_FORCE_VC_REPOSITORY}"
+32:                            -P "${generate_vcs_version_script}")
+33: 
+34: # Mark the generated header as being generated.
+35: set_source_files_properties("${version_inc}"
+36:   PROPERTIES GENERATED TRUE
+37:              HEADER_FILE_ONLY TRUE)
+38: 
+39: include_directories(${CMAKE_CURRENT_BINARY_DIR})
+40: 
+41: add_llvm_library(LLVMBOLTUtils
+42:   CommandLineOpts.cpp
+43:   Utils.cpp
+44:   ${version_inc}
+45: 
+46:   NO_EXPORT
+47:   DISABLE_LLVM_LINK_LLVM_DYLIB
+48: 
+49:   LINK_LIBS
+50:   ${LLVM_PTHREAD_LIB}
+51: 
+52:   LINK_COMPONENTS
+53:   Support
+54:   )
+
+FILE bolt/lib/Target/X86/CMakeLists.txt
+1: set(LLVM_LINK_COMPONENTS
+2:   MC
+3:   MCDisassembler
+4:   Support
+5:   X86Desc
+6:   )
+7: 
+8: if(BOLT_BUILT_STANDALONE)
+9:   set(LLVM_TARGET_DEFINITIONS ${LLVM_MAIN_SRC_DIR}/lib/Target/X86/X86.td)
+10:   list(APPEND LLVM_TABLEGEN_FLAGS -I ${LLVM_MAIN_SRC_DIR}/lib/Target/X86)
+11:   tablegen(LLVM X86GenInstrInfo.inc -gen-instr-info -instr-info-expand-mi-operand-info=0)
+12:   tablegen(LLVM X86GenMnemonicTables.inc -gen-x86-mnemonic-tables -asmwriternum=1)
+13:   tablegen(LLVM X86GenRegisterInfo.inc -gen-register-info)
+14:   tablegen(LLVM X86GenSubtargetInfo.inc -gen-subtarget)
+15: 
+16:   add_public_tablegen_target(X86CommonTableGen)
+17:   include_directories(${CMAKE_CURRENT_BINARY_DIR})
+18: endif()
+19: 
+20: add_llvm_library(LLVMBOLTTargetX86
+21:   X86MCPlusBuilder.cpp
+22:   X86MCSymbolizer.cpp
+23: 
+24:   NO_EXPORT
+25:   DISABLE_LLVM_LINK_LLVM_DYLIB
+26: 
+27:   DEPENDS
+28:   X86CommonTableGen
+29:   )
+30: 
+31: target_link_libraries(LLVMBOLTTargetX86 PRIVATE LLVMBOLTCore LLVMBOLTUtils)
+32: 
+33: include_directories(
+34:   ${LLVM_MAIN_SRC_DIR}/lib/Target/X86
+35:   ${LLVM_BINARY_DIR}/lib/Target/X86
+36:   )

@@ -1,0 +1,166 @@
+{
+  "tool_sha256": "0ecdff6172f7fffb08d30f3865976ca15dc8708c3a1ef9fe0d2a543059996f75",
+  "profile_sha256": "d9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326",
+  "input_sha256": "e79409133e6c9b12eecd33ee9af3ab6bc76049db5de4f43c8622b8c8a09b0598",
+  "output_sha256": "bff9cd119d9323e8ccb1345ef35f2afde521b034e676f03a6a8b6bb8d5fbc425",
+  "argv": [
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/reference-relocs-clang-22",
+    "-o",
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/clang.bolt",
+    "-data=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/profile.fdata",
+    "-reorder-blocks=ext-tsp",
+    "-reorder-functions=cdsort",
+    "-split-functions",
+    "-split-all-cold",
+    "-split-eh",
+    "-dyno-stats",
+    "--thread-count=1",
+    "-stale-threshold=5"
+  ],
+  "counts": {
+    "N": 23592,
+    "M": 144032,
+    "S": 0,
+    "U": 1,
+    "Q": 383,
+    "R": 4.238545331242318e-05,
+    "S_over_N": 0.0
+  },
+  "elf": {
+    "entry": 155111360,
+    "loads": [
+      [
+        1,
+        4,
+        0,
+        0,
+        0,
+        41458604,
+        41458604,
+        4096
+      ],
+      [
+        1,
+        5,
+        41458624,
+        41462720,
+        41462720,
+        95424496,
+        95424496,
+        4096
+      ],
+      [
+        1,
+        6,
+        136883120,
+        136891312,
+        136891312,
+        3004136,
+        3007568,
+        4096
+      ],
+      [
+        1,
+        6,
+        139887264,
+        139899552,
+        139899552,
+        39888,
+        589866,
+        4096
+      ],
+      [
+        1,
+        5,
+        140509184,
+        140509184,
+        140509184,
+        42712256,
+        42712256,
+        2097152
+      ]
+    ],
+    "bolt_sections": [
+      ".bolt.org.rodata",
+      ".bolt.org.eh_frame",
+      ".bolt.org.eh_frame_hdr",
+      ".bolt.org.text",
+      ".note.bolt_info"
+    ]
+  },
+  "identity": {
+    "before_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/clang.bolt",
+    "before_sha256": "bff9cd119d9323e8ccb1345ef35f2afde521b034e676f03a6a8b6bb8d5fbc425",
+    "bolt_note_before": true,
+    "bolt_sections_before": [
+      ".bolt.org.rodata",
+      ".bolt.org.eh_frame",
+      ".bolt.org.eh_frame_hdr",
+      ".bolt.org.text",
+      ".note.bolt_info"
+    ],
+    "after_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/clang.candidate",
+    "after_sha256": "8b799f18e2bc37269385db125c881609e8457de1dd179f5d9d0ff9f557b58d16",
+    "strip_tool_sha256": "d5699b8f418931119d49ea82848c708e3252fea4e820f8d7373e5230e515d79d"
+  },
+  "security": {
+    "security_preserved": true,
+    "ordinary_sha256": "d5090159915657b235b96f1202c058e1efd1647d6a2225ac8fdb2906aeaa501d",
+    "candidate_sha256": "8b799f18e2bc37269385db125c881609e8457de1dd179f5d9d0ff9f557b58d16",
+    "properties": {
+      "elf_type": 3,
+      "PT_INTERP": [
+        "/lib64/ld-linux-x86-64.so.2"
+      ],
+      "PT_GNU_RELRO": [
+        {
+          "flags": 4,
+          "vaddr": 136891312,
+          "filesz": 3004136,
+          "memsz": 3007568
+        }
+      ],
+      "PT_GNU_STACK": [
+        {
+          "flags": 6
+        }
+      ],
+      "PT_GNU_PROPERTY": [],
+      ".note.gnu.property": null,
+      "DT_RPATH": null,
+      "DT_RUNPATH": "$ORIGIN/../lib64:/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:",
+      "DT_FLAGS_FLAGS1": {
+        "1879048187": 134217728
+      },
+      "DT_BIND_NOW": false,
+      "W_X_LOAD": false,
+      "DT_NEEDED": [
+        "librt.so.1",
+        "libdl.so.2",
+        "libm.so.6",
+        "libz.so.1",
+        "libstdc++.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ]
+    },
+    "symbol_version_evidence": {
+      ".dynsym": {
+        "entries": 65241,
+        "sha256": "f4e1b3531e2293c2204a617083da383434d4479dff8f871808733df88201ff17"
+      },
+      ".gnu.version": {
+        "entries": 65241,
+        "sha256": "3629948cb4073024cb70eecd9076116783897b94bfb00a14efd12f0a7cce072a"
+      },
+      ".gnu.version_r": {
+        "entries": 43,
+        "sha256": "c77fea65dd0ae40affc5d024d0cd05f2e28ad2a46b87f3e0b2ab51c26f74948a"
+      }
+    }
+  },
+  "input_policy": "emit-relocs-then-strip-debug",
+  "cache_policy": "original-in-place"
+}

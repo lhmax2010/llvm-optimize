@@ -1,0 +1,71 @@
+BOLT-INFO: shared object or position-independent executable detected
+BOLT-INFO: Target architecture: x86_64
+BOLT-INFO: BOLT version: <unknown>
+BOLT-INFO: first alloc address is 0x0
+BOLT-INFO: creating new program header table at address 0x8600000, offset 0x8600000
+BOLT-INFO: enabling relocation mode
+BOLT-INFO: enabling lite mode
+BOLT-WARNING: split function detected on input : _ZN10tensorflow22XlaCompiledCpuFunctionC2ERKNS0_10StaticDataENS0_9AllocModeE.cold. The support is limited in relocation mode
+BOLT-WARNING: Failed to analyze 2804 relocations
+BOLT-INFO: pre-processing profile using branch profile reader
+BOLT-WARNING: jump past end detected at 0x2d00cbb in function _ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x2f1ea1e in function _ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x2f1ead8 in function _ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x2f1f785 in function _ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x2f1fc15 in function _ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x3095780 in function _ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.14459465481922135629/1 : replacing with nop.
+BOLT-INFO: forcing -jump-tables=move as PIC jump table was detected in function _ZNK4llvm10DataLayout17getTypeSizeInBitsEPNS_4TypeE/1
+Warning: request a ThreadPool with 20 threads, but LLVM_ENABLE_THREADS has been turned off
+BOLT-INFO: 23592 out of 144032 functions in the binary (16.4%) have non-empty execution profile
+BOLT-INFO: 383 functions with profile could not be optimized
+BOLT-INFO: profile for 1 objects was ignored
+BOLT-INFO: profile quality metrics for the hottest 1000 functions (reporting top 5% values): function CFG discontinuity 0.00%; call graph flow conservation gap 0.00%; CFG flow conservation gap 0.00% (weighted) 0.00% (worst); exception handling usage 0.00% (of total BBEC) 0.00% (of total InvokeEC)
+BOLT-INFO: 395097 instructions were shortened
+BOLT-INFO: removed 33121 empty blocks
+BOLT-INFO: basic block reordering modified layout of 18754 functions (79.49% of profiled, 12.99% of total)
+BOLT-INFO: UCE removed 1 blocks and 11 bytes of code
+BOLT-INFO: splitting separates 11852615 hot bytes from 13318730 cold bytes (47.09% of split functions is hot).
+BOLT-INFO: 41 Functions were reordered by LoopInversionPass
+BOLT-INFO: program-wide dynostats after all optimizations before SCTC and FOP:
+
+         84195729964 : executed forward branches
+         37476868639 : taken forward branches
+         22416396091 : executed backward branches
+         10738214127 : taken backward branches
+         11659933162 : executed unconditional branches
+         17422124951 : all function calls
+          2930155426 : indirect calls
+          1321411708 : PLT calls
+        815741765614 : executed instructions
+        194456200794 : executed load instructions
+        106839754282 : executed store instructions
+          2607903470 : taken jump table branches
+                   0 : taken unknown indirect branches
+        118272059217 : total branches
+         59875015928 : taken branches
+         58397043289 : non-taken conditional branches
+         48215082766 : taken conditional branches
+        106612126055 : all conditional branches
+
+         84679856822 : executed forward branches (+0.6%)
+          6711241171 : taken forward branches (-82.1%)
+         21932269233 : executed backward branches (-2.2%)
+         10135617619 : taken backward branches (-5.6%)
+          4074634999 : executed unconditional branches (-65.1%)
+         17422124951 : all function calls (=)
+          2930155426 : indirect calls (=)
+          1321411708 : PLT calls (=)
+        803493495029 : executed instructions (-1.5%)
+        194456200794 : executed load instructions (=)
+        106839754282 : executed store instructions (=)
+          2607903470 : taken jump table branches (=)
+                   0 : taken unknown indirect branches (=)
+        110686761054 : total branches (-6.4%)
+         20921493789 : taken branches (-65.1%)
+         89765267265 : non-taken conditional branches (+53.7%)
+         16846858790 : taken conditional branches (-65.1%)
+        106612126055 : all conditional branches (=)
+
+BOLT-INFO: SCTC: patched 196 tail calls (194 forward) tail calls (2 backward) from a total of 196 while removing 6 double jumps and removing 200 basic blocks totalling 991 bytes of code. CTCs total execution count is 47403332 and the number of times CTCs are taken is 13255019
+BOLT-INFO: setting __hot_start to 0x8800000
+BOLT-INFO: setting __hot_end to 0x95f8fd8
