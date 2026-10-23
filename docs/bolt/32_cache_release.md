@@ -1,6 +1,6 @@
 # ThinLTO 缓存释放与双轮本地测量（2026-10-22）
 
-最新状态（2026-10-23 07:38）：**第一轮完整构建PASS并已保全；第二轮d20e873b普通构建7634/7634完成，现进入%install。双轮候选/RPM与峰值比较仍待第二轮完成。**
+最新状态（2026-10-23 08:15）：**第二轮工具/流水线/compare-root PASS；候选与第一轮同为4ec07159；真实cache-release成功释放98,180,882,432B，正在原有静态库转换。整轮打包及RPM对比尚未完成。**
 
 以下为2026-10-22停止快照，当前续跑见第9节。 第一次未改 9e5675f 的构建停在普通 LLVM 链接；分段暂停后，等待内存准入达到 60 分钟上限。BOLT 实际增量尚未测得；释放后的整轮峰值及后处理降幅尚未测得；clang 与 RPM 一致性尚未验证。不得用历史 97 GB 缓存代替本次测量。
 
@@ -204,3 +204,25 @@ RuntimeError: memory admission timeout
 完整根目前最高采样173872345088B（161.93GiB），已开始普通安装；不是整轮峰值。ThinLTO临时文件消失导致的du rc1逐条保留，最终完整峰值只采用rc0记录。尚未运行cache-release、未生成第二轮candidate/RPM。只读定位脚本时一次rg搜索误遍历新根的proc并报权限错误；没有产品操作或输入变化，随后改为限定深度的查找，见lookup-note.json。
 
 本次中间归档一次使用相对脚本路径，systemd-run工作目录为/home/linhao而非调用目录，启动即rc2；改为绝对路径后归档成功。未影响产品构建，原文见archive-launch-correction.json。
+
+## 12. 第二轮BOLT门禁与真实缓存释放（08:15进行中）
+
+工具计划和实际执行均113项（111BOLT+2TF），ninja_diagnostics为空；BOLT_NINJA_EXIT_0与tool-build-verification通过。llvm-bolt SHA为0ecdff6172f7fffb08d30f3865976ca15dc8708c3a1ef9fe0d2a543059996f75，与首轮一致。TF归档前后均f15c565d30a981c22c71cbcf823030302cf51d19a381f4cc82e44626688be1ed。
+
+流水线全部PASS，ordinary、重链输入、BOLT输出和strip-all候选四项SHA均与首轮相同，最终候选为4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9。N/M/S/U/Q=23592/144032/0/1/383，R=0.0042385%、S/N=0；安全属性与三目标微型门禁PASS。pipeline报告BOLT自有allocated bytes为4,665,487,360B，tool-built为4,039,049,216B。
+
+compare-root PASS之后，日志第23650行原文：
+
+```text
+[10113s] BOLT_CACHE_RELEASE removed path=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache files=47717 allocated_bytes=98180882432 seconds=29.205012623002403
+```
+
+cache-release.json状态removed。释放约91.438GiB，随后完整根采样132,480,196,608B（123.382GiB）；此时Source1005刚开始，不能把前后单点差直接称为最终峰值降幅。第二轮截至此时完整根最高采样231,374,397,440B，发生在pipeline期间；待整轮结束再判定整轮峰值、阶段降幅和RPM差异。第三段持锁3200.754秒后正常冻结/释放/恢复；未因内存等待。
+
+只读进度显示脚本修正了重复拼接-root导致未显示Source1005计数的问题；不涉及产品输入或采样。tool-verify.json只读查找未命中后按目录清单定位tool-build-verification.json；原始说明在monitor-corrections.json。
+
+### 12.1 首轮续跑残留的占用混杂因素
+
+只读对比两轮build树文件大小（排除缓存/BOLT工作区/转换工作区）发现首轮独有两个普通链接临时文件：bin/bugpoint.tmpb222052和lib64/liblldb.so.22.1.8.tmpe4ea0a7，mtime均在此前被中断的首轮链接阶段。逻辑大小合计2,657,653,320B，实际allocated bytes合计2,216,964,096B（约2.065GiB）。保留原件不删除，最终实测峰值差须单列这一混杂因素，不可全部归因于cache-release。原文在build-size-differences.json与baseline-linker-temporary-residue.json。
+
+CMakeCache只读diff另存cmake-cache-comparison.diff：首轮恢复配置留下C/CXX编译器相对名与UNINITIALIZED类型，第二轮首次配置记录/bin绝对名及STRING；AR/RANLIB路径相同，仅缓存类型/注释不同。两轮实际ordinary/relink/tool/candidate SHA均一致，但仍保留该配置历史差异，不宣称缓存文件逐字节相同。

@@ -5,9 +5,14 @@ print(datetime.datetime.now().astimezone().isoformat())
 log=E/'rpm-build.log'
 if not log.exists():log=E/'build.log'
 if log.exists():print('last_log',log.read_text(errors='replace').splitlines()[-1][:900])
-p=D/(label+'-root')/'local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/native-archive-conversion/summary.json'
+build=D/(label if label.endswith('-root') else label+'-root')/'local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build'
+p=build/'native-archive-conversion/summary.json'
 if p.exists():
  d=json.loads(p.read_text());print('Source1005',d.get('status'),'archives_completed',len(d.get('archives',[])),'installed',sum(bool(a.get('installed')) for a in d.get('archives',[])))
+p=build/'clang-bolt/tool-build.txt'
+if p.exists():
+ lines=p.read_text(errors='replace').splitlines()
+ if lines:print('tool_log',lines[-1][:250])
 for name in ('du-root-complete.jsonl','independent-processes.jsonl'):
  p=E/name
  if p.exists():

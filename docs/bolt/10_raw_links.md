@@ -223,3 +223,10 @@ sandbox/lhmax2025/bolt_pgo远端由cb67996861d070d68fec2b4c623eed7d20ba2e23更�
 - [第二轮完整根采样](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/revised-run/du-root-complete.jsonl)
 - [第二轮输入身份](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/revised-run/input-identities.json)
 - [第二轮锁续租](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/revised-run/leases.jsonl)
+
+
+### 第二轮真实缓存释放（2026-10-23）
+
+- [cache-release实测JSON](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/cache-release.json)
+- [第二轮pipeline身份与门禁](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/pipeline-result.json)
+- [工具构建实物复核](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/tool-build-verification.json)
