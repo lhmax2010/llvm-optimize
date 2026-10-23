@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "sudo",
+    "-n",
+    "/usr/sbin/chroot",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0",
+    "/usr/bin/clang",
+    "--no-default-config",
+    "-Xclang",
+    "-load",
+    "-Xclang",
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/AnnotateFunctions.so",
+    "-Xclang",
+    "-ast-dump",
+    "-fsyntax-only",
+    "/home/abuild/hybrid-validation/plugin-smoke.c"
+  ],
+  "rc": 0,
+  "stdout": "TranslationUnitDecl 0x5bc4064c0248 <<invalid sloc>> <invalid sloc>\n|-TypedefDecl 0x5bc4064c0e48 <<invalid sloc>> <invalid sloc> implicit __int128_t '__int128'\n| `-BuiltinType 0x5bc4064c0810 '__int128'\n|-TypedefDecl 0x5bc4064c0eb8 <<invalid sloc>> <invalid sloc> implicit __uint128_t 'unsigned __int128'\n| `-BuiltinType 0x5bc4064c0830 'unsigned __int128'\n|-TypedefDecl 0x5bc4064c11c8 <<invalid sloc>> <invalid sloc> implicit __NSConstantString 'struct __NSConstantString_tag'\n| `-RecordType 0x5bc4064c1190 'struct __NSConstantString_tag' canonical\n|   `-Record 0x5bc4064c0f10 '__NSConstantString_tag'\n|-TypedefDecl 0x5bc4064c0ac8 <<invalid sloc>> <invalid sloc> implicit __builtin_ms_va_list 'char *'\n| `-PointerType 0x5bc4064c0a80 'char *'\n|   `-BuiltinType 0x5bc4064c02f0 'char'\n|-TypedefDecl 0x5bc4064c0dd8 <<invalid sloc>> <invalid sloc> implicit __builtin_va_list 'struct __va_list_tag[1]'\n| `-ConstantArrayType 0x5bc4064c0d80 'struct __va_list_tag[1]' 1 \n|   `-RecordType 0x5bc4064c0d40 'struct __va_list_tag' canonical\n|     `-Record 0x5bc4064c0b20 '__va_list_tag'\n`-FunctionDecl 0x5bc406528210 </home/abuild/hybrid-validation/plugin-smoke.c:2:1, col:21> col:6 example 'void (void)'\n  |-CompoundStmt 0x5bc406528300 <col:20, col:21>\n  `-AnnotateAttr 0x5bc406528310 <<invalid sloc>> Implicit \"example_annotation\"\n",
+  "stderr": "",
+  "start_ns": 1792749777161527227,
+  "end_ns": 1792749777181633123
+}

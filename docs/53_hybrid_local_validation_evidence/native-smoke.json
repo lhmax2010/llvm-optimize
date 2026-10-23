@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "sudo",
+    "-n",
+    "/usr/sbin/chroot",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0",
+    "/bin/sh",
+    "-exc",
+    "cd /home/abuild/hybrid-validation/native-smoke; clang -c hello.c -o hello.o; clang++ -c hello.cc -o hello-cxx.o; clang -fuse-ld=lld hello.o -o hello; clang++ -fuse-ld=lld hello-cxx.o -o hello-cxx; test \"$(./hello)\" = hello; test \"$(./hello-cxx)\" = hello; clang -c answer.c -o answer.o; llvm-ar rcs libanswer.a answer.o; llvm-ar t libanswer.a; llvm-nm --print-armap libanswer.a; ld.lld -r answer.o -o answer-linked.o; readelf -h answer-linked.o; opt --version; llc --version; clang-tidy --version"
+  ],
+  "rc": 0,
+  "stdout": "answer.o\nArchive map\nanswer in answer.o\n\n\nanswer.o:\n0000000000000000 T answer\nELF Header:\n  Magic:   7f 45 4c 46 02 01 01 00 00 00 00 00 00 00 00 00 \n  Class:                             ELF64\n  Data:                              2's complement, little endian\n  Version:                           1 (current)\n  OS/ABI:                            UNIX - System V\n  ABI Version:                       0\n  Type:                              REL (Relocatable file)\n  Machine:                           Advanced Micro Devices X86-64\n  Version:                           0x1\n  Entry point address:               0x0\n  Start of program headers:          0 (bytes into file)\n  Start of section headers:          472 (bytes into file)\n  Flags:                             0x0\n  Size of this header:               64 (bytes)\n  Size of program headers:           0 (bytes)\n  Number of program headers:         0\n  Size of section headers:           64 (bytes)\n  Number of section headers:         10\n  Section header string table index: 8\nLLVM (http://llvm.org/):\n  LLVM version 22.1.8\n  Optimized build.\n  Default target: x86_64-tizen-linux-gnu\n  Host CPU: arrowlake-s\nLLVM (http://llvm.org/):\n  LLVM version 22.1.8\n  Optimized build.\n  Default target: x86_64-tizen-linux-gnu\n  Host CPU: arrowlake-s\n\n  Registered Targets:\n    aarch64    - AArch64 (little endian)\n    aarch64_32 - AArch64 (little endian ILP32)\n    aarch64_be - AArch64 (big endian)\n    arm        - ARM\n    arm64      - ARM64 (little endian)\n    arm64_32   - ARM64 (little endian ILP32)\n    armeb      - ARM (big endian)\n    bpf        - BPF (host endian)\n    bpfeb      - BPF (big endian)\n    bpfel      - BPF (little endian)\n    thumb      - Thumb\n    thumbeb    - Thumb (big endian)\n    x86        - 32-bit X86: Pentium-Pro and above\n    x86-64     - 64-bit X86: EM64T and AMD64\nLLVM (http://llvm.org/):\n  LLVM version 22.1.8\n  Optimized build.\n",
+  "stderr": "+ cd /home/abuild/hybrid-validation/native-smoke\n+ clang -c hello.c -o hello.o\n+ clang++ -c hello.cc -o hello-cxx.o\n+ clang -fuse-ld=lld hello.o -o hello\n+ clang++ -fuse-ld=lld hello-cxx.o -o hello-cxx\n++ ./hello\n+ test hello = hello\n++ ./hello-cxx\n+ test hello = hello\n+ clang -c answer.c -o answer.o\n+ llvm-ar rcs libanswer.a answer.o\n+ llvm-ar t libanswer.a\n+ llvm-nm --print-armap libanswer.a\n+ ld.lld -r answer.o -o answer-linked.o\n+ readelf -h answer-linked.o\n+ opt --version\n+ llc --version\n+ clang-tidy --version\n",
+  "start_ns": 1792748322987196091,
+  "end_ns": 1792748323513404387
+}

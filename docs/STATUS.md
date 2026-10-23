@@ -1,10 +1,12 @@
 # LLVM 吞吐优化分支状态
 
-更新日期：2026-10-20。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
+更新日期：2026-10-23。分支：`main`；仓库：`lhmax2010/llvm-optimize`。
 
 **长期署名规则（2026-10-15 PM 裁决，优先于历史署名约定）**：作者、提交者及 Signed-off-by 使用本机全局身份 `liushanshan <ss0217.liu@samsung.com>`，或显式使用 `Hao Lin <hao.lin@samsung.com>`；任何后续提交、提交说明和交付文档均不再使用旧别名。不修改全局 Git 配置。详见 §4。
 
-**当前任务（内网可续传源码包）完成：PASS**。按用户裁决仅将浅克隆局部 core.abbrev 固定为12，local upstream/merge-base 均 ca7933e4；HEAD 6e9d4f2b、tree 80a6fd23、origin 和干净状态不变。标准 GBS export 的 spec（1da77fe8…）及8 patch全部逐字节同参考；repack后只打包.git，整包 **425,114,069 B、5片**，SHA `cebfeb3cbda216be11f4e760336a2afc3a8d40ad26906482a849225559777f46`。已发布 [Release](https://github.com/lhmax2010/llvm-optimize/releases/tag/src-llvm-optimize-6e9d4f2)；从GitHub实际回下，HEAD/TREE/UPSTREAM/ABBREV全部PASS，再次export的spec和8patch仍同字节。可直接粘贴的脚本见[内网下载指南](llvm_optimize_intranet_fetch.md)。局部upstream与core.abbrev=12均须保留，未来只拉sandbox分支。无源码/配置配方修改、无构建、无Gerrit push；未访问BOLT资产；锁/scope/采样器已回收。
+**当前任务（hybrid 本地完整构建）已完成，构建 PASS、验证部分通过**：干净6e9d4f2，固定QB1202084 Base20261013.024319，唯一完整GBS构建12737.276s、22+1 RPM。采样峰值66.696GiB（较全静态+BOLT基线少158.022GiB），结束缓存18.990GiB（少72.448GiB）；普通链接至%install初期有76.3分钟有效du空档，不能保证绝对峰值。22二进制RPM合计7.990→1.449GiB。三目标90/90完整对象、225/225归档、SDK/329导入文件、已安装170条ELF映射均PASS。188目标最终183PASS、4个非默认测试/fuzzer未产出、AnnotateFunctions一项NEEDED待分析；158入口144运行PASS、14脚本缺运行依赖，未发现缺共享库。记录其他会话并发I/O，不据耗时宣称加速。根temp/hybrid-local-20261023/gbs-root保留；源码/配置未改、无Gerrit/QB操作。见[完整报告](53_hybrid_local_validation.md)。
+
+**上一任务（内网可续传源码包）完成：PASS**。按用户裁决仅将浅克隆局部 core.abbrev 固定为12，local upstream/merge-base 均 ca7933e4；HEAD 6e9d4f2b、tree 80a6fd23、origin 和干净状态不变。标准 GBS export 的 spec（1da77fe8…）及8 patch全部逐字节同参考；repack后只打包.git，整包 **425,114,069 B、5片**，SHA `cebfeb3cbda216be11f4e760336a2afc3a8d40ad26906482a849225559777f46`。已发布 [Release](https://github.com/lhmax2010/llvm-optimize/releases/tag/src-llvm-optimize-6e9d4f2)；从GitHub实际回下，HEAD/TREE/UPSTREAM/ABBREV全部PASS，再次export的spec和8patch仍同字节。可直接粘贴的脚本见[内网下载指南](llvm_optimize_intranet_fetch.md)。局部upstream与core.abbrev=12均须保留，未来只拉sandbox分支。无源码/配置配方修改、无构建、无Gerrit push；未访问BOLT资产；锁/scope/采样器已回收。
 
 **上一任务（统一混合 sandbox + 指南 v3）A/B 完成，待服务器构建**：Gerrit 仅创建 `sandbox/lhmax2025/llvm_optimize`，提交 `6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2`，tree `80a6fd231c4564a3b762f4ec288cf2c41f9d2e20`，parent `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`，Change-Id `I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06`。原补丁 SHA 30e90aa3… 不变，作者/提交者 Hao Lin；远端分支原先不存在，唯一 push 后回读及新克隆身份 PASS，GBS 导出的 8 条 Patch/8 条 %patch 全部无条件。指南 v3 改为只读检出统一分支，移除本机资源规则，给出真实 GBS 测试根准备及两个 accel RPM 合并解包/本地 emul 闭合方法；归档按对照 RPM 路径清单比较。B5 重建触发机制证据不足，已明确需向 QB 管理员确认。补丁和 188 目标期望表未改；未构建、未推 refs/for、未访问 BOLT 资产/交接树；用户 gbs_llvm.conf 修改保留。见 [指南 v3](52_hybrid_link_validation.md)、[分支/导出/清单证据](52_hybrid_sandbox_evidence/README.md)。
 
@@ -97,7 +99,7 @@ docs/21 取代 docs/20 的后续实施方案；历史报告、校准判定和预
 ## 1. 计划
 
 总目标：降低 Tizen 全平台 RPM 包构建总耗时，优化对象覆盖实际调用的 LLVM 工具。
-当前阶段：x86归档修复已合入356627，356949 PS2待评审；docs/52混合链接补丁已获PM通过、统一sandbox已建立，内网可续传源码包已交付并通过回下再导出；等待用户/组员在服务器执行完整构建。既有x86构建树已于2026-10-14交接BOLT，本任务不访问该资产。历史发布模式完整构建与后续ARM验收仍挂账。
+当前阶段：docs/53 已在独立新根完成 hybrid 唯一一次本地完整构建，22+1 RPM 成功，磁盘/缓存明显缩小；验证仍有四个非默认目标、一项 NEEDED 期望偏离及14个脚本依赖问题，详见当前任务摘要。源码仍为6e9d4f2，未推Gerrit/QB，构建根保留。历史发布模式完整构建与后续ARM验收仍挂账。
 上轮任务执行docs/40 §12：GD/LD/TLSDESC按明确清单授权，LE无条件拒绝，IE与其他未认证类型仍停止；-mthumb补回并增加逐成员参考对象模式门禁。67测试及最终SHA全量x86回归已通过；两ARM全库转换、重定位与三套消费者/strip全部通过，第一段结束。不重建ARM32、不install/打包，生产Source与两个review补丁不改。
 **x86_64归档转换与llvm-strip已由用户上传Gerrit 356627、356639，代理未推Gerrit。ARM未来通过后更新同两个change的patchset，保持x86行为；当前生产Source/补丁仍仅认证x86，候选ARM Source已通过本轮固定输入第一段功能认证，ARM的spec集成/RPM验收尚未执行。设计v4/BOLT继续暂缓；W/llvm/spec和评审补丁未改。**
 docs/30 从 docs/13 的 22 RPM 及 docs/26 登记的基线解包开始复核，环境预检确认 GNU time 缺失，Source 改用 wait4；五代表归档与 docs/28 逐成员及整档 SHA 相同，45 项单元测试 PASS。
@@ -864,3 +866,8 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 用户将内网验证改为本机：干净6e9d4f2，固定QB1202084配置/Base20261013.024319；build.conf/spec/8补丁身份核对PASS。新根temp/hybrid-local-20261023/gbs-root开始唯一一次完整构建。资源按本轮用户裁决：MemTotal-8GiB/swap0/nice10/IO2:7，无内存准入或分段冻结，仅/home<20GiB主动停止，OOM不重试。源码未改，BOLT/历史根只读，不推Gerrit/QB。结果待完成，见docs/53。
 
 2026-10-23 15:47 更新：hybrid 普通构建到 7631/7633，clang 链接仍在 I/O 等待，无 OOM。只读发现另一 VS Code scope 并行跑 qb_analysis/work3/round7 的 GBS/grep 矩阵，已保存证据并登记条件偏差；不干预其进程/根。完整根 du 超时如实记缺失，不从整盘 df 变化推算本根占用。继续当前唯一一次 hybrid 构建，尚未认证产物。
+
+### 2026-10-23 hybrid 本地完整验证完成
+
+**当前任务（hybrid 本地完整构建）已完成，构建 PASS、验证部分通过**：干净6e9d4f2，固定QB1202084 Base20261013.024319，唯一完整GBS构建12737.276s、22+1 RPM。采样峰值66.696GiB（较全静态+BOLT基线少158.022GiB），结束缓存18.990GiB（少72.448GiB）；普通链接至%install初期有76.3分钟有效du空档，不能保证绝对峰值。22二进制RPM合计7.990→1.449GiB。三目标90/90完整对象、225/225归档、SDK/329导入文件、已安装170条ELF映射均PASS。188目标最终183PASS、4个非默认测试/fuzzer未产出、AnnotateFunctions一项NEEDED待分析；158入口144运行PASS、14脚本缺运行依赖，未发现缺共享库。记录其他会话并发I/O，不据耗时宣称加速。根temp/hybrid-local-20261023/gbs-root保留；源码/配置未改、无Gerrit/QB操作。见[完整报告](53_hybrid_local_validation.md)。
+

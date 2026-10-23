@@ -15,12 +15,12 @@ def run(name,argv,timeout=300):
  start=time.time_ns();p=subprocess.run(argv,capture_output=True,text=True,timeout=timeout);r={'argv':argv,'rc':p.returncode,'stdout':p.stdout,'stderr':p.stderr,'start_ns':start,'end_ns':time.time_ns()};save(name+'.json',r);return r
 def root(name,args,timeout=300):return run(name,['sudo','-n','/usr/sbin/chroot',str(R),*args],timeout)
 def linkage():
- table=json.loads((W/'docs/52_hybrid_link_evidence/needed-expectations-v2.json').read_text());rows=[]
+ table=json.loads((W/'docs/52_hybrid_link_evidence/needed-expectations-v2.json').read_text());rows=[];suffix='-final' if (E/'optional-build-result.json').exists() else ''
  for t in table['targets']:
-  p=BUILD/t['build_output'];r=run('linkage/raw-'+str(len(rows)),['readelf','-dW',str(p)])
+  p=BUILD/t['build_output'];r=run('linkage'+suffix+'/raw-'+str(len(rows)),['readelf','-dW',str(p)])
   libs=re.findall(r'\(NEEDED\).*?\[([^]]+)\]',r['stdout']);state=needed.needed_status(t['expected_needed'],libs)
   rows.append({**t,'exists':p.exists(),'needed':libs,'status':state['status'] if r['rc']==0 else 'INSPECTION_ERROR','needed_comparison':state,'rc':r['rc']})
- save('linkage-188.json',{'total':len(rows),'counts':dict(collections.Counter(str(x['status']) for x in rows)),'rows':rows})
+ save('linkage-188'+suffix+'.json',{'total':len(rows),'counts':dict(collections.Counter(str(x['status']) for x in rows)),'rows':rows})
  return rows
 
 def sizes():
@@ -63,6 +63,21 @@ def objects():
  assert len({x['inode'] for x in identities})==1
  save('objects-result.json',{'total':90,'passed':sum(r.get('byte_equal',False) for r in results.values()),'same_entity':True,'section_filtering':False,'identities':identities,'results':results})
 
+def optional_targets():
+ j=json.loads((E/'linkage-188-classification.json').read_text());targets=[r['build_output'] for r in j['rows'] if r['classification']=='NOT_BUILT_NONDEFAULT_NONINSTALLED'];assert len(targets)==22
+ env=json.loads((E/'rpm-environment-allowlist.json').read_text())['env'];prefix=['sudo','-n','/usr/sbin/chroot','--userspec=1000:1000',str(R),'/usr/bin/env','-i',*[k+'='+v for k,v in sorted(env.items())],'/usr/bin/ninja','-C','/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build']
+ dry=run('optional-target-dry-run',prefix+['-n',*targets],300)
+ result={'targets':targets,'purpose':'Supplemental coverage of nondefault/noninstalled targets, after QB-equivalent full build measurement and before installing new RPMs','dry_run_rc':dry['rc'],'status':'NOT_RUN'}
+ save('optional-build-result.json',result)
+ assert dry['rc']==0
+ assert not re.search(r're-running cmake|regenerating|cmake --regenerate-during-build',dry['stdout']+dry['stderr'],re.I)
+ argv=prefix+['-j6',*targets];start=time.time_ns()
+ with (E/'optional-target-build.log').open('wb') as out:
+  rc=subprocess.run(argv,stdout=out,stderr=subprocess.STDOUT).returncode
+ result.update(argv=argv,rc=rc,start_ns=start,end_ns=time.time_ns(),status='PASS' if rc==0 else 'FAIL');save('optional-build-result.json',result)
+ assert rc==0
+ for name,path in [('root','/'),('cache','/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache'),('build','/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build')]:root('optional-size-'+name,['/bin/du','-sx','-B1',path],600)
+
 def arm_parse():
  V.mkdir(exist_ok=True);shutil.copyfile(D/'export/llvm.spec',V/'llvm.spec');rows=[]
  r=root('rpm-version',['rpm','--version']);assert r['rc']==0
@@ -71,5 +86,5 @@ def arm_parse():
  save('arm-parse-result.json',rows)
 
 if __name__=='__main__':
- assert sys.argv[1] in ('linkage','sizes','install','installed_linkage','objects','arm_parse')
+ assert sys.argv[1] in ('linkage','sizes','install','installed_linkage','objects','arm_parse','optional_targets')
  result=globals()[sys.argv[1]]();print('DONE',sys.argv[1],flush=True)

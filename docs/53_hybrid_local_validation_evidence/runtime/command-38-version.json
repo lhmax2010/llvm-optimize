@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "sudo",
+    "-n",
+    "/usr/sbin/chroot",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0",
+    "/usr/bin/git-clang-format",
+    "--version"
+  ],
+  "rc": 1,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"/usr/bin/git-clang-format\", line 858, in <module>\n    sys.exit(main())\n             ~~~~^^\n  File \"/usr/bin/git-clang-format\", line 71, in main\n    config = load_git_config()\n  File \"/usr/bin/git-clang-format\", line 318, in load_git_config\n    for entry in run(\"git\", \"config\", \"--list\", \"--null\").split(\"\\0\"):\n                 ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/bin/git-clang-format\", line 804, in run\n    p = subprocess.Popen(\n        args,\n    ...<2 lines>...\n        stdin=subprocess.PIPE,\n    )\n  File \"/usr/lib64/python3.14/subprocess.py\", line 1038, in __init__\n    self._execute_child(args, executable, preexec_fn, close_fds,\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                        pass_fds, cwd, env,\n                        ^^^^^^^^^^^^^^^^^^^\n    ...<5 lines>...\n                        gid, gids, uid, umask,\n                        ^^^^^^^^^^^^^^^^^^^^^^\n                        start_new_session, process_group)\n                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib64/python3.14/subprocess.py\", line 1989, in _execute_child\n    raise child_exception_type(errno_num, err_msg, err_filename)\nFileNotFoundError: [Errno 2] No such file or directory: 'git'\n",
+  "start_ns": 1792748329471432832,
+  "end_ns": 1792748329551248687
+}

@@ -21,6 +21,9 @@ for i,line in enumerate(log,1):
  elif ' finished "build llvm.spec"' in text:kind='finished'
  if kind:anchors.append({'kind':kind,'line':i,'elapsed_seconds':sec,'time_ns':int((origin+sec)*1e9) if origin else None,'raw':line})
 assert origin is not None
+if not any(a['kind']=='finished' for a in anchors):
+ end=json.loads((E/'build-result.json').read_text())['end_ns']
+ anchors.append({'kind':'finished','line':None,'elapsed_seconds':(end/1e9-origin),'time_ns':end,'raw':'build-result.json end_ns; GBS exit 0 (no finished timestamp in RPM log)'})
 (E/'timeline.tsv').write_text('kind\tline\telapsed_seconds\tUTC\traw\n'+''.join(f"{a['kind']}\t{a['line']}\t{a['elapsed_seconds']}\t{datetime.datetime.fromtimestamp(a['time_ns']/1e9,datetime.timezone.utc).isoformat()}\t{a['raw']}\n" for a in anchors))
 rows=[json.loads(l) for l in (E/'du-root-complete.jsonl').read_text().splitlines()];valid=[{'time_ns':r['time_ns'],'end_ns':r['time_ns']+int(r['seconds']*1e9),'bytes':int(r['stdout'].split()[0]),'scan_seconds':r['seconds']} for r in rows if r.get('rc')==0 and r.get('stdout','').strip()]
 if (E/'final-size-root.json').exists():

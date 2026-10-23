@@ -5,7 +5,9 @@ state=subprocess.run(['systemctl','--user','show','hybrid-local-20261023.service
 print(time.strftime('%Y-%m-%d %H:%M:%S %Z'));print(state.strip())
 p=E/'rpm-build.log'
 if p.exists():
- lines=p.read_text(errors='replace').splitlines();print('log_lines',len(lines));print('\n'.join(x[:300] for x in lines[-3:]));samples=[l for l in lines if re.search(r'\[\d+/\d+\]',l)];print('last_progress',samples[-1][:240] if samples else 'none')
+ lines=p.read_text(errors='replace').splitlines();print('log_lines',len(lines));print('\n'.join(x[:160] for x in lines[-3:]));samples=[l for l in lines if re.search(r'\[\d+/\d+\]',l)];print('last_progress',samples[-1][:240] if samples else 'none')
+native={m.group(1) for l in lines if (m:=re.search(r'\{"path": "([^"]+)", "before_sha256":',l))}
+if native:print('native_archives_completed',len(native),'/225');print('native_archives_installed',sum('NATIVE_ARCHIVE_INSTALLED {' in l for l in lines),'/225')
 p=E/'resources.jsonl'
 if p.exists():
  r=json.loads(p.read_text().splitlines()[-1]);print('free_GiB',round(r['home_available_bytes']/2**30,3));print('memory',r.get('memory.current'),'peak',r.get('memory.peak'),'events',r.get('memory.events'))

@@ -2,7 +2,7 @@
 import json,subprocess,time
 from pathlib import Path
 from validate import D,E,R,save
-stages=[('sizes','validate.py'),('linkage','validate.py'),('install','validate.py'),('installed_linkage','validate.py'),('native_smoke','runtime-validation.py'),('sdk','runtime-validation.py'),('executables','runtime-validation.py'),('objects','validate.py'),('archives','runtime-validation.py')]
+stages=[('sizes','validate.py'),('optional_targets','validate.py'),('linkage','validate.py'),('install','validate.py'),('installed_linkage','validate.py'),('native_smoke','runtime-validation.py'),('sdk','runtime-validation.py'),('executables','runtime-validation.py'),('objects','validate.py'),('archives','runtime-validation.py')]
 rows=[]
 for name,script in stages:
  argv=['python3','-B',str(D/script),name];start=time.time_ns()
