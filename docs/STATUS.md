@@ -862,3 +862,5 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 ### 2026-10-23 hybrid 本地完整验证开始
 
 用户将内网验证改为本机：干净6e9d4f2，固定QB1202084配置/Base20261013.024319；build.conf/spec/8补丁身份核对PASS。新根temp/hybrid-local-20261023/gbs-root开始唯一一次完整构建。资源按本轮用户裁决：MemTotal-8GiB/swap0/nice10/IO2:7，无内存准入或分段冻结，仅/home<20GiB主动停止，OOM不重试。源码未改，BOLT/历史根只读，不推Gerrit/QB。结果待完成，见docs/53。
+
+2026-10-23 15:47 更新：hybrid 普通构建到 7631/7633，clang 链接仍在 I/O 等待，无 OOM。只读发现另一 VS Code scope 并行跑 qb_analysis/work3/round7 的 GBS/grep 矩阵，已保存证据并登记条件偏差；不干预其进程/根。完整根 du 超时如实记缺失，不从整盘 df 变化推算本根占用。继续当前唯一一次 hybrid 构建，尚未认证产物。

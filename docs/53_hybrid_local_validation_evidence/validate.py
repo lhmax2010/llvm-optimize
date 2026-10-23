@@ -24,7 +24,7 @@ def linkage():
  return rows
 
 def sizes():
- paths={'cache':BUILD/'lto.cache','build':BUILD,'BUILDROOT':R/'home/abuild/rpmbuild/BUILDROOT','binary_rpms':R/'home/abuild/rpmbuild/RPMS','source_rpms':R/'home/abuild/rpmbuild/SRPMS'};rows=[]
+ paths={'root':R,'cache':BUILD/'lto.cache','build':BUILD,'BUILDROOT':R/'home/abuild/rpmbuild/BUILDROOT','binary_rpms':R/'home/abuild/rpmbuild/RPMS','source_rpms':R/'home/abuild/rpmbuild/SRPMS'};rows=[]
  for name,path in paths.items():
   inner='/'+str(path.relative_to(R));r=root('final-size-'+name,['/bin/du','-sx','-B1',inner],600);rows.append({'name':name,'path':str(path),**r})
  save('final-sizes.json',rows)
@@ -37,7 +37,8 @@ def install():
   f=run('rpm-files/'+p.name,['rpm','-qpl',str(p)]);assert f['rc']==0
   if p in rpms:paths.update(f['stdout'].splitlines())
   rows.append({'file':str(p),'name':p.name,'bytes':p.stat().st_size,'sha256':sha(p),'header':q['stdout']})
- save('rpm-identities.json',rows);(E/'rpm-paths.txt').write_text('\n'.join(sorted(paths))+'\n')
+ save('rpm-identities.json',rows);expected=sorted((W/'docs/52_hybrid_link_evidence/expected-rpm-names.txt').read_text().splitlines());actual=sorted(r['header'].split('\t',1)[0] for r in rows if not r['name'].endswith('.src.rpm'));save('rpm-name-check.json',{'expected':expected,'actual':actual,'pass':actual==expected});assert actual==expected
+ (E/'rpm-paths.txt').write_text('\n'.join(sorted(paths))+'\n')
  root('installed-before',['rpm','-qa'])
  r=root('install-rpms',['/bin/sh','-ec','rpm -Uvh --oldpackage --replacepkgs /home/abuild/rpmbuild/RPMS/x86_64/*.rpm'],1200);assert r['rc']==0,r
  root('installed-after',['rpm','-qa']);return paths

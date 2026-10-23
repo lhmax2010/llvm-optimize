@@ -6,7 +6,7 @@ import check_hybrid_link_needed as needed
 def executables():
  paths=(E/'rpm-paths.txt').read_text().splitlines();rows=[]
  for logical in paths:
-  if logical.startswith('/usr/lib/debug/'):continue
+  if logical.startswith(('/usr/lib/debug/','/usr/src/debug/')):continue
   try:p=needed.rooted_path(R,logical)
   except Exception as exc:rows.append({'path':logical,'error':str(exc),'status':'PATH_ERROR'});continue
   if not p.is_file() or not p.stat().st_mode&0o111:continue
@@ -80,5 +80,14 @@ def archives():
   row={k:v for k,v in r.items() if k not in ('members','index','machine_symbols','native_symbols','native_map')};row['pass']=passed;rows.append(row)
   with (E/'archive-inspection.jsonl').open('a') as f:f.write(json.dumps(r)+'\n')
  save('archives-result.json',{'count':len(rows),'passed':sum(r['pass'] for r in rows),'rows':rows})
+
+
+def native_smoke():
+ V.mkdir(exist_ok=True);p=V/'native-smoke';p.mkdir(exist_ok=True)
+ (p/'hello.c').write_text('#include <stdio.h>\nint main(void){puts("hello");return 0;}\n')
+ (p/'hello.cc').write_text('#include <iostream>\nint main(){std::cout<<"hello\\n";}\n')
+ (p/'answer.c').write_text('int answer(void){return 42;}\n')
+ script='cd '+INNER+'/native-smoke; clang -c hello.c -o hello.o; clang++ -c hello.cc -o hello-cxx.o; clang -fuse-ld=lld hello.o -o hello; clang++ -fuse-ld=lld hello-cxx.o -o hello-cxx; test "$(./hello)" = hello; test "$(./hello-cxx)" = hello; clang -c answer.c -o answer.o; llvm-ar rcs libanswer.a answer.o; llvm-ar t libanswer.a; llvm-nm --print-armap libanswer.a; ld.lld -r answer.o -o answer-linked.o; readelf -h answer-linked.o; opt --version; llc --version; clang-tidy --version'
+ r=root('native-smoke',['/bin/sh','-exc',script],300);save('native-smoke-result.json',{'pass':r['rc']==0,'files':{f.name:sha(f) for f in p.iterdir() if f.is_file()},'result':r})
 
 if __name__=='__main__':globals()[sys.argv[1]]()

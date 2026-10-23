@@ -29,3 +29,9 @@ armv7l/aarch64使用本次同一GBS导出，在新根Tizen rpm/rpm-build 4.14.1.
 新根不含timeout(1)，初始采样器在初始化阶段记录missing；编译开始前改为根内Python subprocess.run(du, timeout=50)，只改本地只读观察器，构建未重启。完整采样流为du-root-complete.jsonl，初始du-root.jsonl保留为诊断历史，不拿缺失值作0。首个扫描40秒，其后正常约1秒。
 
 CMake实物：LLVM_ENABLE_LTO=Thin，TIZEN_HYBRID_LINK=ON，LLVM_LINK_LLVM_DYLIB/CLANG_LINK_CLANG_DYLIB=ON，编译池6/链接池2，编译器/bin/clang与/bin/clang++。build.ninja/CMakeCache/rules快照和SHA已保存。14:20仍在普通编译，无OOM；实际NEEDED与打包后运行等检查仍待完成。
+
+## 5. 运行中的条件偏差（尚未完成）
+
+15:38 左右只读检查 `/proc` 发现另一 VS Code scope 中有 `qb_analysis/work3/round7/matrix.py`（armv7l、x86_64）及 `resolution_matrix.py`，并行运行 GBS/grep 构建。它们不是本任务创建的进程，根与本任务不同。保存的命令、根路径、PID、cgroup 见 [concurrent-build-observation.json](53_hybrid_local_validation_evidence/concurrent-build-observation.json)。未操作这些进程或目录。其运行时间与本次链接的 I/O 等待重叠；只能证明存在并发干扰，不能量化各自对等待的贡献。
+
+因此本轮不是单任务安静环境；不把整盘可用空间变化算成本根用量，也不据耗时宣称 hybrid 的加速比例。采用本根 du 实测；50 秒扫描超时或文件在扫描中消失均记缺失。至 15:47，Ninja 为 7631/7633，最后的 clang 链接仍运行，尚无最终构建/打包/实物验证结论。cgroup 峰值 24,206,639,104 B，oom/oom_kill 为 0。最终报告将替换本临时进度。
