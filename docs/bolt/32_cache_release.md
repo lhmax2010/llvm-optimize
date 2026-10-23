@@ -334,3 +334,30 @@ BOLT开始后、compare-root之前的整根瞬时增量观测值为首轮7.070Gi
 - [第二轮完整日志](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/rpm-build.log.gz)
 - [第二轮完整根du](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/du-root-complete.jsonl)
 - [证据SHA索引](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/build-evidence-provenance.json)
+
+
+## 14. 2026-10-23：异常兜底修复前的挂载检查停止
+
+用户要求先确认首轮 `baseline-root/proc` 无占用，再正常卸载；仍被占用时立即停止，不结束占用进程。本次 19:17（Asia/Shanghai）检查未满足该前提。
+
+完整路径：`/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0/proc`。
+
+`lsof -nP <路径>` 返回 0，原文：
+
+```text
+COMMAND    PID   USER   FD   TYPE DEVICE SIZE/OFF  NODE NAME
+code    202760 linhao   48r   DIR   0,60        0     1 <路径>
+code    202760 linhao   49r   DIR   0,60        0 51203 <路径>/2558
+```
+
+上方仅为可读性缩写路径；[原始输出](../../tools/bolt/results/cache-release-exception-20261023/mount-prechecks.json)保存完整路径。`fuser -v <路径>` 同样返回 0，显示 `linhao 202760 f.... code`；`findmnt -M <路径>` 确认 proc 挂载仍在。直接读取 `/proc/202760/fd/48`、`49` 的链接也确认相同占用，见 [句柄证据](../../tools/bolt/results/cache-release-exception-20261023/proc-holders.json)。
+
+| 项目 | 结果 |
+|---|---|
+| 占用检查 | FAIL：VS Code PID 202760，FD 48/49 |
+| 正常卸载 | NOT RUN，按用户停止条件未尝试 |
+| cache_release 修复及新增 IndexError 测试 | NOT RUN |
+| 300 项测试、gbs export、五项 Tizen RPM 解析 | NOT RUN |
+| 源码 amend / sandbox 推送 | NOT RUN |
+
+源提交仍为 `d20e873b2c7dfac10fab9235e2b781dad08dc4c7`；没有修改 helper/spec，没有删除任何构建根，没有结束占用进程，也没有运行历史树中的 cmake/ninja。此前 299 项测试与五项解析结果不冒充本轮认证。仅提交本次停止记录和证据，等待用户释放句柄后再继续。

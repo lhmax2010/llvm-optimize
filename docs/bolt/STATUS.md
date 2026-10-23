@@ -384,3 +384,8 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 两轮candidate同为4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9。22二进制RPM清单及非时间元数据一致；19包全部文件SHA相同，另3包271个.a仅ar头时间戳不同，所有成员内容相同。源码RPM仅helper/spec变化，导出spec另有GBS自动VCS提交号；所有差异原文保留，未声称RPM容器逐字节相同。
 
 第二轮所有构建/采样服务已退出、挂载已清理；首轮proc仍被VS Code PID4237 FD48/49占用，未强制卸载。只删除过本次首轮新根的缓存腾空间及第二轮产品命令释放的缓存，历史树未动。详见32第13节及原始证据。任务完成，停止并等待下一步指令。
+
+
+## 2026-10-23 19:17：cache-release 异常处理修复任务停止于挂载检查
+
+首轮 baseline-root 的 proc 仍被 VS Code PID **202760** FD **48/49** 持有；lsof、fuser 均命中，/proc/fd 复核一致。按用户“仍然被占用就停下”要求，未尝试 umount、未结束占用进程、未删除根；后续修复、300 测试、导出、五项解析与 sandbox 推送均 NOT RUN。源提交仍为 d20e873b2c7dfac10fab9235e2b781dad08dc4c7，本轮仅追加停止证据。见 32 第14节和 tools/bolt/results/cache-release-exception-20261023/。等待用户释放占用。
