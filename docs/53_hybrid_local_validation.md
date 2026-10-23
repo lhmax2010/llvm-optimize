@@ -21,3 +21,11 @@
 完整构建、22+1 RPM、188实物NEEDED、全部已打包工具运行、三目标90对对象、开发包CMake消费者/导出文件、225归档以及ARM两模式解析均待完成。最终不得以配置级期望代替实物验证。
 
 证据目录：[53_hybrid_local_validation_evidence](53_hybrid_local_validation_evidence/)。
+
+## 4. 编译前已完成的独立检查
+
+armv7l/aarch64使用本次同一GBS导出，在新根Tizen rpm/rpm-build 4.14.1.1-1.7中解析均退出0；每项保留8个Patch声明和8条%patch命令，TIZEN_HYBRID_LINK未开启。188目标表自检188/188；90份历史三目标.ii全部核对原SHA并复制到本任务目录，未改历史输入。
+
+新根不含timeout(1)，初始采样器在初始化阶段记录missing；编译开始前改为根内Python subprocess.run(du, timeout=50)，只改本地只读观察器，构建未重启。完整采样流为du-root-complete.jsonl，初始du-root.jsonl保留为诊断历史，不拿缺失值作0。首个扫描40秒，其后正常约1秒。
+
+CMake实物：LLVM_ENABLE_LTO=Thin，TIZEN_HYBRID_LINK=ON，LLVM_LINK_LLVM_DYLIB/CLANG_LINK_CLANG_DYLIB=ON，编译池6/链接池2，编译器/bin/clang与/bin/clang++。build.ninja/CMakeCache/rules快照和SHA已保存。14:20仍在普通编译，无OOM；实际NEEDED与打包后运行等检查仍待完成。
