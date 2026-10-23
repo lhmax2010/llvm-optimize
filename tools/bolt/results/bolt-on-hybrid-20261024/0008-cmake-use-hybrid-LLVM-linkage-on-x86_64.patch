@@ -1,0 +1,203 @@
+From: Hao Lin <hao.lin@samsung.com>
+Date: Thu, 15 Oct 2026 19:59:18 +0800
+Subject: cmake: use hybrid LLVM linkage on x86_64
+
+Enable shared LLVM and Clang linkage in the x86_64 recipe while keeping
+clang, lld and llvm-ar statically linked to LLVM components. Their
+driver aliases continue to share the same executable. Other tools use
+libLLVM and, where applicable, libclang-cpp through the normal upstream
+interfaces.
+
+Use TIZEN_HYBRID_LINK and a per-consumer TIZEN_STATIC_LLVM property to
+select component dependencies only for the three opted-in drivers. When
+disabled, the shared-link interfaces retain upstream behavior. Keep
+BUILD_SHARED_LIBS and the unified LLVM driver disabled on x86_64.
+
+Preserve upstream forced-static llvm-tblgen, clang-tblgen, lldb-tblgen,
+llvm-config and llvm-exegesis. Tool-private archives and build utilities
+retain upstream behavior. Do not change armv7l or aarch64 recipes,
+optimization flags, static-devel packaging or native archive conversion.
+
+Validation: CMake generation with the complete x86_64 recipe parameters;
+all-static, hybrid and shared controls; unchanged ARM build/install
+macro expansions; clean patch application. Full build and RPM/runtime
+validation are left to the receiving team.
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+Change-Id: I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06
+---
+ clang/cmake/modules/AddClang.cmake |  1 +
+ clang/tools/driver/CMakeLists.txt  | 15 +++++++++++++++
+ lld/cmake/modules/AddLLD.cmake     |  1 +
+ lld/tools/lld/CMakeLists.txt       | 14 ++++++++++++++
+ llvm/cmake/modules/AddLLVM.cmake   | 34 ++++++++++++++++++++++++++++++++++
+ llvm/tools/llvm-ar/CMakeLists.txt  | 14 ++++++++++++++
+ 6 files changed, 79 insertions(+)
+
+diff --git a/clang/cmake/modules/AddClang.cmake b/clang/cmake/modules/AddClang.cmake
+index 4059fc3e986c..8583bbcaf4d1 100644
+--- a/clang/cmake/modules/AddClang.cmake
++++ b/clang/cmake/modules/AddClang.cmake
+@@ -107,6 +107,7 @@ macro(add_clang_library name)
+     set_property(GLOBAL APPEND PROPERTY CLANG_STATIC_LIBS ${name})
+   endif()
+   llvm_add_library(${name} ${LIBTYPE} ${ARG_UNPARSED_ARGUMENTS} ${srcs})
++  tizen_hybrid_llvm_interface(${name} ${ARGN})
+ 
+   if(MSVC AND NOT CLANG_LINK_CLANG_DYLIB)
+     # Make sure all consumers also turn off visibility macros so they're not
+diff --git a/clang/tools/driver/CMakeLists.txt b/clang/tools/driver/CMakeLists.txt
+index 002aaef00525..b7f70845f695 100644
+--- a/clang/tools/driver/CMakeLists.txt
++++ b/clang/tools/driver/CMakeLists.txt
+@@ -39,7 +39,18 @@ if (CLANG_BOLT AND NOT LLVM_BUILD_INSTRUMENTED)
+   endif()
+ endif()
+ 
++set(tizen_static_link)
++if(TIZEN_HYBRID_LINK)
++  if(BUILD_SHARED_LIBS OR LLVM_TOOL_LLVM_DRIVER_BUILD)
++    message(FATAL_ERROR "Tizen hybrid requires component archives and separate drivers")
++  endif()
++  set(tizen_static_link DISABLE_LLVM_LINK_LLVM_DYLIB)
++  set(USE_SHARED "")
++  set(CLANG_LINK_CLANG_DYLIB OFF) # Directory-local; other clang tools keep ON.
++endif()
++
+ add_clang_tool(clang
++  ${tizen_static_link}
+   driver.cpp
+   cc1_main.cpp
+   cc1as_main.cpp
+@@ -54,6 +65,10 @@ add_clang_tool(clang
+   GENERATE_DRIVER
+   )
+ 
++if(TIZEN_HYBRID_LINK)
++  set_property(TARGET clang PROPERTY TIZEN_STATIC_LLVM ON)
++endif()
++
+ setup_host_tool(clang CLANG clang_exe clang_target)
+ 
+ clang_target_link_libraries(clang
+diff --git a/lld/cmake/modules/AddLLD.cmake b/lld/cmake/modules/AddLLD.cmake
+index 37f73afa915f..6866e7fc87fc 100644
+--- a/lld/cmake/modules/AddLLD.cmake
++++ b/lld/cmake/modules/AddLLD.cmake
+@@ -11,6 +11,7 @@ macro(add_lld_library name)
+     set(ARG_ENABLE_SHARED SHARED)
+   endif()
+   llvm_add_library(${name} ${ARG_ENABLE_SHARED} ${ARG_UNPARSED_ARGUMENTS})
++  tizen_hybrid_llvm_interface(${name} ${ARGN})
+ 
+   if (NOT LLVM_INSTALL_TOOLCHAIN_ONLY)
+     get_target_export_arg(${name} LLD export_to_lldtargets UMBRELLA lld-libraries)
+diff --git a/lld/tools/lld/CMakeLists.txt b/lld/tools/lld/CMakeLists.txt
+index 8498a91597a9..10e89babffa1 100644
+--- a/lld/tools/lld/CMakeLists.txt
++++ b/lld/tools/lld/CMakeLists.txt
+@@ -3,12 +3,26 @@ set(LLVM_LINK_COMPONENTS
+   TargetParser
+   )
+ 
++set(tizen_static_link)
++if(TIZEN_HYBRID_LINK)
++  if(BUILD_SHARED_LIBS OR LLVM_TOOL_LLVM_DRIVER_BUILD)
++    message(FATAL_ERROR "Tizen hybrid requires component archives and separate drivers")
++  endif()
++  set(tizen_static_link DISABLE_LLVM_LINK_LLVM_DYLIB)
++  set(USE_SHARED "")
++endif()
++
+ add_lld_tool(lld
++  ${tizen_static_link}
+   lld.cpp
+ 
+   SUPPORT_PLUGINS
+   GENERATE_DRIVER
+   )
++if(TIZEN_HYBRID_LINK)
++  set_property(TARGET lld PROPERTY TIZEN_STATIC_LLVM ON)
++endif()
++
+ export_executable_symbols_for_plugins(lld)
+ 
+ function(lld_target_link_libraries target type)
+diff --git a/llvm/cmake/modules/AddLLVM.cmake b/llvm/cmake/modules/AddLLVM.cmake
+index d938214f9d0d..b00748adb4fb 100644
+--- a/llvm/cmake/modules/AddLLVM.cmake
++++ b/llvm/cmake/modules/AddLLVM.cmake
+@@ -1030,6 +1030,40 @@ macro(generate_llvm_objects name)
+   endif()
+ endmacro()
+ 
++# Proposed Tizen hybrid linkage: keep the default shared interface, but
++# provide component dependencies to an explicitly opted-in final consumer.
++function(tizen_hybrid_llvm_interface name)
++  if(NOT TIZEN_HYBRID_LINK OR NOT LLVM_LINK_LLVM_DYLIB OR NOT TARGET ${name})
++    return()
++  endif()
++  get_target_property(kind ${name} TYPE)
++  if(NOT kind STREQUAL "STATIC_LIBRARY")
++    return()
++  endif()
++  get_target_property(iface ${name} INTERFACE_LINK_LIBRARIES)
++  if(NOT "LLVM" IN_LIST iface)
++    # Some components explicitly disable the dylib already (e.g. clangSupport).
++    return()
++  endif()
++  cmake_parse_arguments(H "" ""
++    "LINK_COMPONENTS;LINK_LIBS;DEPENDS;OBJLIBS;ADDITIONAL_HEADERS" ${ARGN})
++  llvm_map_components_to_libnames(components ${H_LINK_COMPONENTS} ${LLVM_LINK_COMPONENTS})
++  set(static_consumer "$<BOOL:$<TARGET_PROPERTY:TIZEN_STATIC_LLVM>>")
++  set(replacement "$<$<NOT:${static_consumer}>:LLVM>")
++  foreach(component IN LISTS components)
++    list(APPEND replacement "$<${static_consumer}:${component}>")
++  endforeach()
++  set(result)
++  foreach(dep IN LISTS iface)
++    if(dep STREQUAL "LLVM")
++      list(APPEND result ${replacement})
++    else()
++      list(APPEND result "${dep}")
++    endif()
++  endforeach()
++  set_property(TARGET ${name} PROPERTY INTERFACE_LINK_LIBRARIES "${result}")
++endfunction()
++
+ macro(add_llvm_executable name)
+   cmake_parse_arguments(ARG
+     "DISABLE_LLVM_LINK_LLVM_DYLIB;IGNORE_EXTERNALIZE_DEBUGINFO;NO_INSTALL_RPATH;SUPPORT_PLUGINS;EXPORT_SYMBOLS"
+diff --git a/llvm/tools/llvm-ar/CMakeLists.txt b/llvm/tools/llvm-ar/CMakeLists.txt
+index 4d0718f8cefe..2bb0025a0033 100644
+--- a/llvm/tools/llvm-ar/CMakeLists.txt
++++ b/llvm/tools/llvm-ar/CMakeLists.txt
+@@ -11,7 +11,17 @@ set(LLVM_LINK_COMPONENTS
+   TargetParser
+   )
+ 
++set(tizen_static_link)
++if(TIZEN_HYBRID_LINK)
++  if(BUILD_SHARED_LIBS OR LLVM_TOOL_LLVM_DRIVER_BUILD)
++    message(FATAL_ERROR "Tizen hybrid requires component archives and separate drivers")
++  endif()
++  set(tizen_static_link DISABLE_LLVM_LINK_LLVM_DYLIB)
++  set(USE_SHARED "")
++endif()
++
+ add_llvm_tool(llvm-ar
++  ${tizen_static_link}
+   llvm-ar.cpp
+ 
+   DEPENDS
+@@ -19,6 +29,10 @@ add_llvm_tool(llvm-ar
+   GENERATE_DRIVER
+   )
+ 
++if(TIZEN_HYBRID_LINK)
++  set_property(TARGET llvm-ar PROPERTY TIZEN_STATIC_LLVM ON)
++endif()
++
+ add_llvm_tool_symlink(llvm-ranlib llvm-ar)
+ add_llvm_tool_symlink(llvm-lib llvm-ar)
+ add_llvm_tool_symlink(llvm-dlltool llvm-ar)

@@ -398,3 +398,8 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 在 d20e873b 上 amend 为 **3d3b4bf564fd8edec793e49e6de75b5fa7007d16**，tree **1143bd87650ddf8c8ed5ca40c0643c58c82db5ca**，父67619ec8与Change-Id不变。仅 cache_release 外层 except Exception 和解析注释；另补 IndexError 测试。300/300测试、GBS export、Tizen RPM4.14.1.1-1.7五项解析全部PASS；spec逐字节未改，其他helper函数未改，不重跑完整构建，第13节双轮结论沿用。
 
 已用精确租约把 sandbox/lhmax2025/bolt_pgo 从9e5675f更新为新提交，推后ls-remote一致；没有推refs/for或操作QB。QB使用 `platform/upstream/llvm@3d3b4bf564fd8edec793e49e6de75b5fa7007d16`，由用户启动。详见[32第15节](32_cache_release.md#15-2026-10-23懒卸载cache-release-异常兜底修复与-sandbox-更新)和 tools/bolt/results/cache-release-fix-20261023/。
+
+
+## 2026-10-23：BOLT on hybrid 本地完整构建启动
+
+本地detached合并提交 `aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`（父6e9d4f2，cherry-pick3d3b4bf），无冲突，保留hybrid配置与BOLT门禁。GBS export与Tizen五项解析PASS，复制图clang重放预检查PASS；源码显示llvm-bolt及BOLT库禁用LLVM dylib，白名单不改。新根temp/bolt-on-hybrid-20261024/gbs-root按用户资源规则运行；尚待完整构建、profile/90对象/RPM与磁盘认证，无Gerrit推送。见33号文档。

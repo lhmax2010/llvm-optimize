@@ -1,0 +1,170 @@
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index f6cd8c6c64b5..fc3d8cad9610 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -1,3 +1,10 @@
++# Quickbuild sandbox: x86_64 BOLT is on by default; other architectures unchanged.
++%ifarch x86_64
++%bcond_without clang_bolt
++%else
++%bcond_with clang_bolt
++%endif
++
+ %define keepstatic 1
+ 
+ # MLGO AOT support for LLVM MLGO (Ahead-of-Time compilation)
+@@ -45,11 +52,14 @@ Source1002: mlgo_arm_model.tar.gz
+ Source1003: mlgo_aarch_model.tar.gz
+ Source1004: mlgo_x86_model.tar.gz
+ Source1005: llvm-static-archives-native.py
++Source1200: clang-bolt-v2.fdata.xz
++Source1201: clang-bolt-helper.py
+ 
+ %ifarch x86_64
+ BuildRequires: util-linux
+ %endif
+ 
++
+ %{!?mlgo_build_jobs: %define mlgo_build_jobs 6}
+ %{!?mlgo_verify_configure_only: %define mlgo_verify_configure_only 0}
+ 
+@@ -63,6 +73,12 @@ BuildRequires: libxml2-devel
+ BuildRequires: sed
+ %endif
+ BuildRequires: ninja
++%ifarch x86_64
++%if %{with clang_bolt}
++BuildRequires: python3 >= 3.9
++BuildRequires: xz
++%endif
++%endif
+ 
+ %if %{undefined _toolchain}
+ %ifarch x86_64
+@@ -393,11 +409,96 @@ cmake \
+ %endif
+ 
+ # Full build using ninja (already in build/ directory after cd build)
++%ifarch x86_64
++%if %{with clang_bolt}
++ninja -d keeprsp -j %{mlgo_build_jobs} || exit 1
++%else
++ninja -j %{mlgo_build_jobs}
++%endif
++%else
+ ninja -j %{mlgo_build_jobs}
++%endif
+ 
+ %install
+ cd build
+ cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
++%ifarch x86_64
++%if %{with clang_bolt}
++
++# Reject debug-named buildroots before any BOLT action.
++case $(printf '%s' '%{buildroot}' | LC_ALL=C tr '[:upper:]' '[:lower:]') in
++  *debug*) echo 'BOLT buildroot absolute path contains debug' >&2; exit 1 ;;
++esac
++BOLT_BUILD="$PWD"
++BOLT_WORK="$PWD/clang-bolt"
++BOLT_INSTALL_ROOT="%{buildroot}"
++BOLT_PROFILE_SOURCE="%{SOURCE1200}"
++export BOLT_BUILD BOLT_WORK BOLT_INSTALL_ROOT BOLT_PROFILE_SOURCE
++bolt_fail() {
++  python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || true
++  exit 1
++}
++bolt_checked() {
++  bolt_stage=$1
++  bolt_log=$2
++  shift 2
++  if bolt_output=$("$@" 2>&1); then
++    printf '%%s\n' "$bolt_output" || bolt_fail "$bolt_stage-output" -
++  else
++    printf '%%s\n' "$bolt_output" || true
++    printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || true
++    exit 1
++  fi
++}
++bolt_step() {
++  bolt_stage=$1
++  shift
++  bolt_checked "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" python3 -B %{SOURCE1201} run-step "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" -- "$@"
++}
++python3 -B %{SOURCE1201} disk-report begin
++echo "BOLT_BUILDROOT_OK %{buildroot}"
++python3 -B %{SOURCE1201} preflight || exit 1
++python3 -B %{SOURCE1201} certified || exit 1
++if [ -r /proc/self/stat ]; then echo BOLT_PROC_OK; else echo BOLT_PROC_MISSING; fi
++# One relink: emit-relocs, then LLVM strip-debug, BOLT and full strip.
++# The handed-off build owns its original ThinLTO cache; do not duplicate it.
++mkdir -p "$BOLT_WORK" || exit 1
++# File-list baseline is the actual ordinary CMake install, not a name whitelist.
++python3 -B %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
++bolt_step manifest-copy cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt"
++bolt_step ordinary-copy cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22"
++bolt_checked link-command "$BOLT_WORK/link-command.log" python3 -B %{SOURCE1201} run-step link-command "$BOLT_WORK/link-command.log" --output "$BOLT_WORK/link.original" -- ninja -t commands -s bin/clang-22
++python3 -B %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || exit 1
++bolt_step configure cmake -S ../llvm -B . \
++  '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' \
++  -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \
++  -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
++# Only certified BOLT tasks and the paired configure-refreshed TF anchor.
++bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
++LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- ninja -n llvm-bolt
++bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
++python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
++cat "$BOLT_WORK/tool-plan.json"
++python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
++LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- ninja -j 1 llvm-bolt
++python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
++  "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
++cat "$BOLT_WORK/tool-build-verification.json"
++python3 -B %{SOURCE1201} disk-report tool-built
++python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
++echo BOLT_PIPELINE_PASS
++python3 -B %{SOURCE1201} disk-report pipeline
++# BOLT configuration/build/rewrite must not change the ordinary installation.
++# Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
++python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
++  "$BOLT_WORK/install-after-pipeline.json" || exit 1
++echo BOLT_COMPARE_ROOT_PASS
++# No subsequent step consumes this ThinLTO cache.
++# Release it only inside the enabled x86_64 BOLT block.
++python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK"
++# Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
++%endif
++%endif
+ ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
+ 
+ ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
+@@ -443,6 +544,14 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+     --jobs 4 --address-space-bytes 4294967296 || exit 1
+ %endif
+ 
++%ifarch x86_64
++%if %{with clang_bolt}
++# Candidate is fully stripped before the one unchanged platform post-processing chain.
++python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
++  "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || exit 1
++
++%endif
++%endif
+ %post -n clang -p /sbin/ldconfig
+ %postun -n clang -p /sbin/ldconfig
+ 
+@@ -674,3 +783,14 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ 
+ %files -n python-clang
+ %{python3_sitelib}/clang
++%ifarch x86_64
++%if %{with clang_bolt}
++
++%global __bolt_original_spec_install_post %{__spec_install_post}
++%define __spec_install_post \
++    %{__bolt_original_spec_install_post} \
++    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
++    echo BOLT_POST_GATE_PASS \
++    python3 -B %{SOURCE1201} disk-report post
++%endif
++%endif

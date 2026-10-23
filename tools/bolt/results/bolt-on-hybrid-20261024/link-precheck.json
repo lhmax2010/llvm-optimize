@@ -1,0 +1,71 @@
+{
+  "clang_replay": "PASS",
+  "graph_copy": "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/graph-copy",
+  "cache": [
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache"
+  ],
+  "bolt_expected_linkage": "static LLVM; driver and all BOLT libraries explicitly disable dylib",
+  "cmake_evidence": [
+    {
+      "file": "bolt/tools/driver/CMakeLists.txt",
+      "disable_dylib_lines": [
+        17
+      ]
+    },
+    {
+      "file": "bolt/lib/Core/CMakeLists.txt",
+      "disable_dylib_lines": [
+        41
+      ]
+    },
+    {
+      "file": "bolt/lib/Passes/CMakeLists.txt",
+      "disable_dylib_lines": [
+        53
+      ]
+    },
+    {
+      "file": "bolt/lib/Profile/CMakeLists.txt",
+      "disable_dylib_lines": [
+        11
+      ]
+    },
+    {
+      "file": "bolt/lib/Rewrite/CMakeLists.txt",
+      "disable_dylib_lines": [
+        32
+      ]
+    },
+    {
+      "file": "bolt/lib/RuntimeLibs/CMakeLists.txt",
+      "disable_dylib_lines": [
+        15
+      ]
+    },
+    {
+      "file": "bolt/lib/Utils/CMakeLists.txt",
+      "disable_dylib_lines": [
+        47
+      ]
+    },
+    {
+      "file": "bolt/lib/Target/AArch64/CMakeLists.txt",
+      "disable_dylib_lines": [
+        25
+      ]
+    },
+    {
+      "file": "bolt/lib/Target/RISCV/CMakeLists.txt",
+      "disable_dylib_lines": [
+        24
+      ]
+    },
+    {
+      "file": "bolt/lib/Target/X86/CMakeLists.txt",
+      "disable_dylib_lines": [
+        25
+      ]
+    }
+  ],
+  "whitelist_changes": []
+}

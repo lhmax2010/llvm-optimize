@@ -1,0 +1,757 @@
+From: lhmax2025 <hao.lin@samsung.com>
+Date: Tue, 1 Sep 2026 16:15:34 +0900
+Subject: libcxx: backport EH ABI forced-unwind handling
+
+Squash the changes from sandbox/lhmax2025/libcxx-ehabi-backport:
+
+- packaging: add libc++ runtimes spec
+- libc++abi: preserve foreign forced-unwind state
+- libc++abi: expose GNU forced-unwind marker type
+- libcxx: preserve forced unwind in consumer-instantiated handlers
+- libcxx: preserve forced unwind in library-delivered handlers
+
+Change-Id: I0dfaf3ae6c88db033f1aff9167d64ffa211cdf2e
+Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+---
+ libcxx/include/__ostream/basic_ostream.h |   3 +
+ libcxx/include/future                    | 142 ++++++++++++++++++++++++++++++-
+ libcxx/include/istream                   | 100 ++++++++++++++++++++++
+ libcxx/include/string                    |   3 +
+ libcxx/src/future.cpp                    |  10 ++-
+ libcxx/src/ios.cpp                       |  17 +++-
+ libcxxabi/include/cxxabi.h               |   8 ++
+ libcxxabi/src/cxa_exception.cpp          |   7 +-
+ libcxxabi/src/cxa_personality.cpp        |  28 ++++++
+ 9 files changed, 310 insertions(+), 8 deletions(-)
+
+diff --git a/libcxx/include/__ostream/basic_ostream.h b/libcxx/include/__ostream/basic_ostream.h
+index 62770be72f98..67b9586cbc7c 100644
+--- a/libcxx/include/__ostream/basic_ostream.h
++++ b/libcxx/include/__ostream/basic_ostream.h
+@@ -13,6 +13,7 @@
+ 
+ #if _LIBCPP_HAS_LOCALIZATION
+ 
++#  include <cxxabi.h>
+ #  include <__exception/operations.h>
+ #  include <__fwd/memory.h>
+ #  include <__iterator/ostreambuf_iterator.h>
+@@ -214,6 +215,8 @@ basic_ostream<_CharT, _Traits>::sentry::~sentry() {
+       if (__os_.rdbuf()->pubsync() == -1)
+         __os_.setstate(ios_base::badbit);
+ #  if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      throw;
+     } catch (...) {
+     }
+ #  endif // _LIBCPP_HAS_EXCEPTIONS
+diff --git a/libcxx/include/future b/libcxx/include/future
+index 4cd5e8ab2aec..6261fd382469 100644
+--- a/libcxx/include/future
++++ b/libcxx/include/future
+@@ -367,6 +367,7 @@ template <class R, class Alloc> struct uses_allocator<packaged_task<R>, Alloc>;
+ 
+ #  if _LIBCPP_HAS_THREADS
+ 
++#    include <cxxabi.h>
+ #    include <__assert>
+ #    include <__chrono/duration.h>
+ #    include <__chrono/steady_clock.h>
+@@ -522,6 +523,8 @@ void __throw_future_error(future_errc __ev) {
+ 
+ class _LIBCPP_EXPORTED_FROM_ABI __assoc_sub_state : public __shared_count {
+ protected:
++  enum class __forced_unwind_action { __restore_deferred, __complete_with_error };
++
+   exception_ptr __exception_;
+   mutable mutex __mut_;
+   mutable condition_variable __cv_;
+@@ -530,6 +533,26 @@ protected:
+   void __on_zero_shared() _NOEXCEPT override;
+   void __sub_wait(unique_lock<mutex>& __lk);
+ 
++  _LIBCPP_HIDE_FROM_ABI void
++  __handle_forced_unwind(__forced_unwind_action __action, exception_ptr __error = exception_ptr()) _NOEXCEPT {
++#    if _LIBCPP_HAS_EXCEPTIONS
++    try {
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++      unique_lock<mutex> __lk(__mut_);
++      if (__action == __forced_unwind_action::__restore_deferred) {
++        if (!(__state_ & ready) && !__has_value())
++          __state_ |= deferred;
++      } else if (!(__state_ & ready) && !__has_value()) {
++        __exception_ = std::move(__error);
++        __state_ |= ready;
++      }
++      __cv_.notify_all();
++#    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (...) {
++    }
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++  }
++
+ public:
+   enum { __constructed = 1, __future_attached = 2, ready = 4, deferred = 8 };
+ 
+@@ -591,6 +614,11 @@ protected:
+ 
+   _LIBCPP_HIDE_FROM_ABI_VIRTUAL void __on_zero_shared() _NOEXCEPT override;
+ 
++  template <class _Arg>
++  _LIBCPP_HIDE_FROM_ABI void __construct_value_unready(_Arg&& __arg);
++
++  _LIBCPP_HIDE_FROM_ABI void __complete_forced_unwind(exception_ptr __error) _NOEXCEPT;
++
+ public:
+   template <class _Arg>
+   _LIBCPP_HIDE_FROM_ABI void set_value(_Arg&& __arg);
+@@ -620,6 +648,51 @@ void __assoc_state<_Rp>::set_value(_Arg&& __arg) {
+   __cv_.notify_all();
+ }
+ 
++template <class _Rp>
++template <class _Arg>
++void __assoc_state<_Rp>::__construct_value_unready(_Arg&& __arg) {
++  unique_lock<mutex> __lk(this->__mut_);
++  if (this->__has_value())
++    std::__throw_future_error(future_errc::promise_already_satisfied);
++  ::new ((void*)std::addressof(__value_)) _Rp(std::forward<_Arg>(__arg));
++  this->__state_ |= base::__constructed;
++}
++
++template <class _Rp>
++void __assoc_state<_Rp>::__complete_forced_unwind(exception_ptr __error) _NOEXCEPT {
++  bool __destroy_value = false;
++#    if _LIBCPP_HAS_EXCEPTIONS
++  try {
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++    {
++      unique_lock<mutex> __lk(this->__mut_);
++      if (!(this->__state_ & base::ready)) {
++        __destroy_value = (this->__state_ & base::__constructed) != 0;
++        this->__state_ &= ~base::__constructed;
++        this->__exception_ = std::move(__error);
++      }
++    }
++    if (__destroy_value) {
++#    if _LIBCPP_HAS_EXCEPTIONS
++      try {
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++        reinterpret_cast<_Rp*>(std::addressof(__value_))->~_Rp();
++#    if _LIBCPP_HAS_EXCEPTIONS
++      } catch (...) {
++      }
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++    }
++    unique_lock<mutex> __lk(this->__mut_);
++    if (!(this->__state_ & base::ready) && this->__exception_ != nullptr) {
++      this->__state_ |= base::ready;
++      this->__cv_.notify_all();
++    }
++#    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (...) {
++  }
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++}
++
+ template <class _Rp>
+ template <class _Arg>
+ void __assoc_state<_Rp>::set_value_at_thread_exit(_Arg&& __arg) {
+@@ -659,6 +732,10 @@ protected:
+ 
+   _LIBCPP_HIDE_FROM_ABI_VIRTUAL void __on_zero_shared() _NOEXCEPT override;
+ 
++  _LIBCPP_HIDE_FROM_ABI void __construct_value_unready(_Rp& __arg);
++
++  _LIBCPP_HIDE_FROM_ABI void __complete_forced_unwind(exception_ptr __error) _NOEXCEPT;
++
+ public:
+   _LIBCPP_HIDE_FROM_ABI void set_value(_Rp& __arg);
+   _LIBCPP_HIDE_FROM_ABI void set_value_at_thread_exit(_Rp& __arg);
+@@ -681,6 +758,34 @@ void __assoc_state<_Rp&>::set_value(_Rp& __arg) {
+   __cv_.notify_all();
+ }
+ 
++template <class _Rp>
++void __assoc_state<_Rp&>::__construct_value_unready(_Rp& __arg) {
++  unique_lock<mutex> __lk(this->__mut_);
++  if (this->__has_value())
++    std::__throw_future_error(future_errc::promise_already_satisfied);
++  __value_ = std::addressof(__arg);
++  this->__state_ |= base::__constructed;
++}
++
++template <class _Rp>
++void __assoc_state<_Rp&>::__complete_forced_unwind(exception_ptr __error) _NOEXCEPT {
++#    if _LIBCPP_HAS_EXCEPTIONS
++  try {
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++    unique_lock<mutex> __lk(this->__mut_);
++    if (!(this->__state_ & base::ready)) {
++      this->__state_ &= ~base::__constructed;
++      __value_ = nullptr;
++      this->__exception_ = std::move(__error);
++      this->__state_ |= base::ready;
++      this->__cv_.notify_all();
++    }
++#    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (...) {
++  }
++#    endif // _LIBCPP_HAS_EXCEPTIONS
++}
++
+ template <class _Rp>
+ void __assoc_state<_Rp&>::set_value_at_thread_exit(_Rp& __arg) {
+   unique_lock<mutex> __lk(this->__mut_);
+@@ -789,6 +894,9 @@ void __deferred_assoc_state<_Rp, _Fp>::__execute() {
+ #    endif // _LIBCPP_HAS_EXCEPTIONS
+     this->set_value(__func_());
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    this->__handle_forced_unwind(base::__forced_unwind_action::__restore_deferred);
++    throw;
+   } catch (...) {
+     this->set_exception(current_exception());
+   }
+@@ -820,6 +928,9 @@ void __deferred_assoc_state<void, _Fp>::__execute() {
+     __func_();
+     this->set_value();
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    this->__handle_forced_unwind(base::__forced_unwind_action::__restore_deferred);
++    throw;
+   } catch (...) {
+     this->set_exception(current_exception());
+   }
+@@ -848,8 +959,18 @@ void __async_assoc_state<_Rp, _Fp>::__execute() {
+ #    if _LIBCPP_HAS_EXCEPTIONS
+   try {
+ #    endif // _LIBCPP_HAS_EXCEPTIONS
+-    this->set_value(__func_());
++    this->__construct_value_unready(__func_());
++    this->__make_ready();
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    exception_ptr __error;
++    try {
++      std::__throw_future_error(future_errc::broken_promise);
++    } catch (...) {
++      __error = current_exception();
++    }
++    this->__complete_forced_unwind(std::move(__error));
++    throw;
+   } catch (...) {
+     this->set_exception(current_exception());
+   }
+@@ -887,6 +1008,15 @@ void __async_assoc_state<void, _Fp>::__execute() {
+     __func_();
+     this->set_value();
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    exception_ptr __error;
++    try {
++      std::__throw_future_error(future_errc::broken_promise);
++    } catch (...) {
++      __error = current_exception();
++    }
++    this->__handle_forced_unwind(base::__forced_unwind_action::__complete_with_error, std::move(__error));
++    throw;
+   } catch (...) {
+     this->set_exception(current_exception());
+   }
+@@ -1661,6 +1791,8 @@ void packaged_task<_Rp(_ArgTypes...)>::operator()(_ArgTypes... __args) {
+ #    endif // _LIBCPP_HAS_EXCEPTIONS
+     __p_.set_value(__f_(std::forward<_ArgTypes>(__args)...));
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     __p_.set_exception(current_exception());
+   }
+@@ -1678,6 +1810,8 @@ void packaged_task<_Rp(_ArgTypes...)>::make_ready_at_thread_exit(_ArgTypes... __
+ #    endif // _LIBCPP_HAS_EXCEPTIONS
+     __p_.set_value_at_thread_exit(__f_(std::forward<_ArgTypes>(__args)...));
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     __p_.set_exception_at_thread_exit(current_exception());
+   }
+@@ -1761,6 +1895,8 @@ void packaged_task<void(_ArgTypes...)>::operator()(_ArgTypes... __args) {
+     __f_(std::forward<_ArgTypes>(__args)...);
+     __p_.set_value();
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     __p_.set_exception(current_exception());
+   }
+@@ -1779,6 +1915,8 @@ void packaged_task<void(_ArgTypes...)>::make_ready_at_thread_exit(_ArgTypes... _
+     __f_(std::forward<_ArgTypes>(__args)...);
+     __p_.set_value_at_thread_exit();
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     __p_.set_exception_at_thread_exit(current_exception());
+   }
+@@ -1862,6 +2000,8 @@ async(launch __policy, _Fp&& __f, _Args&&... __args) {
+     if (__does_policy_contain(__policy, launch::async))
+       return std::__make_async_assoc_state<_Rp>(_BF(std::forward<_Fp>(__f), std::forward<_Args>(__args)...));
+ #      if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     if (__policy == launch::async)
+       throw;
+diff --git a/libcxx/include/istream b/libcxx/include/istream
+index dfa22e9f3bfb..c39dce589fa0 100644
+--- a/libcxx/include/istream
++++ b/libcxx/include/istream
+@@ -166,6 +166,7 @@ template <class Stream, class T>
+ 
+ #  if _LIBCPP_HAS_LOCALIZATION
+ 
++#    include <cxxabi.h>
+ #    include <__fwd/istream.h>
+ #    include <__iterator/istreambuf_iterator.h>
+ #    include <__locale_dir/num.h>
+@@ -374,6 +375,10 @@ __input_arithmetic(basic_istream<_CharT, _Traits>& __is, _Tp& __n) {
+       typedef num_get<_CharT, _Ip> _Fp;
+       std::use_facet<_Fp>(__is.getloc()).get(_Ip(__is), _Ip(), __is, __state, __n);
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -465,6 +470,10 @@ __input_arithmetic_with_numeric_limits(basic_istream<_CharT, _Traits>& __is, _Tp
+         __n = static_cast<_Tp>(__temp);
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -516,6 +525,10 @@ __input_c_string(basic_istream<_CharT, _Traits>& __is, _CharT* __p, size_t __n)
+       if (__s == __p)
+         __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -591,6 +604,10 @@ _LIBCPP_HIDE_FROM_ABI basic_istream<_CharT, _Traits>& operator>>(basic_istream<_
+       else
+         __c = _Traits::to_char_type(__i);
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -641,6 +658,12 @@ basic_istream<_CharT, _Traits>::operator>>(basic_streambuf<char_type, traits_typ
+         if (__gc_ == 0)
+           __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++      } catch (const __cxxabiv1::__forced_unwind&) {
++        __state |= ios_base::badbit;
++        if (__gc_ == 0)
++          __state |= ios_base::failbit;
++        this->__setstate_nothrow(__state);
++        throw;
+       } catch (...) {
+         __state |= ios_base::badbit;
+         if (__gc_ == 0)
+@@ -676,6 +699,9 @@ typename basic_istream<_CharT, _Traits>::int_type basic_istream<_CharT, _Traits>
+       else
+         __gc_ = 1;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      this->__setstate_nothrow(this->rdstate() | ios_base::badbit);
++      throw;
+     } catch (...) {
+       this->__setstate_nothrow(this->rdstate() | ios_base::badbit);
+       if (this->exceptions() & ios_base::badbit) {
+@@ -714,6 +740,12 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::get(char_type* _
+         if (__gc_ == 0)
+           __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++      } catch (const __cxxabiv1::__forced_unwind&) {
++        __state |= ios_base::badbit;
++        this->__setstate_nothrow(__state);
++        if (__n > 0)
++          *__s = char_type();
++        throw;
+       } catch (...) {
+         __state |= ios_base::badbit;
+         this->__setstate_nothrow(__state);
+@@ -762,6 +794,10 @@ basic_istream<_CharT, _Traits>::get(basic_streambuf<char_type, traits_type>& __s
+         this->rdbuf()->sbumpc();
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       // according to the spec, exceptions here are caught but not rethrown
+@@ -805,6 +841,14 @@ basic_istream<_CharT, _Traits>::getline(char_type* __s, streamsize __n, char_typ
+         __inc_gcount();
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      if (__n > 0)
++        *__s = char_type();
++      if (__gc_ == 0)
++        __state |= ios_base::failbit;
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -859,6 +903,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::ignore(streamsiz
+         }
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -886,6 +934,10 @@ typename basic_istream<_CharT, _Traits>::int_type basic_istream<_CharT, _Traits>
+       if (traits_type::eq_int_type(__r, traits_type::eof()))
+         __state |= ios_base::eofbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -912,6 +964,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::read(char_type*
+       if (__gc_ != __n)
+         __state |= ios_base::failbit | ios_base::eofbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -951,6 +1007,10 @@ streamsize basic_istream<_CharT, _Traits>::readsome(char_type* __s, streamsize _
+         break;
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -979,6 +1039,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::putback(char_typ
+       if (this->rdbuf() == nullptr || this->rdbuf()->sputbackc(__c) == traits_type::eof())
+         __state |= ios_base::badbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1007,6 +1071,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::unget() {
+       if (this->rdbuf() == nullptr || this->rdbuf()->sungetc() == traits_type::eof())
+         __state |= ios_base::badbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1039,6 +1107,10 @@ int basic_istream<_CharT, _Traits>::sync() {
+         __r = -1;
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1063,6 +1135,10 @@ typename basic_istream<_CharT, _Traits>::pos_type basic_istream<_CharT, _Traits>
+ #    endif // _LIBCPP_HAS_EXCEPTIONS
+       __r = this->rdbuf()->pubseekoff(0, ios_base::cur, ios_base::in);
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1088,6 +1164,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::seekg(pos_type _
+       if (this->rdbuf()->pubseekpos(__pos, ios_base::in) == pos_type(-1))
+         __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1113,6 +1193,10 @@ basic_istream<_CharT, _Traits>& basic_istream<_CharT, _Traits>::seekg(off_type _
+       if (this->rdbuf()->pubseekoff(__off, __dir, ios_base::in) == pos_type(-1))
+         __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      this->__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       this->__setstate_nothrow(__state);
+@@ -1146,6 +1230,10 @@ _LIBCPP_HIDE_FROM_ABI basic_istream<_CharT, _Traits>& ws(basic_istream<_CharT, _
+         __is.rdbuf()->sbumpc();
+       }
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -1252,6 +1340,10 @@ operator>>(basic_istream<_CharT, _Traits>& __is, basic_string<_CharT, _Traits, _
+       if (__c == 0)
+         __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+@@ -1325,6 +1417,10 @@ getline(basic_istream<_CharT, _Traits>& __is, basic_string<_CharT, _Traits, _All
+       __state |= ios_base::eofbit | (__str.empty() ? ios_base::failbit : ios_base::goodbit);
+ 
+ #    if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    __state |= ios_base::badbit;
++    __is.__setstate_nothrow(__state);
++    throw;
+   } catch (...) {
+     __state |= ios_base::badbit;
+     __is.__setstate_nothrow(__state);
+@@ -1386,6 +1482,10 @@ operator>>(basic_istream<_CharT, _Traits>& __is, bitset<_Size>& __x) {
+       if (_Size > 0 && __c == 0)
+         __state |= ios_base::failbit;
+ #    if _LIBCPP_HAS_EXCEPTIONS
++    } catch (const __cxxabiv1::__forced_unwind&) {
++      __state |= ios_base::badbit;
++      __is.__setstate_nothrow(__state);
++      throw;
+     } catch (...) {
+       __state |= ios_base::badbit;
+       __is.__setstate_nothrow(__state);
+diff --git a/libcxx/include/string b/libcxx/include/string
+index 34af7efb5665..37a95c0225b9 100644
+--- a/libcxx/include/string
++++ b/libcxx/include/string
+@@ -649,6 +649,7 @@ basic_string<char32_t> operator""s( const char32_t *str, size_t len );
+ #  include <climits>
+ #  include <cstdio> // EOF
+ #  include <cstring>
++#  include <cxxabi.h>
+ #  include <limits>
+ #  include <stdexcept>
+ #  include <string_view>
+@@ -3463,6 +3464,8 @@ inline _LIBCPP_CONSTEXPR_SINCE_CXX20 void basic_string<_CharT, _Traits, _Allocat
+     traits_type::copy(std::__to_address(__buffer.__data_), std::__to_address(__get_long_pointer()), __size + 1);
+     __reset_internal_buffer(__buffer);
+ #  if _LIBCPP_HAS_EXCEPTIONS
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
+   } catch (...) {
+     return;
+   }
+diff --git a/libcxx/src/future.cpp b/libcxx/src/future.cpp
+index 7bba635e9006..2d1aae641cb7 100644
+--- a/libcxx/src/future.cpp
++++ b/libcxx/src/future.cpp
+@@ -111,14 +111,16 @@ void __assoc_sub_state::wait() {
+ }
+ 
+ void __assoc_sub_state::__sub_wait(unique_lock<mutex>& __lk) {
+-  if (!__is_ready()) {
++  while (!__is_ready()) {
+     if (__state_ & static_cast<unsigned>(deferred)) {
+       __state_ &= ~static_cast<unsigned>(deferred);
+       __lk.unlock();
+       __execute();
+-    } else
+-      while (!__is_ready())
+-        __cv_.wait(__lk);
++      if (!__lk.owns_lock())
++        __lk.lock();
++    } else {
++      __cv_.wait(__lk);
++    }
+   }
+ }
+ 
+diff --git a/libcxx/src/ios.cpp b/libcxx/src/ios.cpp
+index 02ce4841187f..3aab86189bbc 100644
+--- a/libcxx/src/ios.cpp
++++ b/libcxx/src/ios.cpp
+@@ -9,6 +9,7 @@
+ #include <__config>
+ #include <__locale>
+ #include <algorithm>
++#include <cxxabi.h>
+ #include <ios>
+ #include <limits>
+ #include <memory>
+@@ -362,16 +363,28 @@ void ios_base::swap(ios_base& rhs) noexcept {
+ void ios_base::__set_badbit_and_consider_rethrow() {
+   __rdstate_ |= badbit;
+ #if _LIBCPP_HAS_EXCEPTIONS
+-  if (__exceptions_ & badbit)
++  try {
+     throw;
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
++  } catch (...) {
++    if (__exceptions_ & badbit)
++      throw;
++  }
+ #endif // _LIBCPP_HAS_EXCEPTIONS
+ }
+ 
+ void ios_base::__set_failbit_and_consider_rethrow() {
+   __rdstate_ |= failbit;
+ #if _LIBCPP_HAS_EXCEPTIONS
+-  if (__exceptions_ & failbit)
++  try {
+     throw;
++  } catch (const __cxxabiv1::__forced_unwind&) {
++    throw;
++  } catch (...) {
++    if (__exceptions_ & failbit)
++      throw;
++  }
+ #endif // _LIBCPP_HAS_EXCEPTIONS
+ }
+ 
+diff --git a/libcxxabi/include/cxxabi.h b/libcxxabi/include/cxxabi.h
+index 9ea93680f62e..da75b45c84fe 100644
+--- a/libcxxabi/include/cxxabi.h
++++ b/libcxxabi/include/cxxabi.h
+@@ -37,6 +37,14 @@ class type_info; // forward declaration
+ // runtime routines use C calling conventions, but are in __cxxabiv1 namespace
+ namespace __cxxabiv1 {
+ 
++// An out-of-line key function makes the runtime library own the unique
++// exported typeinfo definition. Keep the libstdc++ abstract class shape so
++// this marker can only be caught by reference.
++class _LIBCXXABI_TYPE_VIS __forced_unwind {
++  virtual ~__forced_unwind();
++  virtual void __pure_dummy() = 0;
++};
++
+ struct __cxa_exception;
+ 
+ extern "C"  {
+diff --git a/libcxxabi/src/cxa_exception.cpp b/libcxxabi/src/cxa_exception.cpp
+index 5d7edae697d6..3a6a0b8b8e17 100644
+--- a/libcxxabi/src/cxa_exception.cpp
++++ b/libcxxabi/src/cxa_exception.cpp
+@@ -36,6 +36,8 @@
+ 
+ namespace __cxxabiv1 {
+ 
++__forced_unwind::~__forced_unwind() = default;
++
+ //  Utility routines
+ static
+ inline
+@@ -648,7 +650,10 @@ void __cxa_rethrow() {
+ #ifdef __USING_SJLJ_EXCEPTIONS__
+     _Unwind_SjLj_RaiseException(&exception_header->unwindHeader);
+ #else
+-    _Unwind_RaiseException(&exception_header->unwindHeader);
++    if (native_exception)
++        _Unwind_RaiseException(&exception_header->unwindHeader);
++    else
++        _Unwind_Resume_or_Rethrow(&exception_header->unwindHeader);
+ #endif
+ 
+     //  If we get here, some kind of unwinding error has occurred.
+diff --git a/libcxxabi/src/cxa_personality.cpp b/libcxxabi/src/cxa_personality.cpp
+index 28208194edb3..559000728bcb 100644
+--- a/libcxxabi/src/cxa_personality.cpp
++++ b/libcxxabi/src/cxa_personality.cpp
+@@ -819,6 +819,23 @@ static void scan_eh_tab(scan_results &results, _Unwind_Action actions,
+                     }
+                     // Else this is a catch (T) clause and will never
+                     //    catch a foreign exception
++                    else if (!native_exception &&
++                             (actions & _UA_FORCE_UNWIND))
++                    {
++                        void* adjustedPtr =
++                            get_thrown_object_ptr(unwind_exception);
++                        const __shim_type_info* forcedType =
++                            static_cast<const __shim_type_info*>(
++                                &typeid(__cxxabiv1::__forced_unwind));
++                        if (catchType->can_catch(forcedType, adjustedPtr))
++                        {
++                            results.ttypeIndex = ttypeIndex;
++                            results.actionRecord = actionRecord;
++                            results.adjustedPtr = adjustedPtr;
++                            results.reason = _URC_HANDLER_FOUND;
++                            return;
++                        }
++                    }
+                     else if (native_exception)
+                     {
+                         __cxa_exception* exception_header = (__cxa_exception*)(unwind_exception+1) - 1;
+@@ -1254,6 +1271,17 @@ __gxx_personality_v0(_Unwind_State state,
+                       unwind_exception, context);
+         if (results.reason == _URC_HANDLER_FOUND)
+         {
++            // A non-zero ttypeIndex identifies a catching handler. ARM EHABI
++            // requires __cxa_begin_cleanup only for a true cleanup entry
++            // (ttypeIndex == 0), matching libstdc++'s found_cleanup gate.
++            if (is_force_unwinding && !native_exception &&
++                results.ttypeIndex != 0)
++            {
++                save_results_to_barrier_cache(unwind_exception, results);
++                set_registers(unwind_exception, context, results);
++                return _URC_INSTALL_CONTEXT;
++            }
++
+             // Found a non-catching handler
+ 
+             // ARM EHABI 8.4.2: Before we can jump to the cleanup handler, we have to setup some
