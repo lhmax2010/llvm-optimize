@@ -866,6 +866,7 @@ def cache_release(build, work):
         original = (work/'link.original').read_text()
         # Validate the original edge with the exact replay syntax/cache rules.
         replay_script(original, work/'unused-output', work/'unused-dependency')
+        # Remove CMake Ninja ': && ' and ' && :' wrappers, as in replay_script.
         paths = re.findall(r'--thinlto-cache-dir=([^\s]+)', original.strip()[5:-5])
         path = Path(paths[0])
         result['path'] = str(path)
@@ -897,7 +898,7 @@ def cache_release(build, work):
         if reason:
             result['reason'] = reason
             emit('skipped reason='+reason+' path='+str(path))
-    except (OSError, ValueError, GateError, RuntimeError) as error:
+    except Exception as error:
         result['reason'] = str(error)
         emit('skipped reason='+str(error)+' path='+str(path))
     try:

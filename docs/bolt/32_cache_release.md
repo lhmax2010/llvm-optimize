@@ -361,3 +361,62 @@ code    202760 linhao   49r   DIR   0,60        0 51203 <路径>/2558
 | 源码 amend / sandbox 推送 | NOT RUN |
 
 源提交仍为 `d20e873b2c7dfac10fab9235e2b781dad08dc4c7`；没有修改 helper/spec，没有删除任何构建根，没有结束占用进程，也没有运行历史树中的 cmake/ninja。此前 299 项测试与五项解析结果不冒充本轮认证。仅提交本次停止记录和证据，等待用户释放句柄后再继续。
+
+
+## 15. 2026-10-23：懒卸载、cache-release 异常兜底修复与 sandbox 更新
+
+用户明确授权仅对首轮 baseline-root 下的 proc 挂载使用懒卸载，挂载结果不阻塞源码修复与推送。`findmnt -rn -o TARGET,SOURCE,FSTYPE` 检查该根只剩一个 `none proc` 挂载；执行：
+
+```sh
+sudo -n /usr/sbin/chroot /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0 /bin/umount -l /proc
+```
+
+返回 0，stdout/stderr 均为空。复查该根下挂载表为空；这是从挂载表脱离，不宣称 VS Code 已关闭原句柄。没有结束任何进程、修改 VS Code 配置或删除构建根。完整命令与过滤后的 findmnt 原文见 [mount.json](../../tools/bolt/results/cache-release-fix-20261023/mount.json)。
+
+### 15.1 限定修复与认证
+
+从 `d20e873b2c7dfac10fab9235e2b781dad08dc4c7` amend，源码差异只有 `packaging/clang-bolt-helper.py` 中的两处：`cache_release` 外层异常改为 `except Exception`；在 `original.strip()[5:-5]` 上方补充去掉 CMake Ninja `: && ` / ` && :`、与 replay_script 一致的注释。第三处为证据仓库新增的 IndexError 测试，不随 Source 发布。测试注入 replay_script 抛出 IndexError，确认 CLI 返回 0、打印 skipped、JSON status/reason 正确且缓存未删除。
+
+- [源码完整 diff](../../tools/bolt/results/cache-release-fix-20261023/source.diff)：只改上述函数，2 行新增、1 行删除。
+- [范围与身份核对](../../tools/bolt/results/cache-release-fix-20261023/verification.json)：spec 逐字节相同，其他 helper 顶层节点/函数 AST 相同；提交说明、父提交、Change-Id 不变。
+- 全部 **300 项 PASS**（原 299 + IndexError 1）；[stdout](../../tools/bolt/results/cache-release-fix-20261023/tests.stdout)、[stderr](../../tools/bolt/results/cache-release-fix-20261023/tests.stderr)，`Ran 300 tests in 3.957s` / `OK`。
+- 新提交 [GBS export](../../tools/bolt/results/cache-release-fix-20261023/export.json) 返回 0；[导出文件 SHA](../../tools/bolt/results/cache-release-fix-20261023/export-files.json)、[导出 spec](../../tools/bolt/results/cache-release-fix-20261023/exported-llvm.spec)。
+- Tizen `rpm/rpm-build 4.14.1.1-1.7`，在首轮根中新建专用解析目录，使用 `rpmbuild -bp --nodeps --nobuild` 和 `rpmspec -P`，未执行构建或历史树 cmake/ninja，无需重新挂载 proc。
+
+| 解析模式 | rpmbuild / rpmspec 退出码 | Patch0–6 | 结果 |
+|---|---|---|---|
+| x86_64 默认 BOLT 开 | 0 / 0 | 7 项 | PASS |
+| x86_64 --without clang_bolt | 0 / 0 | 7 项 | PASS |
+| x86_64 bcond 一行回退 | 0 / 0 | 7 项 | PASS |
+| armv7l | 0 / 0 | 7 项 | PASS |
+| aarch64 | 0 / 0 | 7 项 | PASS |
+
+完整 [五项命令与结果](../../tools/bolt/results/cache-release-fix-20261023/five-parse/matrix.json)，各次 stdout/stderr 在同目录。成功路径未改，按本轮授权不重跑完整构建；第13节双轮构建、candidate 与 RPM 比较结论继续有效，不冒充本提交重新构建。
+
+### 15.2 源码与推送
+
+- 新源提交：`3d3b4bf564fd8edec793e49e6de75b5fa7007d16`。
+- tree：`1143bd87650ddf8c8ed5ca40c0643c58c82db5ca`。
+- 父提交：`67619ec8bbbac7238a6cfc33a481ccfbcd12206f`。
+- 作者/提交者：Hao Lin <hao.lin@samsung.com>（单次 git -c，不改全局配置）。
+- Change-Id：`Ic98eab90cc017f127a66e1729b44fab8b8e8fb41`。
+- spec SHA256：`64bff4b4f6a9587a28ba2b2663ce05b61a4c391bb59d9120beb2845cce488f1f`。
+- helper SHA256：`fca5e528402bc45bc8c1f574f8087ee7d2165b162470259763afab3d1b8caa71`。
+
+推前远端为 `9e5675f57d122549997caffa39b655dfefc46fee`，使用精确租约：
+
+```sh
+git push --force-with-lease=refs/heads/sandbox/lhmax2025/bolt_pgo:9e5675f57d122549997caffa39b655dfefc46fee origin 3d3b4bf564fd8edec793e49e6de75b5fa7007d16:refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+返回 0，输出如下（stdout 为空；展示去掉行尾空格，字节原文见 sandbox-push.stderr）：
+
+```text
+remote:
+remote: Processing changes: refs: 1
+remote: Processing changes: refs: 1, done
+To ssh://review.tizen.org:29418/platform/upstream/llvm
+ + 9e5675f57d12...3d3b4bf564fd 3d3b4bf564fd8edec793e49e6de75b5fa7007d16 -> sandbox/lhmax2025/bolt_pgo (forced update)
+```
+
+[推送完整记录](../../tools/bolt/results/cache-release-fix-20261023/sandbox-push.json)、[推前](../../tools/bolt/results/cache-release-fix-20261023/remote-before.json)、[推后](../../tools/bolt/results/cache-release-fix-20261023/remote-after.json)。推后远端精确等于新源提交。没有创建分支，没有推 refs/for，没有操作 QB。QB 软件包：`platform/upstream/llvm@3d3b4bf564fd8edec793e49e6de75b5fa7007d16`，由用户启动。

@@ -44,6 +44,14 @@ class CacheReleaseTests(Base):
     def test_invalid_edge(self):
         (self.work/'link.original').write_text(self.edge.replace(' && :',' --thinlto-cache-dir=/elsewhere && :'))
         self.assertIn('skipped reason=',self.run_release());self.assertTrue(self.cache.exists())
+    def test_index_error_is_skipped_and_recorded(self):
+        with patch.object(h, 'replay_script', side_effect=IndexError('fixture empty paths')):
+            output = self.run_release()
+        self.assertIn('BOLT_CACHE_RELEASE skipped reason=fixture empty paths', output)
+        record = json.loads((self.work/'cache-release.json').read_text())
+        self.assertEqual(record['status'], 'skipped')
+        self.assertEqual(record['reason'], 'fixture empty paths')
+        self.assertTrue((self.cache/'data').exists())
     def test_missing_edge(self):
         (self.work/'link.original').unlink()
         self.assertIn('skipped reason=',self.run_release());self.assertTrue(self.cache.exists())

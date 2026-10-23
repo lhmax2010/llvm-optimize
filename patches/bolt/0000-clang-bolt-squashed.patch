@@ -1,6 +1,6 @@
-From d20e873b2c7dfac10fab9235e2b781dad08dc4c7 Mon Sep 17 00:00:00 2001
+From 3d3b4bf564fd8edec793e49e6de75b5fa7007d16 Mon Sep 17 00:00:00 2001
 From: Hao Lin <hao.lin@samsung.com>
-Date: Thu, 22 Oct 2026 20:52:59 +0800
+Date: Fri, 23 Oct 2026 19:56:18 +0800
 Subject: [PATCH] packaging: optimize x86_64 clang with BOLT
 
 Enable BOLT by default on x86_64: ordinary install, snapshot, append
@@ -77,19 +77,19 @@ memory. Maintenance notes: header of packaging/clang-bolt-helper.py
 Change-Id: Ic98eab90cc017f127a66e1729b44fab8b8e8fb41
 Signed-off-by: Hao Lin <hao.lin@samsung.com>
 ---
- packaging/clang-bolt-helper.py   | 1438 ++++++++++++++++++++++++++++++
+ packaging/clang-bolt-helper.py   | 1439 ++++++++++++++++++++++++++++++
  packaging/clang-bolt-v2.fdata.xz |  Bin 0 -> 9735212 bytes
  packaging/llvm.spec              |  120 +++
- 3 files changed, 1558 insertions(+)
+ 3 files changed, 1559 insertions(+)
  create mode 100644 packaging/clang-bolt-helper.py
  create mode 100644 packaging/clang-bolt-v2.fdata.xz
 
 diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
 new file mode 100644
-index 000000000000..d3e2217a1081
+index 000000000000..a2f81552ce3c
 --- /dev/null
 +++ b/packaging/clang-bolt-helper.py
-@@ -0,0 +1,1438 @@
+@@ -0,0 +1,1439 @@
 +#!/usr/bin/env python3
 +"""Tizen clang BOLT gates. Python >= 3.9; shell commands use POSIX sh.
 +
@@ -958,6 +958,7 @@ index 000000000000..d3e2217a1081
 +        original = (work/'link.original').read_text()
 +        # Validate the original edge with the exact replay syntax/cache rules.
 +        replay_script(original, work/'unused-output', work/'unused-dependency')
++        # Remove CMake Ninja ': && ' and ' && :' wrappers, as in replay_script.
 +        paths = re.findall(r'--thinlto-cache-dir=([^\s]+)', original.strip()[5:-5])
 +        path = Path(paths[0])
 +        result['path'] = str(path)
@@ -989,7 +990,7 @@ index 000000000000..d3e2217a1081
 +        if reason:
 +            result['reason'] = reason
 +            emit('skipped reason='+reason+' path='+str(path))
-+    except (OSError, ValueError, GateError, RuntimeError) as error:
++    except Exception as error:
 +        result['reason'] = str(error)
 +        emit('skipped reason='+str(error)+' path='+str(path))
 +    try:

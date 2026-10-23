@@ -389,3 +389,12 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 ## 2026-10-23 19:17：cache-release 异常处理修复任务停止于挂载检查
 
 首轮 baseline-root 的 proc 仍被 VS Code PID **202760** FD **48/49** 持有；lsof、fuser 均命中，/proc/fd 复核一致。按用户“仍然被占用就停下”要求，未尝试 umount、未结束占用进程、未删除根；后续修复、300 测试、导出、五项解析与 sandbox 推送均 NOT RUN。源提交仍为 d20e873b2c7dfac10fab9235e2b781dad08dc4c7，本轮仅追加停止证据。见 32 第14节和 tools/bolt/results/cache-release-exception-20261023/。等待用户释放占用。
+
+
+## 2026-10-23：cache-release 异常兜底修复已认证并推 sandbox
+
+按用户独立授权，首轮 baseline-root 的唯一 proc 挂载通过 chroot 内 `umount -l /proc` 成功脱离，findmnt 确认该根下无残留挂载；未终止进程、未删除根或修改 VS Code 配置。此前第14节停止条件现已按新授权处理。
+
+在 d20e873b 上 amend 为 **3d3b4bf564fd8edec793e49e6de75b5fa7007d16**，tree **1143bd87650ddf8c8ed5ca40c0643c58c82db5ca**，父67619ec8与Change-Id不变。仅 cache_release 外层 except Exception 和解析注释；另补 IndexError 测试。300/300测试、GBS export、Tizen RPM4.14.1.1-1.7五项解析全部PASS；spec逐字节未改，其他helper函数未改，不重跑完整构建，第13节双轮结论沿用。
+
+已用精确租约把 sandbox/lhmax2025/bolt_pgo 从9e5675f更新为新提交，推后ls-remote一致；没有推refs/for或操作QB。QB使用 `platform/upstream/llvm@3d3b4bf564fd8edec793e49e6de75b5fa7007d16`，由用户启动。详见[32第15节](32_cache_release.md#15-2026-10-23懒卸载cache-release-异常兜底修复与-sandbox-更新)和 tools/bolt/results/cache-release-fix-20261023/。
