@@ -11,11 +11,11 @@ for folder in folders:
 rows=[]
 for src in sorted(set(files)):
  rel=src.relative_to(D)
- if src.stat().st_size>100*1024**2:
+ if src.stat().st_size>100*1024**2 and src.suffix != '.json':
   rows.append({'source':str(src),'omitted':'over 100 MiB uncompressed'});continue
  out=E/rel
  out.parent.mkdir(parents=True,exist_ok=True)
- if src.suffix=='.log':
+ if src.suffix=='.log' or src.stat().st_size>100*1024**2:
   out=out.with_name(out.name+'.gz')
   with src.open('rb') as a,out.open('wb') as raw,gzip.GzipFile(filename='',mode='wb',fileobj=raw,mtime=0) as b:shutil.copyfileobj(a,b)
  else:shutil.copyfile(src,out)
