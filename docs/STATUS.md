@@ -857,3 +857,8 @@ Serialize.cpp可加载节内容差异按最终判据停止，需PM下一步安�
 收尾核查（续十二，2026-10-14T16:18:28.485266+08:00）：冻结输入与W/llvm状态一致，三scope及其采样器回收，本任务进程/挂载0，两项目锁释放；未进入已交接树，用户gbs配置改动保留。证据temp/archive-followup-review-20261014/final-audit.json。
 
 收尾核查（docs/51，2026-10-14T16:42:57+08）：四scope均inactive、采样器/日志线程回收，无临时挂载，两项目锁释放；两Source和用户gbs配置SHA未变。证据temp/gnu-strip-merged-check-20261014/final-audit.json。
+
+
+### 2026-10-23 hybrid 本地完整验证开始
+
+用户将内网验证改为本机：干净6e9d4f2，固定QB1202084配置/Base20261013.024319；build.conf/spec/8补丁身份核对PASS。新根temp/hybrid-local-20261023/gbs-root开始唯一一次完整构建。资源按本轮用户裁决：MemTotal-8GiB/swap0/nice10/IO2:7，无内存准入或分段冻结，仅/home<20GiB主动停止，OOM不重试。源码未改，BOLT/历史根只读，不推Gerrit/QB。结果待完成，见docs/53。
