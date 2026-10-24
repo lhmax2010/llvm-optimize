@@ -410,3 +410,12 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 按用户授权，用精确 `--force-with-lease` 将 `sandbox/lhmax2025/bolt_pgo` 从 `3d3b4bf564fd8edec793e49e6de75b5fa7007d16` 更新为 **`aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`**；推后 ls-remote 确认一致。tree 为 `1c52e7922a5ae112b96dc18c297ed2dff58aa218`；父 hybrid `6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2` 及其 Change-Id 保持原样，再上一层为 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`。署名、BOLT Change-Id 与干净工作区检查全部 PASS；33号报告的导出、五项解析及本地构建认证针对同一提交，直接沿用。
 
 推送退出 0，无警告；未修改源码、重做构建、创建分支、推 refs/for 或操作 QB。命令、原样输出与前后远端记录见 [33 第10节](33_bolt_on_hybrid.md#10-2026-10-24授权更新统一-sandbox-分支)。QB 软件包：`platform/upstream/llvm@aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`。已完成授权推送并停止，由用户启动 QB。
+
+## 2026-10-25：C / C++、-O2 / -Os 性能补测完成
+
+- 报告：[34_perf_c_o2_os.md](34_perf_c_o2_os.md)；原始证据：`tools/bolt/results/perf-c-o2-os-20261025/`。
+- 静态组 `06c94072…` / `4ec07159…` 与 hybrid 组 `d5090159…` / `8b799f18…` 均完成；保全原件 SHA 不变。20 个本机 zlib/minizip C 文件、20 个独立 LLVM C++ 文件，三个历史 Tizen 目标；固定 CPU 2、单编译、关闭 ASLR、每侧五次，角色按轮交替。
+- HQ 表：C -O2 节省 12.06%–13.91%，C -Os 12.67%–14.45%；C++ -O2 14.91%–15.44%，C++ -Os 15.52%–16.35%。hybrid 和静态组收益接近。静态 x86 C++ -O3 比值 0.851867（节省 14.81%），与历史约14%–15%相符；历史30条目与本轮20独立源权重差异已另列。
+- 主矩阵6000次，加独立去无效 -I 的C补测2400次，共8400次全部退出0；7560份非参考输出做完整字节比对全部相同，保留 .GCC.command.line。所有原始样本保留，HQ采用主矩阵C++与无警告C补测。单侧计时试运行149条另存，不混入配对结果。
+- 限制与处理：C仅覆盖zlib/minizip；预处理在宿主通过Tizen loader及只读sysroot执行，未进入chroot；C++沿用已有-O3预处理输入。原C命令的无效-I警告、计时器准备修正、补测计时外fsync及历史ASLR差异均披露。各次负载与频率原始值完整保留，无异常样本剔除。
+- 本轮只测量并更新证据，没有修改生产源码/spec/helper、构建软件包、推送Gerrit或操作QB；生产工作树仍为干净的 `aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`。结果提交仅推GitHub bolt-v4，完成后停止。
