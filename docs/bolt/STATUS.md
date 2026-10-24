@@ -403,3 +403,10 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 ## 2026-10-24：BOLT on hybrid 本地完整构建与验证 PASS
 
 本地 detached 提交 `aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`（父6e9d4f2，cherry-pick3d3b4bf），无冲突、无源码额外修改，未推Gerrit。五项Tizen解析PASS；llvm-bolt仍静态链接LLVM，原111+2白名单实际planned/executed=113，无需改白名单。profile N23592/M144032/S0/U1/Q383，R0.004238545%，与静态参考相同；pipeline、安全属性、tiny、compare-root、post全部PASS；cache-release释放20.138GiB。22二进制RPM+1源码RPM，30TU×3目标完整.o 90/90相同。完整根已观测峰值64.055GiB（hybrid66.696、全静态+BOLT224.718；采样缺失与历史差异详见33）。本次根与products保留供性能测量；candidate SHA `8b799f18e2bc37269385db125c881609e8457de1dd179f5d9d0ff9f557b58d16`。资源按本次用户放宽规则，无OOM/冻结/重试；完成后停止。见[33号报告](33_bolt_on_hybrid.md)。
+
+
+## 2026-10-24：hybrid+BOLT 已推统一 sandbox，等待用户启动 QB
+
+按用户授权，用精确 `--force-with-lease` 将 `sandbox/lhmax2025/bolt_pgo` 从 `3d3b4bf564fd8edec793e49e6de75b5fa7007d16` 更新为 **`aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`**；推后 ls-remote 确认一致。tree 为 `1c52e7922a5ae112b96dc18c297ed2dff58aa218`；父 hybrid `6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2` 及其 Change-Id 保持原样，再上一层为 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`。署名、BOLT Change-Id 与干净工作区检查全部 PASS；33号报告的导出、五项解析及本地构建认证针对同一提交，直接沿用。
+
+推送退出 0，无警告；未修改源码、重做构建、创建分支、推 refs/for 或操作 QB。命令、原样输出与前后远端记录见 [33 第10节](33_bolt_on_hybrid.md#10-2026-10-24授权更新统一-sandbox-分支)。QB 软件包：`platform/upstream/llvm@aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`。已完成授权推送并停止，由用户启动 QB。

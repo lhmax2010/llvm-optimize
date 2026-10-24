@@ -1,0 +1,30 @@
+tree 80a6fd231c4564a3b762f4ec288cf2c41f9d2e20
+parent 67619ec8bbbac7238a6cfc33a481ccfbcd12206f
+author Hao Lin <hao.lin@samsung.com> 1792065558 +0800
+committer Hao Lin <hao.lin@samsung.com> 1792389086 +0800
+
+cmake: use hybrid LLVM linkage on x86_64
+
+Enable shared LLVM and Clang linkage in the x86_64 recipe while keeping
+clang, lld and llvm-ar statically linked to LLVM components. Their
+driver aliases continue to share the same executable. Other tools use
+libLLVM and, where applicable, libclang-cpp through the normal upstream
+interfaces.
+
+Use TIZEN_HYBRID_LINK and a per-consumer TIZEN_STATIC_LLVM property to
+select component dependencies only for the three opted-in drivers. When
+disabled, the shared-link interfaces retain upstream behavior. Keep
+BUILD_SHARED_LIBS and the unified LLVM driver disabled on x86_64.
+
+Preserve upstream forced-static llvm-tblgen, clang-tblgen, lldb-tblgen,
+llvm-config and llvm-exegesis. Tool-private archives and build utilities
+retain upstream behavior. Do not change armv7l or aarch64 recipes,
+optimization flags, static-devel packaging or native archive conversion.
+
+Validation: CMake generation with the complete x86_64 recipe parameters;
+all-static, hybrid and shared controls; unchanged ARM build/install
+macro expansions; clean patch application. Full build and RPM/runtime
+validation are left to the receiving team.
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+Change-Id: I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06

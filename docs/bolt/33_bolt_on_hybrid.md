@@ -156,3 +156,65 @@ post自有占用降低包含缓存正增量在删除后归零，不能说工具�
 - GBS默认 `%clean` 清理了本轮BUILDROOT；保留了整个新chroot、BUILD、RPM及products。没有手动删除任何历史根、目录或保全资产。构建结束时本根无残余挂载。磁盘构建采样结束后才复制products、执行对象验证，这些后续写入不计入整轮构建峰值。
 - 最终RPM的 `/usr/bin/clang-22` 文件摘要与candidate SHA相同，见 [packaged-clang-identity.json](../../tools/bolt/results/bolt-on-hybrid-20261024/packaged-clang-identity.json)。post原始JSON见 [post-result.json](../../tools/bolt/results/bolt-on-hybrid-20261024/post-result.json)。
 - 本轮不做性能测量；candidate与本次ordinary已保全，后续由用户安排。验证使用本树ordinary副本，不把它与docs/53的另一轮普通clang做跨构建SHA相等要求。
+
+
+## 10. 2026-10-24：授权更新统一 sandbox 分支
+
+用户明确授权将已验证的 hybrid+BOLT 合并提交推到唯一的 BOLT sandbox 分支。本节更新此前“未推 Gerrit”的历史状态；不修改源码、不重做构建或解析、不操作 QB。
+
+### 10.1 推送前核对
+
+| 核对项 | 实际值 / 结果 |
+|---|---|
+| 源工作区 HEAD | `aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`，tracked/untracked 均干净 |
+| tree | `1c52e7922a5ae112b96dc18c297ed2dff58aa218` |
+| 父提交 hybrid | `6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2` |
+| 再上一层 | `67619ec8bbbac7238a6cfc33a481ccfbcd12206f` |
+| BOLT 作者和提交者 | 均为 `Hao Lin <hao.lin@samsung.com>` |
+| BOLT Change-Id | `Ic98eab90cc017f127a66e1729b44fab8b8e8fb41` |
+| hybrid Change-Id | `I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06`，原提交对象保持不变 |
+| 推送前远端 | `3d3b4bf564fd8edec793e49e6de75b5fa7007d16`，符合精确租约 |
+| 既有认证 | export-result.json 的 --commit 为 aa637c1，退出 0；five-parse/matrix.json 五项均 PASS，rpmbuild/rpmspec 均退出 0 |
+
+上述认证沿用本报告第 1–9 节的同一提交结果，没有重新运行。原始核对与提交对象见 [precheck.json](../../tools/bolt/results/bolt-on-hybrid-20261024/sandbox-push-20261024/precheck.json)、[BOLT commit](../../tools/bolt/results/bolt-on-hybrid-20261024/sandbox-push-20261024/aa637c1b.commit.txt)、[hybrid commit](../../tools/bolt/results/bolt-on-hybrid-20261024/sandbox-push-20261024/6e9d4f2b.commit.txt)。
+
+### 10.2 推送与远端复核
+
+源工作区 origin 为 `ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm`。执行命令：
+
+```sh
+git push --force-with-lease=refs/heads/sandbox/lhmax2025/bolt_pgo:3d3b4bf564fd8edec793e49e6de75b5fa7007d16 origin aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7:refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+退出码 0，合并 stdout/stderr 原文如下（进度回车在 Markdown 中显示为换行；原始字节保存在链接文件）：
+
+```text
+remote: 
+remote: Processing changes: refs: 1        
+remote: Processing changes: refs: 1, done            
+To ssh://review.tizen.org:29418/platform/upstream/llvm
+ + 3d3b4bf564fd...aa637c1b4a0f aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7 -> sandbox/lhmax2025/bolt_pgo (forced update)
+```
+
+推送前 `git ls-remote origin refs/heads/sandbox/lhmax2025/bolt_pgo`：
+
+```text
+3d3b4bf564fd8edec793e49e6de75b5fa7007d16	refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+推送后同一查询：
+
+```text
+aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7	refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+`git log --reverse --format='%H %s' 67619ec8bbbac7238a6cfc33a481ccfbcd12206f..aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7` 列出恰好两个提交：
+
+```text
+6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2 cmake: use hybrid LLVM linkage on x86_64
+aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7 packaging: optimize x86_64 clang with BOLT
+```
+
+推送无警告、无拒绝；没有推 refs/for、创建分支或删除构建根。原始 [命令](../../tools/bolt/results/bolt-on-hybrid-20261024/sandbox-push-20261024/command.txt)、[输出](../../tools/bolt/results/bolt-on-hybrid-20261024/sandbox-push-20261024/push-output.txt)、[退出码](../../tools/bolt/results/bolt-on-hybrid-20261024/sandbox-push-20261024/push-result.json)、[远端结果](../../tools/bolt/results/bolt-on-hybrid-20261024/sandbox-push-20261024/remote-after.txt)已保全。
+
+供用户启动 QB 的软件包写法：`platform/upstream/llvm@aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`。本轮到此停止，QB 由用户启动。
