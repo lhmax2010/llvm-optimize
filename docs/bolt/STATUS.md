@@ -419,3 +419,19 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 - 主矩阵6000次，加独立去无效 -I 的C补测2400次，共8400次全部退出0；7560份非参考输出做完整字节比对全部相同，保留 .GCC.command.line。所有原始样本保留，HQ采用主矩阵C++与无警告C补测。单侧计时试运行149条另存，不混入配对结果。
 - 限制与处理：C仅覆盖zlib/minizip；预处理在宿主通过Tizen loader及只读sysroot执行，未进入chroot；C++沿用已有-O3预处理输入。原C命令的无效-I警告、计时器准备修正、补测计时外fsync及历史ASLR差异均披露。各次负载与频率原始值完整保留，无异常样本剔除。
 - 本轮只测量并更新证据，没有修改生产源码/spec/helper、构建软件包、推送Gerrit或操作QB；生产工作树仍为干净的 `aa637c1b4a0f9ea9f6f0317cf035126eba85aeb7`。结果提交仅推GitHub bolt-v4，完成后停止。
+
+
+## 2026-10-26：W/temp 只读清理盘点（38）
+
+完成 [38_temp_cleanup_inventory.md](38_temp_cleanup_inventory.md)，原始材料在
+`tools/bolt/results/temp-cleanup-20261026/`。本轮没有删除、移动、改权限、提权、挂载、构建或推送 Gerrit；仅提交 GitHub bolt-v4 的文档与证据。
+
+- W 可见实占 1011.690 GiB，其中 temp 1004.114 GiB；覆盖 140 个一级目录、481 个细分范围，逐项分析 42 个大于 5 GiB 的 temp/var-tmp 目录。65 条遍历权限错误保留原文，大小可能是下界。
+- /home 当前可用 149.060 GiB；稳妥方案预计净释放 256.833 GiB、执行后约 405.893 GiB；激进方案预计净释放 398.888 GiB、执行后约 547.948 GiB。均已扣除 5.517 GiB 保全预算。只有38号第3节的精确子范围属于建议，不整删任何混合父目录。
+- /var/tmp 位于另一块盘：可用 46.446 GiB；两方案分别净释放 90.322 / 136.621 GiB，执行后约 136.768 / 183.067 GiB。不得与 /home 相加。
+- products、90份TU、34号C/C++输入、profile、QB配置、源码/工作树/工具/已提交证据全部保留。hybrid+BOLT根若将来获准删除，须先保全测量用Tizen运行库和resource-dir；旧脚本未来重跑要改指保全路径。
+- docs35、docs38、docs49各22个原始二进制RPM均仍在，66/66 SHA与原报告一致。可恢复载荷仅列入激进建议；未重新解包验证。
+- 当前可读lsof/fuser与mountinfo未见建议范围被使用；有权限可见性盲区，删除前须再核查。root属主/不可写目录已单列，本轮不提权。
+- P1–P3已不存在；P4旧upper也不存在，旁有preserved-from-upper。本轮未找到解释P4后续处置的记录，不推测操作者、不把旧60.530 GiB再计入收益。runpath-fix-20261026当前不存在；以后创建时整目录保留。
+
+**所有建议等待用户逐项批准，当前没有删除授权的自动延伸。**
