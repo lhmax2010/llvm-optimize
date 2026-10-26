@@ -1,0 +1,14 @@
+REVISED-ROOT FOLLOWUP START only this one path is authorized
+COMMAND df -B1 /home
+COMMAND END df-initial rc=0 seconds=0.006
+COMMAND sha256sum --check --strict SHA256SUMS
+COMMAND END sha256sums-check rc=0 seconds=9.491
+PRESERVATION VERIFIED; no copies made
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+COMMAND END before-lsof rc=1 seconds=2.773
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+COMMAND END before-fuser rc=1 seconds=0.067
+STOP AssertionError('process occupied or process check failed; stop without removal')
+COMMAND df -B1 /home
+COMMAND END df-after rc=0 seconds=0.005
+CLEANUP FINISHED 2026-10-26T21:46:23+08:00 status=skipped path=revised-root

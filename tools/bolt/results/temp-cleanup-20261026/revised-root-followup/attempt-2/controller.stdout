@@ -1,0 +1,32 @@
+REVISED-ROOT FOLLOWUP START only this one path is authorized
+COMMAND df -B1 /home
+COMMAND END df-initial rc=0 seconds=0.002
+COMMAND sha256sum --check --strict SHA256SUMS
+COMMAND END sha256sums-check rc=0 seconds=9.339
+PRESERVATION VERIFIED; no copies made
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+COMMAND END before-lsof rc=1 seconds=2.975
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+COMMAND END before-fuser rc=1 seconds=0.066
+COMMAND df -B1 /home
+COMMAND END df-before-delete rc=0 seconds=0.004
+COMMAND du -sx -B1 /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+COMMAND END du-before rc=1 seconds=0.317
+COMMAND rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+RUNNING phase=ordinary rm
+COMMAND END rm rc=1 seconds=11.096
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+COMMAND END sudo-before-lsof rc=1 seconds=0.767
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+COMMAND END sudo-before-fuser rc=1 seconds=0.065
+GRAPHICAL AUTH only revised-root; cancel/failure will stop
+COMMAND sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+RUNNING phase=graphical sudo rm
+RUNNING phase=graphical sudo rm
+RUNNING phase=graphical sudo rm
+RUNNING phase=graphical sudo rm
+COMMAND END sudo-rm rc=0 seconds=131.147
+REMOVED revised-root; no sibling or parent deletion command executed
+COMMAND df -B1 /home
+COMMAND END df-after rc=0 seconds=0.004
+CLEANUP FINISHED 2026-10-26T21:51:27+08:00 status=ok path=revised-root

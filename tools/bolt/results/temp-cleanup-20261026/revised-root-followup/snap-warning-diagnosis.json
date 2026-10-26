@@ -1,0 +1,36 @@
+{
+  "target_device": "8:1",
+  "mounts": [
+    {
+      "device": "0:27",
+      "target": "/run/snapd/ns",
+      "fstype": "tmpfs",
+      "raw": "153 31 0:27 /snapd/ns /run/snapd/ns rw,nosuid,nodev,noexec,relatime - tmpfs tmpfs rw,size=3229776k,mode=755,inode64"
+    },
+    {
+      "device": "0:4",
+      "target": "/run/snapd/ns/cups.mnt",
+      "fstype": "nsfs",
+      "raw": "181 153 0:4 mnt:[4026532797] /run/snapd/ns/cups.mnt rw - nsfs nsfs rw"
+    },
+    {
+      "device": "0:4",
+      "target": "/run/snapd/ns/snapd-desktop-integration.mnt",
+      "fstype": "nsfs",
+      "raw": "2780 153 0:4 mnt:[4026532854] /run/snapd/ns/snapd-desktop-integration.mnt rw - nsfs nsfs rw"
+    },
+    {
+      "device": "0:4",
+      "target": "/run/snapd/ns/snap-store.mnt",
+      "fstype": "nsfs",
+      "raw": "5505 153 0:4 mnt:[4026532550] /run/snapd/ns/snap-store.mnt rw - nsfs nsfs rw"
+    },
+    {
+      "device": "0:4",
+      "target": "/run/snapd/ns/firefox.mnt",
+      "fstype": "nsfs",
+      "raw": "8332 153 0:4 mnt:[4026532554] /run/snapd/ns/firefox.mnt rw - nsfs nsfs rw"
+    }
+  ],
+  "conclusion": "Warnings concern namespace handles on tmpfs/nsfs, not the /dev/sda1 target subtree. No lsof or fuser process hits."
+}

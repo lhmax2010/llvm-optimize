@@ -354,3 +354,46 @@ DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-i
 结束核对：9个已删除路径均不存在；2号仍存在；1,072个保全条目的目标文件、394个runtime文件、全部66个原始RPM仍在。未删除范围的父目录直属条目元数据/小文件SHA比对没有发现非预期变化，见final-verification.json（此项不是对全部后代再次全量SHA扫描）。
 
 本轮材料：[execution](../../tools/bolt/results/temp-cleanup-20261026/execution/)。完成后停下，不执行其它清理。
+
+### 9.5 第2项 revised-root 单路径复核与删除（2026-10-26）
+
+用户再次明确批准仅删除 `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root`。本次没有重新复制保全数据；没有重做或扩大上一轮其余9项清理。
+
+保全复核：先确认保全目录SHA256SUMS文件自身SHA与上一轮记录一致，再在该目录执行 `sha256sum --check --strict SHA256SUMS`，**124/124 PASS**（123个复制文件及manifest）。上一轮176个保全条目的目标文件仍存在且大小相符；其中53个既有外部副本本轮只检查存在性/大小，不冒称重新做了内容SHA。
+
+准备性检查修正一次：首轮lsof与fuser均无进程命中，但检查程序把 `/run/snapd/ns` 的额外访问警告判为失败，未执行删除。只读核对mountinfo后确认这些警告来自设备0:27的tmpfs与0:4的nsfs，不是目标所在的8:1（/dev/sda1）。修正警告分类后重新执行完整检查；lsof命令未增加过滤参数，也未豁免任何进程命中。首轮与复核原文均保留。
+
+| 检查 | 结果 |
+|---|---|
+| realpath | 与批准的完整路径相同 |
+| 自身及父目录 | 均非软链接 |
+| 文件系统 | /dev/sda1，/home |
+| lsof +D / fuser | 均退出1、无命中；补充全局可见lsof也无目标路径命中 |
+| 权限可见性 | root、ldconfig、upgrade目录的Permission denied警告原文保留，与上一轮同样存在；未提权扫描 |
+| /proc/*/mountinfo | 所有可读条目未发现目标挂载点或overlay引用；未执行任何卸载 |
+| 普通用户删除 | rm退出1，留下权限残留；再次检查无进程及挂载引用 |
+| root残留 | 记录到20921个root属主残留条目，使用sudo -A图形密码框；退出0 |
+| 删除后 | 目标路径不存在，父目录、products及保全目录仍在；未结束任何进程 |
+
+实际命令（仅这一条路径）：
+
+```sh
+rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+```
+
+普通rm耗时 11.096 秒；sudo命令墙钟 131.147 秒（包含图形认证等待）。密码没有写入日志或仓库。
+
+| /home可用空间 | 字节 | GiB |
+|---|---:|---:|
+| 删除前 | 490050117632 | 456.395 |
+| 删除后 | 579190685696 | 539.413 |
+| df净增加 | 89140568064 | 83.019 |
+
+实际df变化包含同期文件系统写入，不与其它盘相加。日志最后一行：
+
+```text
+CLEANUP FINISHED 2026-10-26T21:51:27+08:00 status=ok path=revised-root
+```
+
+证据：[revised-root-followup](../../tools/bolt/results/temp-cleanup-20261026/revised-root-followup/)，含两次校验/检查原文、命令、df、错误诊断、最终验证与日志副本。此前第9.2节“第2项跳过”为当时事实，本节记录其后续完成。

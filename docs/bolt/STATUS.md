@@ -447,3 +447,12 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 - 保全清单及SHA256SUMS已生成；products、TU/C/C++输入、profile、QB配置、源码与不确定范围保持。未运行构建、未推送Gerrit。
 - 已据用户说明与原日志补记10-22晚间旧R1/旧archivefix缓存及P4 upper清理，日志340→500 GiB；14个保全产物及SHA256SUMS仍在。
 - 本次授权仅这10项，不延伸到其它目录。完成后停止。
+
+
+## 2026-10-26：revised-root 单路径清理完成
+
+- 用户再次批准38号第2项；保全SHA256SUMS 124/124通过，没有重新复制。
+- 修正一次对无关snap命名空间警告的分类，重新检查无进程/挂载引用；先普通rm，再通过图形sudo清理root权限残留。没有删除任何其它路径。
+- /home删除前可用456.395 GiB，删除后539.413 GiB，df净增83.019 GiB。父目录、products及保全目录仍在。
+- CLEANUP FINISHED 2026-10-26T21:51:27+08:00 status=ok path=revised-root
+- 详情见[38号第9.5节](38_temp_cleanup_inventory.md)，原文在 `tools/bolt/results/temp-cleanup-20261026/revised-root-followup/`。本轮完成后停止。
