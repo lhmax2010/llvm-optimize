@@ -1,0 +1,240 @@
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=df-before-deletion rc=0 seconds=0.005
+item=1 precheck START /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+RUNNING phase=item=1 precheck
+COMMAND END label=item-1-before-lsof rc=1 seconds=50.521
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+COMMAND END label=item-1-before-fuser rc=1 seconds=0.067
+RUNNING phase=item=1 precheck
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-1-df-before rc=0 seconds=0.002
+COMMAND du -sx -B1 /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+COMMAND END label=item-1-du-before rc=1 seconds=0.566
+COMMAND rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+RUNNING phase=item=1 ordinary rm
+COMMAND END label=item-1-rm rc=1 seconds=30.153
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+COMMAND END label=item-1-sudo-before-lsof rc=1 seconds=0.767
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+COMMAND END label=item-1-sudo-before-fuser rc=1 seconds=0.065
+GRAPHICAL PASSWORD may appear; only authorized exact path /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+COMMAND sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+RUNNING phase=item=1 graphical sudo rm
+COMMAND END label=item-1-sudo-rm rc=0 seconds=1077.797
+item=1 DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-1-df-after rc=0 seconds=0.004
+item=2 precheck START /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+RUNNING phase=item=2 precheck
+RUNNING phase=item=2 precheck
+RUNNING phase=item=2 precheck
+RUNNING phase=item=2 precheck
+RUNNING phase=item=2 precheck
+RUNNING phase=item=2 precheck
+RUNNING phase=item=2 precheck
+COMMAND END label=item-2-before-lsof rc=1 seconds=213.963
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root
+COMMAND END label=item-2-before-fuser rc=0 seconds=0.065
+item=2 SKIPPED AssertionError('process use/error; see lsof/fuser')
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-2-df-after rc=0 seconds=0.004
+item=3 precheck START /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+RUNNING phase=item=3 precheck
+RUNNING phase=item=3 precheck
+RUNNING phase=item=3 precheck
+RUNNING phase=item=3 precheck
+RUNNING phase=item=3 precheck
+RUNNING phase=item=3 precheck
+RUNNING phase=item=3 precheck
+COMMAND END label=item-3-before-lsof rc=1 seconds=200.233
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+COMMAND END label=item-3-before-fuser rc=1 seconds=0.065
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-3-df-before rc=0 seconds=0.005
+COMMAND du -sx -B1 /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+RUNNING phase=item=3 precheck
+COMMAND END label=item-3-du-before rc=1 seconds=0.565
+COMMAND rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+RUNNING phase=item=3 ordinary rm
+COMMAND END label=item-3-rm rc=1 seconds=31.128
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+COMMAND END label=item-3-sudo-before-lsof rc=1 seconds=0.967
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+COMMAND END label=item-3-sudo-before-fuser rc=1 seconds=0.065
+GRAPHICAL PASSWORD may appear; only authorized exact path /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+COMMAND sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+COMMAND END label=item-3-sudo-rm rc=0 seconds=5.430
+item=3 DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-3-df-after rc=0 seconds=0.004
+item=4 precheck START /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+RUNNING phase=item=4 precheck
+RUNNING phase=item=4 precheck
+COMMAND END label=item-4-before-lsof rc=1 seconds=41.935
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+COMMAND END label=item-4-before-fuser rc=1 seconds=0.065
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-4-df-before rc=0 seconds=0.004
+COMMAND du -sx -B1 /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+COMMAND END label=item-4-du-before rc=1 seconds=0.566
+COMMAND rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+RUNNING phase=item=4 ordinary rm
+COMMAND END label=item-4-rm rc=1 seconds=24.488
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+COMMAND END label=item-4-sudo-before-lsof rc=1 seconds=0.867
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+COMMAND END label=item-4-sudo-before-fuser rc=1 seconds=0.065
+GRAPHICAL PASSWORD may appear; only authorized exact path /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+COMMAND sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+COMMAND END label=item-4-sudo-rm rc=0 seconds=2.472
+item=4 DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-4-df-after rc=0 seconds=0.004
+item=5 precheck START /var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache
+COMMAND lsof -nP +D /var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache
+COMMAND END label=item-5-before-lsof rc=1 seconds=1.269
+COMMAND fuser -v /var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache
+COMMAND END label=item-5-before-fuser rc=1 seconds=0.115
+RUNNING phase=item=5 precheck
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-5-df-before rc=0 seconds=0.004
+COMMAND du -sx -B1 /var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache
+COMMAND END label=item-5-du-before rc=0 seconds=0.115
+COMMAND rm -rf --one-file-system -- /var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache
+COMMAND END label=item-5-rm rc=0 seconds=0.616
+item=5 DELETED /var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-5-df-after rc=0 seconds=0.002
+item=6 precheck START /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+COMMAND END label=item-6-before-lsof rc=1 seconds=16.166
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+COMMAND END label=item-6-before-fuser rc=1 seconds=0.114
+RUNNING phase=item=6 precheck
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-6-df-before rc=0 seconds=0.004
+COMMAND du -sx -B1 /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+COMMAND END label=item-6-du-before rc=0 seconds=0.415
+COMMAND rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+COMMAND END label=item-6-rm rc=1 seconds=4.776
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+COMMAND END label=item-6-sudo-before-lsof rc=1 seconds=0.666
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+COMMAND END label=item-6-sudo-before-fuser rc=1 seconds=0.115
+GRAPHICAL PASSWORD may appear; only authorized exact path /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+COMMAND sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+COMMAND END label=item-6-sudo-rm rc=0 seconds=0.033
+item=6 DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-6-df-after rc=0 seconds=0.004
+item=7 precheck START /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-archivefix-v2-final
+RUNNING phase=item=7 precheck
+RUNNING phase=item=7 precheck
+RUNNING phase=item=7 precheck
+RUNNING phase=item=7 precheck
+RUNNING phase=item=7 precheck
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-archivefix-v2-final
+RUNNING phase=item=7 precheck
+COMMAND END label=item-7-before-lsof rc=1 seconds=23.086
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-archivefix-v2-final
+COMMAND END label=item-7-before-fuser rc=1 seconds=0.065
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-7-df-before rc=0 seconds=0.004
+COMMAND du -sx -B1 /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-archivefix-v2-final
+COMMAND END label=item-7-du-before rc=0 seconds=0.114
+COMMAND rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-archivefix-v2-final
+RUNNING phase=item=7 ordinary rm
+COMMAND END label=item-7-rm rc=0 seconds=20.726
+item=7 DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-archivefix-v2-final
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-7-df-after rc=0 seconds=0.005
+item=8 precheck START /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-llvm-strip
+RUNNING phase=item=8 precheck
+RUNNING phase=item=8 precheck
+RUNNING phase=item=8 precheck
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-llvm-strip
+COMMAND END label=item-8-before-lsof rc=1 seconds=4.180
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-llvm-strip
+COMMAND END label=item-8-before-fuser rc=1 seconds=0.065
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-8-df-before rc=0 seconds=0.004
+COMMAND du -sx -B1 /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-llvm-strip
+COMMAND END label=item-8-du-before rc=0 seconds=0.115
+COMMAND rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-llvm-strip
+COMMAND END label=item-8-rm rc=0 seconds=7.988
+item=8 DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-llvm-strip
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-8-df-after rc=0 seconds=0.005
+item=9 precheck START /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-release-x86-20261013
+COMMAND lsof -nP +D /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-release-x86-20261013
+RUNNING phase=item=9 precheck
+COMMAND END label=item-9-before-lsof rc=1 seconds=1.970
+COMMAND fuser -v /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-release-x86-20261013
+COMMAND END label=item-9-before-fuser rc=1 seconds=0.065
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-9-df-before rc=0 seconds=0.004
+COMMAND du -sx -B1 /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-release-x86-20261013
+COMMAND END label=item-9-du-before rc=0 seconds=0.064
+COMMAND rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-release-x86-20261013
+COMMAND END label=item-9-rm rc=0 seconds=6.334
+item=9 DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-release-x86-20261013
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-9-df-after rc=0 seconds=0.005
+item=10 precheck START /var/tmp/llvm-optimize-archivefix-v2-final-20261009/independent-install
+COMMAND lsof -nP +D /var/tmp/llvm-optimize-archivefix-v2-final-20261009/independent-install
+COMMAND END label=item-10-before-lsof rc=1 seconds=0.966
+COMMAND fuser -v /var/tmp/llvm-optimize-archivefix-v2-final-20261009/independent-install
+COMMAND END label=item-10-before-fuser rc=1 seconds=0.065
+RUNNING phase=item=10 precheck
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-10-df-before rc=0 seconds=0.005
+COMMAND du -sx -B1 /var/tmp/llvm-optimize-archivefix-v2-final-20261009/independent-install
+COMMAND END label=item-10-du-before rc=0 seconds=0.065
+COMMAND rm -rf --one-file-system -- /var/tmp/llvm-optimize-archivefix-v2-final-20261009/independent-install
+COMMAND END label=item-10-rm rc=0 seconds=0.216
+item=10 DELETED /var/tmp/llvm-optimize-archivefix-v2-final-20261009/independent-install
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=item-10-df-after rc=0 seconds=0.005
+COMMAND df -B1 /home /var/tmp
+COMMAND END label=df-after-cleanup rc=0 seconds=0.004
+DELETION LOOP COMPLETE
+CLEANUP FINISHED 2026-10-26T18:56:21+08:00 status=partial deleted=9 skipped=1

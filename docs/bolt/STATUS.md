@@ -435,3 +435,15 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 - P1–P3已不存在；P4旧upper也不存在，旁有preserved-from-upper。本轮未找到解释P4后续处置的记录，不推测操作者、不把旧60.530 GiB再计入收益。runpath-fix-20261026当前不存在；以后创建时整目录保留。
 
 **所有建议等待用户逐项批准，当前没有删除授权的自动延伸。**
+
+
+## 2026-10-26：38号批准范围清理执行
+
+用户明确批准10个精确范围；先保全，再逐项核对并删除。结果见[38号第9节](38_temp_cleanup_inventory.md#9-执行记录用户批准的10个精确范围2026-10-26)及 `tools/bolt/results/temp-cleanup-20261026/execution/`。
+
+- CLEANUP FINISHED 2026-10-26T18:59:43+08:00 status=partial deleted=9 skipped=1
+- /dev/sda1 /home：保全前可用145.197 GiB，结束456.414 GiB，净增311.217 GiB。
+- /dev/nvme0n1p1 /：保全前可用46.436 GiB，结束181.637 GiB，净增135.201 GiB。
+- 保全清单及SHA256SUMS已生成；products、TU/C/C++输入、profile、QB配置、源码与不确定范围保持。未运行构建、未推送Gerrit。
+- 已据用户说明与原日志补记10-22晚间旧R1/旧archivefix缓存及P4 upper清理，日志340→500 GiB；14个保全产物及SHA256SUMS仍在。
+- 本次授权仅这10项，不延伸到其它目录。完成后停止。

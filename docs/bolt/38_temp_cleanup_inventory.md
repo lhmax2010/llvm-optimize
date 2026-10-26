@@ -231,3 +231,126 @@ W/temp内未识别出应归为M1的>5GiB独立目录；旧41号文档的M1工作
 证据目录：`tools/bolt/results/temp-cleanup-20261026/`。包括du逐项stdout/stderr、完整下钻JSON、df、findmnt、lsof项目原文、fuser原文、所有命中行的rg输出、/proc挂载检查、元数据/权限、硬链接、资产SHA、重复副本和方案计算程序。lsof全主机原始输出与ps全命令行只留在本机同目录，不提交无关个人进程/文件列表；发布的lsof-project和lsof-final-project保留项目命中原文，NOFD可见性另列。
 
 未删除任何文件（包括看起来可重建的目录），未移动任何文件，未复制待保全产物，未改权限或全局Git配置，未提权、挂载/卸载、运行cmake/ninja或构建，未新建分支、未推Gerrit。仅更新bolt-v4盘点文档和证据。完成后等待用户逐项批准。
+
+## 9. 执行记录：用户批准的10个精确范围（2026-10-26）
+
+批准人：用户在本会话明确批准38号稳妥及激进方案的10个精确路径，授权先普通用户rm，root权限残留才通过图形密码框sudo -A清理同一路径。未授权扩大到父目录、同级目录或“不确定”组。本节是实际执行；前8节保持盘点快照，不回写历史空间数字。
+
+### 9.1 保全与检查
+
+逐个读取 `preserve-before-delete.json`：有同SHA的外部副本重新核对源及副本；其余复制到各父目录 `preserved-before-delete/<构建根名>/`，保留源相对路径。未有历史SHA的依赖RPM本次计算源SHA再与副本比较。每个保全目录生成manifest与SHA256SUMS。复制仅写新目录，不移动原文件，也不修改原products/脚本。
+
+| 项 | 保全清单条目 | 本次复制 | 既有同SHA副本 | 结果 |
+|---|---:|---:|---:|---|
+| 1 | 154 | 123 | 31 | PASS |
+| 2 | 176 | 123 | 53 | PASS |
+| 3 | 171 | 170 | 1 | PASS |
+| 4 | 571 | 517 | 54 | PASS |
+
+hybrid+BOLT的8个运行库及整个resource-dir：**PASS**，保全到 `T/bolt-on-hybrid-20261024/perf-runtime/`；原相对符号链接布局保留，README说明以后重跑34号时重定向loader、运行库和resource-dir。
+
+删除载荷前复核三组原包：docs35: PASS 22/22；docs38: PASS 22/22；docs49: PASS 22/22。7/10依赖docs35，8依赖docs38，9依赖docs49；三组原RPM均不在删除范围。
+
+逐项按realpath、自身/父目录非软链接、文件系统设备、lsof +D/fuser、/proc/*/mountinfo顺序检查。进程命中即跳过，该项后续挂载与删除检查不再执行。lsof +D对root专用系统目录有Permission denied可见性警告，原文保存，并补全局可见lsof路径匹配；不把权限警告冒称完整root进程可见性。进程命中、未知错误或挂载引用都会阻止删除；检查详细结果见每项checks/日志。
+
+### 9.2 逐项执行
+
+| 项 | 精确路径 | 保全/原包前提 | 结果 | sudo | 总耗时秒（含检查/认证等待） | 对应盘df增加GiB |
+|---|---|---|---|---|---:|---:|
+| 1 | `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root` | 保全PASS | deleted  | 是 | 1182.3 | 85.414 |
+| 2 | `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root` | 保全PASS | skipped AssertionError('process use/error; see lsof/fuser') | 否 | 225.6 | 未执行 |
+| 3 | `/home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root` | 保全PASS | deleted  | 是 | 262.1 | 58.524 |
+| 4 | `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root` | 保全PASS | deleted  | 是 | 94.2 | 35.377 |
+| 5 | `/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache` | 无附加保全要求 | deleted  | 否 | 14.1 | 90.322 |
+| 6 | `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse` | 无附加保全要求 | deleted  | 是 | 46.1 | 3.243 |
+| 7 | `/home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-archivefix-v2-final` | 原包docs35 PASS | deleted  | 否 | 199.2 | 46.299 |
+| 8 | `/home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-llvm-strip` | 原包docs38 PASS | deleted  | 否 | 103.1 | 46.256 |
+| 9 | `/home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-release-x86-20261013` | 原包docs49 PASS | deleted  | 否 | 24.8 | 46.256 |
+| 10 | `/var/tmp/llvm-optimize-archivefix-v2-final-20261009/independent-install` | 原包docs35 PASS | deleted  | 否 | 12.7 | 46.299 |
+
+第2项fuser命中原文（未结束该进程）：
+
+```text
+ 228899                     USER        PID ACCESS COMMAND
+/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root:
+                     linhao    f.... code-insiders
+```
+
+跳过项：2 AssertionError('process use/error; see lsof/fuser')。
+
+实际执行命令（完整stdout/stderr、返回码和时间保存在execution目录）：
+
+```sh
+rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root
+rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/gbs-root
+rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-on-hybrid-20261024/gbs-root
+rm -rf --one-file-system -- /var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache
+rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261016-source-order/upper-parse
+rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-archivefix-v2-final
+rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-llvm-strip
+rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-release-x86-20261013
+rm -rf --one-file-system -- /var/tmp/llvm-optimize-archivefix-v2-final-20261009/independent-install
+```
+
+第1项sudo命令墙钟时间包含图形密码框等待，不是纯删除耗时；原命令耗时见JSON。sudo使用新建的图形askpass包装器，不在终端输入密码、不记录密码，每项首次认证失败后不循环索取密码。没有chmod任何现有文件，没有结束占用进程，没有使用强制或懒卸载。9个实际删除项均未发现残留挂载或overlay引用，无须执行umount；2号因进程命中，后续挂载检查未执行。
+
+### 9.3 两块盘前后空间
+
+| 文件系统 | 保全前可用GiB | 清理结束可用GiB | 净增加GiB |
+|---|---:|---:|---:|
+| /dev/sda1（/home） | 145.197 | 456.414 | 311.217 |
+| /dev/nvme0n1p1（/，/var/tmp所在盘） | 46.436 | 181.637 | 135.201 |
+
+保全目录实占见preserved-du.txt，约7.78 GiB；高于盘点的5.517 GiB预算，因为本次逐路径复制933项，没有对保全副本再做内容去重，另保留完整perf-runtime。
+
+净变化包括本次新增保全文件、文件系统元数据和同期其它写入，不能把各项du简单相加当成df保证。两盘不相加。所有products、验证输入、perf父目录、profile、QB配置、旧R1、ARM树、源码和三组原RPM保留；未列出的目录没有删除命令。
+
+**结束标记原文：**
+
+```text
+CLEANUP FINISHED 2026-10-26T18:59:43+08:00 status=partial deleted=9 skipped=1
+```
+
+### 9.4 补记2026-10-22晚间用户清理
+
+根据用户本次说明，以下清理由用户在2026-10-22晚间运行 `cleanup_home_20261022.sh` 完成。读取到 `W/temp/cleanup-20261022-evening.log`；不是本轮操作。它解决了盘点时P4与旧R1缓存去向不明的问题。日志完整原文如下：
+
+```text
+=== 2026-10-22 21:07:11 start ===
+/home free before: 340 GiB (/dev/sda1)
+--- /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache
+CHECK OK /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache  size: 92G
+Delete /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache ? [y/N] DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache in 18s
+--- /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache
+CHECK OK /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache  size: 11G
+Delete /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache ? [y/N] DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache in 20s
+--- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-install-rehearsal/upper
+CHECK OK /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-install-rehearsal/upper  size: 61G
+Delete /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-install-rehearsal/upper (14 files are saved first) ? [y/N] SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-build-verification.json
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-plan.json
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-build.txt
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-dry-run.txt
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-before.json
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-manifest-before.txt
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/reference-relocs.sh
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/profile.fdata
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/disk-admission.json
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/reference-relocs.log.argv.json
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/reference-relocs.log
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-before.json
+SAVED home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt
+DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261015-install-rehearsal/upper in 32s
+/home free after: 500 GiB (/dev/sda1)
+=== 2026-10-22 21:10:01 done, log: /home/linhao/Toolchain/development/llvm-optimize/temp/cleanup-20261022-evening.log ===
+```
+
+日志记载删了旧R1缓存（显示92G）、旧archivefix树缓存（11G）和旧演练upper（61G），/home可用由340 GiB增至500 GiB，即日志取整口径约160 GiB，不能伪装成精确字节值。`preserved-from-upper/`当前包含所列14个产物及1份SHA256SUMS（共15个普通文件），清单另存 `preserved-from-upper-files.tsv`；本轮没有修改这些文件。
+
+结束核对：9个已删除路径均不存在；2号仍存在；1,072个保全条目的目标文件、394个runtime文件、全部66个原始RPM仍在。未删除范围的父目录直属条目元数据/小文件SHA比对没有发现非预期变化，见final-verification.json（此项不是对全部后代再次全量SHA扫描）。
+
+本轮材料：[execution](../../tools/bolt/results/temp-cleanup-20261026/execution/)。完成后停下，不执行其它清理。
