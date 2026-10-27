@@ -151,3 +151,183 @@ new SHA = 44dabd25c8bb4f70d58e60ad4f7ffee6f013b75fd4250efa9b3df222ea1b89a7
 - 后台日志末行固定为 `RUNPATH_FIX FINISHED ... status=stopped reason=rpm-content-gate-compiler-rt-45-ar-files`。
 
 **挂账仍为：old-text是否采用、崩溃定位方案。** 因本轮停止，old-text没有新增测量可供采纳；另需用户裁决归档内部日期差异的验收口径，才能继续未执行的独立验证。
+
+
+## 10. 续跑验收（2026-10-27；用户批准 ar 日期差异单列）
+
+23 个 RPM 全部按本次口径通过：允许的内容变化只有 clang-22，以及源码包的 spec/helper；另有 271 个包内归档条目只有内部日期不同，单列而不计为内容相同。最终 candidate 和 old-text candidate 分别通过 90/90 个完整对象逐字节比较。`-use-old-text` 把 clang 从 183,224,160 缩到 152,532,296 字节，减少 30,691,864 字节（16.75%）；old-text 相对现行参数的编译耗时变化为 -1.48% 至 -0.47%，最终 BOLT candidate 相对 ordinary 的最大 RSS 降低 5.34%–36.93%，具体语言/目标见下表。
+
+本节是对第7、9节历史停止记录的续跑补充，之前的失败事实和原文不改。本地源码提交仍为 `ac112ebfd6e7983bdfd4c38dd156e6baba72731b`，没有重新构建，没有修改 spec/helper/Source1200/发布 OPTIONS/白名单，没有推送 Gerrit 或 sandbox。
+
+### 10.1 输入身份与 RPM 口径
+
+当前 products 的 SHA256SUMS **35/35** 通过；对照 products 不存在 SHA256SUMS，使用33号任务已提交的 `preserved-products.json` 核对 **32/32** 原件。见 [preflight.json](../../tools/bolt/results/runpath-fix-20261026/continue/preflight.json)、[new-products-sha.json](../../tools/bolt/results/runpath-fix-20261026/continue/new-products-sha.json)、[old-products-sha.json](../../tools/bolt/results/runpath-fix-20261026/continue/old-products-sha.json)、[input-identities.json](../../tools/bolt/results/runpath-fix-20261026/continue/input-identities.json)。本轮根的 BUILDROOT 已被 GBS 的 `%clean` 清理，本次没有重建它：从保留 RPM 只读解析载荷，差异归档解到本次新的 continue-work 子目录。
+
+比较脚本只在结果目录：[compare.py](../../tools/bolt/results/runpath-fix-20261026/continue/compare.py)、[rpm_io.py](../../tools/bolt/results/runpath-fix-20261026/continue/rpm_io.py)。三项条件同时成立才判 `allowed-ar-date-difference`：成员名单/顺序一致；逐成员内容 SHA 一致；把两个文件相同 ar header 偏移16起的12字节日期字段屏蔽后，其余**全部字节**一致（含索引、名称表、填充和非日期 header 字段）。独立自测2项通过，第二项同时覆盖成员内容变化和非日期 header 字节变化必须 FAIL：[ar-selftests.txt](../../tools/bolt/results/runpath-fix-20261026/continue/ar-selftests.txt)。未改生产门禁。
+
+| RPM | 允许的内容变化数 | 载荷 mtime 变化数 | 允许的 ar 内部日期差异数 | 结果 |
+|---|---:|---:|---:|---|
+| clang-22.1.8-1.x86_64.rpm | 1 | 66 | 0 | PASS |
+| clang-debuginfo-22.1.8-1.x86_64.rpm | 0 | 27 | 0 | PASS |
+| clang-devel-22.1.8-1.x86_64.rpm | 0 | 237 | 0 | PASS |
+| clang-devel-debuginfo-22.1.8-1.x86_64.rpm | 0 | 4 | 0 | PASS |
+| compiler-rt-22.1.8-1.x86_64.rpm | 0 | 105 | 45 | PASS |
+| compiler-rt-debuginfo-22.1.8-1.x86_64.rpm | 0 | 17 | 0 | PASS |
+| libllvm-22.1.8-1.x86_64.rpm | 0 | 3 | 0 | PASS |
+| libllvm-debuginfo-22.1.8-1.x86_64.rpm | 0 | 4 | 0 | PASS |
+| libomp-22.1.8-1.x86_64.rpm | 0 | 3 | 0 | PASS |
+| libomp-debuginfo-22.1.8-1.x86_64.rpm | 0 | 6 | 0 | PASS |
+| libomp-devel-22.1.8-1.x86_64.rpm | 0 | 1 | 1 | PASS |
+| lldb-22.1.8-1.x86_64.rpm | 0 | 8 | 0 | PASS |
+| lldb-debuginfo-22.1.8-1.x86_64.rpm | 0 | 16 | 0 | PASS |
+| lldb-devel-22.1.8-1.x86_64.rpm | 0 | 34 | 0 | PASS |
+| lldb-devel-debuginfo-22.1.8-1.x86_64.rpm | 0 | 7 | 0 | PASS |
+| llvm-22.1.8-1.x86_64.rpm | 0 | 98 | 0 | PASS |
+| llvm-debuginfo-22.1.8-1.x86_64.rpm | 0 | 85 | 0 | PASS |
+| llvm-debugsource-22.1.8-1.x86_64.rpm | 0 | 1292 | 0 | PASS |
+| llvm-devel-22.1.8-1.x86_64.rpm | 0 | 205 | 0 | PASS |
+| llvm-devel-debuginfo-22.1.8-1.x86_64.rpm | 0 | 11 | 0 | PASS |
+| llvm-static-devel-22.1.8-1.x86_64.rpm | 0 | 225 | 225 | PASS |
+| python-clang-22.1.8-1.x86_64.rpm | 0 | 0 | 0 | PASS |
+| llvm-22.1.8-1.src.rpm | 2 | 17 | 0 | PASS |
+
+日期差异共 271 个包内条目、270 个独立路径；同一 libarcher_static.a 出现在两个包中，按包各计一次。完整清单、旧新 SHA、每个归档的成员与日期范围见 [rpm-comparison/summary.json](../../tools/bolt/results/runpath-fix-20261026/continue/rpm-comparison/summary.json) 及同目录逐包 JSON。没有新增、删除或其它未许可内容变化；RPM 整包 SHA 不同，不能称 RPM 二进制相同。载荷 mtime 与归档内部日期是两个独立计数。
+
+### 10.2 两份 clang 的直接 ELF 比较
+
+aa637c1 candidate `8b799f18e2bc37269385db125c881609e8457de1dd179f5d9d0ff9f557b58d16` 与本轮 `963f1163fa983737a43ec5b4bd04fa142a4236829dee290b23feeda28abd1c9e` 文件大小均为 183,224,160 字节，程序头、节头完全相同。除 `.dynstr` 和 `.dynamic` 两个区域以外，按1MiB块直接逐字节比较 PASS（不是仅比较代码节或 SHA）。见 [elf-literal-bytes.json](../../tools/bolt/results/runpath-fix-20261026/continue/elf-literal-bytes.json)、[elf-comparison.json](../../tools/bolt/results/runpath-fix-20261026/continue/elf-comparison.json)。
+
+`.dynamic` 原始 `(tag,value)` 序列的差异列表为空；其 DT_RUNPATH 指向的字符串发生以下变化，所以解码后的动态标签只差 DT_RUNPATH，DT_RPATH 两者均不存在：
+
+```text
+old DT_RUNPATH = $ORIGIN/../lib64:/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:
+new DT_RUNPATH = $ORIGIN/../lib64
+```
+
+[elf-old-dynamic.txt](../../tools/bolt/results/runpath-fix-20261026/continue/elf-old-dynamic.txt)、[elf-new-dynamic.txt](../../tools/bolt/results/runpath-fix-20261026/continue/elf-new-dynamic.txt) 保留 readelf 原文。
+
+### 10.3 90 TU、old-text 重写与匹配
+
+最终 candidate 对本轮 ordinary **90/90 PASS**；old-text 对本轮 ordinary 另做 **90/90 PASS**。都是30个历史条目×3目标，同一实体路径依次放置编译器；完整 `.o` 比较，保留 `.GCC.command.line`，没有去节或规范化对象。使用已预处理输入与记录参数，显式 `--no-default-config`，运行库、loader、resource-dir 全部来自本轮根；目标 sysroot 只读。见 [objects-current/result.json](../../tools/bolt/results/runpath-fix-20261026/continue/objects-current/result.json)、[objects-oldtext/result.json](../../tools/bolt/results/runpath-fix-20261026/continue/objects-oldtext/result.json)、[objects.py](../../tools/bolt/results/runpath-fix-20261026/continue/objects.py)。
+
+重链输入仍在，SHA `e79409133e6c9b12eecd33ee9af3ab6bc76049db5de4f43c8622b8c8a09b0598` 与记录相同；没有重链。只在发布 OPTIONS 后加 `-use-old-text`，用本轮工具 `0ecdff6172f7fffb08d30f3865976ca15dc8708c3a1ef9fe0d2a543059996f75` 重写并按原方法 strip-all，输出全部放 `temp/runpath-fix-20261026/old-text/`。最终实验 SHA `13a07cb7f84bd1ceda4d851c8bd71bddf7ef0c2d4864892eba64cbbb9a0350b8`。
+
+| 指标 | 结果 |
+|---|---:|
+| N | 23592 |
+| M | 144032 |
+| S | 0 |
+| U | 1 |
+| Q | 383 |
+| R | 0.0042385453% |
+| S/N | 0 |
+| BOLT 耗时 | 42.807 s |
+| BOLT 最大 RSS（/usr/bin/time -v） | 9,686,616 KiB |
+| strip-all 后大小 | 152,532,296 B |
+
+R≤5%、S=0，身份/ELF/strip 检查通过。见 [oldtext-result.json](../../tools/bolt/results/runpath-fix-20261026/continue/oldtext-result.json)、[oldtext-bolt.log](../../tools/bolt/results/runpath-fix-20261026/continue/oldtext-bolt.log)、[oldtext-bolt.time](../../tools/bolt/results/runpath-fix-20261026/continue/oldtext-bolt.time)。实验产物按本项要求只执行重写及 strip-all，没有额外运行发布流水线的 RUNPATH 修补；三方均通过本轮根的显式 loader/--library-path 使用同一套运行库。实验产物没有替换发布 candidate，不是可直接发布的替代包；是否采用 old-text 仍由用户决定。
+
+### 10.4 三方 -O2 编译耗时（五次中位数后几何平均）
+
+每种语言/目标20个文件；普通、现行参数、old-text 三方，每侧5次；CPU2、单并行、setarch -R（personality=00040000）、同一实体路径和 inode；复制/fsync/SHA 不计入计时。monotonic_ns 围绕实际子进程 wait，独立超时线程。所有测量 `.o` 也做完整逐字节比较。
+
+测量期间另一会话启动了 Git index-pack，约16:17–16:35与原始三方第4/5轮、RSS第1轮重叠；本会话的一次范围过大的只读指令文件查找也在 RSS 第1轮内终止。未终止其它会话进程，原始样本全部保留；等它结束并完成第一序列后，整轮补测三方第4/5轮、RSS第1轮，不按数值选择或删除异常点。主表用不重叠的完整5轮；原始整批结果另存，不能混称为无干扰测量。时间边界近似，进程退出前未取得精确 /proc 起止；为此保守重测整个轮次。见 [interference.json](../../tools/bolt/results/runpath-fix-20261026/continue/interference.json)、[原始三方结果](../../tools/bolt/results/runpath-fix-20261026/continue/threeway/result.json)、[原始RSS结果](../../tools/bolt/results/runpath-fix-20261026/continue/rss/result.json)、[补测进程/资源记录](../../tools/bolt/results/runpath-fix-20261026/continue/quiet-resources.jsonl)。
+
+| 语言 | 目标 | 现行/ordinary | old-text/ordinary | old-text/现行 |
+|---|---|---:|---:|---:|
+| C | armv7l-tizen-linux-gnueabi | 0.871618 | 0.867139 | 0.994861 |
+| C | x86_64-tizen-linux-gnu | 0.877254 | 0.873144 | 0.995314 |
+| C++ | armv7l-tizen-linux-gnueabi | 0.841024 | 0.833687 | 0.991275 |
+| C++ | x86_64-tizen-linux-gnu | 0.864930 | 0.852141 | 0.985215 |
+
+比值<1表示更快。含干扰的原始批次中，ARM的 old-text/现行比约为1.0167（C）和1.0146（C++），而安静整轮补测后的主表方向反转；这说明该小量级差值对测量条件敏感。原始批次不作为安静环境结论，但完整保留。微小差值不等同统计显著；本实验没有给置信区间，也不能把所有波动归因于代码布局。主表的逐文件5次中位数与全部比值：[threeway-medians.tsv](../../tools/bolt/results/runpath-fix-20261026/continue/threeway-medians.tsv)；汇总及样本选择规则：[threeway-quiet-final.json](../../tools/bolt/results/runpath-fix-20261026/continue/threeway-quiet-final.json)。补测原样样本：[threeway-quiet-repeat/samples.jsonl](../../tools/bolt/results/runpath-fix-20261026/continue/threeway-quiet-repeat/samples.jsonl)；初次原样样本：[threeway/samples.jsonl](../../tools/bolt/results/runpath-fix-20261026/continue/threeway/samples.jsonl)。
+
+### 10.5 运行时内存（最大 RSS）
+
+C/C++各20文件×3目标，ordinary/最终candidate各5次，共1200次有效测量。每次以宿主 `/usr/bin/time -v` 包裹单个编译器调用，读取 Maximum resident set size (kbytes)，单位KiB；这是进程峰值RSS，不是cgroup峰值或私有页数。逐文件取5次中位数，再对 candidate/ordinary 取几何平均。
+
+| 语言 | 目标 | candidate/ordinary 最大RSS比 | 变化 |
+|---|---|---:|---:|
+| C | aarch64-tizen-linux-gnu | 0.639746 | -36.025% |
+| C | armv7l-tizen-linux-gnueabi | 0.630747 | -36.925% |
+| C | x86_64-tizen-linux-gnu | 0.732494 | -26.751% |
+| C++ | aarch64-tizen-linux-gnu | 0.922020 | -7.798% |
+| C++ | armv7l-tizen-linux-gnueabi | 0.922598 | -7.740% |
+| C++ | x86_64-tizen-linux-gnu | 0.946628 | -5.337% |
+
+逐文件中位数：[rss-medians.tsv](../../tools/bolt/results/runpath-fix-20261026/continue/rss-medians.tsv)；汇总：[rss-quiet-final.json](../../tools/bolt/results/runpath-fix-20261026/continue/rss-quiet-final.json)；每次 `/usr/bin/time -v` 原文保存在 rss/logs 和 rss-quiet-repeat/logs，输入、argv、前后load与CPU频率在两组 samples.jsonl。old-text 的编译RSS不在本项对比范围，未由文件大小推算。
+
+### 10.6 45 个 native 跳过归档的逐成员核对
+
+原证据 tar 中 summary 与根内 native-archive-conversion/summary.json 字节相同。安装前270个 `.a` 减去明确转换的225个路径，得到45个 native跳过路径；它们与 compiler-rt 包日期不同的45项集合完全相同。全部 1964 个实际成员均为 ELF64 little-endian ET_REL、EM_X86_64；bitcode=0，其它类型=0（ar索引/长文件名表是容器元数据，不作为对象成员）。构建原件SHA与 install-before 快照相同，原件和包内成员分别检查类型；平台 strip 前后成员内容是否不同另存，未把原件与打包文件误说为SHA一致。
+
+跳过的45个归档路径如下（与compiler-rt日期差异集合逐项相等）：
+
+```text
+usr/lib64/clang/22/lib/linux/libclang_rt.asan-preinit-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.asan-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.asan_cxx-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.asan_static-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.builtins-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.cfi-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.cfi_diag-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.ctx_profile-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.dd-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.dfsan-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.fuzzer-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.fuzzer_interceptors-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.fuzzer_no_main-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.gwp_asan-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.hwasan-preinit-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.hwasan-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.hwasan_aliases-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.hwasan_aliases_cxx-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.hwasan_cxx-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.lsan-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.memprof-preinit-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.memprof-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.memprof_cxx-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.msan-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.msan_cxx-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.nsan-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.profile-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.rtsan-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.safestack-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.scudo_standalone-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.scudo_standalone_cxx-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.stats-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.stats_client-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.tsan-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.tsan_cxx-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.tysan-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.ubsan_minimal-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.ubsan_standalone-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.ubsan_standalone_cxx-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.xray-basic-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.xray-dso-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.xray-fdr-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.xray-profiling-x86_64.a
+usr/lib64/clang/22/lib/linux/libclang_rt.xray-x86_64.a
+usr/lib64/clang/22/lib/linux/liborc_rt-x86_64.a
+```
+
+名单与逐成员SHA/类型：[native-skipped-members.json](../../tools/bolt/results/runpath-fix-20261026/continue/native-skipped-members.json)；集合推导：[native-audit.json](../../tools/bolt/results/runpath-fix-20261026/continue/native-audit.json)、[native-evidence-match.json](../../tools/bolt/results/runpath-fix-20261026/continue/native-evidence-match.json)。
+
+本轮 llvm-readelf 抽查原文：[libclang_rt.builtins-x86_64.a.readelf.txt](../../tools/bolt/results/runpath-fix-20261026/continue/libclang_rt.builtins-x86_64.a.readelf.txt)、[libclang_rt.asan-x86_64.a.readelf.txt](../../tools/bolt/results/runpath-fix-20261026/continue/libclang_rt.asan-x86_64.a.readelf.txt)；全部列出 Type: REL、Machine: Advanced Micro Devices X86-64。
+
+### 10.7 资源、保全与边界
+
+所有编译和重写由 systemd 用户服务运行，MemoryMax=24,482,967,552 B（MemTotal减8GiB）、MemorySwapMax=0、nice10、ionice2/7；观测总cgroup峰值 11,462,008,832 B，最小 /home 可用 506,818,244,608 B，OOM/oom_kill=0，swap=0。资源每5秒采样，不冒充连续磁盘最低值。补测期间进程快照与采样完整保留。
+
+两种有效数据集的负载/频率范围：
+
+| 数据集 | load1最小–最大 | CPU2频率kHz最小–最大 |
+|---|---:|---:|
+| 三方 | 1.01–4.24 | 800000–5209437 |
+| RSS | 1.14–5.7 | 800000–5200286 |
+
+调频策略/驱动和CPU原文见各 conditions.json。所有argv、stdout/stderr、逐步耗时、资源记录和结束标记在 [steps.json](../../tools/bolt/results/runpath-fix-20261026/continue/steps.json)、[quiet-steps.json](../../tools/bolt/results/runpath-fix-20261026/continue/quiet-steps.json)、[final-resources.json](../../tools/bolt/results/runpath-fix-20261026/continue/final-resources.json)、[runpath-verify.log](../../tools/bolt/results/runpath-fix-20261026/continue/runpath-verify.log)、[quiet-runpath-verify.log](../../tools/bolt/results/runpath-fix-20261026/continue/quiet-runpath-verify.log)。补测控制器在尚未开始任何补测时修正了一次前置结果文件路径，见 preparation-notes.txt；只终止了等待锁的本会话控制器并重启，未影响正在运行的测量。只读查找修正和干扰处理如上；没有产品门禁失败后放宽标准。
+
+本轮根、products、continue-work、old-text全部保留。最终源码HEAD/tree/clean与二进制身份见 [final-identity.json](../../tools/bolt/results/runpath-fix-20261026/continue/final-identity.json)。只提交文档和测量证据到 GitHub bolt-v4；没有新源提交、没有Gerrit/sandbox推送，不操作QB。
+
+**总结论：本次用户裁决口径下23包、两组90 TU、ELF限定差异和45归档类型核对全部PASS；old-text大小/速度与普通对最终candidate的RSS测量已完成，发布源码ac112ebf保持不变，是否采用old-text仍待用户决定。**

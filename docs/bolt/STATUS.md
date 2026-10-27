@@ -467,3 +467,12 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 - **停止**：独立RPM比较在compiler-rt包发现45个.a完整SHA不同。只读诊断证实仅ar头内部日期变化、成员内容一致；没有自行放宽严格内容门禁。其它未比较包、90TU、old-text、RSS均未继续。
 - 根`W/temp/runpath-fix-20261026/gbs-root`及`products/`保留，观测峰值67.519GiB，122有效/4缺失du样本。日志移动造成一次采集路径修正，错误和修正均保留，不属于产品断言失败。
 - 详情：[37_runpath_and_improvements.md](37_runpath_and_improvements.md)，证据`tools/bolt/results/runpath-fix-20261026/`。待用户裁决ar内部日期的验收口径；old-text是否采用、崩溃定位方案继续挂账。
+
+
+## RUNPATH续跑验收（2026-10-27）
+
+用户裁决：仅当ar成员名单/顺序、逐成员SHA、日期字段外全部字节均一致时，允许内部日期差异；单列统计，不并入内容相同。此规则仅在结果目录比较脚本中实施，发布spec/helper不变。
+
+23RPM PASS：clang-22及源码spec/helper为允许内容变化；271个包内条目（270独立路径）的ar日期差异单列。最终candidate和old-text各90/90对象一致，45个native跳过归档全部成员为x86_64 ELF ET_REL、无bitcode。old-text体积减少30,691,864B（16.75%），三方速度及六组RSS已完成；Git解包干扰轮次完整保留并整轮补测，详见[37号第10节](37_runpath_and_improvements.md#10-续跑验收2026-10-27用户批准-ar-日期差异单列)。
+
+源码ac112ebfd6e7983bdfd4c38dd156e6baba72731b保持clean；没有重构建、改发布参数、删除根、创建分支或推送Gerrit/sandbox。old-text是否采用仍待用户决定。
