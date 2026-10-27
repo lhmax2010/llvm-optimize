@@ -1,0 +1,33 @@
+{
+  "time_ns": 1793114647550970424,
+  "user": "relax limits but do not exhaust CPU/memory",
+  "CPUQuota": "1200% of nproc=20",
+  "MemoryMax_bytes": 21474836480,
+  "swap": 0,
+  "nice": 15,
+  "ionice": "idle",
+  "monitor_fix": "Optional io.stat initially absent; initial monitoring thread failed, traceback retained; independent guard installed, no build restart and no source change",
+  "guard_command": [
+    "systemd-run",
+    "--user",
+    "--unit=oldtext-final-resume-guard-20261027",
+    "-p",
+    "MemoryMax=256M",
+    "-p",
+    "CPUQuota=10%",
+    "-p",
+    "Nice=19",
+    "-p",
+    "IOSchedulingClass=idle",
+    "-p",
+    "StandardOutput=append:/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/oldtext-final-20261027/resume-guard.stdout",
+    "-p",
+    "StandardError=append:/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/oldtext-final-20261027/resume-guard.stderr",
+    "python3",
+    "-B",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/resume-guard.py"
+  ],
+  "guard_rc": 0,
+  "guard_stderr": "Running as unit: oldtext-final-resume-guard-20261027.service; invocation ID: 75f5531eebe946d0a1f19e8fe594a524\n",
+  "du": "No recurring full-tree du after reboot, to reduce I/O pressure; historical samples retained. Latest task does not require a disk peak measurement."
+}

@@ -1,0 +1,94 @@
+{
+  "tool_sha256": "0ecdff6172f7fffb08d30f3865976ca15dc8708c3a1ef9fe0d2a543059996f75",
+  "profile_sha256": "d9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326",
+  "input_sha256": "e79409133e6c9b12eecd33ee9af3ab6bc76049db5de4f43c8622b8c8a09b0598",
+  "output_sha256": "de2ae6e3ed1040505151c9b88b66ef1b6383f51058e6535d0a107287a1658e9d",
+  "argv": [
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/reference-relocs-clang-22",
+    "-o",
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/clang.bolt",
+    "-data=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/profile.fdata",
+    "-reorder-blocks=ext-tsp",
+    "-reorder-functions=cdsort",
+    "-split-functions",
+    "-split-all-cold",
+    "-split-eh",
+    "-dyno-stats",
+    "--thread-count=1",
+    "-stale-threshold=5",
+    "-use-old-text"
+  ],
+  "counts": {
+    "N": 23592,
+    "M": 144032,
+    "S": 0,
+    "U": 1,
+    "Q": 383,
+    "R": 4.238545331242318e-05,
+    "S_over_N": 0.0
+  },
+  "elf": {
+    "entry": 54448064,
+    "loads": [
+      [
+        1,
+        4,
+        0,
+        0,
+        0,
+        41458604,
+        41458604,
+        4096
+      ],
+      [
+        1,
+        5,
+        41458624,
+        41462720,
+        41462720,
+        95424496,
+        95424496,
+        4096
+      ],
+      [
+        1,
+        6,
+        136883120,
+        136891312,
+        136891312,
+        3004136,
+        3007568,
+        4096
+      ],
+      [
+        1,
+        6,
+        139887264,
+        139899552,
+        139899552,
+        39888,
+        589866,
+        4096
+      ],
+      [
+        1,
+        5,
+        140509184,
+        140509184,
+        140509184,
+        12020320,
+        12020320,
+        2097152
+      ]
+    ],
+    "bolt_sections": [
+      ".bolt.org.rodata",
+      ".bolt.org.eh_frame",
+      ".bolt.org.gcc_except_table",
+      ".bolt.org.eh_frame_hdr",
+      ".bolt.org.text",
+      ".note.bolt_info"
+    ]
+  }
+}

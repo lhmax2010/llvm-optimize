@@ -1,0 +1,13 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 940ccfa83232..2687ac5adf5e 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -91,7 +91,7 @@ def profile_identity(path):
+             'do not assume the profile is stale' % (actual, PROFILE_SHA))
+ 
+ OPTIONS = ['-reorder-blocks=ext-tsp', '-reorder-functions=cdsort', '-split-functions',
+-           '-split-all-cold', '-split-eh', '-dyno-stats', '--thread-count=1', '-stale-threshold=5']
++           '-split-all-cold', '-split-eh', '-dyno-stats', '--thread-count=1', '-stale-threshold=5', '-use-old-text']
+ TRIPLES = ['armv7l-tizen-linux-gnueabi', 'aarch64-tizen-linux-gnu', 'x86_64-tizen-linux-gnu']
+ TINY = ('unsigned bolt_probe(unsigned x, unsigned y) { return (x * 33u) ^ (y + (x >> 3)); }\n'
+         'int bolt_branch(int x) { return x < 0 ? -x : x * 7 + 1; }\n')

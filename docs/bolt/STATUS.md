@@ -476,3 +476,24 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 23RPM PASS：clang-22及源码spec/helper为允许内容变化；271个包内条目（270独立路径）的ar日期差异单列。最终candidate和old-text各90/90对象一致，45个native跳过归档全部成员为x86_64 ELF ET_REL、无bitcode。old-text体积减少30,691,864B（16.75%），三方速度及六组RSS已完成；Git解包干扰轮次完整保留并整轮补测，详见[37号第10节](37_runpath_and_improvements.md#10-续跑验收2026-10-27用户批准-ar-日期差异单列)。
 
 源码ac112ebfd6e7983bdfd4c38dd156e6baba72731b保持clean；没有重构建、改发布参数、删除根、创建分支或推送Gerrit/sandbox。old-text是否采用仍待用户决定。
+
+
+## 2026-10-27：采用 -use-old-text（39，已完成）
+
+**已闭合：用户已决定采用 -use-old-text，不再挂账“是否采用”。** 崩溃定位方案仍挂账。新 detached BOLT 提交 `f308fe08eeaad4e219f8505449b88bd5f644ea8c`（父 hybrid `6e9d4f2`）仅在 OPTIONS 末尾追加此参数；spec/profile/白名单及其它发布代码不变。318项测试、gbs export、五项Tizen rpm解析、OFF debug/release逐字节比对均PASS。新根 `W/temp/oldtext-final-20261027/gbs-root` 完整构建及全部身份/RPM/90TU/RSS认证均已PASS，并按指定租约推送sandbox；详见[39号报告](39_use_old_text_final.md)。QB由用户启动。
+
+
+### 39号主机重启续跑（2026-10-27）
+
+普通构建在6,614/7,633处因主机重启中断，未进入BOLT；用户明确授权控制资源后继续。内核日志未发现OOM kill证据，不能断言原因。源提交f308fe08和tree不变，输入SHA复核PASS；同一新根以正常`rpmbuild -ba --noprep`续跑，原环境/宏/spec不变。最新本地限额：20GiB、swap0、CPUQuota1200%/20逻辑CPU、nice15、ionice idle；不进入发布代码。独立监控已处理可选io.stat缺失，原错误保留。该记录为恢复时状态；后续全部产品门禁完成，最终结果如下。
+
+
+### 39号最终认证与sandbox（2026-10-28）
+
+- 完整构建22个二进制RPM+1个源码RPM；tool-plan/tool-verify 113/113、profile、strip、tiny、24项real、安全属性、RUNPATH、compare-root、cache-release、post全部PASS。
+- 精确profile N23592/M144032/S0/U1/Q383，R=0.004238545331242318%；strip-all后、RUNPATH调整前SHA为13a07cb7f84bd1ceda4d851c8bd71bddf7ef0c2d4864892eba64cbbb9a0350b8，大小152532296B。最终clang SHA 8c2429d870f421a29a9914458bc4d4ff2ce359a15e0bdd20f39bfb4580c40bdf，RUNPATH精确`$ORIGIN/../lib64`。
+- 23RPM许可外内容差异0；271个归档日期条目单列，mtime2471项单列；clang-debuginfo内容不变。ELF限定区域外逐字节相同；90/90 TU PASS。
+- 1200次RSS测量及对象检查PASS，整批无持续外部干扰。candidate/ordinary六组RSS比0.625825–0.942891（降低5.71%–37.42%）；begin→compare-root842秒，37号883秒，不将全部时间差归因于参数。
+- BOLT源提交f308fe08eeaad4e219f8505449b88bd5f644ea8c，tree214bd2ff9ec7680e045b36b5b8c7e873e953846d，父hybrid6e9d4f2不变。以aa637c1显式租约推送sandbox/lhmax2025/bolt_pgo成功，推后ls-remote一致；未推refs/for、未创建分支、未操作QB。
+- 本轮根/products全部保留；构建结束的普通/proc卸载因busy失败，未强制/懒卸载或结束占用进程。续跑cgroup OOM计数0。源码/所有发布参数除OPTIONS追加flag外不变。
+- “是否采用-use-old-text”已闭合；崩溃定位方案仍挂账。QB：platform/upstream/llvm@f308fe08eeaad4e219f8505449b88bd5f644ea8c。

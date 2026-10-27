@@ -1,0 +1,1 @@
+file(RPATH_CHANGE FILE [=[/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/clang.candidate]=] OLD_RPATH [=[$ORIGIN/../lib64:/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:]=] NEW_RPATH [=[$ORIGIN/../lib64]=])
