@@ -1,0 +1,330 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index a2f81552ce3c..940ccfa83232 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -474,9 +474,10 @@ def security_properties(path):
+     finally:
+         e.close()
+ 
+-def security_compare(ordinary, candidate):
++def security_compare(ordinary, candidate, ignore_paths=False):
+     before, after = security_properties(ordinary), security_properties(candidate)
+-    differences = [key for key in before if before[key] != after[key]]
++    differences = [key for key in before if before[key] != after[key] and
++                   not (ignore_paths and key in ('DT_RPATH', 'DT_RUNPATH'))]
+     if differences:
+         details = []
+         for key in differences:
+@@ -496,6 +497,148 @@ def security_compare(ordinary, candidate):
+                 'sha256': hashlib.sha256(json.dumps(before[key], sort_keys=True).encode()).hexdigest()}
+                 for key in heavy}}
+ 
++def installed_baseline(root, output):
++    entity = Path(root)/'usr/bin/clang-22'
++    properties = security_properties(entity)
++    result = {'path': str(entity), 'sha256': digest(entity),
++              'DT_RPATH': properties['DT_RPATH'], 'DT_RUNPATH': properties['DT_RUNPATH'],
++              'security_properties': properties}
++    save(output, result)
++    return result
++
++
++def installed_security(baseline, candidate):
++    require(Path(baseline).is_file(), 'installed-baseline missing: '+str(baseline))
++    before = json.loads(Path(baseline).read_text())['security_properties']
++    after = json.loads(json.dumps(security_properties(candidate)))
++    differences = {k: {'installed_baseline': before.get(k), 'candidate': after.get(k)}
++                   for k in before.keys() | after.keys() if before.get(k) != after.get(k)}
++    require(not differences, 'installed-baseline security attributes differ: '+json.dumps(differences))
++    return {'installed_security_preserved': True, 'baseline_sha256': digest(baseline),
++            'candidate_sha256': digest(candidate)}
++
++
++def rpath_layout(path):
++    """Freeze headers and every file byte except the two permitted sections."""
++    elf = ELF(path)
++    try:
++        allowed = sorted((s[4], s[4]+s[5]) for name, s in elf.by_name.items()
++                         if name in ('.dynamic', '.dynstr'))
++        cursor = 0; frozen = hashlib.sha256()
++        for start, end in allowed:
++            require(start >= cursor, 'overlapping RPATH sections')
++            frozen.update(elf.mm[cursor:start]); cursor = end
++        frozen.update(elf.mm[cursor:])
++        dynamic = elf.by_name.get('.dynamic')
++        tags = [struct.unpack_from('<qQ', elf.mm, i)[0]
++                for i in range(dynamic[4], dynamic[4]+dynamic[5], 16)] if dynamic else []
++        return {'file_bytes': len(elf.mm), 'program_headers': elf.phdrs,
++                'section_headers': elf.sections, 'dynamic_tags': tags,
++                'unchanged_bytes_sha256': frozen.hexdigest(),
++                'code_sections': {name: hashlib.sha256(elf.mm[s[4]:s[4]+s[5]]).hexdigest()
++                                  for name, s in elf.by_name.items() if s[2] & 4 and s[1] != 8}}
++    finally:
++        elf.close()
++
++
++def cmake_literal(value):
++    require('\x00' not in value, 'NUL in CMake argument')
++    delimiter = '='
++    while ']'+delimiter+']' in value:
++        delimiter += '='
++    return '['+delimiter+'['+value+']'+delimiter+']'
++
++
++def adjust_rpath(candidate, baseline, work, identity):
++    candidate, work = Path(candidate), Path(work)
++    require(Path(baseline).is_file(), 'installed-baseline missing: '+str(baseline))
++    expected = json.loads(Path(baseline).read_text())
++    props = security_properties(candidate)
++    keys = ('DT_RPATH', 'DT_RUNPATH')
++    old, new = {k: props[k] for k in keys}, {k: expected[k] for k in keys}
++    require([k for k in keys if old[k] is not None] == [k for k in keys if new[k] is not None],
++            'RPATH tag types differ from installed-baseline')
++    require(sum(old[k] is not None for k in keys) <= 1, 'multiple RPATH tags unsupported')
++    layout = rpath_layout(candidate); stripped_sha = digest(candidate)
++    if old != new:
++        key = next(k for k in keys if old[k] is not None)
++        script = work/'candidate-rpath.cmake'
++        atomic_text(script, 'file(RPATH_CHANGE FILE '+cmake_literal(str(candidate))+
++                    ' OLD_RPATH '+cmake_literal(old[key])+' NEW_RPATH '+cmake_literal(new[key])+')\n')
++        call(['cmake', '-P', str(script)], work/'candidate-rpath.log', timeout=60)
++    require(rpath_layout(candidate) == layout, 'RPATH_CHANGE changed ELF layout or non-path content')
++    actual = security_properties(candidate)
++    require({k: actual[k] for k in keys} == new, 'ELF RPATH differs from installed-baseline')
++    log = work/'candidate-readelf.log'
++    call(['readelf', '-dW', str(candidate)], log, timeout=60)
++    text = log.read_text(); readelf_paths = {}
++    for key in keys:
++        matches = re.findall(r'\('+key[3:]+r'\)[^\n]*\[([^\n]*)\]', text)
++        require(len(matches) <= 1, 'duplicate readelf path tag: '+key)
++        readelf_paths[key] = matches[0] if matches else None
++    require(readelf_paths == new, 'readelf RPATH differs from installed-baseline')
++    checked = installed_security(baseline, candidate)
++    identity.update(strip_all_sha256=stripped_sha, rpath_adjusted_sha256=digest(candidate),
++                    after_sha256=digest(candidate), installed_baseline_sha256=digest(baseline),
++                    installed_baseline_path=str(baseline),
++                    rpath={'before': old, 'after': new, 'layout': layout, 'readelf': readelf_paths,
++                           'security': checked})
++    validate_identity(identity, candidate)
++    save(work/'identity.json', identity)
++    return identity
++
++
++# Real implementation files, not synthetic tiny probes. C uses compiler resource
++# headers only; freestanding + nostdinc prevents accidental cross-target sysroots.
++REAL_C_SOURCES = ('compiler-rt/lib/builtins/bswapsi2.c', 'compiler-rt/lib/builtins/bswapdi2.c')
++REAL_CXX_SOURCES = ('llvm/lib/Support/SmallVector.cpp', 'llvm/lib/Support/StringRef.cpp')
++
++
++def real_commands(build, resource_dir):
++    build = Path(build).absolute(); source = build.parent
++    cases = []
++    for relative in REAL_C_SOURCES:
++        for target in TRIPLES:
++            cases.append((relative, target, ['--no-default-config', '--target='+target,
++                          '-resource-dir='+str(resource_dir), '-ffreestanding', '-nostdinc',
++                          '-isystem', str(Path(resource_dir)/'include'), '-O2', '-g', '-c',
++                          str(source/relative)]))
++    for relative in REAL_CXX_SOURCES:
++        cases.append((relative, 'x86_64-tizen-linux-gnu', ['--no-default-config',
++                      '--target=x86_64-tizen-linux-gnu', '-resource-dir='+str(resource_dir),
++                      '-O2', '-g', '-std=c++17', '-I'+str(source/'llvm/include'),
++                      '-I'+str(build/'include'), '-c', str(source/relative)]))
++    return cases
++
++
++def real_gate(ordinary, candidate, build, work, resource_dir):
++    started = time.monotonic(); work = Path(work); work.mkdir(parents=True, exist_ok=True)
++    # Both roles use the same physical compiler/output paths, including strings
++    # emitted into .GCC.command.line. No stripping or object normalization.
++    compiler = work/'same-clang'; output = work/'same.o'; rows = []
++    cases = real_commands(build, resource_dir)
++    for role, executable in (('ordinary', ordinary), ('candidate', candidate)):
++        shutil.copyfile(executable, compiler); compiler.chmod(0o755)
++        for index, (relative, target, args) in enumerate(cases):
++            output.unlink(missing_ok=True)
++            start = time.monotonic()
++            call([str(compiler), *args, '-o', str(output)], work/('%s-%02d.log' % (role,index)), timeout=120)
++            require(output.is_file() and not output.is_symlink() and output.stat().st_size > 0,
++                    'real compile did not produce a nonempty regular object: '+relative)
++            sha = digest(output)
++            if role == 'ordinary':
++                rows.append({'source': relative, 'target': target, 'ordinary_sha256': sha,
++                             'ordinary_seconds': time.monotonic()-start})
++            else:
++                rows[index].update(candidate_sha256=sha, candidate_seconds=time.monotonic()-start)
++                require(sha == rows[index]['ordinary_sha256'], 'real object bytes differ: '+relative+' '+target)
++                rows[index]['byte_equal'] = True
++    result = {'real_pass': True, 'seconds': time.monotonic()-started, 'cases': rows}
++    save(work/'real-result.json', result)
++    print('BOLT_REAL_GATE_PASS '+json.dumps({'work': str(work), 'cases': len(rows), 'seconds': result['seconds']}), flush=True)
++    return result
++
++
+ def tiny_gate(ordinary, candidate, work, resource_dir=None):
+     work = Path(work); work.mkdir(parents=True, exist_ok=True)
+     source = work/'tiny.c'; source.write_text(TINY); out = work/'same.o'; rows = []
+@@ -605,7 +748,7 @@ def alias_group(root):
+             raise GateError('clang family alias points to different content: '+str(p))
+     return entity, aliases
+ 
+-def install_candidate(root, candidate, state, identity, announce=False):
++def install_candidate(root, candidate, state, identity, announce=False, identity_path=None):
+     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
+     e = ELF(candidate)
+     try:
+@@ -630,10 +773,13 @@ def install_candidate(root, candidate, state, identity, announce=False):
+             link = path.with_name('.'+path.name+'.bolt-link')
+             require(not link.exists() and not link.is_symlink(), 'temporary alias exists')
+             link.symlink_to('clang-22'); staged.append((link,path))
++        identity = dict(identity, installed_sha256=actual)
+         result = {'installed_sha256':actual, 'identity':identity, 'alias_changes':changed,
+                   'allowed_paths':['usr/bin/clang-22']+[p.relative_to(root).as_posix() for p in aliases], 'elf':elf}
+         # All file writes, state and output publication precede the final commit.
+         save(state,result)
++        if identity_path is not None:
++            save(identity_path, identity)
+         if announce: print(json.dumps(result,ensure_ascii=False),flush=True)
+         for link,path in staged: os.replace(link,path)
+         os.replace(tmp,entity)
+@@ -658,10 +804,16 @@ def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
+         e.close()
+     require(digest(entity) == state['identity']['after_sha256'], 'final installed SHA differs from stripped candidate')
+     no_bolt_products(root)
+-    security = security_compare(ordinary, str(entity))
++    security = security_compare(ordinary, str(entity), ignore_paths=True)
++    baseline = Path(ordinary).parent/'installed-baseline.json'
++    if 'installed_baseline_sha256' in state['identity']:
++        require(digest(baseline) == state['identity']['installed_baseline_sha256'], 'installed-baseline SHA changed')
++    installed = installed_security(baseline, entity)
+     rows = tiny_gate(ordinary, str(entity), candidate_work, resource_dir)
++    real = real_gate(ordinary, str(entity), Path(ordinary).parent.parent,
++                     Path(candidate_work)/'real', resource_dir)
+     return {'sha_unchanged': True, 'aliases_pass': True, 'elf': elf, 'tiny': rows,
+-            'strip_identity_pass': True, 'security': security}
++            'strip_identity_pass': True, 'security': security, 'installed_security': installed, 'real': real}
+ 
+ def certified_version(text):
+     lines = re.findall(r'^\s*(LLVM version[^\n]*)$', text, re.M)
+@@ -728,11 +880,13 @@ def tool_plan(text):
+         return {'plan_type': 'up-to-date', 'tasks': 0, 'categories': counts,
+                 'configuration_refresh_tasks': 0, 'descriptions': [], 'ninja_diagnostics': diagnostics, 'ninja_diagnostics_count': len(diagnostics)}
+     require(bool(lines), 'empty BOLT tool plan')
+-    descriptions = []
+-    for index, line in enumerate(lines, 1):
++    descriptions = []; completed = set()
++    for line in lines:
+         match = re.fullmatch(r'\[([0-9]+)/([0-9]+)\] (.+)', line)
+         require(match is not None, 'non-progress line in BOLT tool plan: '+line)
+-        require(int(match[1]) == index and int(match[2]) == len(lines), 'non-contiguous or truncated BOLT plan: '+line)
++        require(1 <= int(match[1]) <= len(lines) and int(match[2]) == len(lines) and
++                int(match[1]) not in completed, 'invalid or truncated BOLT plan: '+line)
++        completed.add(int(match[1]))
+         body = match[3]
+         require(body not in descriptions, 'duplicate BOLT task: '+body)
+         require(body in BOLT_TASK_DESCRIPTIONS or body in TF_REFRESH_DESCRIPTIONS, 'unapproved BOLT task: actual=%s expected=certified BOLT/TF tasks; remedy: inspect configuration and dirty causes, regenerate the certified whitelist and recertify if needed; never expand it automatically' % body)
+@@ -782,12 +936,16 @@ def tool_verify(build, plan, text, state):
+             require(not re.match(r'\[\d', line), 'malformed real build progress: '+line)
+             continue
+         f, t, body = int(match[1]), int(match[2]), match[3]
+-        require(f == len(descriptions)+1 and f <= t, 'invalid real build progress: '+line)
++        require(1 <= f <= t and f not in [c[0] for c in counters],
++                'invalid real build progress: '+line)
+         require(body in plan['descriptions'], 'real build task outside approved plan: '+body)
+         require(body not in descriptions, 'duplicate real build task: '+body)
+         descriptions.append(body); counters.append([f, t])
+     require(plan['plan_type'] != 'up-to-date' or not descriptions, 'up-to-date build unexpectedly ran tasks')
+     require(plan['plan_type'] != 'build' or bool(descriptions), 'build plan executed no tasks')
++    require({c[0] for c in counters} == set(range(1, len(descriptions)+1)), 'real build counter set incomplete')
++    require(set(descriptions) == set(plan['descriptions']) and len(descriptions) == plan['tasks'],
++            'executed task set/count differs from approved plan')
+     executable = Path(build)/'bin/llvm-bolt'
+     require(executable.is_file() and not executable.is_symlink() and os.access(executable, os.X_OK),
+             'llvm-bolt is not a regular executable')
+@@ -1207,6 +1365,8 @@ def run_step(step, log, argv, output=None, success_marker=None):
+ 
+ def pipeline(build, work, bolt, cache=None):
+     build, work = Path(build).absolute(), Path(work).absolute()
++    baseline = work/'installed-baseline.json'
++    require(baseline.is_file(), 'installed-baseline missing: '+str(baseline))
+     edge = (work/'link.original').read_text()
+     reference = work/'reference-relocs-clang-22'
+     require(not reference.exists(), 'relink output must be new')
+@@ -1216,10 +1376,13 @@ def pipeline(build, work, bolt, cache=None):
+     call([str(build/'bin/llvm-strip'),'--strip-debug',str(reference)],work/'reference-strip.log',timeout=600)
+     result = rewrite(str(bolt),str(work/'profile.fdata'),str(reference),str(work/'clang.bolt'),work/'rewrite')
+     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.bolt'),work/'prestrip-gate',str(build/'lib64/clang/22'))
++    real_prestrip = real_gate(work/'ordinary-clang-22',work/'clang.bolt',build,work/'prestrip-real',build/'lib64/clang/22')
+     identity = strip_all(str(build/'bin/llvm-strip'),work/'clang.bolt',work/'clang.candidate',work/'identity.json')
+-    security = security_compare(str(work/'ordinary-clang-22'), str(work/'clang.candidate'))
++    identity = adjust_rpath(work/'clang.candidate',baseline,work,identity)
++    security = security_compare(str(work/'ordinary-clang-22'), str(work/'clang.candidate'), ignore_paths=True)
+     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.candidate'),work/'preinstall-gate',str(build/'lib64/clang/22'))
+-    result.update(identity=identity, security=security, input_policy='emit-relocs-then-strip-debug',
++    real_final = real_gate(work/'ordinary-clang-22',work/'clang.candidate',build,work/'preinstall-real',build/'lib64/clang/22')
++    result.update(real_prestrip=real_prestrip, real_final=real_final, identity=identity, security=security, input_policy='emit-relocs-then-strip-debug',
+                   cache_policy='original-in-place' if cache is None else 'explicit-copy')
+     save(work/'pipeline-result.json',result)
+     return result
+@@ -1262,6 +1425,10 @@ def cache_unchanged(state):
+     return True
+ 
+ def validate_identity(identity, candidate):
++    if 'rpath_adjusted_sha256' in identity:
++        require(identity['after_sha256'] == identity['rpath_adjusted_sha256'], 'RPATH identity SHA inconsistent')
++        require(digest(identity['installed_baseline_path']) == identity['installed_baseline_sha256'],
++                'installed-baseline SHA changed')
+     require(identity.get('bolt_note_before') is True, 'unproven pre-strip BOLT identity')
+     require(identity.get('before_sha256') == digest(identity['before_path']), 'pre-strip SHA changed')
+     before = ELF(identity['before_path'])
+@@ -1269,7 +1436,7 @@ def validate_identity(identity, candidate):
+         before.audit()
+     finally:
+         before.close()
+-    require(digest(candidate) == identity.get('after_sha256'), 'stripped candidate SHA mismatch')
++    require(digest(candidate) == identity.get('rpath_adjusted_sha256', identity.get('after_sha256')), 'stripped candidate SHA mismatch')
+     final = ELF(candidate)
+     try:
+         final.audit(final=True)
+@@ -1359,6 +1526,7 @@ def main():
+     s=sub.add_parser('replay');s.add_argument('edge');s.add_argument('output');s.add_argument('dependency');s.add_argument('script');s.add_argument('--cache-dir')
+     s=sub.add_parser('rewrite');s.add_argument('tool');s.add_argument('profile');s.add_argument('input');s.add_argument('output');s.add_argument('work')
+     s=sub.add_parser('tiny');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('work');s.add_argument('--resource-dir')
++    s=sub.add_parser('installed-baseline');s.add_argument('root');s.add_argument('output')
+     s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
+     s=sub.add_parser('compare-root');s.add_argument('root');s.add_argument('baseline');s.add_argument('after')
+     s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
+@@ -1414,10 +1582,11 @@ def main():
+         atomic_text(a.script,script);Path(a.script).chmod(0o755);result={'script':a.script}
+     elif a.cmd=='rewrite':result=rewrite(a.tool,a.profile,a.input,a.output,a.work)
+     elif a.cmd=='tiny':result=tiny_gate(a.ordinary,a.candidate,a.work,a.resource_dir)
++    elif a.cmd=='installed-baseline':result=installed_baseline(a.root,a.output)
+     elif a.cmd=='snapshot':result=root_snapshot(a.root);save(a.output,result)
+     elif a.cmd=='compare-root':result=compare_root(a.root,json.loads(Path(a.baseline).read_text()),a.after)
+     elif a.cmd=='install':
+-        install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()),announce=True);return
++        install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()),announce=True,identity_path=a.identity);return
+     elif a.cmd=='post':
+         result=post_gate(a.root,json.loads(Path(a.state).read_text()),a.ordinary,a.work,
+                          a.resource_dir);save(Path(a.work)/'post-result.json',result)
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index fc3d8cad9610..8b5529c24c52 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -464,6 +464,7 @@ if [ -r /proc/self/stat ]; then echo BOLT_PROC_OK; else echo BOLT_PROC_MISSING;
+ # The handed-off build owns its original ThinLTO cache; do not duplicate it.
+ mkdir -p "$BOLT_WORK" || exit 1
+ # File-list baseline is the actual ordinary CMake install, not a name whitelist.
++python3 -B %{SOURCE1201} installed-baseline "%{buildroot}" "$BOLT_WORK/installed-baseline.json" || exit 1
+ python3 -B %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
+ bolt_step manifest-copy cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt"
+ bolt_step ordinary-copy cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22"
+@@ -480,7 +481,7 @@ bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
+ python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
+ cat "$BOLT_WORK/tool-plan.json"
+ python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
+-LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- ninja -j 1 llvm-bolt
++LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- ninja -j %{mlgo_build_jobs} llvm-bolt
+ python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+ cat "$BOLT_WORK/tool-build-verification.json"

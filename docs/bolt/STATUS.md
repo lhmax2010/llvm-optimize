@@ -456,3 +456,14 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 - /home删除前可用456.395 GiB，删除后539.413 GiB，df净增83.019 GiB。父目录、products及保全目录仍在。
 - CLEANUP FINISHED 2026-10-26T21:51:27+08:00 status=ok path=revised-root
 - 详情见[38号第9.5节](38_temp_cleanup_inventory.md)，原文在 `tools/bolt/results/temp-cleanup-20261026/revised-root-followup/`。本轮完成后停止。
+
+
+## 2026-10-27：RUNPATH / 工具并行 / real 门禁（37）——RPM内容门禁停止
+
+- 本地 detached amend `ac112ebfd6e7983bdfd4c38dd156e6baba72731b`，tree `581bc4d92752ee7e2de9f7aa70d79cb174c3293b`，父 hybrid `6e9d4f2`，Change-Id不变。只推GitHub证据，不推Gerrit/sandbox。
+- 317项夹具、五项Tizen rpm解析、OFF两模式逐字节展开全部PASS。完整本地构建返回0，22二进制RPM+1源码RPM，cgroup峰值14.999GiB，无OOM。
+- CMake RPATH_CHANGE及安全/布局检查、tool-plan/tool-verify 113/113、profile双门禁、tiny、compare-root、缓存释放、post全部PASS。RUNPATH精确为`$ORIGIN/../lib64`，无RPATH/构建路径/空项；最终candidate SHA `963f1163fa983737a43ec5b4bd04fa142a4236829dee290b23feeda28abd1c9e`。
+- 三处real共24/24对、52.61秒。llvm-bolt纯构建108秒，上次原日志337秒；begin→compare-root883秒，上次1201秒。不同运行条件，不声称全部差值来自并行。
+- **停止**：独立RPM比较在compiler-rt包发现45个.a完整SHA不同。只读诊断证实仅ar头内部日期变化、成员内容一致；没有自行放宽严格内容门禁。其它未比较包、90TU、old-text、RSS均未继续。
+- 根`W/temp/runpath-fix-20261026/gbs-root`及`products/`保留，观测峰值67.519GiB，122有效/4缺失du样本。日志移动造成一次采集路径修正，错误和修正均保留，不属于产品断言失败。
+- 详情：[37_runpath_and_improvements.md](37_runpath_and_improvements.md)，证据`tools/bolt/results/runpath-fix-20261026/`。待用户裁决ar内部日期的验收口径；old-text是否采用、崩溃定位方案继续挂账。

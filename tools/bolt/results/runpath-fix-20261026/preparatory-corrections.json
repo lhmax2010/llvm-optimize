@@ -1,0 +1,30 @@
+[
+  {
+    "item": "host fixture cmake PATH",
+    "cause": "host default PATH has no cmake",
+    "fix": "found existing CMake under ~/.local; use explicit test PATH only; package uses Tizen cmake"
+  },
+  {
+    "item": "parse started before export finished",
+    "cause": "export/llvm.spec had not been published",
+    "fix": "waited for successful export process before parsing; no rpm call had started"
+  },
+  {
+    "item": "parse fixture missing Source tarball",
+    "cause": "copied old parse driver without its SOURCES setup; Tizen rpmbuild --nobuild still checks Source0",
+    "raw": "error: File /home/abuild/runpath-fix-parse-20261026/SOURCES/llvm-22.1.8.tar.gz: No such file or directory",
+    "fix": "copy complete exported inputs into the dedicated parse fixture; first copytree failed because rpmbuild had created an empty SOURCES directory, and the shell repeated parsing without the inputs; verified it was empty and populated it with dirs_exist_ok=True. No source or gate changes."
+  },
+  {
+    "item": "GBS export staging parent ownership",
+    "cause": "sudo build preparation created outer gbs-root/local owned by root; ordinary user cannot create local/sources",
+    "fix": "new user-owned gbs-driver/local holds sources/repos, with BUILD-ROOTS symlink to the same prepared new root; no permission changes and no directory removal; full build has not run yet",
+    "prepared_root": "/home/linhao/Toolchain/development/llvm-optimize/temp/runpath-fix-20261026/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0",
+    "driver_root": "/home/linhao/Toolchain/development/llvm-optimize/temp/runpath-fix-20261026/gbs-driver/local/BUILD-ROOTS/scratch.x86_64.0"
+  },
+  {
+    "time": "2026-10-27T14:07:38.600843+08:00",
+    "issue": "GBS moved .build.log to success/log.txt; qualification collector referenced former path before any product assertion",
+    "correction": "Use discovered final success/log.txt; retain failed collector outputs; no source change, no build retry, no gate bypass"
+  }
+]

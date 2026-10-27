@@ -26,7 +26,7 @@ class FourthReviewBTests(unittest.TestCase):
     def test_non_disk_gates_unchanged(self):
         previous=ast.parse((Path(__file__).parent/'results/review4b-final-helper.py').read_text())
         current=ast.parse(Path(h.__file__).read_text())
-        for name in ('ELF','security_properties','security_compare','match_counts','replay_script','tiny_gate','no_bolt_products','tool_prepare','tool_plan','tool_verify'):
+        for name in ('ELF','security_properties','match_counts','replay_script','tiny_gate','no_bolt_products','tool_prepare'):
             with self.subTest(name=name):
                 a=next(n for n in previous.body if getattr(n,'name',None)==name)
                 b=next(n for n in current.body if getattr(n,'name',None)==name)
