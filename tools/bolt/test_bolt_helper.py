@@ -370,13 +370,13 @@ class PipelineTests(Base):
             events.append(label)
             if failure==label:raise h.GateError('tiny gate failed')
             return [{'byte_equal':True}]*3
-        with patch.object(h,'call',side_effect=command),patch.object(h,'rewrite',side_effect=rewrite),patch.object(h,'tiny_gate',side_effect=tiny),patch.object(h,'cache_copy',side_effect=AssertionError('no automatic cache copy')),patch.object(h,'security_compare',side_effect=lambda *args,**kw: events.append('security') or {'security_preserved':True}),patch.object(h,'real_gate',side_effect=lambda *args: events.append('real') or {'real_pass':True}),patch.object(h,'adjust_rpath',side_effect=lambda *args: events.append('rpath') or args[-1]):
+        with patch.object(h,'call',side_effect=command),patch.object(h,'rewrite',side_effect=rewrite),patch.object(h,'tiny_gate',side_effect=tiny),patch.object(h,'cache_copy',side_effect=AssertionError('no automatic cache copy')),patch.object(h,'security_compare',side_effect=lambda *args,**kw: events.append('security') or {'security_preserved':True}),patch.object(h,'real_gate',side_effect=lambda *args: events.append('real') or {'real_pass':True}),patch.object(h,'adjust_rpath',side_effect=lambda *args: events.append('rpath') or args[-1]),patch.object(h,'separate_debug_symbols',side_effect=lambda *args: events.append('separate-debug') or {}),patch.object(h,'add_debuglink',side_effect=lambda *args: events.append('debuglink') or args[-2]):
             if failure:
-                with self.assertRaises(h.GateError):h.pipeline(build,work,'fixture-bolt','copied/cache' if override else None)
+                with self.assertRaises(h.GateError):h.pipeline(build,work,'fixture-bolt','copied/cache' if override else None,debug_symbols=True)
                 if failure in ('rewrite','prestrip'):self.assertNotIn('strip-all',events)
                 self.assertFalse((work/'pipeline-result.json').exists());return
-            result=h.pipeline(build,work,'fixture-bolt','copied/cache' if override else None)
-        self.assertEqual(events,['relink','strip-debug','rewrite','prestrip','real','strip-all','rpath','security','final','real'])
+            result=h.pipeline(build,work,'fixture-bolt','copied/cache' if override else None,debug_symbols=True)
+        self.assertEqual(events,['relink','strip-debug','rewrite','prestrip','real','separate-debug','strip-all','rpath','debuglink','security','final','real'])
         self.assertEqual(result['identity']['after_sha256'],h.digest(work/'clang.candidate'))
         self.assertFalse((work/'lto-cache').exists());self.assertFalse((work/'strip-equivalence.json').exists())
         return result

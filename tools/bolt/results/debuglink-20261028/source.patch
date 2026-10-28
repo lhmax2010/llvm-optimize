@@ -1,0 +1,61 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 7760f1e0d823..0aceb0330305 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -1535,7 +1535,7 @@ def run_step(step, log, argv, output=None, success_marker=None):
+         raise
+ 
+ 
+-def pipeline(build, work, bolt, cache=None):
++def pipeline(build, work, bolt, cache=None, debug_symbols=False):
+     build, work = Path(build).absolute(), Path(work).absolute()
+     baseline = work/'installed-baseline.json'
+     require(baseline.is_file(), 'installed-baseline missing: '+str(baseline))
+@@ -1549,10 +1549,11 @@ def pipeline(build, work, bolt, cache=None):
+     result = rewrite(str(bolt),str(work/'profile.fdata'),str(reference),str(work/'clang.bolt'),work/'rewrite')
+     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.bolt'),work/'prestrip-gate',str(build/'lib64/clang/22'))
+     real_prestrip = real_gate(work/'ordinary-clang-22',work/'clang.bolt',build,work/'prestrip-real',build/'lib64/clang/22')
+-    debug_info = separate_debug_symbols(build, work)
++    debug_info = separate_debug_symbols(build, work) if debug_symbols else None
+     identity = strip_all(str(build/'bin/llvm-strip'),work/'clang.bolt',work/'clang.candidate',work/'identity.json')
+     identity = adjust_rpath(work/'clang.candidate',baseline,work,identity)
+-    identity = add_debuglink(build,work,identity,debug_info)
++    if debug_info is not None:
++        identity = add_debuglink(build,work,identity,debug_info)
+     security = security_compare(str(work/'ordinary-clang-22'), str(work/'clang.candidate'), ignore_paths=True)
+     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.candidate'),work/'preinstall-gate',str(build/'lib64/clang/22'))
+     real_final = real_gate(work/'ordinary-clang-22',work/'clang.candidate',build,work/'preinstall-real',build/'lib64/clang/22')
+@@ -1705,7 +1706,7 @@ def main():
+     s=sub.add_parser('tool-prepare');s.add_argument('build');s.add_argument('plan');s.add_argument('state')
+     s=sub.add_parser('tool-verify');s.add_argument('build');s.add_argument('plan');s.add_argument('log');s.add_argument('state');s.add_argument('result')
+     s=sub.add_parser('tool-plan');s.add_argument('input')
+-    s=sub.add_parser('pipeline');s.add_argument('build');s.add_argument('work');s.add_argument('tool');s.add_argument('--cache-dir')
++    s=sub.add_parser('pipeline');s.add_argument('build');s.add_argument('work');s.add_argument('tool');s.add_argument('--cache-dir');s.add_argument('--debug-symbols',action='store_true')
+     s=sub.add_parser('strip-all');s.add_argument('tool');s.add_argument('before');s.add_argument('after');s.add_argument('identity')
+     s=sub.add_parser('cache-release');s.add_argument('build');s.add_argument('work')
+     s=sub.add_parser('cache-copy');s.add_argument('edge');s.add_argument('destination');s.add_argument('result')
+@@ -1759,7 +1760,7 @@ def main():
+     elif a.cmd=='tool-verify':
+         result=tool_verify(a.build,json.loads(Path(a.plan).read_text()),Path(a.log).read_text(),json.loads(Path(a.state).read_text()));save(a.result,result)
+     elif a.cmd=='tool-plan':result=tool_plan(Path(a.input).read_text())
+-    elif a.cmd=='pipeline':result=pipeline(a.build,a.work,a.tool,a.cache_dir)
++    elif a.cmd=='pipeline':result=pipeline(a.build,a.work,a.tool,a.cache_dir,a.debug_symbols)
+     elif a.cmd=='strip-all':result=strip_all(a.tool,a.before,a.after,a.identity)
+     elif a.cmd=='cache-copy':result=cache_copy(Path(a.edge).read_text(),a.destination,a.result)
+     elif a.cmd=='package-compare':
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index c35b02da29cd..3e3a2b660709 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -487,7 +487,11 @@ python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_W
+   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+ cat "$BOLT_WORK/tool-build-verification.json"
+ python3 -B %{SOURCE1201} disk-report tool-built
++%if %{llvm_release_build}
+ python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
++%else
++python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" --debug-symbols || exit 1
++%endif
+ echo BOLT_PIPELINE_PASS
+ python3 -B %{SOURCE1201} disk-report pipeline
+ # BOLT configuration/build/rewrite must not change the ordinary installation.

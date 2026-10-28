@@ -577,3 +577,13 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 挂账：建议在Base-Toolchain按Base代码产出新快照、正常流程更新base固定引用后再合入Unified评审，避免新代码搭配旧依赖。合入后第一次QB仍须确认最终使用/合并的project_config和宏。详见[46号第8节](46_qb_meta_toolchain_switch.md)。
 
 - 46号发布后复核：扫描stdout的一级目录计数已改为实际扫描集合；重跑确认1034spec、9487BR、0命中。嵌套rsync spec此前已经参与扫描；两个Gerrit提交及结论不变。
+
+
+## 2026-10-29：43号 debuglink 旧快照完整构建前置认证停止
+
+- 用户改用39号同条件的旧Toolchain20261013.024319调试配置，build.conf SHA e5187fd7…核对通过；不沿用45号新Base配置。
+- 原569d734d缺发布模式分支，按“缺项先补”授权补齐：pipeline默认无符号，debug分支显式 --debug-symbols；release不分离、不加链接。仅本地amend为69807d06b89f5d14140854e99485182bdef9546b，tree f117b3c47eca5739f6829bd3ff9446bc632d77c1，父hybrid6e9d4f2和Change-Id不变。profile/OPTIONS/白名单不变。
+- 348测试PASS，gbs export PASS，新根依赖安装与%prep PASS，Tizen rpm4.14.1.1五项解析PASS；39号products全部35个SHA条目PASS。
+- **STOP：BOLT-off debug展开与f308fe08多一个空行（15914→15915B），对应原草稿新增的条件BuildRequires: elfutils。按逐字节门禁停下，不忽略空白、不启动完整构建。** release展开比较及全部产物认证NOT RUN。详见[43号报告](43_debuginfo_symbols.md)。
+- 新根temp/debuglink-20261028/及本地提交保留，没有删除目录、没有Gerrit/sandbox/QB操作；准备结束后无新根残留挂载。
+- 崩溃定位：函数级代码已实现、42号临时方案已验证；正式RPM完整认证未完成，不能宣称部署可用。源码行方案成本实验、LLVM only-keep-debug修复继续挂账。scm/meta/qb评审359363、359364进展，以及合入后第一次QB使用哪份最终编译配置的核对也继续挂账。

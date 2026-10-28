@@ -30,6 +30,17 @@ class FourthReviewBTests(unittest.TestCase):
             with self.subTest(name=name):
                 a=next(n for n in previous.body if getattr(n,'name',None)==name)
                 b=next(n for n in current.body if getattr(n,'name',None)==name)
+                if name == 'ELF':
+                    # Debuglink integration authorizes exactly these three reader
+                    # changes; normalize them back before checking all old gates.
+                    text=ast.unparse(b)
+                    self.assertIn('sections_only=False',text)
+                    text=text.replace('path, sections_only=False','path')
+                    self.assertIn('range(0 if sections_only else phnum)',text)
+                    text=text.replace('range(0 if sections_only else phnum)','range(phnum)')
+                    self.assertIn(" and n != '.gnu_debuglink'",text)
+                    text=text.replace(" and n != '.gnu_debuglink'",'')
+                    b=ast.parse(text).body[0]
                 self.assertEqual(ast.dump(a,include_attributes=False),ast.dump(b,include_attributes=False))
     def test_diagnostics_count_matches_preserved_warning_lines(self):
         warnings=['ninja: warning: first','ninja: warning: second']

@@ -1,0 +1,24 @@
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 8b5529c24c52..3e3a2b660709 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -76,6 +76,7 @@ BuildRequires: ninja
+ %ifarch x86_64
+ %if %{with clang_bolt}
+ BuildRequires: python3 >= 3.9
++BuildRequires: elfutils
+ BuildRequires: xz
+ %endif
+ %endif
+@@ -486,7 +487,11 @@ python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_W
+   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+ cat "$BOLT_WORK/tool-build-verification.json"
+ python3 -B %{SOURCE1201} disk-report tool-built
++%if %{llvm_release_build}
+ python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
++%else
++python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" --debug-symbols || exit 1
++%endif
+ echo BOLT_PIPELINE_PASS
+ python3 -B %{SOURCE1201} disk-report pipeline
+ # BOLT configuration/build/rewrite must not change the ordinary installation.
