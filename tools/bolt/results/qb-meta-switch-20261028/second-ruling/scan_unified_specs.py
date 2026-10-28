@@ -42,4 +42,4 @@ for prov in (D/'specs').glob('*/provenance.json'):
       alternatives[arch]=[dict(name=p['name'],arch=p['arch'],ver=p['ver'],rel=p['rel'],vcs=p.get('vcs'),source_layer='Unified' if p in new else 'Base-Toolchain') for p in new+base if p['arch'] in (arch,'noarch') and (p['name']==c or c in p['files'] or any(x['name']==c for x in p['provides']))]
      hits.append(dict(r,capability=c,removed_providers=providers,alternatives=alternatives))
 for n,v in [('scanned-specs',scanned),('buildrequires-lines',allbr),('buildrequires-hits',hits),('removed-capability-text-hits',rawhits)]: (D/(n+'.json')).write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n')
-print('specs',len(list((D/'specs').glob('*/packaging/*.spec'))),'BR',len(allbr),'HITS',len(hits));print(json.dumps(hits,ensure_ascii=False,indent=2)[:5000])
+print('specs',len(scanned),'BR',len(allbr),'HITS',len(hits));print(json.dumps(hits,ensure_ascii=False,indent=2)[:5000])

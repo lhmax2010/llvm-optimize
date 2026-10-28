@@ -665,3 +665,6 @@ git push origin 12f22a9c3cd1262f91a798d8f6439f6e3835ad31:refs/for/master
 ### 8.5 执行边界和交付核对
 
 只上传上述两个`refs/for/master`，没有推master、sandbox或其他分支，没有添加reviewer。没有构建软件包、修改QB状态、修改LLVM源码/历史构建根、删除目录或修改VS Code配置。scm/meta/qb中只产生两个独立提交；GitHub仅追加本节、STATUS和审查证据。前文逐字节保留检查和证据索引见本目录`delivery-validation.json`与`SHA256SUMS`。
+
+
+计数输出补记：初版scan.stdout只数一级`packaging/*.spec`，显示1033；实际扫描按provenance遍历，包含嵌套的`platform/upstream/rsync/packaging/lsb/rsync.spec`，scanned-specs.json及闭包汇总一直为1034。已把stdout计数改成实际扫描集合并重跑，现为`specs 1034 BR 9487 HITS 0`。仅修正证据脚本的显示计数，1030仓库覆盖、依赖结论及两个Gerrit提交均未变化。
