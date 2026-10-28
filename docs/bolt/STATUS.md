@@ -524,3 +524,8 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 两轮请求均为f308fe08，子构建分别1210837/1211018，在不同worker上同因失败：armv7l/aarch64/x86_64项目均报 `broken repository 'DOD:Tizen-Base/standard' is unavailable`，尚未进入LLVM包编译。日志创建DOD:Tizen-Base-Toolchain、主项目却引用DOD:Tizen-Base；此名称/引用差异已确认，具体生成缺陷或恢复状态原因待管理员核实。随后Publish_Each_Build因输出repo不存在报FileNotFoundError，为连带错误。没有BOLT门禁执行或hybrid链接失败证据，也无已取得日志中的磁盘满/OOM/超时证据。
 
 已保存两父两子完整日志、页面文本/截图、provenance/逐行节选及与本地39号对比；独立包日志和profiling不可得，报告页空白/公开产物404如实记录。QB用Tizen-Base 20261026.005418+NGBS，本地39用Toolchain 20261013.024319+GBS，不能当作同环境。只提出仓库元数据和发布错误处理建议，未改源码、未构建、未操作QB、未推Gerrit/sandbox。详见[44号报告](44_qb_failure_1210836_1211014.md)。
+
+
+### 44号配置根因追查（2026-10-28）
+
+只读克隆scm/meta/qb master并查历史，定位3c78318b0764d892950f11ec8f460719d4eff6a7：Dongkyun Son，AuthorDate 10-26 16:19:54+09、CommitDate 10-28 12:28:41+09，merge 3ed92e4于03:29:11 UTC合入。为临时用Base RPM，把Toolchain和Dev的DOD引用与snapshot_info同时切到Base；实际QB仍创建DOD:Tizen-Base-Toolchain，引用名脱节解释两轮仓库不可用。三次项目/Ref. Snapshot/reference/仓库覆盖选项相同，解析URL变化对应配置提交，未见选错项目证据。最小建议恢复Toolchain project_meta:6为DOD:Tizen-Base-Toolchain而保留Base下载意图；若恢复原环境，还需恢复snapshot_info和候选列表。只写建议，未实施，Dev实际运行结果未知。完整32个相关历史提交diff及3组git log已存meta/，44号第8节追加、前文不变；没有QB操作、配置修改或Gerrit推送。

@@ -1,0 +1,58 @@
+commit 8739131fa8cce46a428818525d6fbf358175d585
+Author:     He Fangyu <fangyu.he@samsung.com>
+AuthorDate: Mon Oct 26 11:17:57 2026 +0800
+Commit:     He Fangyu <fangyu.he@samsung.com>
+CommitDate: Mon Oct 26 11:17:57 2026 +0800
+
+    Tizen-Base-Toolchain: limit section GC to Clang builds
+    
+    Global --gc-sections also reaches packages that override the default
+    Clang toolchain with GCC. This breaks glibc's libc_pic.os partial link:
+    GNU ld requires an explicit root symbol when combining -r with section
+    GC, but this intermediate object has no such root.
+    
+    Move --gc-sections into the Clang-specific linker flags and resolve the
+    selected flags at macro expansion time so package-level toolchain
+    overrides take effect. Preserve the common and architecture-specific
+    linker flags.
+    
+    Validation:
+    - Passed 18 RPM macro expansion checks across six architectures.
+    - Completed an aarch64 glibc GBS build using the modified project config
+      and the local gbs.conf; generated 15 binary RPMs.
+    - Confirmed libc_pic.os links successfully without --gc-sections.
+    - The glibc test suite remains skipped by the existing project config.
+    
+    Change-Id: I008d9a418fb43b7c6f857baa1af3321aa88115ef
+---
+ TIZEN/Tizen/Tizen-Base-Toolchain/project_config | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+index 1c9fbfb..f3d40b8 100644
+--- a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
++++ b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+@@ -123,6 +123,7 @@ Macros:
+ %__cc_clang %{_host}-clang
+ %__cxx_clang %{_host}-clang++
+ %__optflags_toolchain_clang -Os -ffunction-sections -fdata-sections -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}
++%__ldflags_toolchain_clang -Wl,--gc-sections
+ 
+ # gcc utils
+ %__ar_gcc gcc-ar
+@@ -139,6 +140,8 @@ Macros:
+ %__cc %{expand:%%{__cc_%{_toolchain}}}
+ %__cxx %{expand:%%{__cxx_%{_toolchain}}}
+ %__optflags_toolchain %{expand:%%{__optflags_toolchain_%{_toolchain}}}
++# Resolve at use time so package toolchain overrides also apply to linker flags.
++%__ldflags_toolchain %{expand:%%{?__ldflags_toolchain_%{_toolchain}}}
+ 
+ %prep %%prep\
+ export AR=%{__ar} RANLIB=%{__ranlib};\
+@@ -350,5 +353,5 @@ Macros:
+ :Macros
+ %endif
+ Macros:
+-%build_ldflags -Wl,-z,relro,--as-needed,--gc-sections%{?_ldflags_arch_extra}
++%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra} %{__ldflags_toolchain}
+ :Macros

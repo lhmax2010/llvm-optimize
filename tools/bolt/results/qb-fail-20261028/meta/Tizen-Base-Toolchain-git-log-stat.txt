@@ -1,0 +1,196 @@
+commit 092ff9eefe6d8946f747a94506a2e7c53ee286e8
+Author:     Tizen Build Automation <tizenbuild@samsung.com>
+AuthorDate: Wed Oct 28 03:30:52 2026 +0000
+Commit:     Tizen Build Automation <tizenbuild@samsung.com>
+CommitDate: Wed Oct 28 03:30:52 2026 +0000
+
+    Update candidate_snapshot : TIZEN/Tizen/Tizen-Base-Toolchain/project_meta,TIZEN/Tizen/Tizen-Base-Dev/project_meta,
+
+ .../Tizen/Tizen-Base-Toolchain/candidate_snapshot  | 30 ++++++++++++----------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
+
+commit 3ed92e4a1b716af941609faadedd93824086079f
+Merge: 3d5ed8e 3c78318
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Wed Oct 28 03:29:11 2026 +0000
+Commit:     Gerrit Code Review <gerrit@localhost>
+CommitDate: Wed Oct 28 03:29:11 2026 +0000
+
+    Merge "Tizen-Base-Toolchain, Tizen-Base-Dev: update meta and snapshot"
+
+commit 3c78318b0764d892950f11ec8f460719d4eff6a7
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Mon Oct 26 16:19:54 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Wed Oct 28 12:28:41 2026 +0900
+
+    Tizen-Base-Toolchain, Tizen-Base-Dev: update meta and snapshot
+    
+    This is to enable build along with Tizen-Base rpms one time temporarily.
+    
+    Change-Id: Ide23bdad77985a609626ab3fea253800f8548f29
+    Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/project_meta  | 2 +-
+ TIZEN/Tizen/Tizen-Base-Toolchain/snapshot_info | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+commit 2cb2d14abd9d76a210a8846cb930efc1ba79a119
+Author:     Tizen Build Automation <tizenbuild@samsung.com>
+AuthorDate: Tue Oct 27 11:11:20 2026 +0000
+Commit:     Tizen Build Automation <tizenbuild@samsung.com>
+CommitDate: Tue Oct 27 11:11:20 2026 +0000
+
+    Update candidate_snapshot : TIZEN/Tizen/Tizen-Base-Toolchain/project_meta,TIZEN/Tizen/Tizen-Unified-Toolchain/project_meta,TIZEN/Tizen/Tizen-Base/project_meta,
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/candidate_snapshot | 2 ++
+ 1 file changed, 2 insertions(+)
+
+commit b7c92ab74e950bbff3dee7b893d51c5d5fc419ce
+Author:     Tizen Build Automation <tizenbuild@samsung.com>
+AuthorDate: Tue Oct 27 11:10:10 2026 +0000
+Commit:     Tizen Build Automation <tizenbuild@samsung.com>
+CommitDate: Tue Oct 27 11:10:10 2026 +0000
+
+    Updating Snapshot 1207850
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/snapshot_info | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 1707b87669a408add549ee4f232143c17f742732
+Author:     Tizen Build Automation <tizenbuild@samsung.com>
+AuthorDate: Tue Oct 27 03:20:48 2026 +0000
+Commit:     Tizen Build Automation <tizenbuild@samsung.com>
+CommitDate: Tue Oct 27 03:20:48 2026 +0000
+
+    Update candidate_snapshot : TIZEN/Tizen/Tizen-Base-Toolchain/project_meta,TIZEN/Tizen/Tizen-Unified-Toolchain/project_meta,TIZEN/Tizen/Tizen-Base/project_meta,
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/candidate_snapshot | 2 ++
+ 1 file changed, 2 insertions(+)
+
+commit 7e53e6e469f5d115769ba939c61af91923f75a97
+Author:     Tizen Build Automation <tizenbuild@samsung.com>
+AuthorDate: Tue Oct 27 03:12:07 2026 +0000
+Commit:     Tizen Build Automation <tizenbuild@samsung.com>
+CommitDate: Tue Oct 27 03:12:07 2026 +0000
+
+    Updating Snapshot 1207848
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/snapshot_info | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 424f27a84b03d133e3a62090077c65dfa44ba7e7
+Merge: 53a1ca4 8739131
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Mon Oct 26 04:04:33 2026 +0000
+Commit:     Gerrit Code Review <gerrit@localhost>
+CommitDate: Mon Oct 26 04:04:33 2026 +0000
+
+    Merge "Tizen-Base-Toolchain: limit section GC to Clang builds"
+
+commit 8739131fa8cce46a428818525d6fbf358175d585
+Author:     He Fangyu <fangyu.he@samsung.com>
+AuthorDate: Mon Oct 26 11:17:57 2026 +0800
+Commit:     He Fangyu <fangyu.he@samsung.com>
+CommitDate: Mon Oct 26 11:17:57 2026 +0800
+
+    Tizen-Base-Toolchain: limit section GC to Clang builds
+    
+    Global --gc-sections also reaches packages that override the default
+    Clang toolchain with GCC. This breaks glibc's libc_pic.os partial link:
+    GNU ld requires an explicit root symbol when combining -r with section
+    GC, but this intermediate object has no such root.
+    
+    Move --gc-sections into the Clang-specific linker flags and resolve the
+    selected flags at macro expansion time so package-level toolchain
+    overrides take effect. Preserve the common and architecture-specific
+    linker flags.
+    
+    Validation:
+    - Passed 18 RPM macro expansion checks across six architectures.
+    - Completed an aarch64 glibc GBS build using the modified project config
+      and the local gbs.conf; generated 15 binary RPMs.
+    - Confirmed libc_pic.os links successfully without --gc-sections.
+    - The glibc test suite remains skipped by the existing project config.
+    
+    Change-Id: I008d9a418fb43b7c6f857baa1af3321aa88115ef
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/project_config | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+commit 73d21a27e5b4460fb9b34c51e63fdbde52d83e58
+Author:     Tizen Build Automation <tizenbuild@samsung.com>
+AuthorDate: Mon Oct 26 01:40:47 2026 +0000
+Commit:     Tizen Build Automation <tizenbuild@samsung.com>
+CommitDate: Mon Oct 26 01:40:47 2026 +0000
+
+    Update candidate_snapshot : TIZEN/Tizen/Tizen-Base-Toolchain/project_meta,TIZEN/Tizen/Tizen-Unified-SC/project_meta,TIZEN/Tizen/Tizen-Unified-Toolchain/project_meta,TIZEN/Tizen/Tizen-Unified-X/project_meta,TIZEN/Tizen/Tizen-Unified/project_meta,TIZEN/Tizen/Tizen-Base/project_meta,TIZEN/Tizen-10.1/Tizen-10.1-Unified/project_meta,TIZEN/Tizen-10.0/Tizen-10.0-Unified/project_meta,
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/candidate_snapshot | 2 --
+ 1 file changed, 2 deletions(-)
+
+commit 213bb73d5ddfbfbbe98b52762751ed155df05c9d
+Author:     Tizen Build Automation <tizenbuild@samsung.com>
+AuthorDate: Sun Oct 25 01:41:08 2026 +0000
+Commit:     Tizen Build Automation <tizenbuild@samsung.com>
+CommitDate: Sun Oct 25 01:41:08 2026 +0000
+
+    Update candidate_snapshot : TIZEN/Tizen/Tizen-Base-Toolchain/project_meta,TIZEN/Tizen/Tizen-Unified-Toolchain/project_meta,TIZEN/Tizen/Tizen-Unified-X/project_meta,TIZEN/Tizen/Tizen-Unified/project_meta,TIZEN/Tizen/Tizen-Base/project_meta,TIZEN/Tizen-10.1/Tizen-10.1-Unified/project_meta,TIZEN/Tizen-10.0/Tizen-10.0-Unified/project_meta,
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/candidate_snapshot | 2 --
+ 1 file changed, 2 deletions(-)
+
+commit f476493adb414f0dcdc8c3f758c66e7b4eb269c0
+Merge: 606137c a98f9e8
+Author:     Woo Chang Kim <wchang.kim@samsung.com>
+AuthorDate: Wed Oct 21 21:20:21 2026 +0000
+Commit:     Gerrit Code Review <gerrit@localhost>
+CommitDate: Wed Oct 21 21:20:21 2026 +0000
+
+    Merge "Revert "Enable DOD path for Tizen-Base-X project_meta""
+
+commit d3fa3e1122fe4f9778ae38bf14c82f8f2ce7f65c
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Wed Oct 21 19:22:27 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Wed Oct 21 19:22:27 2026 +0800
+
+    Add LLVM Global Compile Options
+    
+    Change-Id: Ic95a555d1e64018a3ed0257f320e3a42edcdce5a
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/project_config | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+commit 79bc2af1bdf40124449085b97b1d466d81a27c2a
+Author:     Tizen Build Automation <tizenbuild@samsung.com>
+AuthorDate: Wed Oct 21 03:21:27 2026 +0000
+Commit:     Tizen Build Automation <tizenbuild@samsung.com>
+CommitDate: Wed Oct 21 03:21:27 2026 +0000
+
+    Update candidate_snapshot : TIZEN/Tizen/Tizen-Base-Toolchain/project_meta,TIZEN/Tizen/Tizen-Unified-Toolchain/project_meta,TIZEN/Tizen/Tizen-Base/project_meta,
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/candidate_snapshot | 2 ++
+ 1 file changed, 2 insertions(+)
+
+commit fd8cb0bc18870daf3b518732ee4db8ab7ce95cc2
+Author:     Tizen Build Automation <tizenbuild@samsung.com>
+AuthorDate: Wed Oct 21 03:18:34 2026 +0000
+Commit:     Tizen Build Automation <tizenbuild@samsung.com>
+CommitDate: Wed Oct 21 03:18:34 2026 +0000
+
+    Updating Snapshot 1203397
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/snapshot_info | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+commit 998873564e22abfaf154a99558af5e639ad2fef9
+Author:     Tizen Build Automation <tizenbuild@samsung.com>
+AuthorDate: Tue Oct 20 01:40:54 2026 +0000
+Commit:     Tizen Build Automation <tizenbuild@samsung.com>
+CommitDate: Tue Oct 20 01:40:54 2026 +0000
+
+    Update candidate_snapshot : TIZEN/Tizen/Tizen-Base-Toolchain/project_meta,TIZEN/Tizen/Tizen-Unified-Toolchain/project_meta,TIZEN/Tizen/Tizen-Base/project_meta,
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/candidate_snapshot | 2 --
+ 1 file changed, 2 deletions(-)

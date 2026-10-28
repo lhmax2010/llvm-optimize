@@ -1,0 +1,42 @@
+commit d3fa3e1122fe4f9778ae38bf14c82f8f2ce7f65c
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Wed Oct 21 19:22:27 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Wed Oct 21 19:22:27 2026 +0800
+
+    Add LLVM Global Compile Options
+    
+    Change-Id: Ic95a555d1e64018a3ed0257f320e3a42edcdce5a
+---
+ TIZEN/Tizen/Tizen-Base-Toolchain/project_config | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+index e267b05..1c9fbfb 100644
+--- a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
++++ b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+@@ -122,7 +122,7 @@ Macros:
+ %__ranlib_clang llvm-ranlib
+ %__cc_clang %{_host}-clang
+ %__cxx_clang %{_host}-clang++
+-%__optflags_toolchain_clang -Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}
++%__optflags_toolchain_clang -Os -ffunction-sections -fdata-sections -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}
+ 
+ # gcc utils
+ %__ar_gcc gcc-ar
+@@ -341,7 +341,7 @@ Optflags: riscv64 %{__optflags} -mabi=lp64d -march=rv64gc
+ 
+ %ifarch armv7l armv7hl
+ Macros:
+-%_ldflags_arch_extra ,-O1,--hash-style=gnu
++%_ldflags_arch_extra ,-O1,--hash-style=gnu,-z,max-page-size=4096
+ :Macros
+ %endif
+ %ifarch i686
+@@ -350,5 +350,5 @@ Macros:
+ :Macros
+ %endif
+ Macros:
+-%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra}
++%build_ldflags -Wl,-z,relro,--as-needed,--gc-sections%{?_ldflags_arch_extra}
+ :Macros
