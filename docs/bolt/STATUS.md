@@ -507,3 +507,8 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 ## 2026-10-28：40号perf/AutoFDO能力探测
 
 硬件arch_lbr、cpu_core/cpu_atom各32条分支能力可见；普通用户perf_event_paranoid=4，带/不带-b的cycles:u均拒绝（rc255），未采到有效数据。/usr/bin/perf缺当前6.17.0-1033内核工具；只读使用已有perf7.0.14也被权限拒绝。llvm-profgen/perf2bolt/llvm-profdata存在、版本可运行，但profgen转换因无数据NOT RUN。部分完成，不提权、不安装、不改系统配置，详见[40号报告](40_perf_autofdo_probe.md)。
+
+
+## 2026-10-28：外部评审材料包
+
+以只读确认的sandbox f308fe08为准，发布patches/review-20261028/：hybrid6e9d4f2的0001、BOLT f308的0002（显式--no-binary）、8个改动文本文件完整最终版、第三轮后变更说明、hybrid首次外审摘要、README/raw索引/SHA256SUMS。Source1200仅列文件名、9,735,212B和52fd8522…SHA，不含二进制内容，包不自包含构建输入。41符号文件失败和40权限限制均透明链接；源码/提交未改变。本轮仅推GitHub bolt-v4，发布后按README逐个检查raw链接。
