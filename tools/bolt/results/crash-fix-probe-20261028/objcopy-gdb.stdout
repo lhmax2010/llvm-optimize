@@ -1,0 +1,362 @@
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <https://debuginfod.ubuntu.com>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+To enable execution of this file add
+	add-auto-load-safe-path /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libthread_db.so.1
+line to your configuration file "/home/linhao/.config/gdb/gdbinit".
+To completely disable this security protection add
+	set auto-load safe-path /
+line to your configuration file "/home/linhao/.config/gdb/gdbinit".
+For more information about this security protection see the
+"Auto-loading safe path" section in the GDB manual.  E.g., run from the shell:
+	info "(gdb)Auto-loading safe path"
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00007ffff2374277 in ?? () from /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libc.so.6
+#0  0x00007ffff2374277 in ?? () from /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libc.so.6
+#1  0x00007ffff6950647 in llvm::objcopy::elf::ELFWriter<llvm::object::ELFType<(llvm::endianness)1, true> >::writeSegmentData() () from /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libLLVM.so.22.1
+#2  0x00007ffff6951da6 in llvm::objcopy::elf::ELFWriter<llvm::object::ELFType<(llvm::endianness)1, true> >::write() () from /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libLLVM.so.22.1
+#3  0x00007ffff692c437 in ?? () from /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libLLVM.so.22.1
+#4  0x00007ffff692c6fd in llvm::objcopy::elf::executeObjcopyOnBinary(llvm::objcopy::CommonConfig const&, llvm::objcopy::ELFConfig const&, llvm::object::ELFObjectFileBase&, llvm::raw_ostream&) () from /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libLLVM.so.22.1
+#5  0x00007ffff6918e4e in llvm::objcopy::executeObjcopyOnBinary(llvm::objcopy::MultiFormatConfig const&, llvm::object::Binary&, llvm::raw_ostream&) () from /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libLLVM.so.22.1
+#6  0x00007ffff46d8c9e in llvm::writeToOutput(llvm::StringRef, std::function<llvm::Error (llvm::raw_ostream&)>) () from /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libLLVM.so.22.1
+#7  0x00007ffff7fafc59 in ?? ()
+#8  0xffffffffa9400000 in ?? ()
+#9  0xffffeff848ea0000 in ?? ()
+#10 0x00007ffff7f81d70 in ?? ()
+#11 0x0000000000000008 in ?? ()
+#12 0xffffffffa9800000 in ?? ()
+#13 0xffffeff848ea0000 in ?? ()
+#14 0x00007ffff7f81d70 in ?? ()
+#15 0x0000000000000004 in ?? ()
+#16 0x00007fffffffd7e0 in ?? ()
+#17 0x00007fffffffd5d0 in ?? ()
+#18 0x00007ffff7fb0550 in ?? ()
+#19 0x00007ffff7fb0530 in ?? ()
+#20 0x0000000000000000 in ?? ()
+rax            0x7fffeb75e040      140737143758912
+rbx            0x55555557d2e0      93824992400096
+rcx            0x7fffeb75e280      140737143759488
+rdx            0x2d8               728
+rsi            0x7fffef4001c0      140737207337408
+rdi            0x7fffeb75e040      140737143758912
+rbp            0x1                 0x1
+rsp            0x7fffffffd258      0x7fffffffd258
+r8             0x0                 0
+r9             0x3                 3
+r10            0x7                 7
+r11            0x555558d57820      93825050966048
+r12            0x7fffffffd450      140737488344144
+r13            0x1                 1
+r14            0x55555557e6a0      93824992405152
+r15            0x55555557e708      93824992405256
+rip            0x7ffff2374277      0x7ffff2374277
+eflags         0x10207             [ CF PF IF RF ]
+cs             0x33                51
+ss             0x2b                43
+ds             0x0                 0
+es             0x0                 0
+fs             0x0                 0
+gs             0x0                 0
+fs_base        0x7ffff7f2f080      140737353281664
+gs_base        0x0                 0
+#1  0x00007ffff6950647 in llvm::objcopy::elf::ELFWriter<llvm::object::ELFType<(llvm::endianness)1, true> >::writeSegmentData() () from /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libLLVM.so.22.1
+rax            0x7fffeb75e040      140737143758912
+rbx            0x55555557d2e0      93824992400096
+rcx            0x7fffeb75e280      140737143759488
+rdx            0x2d8               728
+rsi            0x7fffef4001c0      140737207337408
+rdi            0x7fffeb75e040      140737143758912
+rbp            0x1                 0x1
+rsp            0x7fffffffd260      0x7fffffffd260
+r8             0x0                 0
+r9             0x3                 3
+r10            0x7                 7
+r11            0x555558d57820      93825050966048
+r12            0x7fffffffd450      140737488344144
+r13            0x1                 1
+r14            0x55555557e6a0      93824992405152
+r15            0x55555557e708      93824992405256
+rip            0x7ffff6950647      0x7ffff6950647 <llvm::objcopy::elf::ELFWriter<llvm::object::ELFType<(llvm::endianness)1, true> >::writeSegmentData()+87>
+eflags         0x10207             [ CF PF IF RF ]
+cs             0x33                51
+ss             0x2b                43
+ds             0x0                 0
+es             0x0                 0
+fs             0x0                 0
+gs             0x0                 0
+fs_base        0x7ffff7f2f080      140737353281664
+gs_base        0x0                 0
+Dump of assembler code for function _ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv:
+   0x00007ffff69505f0 <+0>:	push   %rbp
+   0x00007ffff69505f1 <+1>:	push   %r15
+   0x00007ffff69505f3 <+3>:	push   %r14
+   0x00007ffff69505f5 <+5>:	push   %r13
+   0x00007ffff69505f7 <+7>:	push   %r12
+   0x00007ffff69505f9 <+9>:	push   %rbx
+   0x00007ffff69505fa <+10>:	sub    $0x18,%rsp
+   0x00007ffff69505fe <+14>:	mov    %rdi,%rbx
+   0x00007ffff6950601 <+17>:	mov    0x8(%rdi),%rsi
+   0x00007ffff6950605 <+21>:	mov    0x18(%rsi),%r14
+   0x00007ffff6950609 <+25>:	mov    0x20(%rsi),%r15
+   0x00007ffff695060d <+29>:	cmp    %r15,%r14
+   0x00007ffff6950610 <+32>:	je     0x7ffff6950654 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+100>
+   0x00007ffff6950612 <+34>:	cs nopw 0x0(%rax,%rax,1)
+   0x00007ffff695061c <+44>:	nopl   0x0(%rax)
+   0x00007ffff6950620 <+48>:	mov    (%r14),%rax
+   0x00007ffff6950623 <+51>:	mov    0x20(%rax),%rdx
+   0x00007ffff6950627 <+55>:	mov    0x50(%rax),%rsi
+   0x00007ffff695062b <+59>:	mov    0x58(%rax),%rcx
+   0x00007ffff695062f <+63>:	cmp    %rdx,%rcx
+   0x00007ffff6950632 <+66>:	cmovb  %rcx,%rdx
+   0x00007ffff6950636 <+70>:	mov    0x10(%rbx),%rcx
+   0x00007ffff695063a <+74>:	mov    0x8(%rcx),%rdi
+   0x00007ffff695063e <+78>:	add    0x8(%rax),%rdi
+   0x00007ffff6950642 <+82>:	call   0x7ffff7d49e80 <memcpy@plt>
+=> 0x00007ffff6950647 <+87>:	add    $0x8,%r14
+   0x00007ffff695064b <+91>:	cmp    %r15,%r14
+   0x00007ffff695064e <+94>:	jne    0x7ffff6950620 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+48>
+   0x00007ffff6950650 <+96>:	mov    0x8(%rbx),%rsi
+   0x00007ffff6950654 <+100>:	mov    0x48(%rsi),%r10
+   0x00007ffff6950658 <+104>:	mov    0x58(%rsi),%edi
+   0x00007ffff695065b <+107>:	mov    %rdi,%rax
+   0x00007ffff695065e <+110>:	shl    $0x5,%rax
+   0x00007ffff6950662 <+114>:	lea    (%r10,%rax,1),%rcx
+   0x00007ffff6950666 <+118>:	cmpl   $0x0,0x50(%rsi)
+   0x00007ffff695066a <+122>:	mov    %rcx,%rdx
+   0x00007ffff695066d <+125>:	je     0x7ffff695069c <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+172>
+   0x00007ffff695066f <+127>:	mov    %r10,%rdx
+   0x00007ffff6950672 <+130>:	test   %rdi,%rdi
+   0x00007ffff6950675 <+133>:	je     0x7ffff695069c <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+172>
+   0x00007ffff6950677 <+135>:	mov    $0x1000,%r8d
+   0x00007ffff695067d <+141>:	mov    %r10,%rdx
+   0x00007ffff6950680 <+144>:	mov    (%rdx),%r9
+   0x00007ffff6950683 <+147>:	or     %r8,%r9
+   0x00007ffff6950686 <+150>:	cmp    $0xfffffffffffff000,%r9
+   0x00007ffff695068d <+157>:	jne    0x7ffff695069c <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+172>
+   0x00007ffff695068f <+159>:	add    $0x20,%rdx
+   0x00007ffff6950693 <+163>:	add    $0xffffffffffffffe0,%rax
+   0x00007ffff6950697 <+167>:	jne    0x7ffff6950680 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+144>
+   0x00007ffff6950699 <+169>:	mov    %rcx,%rdx
+   0x00007ffff695069c <+172>:	shl    $0x5,%rdi
+   0x00007ffff69506a0 <+176>:	add    %rdi,%r10
+   0x00007ffff69506a3 <+179>:	cmp    %r10,%rdx
+   0x00007ffff69506a6 <+182>:	je     0x7ffff6950857 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+615>
+   0x00007ffff69506ac <+188>:	movabs $0x7fffffffffffffe0,%rax
+   0x00007ffff69506b6 <+198>:	add    $0x1c,%rax
+   0x00007ffff69506ba <+202>:	mov    %rax,0x8(%rsp)
+   0x00007ffff69506bf <+207>:	mov    $0x1000,%r8d
+   0x00007ffff69506c5 <+213>:	mov    %rbx,0x10(%rsp)
+   0x00007ffff69506ca <+218>:	mov    %r10,(%rsp)
+   0x00007ffff69506ce <+222>:	jmp    0x7ffff69506dd <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+237>
+   0x00007ffff69506d0 <+224>:	mov    (%rsp),%r10
+   0x00007ffff69506d4 <+228>:	cmp    %r10,%rdx
+   0x00007ffff69506d7 <+231>:	je     0x7ffff6950853 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+611>
+   0x00007ffff69506dd <+237>:	mov    0x8(%rdx),%rsi
+   0x00007ffff69506e1 <+241>:	mov    0x10(%rdx),%r11
+   0x00007ffff69506e5 <+245>:	sub    %rsi,%r11
+   0x00007ffff69506e8 <+248>:	test   %r11,%r11
+   0x00007ffff69506eb <+251>:	jle    0x7ffff6950755 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+357>
+   0x00007ffff69506ed <+253>:	mov    0x10(%rbx),%rax
+   0x00007ffff69506f1 <+257>:	mov    0x8(%rax),%r14
+   0x00007ffff69506f5 <+261>:	mov    (%rdx),%rax
+   0x00007ffff69506f8 <+264>:	mov    0x28(%rax),%rdi
+   0x00007ffff69506fc <+268>:	mov    0x50(%rax),%r15
+   0x00007ffff6950700 <+272>:	mov    0x8(%rdi),%r13
+   0x00007ffff6950704 <+276>:	mov    0x40(%rdi),%r12
+   0x00007ffff6950708 <+280>:	mov    %r15,%r9
+   0x00007ffff695070b <+283>:	sub    %r12,%r9
+   0x00007ffff695070e <+286>:	add    %r14,%r9
+   0x00007ffff6950711 <+289>:	add    %r13,%r9
+   0x00007ffff6950714 <+292>:	cmp    $0x4,%r11
+   0x00007ffff6950718 <+296>:	jb     0x7ffff695072e <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+318>
+   0x00007ffff695071a <+298>:	lea    (%r15,%r13,1),%rax
+   0x00007ffff695071e <+302>:	lea    (%rax,%r14,1),%rdi
+   0x00007ffff6950722 <+306>:	sub    %r12,%rdi
+   0x00007ffff6950725 <+309>:	sub    %rsi,%rdi
+   0x00007ffff6950728 <+312>:	cmp    $0x20,%rdi
+   0x00007ffff695072c <+316>:	jae    0x7ffff6950790 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+416>
+   0x00007ffff695072e <+318>:	mov    %r11,%rbp
+   0x00007ffff6950731 <+321>:	mov    %rsi,%r10
+   0x00007ffff6950734 <+324>:	inc    %rbp
+   0x00007ffff6950737 <+327>:	xor    %eax,%eax
+   0x00007ffff6950739 <+329>:	nopl   0x0(%rax)
+   0x00007ffff6950740 <+336>:	movzbl (%r10,%rax,1),%esi
+   0x00007ffff6950745 <+341>:	mov    %sil,(%r9,%rax,1)
+   0x00007ffff6950749 <+345>:	dec    %rbp
+   0x00007ffff695074c <+348>:	inc    %rax
+   0x00007ffff695074f <+351>:	cmp    $0x1,%rbp
+   0x00007ffff6950753 <+355>:	ja     0x7ffff6950740 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+336>
+   0x00007ffff6950755 <+357>:	add    $0x20,%rdx
+   0x00007ffff6950759 <+361>:	cmp    %rcx,%rdx
+   0x00007ffff695075c <+364>:	je     0x7ffff69506d0 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+224>
+   0x00007ffff6950762 <+370>:	mov    (%rsp),%r10
+   0x00007ffff6950766 <+374>:	cs nopw 0x0(%rax,%rax,1)
+   0x00007ffff6950770 <+384>:	mov    (%rdx),%rax
+   0x00007ffff6950773 <+387>:	or     %r8,%rax
+   0x00007ffff6950776 <+390>:	cmp    $0xfffffffffffff000,%rax
+   0x00007ffff695077c <+396>:	jne    0x7ffff69506d4 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+228>
+   0x00007ffff6950782 <+402>:	add    $0x20,%rdx
+   0x00007ffff6950786 <+406>:	cmp    %rcx,%rdx
+   0x00007ffff6950789 <+409>:	jne    0x7ffff6950770 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+384>
+   0x00007ffff695078b <+411>:	jmp    0x7ffff69506d4 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+228>
+   0x00007ffff6950790 <+416>:	cmp    $0x20,%r11
+   0x00007ffff6950794 <+420>:	jae    0x7ffff695079a <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+426>
+   0x00007ffff6950796 <+422>:	xor    %edi,%edi
+   0x00007ffff6950798 <+424>:	jmp    0x7ffff69507ee <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+510>
+   0x00007ffff695079a <+426>:	mov    %r11,%rdi
+   0x00007ffff695079d <+429>:	movabs $0x7fffffffffffffe0,%r10
+   0x00007ffff69507a7 <+439>:	and    %r10,%rdi
+   0x00007ffff69507aa <+442>:	sub    %r12,%rax
+   0x00007ffff69507ad <+445>:	lea    0x10(%r14,%rax,1),%rax
+   0x00007ffff69507b2 <+450>:	xor    %r10d,%r10d
+   0x00007ffff69507b5 <+453>:	cs nopw 0x0(%rax,%rax,1)
+   0x00007ffff69507bf <+463>:	nop
+   0x00007ffff69507c0 <+464>:	movups (%rsi,%r10,1),%xmm0
+   0x00007ffff69507c5 <+469>:	movups 0x10(%rsi,%r10,1),%xmm1
+   0x00007ffff69507cb <+475>:	movups %xmm0,-0x10(%rax,%r10,1)
+   0x00007ffff69507d1 <+481>:	movups %xmm1,(%rax,%r10,1)
+   0x00007ffff69507d6 <+486>:	add    $0x20,%r10
+   0x00007ffff69507da <+490>:	cmp    %r10,%rdi
+   0x00007ffff69507dd <+493>:	jne    0x7ffff69507c0 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+464>
+   0x00007ffff69507df <+495>:	cmp    %rdi,%r11
+   0x00007ffff69507e2 <+498>:	je     0x7ffff6950755 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+357>
+   0x00007ffff69507e8 <+504>:	test   $0x1c,%r11b
+   0x00007ffff69507ec <+508>:	je     0x7ffff6950844 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+596>
+   0x00007ffff69507ee <+510>:	mov    %r11,%rbx
+   0x00007ffff69507f1 <+513>:	and    0x8(%rsp),%rbx
+   0x00007ffff69507f6 <+518>:	mov    %r11d,%ebp
+   0x00007ffff69507f9 <+521>:	and    $0x3,%ebp
+   0x00007ffff69507fc <+524>:	add    %rbx,%r9
+   0x00007ffff69507ff <+527>:	lea    (%rsi,%rbx,1),%r10
+   0x00007ffff6950803 <+531>:	mov    %rbx,%rax
+   0x00007ffff6950806 <+534>:	sub    %rdi,%rax
+   0x00007ffff6950809 <+537>:	add    %rdi,%rsi
+   0x00007ffff695080c <+540>:	add    %rdi,%r15
+   0x00007ffff695080f <+543>:	add    %r13,%r15
+   0x00007ffff6950812 <+546>:	sub    %r12,%r15
+   0x00007ffff6950815 <+549>:	add    %r15,%r14
+   0x00007ffff6950818 <+552>:	xor    %edi,%edi
+   0x00007ffff695081a <+554>:	nopw   0x0(%rax,%rax,1)
+   0x00007ffff6950820 <+560>:	mov    (%rsi,%rdi,1),%r15d
+   0x00007ffff6950824 <+564>:	mov    %r15d,(%r14,%rdi,1)
+   0x00007ffff6950828 <+568>:	add    $0x4,%rdi
+   0x00007ffff695082c <+572>:	cmp    %rdi,%rax
+   0x00007ffff695082f <+575>:	jne    0x7ffff6950820 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+560>
+   0x00007ffff6950831 <+577>:	cmp    %rbx,%r11
+   0x00007ffff6950834 <+580>:	mov    0x10(%rsp),%rbx
+   0x00007ffff6950839 <+585>:	jne    0x7ffff6950734 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+324>
+   0x00007ffff695083f <+591>:	jmp    0x7ffff6950755 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+357>
+   0x00007ffff6950844 <+596>:	and    $0x1f,%r11d
+   0x00007ffff6950848 <+600>:	add    %rdi,%r9
+   0x00007ffff695084b <+603>:	add    %rdi,%rsi
+   0x00007ffff695084e <+606>:	jmp    0x7ffff695072e <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+318>
+   0x00007ffff6950853 <+611>:	mov    0x8(%rbx),%rsi
+   0x00007ffff6950857 <+615>:	mov    0x30(%rsi),%r14
+   0x00007ffff695085b <+619>:	mov    0x38(%rsi),%r15
+   0x00007ffff695085f <+623>:	jmp    0x7ffff6950874 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+644>
+   0x00007ffff6950861 <+625>:	cs nopw 0x0(%rax,%rax,1)
+   0x00007ffff695086b <+635>:	nopl   0x0(%rax,%rax,1)
+   0x00007ffff6950870 <+640>:	add    $0x8,%r14
+   0x00007ffff6950874 <+644>:	cmp    %r15,%r14
+   0x00007ffff6950877 <+647>:	je     0x7ffff69508b8 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+712>
+   0x00007ffff6950879 <+649>:	mov    (%r14),%rcx
+   0x00007ffff695087c <+652>:	mov    0x28(%rcx),%rax
+   0x00007ffff6950880 <+656>:	test   %rax,%rax
+   0x00007ffff6950883 <+659>:	je     0x7ffff6950870 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+640>
+   0x00007ffff6950885 <+661>:	cmpq   $0x8,0xa0(%rcx)
+   0x00007ffff695088d <+669>:	je     0x7ffff6950870 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+640>
+   0x00007ffff695088f <+671>:	mov    0x98(%rcx),%rdx
+   0x00007ffff6950896 <+678>:	test   %rdx,%rdx
+   0x00007ffff6950899 <+681>:	je     0x7ffff6950870 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+640>
+   0x00007ffff695089b <+683>:	mov    0x50(%rcx),%rdi
+   0x00007ffff695089f <+687>:	sub    0x40(%rax),%rdi
+   0x00007ffff69508a3 <+691>:	mov    0x10(%rbx),%rcx
+   0x00007ffff69508a7 <+695>:	add    0x8(%rcx),%rdi
+   0x00007ffff69508ab <+699>:	add    0x8(%rax),%rdi
+   0x00007ffff69508af <+703>:	xor    %esi,%esi
+   0x00007ffff69508b1 <+705>:	call   0x7ffff7d49ca0 <memset@plt>
+   0x00007ffff69508b6 <+710>:	jmp    0x7ffff6950870 <_ZN4llvm7objcopy3elf9ELFWriterINS_6object7ELFTypeILNS_10endiannessE1ELb1EEEE16writeSegmentDataEv+640>
+   0x00007ffff69508b8 <+712>:	add    $0x18,%rsp
+   0x00007ffff69508bc <+716>:	pop    %rbx
+   0x00007ffff69508bd <+717>:	pop    %r12
+   0x00007ffff69508bf <+719>:	pop    %r13
+   0x00007ffff69508c1 <+721>:	pop    %r14
+   0x00007ffff69508c3 <+723>:	pop    %r15
+   0x00007ffff69508c5 <+725>:	pop    %rbp
+   0x00007ffff69508c6 <+726>:	ret
+End of assembler dump.
+process 871280
+Mapped address spaces:
+
+          Start Addr           End Addr       Size     Offset  Perms  objfile
+      0x555555555000     0x555559079000  0x3b24000        0x0  rw-p   [heap]
+      0x7fffe315e000     0x7fffe5efc000  0x2d9e000        0x0  rw-p   
+      0x7fffe67fe000     0x7fffe6bff000   0x401000        0x0  rw-p   
+      0x7fffe6e00000     0x7ffff1f14000  0xb114000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/clang.bolt
+      0x7ffff20e0000     0x7ffff2104000    0x24000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libxml2.so.16.1.1
+      0x7ffff2104000     0x7ffff21dc000    0xd8000    0x24000  r-xp   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libxml2.so.16.1.1
+      0x7ffff21dc000     0x7ffff2219000    0x3d000    0xfc000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libxml2.so.16.1.1
+      0x7ffff2219000     0x7ffff2221000     0x8000   0x138000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libxml2.so.16.1.1
+      0x7ffff2221000     0x7ffff2223000     0x2000   0x140000  rw-p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libxml2.so.16.1.1
+      0x7ffff2223000     0x7ffff2224000     0x1000        0x0  rw-p   
+      0x7ffff2224000     0x7ffff224c000    0x28000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libc.so.6
+      0x7ffff224c000     0x7ffff239c000   0x150000    0x28000  r-xp   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libc.so.6
+      0x7ffff239c000     0x7ffff23f2000    0x56000   0x178000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libc.so.6
+      0x7ffff23f2000     0x7ffff23f6000     0x4000   0x1ce000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libc.so.6
+      0x7ffff23f6000     0x7ffff23f8000     0x2000   0x1d2000  rw-p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libc.so.6
+      0x7ffff23f8000     0x7ffff2400000     0x8000        0x0  rw-p   
+      0x7ffff2400000     0x7ffff24a5000    0xa5000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libstdc++.so.6.0.33
+      0x7ffff24a5000     0x7ffff25cd000   0x128000    0xa5000  r-xp   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libstdc++.so.6.0.33
+      0x7ffff25cd000     0x7ffff2654000    0x87000   0x1cd000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libstdc++.so.6.0.33
+      0x7ffff2654000     0x7ffff265f000     0xb000   0x254000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libstdc++.so.6.0.33
+      0x7ffff265f000     0x7ffff2662000     0x3000   0x25f000  rw-p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libstdc++.so.6.0.33
+      0x7ffff2662000     0x7ffff2666000     0x4000        0x0  rw-p   
+      0x7ffff271d000     0x7ffff272d000    0x10000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libm.so.6
+      0x7ffff272d000     0x7ffff27a3000    0x76000    0x10000  r-xp   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libm.so.6
+      0x7ffff27a3000     0x7ffff27fe000    0x5b000    0x86000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libm.so.6
+      0x7ffff27fe000     0x7ffff27ff000     0x1000    0xe0000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libm.so.6
+      0x7ffff27ff000     0x7ffff2800000     0x1000    0xe1000  rw-p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libm.so.6
+      0x7ffff2800000     0x7ffff4513000  0x1d13000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libLLVM.so.22.1
+      0x7ffff4513000     0x7ffff7d4b000  0x3838000  0x1d12000  r-xp   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libLLVM.so.22.1
+      0x7ffff7d4b000     0x7ffff7e87000   0x13c000  0x5549000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libLLVM.so.22.1
+      0x7ffff7e87000     0x7ffff7e8c000     0x5000  0x5684000  rw-p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libLLVM.so.22.1
+      0x7ffff7e8c000     0x7ffff7f16000    0x8a000        0x0  rw-p   
+      0x7ffff7f2c000     0x7ffff7f32000     0x6000        0x0  rw-p   
+      0x7ffff7f32000     0x7ffff7f35000     0x3000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libz.so.1.3.1
+      0x7ffff7f35000     0x7ffff7f41000     0xc000     0x3000  r-xp   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libz.so.1.3.1
+      0x7ffff7f41000     0x7ffff7f47000     0x6000     0xf000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libz.so.1.3.1
+      0x7ffff7f47000     0x7ffff7f48000     0x1000    0x15000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libz.so.1.3.1
+      0x7ffff7f48000     0x7ffff7f49000     0x1000    0x16000  rw-p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libz.so.1.3.1
+      0x7ffff7f49000     0x7ffff7f4a000     0x1000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libdl.so.2
+      0x7ffff7f4a000     0x7ffff7f4b000     0x1000     0x1000  r-xp   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libdl.so.2
+      0x7ffff7f4b000     0x7ffff7f4c000     0x1000     0x2000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libdl.so.2
+      0x7ffff7f4c000     0x7ffff7f4d000     0x1000     0x2000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libdl.so.2
+      0x7ffff7f4d000     0x7ffff7f4e000     0x1000     0x3000  rw-p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libdl.so.2
+      0x7ffff7f4e000     0x7ffff7f4f000     0x1000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/librt.so.1
+      0x7ffff7f4f000     0x7ffff7f50000     0x1000     0x1000  r-xp   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/librt.so.1
+      0x7ffff7f50000     0x7ffff7f51000     0x1000     0x2000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/librt.so.1
+      0x7ffff7f51000     0x7ffff7f52000     0x1000     0x2000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/librt.so.1
+      0x7ffff7f52000     0x7ffff7f53000     0x1000     0x3000  rw-p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/librt.so.1
+      0x7ffff7f53000     0x7ffff7f57000     0x4000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libgcc_s.so.1
+      0x7ffff7f57000     0x7ffff7f7a000    0x23000     0x4000  r-xp   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libgcc_s.so.1
+      0x7ffff7f7a000     0x7ffff7f7e000     0x4000    0x27000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libgcc_s.so.1
+      0x7ffff7f7e000     0x7ffff7f7f000     0x1000    0x2b000  rw-p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libgcc_s.so.1
+      0x7ffff7f7f000     0x7ffff7f83000     0x4000        0x0  rw-p   
+      0x7ffff7f83000     0x7ffff7f91000     0xe000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-objcopy
+      0x7ffff7f91000     0x7ffff7fb1000    0x20000     0xd000  r-xp   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-objcopy
+      0x7ffff7fb1000     0x7ffff7fb8000     0x7000    0x2c000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-objcopy
+      0x7ffff7fb8000     0x7ffff7fb9000     0x1000    0x32000  rw-p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-objcopy
+      0x7ffff7fb9000     0x7ffff7fbd000     0x4000        0x0  r--p   [vvar]
+      0x7ffff7fbd000     0x7ffff7fbf000     0x2000        0x0  r--p   [vvar_vclock]
+      0x7ffff7fbf000     0x7ffff7fc1000     0x2000        0x0  r-xp   [vdso]
+      0x7ffff7fc1000     0x7ffff7fc2000     0x1000        0x0  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2
+      0x7ffff7fc2000     0x7ffff7fef000    0x2d000     0x1000  r-xp   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2
+      0x7ffff7fef000     0x7ffff7ffb000     0xc000    0x2e000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2
+      0x7ffff7ffb000     0x7ffff7ffd000     0x2000    0x3a000  r--p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2
+      0x7ffff7ffd000     0x7ffff7fff000     0x2000    0x3c000  rw-p   /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2
+      0x7ffffffde000     0x7ffffffff000    0x21000        0x0  rw-p   [stack]
+  0xffffffffff600000 0xffffffffff601000     0x1000        0x0  --xp   [vsyscall]

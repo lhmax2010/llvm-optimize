@@ -1,0 +1,3181 @@
+1: /** \ingroup rpmbuild
+2:  * \file build/files.c
+3:  *  The post-build, pre-packaging file tree walk to assemble the package
+4:  *  manifest.
+5:  */
+6: 
+7: #include "system.h"
+8: 
+9: #define	MYALLPERMS	07777
+10: 
+11: #include <errno.h>
+12: #include <stdlib.h>
+13: #include <regex.h>
+14: #if WITH_CAP
+15: #include <sys/capability.h>
+16: #endif
+17: 
+18: #if HAVE_LIBDW
+19: #include <libelf.h>
+20: #include <elfutils/libdwelf.h>
+21: #endif
+22: 
+23: #include <rpm/rpmpgp.h>
+24: #include <rpm/argv.h>
+25: #include <rpm/rpmfc.h>
+26: #include <rpm/rpmfileutil.h>	/* rpmDoDigest() */
+27: #include <rpm/rpmlog.h>
+28: #include <rpm/rpmbase64.h>
+29: 
+30: #include "rpmio/rpmio_internal.h"	/* XXX rpmioSlurp */
+31: #include "misc/rpmfts.h"
+32: #include "lib/rpmfi_internal.h"	/* XXX fi->apath */
+33: #include "lib/rpmug.h"
+34: #include "build/rpmbuild_internal.h"
+35: #include "build/rpmbuild_misc.h"
+36: 
+37: #include "debug.h"
+38: #include <libgen.h>
+39: 
+40: #define SKIPSPACE(s) { while (*(s) && risspace(*(s))) (s)++; }
+41: #define	SKIPWHITE(_x)	{while (*(_x) && (risspace(*_x) || *(_x) == ',')) (_x)++;}
+42: #define	SKIPNONWHITE(_x){while (*(_x) &&!(risspace(*_x) || *(_x) == ',')) (_x)++;}
+43: 
+44: /* the following defines must be in sync with the equally hardcoded paths from
+45:  * scripts/find-debuginfo.sh
+46:  */
+47: #define BUILD_ID_DIR		"/usr/lib/.build-id"
+48: #define DEBUG_SRC_DIR		"/usr/src/debug"
+49: #define DEBUG_LIB_DIR		"/usr/lib/debug"
+50: #define DEBUG_LIB_PREFIX	"/usr/lib/debug/"
+51: #define DEBUG_ID_DIR		"/usr/lib/debug/.build-id"
+52: #define DEBUG_DWZ_DIR 		"/usr/lib/debug/.dwz"
+53: 
+54: #undef HASHTYPE
+55: #undef HTKEYTYPE
+56: #undef HTDATATYPE
+57: #define HASHTYPE fileRenameHash
+58: #define HTKEYTYPE const char *
+59: #define HTDATATYPE const char *
+60: #include "lib/rpmhash.C"
+61: #undef HASHTYPE
+62: #undef HTKEYTYPE
+63: #undef HTDATATYPE
+64: 
+65: /**
+66:  */
+67: enum specfFlags_e {
+68:     SPECD_DEFFILEMODE	= (1 << 0),
+69:     SPECD_DEFDIRMODE	= (1 << 1),
+70:     SPECD_DEFUID	= (1 << 2),
+71:     SPECD_DEFGID	= (1 << 3),
+72:     SPECD_DEFVERIFY	= (1 << 4),
+73: 
+74:     SPECD_FILEMODE	= (1 << 8),
+75:     SPECD_DIRMODE	= (1 << 9),
+76:     SPECD_UID		= (1 << 10),
+77:     SPECD_GID		= (1 << 11),
+78:     SPECD_VERIFY	= (1 << 12)
+79: };
+80: 
+81: typedef rpmFlags specfFlags;
+82: 
+83: /* internal %files parsing state attributes */
+84: enum parseAttrs_e {
+85:     RPMFILE_EXCLUDE	= (1 << 16),	/*!< from %%exclude */
+86:     RPMFILE_DOCDIR	= (1 << 17),	/*!< from %%docdir */
+87:     RPMFILE_DIR		= (1 << 18),	/*!< from %%dir */
+88:     RPMFILE_SPECIALDIR	= (1 << 19),	/*!< from special %%doc */
+89: };
+90: 
+91: /* bits up to 15 (for now) reserved for exported rpmfileAttrs */
+92: #define PARSEATTR_MASK 0x0000ffff
+93: 
+94: /**
+95:  */
+96: typedef struct FileListRec_s {
+97:     struct stat fl_st;
+98: #define	fl_dev	fl_st.st_dev
+99: #define	fl_ino	fl_st.st_ino
+100: #define	fl_mode	fl_st.st_mode
+101: #define	fl_nlink fl_st.st_nlink
+102: #define	fl_uid	fl_st.st_uid
+103: #define	fl_gid	fl_st.st_gid
+104: #define	fl_rdev	fl_st.st_rdev
+105: #define	fl_size	fl_st.st_size
+106: #define	fl_mtime fl_st.st_mtime
+107: 
+108:     char *diskPath;		/* get file from here       */
+109:     char *cpioPath;		/* filename in cpio archive */
+110:     rpmsid uname;
+111:     rpmsid gname;
+112:     unsigned	flags;
+113:     specfFlags	specdFlags;	/* which attributes have been explicitly specified. */
+114:     rpmVerifyFlags verifyFlags;
+115:     char *langs;		/* XXX locales separated with | */
+116:     char *caps;
+117: } * FileListRec;
+118: 
+119: /**
+120:  */
+121: typedef struct AttrRec_s {
+122:     rpmsid	ar_fmodestr;
+123:     rpmsid	ar_dmodestr;
+124:     rpmsid	ar_user;
+125:     rpmsid	ar_group;
+126:     mode_t	ar_fmode;
+127:     mode_t	ar_dmode;
+128: } * AttrRec;
+129: 
+130: /* list of files */
+131: static StringBuf check_fileList = NULL;
+132: 
+133: typedef struct FileEntry_s {
+134:     rpmfileAttrs attrFlags;
+135:     specfFlags specdFlags;
+136:     rpmVerifyFlags verifyFlags;
+137:     struct AttrRec_s ar;
+138: 
+139:     ARGV_t langs;
+140:     char *caps;
+141: 
+142:     /* these are only ever relevant for current entry */
+143:     unsigned devtype;
+144:     unsigned devmajor;
+145:     int devminor;
+146:     int isDir;
+147: } * FileEntry;
+148: 
+149: typedef struct specialDir_s {
+150:     char * dirname;
+151:     ARGV_t files;
+152:     struct AttrRec_s ar;
+153:     struct AttrRec_s def_ar;
+154:     rpmFlags sdtype;
+155: 
+156:     int entriesCount;
+157:     int entriesAlloced;
+158: 
+159:     struct {
+160: 	struct FileEntry_s defEntry;
+161: 	struct FileEntry_s curEntry;
+162:     } *entries;
+163: 
+164: } * specialDir;
+165: 
+166: typedef struct FileRecords_s {
+167:     FileListRec recs;
+168:     int alloced;
+169:     int used;
+170: } * FileRecords;
+171: 
+172: /**
+173:  * Package file tree walk data.
+174:  */
+175: typedef struct FileList_s {
+176:     /* global filelist state */
+177:     char * buildRoot;
+178:     size_t buildRootLen;
+179:     int processingFailed;
+180:     int haveCaps;
+181:     int largeFiles;
+182:     ARGV_t docDirs;
+183:     rpmBuildPkgFlags pkgFlags;
+184:     rpmstrPool pool;
+185: 
+186:     /* actual file records */
+187:     struct FileRecords_s files;
+188: 
+189:     /* active defaults */
+190:     struct FileEntry_s def;
+191: 
+192:     /* current file-entry state */
+193:     struct FileEntry_s cur;
+194: } * FileList;
+195: 
+196: static void nullAttrRec(AttrRec ar)
+197: {
+198:     memset(ar, 0, sizeof(*ar));
+199: }
+200: 
+201: static void dupAttrRec(const AttrRec oar, AttrRec nar)
+202: {
+203:     if (oar == nar)
+204: 	return;
+205:     *nar = *oar; /* struct assignment */
+206: }
+207: 
+208: /* Creates a default $defattr string. Can be used with argvAdd().
+209:    Caller owns the new string which needs to be freed when done.  */
+210: static char *mkattr(void)
+211: {
+212:     char *s = NULL;
+213:     rasprintf(&s, "%s(644,%s,%s,755)", "%defattr", UID_0_USER, GID_0_GROUP);
+214:     return s;
+215: }
+216: 
+217: static void copyFileEntry(FileEntry src, FileEntry dest)
+218: {
+219:     /* Copying struct makes just shallow copy */
+220:     *dest = *src;
+221: 
+222:     /* Do also deep copying */
+223:     if (src->langs != NULL) {
+224: 	dest->langs = argvNew();
+225: 	argvAppend(&dest->langs, src->langs);
+226:     }
+227: 
+228:     if (src->caps != NULL) {
+229: 	dest->caps = xstrdup(src->caps);
+230:     }
+231: }
+232: 
+233: static void FileEntryFree(FileEntry entry)
+234: {
+235:     argvFree(entry->langs);
+236:     memset(entry, 0, sizeof(*entry));
+237: }
+238: 
+239: /**
+240:  * strtokWithQuotes.
+241:  * @param s
+242:  * @param delim
+243:  */
+244: static char *strtokWithQuotes(char *s, const char *delim)
+245: {
+246:     static char *olds = NULL;
+247:     char *token;
+248: 
+249:     if (s == NULL)
+250: 	s = olds;
+251:     if (s == NULL)
+252: 	return NULL;
+253: 
+254:     /* Skip leading delimiters */
+255:     s += strspn(s, delim);
+256:     if (*s == '\0')
+257: 	return NULL;
+258: 
+259:     /* Find the end of the token.  */
+260:     token = s;
+261:     if (*token == '"') {
+262: 	token++;
+263: 	/* Find next " char */
+264: 	s = strchr(token, '"');
+265:     } else {
+266: 	s = strpbrk(token, delim);
+267:     }
+268: 
+269:     /* Terminate it */
+270:     if (s == NULL) {
+271: 	/* This token finishes the string */
+272: 	olds = strchr(token, '\0');
+273:     } else {
+274: 	/* Terminate the token and make olds point past it */
+275: 	*s = '\0';
+276: 	olds = s+1;
+277:     }
+278: 
+279:     return token;
+280: }
+281: 
+282: /**
+283:  */
+284: typedef const struct VFA {
+285:     const char * attribute;
+286:     int	flag;
+287: } VFA_t;
+288: 
+289: /**
+290:  */
+291: static VFA_t const verifyAttrs[] = {
+292:     { "md5",		RPMVERIFY_FILEDIGEST },
+293:     { "filedigest",	RPMVERIFY_FILEDIGEST },
+294:     { "size",		RPMVERIFY_FILESIZE },
+295:     { "link",		RPMVERIFY_LINKTO },
+296:     { "user",		RPMVERIFY_USER },
+297:     { "owner",		RPMVERIFY_USER },
+298:     { "group",		RPMVERIFY_GROUP },
+299:     { "mtime",		RPMVERIFY_MTIME },
+300:     { "mode",		RPMVERIFY_MODE },
+301:     { "rdev",		RPMVERIFY_RDEV },
+302:     { "caps",		RPMVERIFY_CAPS },
+303:     { NULL, 0 }
+304: };
+305: 
+306: static rpmFlags vfaMatch(VFA_t *attrs, const char *token, rpmFlags *flags)
+307: {
+308:     VFA_t *vfa;
+309: 
+310:     for (vfa = attrs; vfa->attribute != NULL; vfa++) {
+311: 	if (rstreq(token, vfa->attribute)) {
+312: 	    *flags |= vfa->flag;
+313: 	    break;
+314: 	}
+315:     }
+316:     return vfa->flag;
+317: }
+318: 
+319: /**
+320:  * Parse %verify and %defverify from file manifest.
+321:  * @param buf		current spec file line
+322:  * @param def		parse for %defverify or %verify?
+323:  * @param entry		file entry data (current or default)
+324:  * @return		RPMRC_OK on success
+325:  */
+326: static rpmRC parseForVerify(char * buf, int def, FileEntry entry)
+327: {
+328:     char *p, *pe, *q = NULL;
+329:     const char *name = def ? "%defverify" : "%verify";
+330:     int negated = 0;
+331:     rpmVerifyFlags verifyFlags = RPMVERIFY_NONE;
+332:     rpmRC rc = RPMRC_FAIL;
+333: 
+334:     if ((p = strstr(buf, name)) == NULL)
+335: 	return RPMRC_OK;
+336: 
+337:     for (pe = p; (pe-p) < strlen(name); pe++)
+338: 	*pe = ' ';
+339: 
+340:     SKIPSPACE(pe);
+341: 
+342:     if (*pe != '(') {
+343: 	rpmlog(RPMLOG_ERR, _("Missing '(' in %s %s\n"), name, pe);
+344: 	goto exit;
+345:     }
+346: 
+347:     /* Bracket %*verify args */
+348:     *pe++ = ' ';
+349:     for (p = pe; *pe && *pe != ')'; pe++)
+350: 	{};
+351: 
+352:     if (*pe == '\0') {
+353: 	rpmlog(RPMLOG_ERR, _("Missing ')' in %s(%s\n"), name, p);
+354: 	goto exit;
+355:     }
+356: 
+357:     /* Localize. Erase parsed string */
+358:     q = xmalloc((pe-p) + 1);
+359:     rstrlcpy(q, p, (pe-p) + 1);
+360:     while (p <= pe)
+361: 	*p++ = ' ';
+362: 
+363:     for (p = q; *p != '\0'; p = pe) {
+364: 	SKIPWHITE(p);
+365: 	if (*p == '\0')
+366: 	    break;
+367: 	pe = p;
+368: 	SKIPNONWHITE(pe);
+369: 	if (*pe != '\0')
+370: 	    *pe++ = '\0';
+371: 
+372: 	if (vfaMatch(verifyAttrs, p, &verifyFlags))
+373: 	    continue;
+374: 
+375: 	if (rstreq(p, "not")) {
+376: 	    negated ^= 1;
+377: 	} else {
+378: 	    rpmlog(RPMLOG_ERR, _("Invalid %s token: %s\n"), name, p);
+379: 	    goto exit;
+380: 	}
+381:     }
+382: 
+383:     entry->verifyFlags = negated ? ~(verifyFlags) : verifyFlags;
+384:     entry->specdFlags |= SPECD_VERIFY;
+385:     rc = RPMRC_OK;
+386: 
+387: exit:
+388:     free(q);
+389: 
+390:     return rc;
+391: }
+392: 
+393: static int isAttrDefault(rpmstrPool pool, rpmsid arsid)
+394: {
+395:     const char *ars = rpmstrPoolStr(pool, arsid);
+396:     return (ars && ars[0] == '-' && ars[1] == '\0');
+397: }
+398: 
+399: /**
+400:  * Parse %dev from file manifest.
+401:  * @param buf		current spec file line
+402:  * @param cur		current file entry data
+403:  * @return		RPMRC_OK on success
+404:  */
+405: static rpmRC parseForDev(char * buf, FileEntry cur)
+406: {
+407:     const char * name;
+408:     const char * errstr = NULL;
+409:     char *p, *pe, *q = NULL;
+410:     rpmRC rc = RPMRC_FAIL;	/* assume error */
+411:     char *attr_parameters = NULL;
+412: 
+413:     if ((p = strstr(buf, (name = "%dev"))) == NULL)
+414: 	return RPMRC_OK;
+415: 
+416:     for (pe = p; (pe-p) < strlen(name); pe++)
+417: 	*pe = ' ';
+418:     SKIPSPACE(pe);
+419: 
+420:     if (*pe != '(') {
+421: 	errstr = "'('";
+422: 	goto exit;
+423:     }
+424: 
+425:     /* Bracket %dev args */
+426:     *pe++ = ' ';
+427:     for (p = pe; *pe && *pe != ')'; pe++)
+428: 	{};
+429:     if (*pe != ')') {
+430: 	errstr = "')'";
+431: 	goto exit;
+432:     }
+433: 
+434:     /* Localize. Erase parsed string */
+435:     q = xmalloc((pe-p) + 1);
+436:     rstrlcpy(q, p, (pe-p) + 1);
+437: 
+438:     attr_parameters = xmalloc((pe-p) + 1);
+439:     rstrlcpy(attr_parameters, p, (pe-p) + 1);
+440: 
+441:     while (p <= pe)
+442: 	*p++ = ' ';
+443: 
+444:     p = q; SKIPWHITE(p);
+445:     pe = p; SKIPNONWHITE(pe); if (*pe != '\0') *pe++ = '\0';
+446:     if (*p == 'b')
+447: 	cur->devtype = 'b';
+448:     else if (*p == 'c')
+449: 	cur->devtype = 'c';
+450:     else {
+451: 	errstr = "devtype";
+452: 	goto exit;
+453:     }
+454: 
+455:     p = pe; SKIPWHITE(p);
+456:     pe = p; SKIPNONWHITE(pe); if (*pe != '\0') *pe = '\0';
+457:     for (pe = p; *pe && risdigit(*pe); pe++)
+458: 	{} ;
+459:     if (*pe == '\0') {
+460: 	cur->devmajor = atoi(p);
+461: 	if (!(cur->devmajor >= 0 && cur->devmajor < 256)) {
+462: 	    errstr = "devmajor";
+463: 	    goto exit;
+464: 	}
+465: 	pe++;
+466:     } else {
+467: 	errstr = "devmajor";
+468: 	goto exit;
+469:     }
+470: 
+471:     p = pe; SKIPWHITE(p);
+472:     pe = p; SKIPNONWHITE(pe); if (*pe != '\0') *pe = '\0';
+473:     for (pe = p; *pe && risdigit(*pe); pe++)
+474: 	{} ;
+475:     if (*pe == '\0') {
+476: 	cur->devminor = atoi(p);
+477: 	if (!(cur->devminor >= 0 && cur->devminor < 256)) {
+478: 	    errstr = "devminor";
+479: 	    goto exit;
+480: 	}
+481:     } else {
+482: 	errstr = "devminor";
+483: 	goto exit;
+484:     }
+485: 
+486:     rc = RPMRC_OK;
+487: 
+488: exit:
+489:     if (rc) {
+490: 	rpmlog(RPMLOG_ERR, _("Missing %s in %s(%s)\n"), errstr, name, attr_parameters);
+491:     }
+492:     free(attr_parameters);
+493:     free(q);
+494:     return rc;
+495: }
+496: 
+497: /**
+498:  * Parse %attr and %defattr from file manifest.
+499:  * @param pool		string pool
+500:  * @param buf		current spec file line
+501:  * @param def		parse for %defattr or %attr?
+502:  * @param entry		file entry data (current / default)
+503:  * @return		0 on success
+504:  */
+505: static rpmRC parseForAttr(rpmstrPool pool, char * buf, int def, FileEntry entry)
+506: {
+507:     const char *name = def ? "%defattr" : "%attr";
+508:     char *p, *pe, *q = NULL;
+509:     char *attr_parameters = NULL;
+510:     int x;
+511:     struct AttrRec_s arbuf;
+512:     AttrRec ar = &arbuf;
+513:     rpmRC rc = RPMRC_FAIL;
+514: 
+515:     if ((p = strstr(buf, name)) == NULL)
+516: 	return RPMRC_OK;
+517: 
+518:     for (pe = p; (pe-p) < strlen(name); pe++)
+519: 	*pe = ' ';
+520: 
+521:     SKIPSPACE(pe);
+522: 
+523:     if (*pe != '(') {
+524: 	rpmlog(RPMLOG_ERR, _("Missing '(' in %s %s\n"), name, pe);
+525: 	goto exit;
+526:     }
+527: 
+528:     /* Bracket %*attr args */
+529:     *pe++ = ' ';
+530:     for (p = pe; *pe && *pe != ')'; pe++)
+531: 	{};
+532: 
+533:     if (def) {	/* %defattr */
+534: 	char *r = pe;
+535: 	r++;
+536: 	SKIPSPACE(r);
+537: 	if (*r != '\0') {
+538: 	    rpmlog(RPMLOG_ERR,
+539: 		     _("Non-white space follows %s(): %s\n"), name, r);
+540: 	    goto exit;
+541: 	}
+542:     }
+543: 
+544:     /* Localize. Erase parsed string */
+545:     q = xmalloc((pe-p) + 1);
+546:     rstrlcpy(q, p, (pe-p) + 1);
+547: 
+548:     attr_parameters = xmalloc((pe-p) + 1);
+549:     rstrlcpy(attr_parameters, p, (pe-p) + 1);
+550: 
+551:     while (p <= pe)
+552: 	*p++ = ' ';
+553: 
+554:     nullAttrRec(ar);
+555: 
+556:     p = q; SKIPWHITE(p);
+557:     if (*p != '\0') {
+558: 	pe = p; SKIPNONWHITE(pe); if (*pe != '\0') *pe++ = '\0';
+559: 	ar->ar_fmodestr = rpmstrPoolId(pool, p, 1);
+560: 	p = pe; SKIPWHITE(p);
+561:     }
+562:     if (*p != '\0') {
+563: 	pe = p; SKIPNONWHITE(pe); if (*pe != '\0') *pe++ = '\0';
+564: 	ar->ar_user = rpmstrPoolId(pool, p, 1);
+565: 	p = pe; SKIPWHITE(p);
+566:     }
+567:     if (*p != '\0') {
+568: 	pe = p; SKIPNONWHITE(pe); if (*pe != '\0') *pe++ = '\0';
+569: 	ar->ar_group = rpmstrPoolId(pool, p, 1);
+570: 	p = pe; SKIPWHITE(p);
+571:     }
+572:     if (*p != '\0' && def) {	/* %defattr */
+573: 	pe = p; SKIPNONWHITE(pe); if (*pe != '\0') *pe++ = '\0';
+574: 	ar->ar_dmodestr = rpmstrPoolId(pool, p, 1);
+575: 	p = pe; SKIPWHITE(p);
+576:     }
+577: 
+578:     if (!(ar->ar_fmodestr && ar->ar_user && ar->ar_group) || *p != '\0') {
+579: 	rpmlog(RPMLOG_ERR, _("Bad syntax: %s(%s)\n"), name, attr_parameters);
+580: 	goto exit;
+581:     }
+582: 
+583:     /* Do a quick test on the mode argument and adjust for "-" */
+584:     if (ar->ar_fmodestr && !isAttrDefault(pool, ar->ar_fmodestr)) {
+585: 	unsigned int ui;
+586: 	x = sscanf(rpmstrPoolStr(pool, ar->ar_fmodestr), "%o", &ui);
+587: 	if ((x == 0) || (ar->ar_fmode & ~MYALLPERMS)) {
+588: 	    rpmlog(RPMLOG_ERR, _("Bad mode spec: %s(%s)\n"), name, attr_parameters);
+589: 	    goto exit;
+590: 	}
+591: 	ar->ar_fmode = ui;
+592:     } else {
+593: 	ar->ar_fmodestr = 0;
+594:     }
+595: 
+596:     if (ar->ar_dmodestr && !isAttrDefault(pool, ar->ar_dmodestr)) {
+597: 	unsigned int ui;
+598: 	x = sscanf(rpmstrPoolStr(pool, ar->ar_dmodestr), "%o", &ui);
+599: 	if ((x == 0) || (ar->ar_dmode & ~MYALLPERMS)) {
+600: 	    rpmlog(RPMLOG_ERR, _("Bad dirmode spec: %s(%s)\n"), name, attr_parameters);
+601: 	    goto exit;
+602: 	}
+603: 	ar->ar_dmode = ui;
+604:     } else {
+605: 	ar->ar_dmodestr = 0;
+606:     }
+607: 
+608:     if (!(ar->ar_user && !isAttrDefault(pool, ar->ar_user))) {
+609: 	ar->ar_user = 0;
+610:     }
+611: 
+612:     if (!(ar->ar_group && !isAttrDefault(pool, ar->ar_group))) {
+613: 	ar->ar_group = 0;
+614:     }
+615: 
+616:     dupAttrRec(ar, &(entry->ar));
+617: 
+618:     /* XXX fix all this */
+619:     entry->specdFlags |= SPECD_UID | SPECD_GID | SPECD_FILEMODE | SPECD_DIRMODE;
+620:     rc = RPMRC_OK;
+621: 
+622: exit:
+623:     free(q);
+624:     free(attr_parameters);
+625:     
+626:     return rc;
+627: }
+628: 
+629: static VFA_t const configAttrs[] = {
+630:     { "missingok",	RPMFILE_MISSINGOK },
+631:     { "noreplace",	RPMFILE_NOREPLACE },
+632:     { NULL, 0 }
+633: };
+634: 
+635: /**
+636:  * Parse %config from file manifest.
+637:  * @param buf		current spec file line
+638:  * @param cur		current file entry data
+639:  * @return		RPMRC_OK on success
+640:  */
+641: static rpmRC parseForConfig(char * buf, FileEntry cur)
+642: {
+643:     char *p, *pe, *q = NULL;
+644:     const char *name;
+645:     rpmRC rc = RPMRC_FAIL;
+646: 
+647:     if ((p = strstr(buf, (name = "%config"))) == NULL)
+648: 	return RPMRC_OK;
+649: 
+650:     cur->attrFlags |= RPMFILE_CONFIG;
+651: 
+652:     /* Erase "%config" token. */
+653:     for (pe = p; (pe-p) < strlen(name); pe++)
+654: 	*pe = ' ';
+655:     SKIPSPACE(pe);
+656:     if (*pe != '(')
+657: 	return RPMRC_OK;
+658: 
+659:     /* Bracket %config args */
+660:     *pe++ = ' ';
+661:     for (p = pe; *pe && *pe != ')'; pe++)
+662: 	{};
+663: 
+664:     if (*pe == '\0') {
+665: 	rpmlog(RPMLOG_ERR, _("Missing ')' in %s(%s\n"), name, p);
+666: 	goto exit;
+667:     }
+668: 
+669:     /* Localize. Erase parsed string. */
+670:     q = xmalloc((pe-p) + 1);
+671:     rstrlcpy(q, p, (pe-p) + 1);
+672:     while (p <= pe)
+673: 	*p++ = ' ';
+674: 
+675:     for (p = q; *p != '\0'; p = pe) {
+676: 	SKIPWHITE(p);
+677: 	if (*p == '\0')
+678: 	    break;
+679: 	pe = p;
+680: 	SKIPNONWHITE(pe);
+681: 	if (*pe != '\0')
+682: 	    *pe++ = '\0';
+683: 	if (!vfaMatch(configAttrs, p, &(cur->attrFlags))) {
+684: 	    rpmlog(RPMLOG_ERR, _("Invalid %s token: %s\n"), name, p);
+685: 	    goto exit;
+686: 	}
+687:     }
+688:     rc = RPMRC_OK;
+689:     
+690: exit:
+691:     free(q);
+692: 
+693:     return rc;
+694: }
+695: 
+696: static rpmRC addLang(ARGV_t *av, const char *lang, size_t n, const char *ent)
+697: {
+698:     rpmRC rc = RPMRC_FAIL;
+699:     char lbuf[n + 1];
+700:     rstrlcpy(lbuf, lang, sizeof(lbuf));
+701:     SKIPWHITE(ent);
+702: 
+703:     /* Sanity check locale length */
+704:     if (n < 1 || (n == 1 && *lang != 'C') || n >= 32) {
+705: 	rpmlog(RPMLOG_ERR, _("Unusual locale length: \"%s\" in %%lang(%s)\n"),
+706: 		lbuf, ent);
+707: 	goto exit;
+708:     }
+709: 
+710:     /* Check for duplicate locales */
+711:     if (argvSearch(*av, lbuf, NULL)) {
+712: 	rpmlog(RPMLOG_WARNING, _("Duplicate locale %s in %%lang(%s)\n"),
+713: 		lbuf, ent);
+714:     } else {
+715: 	argvAdd(av, lbuf);
+716: 	argvSort(*av, NULL);
+717:     }
+718:     rc = RPMRC_OK;
+719: 
+720: exit:
+721:     return rc;
+722: }
+723: 
+724: /**
+725:  * Parse %lang from file manifest.
+726:  * @param buf		current spec file line
+727:  * @param cur		current file entry data
+728:  * @return		RPMRC_OK on success
+729:  */
+730: static rpmRC parseForLang(char * buf, FileEntry cur)
+731: {
+732:     char *p, *pe, *q = NULL;
+733:     const char *name;
+734:     rpmRC rc = RPMRC_FAIL;
+735: 
+736:   while ((p = strstr(buf, (name = "%lang"))) != NULL) {
+737: 
+738:     for (pe = p; (pe-p) < strlen(name); pe++)
+739: 	*pe = ' ';
+740:     SKIPSPACE(pe);
+741: 
+742:     if (*pe != '(') {
+743: 	rpmlog(RPMLOG_ERR, _("Missing '(' in %s %s\n"), name, pe);
+744: 	goto exit;
+745:     }
+746: 
+747:     /* Bracket %lang args */
+748:     *pe = ' ';
+749:     for (pe = p; *pe && *pe != ')'; pe++)
+750: 	{};
+751: 
+752:     if (*pe == '\0') {
+753: 	rpmlog(RPMLOG_ERR, _("Missing ')' in %s(%s\n"), name, p);
+754: 	goto exit;
+755:     }
+756: 
+757:     /* Localize. Erase parsed string. */
+758:     q = xmalloc((pe-p) + 1);
+759:     rstrlcpy(q, p, (pe-p) + 1);
+760:     while (p <= pe)
+761: 	*p++ = ' ';
+762: 
+763:     /* Parse multiple arguments from %lang */
+764:     for (p = q; *p != '\0'; p = pe) {
+765: 	SKIPWHITE(p);
+766: 	pe = p;
+767: 	SKIPNONWHITE(pe);
+768: 
+769: 	if (addLang(&(cur->langs), p, (pe-p), q))
+770: 	    goto exit;
+771: 
+772: 	if (*pe == ',') pe++;	/* skip , if present */
+773:     }
+774:   }
+775: 
+776:     rc = RPMRC_OK;
+777: 
+778: exit:
+779:     free(q);
+780: 
+781:     return rc;
+782: }
+783: 
+784: /**
+785:  * Parse %caps from file manifest.
+786:  * @param buf		current spec file line
+787:  * @param cur		current file entry data
+788:  * @return		RPMRC_OK on success
+789:  */
+790: static rpmRC parseForCaps(char * buf, FileEntry cur)
+791: {
+792:     char *p, *pe, *q = NULL;
+793:     const char *name;
+794:     rpmRC rc = RPMRC_FAIL;
+795: 
+796:     if ((p = strstr(buf, (name = "%caps"))) == NULL)
+797: 	return RPMRC_OK;
+798: 
+799:     /* Erase "%caps" token. */
+800:     for (pe = p; (pe-p) < strlen(name); pe++)
+801: 	*pe = ' ';
+802:     SKIPSPACE(pe);
+803:     if (*pe != '(')
+804: 	return RPMRC_OK;
+805: 
+806:     /* Bracket %caps args */
+807:     *pe++ = ' ';
+808:     for (p = pe; *pe && *pe != ')'; pe++)
+809: 	{};
+810: 
+811:     if (*pe == '\0') {
+812: 	rpmlog(RPMLOG_ERR, _("Missing ')' in %s(%s\n"), name, p);
+813: 	goto exit;
+814:     }
+815: 
+816:     /* Localize. Erase parsed string. */
+817:     q = xmalloc((pe-p) + 1);
+818:     rstrlcpy(q, p, (pe-p) + 1);
+819:     while (p <= pe)
+820: 	*p++ = ' ';
+821: 
+822: #if WITH_CAP
+823:     {
+824: 	char *captxt = NULL;
+825: 	cap_t fcaps = cap_from_text(q);
+826: 	if (fcaps == NULL) {
+827: 	    rpmlog(RPMLOG_ERR, _("Invalid capability: %s\n"), q);
+828: 	    goto exit;
+829: 	}
+830: 	/* run our string through cap_to_text() to get libcap presentation */
+831: 	captxt = cap_to_text(fcaps, NULL);
+832: 	cur->caps = xstrdup(captxt);
+833: 	cap_free(captxt);
+834: 	cap_free(fcaps);
+835:     }
+836: #else
+837: 	rpmlog(RPMLOG_ERR, _("File capability support not built in\n"));
+838: 	goto exit;
+839: #endif
+840: 
+841:     rc = RPMRC_OK;
+842:     
+843: exit:
+844:     free(q);
+845: 
+846:     return rc;
+847: }
+848: /**
+849:  */
+850: static VFA_t const virtualAttrs[] = {
+851:     { "%dir",		RPMFILE_DIR },
+852:     { "%docdir",	RPMFILE_DOCDIR },
+853:     { "%doc",		RPMFILE_DOC },
+854:     { "%ghost",		RPMFILE_GHOST },
+855:     { "%exclude",	RPMFILE_EXCLUDE },
+856:     { "%readme",	RPMFILE_README },
+857:     { "%license",	RPMFILE_LICENSE },
+858:     { "%pubkey",	RPMFILE_PUBKEY },
+859:     { "%missingok",	RPMFILE_MISSINGOK },
+860:     { "%artifact",	RPMFILE_ARTIFACT },
+861:     { NULL, 0 }
+862: };
+863: 
+864: /**
+865:  * Parse simple attributes (e.g. %dir) from file manifest.
+866:  * @param buf		current spec file line
+867:  * @param cur		current file entry data
+868:  * @retval *fileNames	file names
+869:  * @return		RPMRC_OK on success
+870:  */
+871: static rpmRC parseForSimple(char * buf, FileEntry cur, ARGV_t * fileNames)
+872: {
+873:     char *s, *t;
+874:     rpmRC res = RPMRC_OK;
+875:     int allow_relative = (RPMFILE_PUBKEY|RPMFILE_DOC|RPMFILE_LICENSE);
+876: 
+877:     t = buf;
+878:     while ((s = strtokWithQuotes(t, " \t\n")) != NULL) {
+879: 	t = NULL;
+880: 
+881:     	/* Set flags for virtual file attributes */
+882: 	if (vfaMatch(virtualAttrs, s, &(cur->attrFlags)))
+883: 	    continue;
+884: 
+885: 	/* normally paths need to be absolute */
+886: 	if (*s != '/') {
+887: 	   if (!(cur->attrFlags & allow_relative)) {
+888: 		rpmlog(RPMLOG_ERR, _("File must begin with \"/\": %s\n"), s);
+889: 		res = RPMRC_FAIL;
+890: 		continue;
+891: 	    }
+892: 	    /* non-absolute %doc and %license paths are special */
+893: 	    if (cur->attrFlags & (RPMFILE_DOC | RPMFILE_LICENSE))
+894: 		cur->attrFlags |= RPMFILE_SPECIALDIR;
+895: 	}
+896: 	argvAdd(fileNames, s);
+897:     }
+898: 
+899:     return res;
+900: }
+901: 
+902: /**
+903:  */
+904: static int compareFileListRecs(const void * ap, const void * bp)	
+905: {
+906:     const char *a = ((FileListRec)ap)->cpioPath;
+907:     const char *b = ((FileListRec)bp)->cpioPath;
+908:     return strcmp(a, b);
+909: }
+910: 
+911: /**
+912:  * Test if file is located in a %docdir.
+913:  * @param docDirs	doc dirs
+914:  * @param fileName	file path
+915:  * @return		1 if doc file, 0 if not
+916:  */
+917: static int isDoc(ARGV_const_t docDirs, const char * fileName)	
+918: {
+919:     size_t k, l;
+920: 
+921:     k = strlen(fileName);
+922:     for (ARGV_const_t dd = docDirs; *dd; dd++) {
+923: 	l = strlen(*dd);
+924: 	if (l < k && rstreqn(fileName, *dd, l) && fileName[l] == '/')
+925: 	    return 1;
+926:     }
+927:     return 0;
+928: }
+929: 
+930: static int isHardLink(FileListRec flp, FileListRec tlp)
+931: {
+932:     return ((S_ISREG(flp->fl_mode) && S_ISREG(tlp->fl_mode)) &&
+933: 	    ((flp->fl_nlink > 1) && (flp->fl_nlink == tlp->fl_nlink)) &&
+934: 	    (flp->fl_ino == tlp->fl_ino) && 
+935: 	    (flp->fl_dev == tlp->fl_dev));
+936: }
+937: 
+938: /**
+939:  * Verify that file attributes scope over hardlinks correctly.
+940:  * If partial hardlink sets are possible, then add tracking dependency.
+941:  * @param files		package file records
+942:  * @return		1 if partial hardlink sets can exist, 0 otherwise.
+943:  */
+944: static int checkHardLinks(FileRecords files)
+945: {
+946:     FileListRec ilp, jlp;
+947:     int i, j;
+948: 
+949:     for (i = 0;  i < files->used; i++) {
+950: 	ilp = files->recs + i;
+951: 	if (!(S_ISREG(ilp->fl_mode) && ilp->fl_nlink > 1))
+952: 	    continue;
+953: 
+954: 	for (j = i + 1; j < files->used; j++) {
+955: 	    jlp = files->recs + j;
+956: 	    if (isHardLink(ilp, jlp)) {
+957: 		return 1;
+958: 	    }
+959: 	}
+960:     }
+961:     return 0;
+962: }
+963: 
+964: static int seenHardLink(FileRecords files, FileListRec flp, rpm_ino_t *fileid)
+965: {
+966:     for (FileListRec ilp = files->recs; ilp < flp; ilp++) {
+967: 	if (isHardLink(flp, ilp)) {
+968: 	    *fileid = ilp - files->recs;
+969: 	    return 1;
+970: 	}
+971:     }
+972:     return 0;
+973: }
+974: 
+975: /**
+976:  * Add file entries to header.
+977:  * @todo Should directories have %doc/%config attributes? (#14531)
+978:  * @todo Remove RPMTAG_OLDFILENAMES, add dirname/basename instead.
+979:  * @param fl		package file tree walk data
+980:  * @param pkg		(sub) package
+981:  * @param isSrc		pass 1 for source packages 0 otherwise
+982:  */
+983: static void genCpioListAndHeader(FileList fl, Package pkg, int isSrc)
+984: {
+985:     FileListRec flp;
+986:     char buf[BUFSIZ];
+987:     int i, npaths = 0;
+988:     uint32_t defaultalgo = PGPHASHALGO_MD5, digestalgo;
+989:     rpm_loff_t totalFileSize = 0;
+990:     Header h = pkg->header; /* just a shortcut */
+991:     int override_date = 0;
+992:     time_t source_date_epoch;
+993:     char *srcdate = getenv("SOURCE_DATE_EPOCH");
+994: 
+995:     /* Limit the maximum date to SOURCE_DATE_EPOCH if defined
+996:      * similar to the tar --clamp-mtime option
+997:      * https://reproducible-builds.org/specs/source-date-epoch/
+998:      */
+999:     if (srcdate && rpmExpandNumeric("%{?clamp_mtime_to_source_date_epoch}")) {
+1000: 	char *endptr;
+1001: 	errno = 0;
+1002: 	source_date_epoch = strtol(srcdate, &endptr, 10);
+1003: 	if (srcdate == endptr || *endptr || errno != 0) {
+1004: 	    rpmlog(RPMLOG_ERR, _("unable to parse %s=%s\n"), "SOURCE_DATE_EPOCH", srcdate);
+1005: 	    exit(28);
+1006: 	}
+1007: 	override_date = 1;
+1008:     }
+1009: 
+1010:     /*
+1011:      * See if non-md5 file digest algorithm is requested. If not
+1012:      * specified, quietly assume md5. Otherwise check if supported type.
+1013:      */
+1014:     digestalgo = rpmExpandNumeric(isSrc ? "%{_source_filedigest_algorithm}" :
+1015: 					  "%{_binary_filedigest_algorithm}");
+1016:     if (digestalgo == 0) {
+1017: 	digestalgo = defaultalgo;
+1018:     }
+1019: 
+1020:     if (rpmDigestLength(digestalgo) == 0) {
+1021: 	rpmlog(RPMLOG_WARNING,
+1022: 		_("Unknown file digest algorithm %u, falling back to MD5\n"), 
+1023: 		digestalgo);
+1024: 	digestalgo = defaultalgo;
+1025:     }
+1026: 
+1027:     /* Adjust paths if needed */
+1028:     if (!isSrc && pkg->removePostfixes) {
+1029: 	pkg->fileRenameMap = fileRenameHashCreate(fl->files.used,
+1030: 	                                          rstrhash, strcmp,
+1031: 	                                          (fileRenameHashFreeKey)rfree, (fileRenameHashFreeData)rfree);
+1032: 	for (i = 0, flp = fl->files.recs; i < fl->files.used; i++, flp++) {
+1033: 	    char * cpiopath = flp->cpioPath;
+1034: 	    char * cpiopath_orig = xstrdup(cpiopath);
+1035: 
+1036: 	    for (ARGV_const_t postfix_p = pkg->removePostfixes; *postfix_p; postfix_p++) {
+1037: 		int len = strlen(*postfix_p);
+1038: 		int plen = strlen(cpiopath);
+1039: 		if (len <= plen && !strncmp(cpiopath+plen-len, *postfix_p, len)) {
+1040: 		    cpiopath[plen-len] = '\0';
+1041: 		    if (plen-len > 0 && cpiopath[plen-len-1] == '/') {
+1042: 			cpiopath[plen-len-1] = '\0';
+1043: 		    }
+1044: 		}
+1045: 	    }
+1046: 	    if (strcmp(cpiopath_orig, cpiopath))
+1047: 		fileRenameHashAddEntry(pkg->fileRenameMap, xstrdup(cpiopath), cpiopath_orig);
+1048: 	    else
+1049: 		_free(cpiopath_orig);
+1050: 	}
+1051:     }
+1052: 
+1053:     /* Sort the big list */
+1054:     qsort(fl->files.recs, fl->files.used,
+1055: 	  sizeof(*(fl->files.recs)), compareFileListRecs);
+1056:     
+1057:     pkg->dpaths = xmalloc((fl->files.used + 1) * sizeof(*pkg->dpaths));
+1058: 
+1059:     /* Generate the header. */
+1060:     for (i = 0, flp = fl->files.recs; i < fl->files.used; i++, flp++) {
+1061: 	rpm_ino_t fileid = flp - fl->files.recs;
+1062: 
+1063:  	/* Merge duplicate entries. */
+1064: 	while (i < (fl->files.used - 1) &&
+1065: 	    rstreq(flp->cpioPath, flp[1].cpioPath)) {
+1066: 
+1067: 	    /* Two entries for the same file found, merge the entries. */
+1068: 	    /* Note that an %exclude is a duplication of a file reference */
+1069: 
+1070: 	    /* file flags */
+1071: 	    flp[1].flags |= flp->flags;	
+1072: 
+1073: 	    if (!(flp[1].flags & RPMFILE_EXCLUDE))
+1074: 		rpmlog(RPMLOG_WARNING, _("File listed twice: %s\n"),
+1075: 			flp->cpioPath);
+1076:    
+1077: 	    /* file mode */
+1078: 	    if (S_ISDIR(flp->fl_mode)) {
+1079: 		if ((flp[1].specdFlags & (SPECD_DIRMODE | SPECD_DEFDIRMODE)) <
+1080: 		    (flp->specdFlags & (SPECD_DIRMODE | SPECD_DEFDIRMODE)))
+1081: 			flp[1].fl_mode = flp->fl_mode;
+1082: 	    } else {
+1083: 		if ((flp[1].specdFlags & (SPECD_FILEMODE | SPECD_DEFFILEMODE)) <
+1084: 		    (flp->specdFlags & (SPECD_FILEMODE | SPECD_DEFFILEMODE)))
+1085: 			flp[1].fl_mode = flp->fl_mode;
+1086: 	    }
+1087: 
+1088: 	    /* uid */
+1089: 	    if ((flp[1].specdFlags & (SPECD_UID | SPECD_DEFUID)) <
+1090: 		(flp->specdFlags & (SPECD_UID | SPECD_DEFUID)))
+1091: 	    {
+1092: 		flp[1].fl_uid = flp->fl_uid;
+1093: 		flp[1].uname = flp->uname;
+1094: 	    }
+1095: 
+1096: 	    /* gid */
+1097: 	    if ((flp[1].specdFlags & (SPECD_GID | SPECD_DEFGID)) <
+1098: 		(flp->specdFlags & (SPECD_GID | SPECD_DEFGID)))
+1099: 	    {
+1100: 		flp[1].fl_gid = flp->fl_gid;
+1101: 		flp[1].gname = flp->gname;
+1102: 	    }
+1103: 
+1104: 	    /* verify flags */
+1105: 	    if ((flp[1].specdFlags & (SPECD_VERIFY | SPECD_DEFVERIFY)) <
+1106: 		(flp->specdFlags & (SPECD_VERIFY | SPECD_DEFVERIFY)))
+1107: 		    flp[1].verifyFlags = flp->verifyFlags;
+1108: 
+1109: 	    /* XXX to-do: language */
+1110: 
+1111: 	    flp++; i++;
+1112: 	}
+1113: 
+1114: 	/* Skip files that were marked with %exclude. */
+1115: 	if (flp->flags & RPMFILE_EXCLUDE)
+1116: 	{
+1117: 	    argvAdd(&pkg->fileExcludeList, flp->cpioPath);
+1118: 	    continue;
+1119: 	}
+1120: 
+1121: 	/* Collect on-disk paths for archive creation */
+1122: 	pkg->dpaths[npaths++] = xstrdup(flp->diskPath);
+1123: 
+1124: 	headerPutString(h, RPMTAG_OLDFILENAMES, flp->cpioPath);
+1125: 	headerPutString(h, RPMTAG_FILEUSERNAME,
+1126: 			rpmstrPoolStr(fl->pool, flp->uname));
+1127: 	headerPutString(h, RPMTAG_FILEGROUPNAME,
+1128: 			rpmstrPoolStr(fl->pool, flp->gname));
+1129: 
+1130: 	/* Only use 64bit filesizes tag if required. */
+1131: 	if (fl->largeFiles) {
+1132: 	    rpm_loff_t rsize64 = (rpm_loff_t)flp->fl_size;
+1133: 	    headerPutUint64(h, RPMTAG_LONGFILESIZES, &rsize64, 1);
+1134:             (void) rpmlibNeedsFeature(pkg, "LargeFiles", "4.12.0-1");
+1135: 	} else {
+1136: 	    rpm_off_t rsize32 = (rpm_off_t)flp->fl_size;
+1137: 	    headerPutUint32(h, RPMTAG_FILESIZES, &rsize32, 1);
+1138: 	}
+1139: 	/* Excludes and dupes have been filtered out by now. */
+1140: 	if (S_ISREG(flp->fl_mode)) {
+1141: 	    if (flp->fl_nlink == 1 || !seenHardLink(&fl->files, flp, &fileid)) {
+1142: 		totalFileSize += flp->fl_size;
+1143: 	    }
+1144: 	}
+1145: 	
+1146: 	if (override_date && flp->fl_mtime > source_date_epoch) {
+1147: 	    flp->fl_mtime = source_date_epoch;
+1148: 	}
+1149: 	/*
+1150:  	 * For items whose size varies between systems, always explicitly 
+1151:  	 * cast to the header type before inserting.
+1152:  	 * TODO: check and warn if header type overflows for each case.
+1153:  	 */
+1154: 	{   rpm_time_t rtime = (rpm_time_t) flp->fl_mtime;
+1155: 	    headerPutUint32(h, RPMTAG_FILEMTIMES, &rtime, 1);
+1156: 	}
+1157: 
+1158: 	{   rpm_mode_t rmode = (rpm_mode_t) flp->fl_mode;
+1159: 	    headerPutUint16(h, RPMTAG_FILEMODES, &rmode, 1);
+1160: 	}
+1161: 
+1162: 	{   rpm_rdev_t rrdev = (rpm_rdev_t) flp->fl_rdev;
+1163: 	    headerPutUint16(h, RPMTAG_FILERDEVS, &rrdev, 1);
+1164: 	}
+1165: 	
+1166: 	/*
+1167: 	 * To allow rpmbuild to work on filesystems with 64bit inodes numbers,
+1168: 	 * remap them into 32bit integers based on filelist index, just
+1169: 	 * preserving semantics for determining hardlinks.
+1170: 	 * Start at 1 as inode zero as that could be considered as an error.
+1171: 	 * Since we flatten all the inodes to appear within a single fs,
+1172: 	 * we also need to flatten the devices.
+1173: 	 */
+1174: 	{   rpm_ino_t rino = fileid + 1;
+1175: 	    rpm_dev_t rdev = flp->fl_dev ? 1 : 0;
+1176: 	    headerPutUint32(h, RPMTAG_FILEINODES, &rino, 1);
+1177: 	    headerPutUint32(h, RPMTAG_FILEDEVICES, &rdev, 1);
+1178: 	}
+1179: 	
+1180: 	headerPutString(h, RPMTAG_FILELANGS, flp->langs);
+1181: 
+1182: 	if (fl->haveCaps) {
+1183: 	    headerPutString(h, RPMTAG_FILECAPS, flp->caps);
+1184: 	}
+1185: 	
+1186: 	buf[0] = '\0';
+1187: 	if (S_ISREG(flp->fl_mode) && !(flp->flags & RPMFILE_GHOST))
+1188: 	    (void) rpmDoDigest(digestalgo, flp->diskPath, 1, 
+1189: 			       (unsigned char *)buf, NULL);
+1190: 	headerPutString(h, RPMTAG_FILEDIGESTS, buf);
+1191: 	
+1192: 	buf[0] = '\0';
+1193: 	if (S_ISLNK(flp->fl_mode)) {
+1194: 	    ssize_t llen = readlink(flp->diskPath, buf, BUFSIZ-1);
+1195: 	    if (llen == -1) {
+1196: 		rpmlog(RPMLOG_ERR, _("reading symlink %s failed: %s\n"),
+1197: 			flp->diskPath, strerror(errno));
+1198: 		fl->processingFailed = 1;
+1199: 	    } else {
+1200: 		buf[llen] = '\0';
+1201: 		if (buf[0] == '/' && !rstreq(fl->buildRoot, "/") &&
+1202: 			rstreqn(buf, fl->buildRoot, fl->buildRootLen)) {
+1203: 		    rpmlog(RPMLOG_ERR,
+1204: 				_("Symlink points to BuildRoot: %s -> %s\n"),
+1205: 				flp->cpioPath, buf);
+1206: 		    fl->processingFailed = 1;
+1207: 		}
+1208: 	    }
+1209: 	}
+1210: 	headerPutString(h, RPMTAG_FILELINKTOS, buf);
+1211: 	
+1212: 	if (flp->flags & RPMFILE_GHOST) {
+1213: 	    flp->verifyFlags &= ~(RPMVERIFY_FILEDIGEST | RPMVERIFY_FILESIZE |
+1214: 				RPMVERIFY_LINKTO | RPMVERIFY_MTIME);
+1215: 	}
+1216: 	headerPutUint32(h, RPMTAG_FILEVERIFYFLAGS, &(flp->verifyFlags),1);
+1217: 	
+1218: 	if (!isSrc && isDoc(fl->docDirs, flp->cpioPath))
+1219: 	    flp->flags |= RPMFILE_DOC;
+1220: 	/* XXX Should directories have %doc/%config attributes? (#14531) */
+1221: 	if (S_ISDIR(flp->fl_mode))
+1222: 	    flp->flags &= ~(RPMFILE_CONFIG|RPMFILE_DOC|RPMFILE_LICENSE);
+1223: 	/* Strip internal parse data */
+1224: 	flp->flags &= PARSEATTR_MASK;
+1225: 
+1226: 	headerPutUint32(h, RPMTAG_FILEFLAGS, &(flp->flags) ,1);
+1227:     }
+1228:     pkg->dpaths[npaths] = NULL;
+1229: 
+1230:     if (totalFileSize < UINT32_MAX) {
+1231: 	rpm_off_t totalsize = totalFileSize;
+1232: 	headerPutUint32(h, RPMTAG_SIZE, &totalsize, 1);
+1233:     } else {
+1234: 	rpm_loff_t totalsize = totalFileSize;
+1235: 	headerPutUint64(h, RPMTAG_LONGSIZE, &totalsize, 1);
+1236:     }
+1237: 
+1238:     if (digestalgo != defaultalgo) {
+1239: 	headerPutUint32(h, RPMTAG_FILEDIGESTALGO, &digestalgo, 1);
+1240: 	rpmlibNeedsFeature(pkg, "FileDigests", "4.6.0-1");
+1241:     }
+1242: 
+1243:     if (fl->haveCaps) {
+1244: 	rpmlibNeedsFeature(pkg, "FileCaps", "4.6.1-1");
+1245:     }
+1246: 
+1247:     if (!isSrc && !rpmExpandNumeric("%{_noPayloadPrefix}"))
+1248: 	(void) rpmlibNeedsFeature(pkg, "PayloadFilesHavePrefix", "4.0-1");
+1249: 
+1250:     /* rpmfiNew() only groks compressed filelists */
+1251:     headerConvert(h, HEADERCONV_COMPRESSFILELIST);
+1252:     pkg->cpioList = rpmfilesNew(NULL, h, RPMTAG_BASENAMES,
+1253: 			    (RPMFI_NOFILEUSER|RPMFI_NOFILEGROUP));
+1254: 
+1255:     if (pkg->cpioList == NULL || rpmfilesFC(pkg->cpioList) != npaths) {
+1256: 	fl->processingFailed = 1;
+1257:     }
+1258: 
+1259:     if (fl->pkgFlags & RPMBUILD_PKG_NODIRTOKENS) {
+1260: 	/* Uncompress filelist if legacy format requested */
+1261: 	headerConvert(h, HEADERCONV_EXPANDFILELIST);
+1262:     } else {
+1263: 	/* Binary packages with dirNames cannot be installed by legacy rpm. */
+1264: 	(void) rpmlibNeedsFeature(pkg, "CompressedFileNames", "3.0.4-1");
+1265:     }
+1266: }
+1267: 
+1268: static FileRecords FileRecordsFree(FileRecords files)
+1269: {
+1270:     for (int i = 0; i < files->used; i++) {
+1271: 	free(files->recs[i].diskPath);
+1272: 	free(files->recs[i].cpioPath);
+1273: 	free(files->recs[i].langs);
+1274: 	free(files->recs[i].caps);
+1275:     }
+1276:     free(files->recs);
+1277:     return NULL;
+1278: }
+1279: 
+1280: static void FileListFree(FileList fl)
+1281: {
+1282:     FileEntryFree(&(fl->cur));
+1283:     FileEntryFree(&(fl->def));
+1284:     FileRecordsFree(&(fl->files));
+1285:     free(fl->buildRoot);
+1286:     argvFree(fl->docDirs);
+1287:     rpmstrPoolFree(fl->pool);
+1288: }
+1289: 
+1290: /* forward ref */
+1291: static rpmRC recurseDir(FileList fl, const char * diskPath);
+1292: 
+1293: /* Hack up a stat structure for a %dev or non-existing %ghost */
+1294: static struct stat * fakeStat(FileEntry cur, struct stat * statp)
+1295: {
+1296:     time_t now = time(NULL);
+1297: 
+1298:     if (cur->devtype) {
+1299: 	statp->st_rdev = ((cur->devmajor & 0xff) << 8) | (cur->devminor & 0xff);
+1300: 	statp->st_dev = statp->st_rdev;
+1301: 	statp->st_mode = (cur->devtype == 'b' ? S_IFBLK : S_IFCHR);
+1302:     } else {
+1303: 	/* non-existing %ghost file or directory */
+1304: 	statp->st_mode = cur->isDir ? S_IFDIR : S_IFREG;
+1305: 	/* can't recurse into non-existing directory */
+1306: 	if (cur->isDir)
+1307: 	    cur->isDir = 1;
+1308:     }
+1309:     statp->st_mode |= (cur->ar.ar_fmode & 0777);
+1310:     statp->st_atime = now;
+1311:     statp->st_mtime = now;
+1312:     statp->st_ctime = now;
+1313:     statp->st_nlink = 1;
+1314:     return statp;
+1315: }
+1316: 
+1317: /**
+1318:  * Add a file to the package manifest.
+1319:  * @param fl		package file tree walk data
+1320:  * @param diskPath	path to file
+1321:  * @param statp		file stat (possibly NULL)
+1322:  * @return		RPMRC_OK on success
+1323:  */
+1324: static rpmRC addFile(FileList fl, const char * diskPath,
+1325: 		struct stat * statp)
+1326: {
+1327:     size_t plen = strlen(diskPath);
+1328:     char buf[plen + 1];
+1329:     const char *cpioPath;
+1330:     struct stat statbuf;
+1331:     mode_t fileMode;
+1332:     uid_t fileUid;
+1333:     gid_t fileGid;
+1334:     const char *fileUname;
+1335:     const char *fileGname;
+1336:     rpmRC rc = RPMRC_FAIL; /* assume failure */
+1337: 
+1338:     /* Strip trailing slash. The special case of '/' path is handled below. */
+1339:     if (plen > 0 && diskPath[plen - 1] == '/') {
+1340: 	diskPath = strcpy(buf, diskPath);
+1341: 	buf[plen - 1] = '\0';
+1342:     }
+1343:     cpioPath = diskPath;
+1344: 	
+1345:     if (strncmp(diskPath, fl->buildRoot, fl->buildRootLen)) {
+1346: 	rpmlog(RPMLOG_ERR, _("Path is outside buildroot: %s\n"), diskPath);
+1347: 	goto exit;
+1348:     }
+1349:     
+1350:     /* Path may have prepended buildRoot, so locate the original filename. */
+1351:     /*
+1352:      * XXX There are 3 types of entry into addFile:
+1353:      *
+1354:      *	From			diskUrl			statp
+1355:      *	=====================================================
+1356:      *  processBinaryFile	path			NULL
+1357:      *  processBinaryFile	glob result path	NULL
+1358:      *  myftw			path			stat
+1359:      *
+1360:      */
+1361:     if (fl->buildRoot && !rstreq(fl->buildRoot, "/"))
+1362:     	cpioPath += fl->buildRootLen;
+1363: 
+1364:     /* XXX make sure '/' can be packaged also */
+1365:     if (*cpioPath == '\0')
+1366: 	cpioPath = "/";
+1367: 
+1368:     /*
+1369:      * Unless recursing, we dont have stat() info at hand. Handle the
+1370:      * various cases, preserving historical behavior wrt %dev():
+1371:      * - for %dev() entries we fake it up whether the file exists or not
+1372:      * - otherwise try to grab the data by lstat()
+1373:      * - %ghost entries might not exist, fake it up
+1374:      */
+1375:     if (statp == NULL) {
+1376: 	memset(&statbuf, 0, sizeof(statbuf));
+1377: 
+1378: 	if (fl->cur.devtype) {
+1379: 	    statp = fakeStat(&(fl->cur), &statbuf);
+1380: 	} else if (lstat(diskPath, &statbuf) == 0) {
+1381: 	    statp = &statbuf;
+1382: 	} else if (fl->cur.attrFlags & RPMFILE_GHOST) {
+1383: 	    statp = fakeStat(&(fl->cur), &statbuf);
+1384: 	} else {
+1385: 	    int lvl = RPMLOG_ERR;
+1386: 	    const char *msg = fl->cur.isDir ? _("Directory not found: %s\n") :
+1387: 					      _("File not found: %s\n");
+1388: 	    if (fl->cur.attrFlags & RPMFILE_EXCLUDE) {
+1389: 		lvl = RPMLOG_WARNING;
+1390: 		rc = RPMRC_OK;
+1391: 	    }
+1392: 	    rpmlog(lvl, msg, diskPath);
+1393: 	    goto exit;
+1394: 	}
+1395:     }
+1396: 
+1397:     /* Error out when a non-directory is specified as one in spec */
+1398:     if (fl->cur.isDir && (statp == &statbuf) && !S_ISDIR(statp->st_mode)) {
+1399: 	rpmlog(RPMLOG_ERR, _("Not a directory: %s\n"), diskPath);
+1400: 	goto exit;
+1401:     }
+1402: 
+1403:     /* Don't recurse into explicit %dir, don't double-recurse from fts */
+1404:     if ((fl->cur.isDir != 1) && (statp == &statbuf) && S_ISDIR(statp->st_mode)) {
+1405: 	return recurseDir(fl, diskPath);
+1406:     }
+1407: 
+1408:     fileMode = statp->st_mode;
+1409:     fileUid = statp->st_uid;
+1410:     fileGid = statp->st_gid;
+1411: 
+1412:     /* Explicit %attr() always wins */
+1413:     if (fl->cur.ar.ar_fmodestr) {
+1414: 	if (S_ISLNK(fileMode)) {
+1415: 	    rpmlog(RPMLOG_WARNING,
+1416: 		   "Explicit %%attr() mode not applicable to symlink: %s\n",
+1417: 		   diskPath);
+1418: 	} else {
+1419: 	    fileMode &= S_IFMT;
+1420: 	    fileMode |= fl->cur.ar.ar_fmode;
+1421: 	}
+1422:     } else {
+1423: 	/* ...but %defattr() for directories and files is different */
+1424: 	if (S_ISDIR(fileMode)) {
+1425: 	    if (fl->def.ar.ar_dmodestr) {
+1426: 		fileMode &= S_IFMT;
+1427: 		fileMode |= fl->def.ar.ar_dmode;
+1428: 	    }
+1429: 	} else if (!S_ISLNK(fileMode) && fl->def.ar.ar_fmodestr) {
+1430: 	    fileMode &= S_IFMT;
+1431: 	    fileMode |= fl->def.ar.ar_fmode;
+1432: 	}
+1433:     }
+1434:     if (fl->cur.ar.ar_user) {
+1435: 	fileUname = rpmstrPoolStr(fl->pool, fl->cur.ar.ar_user);
+1436:     } else if (fl->def.ar.ar_user) {
+1437: 	fileUname = rpmstrPoolStr(fl->pool, fl->def.ar.ar_user);
+1438:     } else {
+1439: 	fileUname = rpmugUname(fileUid);
+1440:     }
+1441:     if (fl->cur.ar.ar_group) {
+1442: 	fileGname = rpmstrPoolStr(fl->pool, fl->cur.ar.ar_group);
+1443:     } else if (fl->def.ar.ar_group) {
+1444: 	fileGname = rpmstrPoolStr(fl->pool, fl->def.ar.ar_group);
+1445:     } else {
+1446: 	fileGname = rpmugGname(fileGid);
+1447:     }
+1448: 	
+1449:     /* Default user/group to builder's user/group */
+1450:     if (fileUname == NULL)
+1451: 	fileUname = rpmugUname(getuid());
+1452:     if (fileGname == NULL)
+1453: 	fileGname = rpmugGname(getgid());
+1454:     
+1455:     /* S_XXX macro must be consistent with type in find call at check-files script */
+1456:     if (check_fileList && (S_ISREG(fileMode) || S_ISLNK(fileMode))) {
+1457: 	appendStringBuf(check_fileList, diskPath);
+1458: 	appendStringBuf(check_fileList, "\n");
+1459:     }
+1460: 
+1461:     /* Add to the file list */
+1462:     if (fl->files.used == fl->files.alloced) {
+1463: 	fl->files.alloced += 128;
+1464: 	fl->files.recs = xrealloc(fl->files.recs,
+1465: 			fl->files.alloced * sizeof(*(fl->files.recs)));
+1466:     }
+1467: 	    
+1468:     {	FileListRec flp = &fl->files.recs[fl->files.used];
+1469: 
+1470: 	flp->fl_st = *statp;	/* structure assignment */
+1471: 	flp->fl_mode = fileMode;
+1472: 	flp->fl_uid = fileUid;
+1473: 	flp->fl_gid = fileGid;
+1474: 	if (S_ISDIR(fileMode))
+1475: 	    flp->fl_size = 0;
+1476: 
+1477: 	flp->cpioPath = xstrdup(cpioPath);
+1478: 	flp->diskPath = xstrdup(diskPath);
+1479: 	flp->uname = rpmstrPoolId(fl->pool, fileUname, 1);
+1480: 	flp->gname = rpmstrPoolId(fl->pool, fileGname, 1);
+1481: 
+1482: 	if (fl->cur.langs) {
+1483: 	    flp->langs = argvJoin(fl->cur.langs, "|");
+1484: 	} else {
+1485: 	    flp->langs = xstrdup("");
+1486: 	}
+1487: 
+1488: 	if (fl->cur.caps) {
+1489: 	    flp->caps = xstrdup(fl->cur.caps);
+1490: 	} else {
+1491: 	    flp->caps = xstrdup("");
+1492: 	}
+1493: 
+1494: 	flp->flags = fl->cur.attrFlags;
+1495: 	flp->specdFlags = fl->cur.specdFlags;
+1496: 	flp->verifyFlags = fl->cur.verifyFlags;
+1497: 
+1498: 	if (!(flp->flags & RPMFILE_EXCLUDE) && S_ISREG(flp->fl_mode)) {
+1499: 	    if (flp->fl_size >= UINT32_MAX) {
+1500: 		fl->largeFiles = 1;
+1501: 	    }
+1502: 	}
+1503:     }
+1504: 
+1505:     rc = RPMRC_OK;
+1506:     fl->files.used++;
+1507: 
+1508: exit:
+1509:     if (rc != RPMRC_OK)
+1510: 	fl->processingFailed = 1;
+1511: 
+1512:     return rc;
+1513: }
+1514: 
+1515: /**
+1516:  * Add directory (and all of its files) to the package manifest.
+1517:  * @param fl		package file tree walk data
+1518:  * @param diskPath	path to file
+1519:  * @return		RPMRC_OK on success
+1520:  */
+1521: static rpmRC recurseDir(FileList fl, const char * diskPath)
+1522: {
+1523:     char * ftsSet[2];
+1524:     FTS * ftsp;
+1525:     FTSENT * fts;
+1526:     int myFtsOpts = (FTS_COMFOLLOW | FTS_NOCHDIR | FTS_PHYSICAL);
+1527:     rpmRC rc = RPMRC_FAIL;
+1528: 
+1529:     ftsSet[0] = (char *) diskPath;
+1530:     ftsSet[1] = NULL;
+1531:     ftsp = Fts_open(ftsSet, myFtsOpts, NULL);
+1532:     while ((fts = Fts_read(ftsp)) != NULL) {
+1533: 	switch (fts->fts_info) {
+1534: 	case FTS_D:		/* preorder directory */
+1535: 	case FTS_F:		/* regular file */
+1536: 	case FTS_SL:		/* symbolic link */
+1537: 	case FTS_SLNONE:	/* symbolic link without target */
+1538: 	case FTS_DEFAULT:	/* none of the above */
+1539: 	    rc = addFile(fl, fts->fts_accpath, fts->fts_statp);
+1540: 	    break;
+1541: 	case FTS_DOT:		/* dot or dot-dot */
+1542: 	case FTS_DP:		/* postorder directory */
+1543: 	    rc = RPMRC_OK;
+1544: 	    break;
+1545: 	case FTS_NS:		/* stat(2) failed */
+1546: 	case FTS_DNR:		/* unreadable directory */
+1547: 	case FTS_ERR:		/* error; errno is set */
+1548: 	case FTS_DC:		/* directory that causes cycles */
+1549: 	case FTS_NSOK:		/* no stat(2) requested */
+1550: 	case FTS_INIT:		/* initialized only */
+1551: 	case FTS_W:		/* whiteout object */
+1552: 	default:
+1553: 	    rpmlog(RPMLOG_ERR, _("Can't read content of file: %s\n"),
+1554: 		fts->fts_path);
+1555: 	    rc = RPMRC_FAIL;
+1556: 	    break;
+1557: 	}
+1558: 	if (rc)
+1559: 	    break;
+1560:     }
+1561:     (void) Fts_close(ftsp);
+1562: 
+1563:     return rc;
+1564: }
+1565: 
+1566: /**
+1567:  * Add a pubkey/icon to a binary package.
+1568:  * @param pkg
+1569:  * @param fl		package file tree walk data
+1570:  * @param fileName	path to file, relative is builddir, absolute buildroot.
+1571:  * @param tag		tag to add
+1572:  * @return		RPMRC_OK on success
+1573:  */
+1574: static rpmRC processMetadataFile(Package pkg, FileList fl, 
+1575: 				 const char * fileName, rpmTagVal tag)
+1576: {
+1577:     const char * buildDir = "%{_builddir}/%{?buildsubdir}/";
+1578:     char * fn = NULL;
+1579:     char * apkt = NULL;
+1580:     uint8_t * pkt = NULL;
+1581:     ssize_t pktlen = 0;
+1582:     int absolute = 0;
+1583:     rpmRC rc = RPMRC_FAIL;
+1584:     int xx;
+1585: 
+1586:     if (*fileName == '/') {
+1587: 	fn = rpmGenPath(fl->buildRoot, NULL, fileName);
+1588: 	absolute = 1;
+1589:     } else
+1590: 	fn = rpmGenPath(buildDir, NULL, fileName);
+1591: 
+1592:     switch (tag) {
+1593:     default:
+1594: 	rpmlog(RPMLOG_ERR, _("%s: can't load unknown tag (%d).\n"),
+1595: 		fn, tag);
+1596: 	goto exit;
+1597: 	break;
+1598:     case RPMTAG_PUBKEYS: {
+1599: 	if ((xx = pgpReadPkts(fn, &pkt, (size_t *)&pktlen)) <= 0) {
+1600: 	    rpmlog(RPMLOG_ERR, _("%s: public key read failed.\n"), fn);
+1601: 	    goto exit;
+1602: 	}
+1603: 	if (xx != PGPARMOR_PUBKEY) {
+1604: 	    rpmlog(RPMLOG_ERR, _("%s: not an armored public key.\n"), fn);
+1605: 	    goto exit;
+1606: 	}
+1607: 	apkt = pgpArmorWrap(PGPARMOR_PUBKEY, pkt, pktlen);
+1608: 	break;
+1609:     }
+1610:     }
+1611: 
+1612:     if (!apkt) {
+1613: 	rpmlog(RPMLOG_ERR, _("%s: failed to encode\n"), fn);
+1614: 	goto exit;
+1615:     }
+1616: 
+1617:     headerPutString(pkg->header, tag, apkt);
+1618:     rc = RPMRC_OK;
+1619: 
+1620:     if (absolute)
+1621: 	rc = addFile(fl, fn, NULL);
+1622: 
+1623: exit:
+1624:     free(apkt);
+1625:     free(pkt);
+1626:     free(fn);
+1627:     if (rc) {
+1628: 	fl->processingFailed = 1;
+1629: 	rc = RPMRC_FAIL;
+1630:     }
+1631:     return rc;
+1632: }
+1633: 
+1634: /* add a file with possible virtual attributes to the file list */
+1635: static void argvAddAttr(ARGV_t *filesp, rpmfileAttrs attrs, const char *path)
+1636: {
+1637:     char *line = NULL;
+1638: 
+1639:     for (VFA_t *vfa = virtualAttrs; vfa->attribute != NULL; vfa++) {
+1640: 	if (vfa->flag & attrs)
+1641: 	    line = rstrscat(&line, vfa->attribute, " ", NULL);
+1642:     }
+1643:     line = rstrscat(&line, path, NULL);
+1644:     argvAdd(filesp, line);
+1645:     free(line);
+1646: }
+1647: 
+1648: #if HAVE_LIBDW
+1649: /* How build id links are generated.  See macros.in for description.  */
+1650: #define BUILD_IDS_NONE     0
+1651: #define BUILD_IDS_ALLDEBUG 1
+1652: #define BUILD_IDS_SEPARATE 2
+1653: #define BUILD_IDS_COMPAT   3
+1654: 
+1655: static int addNewIDSymlink(ARGV_t *files,
+1656: 			   char *targetpath, char *idlinkpath,
+1657: 			   int isDbg, int *dups)
+1658: {
+1659:     const char *linkerr = _("failed symlink");
+1660:     int rc = 0;
+1661:     int nr = 0;
+1662:     int exists = 0;
+1663:     char *origpath, *linkpath;
+1664: 
+1665:     if (isDbg)
+1666: 	rasprintf(&linkpath, "%s.debug", idlinkpath);
+1667:     else
+1668: 	linkpath = idlinkpath;
+1669:     origpath = linkpath;
+1670: 
+1671:     while (faccessat(AT_FDCWD, linkpath, F_OK, AT_SYMLINK_NOFOLLOW) == 0) {
+1672:         /* We don't care about finding dups for compat links, they are
+1673: 	   OK as is.  Otherwise we will need to double check if
+1674: 	   existing link points to the correct target. */
+1675: 	if (dups == NULL)
+1676: 	  {
+1677: 	    exists = 1;
+1678: 	    break;
+1679: 	  }
+1680: 
+1681: 	char ltarget[PATH_MAX];
+1682: 	ssize_t llen;
+1683: 	/* In short-circuited builds the link might already exist  */
+1684: 	if ((llen = readlink(linkpath, ltarget, sizeof(ltarget)-1)) != -1) {
+1685: 	    ltarget[llen] = '\0';
+1686: 	    if (rstreq(ltarget, targetpath)) {
+1687: 		exists = 1;
+1688: 		break;
+1689: 	    }
+1690: 	}
+1691: 
+1692: 	if (nr > 0)
+1693: 	    free(linkpath);
+1694: 	nr++;
+1695: 	rasprintf(&linkpath, "%s.%d%s", idlinkpath, nr,
+1696: 		  isDbg ? ".debug" : "");
+1697:     }
+1698: 
+1699:     if (!exists && symlink(targetpath, linkpath) < 0) {
+1700: 	rc = 1;
+1701: 	rpmlog(RPMLOG_ERR, "%s: %s -> %s: %m\n",
+1702: 	       linkerr, linkpath, targetpath);
+1703:     } else {
+1704: 	argvAddAttr(files, RPMFILE_ARTIFACT, linkpath);
+1705:     }
+1706: 
+1707:     if (nr > 0) {
+1708: 	/* Lets see why there are multiple build-ids. If the original
+1709: 	   targets are hard linked, then it is OK, otherwise warn
+1710: 	   something fishy is going on. Would be nice to call
+1711: 	   something like eu-elfcmp to see if they are really the same
+1712: 	   ELF file or not. */
+1713: 	struct stat st1, st2;
+1714: 	if (stat (origpath, &st1) != 0) {
+1715: 	    rpmlog(RPMLOG_WARNING, _("Duplicate build-id, stat %s: %m\n"),
+1716: 		   origpath);
+1717: 	} else if (stat (linkpath, &st2) != 0) {
+1718: 	    rpmlog(RPMLOG_WARNING, _("Duplicate build-id, stat %s: %m\n"),
+1719: 		   linkpath);
+1720: 	} else if (!(S_ISREG(st1.st_mode) && S_ISREG(st2.st_mode)
+1721: 		  && st1.st_nlink > 1 && st2.st_nlink == st1.st_nlink
+1722: 		  && st1.st_ino == st2.st_ino && st1.st_dev == st2.st_dev)) {
+1723: 	    char *rpath1 = realpath(origpath, NULL);
+1724: 	    char *rpath2 = realpath(linkpath, NULL);
+1725: 	    rpmlog(RPMLOG_WARNING, _("Duplicate build-ids %s and %s\n"),
+1726: 		   rpath1, rpath2);
+1727: 	    free(rpath1);
+1728: 	    free(rpath2);
+1729: 	}
+1730:     }
+1731: 
+1732:     if (isDbg)
+1733: 	free(origpath);
+1734:     if (nr > 0)
+1735: 	free(linkpath);
+1736:     if (dups != NULL)
+1737:       *dups = nr;
+1738: 
+1739:     return rc;
+1740: }
+1741: 
+1742: static int haveModinfo(Elf *elf)
+1743: {
+1744:     Elf_Scn * scn = NULL;
+1745:     size_t shstrndx;
+1746:     int have_modinfo = 0;
+1747:     const char *sname;
+1748: 
+1749:     if (elf_getshdrstrndx(elf, &shstrndx) == 0) {
+1750: 	while ((scn = elf_nextscn(elf, scn)) != NULL) {
+1751: 	    GElf_Shdr shdr_mem, *shdr = gelf_getshdr(scn, &shdr_mem);
+1752: 	    if (shdr == NULL)
+1753: 		continue;
+1754: 	    sname = elf_strptr(elf, shstrndx, shdr->sh_name);
+1755: 	    if (sname && rstreq(sname, ".modinfo")) {
+1756: 		have_modinfo = 1;
+1757: 		break;
+1758: 	    }
+1759: 	}
+1760:     }
+1761:     return have_modinfo;
+1762: }
+1763: 
+1764: static int generateBuildIDs(FileList fl, ARGV_t *files)
+1765: {
+1766:     int rc = 0;
+1767:     int i;
+1768:     FileListRec flp;
+1769:     char **ids = NULL;
+1770:     char **paths = NULL;
+1771:     size_t nr_ids, allocated;
+1772:     nr_ids = allocated = 0;
+1773: 
+1774:     /* How are we supposed to create the build-id links?  */
+1775:     char *build_id_links_macro = rpmExpand("%{?_build_id_links}", NULL);
+1776:     int build_id_links;
+1777:     if (*build_id_links_macro == '\0') {
+1778: 	rpmlog(RPMLOG_WARNING,
+1779: 	       _("_build_id_links macro not set, assuming 'compat'\n"));
+1780: 	build_id_links = BUILD_IDS_COMPAT;
+1781:     } else if (strcmp(build_id_links_macro, "none") == 0) {
+1782: 	build_id_links = BUILD_IDS_NONE;
+1783:     } else if (strcmp(build_id_links_macro, "alldebug") == 0) {
+1784: 	build_id_links = BUILD_IDS_ALLDEBUG;
+1785:     } else if (strcmp(build_id_links_macro, "separate") == 0) {
+1786: 	build_id_links = BUILD_IDS_SEPARATE;
+1787:     } else if (strcmp(build_id_links_macro, "compat") == 0) {
+1788: 	build_id_links = BUILD_IDS_COMPAT;
+1789:     } else {
+1790: 	rc = 1;
+1791: 	rpmlog(RPMLOG_ERR,
+1792: 	       _("_build_id_links macro set to unknown value '%s'\n"),
+1793: 	       build_id_links_macro);
+1794: 	build_id_links = BUILD_IDS_NONE;
+1795:     }
+1796:     free(build_id_links_macro);
+1797: 
+1798:     if (build_id_links == BUILD_IDS_NONE || rc != 0)
+1799: 	return rc;
+1800: 
+1801:     /* Historically we have only checked build_ids when __debug_package
+1802:        was defined. So don't terminate the build if __debug_package is
+1803:        unset, even when _missing_build_ids_terminate_build is. */
+1804:     int terminate = (rpmExpandNumeric("%{?_missing_build_ids_terminate_build}")
+1805: 		     && rpmExpandNumeric("%{?__debug_package}"));
+1806: 
+1807:     /* Collect and check all build-ids for ELF files in this package.  */
+1808:     int needMain = 0;
+1809:     int needDbg = 0;
+1810:     for (i = 0, flp = fl->files.recs; i < fl->files.used; i++, flp++) {
+1811: 	struct stat sbuf;
+1812: 	if (lstat(flp->diskPath, &sbuf) == 0 && S_ISREG (sbuf.st_mode)) {
+1813: 	    /* We determine whether this is a main or
+1814: 	       debug ELF based on path.  */
+1815: 	    int isDbg = strncmp (flp->cpioPath,
+1816: 				 DEBUG_LIB_PREFIX, strlen (DEBUG_LIB_PREFIX)) == 0;
+1817: 
+1818: 	    /* For the main package files mimic what find-debuginfo.sh does.
+1819: 	       Only check build-ids for executable files. Debug files are
+1820: 	       always non-executable. */
+1821: 	    if (!isDbg
+1822: 		&& (sbuf.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) == 0)
+1823: 	      continue;
+1824: 
+1825: 	    int fd = open (flp->diskPath, O_RDONLY);
+1826: 	    if (fd >= 0) {
+1827: 		/* Only real ELF files, that are ET_EXEC, ET_DYN or
+1828: 		   kernel modules (ET_REL files with .modinfo section)
+1829: 		   should have build-ids. */
+1830: 		GElf_Ehdr ehdr;
+1831: #if HAVE_DWELF_ELF_BEGIN
+1832: 		Elf *elf = dwelf_elf_begin(fd);
+1833: #else
+1834: 		Elf *elf = elf_begin (fd, ELF_C_READ, NULL);
+1835: #endif
+1836: 		if (elf != NULL && elf_kind(elf) == ELF_K_ELF
+1837: 		    && gelf_getehdr(elf, &ehdr) != NULL
+1838: 		    && (ehdr.e_type == ET_EXEC || ehdr.e_type == ET_DYN
+1839: 			|| (ehdr.e_type == ET_REL && haveModinfo(elf)))) {
+1840: 		    const void *build_id;
+1841: 		    ssize_t len = dwelf_elf_gnu_build_id (elf, &build_id);
+1842: 		    /* len == -1 means error. Zero means no
+1843: 		       build-id. We want at least a length of 2 so we
+1844: 		       have at least a xx/yy (hex) dir/file. But
+1845: 		       reasonable build-ids are between 16 bytes (md5
+1846: 		       is 128 bits) and 64 bytes (largest sha3 is 512
+1847: 		       bits), common is 20 bytes (sha1 is 160 bits). */
+1848: 		    if (len >= 16 && len <= 64) {
+1849: 			int addid = 0;
+1850: 			if (isDbg) {
+1851: 			    needDbg = 1;
+1852: 			    addid = 1;
+1853: 			}
+1854: 			else if (build_id_links != BUILD_IDS_ALLDEBUG) {
+1855: 			    needMain = 1;
+1856: 			    addid = 1;
+1857: 			}
+1858: 			if (addid) {
+1859: 			    const unsigned char *p = build_id;
+1860: 			    const unsigned char *end = p + len;
+1861: 			    char *id_str;
+1862: 			    if (allocated <= nr_ids) {
+1863: 				allocated += 16;
+1864: 				paths = xrealloc (paths,
+1865: 						  allocated * sizeof(char *));
+1866: 				ids = xrealloc (ids,
+1867: 						allocated * sizeof(char *));
+1868: 			    }
+1869: 
+1870: 			    paths[nr_ids] = xstrdup(flp->cpioPath);
+1871: 			    id_str = ids[nr_ids] = xmalloc(2 * len + 1);
+1872: 			    while (p < end)
+1873: 				id_str += sprintf(id_str, "%02x",
+1874: 						  (unsigned)*p++);
+1875: 			    *id_str = '\0';
+1876: 			    nr_ids++;
+1877: 			}
+1878: 		    } else {
+1879: 			if (len < 0) {
+1880: 			    rpmlog(terminate ? RPMLOG_ERR : RPMLOG_WARNING,
+1881: 				   _("error reading build-id in %s: %s\n"),
+1882: 				   flp->diskPath, elf_errmsg (-1));
+1883: 			} else if (len == 0) {
+1884: 			      rpmlog(terminate ? RPMLOG_ERR : RPMLOG_WARNING,
+1885: 				     _("Missing build-id in %s\n"),
+1886: 				     flp->diskPath);
+1887: 			} else {
+1888: 			    rpmlog(terminate ? RPMLOG_ERR : RPMLOG_WARNING,
+1889: 				   (len < 16
+1890: 				    ? _("build-id found in %s too small\n")
+1891: 				    : _("build-id found in %s too large\n")),
+1892: 				   flp->diskPath);
+1893: 			}
+1894: 			if (terminate)
+1895: 			    rc = 1;
+1896: 		    }
+1897: 		    elf_end (elf);
+1898: 		}
+1899: 		close (fd);
+1900: 	    }
+1901: 	}
+1902:     }
+1903: 
+1904:     /* Process and clean up all build-ids.  */
+1905:     if (nr_ids > 0) {
+1906: 	const char *errdir = _("failed to create directory");
+1907: 	char *mainiddir = NULL;
+1908: 	char *debugiddir = NULL;
+1909: 	if (rc == 0) {
+1910: 	    char *attrstr;
+1911: 	    /* Add .build-id directories to hold the subdirs/symlinks.  */
+1912: 
+1913: 	    mainiddir = rpmGetPath(fl->buildRoot, BUILD_ID_DIR, NULL);
+1914: 	    debugiddir = rpmGetPath(fl->buildRoot, DEBUG_ID_DIR, NULL);
+1915: 
+1916: 	    /* Make sure to reset all file flags to defaults.  */
+1917: 	    attrstr = mkattr();
+1918: 	    argvAdd(files, attrstr);
+1919: 	    free (attrstr);
+1920: 
+1921: 	    /* Supported, but questionable.  */
+1922: 	    if (needMain && needDbg)
+1923: 		rpmlog(RPMLOG_WARNING,
+1924: 		       _("Mixing main ELF and debug files in package"));
+1925: 
+1926: 	    if (needMain) {
+1927: 		if ((rc = rpmioMkpath(mainiddir, 0755, -1, -1)) != 0) {
+1928: 		    rpmlog(RPMLOG_ERR, "%s %s: %m\n", errdir, mainiddir);
+1929: 		} else {
+1930: 		    argvAddAttr(files, RPMFILE_DIR|RPMFILE_ARTIFACT, mainiddir);
+1931: 		}
+1932: 	    }
+1933: 
+1934: 	    if (rc == 0 && needDbg) {
+1935: 		if ((rc = rpmioMkpath(debugiddir, 0755, -1, -1)) != 0) {
+1936: 		    rpmlog(RPMLOG_ERR, "%s %s: %m\n", errdir, debugiddir);
+1937: 		} else {
+1938: 		    argvAddAttr(files, RPMFILE_DIR|RPMFILE_ARTIFACT, debugiddir);
+1939: 		}
+1940: 	    }
+1941: 	}
+1942: 
+1943: 	/* In case we need ALLDEBUG links we might need the vra as
+1944: 	   tagged onto the .debug file name. */
+1945: 	char *vra = NULL;
+1946: 	if (rc == 0 && needDbg && build_id_links == BUILD_IDS_ALLDEBUG) {
+1947: 	    int unique_debug_names =
+1948: 		rpmExpandNumeric("%{?_unique_debug_names}");
+1949: 	    if (unique_debug_names == 1)
+1950: 		vra = rpmExpand("-%{VERSION}-%{RELEASE}.%{_arch}", NULL);
+1951: 	}
+1952: 
+1953: 	/* Now add a subdir and symlink for each buildid found.  */
+1954: 	for (i = 0; i < nr_ids; i++) {
+1955: 	    /* Don't add anything more when an error occurred. But do
+1956: 	       cleanup.  */
+1957: 	    if (rc == 0) {
+1958: 		int isDbg = strncmp (paths[i], DEBUG_LIB_PREFIX,
+1959: 				     strlen (DEBUG_LIB_PREFIX)) == 0;
+1960: 
+1961: 		char *buildidsubdir;
+1962: 		char subdir[4];
+1963: 		subdir[0] = '/';
+1964: 		subdir[1] = ids[i][0];
+1965: 		subdir[2] = ids[i][1];
+1966: 		subdir[3] = '\0';
+1967: 		if (isDbg)
+1968: 		    buildidsubdir = rpmGetPath(debugiddir, subdir, NULL);
+1969: 		else
+1970: 		    buildidsubdir = rpmGetPath(mainiddir, subdir, NULL);
+1971: 		/* We only need to create and add the subdir once. */
+1972: 		int addsubdir = access (buildidsubdir, F_OK) == -1;
+1973: 		if (addsubdir
+1974: 		    && (rc = rpmioMkpath(buildidsubdir, 0755, -1, -1)) != 0) {
+1975: 		    rpmlog(RPMLOG_ERR, "%s %s: %m\n", errdir, buildidsubdir);
+1976: 		} else {
+1977: 		    if (addsubdir)
+1978: 		       argvAddAttr(files, RPMFILE_DIR|RPMFILE_ARTIFACT, buildidsubdir);
+1979: 		    if (rc == 0) {
+1980: 			char *linkpattern, *targetpattern;
+1981: 			char *linkpath, *targetpath;
+1982: 			int dups = 0;
+1983: 			if (isDbg) {
+1984: 			    linkpattern = "%s/%s";
+1985: 			    targetpattern = "../../../../..%s";
+1986: 			} else {
+1987: 			    linkpattern = "%s/%s";
+1988: 			    targetpattern = "../../../..%s";
+1989: 			}
+1990: 			rasprintf(&linkpath, linkpattern,
+1991: 				  buildidsubdir, &ids[i][2]);
+1992: 			rasprintf(&targetpath, targetpattern, paths[i]);
+1993: 			rc = addNewIDSymlink(files, targetpath, linkpath,
+1994: 					     isDbg, &dups);
+1995: 
+1996: 			/* We might want to have a link from the debug
+1997: 			   build_ids dir to the main one. We create it
+1998: 			   when we are creating compat links or doing
+1999: 			   an old style alldebug build-ids package. In
+2000: 			   the first case things are simple since we
+2001: 			   just link to the main build-id symlink. The
+2002: 			   second case is a bit tricky, since we
+2003: 			   cannot be 100% sure the file names in the
+2004: 			   main and debug package match. Currently
+2005: 			   they do, but when creating parallel
+2006: 			   installable debuginfo packages they might
+2007: 			   not (in that case we might have to also
+2008: 			   strip the nvr from the debug name).
+2009: 
+2010: 			   In general either method is discouraged
+2011:                            since it might create dangling symlinks if
+2012:                            the package versions get out of sync.  */
+2013: 			if (rc == 0 && isDbg
+2014: 			    && build_id_links == BUILD_IDS_COMPAT) {
+2015: 			    /* buildidsubdir already points to the
+2016: 			       debug buildid. We just need to setup
+2017: 			       the symlink to the main one. There
+2018: 			       might be duplicate IDs, those are found
+2019: 			       by the addNewIDSymlink above. Target
+2020: 			       the last found duplicate, if any. */
+2021: 			    free(linkpath);
+2022: 			    free(targetpath);
+2023: 			    if (dups == 0)
+2024: 			      {
+2025: 				rasprintf(&linkpath, "%s/%s",
+2026: 					  buildidsubdir, &ids[i][2]);
+2027: 				rasprintf(&targetpath,
+2028: 					  "../../../.build-id%s/%s",
+2029: 					  subdir, &ids[i][2]);
+2030: 			      }
+2031: 			    else
+2032: 			      {
+2033: 				rasprintf(&linkpath, "%s/%s.%d",
+2034: 					  buildidsubdir, &ids[i][2], dups);
+2035: 				rasprintf(&targetpath,
+2036: 					  "../../../.build-id%s/%s.%d",
+2037: 					  subdir, &ids[i][2], dups);
+2038: 			      }
+2039: 			    rc = addNewIDSymlink(files, targetpath, linkpath,
+2040: 						 0, NULL);
+2041: 			}
+2042: 
+2043: 			if (rc == 0 && isDbg
+2044: 			    && build_id_links == BUILD_IDS_ALLDEBUG) {
+2045: 			    /* buildidsubdir already points to the
+2046: 			       debug buildid. We do have to figure out
+2047: 			       the main ELF file though (which is most
+2048: 			       likely not in this package). Guess we
+2049: 			       can find it by stripping the
+2050: 			       /usr/lib/debug path and .debug
+2051: 			       prefix. Which might not really be
+2052: 			       correct if there was a more involved
+2053: 			       transformation (for example for
+2054: 			       parallel installable debuginfo
+2055: 			       packages), but then we shouldn't be
+2056: 			       using ALLDEBUG in the first place.
+2057: 			       Also ignore things like .dwz multifiles
+2058: 			       which don't end in ".debug". */
+2059: 			    int pathlen = strlen(paths[i]);
+2060: 			    int debuglen = strlen(".debug");
+2061: 			    int prefixlen = strlen(DEBUG_LIB_DIR);
+2062: 			    int vralen = vra == NULL ? 0 : strlen(vra);
+2063: 			    if (pathlen > prefixlen + debuglen + vralen
+2064: 				&& strcmp ((paths[i] + pathlen - debuglen),
+2065: 					   ".debug") == 0) {
+2066: 				free(linkpath);
+2067: 				free(targetpath);
+2068: 				char *targetstr = xstrdup (paths[i]
+2069: 							   + prefixlen);
+2070: 				int targetlen = pathlen - prefixlen;
+2071: 				int targetend = targetlen - debuglen - vralen;
+2072: 				targetstr[targetend] = '\0';
+2073: 				rasprintf(&linkpath, "%s/%s",
+2074: 					  buildidsubdir, &ids[i][2]);
+2075: 				rasprintf(&targetpath, "../../../../..%s",
+2076: 					  targetstr);
+2077: 				rc = addNewIDSymlink(files, targetpath,
+2078: 						     linkpath, 0, &dups);
+2079: 				free(targetstr);
+2080: 			    }
+2081: 			}
+2082: 			free(linkpath);
+2083: 			free(targetpath);
+2084: 		    }
+2085: 		}
+2086: 		free(buildidsubdir);
+2087: 	    }
+2088: 	    free(paths[i]);
+2089: 	    free(ids[i]);
+2090: 	}
+2091: 	free(mainiddir);
+2092: 	free(debugiddir);
+2093: 	free(vra);
+2094: 	free(paths);
+2095: 	free(ids);
+2096:     }
+2097:     return rc;
+2098: }
+2099: #endif
+2100: 
+2101: /**
+2102:  * Add a file to a binary package.
+2103:  * @param pkg
+2104:  * @param fl		package file tree walk data
+2105:  * @param fileName	file to add
+2106:  * @return		RPMRC_OK on success
+2107:  */
+2108: static rpmRC processBinaryFile(Package pkg, FileList fl, const char * fileName)
+2109: {
+2110:     int quote = 1;	/* XXX permit quoted glob characters. */
+2111:     int doGlob;
+2112:     char *diskPath = NULL;
+2113:     rpmRC rc = RPMRC_OK;
+2114:     size_t fnlen = strlen(fileName);
+2115:     int trailing_slash = (fnlen > 0 && fileName[fnlen-1] == '/');
+2116: 
+2117:     /* XXX differentiate other directories from explicit %dir */
+2118:     if (trailing_slash && !fl->cur.isDir)
+2119: 	fl->cur.isDir = -1;
+2120:     
+2121:     doGlob = rpmIsGlob(fileName, quote);
+2122: 
+2123:     /* Check that file starts with leading "/" */
+2124:     if (*fileName != '/') {
+2125: 	rpmlog(RPMLOG_ERR, _("File needs leading \"/\": %s\n"), fileName);
+2126:     	rc = RPMRC_FAIL;
+2127:     	goto exit;
+2128:     }
+2129:     
+2130:     /* Copy file name or glob pattern removing multiple "/" chars. */
+2131:     /*
+2132:      * Note: rpmGetPath should guarantee a "canonical" path. That means
+2133:      * that the following pathologies should be weeded out:
+2134:      *		//bin//sh
+2135:      *		//usr//bin/
+2136:      *		/.././../usr/../bin//./sh
+2137:      */
+2138:     diskPath = rpmGenPath(fl->buildRoot, NULL, fileName);
+2139:     /* Arrange trailing slash on directories */
+2140:     if (fl->cur.isDir)
+2141: 	diskPath = rstrcat(&diskPath, "/");
+2142: 
+2143:     if (doGlob) {
+2144: 	ARGV_t argv = NULL;
+2145: 	int argc = 0;
+2146: 	int i;
+2147: 
+2148: 	if (fl->cur.devtype) {
+2149: 	    rpmlog(RPMLOG_ERR, _("%%dev glob not permitted: %s\n"), diskPath);
+2150: 	    rc = RPMRC_FAIL;
+2151: 	    goto exit;
+2152: 	}
+2153: 
+2154: 	if (rpmGlob(diskPath, &argc, &argv) == 0) {
+2155: 	    for (i = 0; i < argc; i++) {
+2156: 		rc = addFile(fl, argv[i], NULL);
+2157: 	    }
+2158: 	    argvFree(argv);
+2159: 	} else {
+2160: 	    const char *msg = (fl->cur.isDir) ?
+2161: 				_("Directory not found by glob: %s. "
+2162: 				"Trying without globbing.\n") :
+2163: 				_("File not found by glob: %s. "
+2164: 				"Trying without globbing.\n");
+2165: 	    rpmlog(RPMLOG_DEBUG, msg, diskPath);
+2166: 	    rc = addFile(fl, diskPath, NULL);
+2167: 	}
+2168:     } else {
+2169: 	rc = addFile(fl, diskPath, NULL);
+2170:     }
+2171: 
+2172: exit:
+2173:     free(diskPath);
+2174:     if (rc) {
+2175: 	fl->processingFailed = 1;
+2176: 	rc = RPMRC_FAIL;
+2177:     }
+2178:     return rc;
+2179: }
+2180: 
+2181: static rpmRC readFilesManifest(rpmSpec spec, Package pkg, const char *path)
+2182: {
+2183:     char *fn, buf[BUFSIZ];
+2184:     FILE *fd = NULL;
+2185:     rpmRC rc = RPMRC_FAIL;
+2186:     unsigned int nlines = 0;
+2187:     char *expanded;
+2188: 
+2189:     if (*path == '/') {
+2190: 	fn = rpmGetPath(path, NULL);
+2191:     } else {
+2192: 	fn = rpmGetPath("%{_builddir}/",
+2193: 	    (spec->buildSubdir ? spec->buildSubdir : "") , "/", path, NULL);
+2194:     }
+2195:     fd = fopen(fn, "r");
+2196: 
+2197:     if (fd == NULL) {
+2198: 	rpmlog(RPMLOG_ERR, _("Could not open %%files file %s: %m\n"), fn);
+2199: 	goto exit;
+2200:     }
+2201: 
+2202:     /* XXX unmask %license while parsing files manifest*/
+2203:     rpmPushMacro(spec->macros, "license", NULL, "%%license", RMIL_SPEC);
+2204: 
+2205:     while (fgets(buf, sizeof(buf), fd)) {
+2206: 	if (handleComments(buf))
+2207: 	    continue;
+2208: 	if (rpmExpandMacros(spec->macros, buf, &expanded, 0) < 0) {
+2209: 	    rpmlog(RPMLOG_ERR, _("line: %s\n"), buf);
+2210: 	    goto exit;
+2211: 	}
+2212: 	argvAdd(&(pkg->fileList), expanded);
+2213: 	free(expanded);
+2214: 	nlines++;
+2215:     }
+2216: 
+2217:     if (nlines == 0) {
+2218: 	int terminate =
+2219: 		rpmExpandNumeric("%{?_empty_manifest_terminate_build}");
+2220: 	rpmlog(terminate ? RPMLOG_ERR : RPMLOG_WARNING,
+2221: 	       _("Empty %%files file %s\n"), fn);
+2222: 	if (terminate)
+2223: 		goto exit;
+2224:     }
+2225: 
+2226:     if (ferror(fd))
+2227: 	rpmlog(RPMLOG_ERR, _("Error reading %%files file %s: %m\n"), fn);
+2228:     else
+2229: 	rc = RPMRC_OK;
+2230: 
+2231: exit:
+2232:     rpmPopMacro(NULL, "license");
+2233:     if (fd) fclose(fd);
+2234:     free(fn);
+2235:     return rc;
+2236: }
+2237: 
+2238: static char * getSpecialDocDir(Header h, rpmFlags sdtype)
+2239: {
+2240:     const char *errstr = NULL;
+2241:     const char *dirtype = (sdtype == RPMFILE_DOC) ? "docdir" : "licensedir";
+2242:     const char *fmt_default = "%{NAME}-%{VERSION}";
+2243:     char *fmt_macro = rpmExpand("%{?_docdir_fmt}", NULL);
+2244:     char *fmt = NULL; 
+2245:     char *res = NULL;
+2246: 
+2247:     if (fmt_macro && strlen(fmt_macro) > 0) {
+2248: 	fmt = headerFormat(h, fmt_macro, &errstr);
+2249: 	if (errstr) {
+2250: 	    rpmlog(RPMLOG_WARNING, _("illegal _docdir_fmt %s: %s\n"),
+2251: 		   fmt_macro, errstr);
+2252: 	}
+2253:     }
+2254: 
+2255:     if (fmt == NULL)
+2256: 	fmt = headerFormat(h, fmt_default, &errstr);
+2257: 
+2258:     res = rpmGetPath("%{_", dirtype, "}/", fmt, NULL);
+2259: 
+2260:     free(fmt);
+2261:     free(fmt_macro);
+2262:     return res;
+2263: }
+2264: 
+2265: static specialDir specialDirNew(Header h, rpmFlags sdtype)
+2266: {
+2267:     specialDir sd = xcalloc(1, sizeof(*sd));
+2268: 
+2269:     sd->entriesCount = 0;
+2270:     sd->entriesAlloced = 10;
+2271:     sd->entries = xcalloc(sd->entriesAlloced, sizeof(sd->entries[0]));
+2272: 
+2273:     sd->dirname = getSpecialDocDir(h, sdtype);
+2274:     sd->sdtype = sdtype;
+2275:     return sd;
+2276: }
+2277: 
+2278: static void addSpecialFile(specialDir sd, const char *path, FileEntry cur,
+2279:     FileEntry def)
+2280: {
+2281:     argvAdd(&sd->files, path);
+2282: 
+2283:     if (sd->entriesCount >= sd->entriesAlloced) {
+2284: 	sd->entriesAlloced <<= 1;
+2285: 	sd->entries = xrealloc(sd->entries, sd->entriesAlloced *
+2286: 	    sizeof(sd->entries[0]));
+2287:     }
+2288: 
+2289:     copyFileEntry(cur, &sd->entries[sd->entriesCount].curEntry);
+2290:     copyFileEntry(def, &sd->entries[sd->entriesCount].defEntry);
+2291:     sd->entriesCount++;
+2292: }
+2293: 
+2294: static specialDir specialDirFree(specialDir sd)
+2295: {
+2296:     int i = 0;
+2297: 
+2298:     if (sd) {
+2299: 	argvFree(sd->files);
+2300: 	free(sd->dirname);
+2301: 	for (i = 0; i < sd->entriesCount; i++) {
+2302: 	    FileEntryFree(&sd->entries[i].curEntry);
+2303: 	    FileEntryFree(&sd->entries[i].defEntry);
+2304: 	}
+2305: 	free(sd->entries);
+2306: 	free(sd);
+2307:     }
+2308:     return NULL;
+2309: }
+2310: 
+2311: static void processSpecialDir(rpmSpec spec, Package pkg, FileList fl,
+2312: 				specialDir sd, int install, int test)
+2313: {
+2314:     const char *sdenv = (sd->sdtype == RPMFILE_DOC) ? "DOCDIR" : "LICENSEDIR";
+2315:     const char *sdname = (sd->sdtype == RPMFILE_DOC) ? "%doc" : "%license";
+2316:     char *mkdocdir = rpmExpand("%{__mkdir_p} $", sdenv, NULL);
+2317:     StringBuf docScript = newStringBuf();
+2318:     char *basepath, **files;
+2319:     int fi;
+2320: 
+2321:     appendStringBuf(docScript, sdenv);
+2322:     appendStringBuf(docScript, "=$RPM_BUILD_ROOT");
+2323:     appendLineStringBuf(docScript, sd->dirname);
+2324:     appendLineStringBuf(docScript, "export LC_ALL=C");
+2325:     appendStringBuf(docScript, "export ");
+2326:     appendLineStringBuf(docScript, sdenv);
+2327:     appendLineStringBuf(docScript, mkdocdir);
+2328: 
+2329:     for (ARGV_const_t fn = sd->files; fn && *fn; fn++) {
+2330: 	/* Quotes would break globs, escape spaces instead */
+2331: 	char *efn = rpmEscapeSpaces(*fn);
+2332: 	appendStringBuf(docScript, "cp -pr ");
+2333: 	appendStringBuf(docScript, efn);
+2334: 	appendStringBuf(docScript, " $");
+2335: 	appendStringBuf(docScript, sdenv);
+2336: 	appendLineStringBuf(docScript, " ||:");
+2337: 	free(efn);
+2338:     }
+2339: 
+2340:     if (install) {
+2341: 	rpmRC rc = doScript(spec, RPMBUILD_STRINGBUF, sdname,
+2342: 			    getStringBuf(docScript), test);
+2343: 
+2344: 	if (rc && rpmExpandNumeric("%{?_missing_doc_files_terminate_build}"))
+2345: 	    fl->processingFailed = 1;
+2346:     }
+2347: 
+2348:     basepath = rpmGenPath(spec->rootDir, "%{_builddir}", spec->buildSubdir);
+2349:     files = sd->files;
+2350:     fi = 0;
+2351:     while (*files != NULL) {
+2352: 	char *origfile = rpmGenPath(basepath, *files, NULL);
+2353: 	char *eorigfile = rpmEscapeSpaces(origfile);
+2354: 	ARGV_t globFiles;
+2355: 	int globFilesCount, i;
+2356: 	char *newfile;
+2357: 
+2358: 	FileEntryFree(&fl->cur);
+2359: 	FileEntryFree(&fl->def);
+2360: 	copyFileEntry(&sd->entries[fi].curEntry, &fl->cur);
+2361: 	copyFileEntry(&sd->entries[fi].defEntry, &fl->def);
+2362: 	fi++;
+2363: 
+2364: 	if (rpmGlob(eorigfile, &globFilesCount, &globFiles) == 0) {
+2365: 	    for (i = 0; i < globFilesCount; i++) {
+2366: 		rasprintf(&newfile, "%s/%s", sd->dirname, basename(globFiles[i]));
+2367: 		processBinaryFile(pkg, fl, newfile);
+2368: 		free(newfile);
+2369: 	    }
+2370: 	    argvFree(globFiles);
+2371: 	} else {
+2372: 	    rpmlog(RPMLOG_ERR, _("File not found by glob: %s\n"), eorigfile);
+2373: 	    fl->processingFailed = 1;
+2374: 	}
+2375: 	free(eorigfile);
+2376: 	free(origfile);
+2377: 	files++;
+2378:     }
+2379:     free(basepath);
+2380: 
+2381:     FileEntryFree(&fl->cur);
+2382:     FileEntryFree(&fl->def);
+2383:     copyFileEntry(&sd->entries[0].defEntry, &fl->def);
+2384:     copyFileEntry(&sd->entries[0].curEntry, &fl->cur);
+2385:     fl->cur.isDir = 1;
+2386:     (void) processBinaryFile(pkg, fl, sd->dirname);
+2387: 
+2388:     freeStringBuf(docScript);
+2389:     free(mkdocdir);
+2390: }
+2391: 
+2392: 
+2393: /* Resets the default settings for files in the package list.
+2394:    Used in processPackageFiles whenever a new set of files is added. */
+2395: static void resetPackageFilesDefaults (struct FileList_s *fl,
+2396: 				       rpmBuildPkgFlags pkgFlags)
+2397: {
+2398:     struct AttrRec_s root_ar = { 0, 0, 0, 0, 0, 0 };
+2399: 
+2400:     root_ar.ar_user = rpmstrPoolId(fl->pool, UID_0_USER, 1);
+2401:     root_ar.ar_group = rpmstrPoolId(fl->pool, GID_0_GROUP, 1);
+2402:     dupAttrRec(&root_ar, &fl->def.ar);	/* XXX assume %defattr(-,root,root) */
+2403: 
+2404:     fl->def.verifyFlags = RPMVERIFY_ALL;
+2405: 
+2406:     fl->pkgFlags = pkgFlags;
+2407: }
+2408: 
+2409: /* Adds the given fileList to the package. If fromSpecFileList is not zero
+2410:    then the specialDirs are also filled in and the files are sanitized
+2411:    through processBinaryFile(). Otherwise no special files are processed
+2412:    and the files are added directly through addFile().  */
+2413: static void addPackageFileList (struct FileList_s *fl, Package pkg,
+2414: 				ARGV_t *fileList,
+2415: 				specialDir *specialDoc, specialDir *specialLic,
+2416: 				int fromSpecFileList)
+2417: {
+2418:     ARGV_t fileNames = NULL;
+2419:     for (ARGV_const_t fp = *fileList; *fp != NULL; fp++) {
+2420: 	char buf[strlen(*fp) + 1];
+2421: 	const char *s = *fp;
+2422: 	SKIPSPACE(s);
+2423: 	if (*s == '\0')
+2424: 	    continue;
+2425: 	fileNames = argvFree(fileNames);
+2426: 	rstrlcpy(buf, s, sizeof(buf));
+2427: 	
+2428: 	/* Reset for a new line in %files */
+2429: 	FileEntryFree(&fl->cur);
+2430: 
+2431: 	/* turn explicit flags into %def'd ones (gosh this is hacky...) */
+2432: 	fl->cur.specdFlags = ((unsigned)fl->def.specdFlags) >> 8;
+2433: 	fl->cur.verifyFlags = fl->def.verifyFlags;
+2434: 
+2435: 	if (parseForVerify(buf, 0, &fl->cur) ||
+2436: 	    parseForVerify(buf, 1, &fl->def) ||
+2437: 	    parseForAttr(fl->pool, buf, 0, &fl->cur) ||
+2438: 	    parseForAttr(fl->pool, buf, 1, &fl->def) ||
+2439: 	    parseForDev(buf, &fl->cur) ||
+2440: 	    parseForConfig(buf, &fl->cur) ||
+2441: 	    parseForLang(buf, &fl->cur) ||
+2442: 	    parseForCaps(buf, &fl->cur) ||
+2443: 	    parseForSimple(buf, &fl->cur, &fileNames))
+2444: 	{
+2445: 	    fl->processingFailed = 1;
+2446: 	    continue;
+2447: 	}
+2448: 
+2449: 	for (ARGV_const_t fn = fileNames; fn && *fn; fn++) {
+2450: 
+2451: 	    /* For file lists that don't come from a spec file list
+2452: 	       processing is easy. There are no special files and the
+2453: 	       file names don't need to be adjusted. */
+2454: 	    if (!fromSpecFileList) {
+2455: 	        if (fl->cur.attrFlags & RPMFILE_SPECIALDIR
+2456: 		    || fl->cur.attrFlags & RPMFILE_DOCDIR
+2457: 		    || fl->cur.attrFlags & RPMFILE_PUBKEY) {
+2458: 			rpmlog(RPMLOG_ERR,
+2459: 			       _("Special file in generated file list: %s\n"),
+2460: 			       *fn);
+2461: 			fl->processingFailed = 1;
+2462: 			continue;
+2463: 		}
+2464: 		if (fl->cur.attrFlags & RPMFILE_DIR)
+2465: 		    fl->cur.isDir = 1;
+2466: 		addFile(fl, *fn, NULL);
+2467: 		continue;
+2468: 	    }
+2469: 
+2470: 	    /* File list does come from the spec, try to detect special
+2471: 	       files and adjust the actual file names.  */
+2472: 	    if (fl->cur.attrFlags & RPMFILE_SPECIALDIR) {
+2473: 		rpmFlags oattrs = (fl->cur.attrFlags & ~RPMFILE_SPECIALDIR);
+2474: 		specialDir *sdp = NULL;
+2475: 		if (oattrs == RPMFILE_DOC) {
+2476: 		    sdp = specialDoc;
+2477: 		} else if (oattrs == RPMFILE_LICENSE) {
+2478: 		    sdp = specialLic;
+2479: 		}
+2480: 
+2481: 		if (sdp == NULL || **fn == '/') {
+2482: 		    rpmlog(RPMLOG_ERR,
+2483: 			   _("Can't mix special %s with other forms: %s\n"),
+2484: 			   (oattrs & RPMFILE_DOC) ? "%doc" : "%license", *fn);
+2485: 		    fl->processingFailed = 1;
+2486: 		    continue;
+2487: 		}
+2488: 
+2489: 		/* save attributes on first special doc/license for later use */
+2490: 		if (*sdp == NULL) {
+2491: 		    *sdp = specialDirNew(pkg->header, oattrs);
+2492: 		}
+2493: 		addSpecialFile(*sdp, *fn, &fl->cur, &fl->def);
+2494: 		continue;
+2495: 	    }
+2496: 
+2497: 	    /* this is now an artificial limitation */
+2498: 	    if (fn != fileNames) {
+2499: 		rpmlog(RPMLOG_ERR, _("More than one file on a line: %s\n"),*fn);
+2500: 		fl->processingFailed = 1;
+2501: 		continue;
+2502: 	    }
+2503: 
+2504: 	    if (fl->cur.attrFlags & RPMFILE_DOCDIR) {
+2505: 		argvAdd(&(fl->docDirs), *fn);
+2506: 	    } else if (fl->cur.attrFlags & RPMFILE_PUBKEY) {
+2507: 		(void) processMetadataFile(pkg, fl, *fn, RPMTAG_PUBKEYS);
+2508: 	    } else {
+2509: 		if (fl->cur.attrFlags & RPMFILE_DIR)
+2510: 		    fl->cur.isDir = 1;
+2511: 		(void) processBinaryFile(pkg, fl, *fn);
+2512: 	    }
+2513: 	}
+2514: 
+2515: 	if (fl->cur.caps)
+2516: 	    fl->haveCaps = 1;
+2517:     }
+2518:     argvFree(fileNames);
+2519: }
+2520: 
+2521: static rpmRC processPackageFiles(rpmSpec spec, rpmBuildPkgFlags pkgFlags,
+2522: 				 Package pkg, int didInstall, int test)
+2523: {
+2524:     struct FileList_s fl;
+2525:     specialDir specialDoc = NULL;
+2526:     specialDir specialLic = NULL;
+2527: 
+2528:     pkg->cpioList = NULL;
+2529: 
+2530:     for (ARGV_const_t fp = pkg->fileFile; fp && *fp != NULL; fp++) {
+2531: 	if (readFilesManifest(spec, pkg, *fp))
+2532: 	    return RPMRC_FAIL;
+2533:     }
+2534:     /* Init the file list structure */
+2535:     memset(&fl, 0, sizeof(fl));
+2536: 
+2537:     fl.pool = rpmstrPoolLink(spec->pool);
+2538:     /* XXX spec->buildRoot == NULL, then xstrdup("") is returned */
+2539:     fl.buildRoot = rpmGenPath(spec->rootDir, spec->buildRoot, NULL);
+2540:     fl.buildRootLen = strlen(fl.buildRoot);
+2541: 
+2542:     resetPackageFilesDefaults (&fl, pkgFlags);
+2543: 
+2544:     {	char *docs = rpmGetPath("%{?__docdir_path}", NULL);
+2545: 	argvSplit(&fl.docDirs, docs, ":");
+2546: 	free(docs);
+2547:     }
+2548: 
+2549:     addPackageFileList (&fl, pkg, &pkg->fileList,
+2550: 			&specialDoc, &specialLic, 1);
+2551: 
+2552:     /* Now process special docs and licenses if present */
+2553:     if (specialDoc)
+2554: 	processSpecialDir(spec, pkg, &fl, specialDoc, didInstall, test);
+2555:     if (specialLic)
+2556: 	processSpecialDir(spec, pkg, &fl, specialLic, didInstall, test);
+2557:     
+2558:     if (fl.processingFailed)
+2559: 	goto exit;
+2560: 
+2561: #if HAVE_LIBDW
+2562:     /* Check build-ids and add build-ids links for files to package list. */
+2563:     const char *arch = headerGetString(pkg->header, RPMTAG_ARCH);
+2564:     if (!rstreq(arch, "noarch")) {
+2565: 	/* Go through the current package list and generate a files list. */
+2566: 	ARGV_t idFiles = NULL;
+2567: 	if (generateBuildIDs (&fl, &idFiles) != 0) {
+2568: 	    rpmlog(RPMLOG_ERR, _("Generating build-id links failed\n"));
+2569: 	    fl.processingFailed = 1;
+2570: 	    argvFree(idFiles);
+2571: 	    goto exit;
+2572: 	}
+2573: 
+2574: 	if (idFiles != NULL) {
+2575: 	    resetPackageFilesDefaults (&fl, pkgFlags);
+2576: 	    addPackageFileList (&fl, pkg, &idFiles, NULL, NULL, 0);
+2577: 	}
+2578: 	argvFree(idFiles);
+2579: 
+2580: 	if (fl.processingFailed)
+2581: 	    goto exit;
+2582:     }
+2583: #endif
+2584: 
+2585:     /* Verify that file attributes scope over hardlinks correctly. */
+2586:     if (checkHardLinks(&fl.files))
+2587: 	(void) rpmlibNeedsFeature(pkg, "PartialHardlinkSets", "4.0.4-1");
+2588: 
+2589:     genCpioListAndHeader(&fl, pkg, 0);
+2590: 
+2591: exit:
+2592:     FileListFree(&fl);
+2593:     specialDirFree(specialDoc);
+2594:     specialDirFree(specialLic);
+2595:     return fl.processingFailed ? RPMRC_FAIL : RPMRC_OK;
+2596: }
+2597: 
+2598: static void genSourceRpmName(rpmSpec spec)
+2599: {
+2600:     if (spec->sourceRpmName == NULL) {
+2601: 	char *nvr = headerGetAsString(spec->packages->header, RPMTAG_NVR);
+2602: 	rasprintf(&spec->sourceRpmName, "%s.%ssrc.rpm", nvr,
+2603: 	    	  spec->noSource ? "no" : "");
+2604: 	free(nvr);
+2605:     }
+2606: }
+2607: 
+2608: rpmRC processSourceFiles(rpmSpec spec, rpmBuildPkgFlags pkgFlags)
+2609: {
+2610:     struct Source *srcPtr;
+2611:     struct FileList_s fl;
+2612:     ARGV_t files = NULL;
+2613:     Package pkg;
+2614:     Package sourcePkg = spec->sourcePackage;
+2615:     static char *_srcdefattr;
+2616:     static int oneshot;
+2617: 
+2618:     if (!oneshot) {
+2619: 	_srcdefattr = rpmExpand("%{?_srcdefattr}", NULL);
+2620: 	if (_srcdefattr && !*_srcdefattr)
+2621: 	    _srcdefattr = _free(_srcdefattr);
+2622: 	oneshot = 1;
+2623:     }
+2624: 
+2625:     genSourceRpmName(spec);
+2626:     /* Construct the file list and source entries */
+2627:     argvAdd(&files, spec->specFile);
+2628:     for (srcPtr = spec->sources; srcPtr != NULL; srcPtr = srcPtr->next) {
+2629: 	char * sfn = rpmGetPath( ((srcPtr->flags & RPMBUILD_ISNO) ? "!" : ""),
+2630: 		"%{_sourcedir}/", srcPtr->source, NULL);
+2631: 	argvAdd(&files, sfn);
+2632: 	free(sfn);
+2633:     }
+2634: 
+2635:     for (pkg = spec->packages; pkg != NULL; pkg = pkg->next) {
+2636: 	for (srcPtr = pkg->icon; srcPtr != NULL; srcPtr = srcPtr->next) {
+2637: 	    char * sfn;
+2638: 	    sfn = rpmGetPath( ((srcPtr->flags & RPMBUILD_ISNO) ? "!" : ""),
+2639: 		"%{_sourcedir}/", srcPtr->source, NULL);
+2640: 	    argvAdd(&files, sfn);
+2641: 	    free(sfn);
+2642: 	}
+2643:     }
+2644: 
+2645:     sourcePkg->cpioList = NULL;
+2646: 
+2647:     /* Init the file list structure */
+2648:     memset(&fl, 0, sizeof(fl));
+2649:     fl.pool = rpmstrPoolLink(spec->pool);
+2650:     if (_srcdefattr) {
+2651: 	char *a = rstrscat(NULL, "%defattr ", _srcdefattr, NULL);
+2652: 	parseForAttr(fl.pool, a, 1, &fl.def);
+2653: 	free(a);
+2654:     }
+2655:     fl.files.alloced = spec->numSources + 1;
+2656:     fl.files.recs = xcalloc(fl.files.alloced, sizeof(*fl.files.recs));
+2657:     fl.pkgFlags = pkgFlags;
+2658: 
+2659:     for (ARGV_const_t fp = files; *fp != NULL; fp++) {
+2660: 	const char *diskPath = *fp;
+2661: 	char *tmp;
+2662: 	FileListRec flp;
+2663: 
+2664: 	SKIPSPACE(diskPath);
+2665: 	if (! *diskPath)
+2666: 	    continue;
+2667: 
+2668: 	flp = &fl.files.recs[fl.files.used];
+2669: 
+2670: 	/* The first source file is the spec file */
+2671: 	flp->flags = (fl.files.used == 0) ? RPMFILE_SPECFILE : 0;
+2672: 	/* files with leading ! are no source files */
+2673: 	if (*diskPath == '!') {
+2674: 	    flp->flags |= RPMFILE_GHOST;
+2675: 	    diskPath++;
+2676: 	}
+2677: 
+2678: 	tmp = xstrdup(diskPath); /* basename() might modify */
+2679: 	flp->diskPath = xstrdup(diskPath);
+2680: 	flp->cpioPath = xstrdup(basename(tmp));
+2681: 	flp->verifyFlags = RPMVERIFY_ALL;
+2682: 	free(tmp);
+2683: 
+2684: 	if (stat(diskPath, &flp->fl_st)) {
+2685: 	    rpmlog(RPMLOG_ERR, _("Bad file: %s: %s\n"),
+2686: 		diskPath, strerror(errno));
+2687: 	    fl.processingFailed = 1;
+2688: 	} else {
+2689: 	    if (S_ISREG(flp->fl_mode) && flp->fl_size >= UINT32_MAX)
+2690: 		fl.largeFiles = 1;
+2691: 	}
+2692: 
+2693: 	if (fl.def.ar.ar_fmodestr) {
+2694: 	    flp->fl_mode &= S_IFMT;
+2695: 	    flp->fl_mode |= fl.def.ar.ar_fmode;
+2696: 	}
+2697: 
+2698: 	if (fl.def.ar.ar_user) {
+2699: 	    flp->uname = fl.def.ar.ar_user;
+2700: 	} else {
+2701: 	    flp->uname = rpmstrPoolId(fl.pool, rpmugUname(flp->fl_uid), 1);
+2702: 	}
+2703: 	if (! flp->uname) {
+2704: 	    flp->uname = rpmstrPoolId(fl.pool, rpmugUname(getuid()), 1);
+2705: 	}
+2706: 	if (! flp->uname) {
+2707: 	    flp->uname = rpmstrPoolId(fl.pool, UID_0_USER, 1);
+2708: 	}
+2709: 
+2710: 	if (fl.def.ar.ar_group) {
+2711: 	    flp->gname = fl.def.ar.ar_group;
+2712: 	} else {
+2713: 	    flp->gname = rpmstrPoolId(fl.pool, rpmugGname(flp->fl_gid), 1);
+2714: 	}
+2715: 	if (! flp->gname) {
+2716: 	    flp->gname = rpmstrPoolId(fl.pool, rpmugGname(getgid()), 1);
+2717: 	}
+2718: 	if (! flp->gname) {
+2719: 	    flp->gname = rpmstrPoolId(fl.pool, GID_0_GROUP, 1);
+2720: 	}
+2721: 
+2722: 	flp->langs = xstrdup("");
+2723: 	fl.files.used++;
+2724:     }
+2725:     argvFree(files);
+2726: 
+2727:     if (! fl.processingFailed) {
+2728: 	if (sourcePkg->header != NULL) {
+2729: 	    genCpioListAndHeader(&fl, sourcePkg, 1);
+2730: 	}
+2731:     }
+2732: 
+2733:     FileListFree(&fl);
+2734:     return fl.processingFailed ? RPMRC_FAIL : RPMRC_OK;
+2735: }
+2736: 
+2737: /**
+2738:  * Check packaged file list against what's in the build root.
+2739:  * @param buildRoot	path of build root
+2740:  * @param fileList	packaged file list
+2741:  * @return		-1 if skipped, 0 on OK, 1 on error
+2742:  */
+2743: static int checkFiles(const char *buildRoot, StringBuf fileList)
+2744: {
+2745:     static char * const av_ckfile[] = { "%{?__check_files}", NULL };
+2746:     StringBuf sb_stdout = NULL;
+2747:     int rc = -1;
+2748:     char * s = rpmExpand(av_ckfile[0], NULL);
+2749:     
+2750:     if (!(s && *s))
+2751: 	goto exit;
+2752: 
+2753:     rpmlog(RPMLOG_NOTICE, _("Checking for unpackaged file(s): %s\n"), s);
+2754: 
+2755:     rc = rpmfcExec(av_ckfile, fileList, &sb_stdout, 0, buildRoot);
+2756:     if (rc < 0)
+2757: 	goto exit;
+2758:     
+2759:     if (sb_stdout) {
+2760: 	int _unpackaged_files_terminate_build =
+2761: 		rpmExpandNumeric("%{?_unpackaged_files_terminate_build}");
+2762: 	const char * t = getStringBuf(sb_stdout);
+2763: 	if ((*t != '\0') && (*t != '\n')) {
+2764: 	    rc = (_unpackaged_files_terminate_build) ? 1 : 0;
+2765: 	    rpmlog((rc ? RPMLOG_ERR : RPMLOG_WARNING),
+2766: 		_("Installed (but unpackaged) file(s) found:\n%s"), t);
+2767: 	}
+2768:     }
+2769:     
+2770: exit:
+2771:     freeStringBuf(sb_stdout);
+2772:     free(s);
+2773:     return rc;
+2774: }
+2775: 
+2776: static rpmTag copyTagsFromMainDebug[] = {
+2777:     RPMTAG_ARCH,
+2778:     RPMTAG_SUMMARY,
+2779:     RPMTAG_DESCRIPTION,
+2780:     RPMTAG_GROUP,
+2781:     /* see addTargets */
+2782:     RPMTAG_OS,
+2783:     RPMTAG_PLATFORM,
+2784:     RPMTAG_OPTFLAGS,
+2785: };
+2786: 
+2787: /* this is a hack: patch the summary and the description to include
+2788:  * the correct package name */
+2789: static void patchDebugPackageString(Package dbg, rpmTag tag, Package pkg, Package mainpkg)
+2790: {
+2791:     const char *oldname, *newname, *old;
+2792:     char *oldsubst = NULL, *newsubst = NULL, *p;
+2793:     oldname = headerGetString(mainpkg->header, RPMTAG_NAME);
+2794:     newname = headerGetString(pkg->header, RPMTAG_NAME);
+2795:     rasprintf(&oldsubst, "package %s", oldname);
+2796:     rasprintf(&newsubst, "package %s", newname);
+2797:     old = headerGetString(dbg->header, tag);
+2798:     p = old ? strstr(old, oldsubst) : NULL;
+2799:     if (p) {
+2800: 	char *new = NULL;
+2801: 	rasprintf(&new, "%.*s%s%s", (int)(p - old), old, newsubst, p + strlen(oldsubst));
+2802: 	headerDel(dbg->header, tag);
+2803: 	headerPutString(dbg->header, tag, new);
+2804: 	_free(new);
+2805:     }
+2806:     _free(oldsubst);
+2807:     _free(newsubst);
+2808: }
+2809: 
+2810: /* Early prototype for use in filterDebuginfoPackage. */
+2811: static void addPackageDeps(Package from, Package to, enum rpmTag_e tag);
+2812: 
+2813: /* create a new debuginfo subpackage for package pkg from the
+2814:  * main debuginfo package */
+2815: static Package cloneDebuginfoPackage(rpmSpec spec, Package pkg, Package maindbg)
+2816: {
+2817:     const char *name = headerGetString(pkg->header, RPMTAG_NAME);
+2818:     char *dbgname = NULL;
+2819:     Package dbg;
+2820: 
+2821:     rasprintf(&dbgname, "%s-%s", name, "debuginfo");
+2822:     dbg = newPackage(dbgname, spec->pool, &spec->packages);
+2823:     headerPutString(dbg->header, RPMTAG_NAME, dbgname);
+2824:     copyInheritedTags(dbg->header, pkg->header);
+2825:     headerDel(dbg->header, RPMTAG_GROUP);
+2826:     headerCopyTags(maindbg->header, dbg->header, copyTagsFromMainDebug);
+2827:     dbg->autoReq = maindbg->autoReq;
+2828:     dbg->autoProv = maindbg->autoProv;
+2829: 
+2830:     /* patch summary and description strings */
+2831:     patchDebugPackageString(dbg, RPMTAG_SUMMARY, pkg, spec->packages);
+2832:     patchDebugPackageString(dbg, RPMTAG_DESCRIPTION, pkg, spec->packages);
+2833: 
+2834:     /* Add self-provides (normally done by addTargets) */
+2835:     addPackageProvides(dbg);
+2836:     dbg->ds = rpmdsThis(dbg->header, RPMTAG_REQUIRENAME, RPMSENSE_EQUAL);
+2837: 
+2838:     _free(dbgname);
+2839:     return dbg;
+2840: }
+2841: 
+2842: /* collect the debug files for package pkg and put them into
+2843:  * a (possibly new) debuginfo subpackage */
+2844: static void filterDebuginfoPackage(rpmSpec spec, Package pkg,
+2845: 				   Package maindbg, Package dbgsrc,
+2846: 				   char *buildroot, char *uniquearch)
+2847: {
+2848:     rpmfi fi;
+2849:     ARGV_t files = NULL;
+2850:     ARGV_t dirs = NULL;
+2851:     int lastdiridx = -1, dirsadded;
+2852:     char *path = NULL, *p, *pmin;
+2853:     size_t buildrootlen = strlen(buildroot);
+2854: 
+2855:     /* ignore noarch subpackages */
+2856:     if (rstreq(headerGetString(pkg->header, RPMTAG_ARCH), "noarch"))
+2857: 	return;
+2858: 
+2859:     if (!uniquearch)
+2860: 	uniquearch = "";
+2861: 
+2862:     fi = rpmfilesIter(pkg->cpioList, RPMFI_ITER_FWD);
+2863:     /* Check if the current package has files with debug info
+2864:        and add them to the file list */
+2865:     fi = rpmfiInit(fi, 0);
+2866:     while (rpmfiNext(fi) >= 0) {
+2867: 	const char *name = rpmfiFN(fi);
+2868: 	int namel = strlen(name);
+2869: 
+2870: 	/* strip trailing .debug like in find-debuginfo.sh */
+2871: 	if (namel > 6 && !strcmp(name + namel - 6, ".debug"))
+2872: 	    namel -= 6;
+2873: 
+2874: 	/* fileRenameMap doesn't necessarily have to be initialized */
+2875: 	if (pkg->fileRenameMap) {
+2876: 	    const char **names = NULL;
+2877: 	    int namec = 0;
+2878: 	    fileRenameHashGetEntry(pkg->fileRenameMap, name, &names, &namec, NULL);
+2879: 	    if (namec) {
+2880: 		if (namec > 1)
+2881: 		    rpmlog(RPMLOG_WARNING, _("%s was mapped to multiple filenames"), name);
+2882: 		name = *names;
+2883: 		namel = strlen(name);
+2884: 	    }
+2885: 	}
+2886: 	
+2887: 	/* generate path */
+2888: 	rasprintf(&path, "%s%s%.*s%s.debug", buildroot, DEBUG_LIB_DIR, namel, name, uniquearch);
+2889: 
+2890: 	/* If that file exists we have debug information for it */
+2891: 	if (access(path, F_OK) == 0) {
+2892: 	    /* Append the file list preamble */
+2893: 	    if (!files) {
+2894: 		char *attr = mkattr();
+2895: 		argvAdd(&files, attr);
+2896: 		argvAddAttr(&files, RPMFILE_DIR, DEBUG_LIB_DIR);
+2897: 		free(attr);
+2898: 	    }
+2899: 
+2900: 	    /* Add the files main debug-info file */
+2901: 	    argvAdd(&files, path + buildrootlen);
+2902: 
+2903: 	    /* Add the dir(s) */
+2904: 	    dirsadded = 0;
+2905: 	    pmin = path + buildrootlen + strlen(DEBUG_LIB_DIR);
+2906: 	    while ((p = strrchr(path + buildrootlen, '/')) != NULL && p > pmin) {
+2907: 		*p = 0;
+2908: 		if (lastdiridx >= 0 && !strcmp(dirs[lastdiridx], path + buildrootlen))
+2909: 		    break;		/* already added this one */
+2910: 		argvAdd(&dirs, path + buildrootlen);
+2911: 		dirsadded++;
+2912: 	    }
+2913: 	    if (dirsadded)
+2914: 		lastdiridx = argvCount(dirs) - dirsadded;	/* remember longest dir */
+2915: 	}
+2916: 	path = _free(path);
+2917:     }
+2918:     rpmfiFree(fi);
+2919:     /* Exclude debug files for files which were excluded in respective non-debug package */
+2920:     for (ARGV_const_t excl = pkg->fileExcludeList; excl && *excl; excl++) {
+2921:         const char *name = *excl;
+2922: 
+2923: 	/* generate path */
+2924: 	rasprintf(&path, "%s%s%s%s.debug", buildroot, DEBUG_LIB_DIR, name, uniquearch);
+2925: 	/* Exclude only debuginfo files which actually exist */
+2926: 	if (access(path, F_OK) == 0) {
+2927: 	    char *line = NULL;
+2928: 	    rasprintf(&line, "%%exclude %s", path + buildrootlen);
+2929: 	    argvAdd(&files, line);
+2930: 	    _free(line);
+2931: 	}
+2932: 	path = _free(path);
+2933:     }
+2934: 
+2935:     /* add collected directories to file list */
+2936:     if (dirs) {
+2937: 	int i;
+2938: 	argvSort(dirs, NULL);
+2939: 	for (i = 0; dirs[i]; i++) {
+2940: 	    if (!i || strcmp(dirs[i], dirs[i - 1]) != 0)
+2941: 		argvAddAttr(&files, RPMFILE_DIR, dirs[i]);
+2942: 	}
+2943: 	dirs = argvFree(dirs);
+2944:     }
+2945: 
+2946:     if (files) {
+2947: 	/* we have collected some files. Now put them in a debuginfo
+2948:          * package. If this is not the main package, clone the main
+2949:          * debuginfo package */
+2950: 	if (pkg == spec->packages)
+2951: 	    maindbg->fileList = files;
+2952: 	else {
+2953: 	    Package dbg = cloneDebuginfoPackage(spec, pkg, maindbg);
+2954: 	    dbg->fileList = files;
+2955: 	    /* Recommend the debugsource package (or the main debuginfo).  */
+2956: 	    addPackageDeps(dbg, dbgsrc ? dbgsrc : maindbg,
+2957: 			   RPMTAG_RECOMMENDNAME);
+2958: 	}
+2959:     }
+2960: }
+2961: 
+2962: /* add the debug dwz files to package pkg.
+2963:  * return 1 if something was added, 0 otherwise. */
+2964: static int addDebugDwz(Package pkg, char *buildroot)
+2965: {
+2966:     int ret = 0;
+2967:     char *path = NULL;
+2968:     struct stat sbuf;
+2969: 
+2970:     rasprintf(&path, "%s%s", buildroot, DEBUG_DWZ_DIR);
+2971:     if (lstat(path, &sbuf) == 0 && S_ISDIR(sbuf.st_mode)) {
+2972: 	if (!pkg->fileList) {
+2973: 	    char *attr = mkattr();
+2974: 	    argvAdd(&pkg->fileList, attr);
+2975: 	    argvAddAttr(&pkg->fileList, RPMFILE_DIR|RPMFILE_ARTIFACT, DEBUG_LIB_DIR);
+2976: 	    free(attr);
+2977: 	}
+2978: 	argvAddAttr(&pkg->fileList, RPMFILE_ARTIFACT, DEBUG_DWZ_DIR);
+2979: 	ret = 1;
+2980:     }
+2981:     path = _free(path);
+2982:     return ret;
+2983: }
+2984: 
+2985: /* add the debug source files to package pkg.
+2986:  * return 1 if something was added, 0 otherwise. */
+2987: static int addDebugSrc(Package pkg, char *buildroot)
+2988: {
+2989:     int ret = 0;
+2990:     char *path = NULL;
+2991:     DIR *d;
+2992:     struct dirent *de;
+2993: 
+2994:     /* not needed if we have an extra debugsource subpackage */
+2995:     if (rpmExpandNumeric("%{?_debugsource_packages}"))
+2996: 	return 0;
+2997: 
+2998:     rasprintf(&path, "%s%s", buildroot, DEBUG_SRC_DIR);
+2999:     d = opendir(path);
+3000:     path = _free(path);
+3001:     if (d) {
+3002: 	while ((de = readdir(d)) != NULL) {
+3003: 	    if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, ".."))
+3004: 		continue;
+3005: 	    rasprintf(&path, "%s/%s", DEBUG_SRC_DIR, de->d_name);
+3006: 	    if (!pkg->fileList) {
+3007: 		char *attr = mkattr();
+3008: 		argvAdd(&pkg->fileList, attr);
+3009: 		free(attr);
+3010: 	    }
+3011: 	    argvAdd(&pkg->fileList, path);
+3012: 	    path = _free(path);
+3013: 	    ret = 1;
+3014: 	}
+3015: 	closedir(d);
+3016:     }
+3017:     return ret;
+3018: }
+3019: 
+3020: /* find the debugsource package, if it has been created.
+3021:  * We do this simply by searching for a package with the right name. */
+3022: static Package findDebugsourcePackage(rpmSpec spec)
+3023: {
+3024:     Package pkg = NULL;
+3025:     if (lookupPackage(spec, "debugsource", PART_SUBNAME|PART_QUIET, &pkg))
+3026: 	return NULL;
+3027:     return pkg && pkg->fileList ? pkg : NULL;
+3028: }
+3029: 
+3030: /* find the main debuginfo package. We do this simply by
+3031:  * searching for a package with the right name. */
+3032: static Package findDebuginfoPackage(rpmSpec spec)
+3033: {
+3034:     Package pkg = NULL;
+3035:     if (lookupPackage(spec, "debuginfo", PART_SUBNAME|PART_QUIET, &pkg))
+3036: 	return NULL;
+3037:     return pkg && pkg->fileList ? pkg : NULL;
+3038: }
+3039: 
+3040: /* add a dependency (e.g. RPMTAG_REQUIRENAME or RPMTAG_RECOMMENDNAME)
+3041:    for package "to" into package "from". */
+3042: static void addPackageDeps(Package from, Package to, enum rpmTag_e tag)
+3043: {
+3044:     const char *name;
+3045:     char *evr, *isaprov;
+3046:     name = headerGetString(to->header, RPMTAG_NAME);
+3047:     evr = headerGetAsString(to->header, RPMTAG_EVR);
+3048:     isaprov = rpmExpand(name, "%{?_isa}", NULL);
+3049:     addReqProv(from, tag, isaprov, evr, RPMSENSE_EQUAL, 0);
+3050:     free(isaprov);
+3051:     free(evr);
+3052: }
+3053: 
+3054: rpmRC processBinaryFiles(rpmSpec spec, rpmBuildPkgFlags pkgFlags,
+3055: 			int didInstall, int test)
+3056: {
+3057:     Package pkg;
+3058:     rpmRC rc = RPMRC_OK;
+3059:     char *buildroot;
+3060:     char *uniquearch = NULL;
+3061:     Package maindbg = NULL;		/* the (existing) main debuginfo package */
+3062:     Package deplink = NULL;		/* create requires to this package */
+3063:     /* The debugsource package, if it exists, that the debuginfo package(s)
+3064:        should Recommend.  */
+3065:     Package dbgsrcpkg = findDebugsourcePackage(spec);
+3066:     
+3067: #if HAVE_LIBDW
+3068:     elf_version (EV_CURRENT);
+3069: #endif
+3070:     check_fileList = newStringBuf();
+3071:     genSourceRpmName(spec);
+3072:     buildroot = rpmGenPath(spec->rootDir, spec->buildRoot, NULL);
+3073:     
+3074:     if (rpmExpandNumeric("%{?_debuginfo_subpackages}")) {
+3075: 	maindbg = findDebuginfoPackage(spec);
+3076: 	if (maindbg) {
+3077: 	    /* move debuginfo package to back */
+3078: 	    if (maindbg->next) {
+3079: 		Package *pp;
+3080: 		/* dequeue */
+3081: 		for (pp = &spec->packages; *pp != maindbg; pp = &(*pp)->next)
+3082: 		    ;
+3083: 		*pp = maindbg->next;
+3084: 		maindbg->next = 0;
+3085: 		/* enqueue at tail */
+3086: 		for (; *pp; pp = &(*pp)->next)
+3087: 		    ;
+3088: 		*pp = maindbg;
+3089: 	    }
+3090: 	    /* delete unsplit file list, we will re-add files back later */
+3091: 	    maindbg->fileFile = argvFree(maindbg->fileFile);
+3092: 	    maindbg->fileList = argvFree(maindbg->fileList);
+3093: 	    if (rpmExpandNumeric("%{?_unique_debug_names}"))
+3094: 		uniquearch = rpmExpand("-%{VERSION}-%{RELEASE}.%{_arch}", NULL);
+3095: 	}
+3096:     } else if (dbgsrcpkg != NULL) {
+3097: 	/* We have a debugsource package, but no debuginfo subpackages.
+3098: 	   The main debuginfo package should recommend the debugsource one. */
+3099: 	Package dbgpkg = findDebuginfoPackage(spec);
+3100: 	if (dbgpkg)
+3101: 	    addPackageDeps(dbgpkg, dbgsrcpkg, RPMTAG_RECOMMENDNAME);
+3102:     }
+3103: 
+3104:     for (pkg = spec->packages; pkg != NULL; pkg = pkg->next) {
+3105: 	char *nvr;
+3106: 	const char *a;
+3107: 	int header_color;
+3108: 	int arch_color;
+3109: 
+3110: 	if (pkg == maindbg) {
+3111: 	    /* if there is just one debuginfo package, we put our extra stuff
+3112: 	     * in it. Otherwise we put it in the main debug package */
+3113: 	    Package extradbg = !maindbg->fileList && maindbg->next && !maindbg->next->next ?
+3114: 		 maindbg->next : maindbg;
+3115: 	    if (addDebugDwz(extradbg, buildroot))
+3116: 		deplink = extradbg;
+3117: 	    if (addDebugSrc(extradbg, buildroot))
+3118: 		deplink = extradbg;
+3119: 	    if (dbgsrcpkg != NULL)
+3120: 		addPackageDeps(extradbg, dbgsrcpkg, RPMTAG_RECOMMENDNAME);
+3121: 	    maindbg = NULL;	/* all normal packages processed */
+3122: 	}
+3123: 
+3124: 	if (pkg->fileList == NULL)
+3125: 	    continue;
+3126: 
+3127: 	headerPutString(pkg->header, RPMTAG_SOURCERPM, spec->sourceRpmName);
+3128: 
+3129: 	nvr = headerGetAsString(pkg->header, RPMTAG_NVRA);
+3130: 	rpmlog(RPMLOG_NOTICE, _("Processing files: %s\n"), nvr);
+3131: 	free(nvr);
+3132: 
+3133: 	if ((rc = processPackageFiles(spec, pkgFlags, pkg, didInstall, test)) != RPMRC_OK)
+3134: 	    goto exit;
+3135: 
+3136: 	if (maindbg)
+3137: 	    filterDebuginfoPackage(spec, pkg, maindbg, dbgsrcpkg,
+3138: 				   buildroot, uniquearch);
+3139: 	else if (deplink && pkg != deplink)
+3140: 	    addPackageDeps(pkg, deplink, RPMTAG_REQUIRENAME);
+3141: 
+3142:         if ((rc = rpmfcGenerateDepends(spec, pkg)) != RPMRC_OK)
+3143: 	    goto exit;
+3144: 
+3145: 	a = headerGetString(pkg->header, RPMTAG_ARCH);
+3146: 	header_color = headerGetNumber(pkg->header, RPMTAG_HEADERCOLOR);
+3147: 	if (!rstreq(a, "noarch")) {
+3148: 	    arch_color = rpmGetArchColor(a);
+3149: 	    if (arch_color > 0 && header_color > 0 &&
+3150: 					!(arch_color & header_color)) {
+3151: 		rpmlog(RPMLOG_WARNING,
+3152: 		       _("Binaries arch (%d) not matching the package arch (%d).\n"),
+3153: 		       header_color, arch_color);
+3154: 	    }
+3155: 	} else if (header_color != 0) {
+3156: 	    int terminate = rpmExpandNumeric("%{?_binaries_in_noarch_packages_terminate_build}");
+3157: 	    rpmlog(terminate ? RPMLOG_ERR : RPMLOG_WARNING, 
+3158: 		   _("Arch dependent binaries in noarch package\n"));
+3159: 	    if (terminate) {
+3160: 		rc = RPMRC_FAIL;
+3161: 		goto exit;
+3162: 	    }
+3163: 	}
+3164:     }
+3165: 
+3166:     /* Now we have in fileList list of files from all packages.
+3167:      * We pass it to a script which does the work of finding missing
+3168:      * and duplicated files.
+3169:      */
+3170:     
+3171:     
+3172:     if (checkFiles(spec->buildRoot, check_fileList) > 0) {
+3173: 	rc = RPMRC_FAIL;
+3174:     }
+3175: exit:
+3176:     check_fileList = freeStringBuf(check_fileList);
+3177:     _free(buildroot);
+3178:     _free(uniquearch);
+3179:     
+3180:     return rc;
+3181: }

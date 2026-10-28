@@ -1,0 +1,1608 @@
+1: #!/usr/bin/env python3
+2: """Tizen clang BOLT gates. Python >= 3.9; shell commands use POSIX sh.
+3: 
+4: Maintenance notes (fail closed; preserve actual/expected values and logs):
+5: - No disk-space admission thresholds: profile, BOLT and clang sizes change,
+6:   so fixed budgets become stale. Record actual allocation/free space only;
+7:   diagnose a failed step from its errno/log and estimate from this build.
+8:   disk-report is best effort; disk-diagnose is read-only. Neither is a gate.
+9: - Tool-version remedy: verify provenance; for an intended LLVM upgrade update
+10:   CERTIFIED and recertify, otherwise disable BOLT. Do not use substring matches.
+11: - Profile-SHA remedy: verify the binary Source and decompressed SHA first;
+12:   a SHA mismatch alone does not establish that the profile is stale.
+13: - Unapproved-task remedy: inspect configuration and dirty causes. Review the
+14:   saved Ninja closure, regenerate the independent description JSON and exact
+15:   whitelist only after review, then recertify. Never expand it automatically.
+16: - Matching remedy: verify input ELF/tool/profile identity; retrain the profile
+17:   or disable BOLT when R or S/N exceeds 5%. Never raise the threshold or enable
+18:   infer-stale to pass a failing gate.
+19: 
+20: LLVM upgrade: review CERTIFIED.llvm_version, bolt_version, profile_sha256,
+21: bolt_task_count and tf_refresh_task_count (PROFILE_SHA is an alias), OPTIONS,
+22: and both task-description sets. Recertify fixtures, static graph plus actual
+23: Ninja plans/build logs and TF archive SHA, ON/OFF debug/release macro and post
+24: chains, install ordering/root identity, ELF security, tiny targets, full object
+25: comparisons, RPM/DWARF payload differences and three-target/holdout performance.
+26: Static graphs do not load .ninja_deps/depfiles or establish full dirty state.
+27: 
+28: Rollback: --without clang_bolt locally; where build arguments cannot change,
+29: change the x86_64 %bcond_without clang_bolt to %bcond_with clang_bolt in a new
+30: spec commit. BOLT Sources/BuildRequires then disable together. Also restore
+31: matching accel/worker binaries and repository snapshots; verify their hashes.
+32: 
+33: Profile retraining is offline, never part of an RPM build: preserve a relinked
+34: emit-relocs/strip-debug input and matching BOLT/runtime identities, instrument
+35: with one BOLT thread and a fresh PID-suffixed profile prefix. Reuse the recorded
+36: 13 ARM workloads (A/B/C generator plus ten real TUs) and ten AArch64 TUs, their
+37: exact flags/sysroots/resource directory and input hashes; exclude holdouts.
+38: The existing collect_bolt_profile.py and extend_bolt_profile_aarch64.py scripts
+39: collect these 13+10 profiles and merge explicit paths with merge-fdata. Compress
+40: the new profile Source, update its SHA, then repeat matching, object, security,
+41: package and performance gates. Historical instrumentation requires
+42: resource planning outside package builds; local resource/lock rules never
+43: enter this release helper.
+44: Retain ordinary/pre-strip BOLT ELFs, rewrite/identity records, final RPM/accel
+45: SHA and Build-ID for crash localization; the shipped clang is fully stripped.
+46: """
+47: import argparse
+48: import collections
+49: import shlex
+50: import hashlib
+51: import json
+52: import lzma
+53: import mmap
+54: import os
+55: from pathlib import Path
+56: import re
+57: import shutil
+58: import signal
+59: import stat
+60: import struct
+61: import subprocess
+62: import sys
+63: import tempfile
+64: import time
+65: 
+66: CERTIFIED = {'llvm_version': '22.1.8', 'bolt_version': 'LLVM version 22.1.8',
+67:              'profile_sha256': 'd9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326',
+68:              'bolt_task_count': 111, 'tf_refresh_task_count': 2}
+69: PROFILE_SHA = CERTIFIED['profile_sha256']
+70: BUILD_SUCCESS = 'BOLT_NINJA_EXIT_0'
+71: REGEN_ERROR = ('dry-run shows "Re-running CMake..."; build.ninja still needs regeneration '
+72:                'after the BOLT configure, so the real plan is not visible')
+73: 
+74: 
+75: def preflight():
+76:     require(sys.version_info >= (3, 9), 'Python actual=%s expected=>=3.9' % (tuple(sys.version_info[:3]),))
+77:     required = ('waitid', 'waitstatus_to_exitcode', 'P_PID', 'WEXITED', 'WNOHANG', 'WNOWAIT', 'CLD_EXITED')
+78:     missing = [name for name in required if not hasattr(os, name)]
+79:     require(not missing, 'Python os interfaces actual=missing %s expected=%s' % (missing, required))
+80:     return {'preflight_pass': True, 'python': list(sys.version_info[:3]), 'os_interfaces': list(required)}
+81: 
+82: 
+83: def certified():
+84:     return {**CERTIFIED, 'whitelist_counts': {'bolt': len(BOLT_TASK_DESCRIPTIONS),
+85:                                              'tf_refresh': len(TF_REFRESH_DESCRIPTIONS)}}
+86: 
+87: 
+88: def profile_identity(path):
+89:     actual = digest(path)
+90:     require(actual == PROFILE_SHA, 'profile SHA actual=%s expected=%s; remedy: first verify the Source identity; '
+91:             'do not assume the profile is stale' % (actual, PROFILE_SHA))
+92: 
+93: OPTIONS = ['-reorder-blocks=ext-tsp', '-reorder-functions=cdsort', '-split-functions',
+94:            '-split-all-cold', '-split-eh', '-dyno-stats', '--thread-count=1', '-stale-threshold=5', '-use-old-text']
+95: TRIPLES = ['armv7l-tizen-linux-gnueabi', 'aarch64-tizen-linux-gnu', 'x86_64-tizen-linux-gnu']
+96: TINY = ('unsigned bolt_probe(unsigned x, unsigned y) { return (x * 33u) ^ (y + (x >> 3)); }\n'
+97:         'int bolt_branch(int x) { return x < 0 ? -x : x * 7 + 1; }\n')
+98: 
+99: class GateError(RuntimeError):
+100:     pass
+101: 
+102: def require(ok, message):
+103:     if not ok:
+104:         raise GateError(message)
+105: 
+106: def digest(path):
+107:     h = hashlib.sha256()
+108:     with open(path, 'rb') as f:
+109:         while True:
+110:             b = f.read(1024 * 1024)
+111:             if not b:
+112:                 break
+113:             h.update(b)
+114:     return h.hexdigest()
+115: 
+116: def atomic_text(path, text):
+117:     path = Path(path)
+118:     path.parent.mkdir(parents=True, exist_ok=True)
+119:     tmp = path.with_name(path.name+'.new')
+120:     try:
+121:         with tmp.open('w',encoding='utf-8') as stream:
+122:             require(stream.write(text) == len(text), 'short text write: '+str(tmp))
+123:             stream.flush(); os.fsync(stream.fileno())
+124:         os.replace(tmp,path)
+125:     except BaseException as error:
+126:         try:
+127:             error.bolt_write_bytes=len(text.encode('utf-8'));error.bolt_write_path=str(path)
+128:         except Exception:pass
+129:         try: tmp.unlink()
+130:         except OSError: pass
+131:         raise
+132: 
+133: 
+134: def save(path, value):
+135:     atomic_text(path, json.dumps(value, ensure_ascii=False, indent=2)+'\n')
+136: 
+137: def proc_stat(path):
+138:     text = Path(path).read_text()
+139:     try:
+140:         pid = int(text.split(' ', 1)[0])
+141:         fields = text.rsplit(')', 1)[1].split()
+142:         require(len(fields) >= 18, 'short process stat: '+str(path))
+143:         return pid, fields[0], int(fields[2]), int(fields[17])
+144:     except (ValueError, IndexError) as error:
+145:         raise GateError('malformed process stat: '+str(path)) from error
+146: 
+147: def live_group_members(group):
+148:     require(proc_stat('/proc/self/stat')[0] == os.getpid(), 'PID namespace mismatch in /proc/self/stat')
+149:     members = []
+150:     try:
+151:         with os.scandir('/proc') as entries:
+152:             for entry in entries:
+153:                 if not entry.name.isdecimal():
+154:                     continue
+155:                 try:
+156:                     pid, state, pgrp, threads = proc_stat('/proc/'+entry.name+'/stat')
+157:                 except (FileNotFoundError, ProcessLookupError):
+158:                     continue
+159:                 if pgrp == group and (state not in ('Z', 'X') or threads > 1):
+160:                     members.append((pid, state))
+161:     except OSError as error:
+162:         raise GateError('cannot enumerate/read process group: '+str(error)) from error
+163:     return sorted(members)
+164: 
+165: def wait_group_exit(group, timeout=10):
+166:     deadline = time.monotonic()+timeout
+167:     while True:
+168:         members = live_group_members(group)
+169:         if not members:
+170:             return
+171:         require(time.monotonic() < deadline, 'process group %d still alive: %s' %
+172:                 (group, ', '.join('%d:%s' % item for item in members)))
+173:         time.sleep(.02)
+174: 
+175: def peek_child_exit(process, timeout):
+176:     deadline = time.monotonic()+timeout if timeout is not None else None
+177:     while True:
+178:         status = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+179:         if status is not None:
+180:             return status.si_status if status.si_code == os.CLD_EXITED else -status.si_status
+181:         if deadline is not None and time.monotonic() >= deadline:
+182:             raise subprocess.TimeoutExpired(str(process.pid), timeout)
+183:         time.sleep(.01)
+184: 
+185: def reap_child(process, timeout=1):
+186:     deadline = time.monotonic()+timeout
+187:     while True:
+188:         pid, status = os.waitpid(process.pid, os.WNOHANG)
+189:         if pid:
+190:             process.returncode = os.waitstatus_to_exitcode(status)
+191:             return process.returncode
+192:         require(time.monotonic() < deadline, 'leader %d was not reaped before deadline' % process.pid)
+193:         time.sleep(.01)
+194: 
+195: def call(argv, log, cwd=None, timeout=300):
+196:     log = Path(log); log.parent.mkdir(parents=True, exist_ok=True)
+197:     process = None; reaped = False; primary = None
+198:     try:
+199:         previous = signal.getsignal(signal.SIGCHLD)
+200:         if previous != signal.SIG_DFL:
+201:             signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+202:         save(log.with_suffix(log.suffix+'.argv.json'),
+203:              {'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None,
+204:               'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+205:         with log.open('wb') as output:
+206:             process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
+207:                                        stderr=subprocess.STDOUT, start_new_session=True)
+208:             rc = peek_child_exit(process, timeout)
+209:             if rc != 0:
+210:                 primary = 'COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
+211:                 raise GateError(primary)
+212:             require(reap_child(process) == rc, 'child exit status changed while reaping')
+213:             reaped = True
+214:         text = log.read_text(errors='replace')
+215:         metadata = log.with_suffix(log.suffix+'.argv.json')
+216:         invocation = json.loads(metadata.read_text())
+217:         save(metadata, dict(invocation,completed=True,rc=0))
+218:         return text
+219:     except BaseException as error:
+220:         if primary is None:
+221:             primary = ('TIMEOUT: ' if isinstance(error, subprocess.TimeoutExpired) else 'COMMAND_ERROR: ')+str(error)
+222:         cleanup = []
+223:         if process is not None and not reaped:
+224:             # Keep the un-reaped leader as a PGID anchor until group cleanup ends.
+225:             try:
+226:                 os.killpg(process.pid, signal.SIGKILL)
+227:             except ProcessLookupError:
+228:                 pass
+229:             except Exception as failure:
+230:                 cleanup.append(str(failure))
+231:             try:
+232:                 wait_group_exit(process.pid, 10)
+233:             except Exception as failure:
+234:                 cleanup.append(str(failure))
+235:             try:
+236:                 reap_child(process, 1)
+237:             except Exception as failure:
+238:                 cleanup.append(str(failure))
+239:         if isinstance(error, (KeyboardInterrupt, SystemExit)):
+240:             raise
+241:         message = primary+' (see '+str(log)+')'
+242:         if cleanup:
+243:             message += '; cleanup error: '+'; '.join(cleanup)
+244:         failure = GateError(message)
+245:         failure.bolt_log = str(log)
+246:         raise failure from error
+247: 
+248: def profile_unpack(source, output):
+249:     output = Path(output)
+250:     require(not output.exists(), 'profile output must be new')
+251:     output.parent.mkdir(parents=True, exist_ok=True)
+252:     try:
+253:         with lzma.open(source, 'rb') as src, output.open('xb') as dst:
+254:             shutil.copyfileobj(src, dst, 1024 * 1024)
+255:         profile_identity(output)
+256:     except Exception:
+257:         if output.exists():
+258:             try: output.unlink()
+259:             except OSError: pass
+260:         raise
+261:     return {'sha256': PROFILE_SHA, 'bytes': output.stat().st_size,
+262:             'compressed_sha256': digest(source)}
+263: 
+264: def quote(value):
+265:     return "'" + str(value).replace("'", "'\\''") + "'"
+266: 
+267: def replay_script(original, output, dependency, cache=None):
+268:     original = original.strip()
+269:     require('\n' not in original and original.startswith(': && ') and original.endswith(' && :'),
+270:             'unexpected link edge framing')
+271:     body = original[5:-5]
+272:     args = shlex.split(body)
+273:     require(not any(arg.startswith('@') or (arg.startswith('-Wl,') and any(part.startswith('@') for part in arg[4:].split(','))) for arg in args),
+274:             'link edge uses a response file; rsp auditing is not implemented')
+275:     require(not any(c in body for c in ';`|&<>') and '$(' not in body,
+276:             'unsupported shell syntax in link edge')
+277:     require(not re.search(r'(?<!\\)\$', body), 'unknown shell substitution')
+278:     require('--emit-relocs' not in body and '--strip-debug' not in body, 'edge already has BOLT flags')
+279:     old_out = '-o bin/clang-22 '
+280:     old_dep = '--dependency-file=tools/clang/tools/driver/CMakeFiles/clang.dir/link.d'
+281:     require(body.count(old_out) == 1 and body.count(old_dep) == 1, 'non-unique clang output/depfile')
+282:     require(not any(x in body for x in ['--Map', '-Map', '--save-temps', '--time-trace']),
+283:             'unregistered additional linker output')
+284:     caches = re.findall(r'--thinlto-cache-dir=([^\s]+)', body)
+285:     require(len(caches) == 1 and caches[0].startswith('/') and not any(c in caches[0] for c in '\"\'`$'), 'non-unique or unsupported ThinLTO cache')
+286:     if cache is not None:
+287:         require(str(cache) != caches[0], 'explicit cache override must be isolated')
+288:         body = body.replace('--thinlto-cache-dir='+caches[0], '--thinlto-cache-dir='+quote(cache), 1)
+289:     body = body.replace(old_out, '-o ' + quote(output) + ' ', 1)
+290:     body = body.replace(old_dep, '--dependency-file=' + quote(dependency), 1)
+291:     flags = ' -Wl,--emit-relocs'
+292:     return '#!/bin/sh\nset -eu\n' + body + flags + '\n'
+293: 
+294: def match_counts(text, argv, successful, trusted_tool):
+295:     require(successful and trusted_tool, 'untrusted tool or incomplete/failed rewrite log')
+296:     require(not any('infer-stale' in str(x) for x in argv), 'infer-stale forbidden')
+297:     nrows = re.findall(r'^BOLT-INFO: (\d+) out of (\d+) functions in the binary .*have non-empty execution profile$', text, re.M)
+298:     srows = re.findall(r'^BOLT-(?:WARNING|ERROR): (\d+) \([^\n]*\) functions? have invalid \(possibly stale\) profile\.', text, re.M)
+299:     urows = re.findall(r'^BOLT-INFO: profile for (\d+) objects was ignored$', text, re.M)
+300:     qrows = re.findall(r'^BOLT-INFO: (\d+) functions? with profile could not be optimized$', text, re.M)
+301:     require('invalid (possibly stale) profile' not in text or bool(srows), 'malformed stale counter')
+302:     require('objects was ignored' not in text or bool(urows), 'malformed unused counter')
+303:     require('with profile could not be optimized' not in text or bool(qrows), 'malformed non-simple counter')
+304:     require(len(nrows) == 1 and len(srows) <= 1 and len(urows) <= 1 and len(qrows) <= 1,
+305:             'missing/duplicate profile counters')
+306:     n, m = map(int, nrows[0]); s = int(srows[0]) if srows else 0
+307:     u = int(urows[0]) if urows else 0; q = int(qrows[0]) if qrows else 0
+308:     require(n > 0 and m >= n and s <= n, 'invalid N/M/S')
+309:     # Absent optional zero-counter lines are allowed only for this authenticated success format.
+310:     require(100 * (s + u) <= 5 * (n + u), 'profile R actual=%s expected=<=0.05; remedy: verify input identity, then retrain the profile or disable BOLT; never raise the threshold' % ((s+u)/(n+u)))
+311:     require(100 * s <= 5 * n, 'profile S/N actual=%s expected=<=0.05; remedy: verify input identity, then retrain the profile or disable BOLT; never raise the threshold' % (s/n))
+312:     return {'N': n, 'M': m, 'S': s, 'U': u, 'Q': q,
+313:             'R': (s + u) / (n + u), 'S_over_N': s / n}
+314: 
+315: class ELF:
+316:     """ELF64 little-endian reader. No whole-file loads; semantic symbol/relocation records."""
+317:     def __init__(self, path):
+318:         self.path = Path(path); self.f = self.path.open('rb')
+319:         if os.fstat(self.f.fileno()).st_size < 64:
+320:             self.f.close(); raise GateError('truncated ELF header')
+321:         self.mm = mmap.mmap(self.f.fileno(), 0, access=mmap.ACCESS_READ)
+322:         try:
+323:             require(self.mm[:6] == b'\x7fELF\x02\x01', 'expected ELF64 little endian')
+324:             h = self.unpack('<16sHHIQQQIHHHHHH', 0)
+325:             require(h[0][6] == 1 and h[3] == 1 and h[8] == 64, 'invalid ELF header version/size')
+326:             require(h[1] in (2, 3), 'expected executable or shared ELF type')
+327:             self.elf_type = h[1]; self.machine = h[2]; self.entry = h[4]
+328:             phoff, shoff, phentsize, phnum, shentsize, shnum, stridx = h[5], h[6], h[9], h[10], h[11], h[12], h[13]
+329:             require(shentsize == 64 and shnum > 0 and stridx < shnum, 'unsupported section numbering')
+330:             self.sections = [self.unpack('<IIQQQQIIQQ', shoff + i * 64) for i in range(shnum)]
+331:             for section in self.sections:
+332:                 if section[1] != 8:
+333:                     self.range(section[4], section[5])
+334:             names = self.sections[stridx]
+335:             require(names[1] == 3, 'section name table is not STRTAB')
+336:             self.names = [self.string(names[4], names[5], s[0]) for s in self.sections]
+337:             self.by_name = dict(zip(self.names, self.sections))
+338:             require(len(self.by_name) == len(self.names), 'duplicate section name')
+339:             self.loads = []; self.phdrs = []
+340:             for i in range(phnum):
+341:                 require(phentsize == 56, 'unsupported program header')
+342:                 p = self.unpack('<IIQQQQQQ', phoff + i * phentsize)
+343:                 self.phdrs.append(p)
+344:                 if p[0] == 1:
+345:                     require(p[5] <= p[6], 'LOAD filesz exceeds memsz')
+346:                     self.range(p[2], p[5])
+347:                     self.loads.append(p)
+348:         except Exception:
+349:             self.close(); raise
+350:     def close(self):
+351:         self.mm.close(); self.f.close()
+352:     def unpack(self, fmt, pos):
+353:         require(pos >= 0 and pos + struct.calcsize(fmt) <= len(self.mm), 'ELF range error')
+354:         return struct.unpack_from(fmt, self.mm, pos)
+355:     def range(self, offset, size):
+356:         require(0 <= offset <= len(self.mm) and 0 <= size <= len(self.mm)-offset, 'ELF content range error')
+357:     def string(self, offset, size, start):
+358:         self.range(offset, size)
+359:         require(0 <= start < size, 'ELF string index error')
+360:         end = self.mm.find(b'\0', offset + start, offset + size)
+361:         require(end >= 0, 'unterminated ELF string')
+362:         return self.mm[offset + start:end].decode('utf-8', errors='surrogateescape')
+363:     def symbols(self, index):
+364:         sec = self.sections[index]; require(sec[1] in (2, 11), 'not a symbol table')
+365:         require(sec[9] == 24 and sec[5] % 24 == 0 and sec[6] < len(self.sections), 'bad symtab')
+366:         strings = self.sections[sec[6]]; require(strings[1] == 3, 'symbol names are not STRTAB'); result = []
+367:         for off in range(sec[4], sec[4] + sec[5], 24):
+368:             name, info, other, shndx, value, size = self.unpack('<IBBHQQ', off)
+369:             require(shndx < len(self.sections) or shndx in (0xfff1, 0xfff2), 'invalid symbol shndx: actual=%d expected=section index, SHN_ABS or SHN_COMMON' % shndx)
+370:             target = self.names[shndx] if shndx < len(self.names) else 'RESERVED:%d' % shndx
+371:             result.append((self.string(strings[4], strings[5], name), info, other, target, value, size, shndx))
+372:         return result
+373:     def audit(self, final=False):
+374:         require(self.machine == 62 and self.loads, 'not executable native x86_64 ELF')
+375:         require(any(p[1] & 1 and p[3] <= self.entry < p[3] + p[5] for p in self.loads),
+376:                 'entry not inside executable LOAD')
+377:         require(not any('debug' in n.lower() for n in self.names), 'BOLT clang contains a debug section')
+378:         require('.gdb_index' not in self.by_name, 'BOLT clang contains a debug index')
+379:         if final:
+380:             require('.symtab' not in self.by_name and '.note.bolt_info' not in self.by_name, 'candidate is not fully stripped')
+381:         else:
+382:             require('.note.bolt_info' in self.by_name, 'missing BOLT note')
+383:         return {'entry': self.entry, 'loads': self.loads, 'bolt_sections': [n for n in self.names if '.bolt' in n]}
+384: 
+385: def security_properties(path):
+386:     e = ELF(path)
+387:     try:
+388:         def content(section):
+389:             require(section[1] != 8, 'NOBITS section cannot contain security metadata')
+390:             return bytes(e.mm[section[4]:section[4]+section[5]])
+391:         def headers(kind):
+392:             return [p for p in e.phdrs if p[0] == kind]
+393:         def header_values(kind, payload=False):
+394:             values = []
+395:             for p in headers(kind):
+396:                 value = {'flags': p[1]}
+397:                 if kind == 0x6474e552:
+398:                     require(p[5] <= p[6], 'RELRO filesz exceeds memsz');e.range(p[2], p[5])
+399:                     value.update(vaddr=p[3], filesz=p[5], memsz=p[6])
+400:                 if payload:
+401:                     e.range(p[2], p[5])
+402:                     value['content_hex'] = bytes(e.mm[p[2]:p[2]+p[5]]).hex()
+403:                 values.append(value)
+404:             return values
+405:         interp = [e.string(p[2], p[5], 0) for p in headers(3)]
+406:         dynamic = e.by_name.get('.dynamic'); needed = []; flags = {}; bind_now = False; search_paths = {}
+407:         if dynamic:
+408:             require(dynamic[1] == 6 and dynamic[9] == 16 and dynamic[5] % 16 == 0 and dynamic[6] < len(e.sections), 'invalid dynamic table')
+409:             strings = e.sections[dynamic[6]]
+410:             require(strings[1] == 3, 'dynamic strings are not STRTAB')
+411:             terminated = False
+412:             for offset in range(dynamic[4], dynamic[4]+dynamic[5], 16):
+413:                 tag, value = e.unpack('<qQ', offset)
+414:                 if tag == 0:
+415:                     terminated = True
+416:                     break
+417:                 if tag in (15, 29):
+418:                     key = 'DT_RPATH' if tag == 15 else 'DT_RUNPATH'
+419:                     require(key not in search_paths, 'duplicate dynamic search path tag: '+key)
+420:                     search_paths[key] = e.string(strings[4], strings[5], value)
+421:                 if tag == 24:
+422:                     bind_now = True
+423:                 if tag == 1:
+424:                     needed.append(e.string(strings[4], strings[5], value))
+425:                 if tag in (30, 0x6ffffffb):
+426:                     require(str(tag) not in flags, 'duplicate dynamic flags')
+427:                     flags[str(tag)] = value
+428:             require(terminated, 'unterminated dynamic table')
+429:         syms = e.symbols(e.names.index('.dynsym')) if '.dynsym' in e.names else []
+430:         vers = e.by_name.get('.gnu.version')
+431:         require(not vers or (vers[1] == 0x6fffffff and vers[5] % 2 == 0), 'invalid versym table')
+432:         version_values = list(struct.unpack('<'+'H'*(vers[5]//2), content(vers))) if vers else []
+433:         verneed = e.by_name.get('.gnu.version_r'); needs = []; version_names = {0: ('', 'LOCAL'), 1: ('', 'GLOBAL')}
+434:         if verneed:
+435:             require(verneed[1] == 0x6ffffffe and verneed[6] < len(e.sections), 'invalid verneed table')
+436:             strings = e.sections[verneed[6]]
+437:             require(strings[1] == 3, 'verneed names are not STRTAB')
+438:             cursor = 0; seen = set()
+439:             while True:
+440:                 require(cursor not in seen and 0 <= cursor <= verneed[5]-16, 'bad verneed record')
+441:                 seen.add(cursor)
+442:                 version, count, filename, auxiliary, following = e.unpack('<HHIII', verneed[4]+cursor)
+443:                 require(version == 1, 'unsupported verneed version')
+444:                 filename = e.string(strings[4], strings[5], filename)
+445:                 position = cursor+auxiliary
+446:                 for index in range(count):
+447:                     require(0 <= position <= verneed[5]-16, 'bad vernaux record')
+448:                     value_hash, value_flags, other, name, next_aux = e.unpack('<IHHII', verneed[4]+position)
+449:                     name = e.string(strings[4], strings[5], name)
+450:                     version_names[other & 0x7fff] = (filename, name)
+451:                     needs.append((filename, name, value_flags, value_hash))
+452:                     if index+1 < count:
+453:                         require(next_aux > 0, 'truncated vernaux chain')
+454:                         position += next_aux
+455:                 if not following:
+456:                     break
+457:                 cursor += following
+458:         require(not version_values or len(version_values) == len(syms), 'versym/dynsym count mismatch')
+459:         require(all((value & 0x7fff) in version_names for value in version_values), 'unknown symbol version')
+460:         def interface(symbol):
+461:             shndx = symbol[6]
+462:             definition = 'UND' if shndx == 0 else 'ABS' if shndx == 0xfff1 else 'COMMON' if shndx == 0xfff2 else 'DEF'
+463:             return symbol[0], symbol[1] >> 4, symbol[1] & 15, symbol[2] & 3, definition
+464:         named_versions = sorted((interface(syms[i]), version_names[value & 0x7fff], bool(value & 0x8000))
+465:                                 for i, value in enumerate(version_values))
+466:         return {'elf_type': e.elf_type, 'PT_INTERP': interp,
+467:                 'PT_GNU_RELRO': header_values(0x6474e552), 'PT_GNU_STACK': header_values(0x6474e551),
+468:                 'PT_GNU_PROPERTY': header_values(0x6474e553, True),
+469:                 '.note.gnu.property': content(e.by_name['.note.gnu.property']).hex() if '.note.gnu.property' in e.by_name else None,
+470:                 'DT_RPATH': search_paths.get('DT_RPATH'), 'DT_RUNPATH': search_paths.get('DT_RUNPATH'),
+471:                 'DT_FLAGS_FLAGS1': flags, 'DT_BIND_NOW': bind_now, 'W_X_LOAD': any(p[1] & 3 == 3 for p in e.loads), 'DT_NEEDED': needed,
+472:                 '.dynsym': sorted(interface(symbol) for symbol in syms),
+473:                 '.gnu.version': named_versions, '.gnu.version_r': sorted(needs)}
+474:     finally:
+475:         e.close()
+476: 
+477: def security_compare(ordinary, candidate, ignore_paths=False):
+478:     before, after = security_properties(ordinary), security_properties(candidate)
+479:     differences = [key for key in before if before[key] != after[key] and
+480:                    not (ignore_paths and key in ('DT_RPATH', 'DT_RUNPATH'))]
+481:     if differences:
+482:         details = []
+483:         for key in differences:
+484:             if key in ('.dynsym', '.gnu.version', '.gnu.version_r'):
+485:                 old = collections.Counter(json.dumps(row, sort_keys=True) for row in before[key])
+486:                 new = collections.Counter(json.dumps(row, sort_keys=True) for row in after[key])
+487:                 details.append('%s before_count=%d after_count=%d first_removed=%r first_added=%r' %
+488:                                (key, len(before[key]), len(after[key]), list((old-new).elements())[:5], list((new-old).elements())[:5]))
+489:             else:
+490:                 details.append('%s before=%r after=%r' % (key, before[key], after[key]))
+491:         raise GateError('ELF security attributes differ: '+'; '.join(details))
+492:     heavy = ('.dynsym', '.gnu.version', '.gnu.version_r')
+493:     return {'security_preserved': True,
+494:             'ordinary_sha256': digest(ordinary), 'candidate_sha256': digest(candidate),
+495:             'properties': {key: value for key, value in before.items() if key not in heavy},
+496:             'symbol_version_evidence': {key: {'entries': len(before[key]),
+497:                 'sha256': hashlib.sha256(json.dumps(before[key], sort_keys=True).encode()).hexdigest()}
+498:                 for key in heavy}}
+499: 
+500: def installed_baseline(root, output):
+501:     entity = Path(root)/'usr/bin/clang-22'
+502:     properties = security_properties(entity)
+503:     result = {'path': str(entity), 'sha256': digest(entity),
+504:               'DT_RPATH': properties['DT_RPATH'], 'DT_RUNPATH': properties['DT_RUNPATH'],
+505:               'security_properties': properties}
+506:     save(output, result)
+507:     return result
+508: 
+509: 
+510: def installed_security(baseline, candidate):
+511:     require(Path(baseline).is_file(), 'installed-baseline missing: '+str(baseline))
+512:     before = json.loads(Path(baseline).read_text())['security_properties']
+513:     after = json.loads(json.dumps(security_properties(candidate)))
+514:     differences = {k: {'installed_baseline': before.get(k), 'candidate': after.get(k)}
+515:                    for k in before.keys() | after.keys() if before.get(k) != after.get(k)}
+516:     require(not differences, 'installed-baseline security attributes differ: '+json.dumps(differences))
+517:     return {'installed_security_preserved': True, 'baseline_sha256': digest(baseline),
+518:             'candidate_sha256': digest(candidate)}
+519: 
+520: 
+521: def rpath_layout(path):
+522:     """Freeze headers and every file byte except the two permitted sections."""
+523:     elf = ELF(path)
+524:     try:
+525:         allowed = sorted((s[4], s[4]+s[5]) for name, s in elf.by_name.items()
+526:                          if name in ('.dynamic', '.dynstr'))
+527:         cursor = 0; frozen = hashlib.sha256()
+528:         for start, end in allowed:
+529:             require(start >= cursor, 'overlapping RPATH sections')
+530:             frozen.update(elf.mm[cursor:start]); cursor = end
+531:         frozen.update(elf.mm[cursor:])
+532:         dynamic = elf.by_name.get('.dynamic')
+533:         tags = [struct.unpack_from('<qQ', elf.mm, i)[0]
+534:                 for i in range(dynamic[4], dynamic[4]+dynamic[5], 16)] if dynamic else []
+535:         return {'file_bytes': len(elf.mm), 'program_headers': elf.phdrs,
+536:                 'section_headers': elf.sections, 'dynamic_tags': tags,
+537:                 'unchanged_bytes_sha256': frozen.hexdigest(),
+538:                 'code_sections': {name: hashlib.sha256(elf.mm[s[4]:s[4]+s[5]]).hexdigest()
+539:                                   for name, s in elf.by_name.items() if s[2] & 4 and s[1] != 8}}
+540:     finally:
+541:         elf.close()
+542: 
+543: 
+544: def cmake_literal(value):
+545:     require('\x00' not in value, 'NUL in CMake argument')
+546:     delimiter = '='
+547:     while ']'+delimiter+']' in value:
+548:         delimiter += '='
+549:     return '['+delimiter+'['+value+']'+delimiter+']'
+550: 
+551: 
+552: def adjust_rpath(candidate, baseline, work, identity):
+553:     candidate, work = Path(candidate), Path(work)
+554:     require(Path(baseline).is_file(), 'installed-baseline missing: '+str(baseline))
+555:     expected = json.loads(Path(baseline).read_text())
+556:     props = security_properties(candidate)
+557:     keys = ('DT_RPATH', 'DT_RUNPATH')
+558:     old, new = {k: props[k] for k in keys}, {k: expected[k] for k in keys}
+559:     require([k for k in keys if old[k] is not None] == [k for k in keys if new[k] is not None],
+560:             'RPATH tag types differ from installed-baseline')
+561:     require(sum(old[k] is not None for k in keys) <= 1, 'multiple RPATH tags unsupported')
+562:     layout = rpath_layout(candidate); stripped_sha = digest(candidate)
+563:     if old != new:
+564:         key = next(k for k in keys if old[k] is not None)
+565:         script = work/'candidate-rpath.cmake'
+566:         atomic_text(script, 'file(RPATH_CHANGE FILE '+cmake_literal(str(candidate))+
+567:                     ' OLD_RPATH '+cmake_literal(old[key])+' NEW_RPATH '+cmake_literal(new[key])+')\n')
+568:         call(['cmake', '-P', str(script)], work/'candidate-rpath.log', timeout=60)
+569:     require(rpath_layout(candidate) == layout, 'RPATH_CHANGE changed ELF layout or non-path content')
+570:     actual = security_properties(candidate)
+571:     require({k: actual[k] for k in keys} == new, 'ELF RPATH differs from installed-baseline')
+572:     log = work/'candidate-readelf.log'
+573:     call(['readelf', '-dW', str(candidate)], log, timeout=60)
+574:     text = log.read_text(); readelf_paths = {}
+575:     for key in keys:
+576:         matches = re.findall(r'\('+key[3:]+r'\)[^\n]*\[([^\n]*)\]', text)
+577:         require(len(matches) <= 1, 'duplicate readelf path tag: '+key)
+578:         readelf_paths[key] = matches[0] if matches else None
+579:     require(readelf_paths == new, 'readelf RPATH differs from installed-baseline')
+580:     checked = installed_security(baseline, candidate)
+581:     identity.update(strip_all_sha256=stripped_sha, rpath_adjusted_sha256=digest(candidate),
+582:                     after_sha256=digest(candidate), installed_baseline_sha256=digest(baseline),
+583:                     installed_baseline_path=str(baseline),
+584:                     rpath={'before': old, 'after': new, 'layout': layout, 'readelf': readelf_paths,
+585:                            'security': checked})
+586:     validate_identity(identity, candidate)
+587:     save(work/'identity.json', identity)
+588:     return identity
+589: 
+590: 
+591: # Real implementation files, not synthetic tiny probes. C uses compiler resource
+592: # headers only; freestanding + nostdinc prevents accidental cross-target sysroots.
+593: REAL_C_SOURCES = ('compiler-rt/lib/builtins/bswapsi2.c', 'compiler-rt/lib/builtins/bswapdi2.c')
+594: REAL_CXX_SOURCES = ('llvm/lib/Support/SmallVector.cpp', 'llvm/lib/Support/StringRef.cpp')
+595: 
+596: 
+597: def real_commands(build, resource_dir):
+598:     build = Path(build).absolute(); source = build.parent
+599:     cases = []
+600:     for relative in REAL_C_SOURCES:
+601:         for target in TRIPLES:
+602:             cases.append((relative, target, ['--no-default-config', '--target='+target,
+603:                           '-resource-dir='+str(resource_dir), '-ffreestanding', '-nostdinc',
+604:                           '-isystem', str(Path(resource_dir)/'include'), '-O2', '-g', '-c',
+605:                           str(source/relative)]))
+606:     for relative in REAL_CXX_SOURCES:
+607:         cases.append((relative, 'x86_64-tizen-linux-gnu', ['--no-default-config',
+608:                       '--target=x86_64-tizen-linux-gnu', '-resource-dir='+str(resource_dir),
+609:                       '-O2', '-g', '-std=c++17', '-I'+str(source/'llvm/include'),
+610:                       '-I'+str(build/'include'), '-c', str(source/relative)]))
+611:     return cases
+612: 
+613: 
+614: def real_gate(ordinary, candidate, build, work, resource_dir):
+615:     started = time.monotonic(); work = Path(work); work.mkdir(parents=True, exist_ok=True)
+616:     # Both roles use the same physical compiler/output paths, including strings
+617:     # emitted into .GCC.command.line. No stripping or object normalization.
+618:     compiler = work/'same-clang'; output = work/'same.o'; rows = []
+619:     cases = real_commands(build, resource_dir)
+620:     for role, executable in (('ordinary', ordinary), ('candidate', candidate)):
+621:         shutil.copyfile(executable, compiler); compiler.chmod(0o755)
+622:         for index, (relative, target, args) in enumerate(cases):
+623:             output.unlink(missing_ok=True)
+624:             start = time.monotonic()
+625:             call([str(compiler), *args, '-o', str(output)], work/('%s-%02d.log' % (role,index)), timeout=120)
+626:             require(output.is_file() and not output.is_symlink() and output.stat().st_size > 0,
+627:                     'real compile did not produce a nonempty regular object: '+relative)
+628:             sha = digest(output)
+629:             if role == 'ordinary':
+630:                 rows.append({'source': relative, 'target': target, 'ordinary_sha256': sha,
+631:                              'ordinary_seconds': time.monotonic()-start})
+632:             else:
+633:                 rows[index].update(candidate_sha256=sha, candidate_seconds=time.monotonic()-start)
+634:                 require(sha == rows[index]['ordinary_sha256'], 'real object bytes differ: '+relative+' '+target)
+635:                 rows[index]['byte_equal'] = True
+636:     result = {'real_pass': True, 'seconds': time.monotonic()-started, 'cases': rows}
+637:     save(work/'real-result.json', result)
+638:     print('BOLT_REAL_GATE_PASS '+json.dumps({'work': str(work), 'cases': len(rows), 'seconds': result['seconds']}), flush=True)
+639:     return result
+640: 
+641: 
+642: def tiny_gate(ordinary, candidate, work, resource_dir=None):
+643:     work = Path(work); work.mkdir(parents=True, exist_ok=True)
+644:     source = work/'tiny.c'; source.write_text(TINY); out = work/'same.o'; rows = []
+645:     for label, cc in [('ordinary', ordinary), ('candidate', candidate)]:
+646:         call([cc, '--version'], work/(label+'-version.log'), timeout=30)
+647:     for triple in TRIPLES:
+648:         row = {'target': triple, 'outputs': []}
+649:         for label, cc in [('ordinary', ordinary), ('candidate', candidate)]:
+650:             argv = [cc, '--no-default-config', '--target='+triple, '-c', '-O2', str(source), '-o', str(out)]
+651:             if resource_dir:
+652:                 argv[1:1] = ['-resource-dir', resource_dir]
+653:             if out.exists() or out.is_symlink():
+654:                 out.unlink()
+655:             call(argv, work/(triple+'-'+label+'.log'), cwd=work, timeout=60)
+656:             require(out.is_file() and not out.is_symlink() and out.stat().st_size > 0,
+657:                     'tiny compiler did not produce a nonempty regular file: '+label+' '+triple)
+658:             dest = work/(triple+'.'+label+'.o'); shutil.copyfile(out, dest)
+659:             row['outputs'].append({'path': str(dest), 'sha256': digest(dest), 'bytes': dest.stat().st_size})
+660:         row['byte_equal'] = (work/(triple+'.ordinary.o')).read_bytes() == (work/(triple+'.candidate.o')).read_bytes()
+661:         rows.append(row); save(work/'result.json', rows)
+662:         require(row['byte_equal'], 'tiny object differs: '+triple)
+663:     return rows
+664: 
+665: def inventory(root, hash_files=True):
+666:     root = Path(root).absolute(); files = {}
+667:     require(root.is_dir() and not root.is_symlink(), 'inventory root must be a non-symlink directory: '+str(root))
+668:     def traversal_error(error):
+669:         raise GateError('inventory traversal failed: '+str(error)) from error
+670:     for folder, dirs, names in os.walk(root, followlinks=False, onerror=traversal_error):
+671:         for name in sorted(dirs + names):
+672:             p = Path(folder)/name; key = p.relative_to(root).as_posix(); st = p.lstat()
+673:             if stat.S_ISLNK(st.st_mode):
+674:                 files[key] = {'type': 'symlink', 'target': os.readlink(p)}
+675:             elif stat.S_ISREG(st.st_mode):
+676:                 files[key] = {'type': 'file', 'mode': stat.S_IMODE(st.st_mode), 'bytes': st.st_size, **({'sha256': digest(p)} if hash_files else {})}
+677:             elif stat.S_ISDIR(st.st_mode):
+678:                 files[key] = {'type': 'dir'}
+679:             else:
+680:                 raise GateError('special file in buildroot: '+key)
+681:     return {'root': str(root), 'files': files}
+682: 
+683: def root_snapshot(root):
+684:     """Packaging baseline, including directory and symlink permissions."""
+685:     root = Path(root).absolute()
+686:     result = inventory(root)
+687:     result['metadata'] = {}
+688:     for key in [''] + sorted(result['files']):
+689:         path = root/key
+690:         st = path.lstat()
+691:         item = {'mode': stat.S_IMODE(st.st_mode)}
+692:         if stat.S_ISLNK(st.st_mode):
+693:             item['bytes'] = st.st_size
+694:         result['metadata'][key] = item
+695:     return result
+696: 
+697: def compare_root(root, baseline, after_path):
+698:     """Reject any buildroot side effect before installing the candidate."""
+699:     current = root_snapshot(root)
+700:     save(after_path, current)
+701:     require(baseline.get('root') == current['root'], 'buildroot baseline belongs to a different root')
+702:     require('metadata' in baseline, 'buildroot baseline lacks complete permission metadata')
+703:     old, new = baseline['files'], current['files']
+704:     for key in sorted(old.keys() | new.keys()):
+705:         require(key in old, 'buildroot added: '+key)
+706:         require(key in new, 'buildroot removed: '+key)
+707:         require(old[key] == new[key], 'buildroot entry differs: '+key)
+708:         require(baseline['metadata'].get(key) == current['metadata'][key],
+709:                 'buildroot permissions/metadata differ: '+key)
+710:     require(baseline['metadata'].get('') == current['metadata'][''],
+711:             'buildroot permissions/metadata differ: .')
+712:     return {'buildroot_unchanged': True, 'entries': len(new)}
+713: 
+714: def rooted_resolve(root, path):
+715:     root = Path(root).absolute(); rel = Path(path).relative_to(root); todo = list(rel.parts)
+716:     done = []; seen = set()
+717:     while todo:
+718:         part = todo.pop(0)
+719:         if part in ('', '.'):
+720:             continue
+721:         if part == '..':
+722:             require(bool(done), 'alias escapes buildroot'); done.pop(); continue
+723:         probe = root.joinpath(*done, part)
+724:         if probe.is_symlink():
+725:             identity = probe.relative_to(root).as_posix()
+726:             require(identity not in seen, 'alias cycle'); seen.add(identity)
+727:             target = os.readlink(probe)
+728:             if target.startswith('/'):
+729:                 done = []
+730:             todo = list(Path(target).parts[1:] if target.startswith('/') else Path(target).parts) + todo
+731:         else:
+732:             done.append(part)
+733:     return root.joinpath(*done)
+734: 
+735: def alias_group(root):
+736:     root = Path(root).absolute(); entity = root/'usr/bin/clang-22'
+737:     require(entity.is_file() and not entity.is_symlink(), 'missing clang-22 installed entity')
+738:     base = entity.stat(); aliases = []
+739:     for p in sorted((root/'usr/bin').iterdir()):
+740:         if p == entity:
+741:             continue
+742:         resolved = rooted_resolve(root, p)
+743:         if resolved.exists() and (resolved.stat().st_dev, resolved.stat().st_ino) == (base.st_dev, base.st_ino):
+744:             aliases.append(p)
+745:         elif p.is_file() and not p.is_symlink() and p.stat().st_size == base.st_size and digest(p) == digest(entity):
+746:             aliases.append(p)
+747:         elif p.name in ['clang', 'clang++', 'clang++-22', 'clang-cl', 'clang-cpp'] or p.name.endswith(('-clang','-clang++')):
+748:             raise GateError('clang family alias points to different content: '+str(p))
+749:     return entity, aliases
+750: 
+751: def install_candidate(root, candidate, state, identity, announce=False, identity_path=None):
+752:     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
+753:     e = ELF(candidate)
+754:     try:
+755:         elf = e.audit(final=True)
+756:     finally:
+757:         e.close()
+758:     validate_identity(identity, candidate)
+759:     entity, aliases = alias_group(root); changed = []
+760:     for p in aliases:
+761:         changed.append({'path': p.relative_to(root).as_posix(), 'old_type': 'symlink' if p.is_symlink() else 'file',
+762:                         'old_target': os.readlink(p) if p.is_symlink() else None})
+763:     st = entity.stat(); tmp = entity.with_name('.clang-bolt.new'); staged = []
+764:     require(not tmp.exists() and not tmp.is_symlink(), 'temporary candidate exists')
+765:     try:
+766:         shutil.copyfile(candidate,tmp)
+767:         tmp.chmod(stat.S_IMODE(st.st_mode))
+768:         with tmp.open('rb') as stream: os.fsync(stream.fileno())
+769:         actual = digest(tmp)
+770:         require(actual == identity['after_sha256'], 'temporary candidate SHA differs')
+771:         require(tmp.stat().st_size == Path(candidate).stat().st_size, 'temporary candidate size differs')
+772:         for path in aliases:
+773:             link = path.with_name('.'+path.name+'.bolt-link')
+774:             require(not link.exists() and not link.is_symlink(), 'temporary alias exists')
+775:             link.symlink_to('clang-22'); staged.append((link,path))
+776:         identity = dict(identity, installed_sha256=actual)
+777:         result = {'installed_sha256':actual, 'identity':identity, 'alias_changes':changed,
+778:                   'allowed_paths':['usr/bin/clang-22']+[p.relative_to(root).as_posix() for p in aliases], 'elf':elf}
+779:         # All file writes, state and output publication precede the final commit.
+780:         save(state,result)
+781:         if identity_path is not None:
+782:             save(identity_path, identity)
+783:         if announce: print(json.dumps(result,ensure_ascii=False),flush=True)
+784:         for link,path in staged: os.replace(link,path)
+785:         os.replace(tmp,entity)
+786:         return result
+787:     except BaseException:
+788:         for path in [tmp]+[link for link,_ in staged]:
+789:             try: path.unlink()
+790:             except OSError: pass
+791:         raise
+792: 
+793: def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
+794:     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
+795:     entity = root/'usr/bin/clang-22'; require(digest(entity) == state['installed_sha256'], 'clang changed during RPM post-processing')
+796:     for change in state['alias_changes']:
+797:         p = root/change['path']
+798:         require(p.is_symlink() and os.readlink(p) == 'clang-22' and rooted_resolve(root,p) == entity,
+799:                 'alias stale or not normalized: '+str(p))
+800:     e = ELF(entity)
+801:     try:
+802:         elf = e.audit(final=True)
+803:     finally:
+804:         e.close()
+805:     require(digest(entity) == state['identity']['after_sha256'], 'final installed SHA differs from stripped candidate')
+806:     no_bolt_products(root)
+807:     security = security_compare(ordinary, str(entity), ignore_paths=True)
+808:     baseline = Path(ordinary).parent/'installed-baseline.json'
+809:     if 'installed_baseline_sha256' in state['identity']:
+810:         require(digest(baseline) == state['identity']['installed_baseline_sha256'], 'installed-baseline SHA changed')
+811:     installed = installed_security(baseline, entity)
+812:     rows = tiny_gate(ordinary, str(entity), candidate_work, resource_dir)
+813:     real = real_gate(ordinary, str(entity), Path(ordinary).parent.parent,
+814:                      Path(candidate_work)/'real', resource_dir)
+815:     return {'sha_unchanged': True, 'aliases_pass': True, 'elf': elf, 'tiny': rows,
+816:             'strip_identity_pass': True, 'security': security, 'installed_security': installed, 'real': real}
+817: 
+818: def certified_version(text):
+819:     lines = re.findall(r'^\s*(LLVM version[^\n]*)$', text, re.M)
+820:     require(lines == [CERTIFIED['bolt_version']], 'uncertified BOLT tool version actual=%s expected=%s; remedy: update certified constants and recertify, or disable with --without clang_bolt / bcond_with' % (lines, CERTIFIED['bolt_version']))
+821:     return lines[0]
+822: 
+823: def no_bolt_products(root):
+824:     root = Path(root).absolute()
+825:     for name in ('llvm-bolt', 'perf2bolt', 'llvm-boltdiff', 'merge-fdata'):
+826:         path = root/'usr/bin'/name
+827:         require(not path.exists() and not path.is_symlink(), 'BOLT tool in buildroot: '+str(path))
+828:     tokens = (b'LLVMBOLT', b'llvm-bolt', b'perf2bolt', b'llvm-boltdiff', b'merge-fdata')
+829:     # Reuse fail-closed inventory traversal without hashing package payloads.
+830:     files = inventory(root, hash_files=False)['files']
+831:     cmake_count = 0
+832:     for key, item in files.items():
+833:         path = root/key
+834:         require(not (key.startswith('usr/lib64/libLLVMBOLT') and key.endswith('.a')),
+835:                 'BOLT static library in buildroot: '+key)
+836:         if key.lower().endswith('.cmake'):
+837:             path = rooted_resolve(root, path)
+838:             require(path.exists(), 'dangling CMake metadata: '+key)
+839:             cmake_count += 1
+840:             require(path.is_file(), 'unreadable CMake metadata: '+key)
+841:             content = path.read_bytes()
+842:             for token in tokens:
+843:                 require(token not in content, 'BOLT CMake export: '+key+' matched '+token.decode())
+844:     return {'no_bolt_products': True, 'paths_checked': len(files), 'cmake_files_checked': cmake_count, 'cmake_tokens': [v.decode() for v in tokens]}
+845: 
+846: def rewrite(bolt, profile, input_elf, output, work):
+847:     work = Path(work); work.mkdir(parents=True, exist_ok=True)
+848:     profile_identity(profile)
+849:     version = call([bolt, '--version'], work/'bolt-version.log')
+850:     certified_version(version)
+851:     argv = [bolt, input_elf, '-o', output, '-data='+str(profile)] + OPTIONS
+852:     text = call(argv, work/'bolt.log', timeout=1800)
+853:     counters = match_counts(text, argv, True, True)
+854:     e = ELF(output)
+855:     try:
+856:         elf = e.audit()
+857:     finally:
+858:         e.close()
+859:     result = {'tool_sha256': digest(bolt), 'profile_sha256': PROFILE_SHA,
+860:               'input_sha256': digest(input_elf), 'output_sha256': digest(output), 'argv': argv,
+861:               'counts': counters, 'elf': elf}
+862:     save(work/'rewrite-result.json', result); return result
+863: 
+864: BOLT_TASK_DESCRIPTIONS = frozenset(('Generating VCSVersion.inc', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/AddressMap.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryBasicBlock.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryContext.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryData.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryEmitter.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryFunction.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryFunctionCallGraph.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinaryFunctionProfile.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/BinarySection.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/CallGraph.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/CallGraphWalker.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/DIEBuilder.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/DebugData.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/DebugNames.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/DynoStats.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/Exceptions.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/FunctionLayout.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/GDBIndex.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/HashUtilities.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/JumpTable.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/MCInstUtils.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/MCPlusBuilder.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/ParallelUtilities.cpp.o', 'Building CXX object tools/bolt/lib/Core/CMakeFiles/LLVMBOLTCore.dir/Relocation.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/AArch64RelaxationPass.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/Aligner.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/AllocCombiner.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/AsmDump.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/BinaryPasses.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/CMOVConversion.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/CacheMetrics.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/DataflowAnalysis.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/DataflowInfoManager.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/FixRISCVCallsPass.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/FixRelaxationPass.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/FrameAnalysis.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/FrameOptimizer.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/HFSort.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/Hugify.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/IdenticalCodeFolding.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/IndirectCallPromotion.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/Inliner.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/Instrumentation.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/JTFootprintReduction.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/LivenessAnalysis.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/LongJmp.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/LoopInversionPass.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/MCF.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PAuthGadgetScanner.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PLTCall.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PatchEntries.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PettisAndHansen.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PointerAuthCFIAnalyzer.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/PointerAuthCFIFixup.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ProfileQualityStats.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/RegAnalysis.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/RegReAssign.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ReorderAlgorithm.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ReorderData.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ReorderFunctions.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/RetpolineInsertion.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ShrinkWrapping.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/SplitFunctions.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/StackAllocationAnalysis.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/StackAvailableExpressions.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/StackPointerTracking.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/StackReachingUses.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/StokeInfo.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/TailDuplication.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ThreeWayBranch.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ValidateInternalCalls.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/ValidateMemRefs.cpp.o', 'Building CXX object tools/bolt/lib/Passes/CMakeFiles/LLVMBOLTPasses.dir/VeneerElimination.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/BoltAddressTranslation.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/DataAggregator.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/DataReader.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/Heatmap.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/StaleProfileMatching.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/YAMLProfileReader.cpp.o', 'Building CXX object tools/bolt/lib/Profile/CMakeFiles/LLVMBOLTProfile.dir/YAMLProfileWriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/BinaryPassManager.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/BoltDiff.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/BuildIDRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/DWARFRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/ExecutableFileMemoryManager.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/GNUPropertyRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/JITLinkLinker.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/LinuxKernelRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/MachORewriteInstance.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/MetadataManager.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/PseudoProbeRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/RSeqRewriter.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/RewriteInstance.cpp.o', 'Building CXX object tools/bolt/lib/Rewrite/CMakeFiles/LLVMBOLTRewrite.dir/SDTRewriter.cpp.o', 'Building CXX object tools/bolt/lib/RuntimeLibs/CMakeFiles/LLVMBOLTRuntimeLibs.dir/HugifyRuntimeLibrary.cpp.o', 'Building CXX object tools/bolt/lib/RuntimeLibs/CMakeFiles/LLVMBOLTRuntimeLibs.dir/InstrumentationRuntimeLibrary.cpp.o', 'Building CXX object tools/bolt/lib/RuntimeLibs/CMakeFiles/LLVMBOLTRuntimeLibs.dir/RuntimeLibrary.cpp.o', 'Building CXX object tools/bolt/lib/Target/X86/CMakeFiles/LLVMBOLTTargetX86.dir/X86MCPlusBuilder.cpp.o', 'Building CXX object tools/bolt/lib/Target/X86/CMakeFiles/LLVMBOLTTargetX86.dir/X86MCSymbolizer.cpp.o', 'Building CXX object tools/bolt/lib/Utils/CMakeFiles/LLVMBOLTUtils.dir/CommandLineOpts.cpp.o', 'Building CXX object tools/bolt/lib/Utils/CMakeFiles/LLVMBOLTUtils.dir/Utils.cpp.o', 'Building CXX object tools/bolt/tools/driver/CMakeFiles/llvm-bolt.dir/llvm-bolt.cpp.o', 'Linking CXX executable bin/llvm-bolt', 'Linking CXX static library lib64/libLLVMBOLTCore.a', 'Linking CXX static library lib64/libLLVMBOLTPasses.a', 'Linking CXX static library lib64/libLLVMBOLTProfile.a', 'Linking CXX static library lib64/libLLVMBOLTRewrite.a', 'Linking CXX static library lib64/libLLVMBOLTRuntimeLibs.a', 'Linking CXX static library lib64/libLLVMBOLTTargetX86.a', 'Linking CXX static library lib64/libLLVMBOLTUtils.a'))
+865: 
+866: TF_REFRESH_DESCRIPTIONS = frozenset((
+867:     'Building C object lib64/tf_runtime/CMakeFiles/tf_xla_runtime.dir/tf_xla_runtime_dummy.c.o',
+868:     'Linking C static library lib64/libtf_xla_runtime.a'))
+869: 
+870: def tool_plan(text):
+871:     lines = text.splitlines()
+872:     while lines and not lines[-1].strip():
+873:         lines.pop()
+874:     require(not any('Re-running CMake...' in line for line in lines), REGEN_ERROR)
+875:     diagnostics = [line for line in lines if line.startswith('ninja: warning:')]
+876:     lines = [line for line in lines if not line.startswith('ninja: warning:')]
+877:     require(not any('Re-running CMake...' in line for line in lines), REGEN_ERROR)
+878:     counts = {'objects': 0, 'static_libraries': 0, 'executables': 0, 'generated': 0}
+879:     if lines == ['ninja: no work to do.']:
+880:         return {'plan_type': 'up-to-date', 'tasks': 0, 'categories': counts,
+881:                 'configuration_refresh_tasks': 0, 'descriptions': [], 'ninja_diagnostics': diagnostics, 'ninja_diagnostics_count': len(diagnostics)}
+882:     require(bool(lines), 'empty BOLT tool plan')
+883:     descriptions = []; completed = set()
+884:     for line in lines:
+885:         match = re.fullmatch(r'\[([0-9]+)/([0-9]+)\] (.+)', line)
+886:         require(match is not None, 'non-progress line in BOLT tool plan: '+line)
+887:         require(1 <= int(match[1]) <= len(lines) and int(match[2]) == len(lines) and
+888:                 int(match[1]) not in completed, 'invalid or truncated BOLT plan: '+line)
+889:         completed.add(int(match[1]))
+890:         body = match[3]
+891:         require(body not in descriptions, 'duplicate BOLT task: '+body)
+892:         require(body in BOLT_TASK_DESCRIPTIONS or body in TF_REFRESH_DESCRIPTIONS, 'unapproved BOLT task: actual=%s expected=certified BOLT/TF tasks; remedy: inspect configuration and dirty causes, regenerate the certified whitelist and recertify if needed; never expand it automatically' % body)
+893:         descriptions.append(body)
+894:         if body in BOLT_TASK_DESCRIPTIONS:
+895:             category = ('generated' if body == 'Generating VCSVersion.inc' else
+896:                         'objects' if body.startswith('Building CXX object ') else
+897:                         'static_libraries' if body.startswith('Linking CXX static library ') else 'executables')
+898:             counts[category] += 1
+899:     tf = set(descriptions) & TF_REFRESH_DESCRIPTIONS
+900:     require(not tf or tf == TF_REFRESH_DESCRIPTIONS, 'TF configuration refresh tasks must appear together')
+901:     require('Linking CXX executable bin/llvm-bolt' in descriptions, 'missing llvm-bolt executable link')
+902:     return {'plan_type': 'build', 'tasks': len(lines), 'categories': counts,
+903:             'configuration_refresh_tasks': len(tf), 'descriptions': descriptions, 'ninja_diagnostics': diagnostics, 'ninja_diagnostics_count': len(diagnostics)}
+904: 
+905: def tool_prepare(build, plan, state_path):
+906:     build = Path(build)
+907:     executable = build/'bin/llvm-bolt'
+908:     exists = executable.exists()
+909:     value = {'configuration_refresh_tasks': plan['configuration_refresh_tasks'],
+910:              'executable_before': {'exists': exists, 'sha256': digest(executable) if exists and executable.is_file() else None}}
+911:     if value['configuration_refresh_tasks']:
+912:         archive = build/'lib64/libtf_xla_runtime.a'
+913:         require(archive.is_file(), 'missing TF archive before build')
+914:         value['archive_path'] = str(archive); value['before_sha256'] = digest(archive)
+915:         # Only evidence: do not turn an optional graph inference into a gate.
+916:         graph = (build/'build.ninja').read_text()
+917:         match = re.search(r'^build lib64/libtf_xla_runtime\.a:[^\n]*(?:\n  [^\n]*)*', graph, re.M)
+918:         paths = set(re.findall(r'/[^\s\"\';]+/libtf_xla_runtime_prebuilt\.a', match[0] if match else ''))
+919:         value['prebuilt_evidence'] = {'inferred_paths': sorted(paths)}
+920:         if len(paths) == 1:
+921:             source = Path(next(iter(paths)))
+922:             if source.is_file():
+923:                 sha = digest(source)
+924:                 value['prebuilt_evidence'].update(sha256=sha, archive_equal=sha == value['before_sha256'])
+925:     save(state_path, value)
+926:     return value
+927: 
+928: def tool_verify(build, plan, text, state):
+929:     lines = text.splitlines()
+930:     require(bool(lines) and lines[-1] == BUILD_SUCCESS and lines.count(BUILD_SUCCESS) == 1,
+931:             'missing, duplicate or non-final '+BUILD_SUCCESS)
+932:     descriptions = []; counters = []
+933:     for line in lines[:-1]:
+934:         match = re.fullmatch(r'\[(\d+)/(\d+)\] (.+)', line)
+935:         if match is None:
+936:             require(not re.match(r'\[\d', line), 'malformed real build progress: '+line)
+937:             continue
+938:         f, t, body = int(match[1]), int(match[2]), match[3]
+939:         require(1 <= f <= t and f not in [c[0] for c in counters],
+940:                 'invalid real build progress: '+line)
+941:         require(body in plan['descriptions'], 'real build task outside approved plan: '+body)
+942:         require(body not in descriptions, 'duplicate real build task: '+body)
+943:         descriptions.append(body); counters.append([f, t])
+944:     require(plan['plan_type'] != 'up-to-date' or not descriptions, 'up-to-date build unexpectedly ran tasks')
+945:     require(plan['plan_type'] != 'build' or bool(descriptions), 'build plan executed no tasks')
+946:     require({c[0] for c in counters} == set(range(1, len(descriptions)+1)), 'real build counter set incomplete')
+947:     require(set(descriptions) == set(plan['descriptions']) and len(descriptions) == plan['tasks'],
+948:             'executed task set/count differs from approved plan')
+949:     executable = Path(build)/'bin/llvm-bolt'
+950:     require(executable.is_file() and not executable.is_symlink() and os.access(executable, os.X_OK),
+951:             'llvm-bolt is not a regular executable')
+952:     require(state['configuration_refresh_tasks'] == plan['configuration_refresh_tasks'], 'TF snapshot does not match plan')
+953:     tf = dict(state)
+954:     if plan['configuration_refresh_tasks']:
+955:         archive = Path(build)/'lib64/libtf_xla_runtime.a'
+956:         require(archive.is_file(), 'missing TF archive after build')
+957:         tf['after_sha256'] = digest(archive)
+958:         require(tf['after_sha256'] == state['before_sha256'], 'TF archive SHA changed during build')
+959:     after_sha = digest(executable)
+960:     before = state['executable_before']
+961:     return {'planned_tasks': plan['tasks'], 'executed_tasks': len(descriptions),
+962:             'executable_before': before['exists'], 'executable_before_sha256': before['sha256'],
+963:             'executable_after_sha256': after_sha,
+964:             'executable_produced_by_this_build': 'Linking CXX executable bin/llvm-bolt' in descriptions,
+965:             'tool_build_verified': True, 'tasks': len(descriptions), 'descriptions': descriptions,
+966:             'progress_counters': counters, 'TF_archive': tf, 'executable': str(executable)}
+967: 
+968: 
+969: # These are package-owned measurement scopes, not admission limits.
+970: BOLT_OWNED_PATHS = ('clang-bolt/**', 'tools/bolt/**', 'lib64/libLLVMBOLT*.a',
+971:                     'bin/llvm-bolt', 'ThinLTO cache positive allocation delta')
+972: DISK_LOG_MATCHES = (r'No space left on device', r'Disk quota exceeded',
+973:                     r'\bENOSPC\b', r'\bEDQUOT\b')
+974: _DISK_CONTEXT = {}
+975: 
+976: 
+977: def disk_context(build=None, work=None, root=None):
+978:     build = Path(build or _DISK_CONTEXT.get('build') or os.environ.get('BOLT_BUILD') or Path.cwd()).absolute()
+979:     work = Path(work or _DISK_CONTEXT.get('work') or os.environ.get('BOLT_WORK') or build/'clang-bolt').absolute()
+980:     root = root or _DISK_CONTEXT.get('root') or os.environ.get('BOLT_INSTALL_ROOT')
+981:     return build, work, Path(root).absolute() if root else None
+982: 
+983: 
+984: def filesystem(path):
+985:     path = Path(path).absolute()
+986:     while not path.exists():
+987:         path = path.parent
+988:     if not path.is_dir():
+989:         path = path.parent
+990:     return {'path': str(path), 'device': path.stat().st_dev,
+991:             'free_bytes': shutil.disk_usage(path).free, 'time_ns': time.time_ns()}
+992: 
+993: 
+994: def disk_entries(root):
+995:     """lstat allocation, including directories; never follow symlinks."""
+996:     root = Path(root)
+997:     if not root.exists() and not root.is_symlink():
+998:         return {}
+999:     result = {}
+1000:     def add(path):
+1001:         s = path.lstat()
+1002:         result[path.relative_to(root).as_posix()] = {
+1003:             'device': s.st_dev, 'inode': s.st_ino, 'bytes': s.st_size,
+1004:             'allocated_bytes': s.st_blocks*512, 'mode': s.st_mode}
+1005:     add(root)
+1006:     if root.is_dir() and not root.is_symlink():
+1007:         def failed(error): raise error
+1008:         for directory, dirs, files in os.walk(root, followlinks=False, onerror=failed):
+1009:             for name in dirs+files:
+1010:                 add(Path(directory)/name)
+1011:     return result
+1012: 
+1013: 
+1014: def cache_release(build, work):
+1015:     """Best-effort release of the certified in-tree cache after compare-root."""
+1016:     build, work = Path(build), Path(work)
+1017:     path = build/'lto.cache'
+1018:     started = time.monotonic()
+1019:     result = {'status': 'skipped', 'path': str(path)}
+1020:     def emit(message):
+1021:         try: print('BOLT_CACHE_RELEASE '+message, flush=True)
+1022:         except OSError: pass
+1023:     try:
+1024:         original = (work/'link.original').read_text()
+1025:         # Validate the original edge with the exact replay syntax/cache rules.
+1026:         replay_script(original, work/'unused-output', work/'unused-dependency')
+1027:         # Remove CMake Ninja ': && ' and ' && :' wrappers, as in replay_script.
+1028:         paths = re.findall(r'--thinlto-cache-dir=([^\s]+)', original.strip()[5:-5])
+1029:         path = Path(paths[0])
+1030:         result['path'] = str(path)
+1031:         if path.is_symlink():
+1032:             reason = 'symlink'
+1033:         elif path.resolve() != (build/'lto.cache').resolve():
+1034:             reason = 'outside-build-cache'
+1035:         elif not path.is_dir():
+1036:             reason = 'not-a-directory-or-missing'
+1037:         else:
+1038:             entries = disk_entries(path)
+1039:             result.update(files=sum(stat.S_ISREG(x['mode']) for x in entries.values()),
+1040:                           allocated_bytes=sum(x['allocated_bytes'] for x in entries.values()))
+1041:             try:
+1042:                 shutil.rmtree(path)
+1043:             except OSError as error:
+1044:                 try:
+1045:                     remaining = sum(stat.S_ISREG(x['mode']) for x in disk_entries(path).values())
+1046:                 except OSError:
+1047:                     remaining = 'unknown'
+1048:                 result.update(status='partial', error=str(error), remaining_files=remaining)
+1049:                 emit('partial error='+str(error)+' remaining_files='+str(remaining))
+1050:             else:
+1051:                 result.update(status='removed', seconds=time.monotonic()-started)
+1052:                 emit('removed path='+str(path)+' files='+str(result['files'])+
+1053:                      ' allocated_bytes='+str(result['allocated_bytes'])+
+1054:                      ' seconds='+str(result['seconds']))
+1055:             reason = None
+1056:         if reason:
+1057:             result['reason'] = reason
+1058:             emit('skipped reason='+reason+' path='+str(path))
+1059:     except Exception as error:
+1060:         result['reason'] = str(error)
+1061:         emit('skipped reason='+str(error)+' path='+str(path))
+1062:     try:
+1063:         save(work/'cache-release.json', result)
+1064:     except (OSError, ValueError) as error:
+1065:         emit('record-unavailable error='+str(error)+' path='+str(work/'cache-release.json'))
+1066:     return result
+1067: 
+1068: 
+1069: def disk_cache(build, work):
+1070:     edge = work/'link.original'
+1071:     if edge.is_file():
+1072:         matches = re.findall(r'--thinlto-cache-dir=([^\s]+)', edge.read_text())
+1073:         if len(matches) == 1:
+1074:             return Path(matches[0].strip("'\""))
+1075:     return build/'lto.cache'
+1076: 
+1077: 
+1078: def disk_measure(build, work, baseline=None):
+1079:     scopes = [('work', work), ('tool_objects', build/'tools/bolt'),
+1080:               ('tool_executable', build/'bin/llvm-bolt')]
+1081:     scopes += [('tool_library', p) for p in sorted((build/'lib64').glob('libLLVMBOLT*.a'))]
+1082:     owned = {}; groups = []; seen = set()
+1083:     for category, path in scopes:
+1084:         entries = disk_entries(path); allocated = logical = 0
+1085:         for rel, item in entries.items():
+1086:             key = (item['device'], item['inode'])
+1087:             if key in seen: continue
+1088:             seen.add(key); allocated += item['allocated_bytes']
+1089:             if stat.S_ISREG(item['mode']): logical += item['bytes']
+1090:             owned[str(path/rel)] = item
+1091:         groups.append({'category': category, 'path': str(path),
+1092:                        'allocated_bytes': allocated, 'logical_file_bytes': logical})
+1093:     cache = disk_cache(build, work); current = disk_entries(cache)
+1094:     old = (baseline or {}).get('cache_entries', {})
+1095:     same_cache = baseline is not None and baseline.get('cache_path') == str(cache)
+1096:     cache_delta = cache_logical = 0
+1097:     if same_cache:
+1098:         for rel, item in current.items():
+1099:             previous = old.get(rel)
+1100:             delta = item['allocated_bytes'] if previous is None else max(0, item['allocated_bytes']-previous['allocated_bytes'])
+1101:             logical = item['bytes'] if previous is None else max(0, item['bytes']-previous['bytes'])
+1102:             cache_delta += delta
+1103:             if stat.S_ISREG(item['mode']): cache_logical += logical
+1104:     per_device = collections.defaultdict(int)
+1105:     for item in owned.values(): per_device[item['device']] += item['allocated_bytes']
+1106:     if same_cache:
+1107:         for rel, item in current.items():
+1108:             previous = old.get(rel)
+1109:             per_device[item['device']] += item['allocated_bytes'] if previous is None else max(0, item['allocated_bytes']-previous['allocated_bytes'])
+1110:     return {'owned_paths': groups, 'owned_filesystem_bytes': dict(per_device),
+1111:             'used_bytes': sum(per_device.values()), 'cache_path': str(cache),
+1112:             'cache_entries': current, 'cache_delta_known': same_cache,
+1113:             'cache_delta_allocated_bytes': cache_delta, 'cache_delta_logical_bytes': cache_logical,
+1114:             'cache_net_allocation_delta_bytes': sum(x['allocated_bytes'] for x in current.values())-sum(x['allocated_bytes'] for x in old.values()) if same_cache else None}
+1115: 
+1116: 
+1117: def disk_report(stage, build=None, work=None, root=None):
+1118:     """Best effort only: no space-based decisions, and no propagated exception."""
+1119:     value = {'stage': stage, 'time_ns': time.time_ns(), 'recorded': False}
+1120:     try:
+1121:         build, work, root = disk_context(build, work, root)
+1122:         baseline_path = work/'disk-baseline.json'
+1123:         baseline = None
+1124:         if stage != 'begin' and baseline_path.is_file():
+1125:             baseline = json.loads(baseline_path.read_text())
+1126:         measured = disk_measure(build, work, baseline)
+1127:         value.update(filesystem(work), build=str(build), work=str(work),
+1128:                      root=str(root) if root else None, scopes=list(BOLT_OWNED_PATHS), **measured)
+1129:         value['filesystem_device']=value['device']
+1130:         if stage == 'begin':
+1131:             baseline = {'time_ns': value['time_ns'], 'cache_path': measured['cache_path'],
+1132:                         'cache_entries': measured['cache_entries']}
+1133:             save(baseline_path, baseline)
+1134:         record = dict(value); record.pop('cache_entries', None); record['recorded'] = True
+1135:         save(work/('disk-'+stage+'.json'), record)
+1136:         value = record
+1137:     except Exception as error:
+1138:         value['report_error'] = str(error)
+1139:     value.pop('cache_entries',None)
+1140:     try: print('BOLT_DISK_REPORT '+json.dumps(value, ensure_ascii=False), flush=True)
+1141:     except Exception: pass
+1142:     return value
+1143: 
+1144: 
+1145: def disk_failure_log(log):
+1146:     try:
+1147:         text = Path(log).read_text(errors='replace') if log and str(log) != '-' else ''
+1148:         return text, bool(text.strip())
+1149:     except (OSError, ValueError):
+1150:         return '', False
+1151: 
+1152: 
+1153: def disk_evidence(log, error=None, log_text=None):
+1154:     evidence = []; seen = set()
+1155:     while error is not None and id(error) not in seen:
+1156:         seen.add(id(error))
+1157:         if isinstance(error, OSError) and error.errno in (28, 122):
+1158:             evidence.append('errno='+str(error.errno))
+1159:         # copytree preserves per-file failures as structured triples, not errno.
+1160:         if isinstance(error, shutil.Error) and error.args and isinstance(error.args[0], list):
+1161:             messages='\n'.join(str(row[2]) for row in error.args[0] if isinstance(row, (list,tuple)) and len(row)==3)
+1162:             evidence += ['copytree:'+pattern for pattern in DISK_LOG_MATCHES if re.search(pattern,messages,re.I)]
+1163:         error = error.__cause__ or error.__context__
+1164:     text = disk_failure_log(log)[0] if log_text is None else log_text
+1165:     evidence += [pattern for pattern in DISK_LOG_MATCHES if re.search(pattern, text, re.I)]
+1166:     return evidence
+1167: 
+1168: 
+1169: def task_output(build, description):
+1170:     for prefix in ('Building CXX object ', 'Building C object ', 'Linking CXX static library ', 'Linking C static library ', 'Linking CXX executable '):
+1171:         if description.startswith(prefix): return build/description[len(prefix):]
+1172:     if description == 'Generating VCSVersion.inc': return build/'tools/bolt/lib/Utils/VCSVersion.inc'
+1173:     if description.startswith('Building CXX object '): return build/description.split('Building CXX object ', 1)[1]
+1174:     return None
+1175: 
+1176: 
+1177: def disk_prediction(build, work, root, measured, baseline, device):
+1178:     formulas = []; unknown = []; growth = peak = 0
+1179:     def file_size(path): return path.stat().st_size if path.is_file() else 0
+1180:     def allocation(path): return path.stat().st_blocks*512 if path.is_file() else 0
+1181:     def completed(log):
+1182:         path = log.with_suffix(log.suffix+'.argv.json')
+1183:         try:
+1184:             value = json.loads(path.read_text())
+1185:             return value.get('completed') is True and path.stat().st_mtime_ns >= baseline['time_ns']
+1186:         except (OSError, ValueError): return False
+1187:     def add(name, expected, present, destination, temporary=False):
+1188:         nonlocal growth, peak
+1189:         need = max(0, expected-present)
+1190:         relevant = filesystem(destination)['device'] == device
+1191:         formulas.append({'item': name, 'formula': 'max(expected_output_bytes - present_allocated_bytes, 0)',
+1192:                          'expected_output_bytes': expected, 'present_allocated_bytes': present,
+1193:                          'additional_bytes': need, 'temporary': temporary,
+1194:                          'filesystem_device': filesystem(destination)['device']})
+1195:         if relevant:
+1196:             if temporary: peak = max(peak, growth+need)
+1197:             else: growth += need; peak = max(peak, growth)
+1198:     copy_source=_DISK_CONTEXT.get('copy_source');copy_destination=_DISK_CONTEXT.get('copy_destination')
+1199:     if copy_source and copy_destination:
+1200:         entries=disk_entries(copy_source);current=disk_entries(copy_destination)
+1201:         expected=sum(v['bytes'] for v in entries.values() if stat.S_ISREG(v['mode']))
+1202:         present=sum(v['allocated_bytes'] for v in current.values() if stat.S_ISREG(v['mode']))
+1203:         formulas.append({'item':'cache-copy size','formula':'sum(actual source file sizes)', 'source_bytes':expected})
+1204:         add('cache-copy remaining',expected,present,copy_destination)
+1205:     plan_path = work/'tool-plan.json'; tool_log = work/'tool-build.txt'
+1206:     try:
+1207:         plan = json.loads(plan_path.read_text()); descriptions = plan['descriptions']
+1208:         done = []; previous = None
+1209:         for line in tool_log.read_text(errors='replace').splitlines() if tool_log.is_file() else []:
+1210:             match = re.fullmatch(r'\[\d+/\d+\] (.+)', line)
+1211:             if match:
+1212:                 previous = match[1]
+1213:                 if previous in descriptions and previous not in done: done.append(previous)
+1214:             elif line.startswith('FAILED:') and previous in done: done.remove(previous)
+1215:         outputs = [task_output(build, d) for d in done]
+1216:         if any(p is None or not p.is_file() for p in outputs):
+1217:             unknown.append('some completed tool tasks have no measurable output')
+1218:         elif done:
+1219:             total = sum(file_size(p) for p in set(outputs)); remaining = len(descriptions)-len(done)
+1220:             predicted = (total*remaining+len(done)-1)//len(done)
+1221:             partial = sum(allocation(p) for d in descriptions if d not in done for p in [task_output(build,d)] if p is not None)
+1222:             formulas.append({'item': 'tool-build', 'formula': 'ceil(completed_output_bytes / completed_tasks * remaining_tasks)',
+1223:                              'completed_output_bytes': total, 'completed_tasks': len(done),
+1224:                              'remaining_tasks': remaining, 'predicted_output_bytes': predicted})
+1225:             add('tool-build remaining', predicted, partial, build)
+1226:         elif descriptions: unknown.append('tool completed_tasks=0: no measured per-task size; cannot divide by zero')
+1227:     except (OSError, ValueError, KeyError, TypeError): unknown.append('tool plan unavailable; no fabricated tool budget')
+1228:     ordinary = work/'ordinary-clang-22'; source = build/'bin/clang-22'
+1229:     ordinary_size = file_size(source) or file_size(ordinary)
+1230:     if not ordinary_size: unknown.append('ordinary-clang-22 size unavailable')
+1231:     formulas.append({'item': 'ordinary-input', 'formula': 'actual ordinary clang file size',
+1232:                      'build_clang_bytes': file_size(source), 'saved_ordinary_bytes': file_size(ordinary)})
+1233:     add('ordinary-copy', ordinary_size, allocation(ordinary), work)
+1234:     profile = work/'profile.fdata'
+1235:     if not completed(work/'unpack.log'):
+1236:         source_name = os.environ.get('BOLT_PROFILE_SOURCE')
+1237:         if source_name:
+1238:             try:
+1239:                 profile_bytes = 0
+1240:                 with lzma.open(source_name,'rb') as stream:
+1241:                     for chunk in iter(lambda: stream.read(1024*1024),b''): profile_bytes += len(chunk)
+1242:                 formulas.append({'item':'profile-size','formula':'stream-count actual decompressed Source bytes without writing a file',
+1243:                                  'source':source_name,'decompressed_bytes':profile_bytes})
+1244:                 add('profile unpack',profile_bytes,allocation(profile),work)
+1245:             except (OSError,lzma.LZMAError): unknown.append('profile Source cannot be measured')
+1246:         elif not profile.is_file(): unknown.append('profile Source size unavailable')
+1247:     reference = work/'reference-relocs-clang-22'; rewritten = work/'clang.bolt'; candidate = work/'clang.candidate'
+1248:     relink_size = max(ordinary_size, file_size(reference))
+1249:     if not completed(work/'reference-relocs.log'):
+1250:         formulas.append({'item':'relink-size', 'formula':'max(ordinary_bytes, observed_reference_bytes)',
+1251:                          'ordinary_bytes':ordinary_size, 'observed_reference_bytes':file_size(reference)})
+1252:         add('relink', relink_size, allocation(reference), work)
+1253:     reference_size = (file_size(reference) or relink_size) if completed(work/'reference-relocs.log') else relink_size
+1254:     if not completed(work/'reference-strip.log'):
+1255:         add('strip-debug temporary', reference_size, 0, work, temporary=True)
+1256:     rewrite_size = file_size(rewritten) if completed(work/'rewrite/bolt.log') else max(reference_size, file_size(rewritten))
+1257:     if not completed(work/'rewrite/bolt.log'):
+1258:         formulas.append({'item':'rewrite-size', 'formula':'max(observed_input_bytes, observed_partial_output_bytes)',
+1259:                          'observed_input_bytes':reference_size, 'observed_partial_output_bytes':file_size(rewritten)})
+1260:         add('BOLT rewrite', rewrite_size, allocation(rewritten), work)
+1261:     if not completed(work/'identity.strip.log'):
+1262:         predicted_candidate = max(rewrite_size, file_size(candidate))
+1263:         add('strip-all candidate copy', predicted_candidate, allocation(candidate), work)
+1264:         add('strip-all temporary', predicted_candidate, 0, work, temporary=True)
+1265:     install_size = file_size(candidate) or rewrite_size
+1266:     if root:
+1267:         entity = root/'usr/bin/clang-22'
+1268:         try: installed = file_size(candidate)>0 and digest(entity)==digest(candidate)
+1269:         except OSError: installed=False
+1270:         if not installed:
+1271:             add('atomic install temporary', install_size, allocation(entity.with_name('.clang-bolt.new')), entity.parent, temporary=True)
+1272:     cache_delta = measured['cache_delta_allocated_bytes']
+1273:     formulas.append({'item':'ThinLTO observed cache allocation', 'formula':'sum(max(current_allocation - baseline_allocation, 0)) per retained cache entry; new entries use current allocation',
+1274:                      'observed_bytes':cache_delta, 'already_in_used_bytes':True,
+1275:                      'additional_prediction_bytes':0, 'note':'Observed growth is retained once; future unobserved cache growth cannot be predicted from file sizes.'})
+1276:     if not measured['cache_delta_known']: unknown.append('cache baseline path mismatch')
+1277:     if not completed(work/'reference-relocs.log'):
+1278:         unknown.append('future ThinLTO growth is unobserved; measured retained cache delta is included once in used bytes')
+1279:     return {'estimated_remaining_bytes':peak, 'estimated_total_bytes':measured['owned_filesystem_bytes'].get(device,0)+peak,
+1280:             'formulas':formulas, 'incomplete_estimate':bool(unknown), 'unknown_components':unknown,
+1281:             'requirement_scope':'failure filesystem, retained outputs plus peak temporary allocation; lower bound when components are unknown'}
+1282: 
+1283: 
+1284: def disk_diagnose(step, log, error=None, build=None, work=None, root=None):
+1285:     """Read-only, failure evidence only; failures here never replace the error."""
+1286:     text, available = disk_failure_log(log)
+1287:     evidence = disk_evidence(log,error,log_text=text)
+1288:     cause = 'disk' if evidence else ('not-disk' if available else 'unknown')
+1289:     value = {'cause': cause, 'step': step, 'free_bytes': None}
+1290:     if cause == 'unknown':
+1291:         value.update(used_bytes=None,reason='日志不可用，无法判定原因')
+1292:     try:
+1293:         build, work, root = disk_context(build, work, root)
+1294:         target = root/'usr/bin' if root and step == 'install' else work
+1295:         value.update(free_bytes=filesystem(target)['free_bytes'])
+1296:         if cause in ('disk','unknown'):
+1297:             device=filesystem(target)['device']
+1298:             if cause == 'disk':
+1299:                 value.update(filesystem_device=device, evidence=evidence,
+1300:                              estimate_note='估计值，依据本次构建实际文件大小',
+1301:                              errno_messages=[os.strerror(int(item.split('=')[1])) for item in evidence if item.startswith('errno=')])
+1302:             baseline = None
+1303:             try:
+1304:                 baseline=json.loads((work/'disk-baseline.json').read_text())
+1305:                 if not (isinstance(baseline,dict) and isinstance(baseline.get('time_ns'),int)
+1306:                         and isinstance(baseline.get('cache_entries'),dict)
+1307:                         and all(isinstance(x,dict) and isinstance(x.get('allocated_bytes'),int)
+1308:                                 and isinstance(x.get('bytes'),int) for x in baseline['cache_entries'].values())):
+1309:                     baseline=None
+1310:             except (OSError, ValueError): pass
+1311:             measured = disk_measure(build,work,baseline)
+1312:             value['used_bytes']=measured['owned_filesystem_bytes'].get(device,0)
+1313:             if cause == 'disk': value['cache_delta_known']=measured['cache_delta_known']
+1314:             if cause == 'unknown':
+1315:                 pass
+1316:             elif baseline is None:
+1317:                 value.update(degraded='records unavailable: only current free and owned allocation are reliable')
+1318:             else:
+1319:                 value.update(disk_prediction(build,work,root,measured,baseline,device))
+1320:                 current=error;seen=set()
+1321:                 while current is not None and id(current) not in seen:
+1322:                     seen.add(id(current))
+1323:                     if hasattr(current,'bolt_write_bytes') and filesystem(current.bolt_write_path)['device']==device:
+1324:                         count=current.bolt_write_bytes
+1325:                         value['formulas'].append({'item':'failed atomic text/JSON output','formula':'actual UTF-8 serialization length; failed temporary removed',
+1326:                                                   'path':current.bolt_write_path,'expected_output_bytes':count})
+1327:                         value['estimated_remaining_bytes']+=count;value['estimated_total_bytes']+=count
+1328:                         break
+1329:                     current=current.__cause__ or current.__context__
+1330:                 value['shortfall_bytes']=max(0,value['estimated_remaining_bytes']-value['free_bytes'])
+1331:                 value['total_formula']='used_bytes + estimated_remaining_bytes'
+1332:                 value['shortfall_formula']='max(estimated_remaining_bytes - free_bytes, 0)'
+1333:                 if any('122' in item or 'quota' in item.lower() for item in value['evidence']):
+1334:                     value['quota_headroom_unknown']=True
+1335:     except Exception as failure:
+1336:         if cause in ('disk','unknown'):
+1337:             value['degraded']=str(failure)
+1338:     try: print('BOLT_DISK_DIAGNOSIS '+json.dumps(value,ensure_ascii=False),flush=True)
+1339:     except Exception: pass
+1340:     return value
+1341: 
+1342: 
+1343: def diagnose_safely(step, log, error=None):
+1344:     try: return disk_diagnose(step,log,error)
+1345:     except Exception: return None
+1346: 
+1347: 
+1348: def run_step(step, log, argv, output=None, success_marker=None):
+1349:     os.environ['BOLT_STEP_LOG'] = str(log)
+1350:     try:
+1351:         text = call(argv,log,timeout=None)
+1352:         if success_marker:
+1353:             with Path(log).open('a') as stream:
+1354:                 require(stream.write(success_marker+'\n')==len(success_marker)+1,'short build-success marker write');stream.flush();os.fsync(stream.fileno())
+1355:             text += success_marker+'\n'
+1356:         if output: atomic_text(output,text)
+1357:         print(text,end='',flush=True)
+1358:         return {'step':step,'log':str(log),'output':str(output) if output else None}
+1359:     except BaseException as error:
+1360:         # Preserve the failed command's actual output even when its exit is nonzero.
+1361:         try: print(Path(log).read_text(errors='replace'),end='',flush=True)
+1362:         except Exception: pass
+1363:         raise
+1364: 
+1365: 
+1366: def pipeline(build, work, bolt, cache=None):
+1367:     build, work = Path(build).absolute(), Path(work).absolute()
+1368:     baseline = work/'installed-baseline.json'
+1369:     require(baseline.is_file(), 'installed-baseline missing: '+str(baseline))
+1370:     edge = (work/'link.original').read_text()
+1371:     reference = work/'reference-relocs-clang-22'
+1372:     require(not reference.exists(), 'relink output must be new')
+1373:     script = work/'reference-relocs.sh'
+1374:     atomic_text(script,replay_script(edge,reference,work/'reference-relocs.d',cache))
+1375:     call(['/bin/sh',str(script)],work/'reference-relocs.log',cwd=build,timeout=1800)
+1376:     call([str(build/'bin/llvm-strip'),'--strip-debug',str(reference)],work/'reference-strip.log',timeout=600)
+1377:     result = rewrite(str(bolt),str(work/'profile.fdata'),str(reference),str(work/'clang.bolt'),work/'rewrite')
+1378:     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.bolt'),work/'prestrip-gate',str(build/'lib64/clang/22'))
+1379:     real_prestrip = real_gate(work/'ordinary-clang-22',work/'clang.bolt',build,work/'prestrip-real',build/'lib64/clang/22')
+1380:     identity = strip_all(str(build/'bin/llvm-strip'),work/'clang.bolt',work/'clang.candidate',work/'identity.json')
+1381:     identity = adjust_rpath(work/'clang.candidate',baseline,work,identity)
+1382:     security = security_compare(str(work/'ordinary-clang-22'), str(work/'clang.candidate'), ignore_paths=True)
+1383:     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.candidate'),work/'preinstall-gate',str(build/'lib64/clang/22'))
+1384:     real_final = real_gate(work/'ordinary-clang-22',work/'clang.candidate',build,work/'preinstall-real',build/'lib64/clang/22')
+1385:     result.update(real_prestrip=real_prestrip, real_final=real_final, identity=identity, security=security, input_policy='emit-relocs-then-strip-debug',
+1386:                   cache_policy='original-in-place' if cache is None else 'explicit-copy')
+1387:     save(work/'pipeline-result.json',result)
+1388:     return result
+1389: 
+1390: def cache_manifest(root):
+1391:     root = Path(root)
+1392:     require(root.is_dir(), 'ThinLTO cache directory missing')
+1393:     rows = []
+1394:     for p in sorted(root.rglob('*')):
+1395:         require(not p.is_symlink(), 'cache symlink is unsupported')
+1396:         if p.is_file():
+1397:             st = p.stat()
+1398:             rows.append({'path': p.relative_to(root).as_posix(), 'bytes': st.st_size,
+1399:                          'mtime_ns': st.st_mtime_ns})
+1400:         else:
+1401:             require(p.is_dir(), 'cache contains a special file')
+1402:     # Deterministic samples spanning the full sorted file list; timestamps are also frozen.
+1403:     indices = sorted(set([0, len(rows)-1] + list(range(0, len(rows), max(1,len(rows)//32))))) if rows else []
+1404:     samples = {rows[i]['path']: digest(root/rows[i]['path']) for i in indices}
+1405:     return {'files': rows, 'count': len(rows), 'bytes': sum(r['bytes'] for r in rows), 'samples': samples}
+1406: 
+1407: def cache_copy(edge, destination, result):
+1408:     matches = re.findall(r'--thinlto-cache-dir=([^\s]+)', edge)
+1409:     require(len(matches) == 1, 'cache path is not unique')
+1410:     source, destination = Path(matches[0]), Path(destination).absolute()
+1411:     require(source.is_absolute() and source != destination and not destination.exists(), 'unsafe cache destination')
+1412:     before = cache_manifest(source)
+1413:     destination.parent.mkdir(parents=True, exist_ok=True)
+1414:     shutil.copytree(source, destination, copy_function=shutil.copy2)
+1415:     copied = cache_manifest(destination)
+1416:     require(before == copied, 'cache copy file count/size/mtime/sample SHA differs')
+1417:     require(cache_manifest(source) == before, 'original cache changed during copy')
+1418:     value = {'source': str(source), 'copy': str(destination), 'before': before, 'copied': copied}
+1419:     save(result, value)
+1420:     print(json.dumps({'cache_copy': {'count': before['count'], 'bytes': before['bytes'], 'copy': str(destination)}}), flush=True)
+1421:     return value
+1422: 
+1423: def cache_unchanged(state):
+1424:     require(cache_manifest(state['source']) == state['before'], 'original ThinLTO cache changed')
+1425:     return True
+1426: 
+1427: def validate_identity(identity, candidate):
+1428:     if 'rpath_adjusted_sha256' in identity:
+1429:         require(identity['after_sha256'] == identity['rpath_adjusted_sha256'], 'RPATH identity SHA inconsistent')
+1430:         require(digest(identity['installed_baseline_path']) == identity['installed_baseline_sha256'],
+1431:                 'installed-baseline SHA changed')
+1432:     require(identity.get('bolt_note_before') is True, 'unproven pre-strip BOLT identity')
+1433:     require(identity.get('before_sha256') == digest(identity['before_path']), 'pre-strip SHA changed')
+1434:     before = ELF(identity['before_path'])
+1435:     try:
+1436:         before.audit()
+1437:     finally:
+1438:         before.close()
+1439:     require(digest(candidate) == identity.get('rpath_adjusted_sha256', identity.get('after_sha256')), 'stripped candidate SHA mismatch')
+1440:     final = ELF(candidate)
+1441:     try:
+1442:         final.audit(final=True)
+1443:     finally:
+1444:         final.close()
+1445: 
+1446: def strip_all(tool, before, after, result):
+1447:     before, after = Path(before).absolute(), Path(after).absolute()
+1448:     require(not after.exists() and before != after, 'strip-all output must be new')
+1449:     e = ELF(before)
+1450:     try:
+1451:         audit = e.audit()
+1452:     finally:
+1453:         e.close()
+1454:     before_sha = digest(before)
+1455:     shutil.copy2(before, after)
+1456:     call([str(tool), '--strip-all', str(after)], Path(result).with_suffix('.strip.log'), timeout=600)
+1457:     identity = {'before_path': str(before), 'before_sha256': before_sha, 'bolt_note_before': True,
+1458:                 'bolt_sections_before': audit['bolt_sections'], 'after_path': str(after),
+1459:                 'after_sha256': digest(after), 'strip_tool_sha256': digest(tool)}
+1460:     validate_identity(identity, after)
+1461:     save(result, identity)
+1462:     print(json.dumps({'BOLT_STRIP_IDENTITY': identity}), flush=True)
+1463:     return identity
+1464: 
+1465: def package_compare(ordinary, candidate, mode, proof):
+1466:     """Local RPM payload comparison. Proof binds per-path DWARF provenance to baseline.
+1467: 
+1468:     The proof must be generated/reviewed from ordinary DWARF and ALL other debuginfo
+1469:     (see design). Missing evidence fails; a path pattern alone is never proof.
+1470:     Root entries are package-qualified: main/, debuginfo/, debugsource/.
+1471:     """
+1472:     require(mode in ('debug','release'), 'unknown package mode')
+1473:     old, new = ordinary['files'], candidate['files']
+1474:     require(new.keys() <= old.keys(), 'RPM added a file')
+1475:     entity = 'main/usr/bin/clang-22'
+1476:     require(entity in old and entity in new, 'RPM lost clang-22')
+1477:     require(old[entity]['type'] == new[entity]['type'] == 'file' and
+1478:             old[entity]['mode'] == new[entity]['mode'], 'clang entity type/mode changed')
+1479:     aliases = set(proof.get('aliases', []))
+1480:     for key in aliases:
+1481:         require(key.startswith('main/usr/bin/') and key != entity and key in old,
+1482:                 'invalid baseline alias')
+1483:         # Alias evidence is produced by alias_group on the ordinary extraction root.
+1484:         require(proof.get('alias_baseline', {}).get(key) == old[key], 'unproven clang alias')
+1485:     removed = sorted(old.keys()-new.keys()); changed = []
+1486:     for key in sorted(new):
+1487:         if old[key] == new[key]:
+1488:             continue
+1489:         if key == entity:
+1490:             changed.append(key);continue
+1491:         if key in aliases:
+1492:             require(new[key] == {'type':'symlink','target':'clang-22'}, 'alias is not normalized')
+1493:             changed.append(key);continue
+1494:         raise GateError('non-clang RPM file changed: '+key)
+1495:     for key in removed:
+1496:         require(mode == 'debug', 'release RPM lost a file: '+key)
+1497:         item = proof.get('removed', {}).get(key)
+1498:         require(item is not None and item.get('baseline') == old[key], 'missing or mismatched DWARF provenance: '+key)
+1499:         evidence = item.get('evidence', {})
+1500:         require(evidence.get('clang_debug_sha256') and evidence.get('dwarf_dump_sha256') and
+1501:                 evidence.get('all_other_debug_manifest_sha256'), 'incomplete DWARF evidence: '+key)
+1502:         if key.startswith('debuginfo/'):
+1503:             require(item.get('kind') in ('clang_debug','clang_build_id') and
+1504:                     evidence.get('owner') == 'usr/bin/clang-22', 'debug file not owned by clang-22')
+1505:         elif key.startswith('debugsource/'):
+1506:             require(item.get('kind') == 'exclusive_source' and evidence.get('referenced_by') == ['usr/bin/clang-22'] and
+1507:                     evidence.get('source_path'), 'source not proven exclusive to clang-22')
+1508:         else:
+1509:             raise GateError('unexpected missing file: '+key)
+1510:     return {'mode':mode, 'pass':True, 'changed':changed, 'removed':removed,
+1511:             'proof_sha256':hashlib.sha256(json.dumps(proof,sort_keys=True).encode()).hexdigest()}
+1512: 
+1513: def main():
+1514:     p = argparse.ArgumentParser(description=__doc__); sub = p.add_subparsers(dest='cmd',required=True)
+1515:     sub.add_parser('preflight'); sub.add_parser('certified')
+1516:     s=sub.add_parser('security');s.add_argument('ordinary');s.add_argument('candidate')
+1517:     s=sub.add_parser('tool-prepare');s.add_argument('build');s.add_argument('plan');s.add_argument('state')
+1518:     s=sub.add_parser('tool-verify');s.add_argument('build');s.add_argument('plan');s.add_argument('log');s.add_argument('state');s.add_argument('result')
+1519:     s=sub.add_parser('tool-plan');s.add_argument('input')
+1520:     s=sub.add_parser('pipeline');s.add_argument('build');s.add_argument('work');s.add_argument('tool');s.add_argument('--cache-dir')
+1521:     s=sub.add_parser('strip-all');s.add_argument('tool');s.add_argument('before');s.add_argument('after');s.add_argument('identity')
+1522:     s=sub.add_parser('cache-release');s.add_argument('build');s.add_argument('work')
+1523:     s=sub.add_parser('cache-copy');s.add_argument('edge');s.add_argument('destination');s.add_argument('result')
+1524:     s=sub.add_parser('package-compare');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('mode',choices=['debug','release']);s.add_argument('proof');s.add_argument('result')
+1525:     s=sub.add_parser('unpack');s.add_argument('source');s.add_argument('output')
+1526:     s=sub.add_parser('replay');s.add_argument('edge');s.add_argument('output');s.add_argument('dependency');s.add_argument('script');s.add_argument('--cache-dir')
+1527:     s=sub.add_parser('rewrite');s.add_argument('tool');s.add_argument('profile');s.add_argument('input');s.add_argument('output');s.add_argument('work')
+1528:     s=sub.add_parser('tiny');s.add_argument('ordinary');s.add_argument('candidate');s.add_argument('work');s.add_argument('--resource-dir')
+1529:     s=sub.add_parser('installed-baseline');s.add_argument('root');s.add_argument('output')
+1530:     s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
+1531:     s=sub.add_parser('compare-root');s.add_argument('root');s.add_argument('baseline');s.add_argument('after')
+1532:     s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
+1533:     s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
+1534:     s=sub.add_parser('disk-report');s.add_argument('stage',choices=['begin','tool-built','pipeline','post']);s.add_argument('--build');s.add_argument('--work');s.add_argument('--root')
+1535:     s=sub.add_parser('disk-diagnose');s.add_argument('step');s.add_argument('log');s.add_argument('--build');s.add_argument('--work');s.add_argument('--root')
+1536:     s=sub.add_parser('run-step');s.add_argument('step');s.add_argument('log');s.add_argument('--output');s.add_argument('--success-marker');s.add_argument('argv',nargs=argparse.REMAINDER)
+1537:     a=p.parse_args()
+1538:     _DISK_CONTEXT.clear()
+1539:     _DISK_CONTEXT['step']=getattr(a,'step',a.cmd)
+1540:     if a.cmd=='pipeline': _DISK_CONTEXT.update(build=a.build,work=a.work)
+1541:     elif a.cmd=='install': _DISK_CONTEXT.update(root=a.root)
+1542:     elif a.cmd=='cache-copy':
+1543:         try:
+1544:             cache_paths=re.findall(r'--thinlto-cache-dir=([^\s]+)',Path(a.edge).read_text())
+1545:             if len(cache_paths)==1:_DISK_CONTEXT.update(copy_source=cache_paths[0],copy_destination=a.destination)
+1546:         except OSError:pass
+1547:     if a.cmd=='cache-release':
+1548:         cache_release(a.build,a.work);return
+1549:     if a.cmd in ('disk-report','disk-diagnose'):
+1550:         try:
+1551:             if a.cmd=='disk-report':disk_report(a.stage,a.build,a.work,a.root)
+1552:             else:disk_diagnose(a.step,a.log,build=a.build,work=a.work,root=a.root)
+1553:         except Exception:pass
+1554:         return
+1555:     if a.cmd=='run-step':
+1556:         # REMAINDER begins after step/log: parse optional output flags explicitly.
+1557:         args=list(a.argv);output=a.output;marker=a.success_marker
+1558:         while args and args[0].startswith('--') and args[0]!='--':
+1559:             flag=args.pop(0)
+1560:             require(flag in ('--output','--success-marker') and args, 'invalid run-step option')
+1561:             value=args.pop(0)
+1562:             if flag=='--output':output=value
+1563:             else:marker=value
+1564:         if args and args[0]=='--':args.pop(0)
+1565:         require(args, 'run-step requires -- command')
+1566:         run_step(a.step,a.log,args,output,marker);return
+1567:     if a.cmd=='preflight':result=preflight()
+1568:     elif a.cmd=='certified':result=certified()
+1569:     elif a.cmd=='security':result=security_compare(a.ordinary,a.candidate)
+1570:     elif a.cmd=='tool-prepare':result=tool_prepare(a.build,json.loads(Path(a.plan).read_text()),a.state)
+1571:     elif a.cmd=='tool-verify':
+1572:         result=tool_verify(a.build,json.loads(Path(a.plan).read_text()),Path(a.log).read_text(),json.loads(Path(a.state).read_text()));save(a.result,result)
+1573:     elif a.cmd=='tool-plan':result=tool_plan(Path(a.input).read_text())
+1574:     elif a.cmd=='pipeline':result=pipeline(a.build,a.work,a.tool,a.cache_dir)
+1575:     elif a.cmd=='strip-all':result=strip_all(a.tool,a.before,a.after,a.identity)
+1576:     elif a.cmd=='cache-copy':result=cache_copy(Path(a.edge).read_text(),a.destination,a.result)
+1577:     elif a.cmd=='package-compare':
+1578:         result=package_compare(json.loads(Path(a.ordinary).read_text()),json.loads(Path(a.candidate).read_text()),a.mode,json.loads(Path(a.proof).read_text()));save(a.result,result)
+1579:     elif a.cmd=='unpack':result=profile_unpack(a.source,a.output)
+1580:     elif a.cmd=='replay':
+1581:         script=replay_script(Path(a.edge).read_text(),a.output,a.dependency,a.cache_dir)
+1582:         atomic_text(a.script,script);Path(a.script).chmod(0o755);result={'script':a.script}
+1583:     elif a.cmd=='rewrite':result=rewrite(a.tool,a.profile,a.input,a.output,a.work)
+1584:     elif a.cmd=='tiny':result=tiny_gate(a.ordinary,a.candidate,a.work,a.resource_dir)
+1585:     elif a.cmd=='installed-baseline':result=installed_baseline(a.root,a.output)
+1586:     elif a.cmd=='snapshot':result=root_snapshot(a.root);save(a.output,result)
+1587:     elif a.cmd=='compare-root':result=compare_root(a.root,json.loads(Path(a.baseline).read_text()),a.after)
+1588:     elif a.cmd=='install':
+1589:         install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()),announce=True,identity_path=a.identity);return
+1590:     elif a.cmd=='post':
+1591:         result=post_gate(a.root,json.loads(Path(a.state).read_text()),a.ordinary,a.work,
+1592:                          a.resource_dir);save(Path(a.work)/'post-result.json',result)
+1593:     print(json.dumps(result,ensure_ascii=False),flush=True)
+1594: 
+1595: def cli():
+1596:     try:
+1597:         main()
+1598:         return 0
+1599:     except (GateError, OSError, ValueError, lzma.LZMAError) as error:
+1600:         step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+1601:         log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+1602:         diagnose_safely(step,log,error)
+1603:         print('BOLT_GATE_FAILED: '+str(error),file=sys.stderr)
+1604:         return 1
+1605: 
+1606: 
+1607: if __name__=='__main__':
+1608:     sys.exit(cli())

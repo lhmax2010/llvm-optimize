@@ -1,0 +1,28 @@
+1: #!/bin/sh
+2: # If using normal root, avoid changing anything.
+3: if [ -z "$RPM_BUILD_ROOT" -o "$RPM_BUILD_ROOT" = "/" ]; then
+4: 	exit 0
+5: fi
+6: 
+7: STRIP=${1:-strip}
+8: OBJDUMP=${2:-objdump}
+9: 
+10: case `uname -a` in
+11: Darwin*) exit 0 ;;
+12: *) ;;
+13: esac
+14: 
+15: # Strip .comment and .note sections (the latter only if it is not allocated)
+16: # for already stripped elf files in the build root
+17: for f in `find "$RPM_BUILD_ROOT" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
+18:         grep -v "^${RPM_BUILD_ROOT}/\?usr/lib/debug"  | \
+19: 	grep -v ' shared object,' | \
+20: 	grep -v '/lib/modules/' | \
+21: 	sed -n -e 's/^\(.*\):[ 	]*ELF.*, stripped/\1/p'`; do
+22: 	note="-R .note"
+23: 	if $OBJDUMP -h $f | grep '^[ 	]*[0-9]*[ 	]*.note[ 	]' -A 1 | \
+24: 		grep ALLOC >/dev/null; then
+25: 		note=
+26: 	fi
+27: 	$STRIP -R .comment $note "$f" || :
+28: done

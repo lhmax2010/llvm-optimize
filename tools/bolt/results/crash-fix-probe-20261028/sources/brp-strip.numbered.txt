@@ -1,0 +1,21 @@
+1: #!/bin/sh
+2: # If using normal root, avoid changing anything.
+3: if [ -z "$RPM_BUILD_ROOT" -o "$RPM_BUILD_ROOT" = "/" ]; then
+4: 	exit 0
+5: fi
+6: 
+7: STRIP=${1:-strip}
+8: 
+9: case `uname -a` in
+10: Darwin*) exit 0 ;;
+11: *) ;;
+12: esac
+13: 
+14: # Strip ELF binaries
+15: for f in `find "$RPM_BUILD_ROOT" -type f \( -perm -0100 -or -perm -0010 -or -perm -0001 \) -exec file {} \; | \
+16:         grep -v "^${RPM_BUILD_ROOT}/\?usr/lib/debug"  | \
+17: 	grep -v ' shared object,' | \
+18: 	grep -v '/lib/modules/' | \
+19: 	sed -n -e 's/^\(.*\):[ 	]*ELF.*, not stripped.*/\1/p'`; do
+20: 	$STRIP -g "$f" || :
+21: done

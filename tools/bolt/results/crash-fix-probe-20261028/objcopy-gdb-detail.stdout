@@ -1,0 +1,33 @@
+
+This GDB supports auto-downloading debuginfo from the following URLs:
+  <https://debuginfod.ubuntu.com>
+Enable debuginfod for this session? (y or [n]) [answered N; input not from terminal]
+Debuginfod has been disabled.
+To make this setting permanent, add 'set debuginfod enabled off' to .gdbinit.
+To enable execution of this file add
+	add-auto-load-safe-path /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/libthread_db.so.1
+line to your configuration file "/home/linhao/.config/gdb/gdbinit".
+To completely disable this security protection add
+	set auto-load safe-path /
+line to your configuration file "/home/linhao/.config/gdb/gdbinit".
+For more information about this security protection see the
+"Auto-loading safe path" section in the GDB manual.  E.g., run from the shell:
+	info "(gdb)Auto-loading safe path"
+
+Program received signal SIGSEGV, Segmentation fault.
+0x00007ffff2374277 in ?? () from /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libc.so.6
+#1  0x00007ffff6950647 in llvm::objcopy::elf::ELFWriter<llvm::object::ELFType<(llvm::endianness)1, true> >::writeSegmentData() () from /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libLLVM.so.22.1
+SEGMENT pointer=0x5555555bcc80
+0x5555555bcc80:	0x0000000400000006	0x0000000008600000
+0x5555555bcc90:	0x0000000008600000	0x0000000008600000
+0x5555555bcca0:	0x00000000000002d8	0x00000000000002d8
+0x5555555bccb0:	0x0000000000000008	0x6e616d6500000000
+0x5555555bccc0:	0x0000000008600000	0x0000555558d58160
+0x5555555bccd0:	0x00007fffef400000	0x00000000000002d8
+BUFFER pointer=0x7fffe315e010
+0x7fffe315e010:	0x00007ffff7d53ef8	0x00007fffe315e040
+0x7fffe315e020:	0x00007fffe52fa648	0x0000000000000000
+0x7fffe315e030:	0x0000000000000000	0x0000000000000000
+0x7fffe315e040:	0x0000000000000000	0x0000000000000000
+SEGMENT type=6 offset=140509184 size=728
+BUFFER start=0x7fffe315e040 end=0x7fffe52fa648 size=35243528

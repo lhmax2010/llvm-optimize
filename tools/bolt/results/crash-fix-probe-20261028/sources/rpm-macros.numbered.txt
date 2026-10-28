@@ -1,0 +1,1365 @@
+1: #/*! \page config_macros Default configuration: /usr/lib/rpm/macros
+2: # \verbatim
+3: #
+4: # This is a global RPM configuration file. All changes made here will
+5: # be lost when the rpm package is upgraded. Any per-system configuration
+6: # should be added to /etc/rpm/macros, while per-user configuration should
+7: # be added to ~/.rpmmacros.
+8: #
+9: 
+10: #==============================================================================
+11: # ---- A macro that expands to nothing.
+12: #
+13: %nil			%{!?nil}
+14: 
+15: #==============================================================================
+16: # ---- filesystem macros.
+17: #
+18: %_usr			/usr
+19: %_usrsrc		%{_usr}/src
+20: %_var			/var
+21: 
+22: #==============================================================================
+23: # ---- Generally useful path macros.
+24: #
+25: %__7zip			/usr/bin/7za
+26: %__awk			gawk
+27: %__bzip2		/bin/bzip2
+28: %__cat			/bin/cat
+29: %__chgrp		/bin/chgrp
+30: %__chmod		/bin/chmod
+31: %__chown		/bin/chown
+32: %__cp			/bin/cp
+33: %__cpio			/bin/cpio
+34: %__file			/bin/file
+35: %__gpg			/usr/bin/gpg2
+36: %__grep			/bin/grep
+37: %__gzip			/bin/gzip
+38: %__id			/bin/id
+39: %__id_u			%{__id} -u
+40: %__install		/bin/install
+41: %__ln_s			ln -s
+42: %__lrzip		/usr/bin/lrzip
+43: %__lzip			/usr/bin/lzip
+44: # Deprecated, use %__xz instead.
+45: %__lzma			%__xz --format=lzma
+46: %__xz			/bin/xz
+47: %__make			/bin/make
+48: %__mkdir		/bin/mkdir
+49: %__mkdir_p		/bin/mkdir -p
+50: %__mv			/bin/mv
+51: %__patch		/bin/patch
+52: %__perl			/bin/perl
+53: %__python		/bin/python2
+54: %__restorecon		/sbin/restorecon
+55: %__rm			/bin/rm
+56: %__rsh			/usr/bin/rsh
+57: %__sed			/bin/sed
+58: %__semodule		/usr/bin/semodule
+59: %__ssh			/usr/bin/ssh
+60: %__tar			/bin/tar
+61: %__unzip		/usr/bin/unzip
+62: %__zstd			/usr/bin/zstd
+63: %__gem			/usr/bin/gem
+64: %__git			/usr/bin/git
+65: %__hg			/usr/bin/hg
+66: %__bzr			/usr/bin/bzr
+67: %__quilt		/usr/bin/quilt
+68: 
+69: #==============================================================================
+70: # ---- Build system path macros.
+71: #
+72: %__ar			llvm-ar
+73: %__as			as
+74: %__cc			x86_64-tizen-linux-gnu-clang
+75: %__cpp			x86_64-tizen-linux-gnu-clang -E
+76: %__cxx			x86_64-tizen-linux-gnu-clang++
+77: %__ld			/bin/ld
+78: %__nm			/bin/nm
+79: %__objcopy		/bin/objcopy
+80: %__objdump		/bin/objdump
+81: %__ranlib		llvm-ranlib
+82: %__remsh		%{__rsh}
+83: %__strip		/bin/strip
+84: 
+85: # XXX avoid failures if tools are not installed when rpm is built.
+86: %__libtoolize		libtoolize
+87: %__aclocal		aclocal
+88: %__autoheader		autoheader
+89: %__automake		automake
+90: %__autoconf		autoconf
+91: 
+92: #==============================================================================
+93: # Conditional build stuff.
+94: 
+95: # Check if symbol is defined.
+96: # Example usage: %if %{defined with_foo} && %{undefined with_bar} ...
+97: %defined()	%{expand:%%{?%{1}:1}%%{!?%{1}:0}}
+98: %undefined()	%{expand:%%{?%{1}:0}%%{!?%{1}:1}}
+99: 
+100: # Shorthand for %{defined with_...}
+101: %with()		%{expand:%%{?with_%{1}:1}%%{!?with_%{1}:0}}
+102: %without()	%{expand:%%{?with_%{1}:0}%%{!?with_%{1}:1}}
+103: 
+104: # Handle conditional builds. %bcond_with is for case when feature is
+105: # default off and needs to be activated with --with ... command line
+106: # switch. %bcond_without is for the dual case.
+107: #
+108: # %bcond_with foo defines symbol with_foo if --with foo was specified on
+109: # command line.
+110: # %bcond_without foo defines symbol with_foo if --without foo was *not*
+111: # specified on command line.
+112: #
+113: # For example (spec file):
+114: #
+115: # (at the beginning)
+116: # %bcond_with extra_fonts
+117: # %bcond_without static
+118: # (and later)
+119: # %if %{with extra_fonts}
+120: # ...
+121: # %else
+122: # ...
+123: # %endif
+124: # %if ! %{with static}
+125: # ...
+126: # %endif
+127: # %if %{with static}
+128: # ...
+129: # %endif
+130: # %{?with_static: ... }
+131: # %{!?with_static: ... }
+132: # %{?with_extra_fonts: ... }
+133: # %{!?with_extra_fonts: ... }
+134: 
+135: #
+136: # The bottom line: never use without_foo, _with_foo nor _without_foo, only
+137: # with_foo. This way changing default set of bconds for given spec is just
+138: # a matter of changing single line in it and syntax is more readable.
+139: %bcond_with()		%{expand:%%{?_with_%{1}:%%global with_%{1} 1}}
+140: %bcond_without()	%{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
+141: #
+142: #==============================================================================
+143: # ---- Required rpmrc macros.
+144: #	Macros that used to be initialized as a side effect of rpmrc parsing.
+145: #	These are the default values that can be overridden by other
+146: #	(e.g. per-platform, per-system, per-packager, per-package) macros.
+147: #
+148: #	The directory where rpm's configuration and scripts live
+149: %_rpmconfigdir		%{getconfdir}
+150: #       The directory where rpm's macro files live
+151: %_rpmmacrodir		%{_rpmconfigdir}/macros.d
+152: 
+153: #	The directory where sources/patches will be unpacked and built.
+154: %_builddir		%{_topdir}/BUILD
+155: 
+156: #	The interpreter used for build scriptlets.
+157: %_buildshell		/bin/sh
+158: 
+159: #	The path to the bzip2 executable (legacy, use %{__bzip2} instead).
+160: %_bzip2bin		%{__bzip2}
+161: 
+162: #	The location of the rpm database file(s).
+163: %_dbpath		%{_var}/lib/rpm
+164: 
+165: #	The location of the rpm database file(s) after "rpm --rebuilddb".
+166: %_dbpath_rebuild	%{_dbpath}
+167: 
+168: %_keyringpath		%{_dbpath}/pubkeys/
+169: 
+170: #
+171: #	Path to script that creates debug symbols in a /usr/lib/debug
+172: #	shadow tree.
+173: #
+174: #	A spec file can %%define _find_debuginfo_opts to pass options to
+175: #	the script.  See the script for details.
+176: #
+177: 
+178: %_find_debuginfo_opts %{?_rpm_strip_disable:--strip-disable}
+179: %_find_debuginfo_strip_opts %{?_rpm_strip_option:\'--strip-option=%{_rpm_strip_option}\'}
+180: %_find_debuginfo_ko_strip_opts %{?_rpm_ko_strip_option:\'--strip-ko-option=%{_rpm_ko_strip_option}\'}
+181: 
+182: %__debug_install_post   \
+183:     %{_rpmconfigdir}/find-debuginfo.sh \\\
+184:     %{?_smp_mflags} \\\
+185:     %{?_missing_build_ids_terminate_build:--strict-build-id} \\\
+186:     %{?_no_recompute_build_ids:-n} \\\
+187:     %{?_include_minidebuginfo:-m} \\\
+188:     %{?_include_gdb_index:-i} \\\
+189:     %{?_unique_build_ids:--build-id-seed "%{VERSION}-%{RELEASE}"} \\\
+190:     %{?_unique_debug_names:--unique-debug-suffix "-%{VERSION}-%{RELEASE}.%{_arch}"} \\\
+191:     %{?_unique_debug_srcs:--unique-debug-src-base "%{name}-%{VERSION}-%{RELEASE}.%{_arch}"} \\\
+192:     %{?_find_debuginfo_dwz_opts} \\\
+193:     %{?_find_debuginfo_opts} \\\
+194:     %{?_find_debuginfo_strip_opts} \\\
+195:     %{?_find_debuginfo_ko_strip_opts} \\\
+196:     %{?_debugsource_packages:-S debugsourcefiles.list} \\\
+197:     "%{_builddir}/%{?buildsubdir}"\\\
+198:     %{?_install_debug_manifest} \
+199: %{nil}
+200: 
+201: #	Template for debug information sub-package.
+202: %_debuginfo_template \
+203: %package debuginfo\
+204: Summary: Debug information for package %{name}\
+205: Group: Development/Debug\
+206: AutoReq: 0\
+207: AutoProv: 1\
+208: %description debuginfo\
+209: This package provides debug information for package %{name}.\
+210: Debug information is useful when developing applications that use this\
+211: package or when debugging this package.\
+212: %files debuginfo -f debugfiles.list\
+213: %{nil}
+214: 
+215: %_debugsource_template \
+216: %package debugsource\
+217: Summary: Debug sources for package %{name}\
+218: Group: Development/Debug\
+219: AutoReqProv: 0\
+220: %description debugsource\
+221: This package provides debug sources for package %{name}.\
+222: Debug sources are useful when developing applications that use this\
+223: package or when debugging this package.\
+224: %files debugsource -f debugsourcefiles.list\
+225: %defattr(-,root,root)\
+226: %manifest %{name}-debugsource.manifest \
+227: %{nil}
+228: 
+229: %debug_package \
+230: %ifnarch noarch\
+231: %global __debug_package 1\
+232: %_debuginfo_template\
+233: %{?_debugsource_packages:%_debugsource_template}\
+234: %endif\
+235: %{nil}
+236: 
+237: %_defaultdocdir		%{_datadir}/doc/packages
+238: %_docdir_fmt		%%{NAME}
+239: %_defaultlicensedir	%{_datadir}/licenses
+240: 
+241: # Following macros for filtering auto deps must not be used in spec files.
+242: # Their purpouse is to set up global filtering for all packages. If you need
+243: # to set up specific filtering for your package use %__requires_exclude_from
+244: # and %__provides_exclude_from instead.
+245: %__global_requires_exclude_from		%{?_docdir:%{_docdir}}
+246: %__global_provides_exclude_from		%{?_docdir:%{_docdir}}
+247: 
+248: #	The path to the gzip executable (legacy, use %{__gzip} instead).
+249: %_gzipbin		%{__gzip}
+250: 
+251: #	The Unix time of the latest kept changelog entry in binary packages.
+252: #	Any older entry is not packaged in binary packages.
+253: %_changelog_trimtime	0
+254: 
+255: #	If true, set the SOURCE_DATE_EPOCH environment variable
+256: #	to the timestamp of the topmost changelog entry
+257: %source_date_epoch_from_changelog 0
+258: 
+259: #	If true, make sure that timestamps in built rpms
+260: #	are not later than the value of SOURCE_DATE_EPOCH.
+261: #	Is ignored when SOURCE_DATE_EPOCH is not set.
+262: %clamp_mtime_to_source_date_epoch 0
+263: 
+264: #	The directory where newly built binary packages will be written.
+265: %_rpmdir		%{_topdir}/RPMS
+266: 
+267: #	A template used to generate the output binary package file name
+268: #	(legacy).
+269: %_rpmfilename		%{_build_name_fmt}
+270: 
+271: #	The directory where sources/patches from a source package will be
+272: #	installed. This is also where sources/patches are found when building.
+273: %_sourcedir		%{_topdir}/SOURCES
+274: 
+275: #	The directory where the spec file from a source package will be
+276: #	installed.
+277: %_specdir		%{_topdir}/SPECS
+278: 
+279: #	The directory where newly built source packages will be written.
+280: %_srcrpmdir		%{_topdir}/SRPMS
+281: 
+282: #	The directory where buildroots will be created.
+283: %_buildrootdir		%{_topdir}/BUILDROOT
+284: 
+285: #	Build root path, where %install installs the package during build.
+286: %buildroot		%{_buildrootdir}/%{NAME}-%{VERSION}-%{RELEASE}.%{_arch}
+287: 
+288: #	Directory where temporaray files can be created.
+289: %_tmppath		%{_var}/tmp
+290: 
+291: #	Path to top of build area.
+292: %_topdir		%{expand:%%global _topdir %{lua:if posix.access(rpm.expand("%{_usrsrc}/packages"), "w") then print "%{_usrsrc}/packages" else print "%{getenv:HOME}/rpmbuild" end} \
+293: }%_topdir
+294: 
+295: #	The path to the unzip executable (legacy, use %{__unzip} instead).
+296: %_unzipbin		%{__unzip}
+297: 
+298: #==============================================================================
+299: # ---- Optional rpmrc macros.
+300: #	Macros that are initialized as a side effect of rpmrc and/or spec
+301: #	file parsing.
+302: #
+303: #	The sub-directory (relative to %{_builddir}) where sources are compiled.
+304: #	This macro is set after processing %setup, either explicitly from the
+305: #	value given to -n or the default name-version.
+306: #
+307: #%buildsubdir
+308: 
+309: #	Configurable distribution information, same as Distribution: tag in a
+310: #	specfile.
+311: #
+312: #%distribution
+313: 
+314: #	Configurable distribution URL, same as DistURL: tag in a specfile.
+315: #	The URL will be used to supply reliable information to tools like
+316: #	rpmfind.
+317: #
+318: # Note: You should not configure with disturl (or build packages with
+319: # the DistURL: tag) unless you are willing to supply content in a
+320: # yet-to-be-determined format at the URL specified.
+321: #
+322: #%disturl
+323: 
+324: #	Configurable bug URL, same as BugURL: tag in a specfile.
+325: #	The URL will be used to supply reliable information to where
+326: #	to file bugs.
+327: #
+328: #%bugurl
+329: 
+330: #	Configurable distribution tag, same as Disttag: tag in a specfile.
+331: #	The tag will be used to supply reliable information to tools like
+332: #	rpmfind.
+333: #
+334: # Note: You should not configure with disturl (or build packages with
+335: # the Disttag: tag) unless you are willing to supply content in a
+336: # yet-to-be-determined format at the tag specified.
+337: #
+338: #%disttag
+339: 
+340: #	Boolean (i.e. 1 == "yes", 0 == "no") that controls whether files
+341: #	marked as %doc should be installed.
+342: #%_excludedocs
+343: 
+344: #	The port and machine name of a FTP proxy host running TIS firewall.
+345: #
+346: #%_ftpport
+347: #%_ftpproxy
+348: 
+349: #	The signature to use and the location of configuration files for
+350: #	signing packages with GNU gpg.
+351: #
+352: #%_gpg_name
+353: #%_gpg_path
+354: 
+355: #	The port and machine name of an HTTP proxy host.
+356: #
+357: #%_httpport
+358: #%_httpproxy
+359: 
+360: #	The PATH put into the environment before running %pre/%post et al.
+361: #
+362: %_install_script_path	/sbin:/bin:/usr/sbin:/usr/bin:/usr/X11R6/bin
+363: 
+364: #	A colon separated list of desired locales to be installed;
+365: #	"all" means install all locale specific files.
+366: #	
+367: %_install_langs	all
+368: 
+369: #	The value of CLASSPATH in build scriptlets (iff configured).
+370: #	
+371: #%_javaclasspath	all
+372: 
+373: #	Import packaging conventions from jpackage.org (prefixed with _
+374: #	to avoid name collisions).
+375: #	
+376: %_javadir      %{_datadir}/java
+377: %_javadocdir   %{_datadir}/javadoc
+378: 
+379: #	A colon separated list of paths where files should *not* be installed.
+380: #	Usually, these are network file system mount points.
+381: #
+382: #%_netsharedpath
+383: 
+384: #	(experimental)
+385: #	The type of pattern match used on rpmdb iterator selectors:
+386: #	"default"	simple glob-like regex, periods will be escaped,
+387: #			splats will have period prepended, full "^...$" match
+388: #			required. Also, file path tags will use glob(7).
+389: #	"strcmp"	compare strings
+390: #	"regex"		regex(7) patterns using regcomp(3)/regexec(3)
+391: #	"glob"		glob(7) patterns using fnmatch(3)
+392: #
+393: %_query_selector_match	default
+394: 
+395: #	Configurable packager information, same as Packager: in a specfile.
+396: #
+397: #%packager
+398: 
+399: #	Compression type and level for source/binary package payloads.
+400: #		"w9.gzdio"	gzip level 9 (default).
+401: #		"w9.bzdio"	bzip2 level 9.
+402: #		"w6.xzdio"	xz level 6, xz's default.
+403: #		"w7T16.xzdio"	xz level 7 using 16 thread (xz only)
+404: #		"w6.lzdio"	lzma-alone level 6, lzma's default
+405: #		"w3.zstdio"	zstd level 3, zstd's default
+406: #		"w.ufdio"	uncompressed
+407: #
+408: #%_source_payload	w9.gzdio
+409: #%_binary_payload	w9.gzdio
+410: %_binary_payload	w19.zstdio
+411: 
+412: #	Algorithm to use for generating file checksum digests on build.
+413: #	If not specified or 0, MD5 is used.
+414: #	WARNING: non-MD5 is backwards incompatible with rpm < 4.6!
+415: #	The supported algorithms may depend on the underlying crypto
+416: #	implementation but generally at least the following are supported:
+417: #	1	MD5
+418: #	2	SHA1
+419: #	8	SHA256 (default)
+420: #	9	SHA384
+421: #	10	SHA512
+422: #
+423: %_source_filedigest_algorithm	8
+424: %_binary_filedigest_algorithm	8
+425: 
+426: #	Configurable vendor information, same as Vendor: in a specfile.
+427: #
+428: #%vendor
+429: 
+430: #	Default fuzz level for %patch in spec file.
+431: %_default_patch_fuzz	0
+432: 
+433: #	Default patch flags
+434: #%_default_patch_flags	-s
+435: %_default_patch_flags --no-backup-if-mismatch
+436: 
+437: #==============================================================================
+438: # ---- Build configuration macros.
+439: #
+440: # Script gets packaged file list on input and buildroot as first parameter.
+441: # Returns list of unpackaged files, i.e. files in $RPM_BUILD_ROOT not packaged.
+442: #
+443: # Note: Disable (by commenting out) for legacy compatibility.
+444: %__check_files         %{_rpmconfigdir}/check-files %{buildroot}
+445: 
+446: #
+447: # Should unpackaged files in a build root terminate a build?
+448: #
+449: # Note: The default value should be 0 for legacy compatibility.
+450: %_unpackaged_files_terminate_build	1
+451: 
+452: #
+453: # Should missing %doc files in the build directory terminate a build?
+454: #
+455: # Note: The default value should be 0 for legacy compatibility.
+456: %_missing_doc_files_terminate_build	1
+457: 
+458: #
+459: # Should empty %files manifest file terminate a build?
+460: #
+461: # Note: The default value should be 0 for legacy compatibility.
+462: %_empty_manifest_terminate_build	0
+463: 
+464: #
+465: # Should binaries in noarch packages terminate a build?
+466: %_binaries_in_noarch_packages_terminate_build	1
+467: 
+468: # Should invalid utf8 encoding in package metadata terminate a build?
+469: %_invalid_encoding_terminates_build 0
+470: 
+471: # Should invalid version format in requires, provides, ... terminate a build?
+472: %_wrong_version_format_terminate_build 0
+473: 
+474: #
+475: # Should rpm try to download missing sources at build-time?
+476: # Enabling this is dangerous as long as rpm has no means to validate
+477: # the integrity of the download with a digest or signature.
+478: %_disable_source_fetch 1
+479: 
+480: #
+481: # Program to call for each successfully built and written binary package.
+482: # The package name is passed to the program as a command-line argument.
+483: #
+484: #%_build_pkgcheck	%{_bindir}/rpmlint
+485: 
+486: #
+487: # Program to call for the whole binary package set after build.
+488: # The package set is passed to the program via command-line arguments.
+489: #
+490: #%_build_pkgcheck_set	%{_bindir}/rpmlint
+491: 
+492: #
+493: # Program to call for successfully built and written SRPM.
+494: # The package name is passed to the program as a command-line argument.
+495: #
+496: #%_build_pkgcheck_srpm	%{_bindir}/rpmlint
+497: 
+498: #
+499: # Should the build of packages fail if package checker (if defined) returns
+500: # non-zero exit status?
+501: #
+502: #%_nonzero_exit_pkgcheck_terminate_build	1
+503: 
+504: #
+505: # Should an ELF file processed by find-debuginfo.sh having no build ID
+506: # terminate a build?  This is left undefined to disable it and defined to
+507: # enable.
+508: #
+509: #%_missing_build_ids_terminate_build	1
+510: 
+511: #
+512: # Include minimal debug information in build binaries.
+513: # Requires _enable_debug_packages.
+514: #
+515: #%_include_minidebuginfo	1
+516: 
+517: #
+518: # Include a .gdb_index section in the .debug files.
+519: # Requires _enable_debug_packages and gdb-add-index installed.
+520: #
+521: #%_include_gdb_index	1
+522: 
+523: #
+524: # Defines how and if build_id links are generated for ELF files.
+525: # The following settings are supported:
+526: #
+527: # - none
+528: #   No build_id links are generated.
+529: #
+530: # - alldebug
+531: #   build_id links are generated only when the __debug_package global is
+532: #   defined. This will generate build_id links in the -debuginfo package
+533: #   for both the main file as /usr/lib/debug/.build-id/xx/yyy and for
+534: #   the .debug file as /usr/lib/debug/.build-id/xx/yyy.debug.
+535: #   This is the old style build_id links as generated by the original
+536: #   find-debuginfo.sh script.
+537: #
+538: # - separate
+539: #   build_id links are generate for all binary packages. If this is a
+540: #   main package (the __debug_package global isn't set) then the
+541: #   build_id link is generated as /usr/lib/.build-id/xx/yyy. If this is
+542: #   a -debuginfo package (the __debug_package global is set) then the
+543: #   build_id link is generated as /usr/lib/debug/.build-id/xx/yyy.
+544: #
+545: # - compat
+546: #   Same as for "separate" but if the __debug_package global is set then
+547: #   the -debuginfo package will have a compatibility link for the main
+548: #   ELF /usr/lib/debug/.build-id/xx/yyy -> /usr/lib/.build-id/xx/yyy
+549: %_build_id_links alldebug
+550: 
+551: # Whether build-ids should be made unique between package version/releases
+552: # when generating debuginfo packages. If set to 1 this will pass
+553: # --build-id-seed "%{VERSION}-%{RELEASE}" to find-debuginfo.sh which will
+554: # pass it onto debugedit --build-id-seed to be used to prime the build-id
+555: # note hash.
+556: %_unique_build_ids	1
+557: 
+558: # Do not recompute build-ids but keep whatever is in the ELF file already.
+559: # Cannot be used together with _unique_build_ids (which forces recomputation).
+560: # Defaults to undefined (unset).
+561: #%_no_recompute_build_ids 1
+562: 
+563: # Whether .debug files should be made unique between package version,
+564: # release and architecture. If set to 1 this will pass
+565: # --unique-debug-suffix "-%{VERSION}-%{RELEASE}.%{_arch} find-debuginfo.sh
+566: # to create debuginfo files which end in -<ver>-<rel>.<arch>.debug
+567: # Requires _unique_build_ids.
+568: #%_unique_debug_names	0
+569: 
+570: # Whether the /usr/debug/src/<package> directories should be unique between
+571: # package version, release and architecture. If set to 1 this will pass
+572: # --unique-debug-src-base "%{name}-%{VERSION}-%{RELEASE}.%{_arch}" to
+573: # find-debuginfo.sh to name the directory under /usr/debug/src as
+574: # <name>-<ver>-<rel>.<arch>.
+575: %_unique_debug_srcs	1
+576: 
+577: # Whether rpm should put debug source files into its own subpackage
+578: %_debugsource_packages	1
+579: 
+580: # Whether rpm should create extra debuginfo packages for each subpackage
+581: %_debuginfo_subpackages 1
+582: 
+583: #
+584: # Use internal dependency generator rather than external helpers?
+585: %_use_internal_dependency_generator	1
+586: 
+587: #
+588: # Filter GLIBC_PRIVATE Provides: and Requires:
+589: %_filter_GLIBC_PRIVATE			0
+590: 
+591: # Directories whose contents should be considered as documentation.
+592: %__docdir_path %{_datadir}/doc:%{_datadir}/man:%{_datadir}/info:%{_datadir}/gtk-doc/html:%{?_docdir}:%{?_mandir}:%{?_infodir}:%{?_javadocdir}:/usr/doc:/usr/man:/usr/info:/usr/X11R6/man
+593: 
+594: # maxnum,cuttime,minnum
+595: # 2014/10/13 (SLES12 GA)
+596: %_binarychangelogtrim 0,1413151200,10
+597: 
+598: #
+599: # Path to scripts to autogenerate package dependencies,
+600: #
+601: %__set_helper_env %{lua:
+602: posix.setenv("RPMBUILD_SPECFILE",rpm.expand("%?_specfile"));
+603: posix.setenv("RPMBUILD_SOURCEDIR",rpm.expand("%?_sourcedir"));
+604: }
+605: # Note: Used iff _use_internal_dependency_generator is zero.
+606: #%__find_provides	%{_rpmconfigdir}/rpmdeps --provides
+607: #%__find_requires	%{_rpmconfigdir}/rpmdeps --requires
+608: %__find_provides	%{_rpmconfigdir}/find-provides %name
+609: %__find_requires	%{_rpmconfigdir}/find-requires %name
+610: #%__find_conflicts	???
+611: #%__find_obsoletes	???
+612: %__find_supplements	%{_rpmconfigdir}/find-supplements %name
+613: #%__find_enhances	???
+614: 
+615: # 
+616: # Path to file attribute classifications for automatic dependency 
+617: # extraction, used when _use_internal_dependency_generator
+618: # is used (on by default). Files can have any number of attributes
+619: # attached to them, and dependencies are separately extracted for
+620: # each attribute.
+621: # 
+622: # To define a new file attribute called "myattr", add a file named
+623: # "myattr" to this directory, defining the requires and/or provides
+624: # finder script(s) + magic and/or path pattern regex(es).
+625: # provides finder and 
+626: # %__myattr_requires	path + args to requires finder script for <myattr>
+627: # %__myattr_provides	path + args to provides finder script for <myattr>
+628: # %__myattr_magic	libmagic classification match regex
+629: # %__myattr_path	path based classification match regex
+630: # %__myattr_flags	flags to control behavior (just "exeonly" for now)
+631: # %__myattr_exclude_magic	exclude by magic regex
+632: # %__myattr_exclude_path	exclude by path regex
+633: #
+634: %_fileattrsdir		%{_rpmconfigdir}/fileattrs
+635: 
+636: # This macro defines how much space (in bytes) in package should be
+637: # reserved for gpg signatures during building of a package. If this space is
+638: # big enough for gpg signatures to fit into it then signing of the packages is
+639: # very quick because it is not necessary to rewrite the whole package to make
+640: # some space for gpg signatures.
+641: %__gpg_reserved_space 4096
+642: 
+643: #==============================================================================
+644: # ---- Database configuration macros.
+645: #
+646: # Select backend database. The following values are supported:
+647: # bdb Berkeley DB
+648: # lmdb Lightning Memory-mapped Database
+649: # ndb new data base format
+650: #
+651: %_db_backend	      bdb
+652: 
+653: #
+654: #	Macros used to configure Berkley db parameters.
+655: #
+656: # rpmdb macro configuration values are a colon (or white space) separated
+657: # list of tokens, with an optional '!' negation to explicitly disable bit
+658: # values, or a "=value" if a parameter. A per-tag value is used (e.g.
+659: # %_dbi_config_Packages) if defined, otherwise a per-rpmdb default
+660: # (e.g. %_dbi_config).
+661: #
+662: # Here's a short list of the tokens, with a guess of whether the option is
+663: # useful:
+664: #	(nothing)	currently used in rpm, known to work.
+665: #	"+++"		under development, will be supported in rpm eventually.
+666: #	"???"		I have no clue, you're mostly on your own.
+667: #
+668: # If you do find yourself inclined to fiddle, here's what I see (shrug):
+669: # 1) Only the value of mp_size has any serious impact on overall performance,
+670: #    and you will need ~256Kb to handle a typical machine install.
+671: # 2) Only the Packages hash, because of the size of the values (i.e. headers),
+672: #    will ever need tuning. Diddle the pagesize if you're interested, although
+673: #    I believe that you will find pagesize=512 "best".
+674: # 3) Adding nofsync increases speed, but risks total data loss. Fiddle shared
+675: #    and/or mp_size instead.
+676: #
+677: #   token	works?	Berkeley db flag or value
+678: #==================================================
+679: #---------------------- DBENV tunable values:
+680: #   mmapsize=16Mb	DBENV->set_mp_mmapsize
+681: #   cachesize=1Mb	DBENV->set_cachesize, DB->set_cachesize
+682: #---------------------- DB->open bits:
+683: #   nommap	???	DB_NOMMAP
+684: #----------------------- rpmdb specific configuration:
+685: #   lockdbfd		(always on for Packages) Use fcntl(2) locking ?
+686: #   nofsync		Disable fsync(2) call performed after db3 writes?
+687: #
+688: 
+689: # Misc BDB tuning options
+690: %__dbi_other			mp_mmapsize=128Mb mp_size=1Mb
+691: 
+692: %_dbi_config			%{?__dbi_other} nofsync
+693: 
+694: # "Packages" should have shared/exclusive fcntl(2) lock using "lockdbfd".
+695: %_dbi_config_Packages		%{?__dbi_other} lockdbfd
+696: 
+697: #==============================================================================
+698: # ---- GPG/PGP/PGP5 signature macros.
+699: #	Macro(s) to hold the arguments passed to GPG/PGP for package
+700: #	signing and verification.
+701: #
+702: 
+703: %__gpg_sign_cmd			%{__gpg} \
+704: 	gpg --no-verbose --no-armor \
+705: 	%{?_gpg_digest_algo:--digest-algo %{_gpg_digest_algo}} \
+706: 	--no-secmem-warning \
+707: 	%{?_gpg_sign_cmd_extra_args:%{_gpg_sign_cmd_extra_args}} \
+708: 	-u "%{_gpg_name}" -sbo %{__signature_filename} %{__plaintext_filename}
+709: 
+710: # XXX rpm >= 4.1 verifies signatures internally
+711: #%__gpg_verify_cmd		%{__gpg} \
+712: #	gpg --batch --no-verbose --verify --no-secmem-warning \
+713: #	%{__signature_filename} %{__plaintext_filename}
+714: #
+715: # XXX rpm-4.1 verifies prelinked libraries using a prelink undo helper.
+716: #	Normally this macro is defined in /etc/rpm/macros.prelink, installed
+717: #	with the prelink package. If the macro is undefined, then prelinked
+718: #	shared libraries contents are MD5 digest verified (as usual), rather
+719: #	than MD5 verifying the output of the prelink undo helper.
+720: #
+721: #	Note: The 2nd token is used as argv[0] and "library" is a
+722: #	placeholder that will be deleted and replaced with the appropriate
+723: #	library file path.
+724: #%__prelink_undo_cmd     /usr/sbin/prelink prelink -y library
+725: 
+726: # Horowitz Key Protocol server configuration
+727: #
+728: %_hkp_keyserver         http://pgp.mit.edu
+729: %_hkp_keyserver_query   %{_hkp_keyserver}:11371/pks/lookup?op=get&search=0x
+730: 
+731: #==============================================================================
+732: # ---- Transaction macros.
+733: #	Macro(s) used to parameterize transactions.
+734: #
+735: #	The output binary package file name template used when building
+736: #	binary packages.
+737: #
+738: # XXX	Note: escaped %% for use in headerSprintf()
+739: %_build_name_fmt	%%{ARCH}/%%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
+740: 
+741: #	Verify digest/signature flags for various rpm modes:
+742: #	0x30300 (_RPMVSF_NODIGESTS)    --nohdrchk      if set, don't check digest(s)
+743: #	0xc0c00 (_RPMVSF_NOSIGNATURES) --nosignature   if set, don't check signature(s)
+744: #	0xf0000 (_RPMVSF_NOPAYLOAD)    --nolegacy      if set, check header+payload (if possible)
+745: #	0x00f00 (_RPMVSF_NOHEADER)     --nohdrchk      if set, don't check rpmdb headers
+746: #
+747: #	For example, the value 0xf0c00 (=0xf0000+0xc0c00) disables legacy
+748: #	digest/signature checking, disables signature checking, but attempts
+749: #	digest checking, also when retrieving headers from the database.
+750: #
+751: #	You also can do:
+752: #	 >>> hex(rpm._RPMVSF_NOSIGNATURES)
+753: #	 '0xc0c00'
+754: #	or:
+755: #	 >>> hex(rpm._RPMVSF_NOSIGNATURES|rpm._RPMVSF_NOPAYLOAD)
+756: #	 '0xf0c00'
+757: #	at the python prompt for example, after "import rpm".
+758: #
+759: #	The checking overhead is ~11ms per header for digests/signatures;
+760: #	each header from the database is checked only when first encountered
+761: #	for each database open.
+762: #
+763: #	Note: the %_vsflags_erase applies to --upgrade/--freshen modes as
+764: #	well as --erase.
+765: #
+766: %__vsflags		0xf0000
+767: %_vsflags_build		%{__vsflags}
+768: %_vsflags_erase		%{__vsflags}
+769: %_vsflags_install	%{__vsflags}
+770: %_vsflags_query		%{__vsflags}
+771: %_vsflags_rebuilddb	0xc0c00
+772: %_vsflags_verify	%{__vsflags}
+773: 
+774: # Set to 1 to minimize writing (at the cost of more reads) to
+775: # conserve eg SSD disks.
+776: %_minimize_writes      0
+777: 
+778: # Set to 1 to flush file IO during transactions (at a severe cost in
+779: # performance for rotational disks)
+780: #%_flush_io	0
+781: 
+782: #
+783: # Default output format string for rpm -qa
+784: #
+785: # XXX	Note: escaped %% for use in headerFormat()
+786: %_query_all_fmt		%%{nvra}
+787: 
+788: #
+789: # Default for coloring output
+790: # valid values are always never and auto
+791: %_color_output	never
+792: 
+793: #
+794: # Default path to the file used for transaction fcntl lock.
+795: %_rpmlock_path	%{_dbpath}/.rpm.lock
+796: 
+797: #
+798: # ISA dependency marker, none for noarch and name-bitness for others
+799: %_isa			%{?__isa:(%{__isa})}%{!?__isa:%{nil}}
+800: 
+801: #
+802: # ABI dependency marker, none for noarch, () for the default ABI, ABI
+803: # in parentheses otherwise
+804: %_abi			%{?__abi:(%{__abi})}%{!?__abi:%{nil}}
+805: 
+806: #
+807: # Define per-arch and per-os defaults. Normally overridden by per-target macros.
+808: %__arch_install_post	%{nil}
+809: %__os_install_post	%{___build_post}
+810: 
+811: # Macro to fix broken permissions in sources
+812: %_fixperms      %{__chmod} -Rf a+rX,u+w,g-w,o-w
+813: 
+814: #==============================================================================
+815: # ---- Scriptlet template templates.
+816: #	Global defaults used for building scriptlet templates.
+817: #
+818: 
+819: %___build_shell		%{?_buildshell:%{_buildshell}}%{!?_buildshell:/bin/sh}
+820: %___build_args		-e
+821: %___build_cmd		%{?_sudo:%{_sudo} }%{?_remsh:%{_remsh} %{_remhost} }%{?_remsudo:%{_remsudo} }%{?_remchroot:%{_remchroot} %{_remroot} }%{___build_shell} %{___build_args}
+822: %___build_pre	\
+823:   RPM_SOURCE_DIR=\"%{u2p:%{_sourcedir}}\"\
+824:   RPM_BUILD_DIR=\"%{u2p:%{_builddir}}\"\
+825:   RPM_OPT_FLAGS=\"%{optflags}\"\
+826:   RPM_ARCH=\"%{_arch}\"\
+827:   RPM_OS=\"%{_os}\"\
+828:   export RPM_SOURCE_DIR RPM_BUILD_DIR RPM_OPT_FLAGS RPM_ARCH RPM_OS\
+829:   RPM_DOC_DIR=\"%{_docdir}\"\
+830:   export RPM_DOC_DIR\
+831:   RPM_PACKAGE_NAME=\"%{NAME}\"\
+832:   RPM_PACKAGE_VERSION=\"%{VERSION}\"\
+833:   RPM_PACKAGE_RELEASE=\"%{RELEASE}\"\
+834:   export RPM_PACKAGE_NAME RPM_PACKAGE_VERSION RPM_PACKAGE_RELEASE\
+835:   LANG=C\
+836:   export LANG\
+837:   unset CDPATH DISPLAY ||:\
+838:   %{?buildroot:RPM_BUILD_ROOT=\"%{u2p:%{buildroot}}\"\
+839:   export RPM_BUILD_ROOT}\
+840:   %{?_javaclasspath:CLASSPATH=\"%{_javaclasspath}\"\
+841:   export CLASSPATH}\
+842:   PKG_CONFIG_PATH=\"${PKG_CONFIG_PATH}:%{_libdir}/pkgconfig:%{_datadir}/pkgconfig\"\
+843:   export PKG_CONFIG_PATH\
+844:   \
+845:   %{verbose:set -x}%{!verbose:exec > /dev/null}\
+846:   umask 022\
+847:   cd \"%{u2p:%{_builddir}}\"\
+848: 
+849: 
+850: #%___build_body		%{nil}
+851: %___build_post		exit $?
+852: 
+853: %___build_template	#!%{___build_shell}\
+854: %{___build_pre}\
+855: %{nil}
+856: 
+857: #%{___build_body}\
+858: #%{___build_post}\
+859: #%{nil}
+860: 
+861: #==============================================================================
+862: # ---- Scriptlet templates.
+863: #	Macro(s) that expand to a command and script that is executed.
+864: #
+865: %__spec_prep_shell	%{___build_shell}
+866: %__spec_prep_args	%{___build_args}
+867: %__spec_prep_cmd	%{___build_cmd}
+868: %__spec_prep_pre	%{___build_pre}
+869: %__spec_prep_body	%{___build_body}
+870: %__spec_prep_post	%{___build_post}
+871: %__spec_prep_template	#!%{__spec_prep_shell}\
+872: %{__spec_prep_pre}\
+873: %{nil}
+874: 
+875: #%{__spec_prep_body}\
+876: #%{__spec_prep_post}\
+877: #%{nil}
+878: 
+879: %__spec_build_shell	%{___build_shell}
+880: %__spec_build_args	%{___build_args}
+881: %__spec_build_cmd	%{___build_cmd}
+882: %__spec_build_pre	%{___build_pre}
+883: %__spec_build_body	%{___build_body}
+884: %__spec_build_post	%{___build_post}
+885: %__spec_build_template	#!%{__spec_build_shell}\
+886: %{__spec_build_pre}\
+887: %{nil}
+888: 
+889: #%{__spec_build_body}\
+890: #%{__spec_build_post}\
+891: #%{nil}
+892: 
+893: %__spec_install_shell	%{___build_shell}
+894: %__spec_install_args	%{___build_args}
+895: %__spec_install_cmd	%{___build_cmd}
+896: %__spec_install_pre	%{___build_pre}
+897: %__spec_install_body	%{___build_body}
+898: %__spec_install_post\
+899: %{?__debug_package:%{__debug_install_post}}\
+900: %{__arch_install_post}\
+901: %{__os_install_post}\
+902: %{nil}
+903: %__spec_install_template	#!%{__spec_install_shell}\
+904: %{__spec_install_pre}\
+905: %{nil}
+906: 
+907: #%{__spec_install_body}\
+908: #%{__spec_install_post}\
+909: #%{nil}
+910: 
+911: %__spec_check_shell	%{___build_shell}
+912: %__spec_check_args	%{___build_args}
+913: %__spec_check_cmd	%{___build_cmd}
+914: %__spec_check_pre	%{___build_pre}
+915: %__spec_check_body	%{___build_body}
+916: %__spec_check_post	%{___build_post}
+917: %__spec_check_template	#!%{__spec_check_shell}\
+918: %{__spec_check_pre}\
+919: %{nil}
+920: 
+921: #%{__spec_check_body}\
+922: #%{__spec_check_post}\
+923: #%{nil}
+924: 
+925: #%__spec_autodep_shell	%{___build_shell}
+926: #%__spec_autodep_args	%{___build_args}
+927: #%__spec_autodep_cmd	%{___build_cmd}
+928: #%__spec_autodep_pre	%{___build_pre}
+929: #%__spec_autodep_body	%{___build_body}
+930: #%__spec_autodep_post	%{___build_post}
+931: #%__spec_autodep_template	#!%{__spec_autodep_shell}\
+932: #%{__spec_autodep_pre}\
+933: #%{nil}
+934: 
+935: #%{__spec_autodep_body}\
+936: #%{__spec_autodep_post}\
+937: #%{nil}
+938: 
+939: %__spec_clean_shell	%{___build_shell}
+940: %__spec_clean_args	%{___build_args}
+941: %__spec_clean_cmd	%{___build_cmd}
+942: %__spec_clean_pre	%{___build_pre}
+943: %__spec_clean_body	%{___build_body}
+944: %__spec_clean_post	%{___build_post}
+945: %__spec_clean_template	#!%{__spec_clean_shell}\
+946: %{__spec_clean_pre}\
+947: %{nil}
+948: 
+949: #%{__spec_clean_body}\
+950: #%{__spec_clean_post}\
+951: #%{nil}
+952: 
+953: %__spec_rmbuild_shell	%{___build_shell}
+954: %__spec_rmbuild_args	%{___build_args}
+955: %__spec_rmbuild_cmd	%{___build_cmd}
+956: %__spec_rmbuild_pre	%{___build_pre}
+957: %__spec_rmbuild_body	%{___build_body}
+958: %__spec_rmbuild_post	%{___build_post}
+959: %__spec_rmbuild_template	#!%{__spec_rmbuild_shell}\
+960: %{__spec_rmbuild_pre}\
+961: %{nil}
+962: 
+963: #%{__spec_rmbuild_body}\
+964: #%{__spec_rmbuild_post}\
+965: #%{nil}
+966: 
+967: # XXX We don't expand pre/post install scriptlets (yet).
+968: #%__spec_pre_pre		%{nil}
+969: #%__spec_pre_post		%{nil}
+970: #%__spec_post_pre		%{nil}
+971: #%__spec_post_post		%{nil}
+972: #%__spec_preun_pre		%{nil}
+973: #%__spec_preun_post		%{nil}
+974: #%__spec_postun_pre		%{nil}
+975: #%__spec_postun_post		%{nil}
+976: #%__spec_triggerpostun_pre	%{nil}
+977: #%__spec_triggerpostun_post	%{nil}
+978: #%__spec_triggerun_pre		%{nil}
+979: #%__spec_triggerun_post		%{nil}
+980: #%__spec_triggerin_pre		%{nil}
+981: #%__spec_triggerin_post		%{nil}
+982: 
+983: #==============================================================================
+984: # ---- configure macros.
+985: #	Macro(s) slavishly copied from autoconf's config.status.
+986: #
+987: %_prefix		/usr
+988: %_exec_prefix		%{_prefix}
+989: %_bindir		%{_exec_prefix}/bin
+990: %_sbindir		%{_exec_prefix}/sbin
+991: %_libexecdir		%{_exec_prefix}/libexec
+992: %_datadir		%{_prefix}/share
+993: %_sysconfdir		/etc
+994: %_sharedstatedir	%{_prefix}/com
+995: %_localstatedir		%{_prefix}/var
+996: %_lib			lib
+997: %_libdir		%{_exec_prefix}/%{_lib}
+998: %_includedir		%{_prefix}/include
+999: %_infodir		%{_datadir}/info
+1000: %_mandir		%{_datadir}/man
+1001: 
+1002: %_hal_prefix		/hal
+1003: %_hal_bindir		%{_hal_prefix}/bin
+1004: %_hal_sbindir		%{_hal_prefix}/sbin
+1005: %_hal_libdir		%{_hal_prefix}/%{_lib}
+1006: %_hal_includedir	%{_hal_prefix}/include
+1007: %_hal_sysconfdir	%{_hal_prefix}%{_sysconfdir}
+1008: %_hal_datadir		%{_hal_prefix}/share
+1009: %_hal_licensedir	%{_hal_prefix}/share/licenses
+1010: 
+1011: %_product_prefix	/product
+1012: %_product_bindir	%{_product_prefix}/bin
+1013: %_product_sbindir	%{_product_prefix}/sbin
+1014: %_product_libdir	%{_product_prefix}/%{_lib}
+1015: %_product_includedir	%{_product_prefix}/include
+1016: %_product_sysconfdir	%{_product_prefix}%{_sysconfdir}
+1017: %_product_datadir	%{_product_prefix}/share
+1018: %_product_licensedir	%{_product_prefix}/share/licenses
+1019: 
+1020: #==============================================================================
+1021: # ---- config.guess platform macros.
+1022: #	Macro(s) similar to the tokens used by configure.
+1023: #
+1024: %_build			%{_host}
+1025: %_build_alias		%{_host_alias}
+1026: %_build_cpu		%{_host_cpu}
+1027: %_build_vendor		%{_host_vendor}
+1028: %_build_os		%{_host_os}
+1029: %_host			x86_64-tizen-linux-gnu
+1030: %_host_alias		x86_64-tizen-linux-gnu%{nil}
+1031: %_host_cpu		x86_64
+1032: %_host_vendor		tizen
+1033: %_host_os		linux
+1034: %_target		%{_host}
+1035: %_target_alias		%{_host_alias}
+1036: %_target_cpu		%{_host_cpu}
+1037: %_target_vendor		%{_host_vendor}
+1038: %_target_os		%{_host_os}
+1039: 
+1040: #==============================================================================
+1041: # ---- compiler flags.
+1042: 
+1043: # C compiler flags.  This is traditionally called CFLAGS in makefiles.
+1044: # Historically also available as %%{optflags}, and %%build sets the
+1045: # environment variable RPM_OPT_FLAGS to this value.
+1046: %build_cflags %{optflags}
+1047: 
+1048: # C++ compiler flags.  This is traditionally called CXXFLAGS in makefiles.
+1049: %build_cxxflags %{optflags}
+1050: 
+1051: # Link editor flags.  This is usually called LDFLAGS in makefiles.
+1052: #%build_ldflags -Wl,-z,relro
+1053: 
+1054: # Expands to shell code to seot the compiler/linker environment
+1055: # variables CFLAGS, CXXFLAGS, LDFLAGS if they have
+1056: # not been set already.
+1057: %set_build_flags \
+1058:   CFLAGS="${CFLAGS:-%{?build_cflags}}" ; export CFLAGS ; \
+1059:   CXXFLAGS="${CXXFLAGS:-%{?build_cxxflags}}" ; export CXXFLAGS ; \
+1060:   LDFLAGS="${LDFLAGS:-%{?build_ldflags}}" ; export LDFLAGS
+1061: 
+1062: #==============================================================================
+1063: # ---- specfile macros.
+1064: #	Macro(s) here can be used reliably for reproducible builds.
+1065: #	(Note: Above is the goal, below are the macros under development)
+1066: #
+1067: # The configure macro runs autoconf configure script with platform specific
+1068: # directory structure (--prefix, --libdir etc) and compiler flags
+1069: # such as CFLAGS.
+1070: #
+1071: %_configure ./configure
+1072: %configure \
+1073:   %{set_build_flags}; \
+1074:   %{_configure} --host=%{_host} --build=%{_build} \\\
+1075: 	--program-prefix=%{?_program_prefix} \\\
+1076: 	--disable-dependency-tracking \\\
+1077: 	--prefix=%{_prefix} \\\
+1078: 	--exec-prefix=%{_exec_prefix} \\\
+1079: 	--bindir=%{_bindir} \\\
+1080: 	--sbindir=%{_sbindir} \\\
+1081: 	--sysconfdir=%{_sysconfdir} \\\
+1082: 	--datadir=%{_datadir} \\\
+1083: 	--includedir=%{_includedir} \\\
+1084: 	--libdir=%{_libdir} \\\
+1085: 	--libexecdir=%{_libexecdir} \\\
+1086: 	--localstatedir=%{_localstatedir} \\\
+1087: 	--sharedstatedir=%{_sharedstatedir} \\\
+1088: 	--mandir=%{_mandir} \\\
+1089: 	--infodir=%{_infodir} \\\
+1090: 	--disable-dependency-tracking
+1091: 
+1092: #------------------------------------------------------------------------------
+1093: # Tested features of make
+1094: # Output synchronization for parallel make:
+1095: %_make_output_sync %(! %{__make} --version -O >/dev/null 2>&1 || echo -O)
+1096: 
+1097: #------------------------------------------------------------------------------
+1098: # The "make" analogue, hiding the _smp_mflags magic from specs
+1099: %make_build %{__make} %{_make_output_sync} %{?_smp_mflags}
+1100: 
+1101: #------------------------------------------------------------------------------
+1102: # The make install analogue of %configure for modern autotools:
+1103: %make_install %{__make} install DESTDIR=%{?buildroot} INSTALL="%{__install} -p"
+1104: 
+1105: #------------------------------------------------------------------------------
+1106: # Former make install analogue, kept for compatibility and for old/broken
+1107: #  packages that don't support DESTDIR properly.
+1108: %makeinstall \
+1109:   echo "warning: %%makeinstall is deprecated, try %%make_install instead" 1>&2\
+1110:   %{__make} \\\
+1111: 	prefix=%{?buildroot:%{buildroot}}%{_prefix} \\\
+1112: 	exec_prefix=%{?buildroot:%{buildroot}}%{_exec_prefix} \\\
+1113: 	bindir=%{?buildroot:%{buildroot}}%{_bindir} \\\
+1114: 	sbindir=%{?buildroot:%{buildroot}}%{_sbindir} \\\
+1115: 	sysconfdir=%{?buildroot:%{buildroot}}%{_sysconfdir} \\\
+1116: 	datadir=%{?buildroot:%{buildroot}}%{_datadir} \\\
+1117: 	includedir=%{?buildroot:%{buildroot}}%{_includedir} \\\
+1118: 	libdir=%{?buildroot:%{buildroot}}%{_libdir} \\\
+1119: 	libexecdir=%{?buildroot:%{buildroot}}%{_libexecdir} \\\
+1120: 	localstatedir=%{?buildroot:%{buildroot}}%{_localstatedir} \\\
+1121: 	sharedstatedir=%{?buildroot:%{buildroot}}%{_sharedstatedir} \\\
+1122: 	mandir=%{?buildroot:%{buildroot}}%{_mandir} \\\
+1123: 	infodir=%{?buildroot:%{buildroot}}%{_infodir} \\\
+1124:   install
+1125: 
+1126: #------------------------------------------------------------------------------
+1127: %patches %{lua: for i, p in ipairs(patches) do print(p.." ") end}
+1128: %sources %{lua: for i, s in ipairs(sources) do print(s.." ") end}
+1129: 
+1130: #------------------------------------------------------------------------------
+1131: # Useful perl macros (from Artur Frysiak <wiget@t17.ds.pwr.wroc.pl>)
+1132: #
+1133: # For example, these can be used as (from ImageMagick.spec from PLD site)
+1134: #	[...]
+1135: #	BuildPrereq: perl
+1136: #	[...]
+1137: #	%package perl
+1138: #	Summary: libraries and modules for access to ImageMagick from perl
+1139: #	Group: Development/Languages/Perl
+1140: #	Requires: %{name} = %{version}
+1141: #	%requires_eq    perl
+1142: #	[...]
+1143: #	%install
+1144: #	rm -fr $RPM_BUILD_ROOT
+1145: #	install -d $RPM_BUILD_ROOT/%{perl_sitearch}
+1146: #	[...]
+1147: #	%files perl
+1148: #	%defattr(644,root,root,755)
+1149: #	%{perl_sitearch}/Image
+1150: #	%dir %{perl_sitearch}/auto/Image
+1151: #
+1152: %requires_eq()	%(echo '%*' | LC_ALL=C xargs -r rpm -q --qf 'Requires: %%{name} = %%{epoch}:%%{version}\\n' | sed -e 's/ (none):/ /' -e 's/ 0:/ /' | grep -v "is not")
+1153: %requires_ge()	%(echo '%*' | LC_ALL=C xargs -r rpm -q --qf 'Requires: %%{name} >= %%{epoch}:%%{version}\\n' | sed -e 's/ (none):/ /' -e 's/ 0:/ /' | grep -v "is not")
+1154: %perl_sitearch	%(eval "`%{__perl} -V:installsitearch`"; echo $installsitearch)
+1155: %perl_sitelib	%(eval "`%{__perl} -V:installsitelib`"; echo $installsitelib)
+1156: %perl_vendorarch %(eval "`%{__perl} -V:installvendorarch`"; echo $installvendorarch)
+1157: %perl_vendorlib  %(eval "`%{__perl} -V:installvendorlib`"; echo $installvendorlib)
+1158: %perl_archlib	%(eval "`%{__perl} -V:installarchlib`"; echo $installarchlib)
+1159: %perl_privlib	%(eval "`%{__perl} -V:installprivlib`"; echo $installprivlib)
+1160: 
+1161: #------------------------------------------------------------------------------
+1162: # Useful python macros for determining python version and paths
+1163: #
+1164: %python_sitelib %(%{__python} -Es %{_rpmconfigdir}/python-macro-helper sitelib)
+1165: %python_sitearch %(%{__python} -Es %{_rpmconfigdir}/python-macro-helper sitearch)
+1166: %python_version %(%{__python} -Es %{_rpmconfigdir}/python-macro-helper version)
+1167: 
+1168: #------------------------------------------------------------------------------
+1169: # arch macro for all Intel i?86 compatible processors
+1170: #  (Note: This macro (and it's analogues) will probably be obsoleted when
+1171: #   rpm can use regular expressions against target platforms in macro
+1172: #   conditionals.
+1173: #
+1174: %ix86   i386 i486 i586 i686 pentium3 pentium4 athlon geode
+1175: 
+1176: #------------------------------------------------------------------------------
+1177: # arch macro for all supported ARM processors
+1178: %arm	armv3l armv4b armv4l armv4tl armv5tl armv5tel armv5tejl armv6l armv6hl armv7l armv7hl armv7hnl
+1179: 
+1180: #------------------------------------------------------------------------------
+1181: # arch macro for 32-bit MIPS processors
+1182: %mips32	mips mipsel mipsr6 mipsr6el
+1183: 
+1184: #------------------------------------------------------------------------------
+1185: # arch macro for 64-bit MIPS processors
+1186: %mips64	mips64 mips64el mips64r6 mips64r6el
+1187: 
+1188: #------------------------------------------------------------------------------
+1189: # arch macro for big endian MIPS processors
+1190: %mipseb	mips mipsr6 mips64 mips64r6
+1191: 
+1192: #------------------------------------------------------------------------------
+1193: # arch macro for little endian MIPS processors
+1194: %mipsel	mipsel mipsr6el mips64el mips64r6el
+1195: 
+1196: #------------------------------------------------------------------------------
+1197: # arch macro for all supported MIPS processors
+1198: %mips	%{mips32} %{mips64}
+1199: 
+1200: #------------------------------------------------------------------------------
+1201: # arch macro for all supported Sparc processors
+1202: %sparc sparc sparcv8 sparcv9 sparcv9v sparc64 sparc64v
+1203: 
+1204: #------------------------------------------------------------------------------
+1205: # arch macro for all supported Alpha processors
+1206: %alpha	alpha alphaev56 alphaev6 alphaev67
+1207: 
+1208: #------------------------------------------------------------------------------
+1209: # arch macro for all supported PowerPC 64 processors
+1210: %power64	ppc64 ppc64p7 ppc64le
+1211: 
+1212: #------------------------------------------------------------------------
+1213: # Use in %install to generate locale specific file lists. For example,
+1214: #
+1215: # %install
+1216: # ...
+1217: # %find_lang %{name}
+1218: # ...
+1219: # %files -f %{name}.lang
+1220: #
+1221: %find_lang	%{_rpmconfigdir}/find-lang.sh %{buildroot}
+1222: %no_lang_C  --without-C
+1223: 
+1224: 
+1225: # Commands + opts to use for retrieving remote files
+1226: # Proxy opts can be set through --httpproxy/--httpport popt aliases,
+1227: # for any special local needs use %__urlhelper_localopts in system-wide
+1228: # or per-user macro configuration.
+1229: %__urlhelpercmd         /usr/bin/curl
+1230: %__urlhelperopts        --silent --show-error --fail --globoff --location -o
+1231: %__urlhelper_proxyopts   %{?_httpproxy:--proxy %{_httpproxy}%{?_httpport::%{_httpport}}}%{!?_httpproxy:%{nil}}
+1232: %_urlhelper             %{__urlhelpercmd} %{?__urlhelper_localopts} %{?__urlhelper_proxyopts} %{__urlhelperopts}
+1233: 
+1234: # Transaction plugin macros
+1235: %__plugindir		%{_libdir}/rpm-plugins
+1236: #%__transaction_systemd_inhibit	%{__plugindir}/systemd_inhibit.so
+1237: #%__transaction_selinux		%{__plugindir}/selinux.so
+1238: #%__transaction_syslog		%{__plugindir}/syslog.so
+1239: #%__transaction_ima		%{__plugindir}/ima.so
+1240: #%__transaction_prioreset	%{__plugindir}/prioreset.so
+1241: 
+1242: #------------------------------------------------------------------------------
+1243: # transaction specific macros
+1244: #%__transaction_plugins     msm
+1245: #%__plugindir				%{_libdir}/rpm-plugins
+1246: #%__transaction_msm       		%{__plugindir}/msm.so
+1247: #%__transaction_msm_default_policy	%{_libdir}/rpm-plugins/msm-device-sec-policy
+1248: #------------------------------------------------------------------------------
+1249: # Macros for further automated spec %setup and patch application
+1250: 
+1251: # default to plain patch
+1252: %__scm patch
+1253: # meh, figure something saner
+1254: %__scm_username rpm-build
+1255: %__scm_usermail <rpm-build>
+1256: %__scm_author %{__scm_username} %{__scm_usermail}
+1257: 
+1258: # Plain patch (-m is unused)
+1259: %__scm_setup_patch(q) %{nil}
+1260: %__scm_apply_patch(qp:m:)\
+1261: %{__patch} %{-p:-p%{-p*}} %{-q:-s} --fuzz=%{_default_patch_fuzz} %{_default_patch_flags}
+1262: 
+1263: # Plain patch with backups for gendiff
+1264: %__scm_setup_gendiff(q) %{nil}
+1265: %__scm_apply_gendiff(qp:m:)\
+1266: %{__patch} %{-p:-p%{-p*}} %{-q:-s} --fuzz=%{_default_patch_fuzz} %{_default_patch_flags} -b --suffix ".%{2}"
+1267: 
+1268: # Mercurial (aka hg)
+1269: %__scm_setup_hg(q)\
+1270: %{__hg} init %{-q} .\
+1271: %{__hg} add %{-q} .\
+1272: %{__hg} commit %{-q} --user "%{__scm_author}" -m "%{NAME}-%{VERSION} base"
+1273: 
+1274: %__scm_apply_hg(qp:m:)\
+1275: %{__hg} import - %{-p:-p%{-p*}} %{-q} -m %{-m*} --user "%{__scm_author}"
+1276: 
+1277: # Git
+1278: %__scm_setup_git(q)\
+1279: %{__git} init %{-q}\
+1280: %{__git} config user.name "%{__scm_username}"\
+1281: %{__git} config user.email "%{__scm_usermail}"\
+1282: %{__git} add .\
+1283: %{__git} commit %{-q} -a\\\
+1284: 	--author "%{__scm_author}" -m "%{NAME}-%{VERSION} base"
+1285: 
+1286: %__scm_apply_git(qp:m:)\
+1287: %{__git} apply --index %{-p:-p%{-p*}} -\
+1288: %{__git} commit %{-q} -m %{-m*} --author "%{__scm_author}"
+1289: 
+1290: # Git, using "git am" (-m is unused)
+1291: %__scm_setup_git_am(q)\
+1292: %{expand:%__scm_setup_git %{-q}}
+1293: 
+1294: %__scm_apply_git_am(qp:m:)\
+1295: %{__git} am %{-q} %{-p:-p%{-p*}}
+1296: 
+1297: # Quilt
+1298: %__scm_setup_quilt(q) %{nil}
+1299: %__scm_apply_quilt(qp:m:)\
+1300: %{__quilt} import %{-p:-p%{-p*}} %{1} && %{__quilt} push %{-q}
+1301: 
+1302: # Bzr
+1303: %__scm_setup_bzr(q)\
+1304: %{__bzr} init %{-q}\
+1305: %{__bzr} whoami --branch "%{__scm_author}"\
+1306: %{__bzr} add .\
+1307: %{__bzr} commit %{-q} -m "%{NAME}-%{VERSION} base"
+1308: 
+1309: # bzr doesn't seem to have its own command to apply patches?
+1310: %__scm_apply_bzr(qp:m:)\
+1311: %{__patch} %{-p:-p%{-p*}} %{-q:-s}\
+1312: %{__bzr} commit %{-q} -m %{-m*}
+1313: 
+1314: # Single patch application
+1315: %apply_patch(qp:m:)\
+1316: %{lua:\
+1317: local file = rpm.expand("%{1}")\
+1318: local num = rpm.expand("%{2}")\
+1319: if posix.access(file, "r") then\
+1320:     local options = rpm.expand("%{-q} %{-p:-p%{-p*}} %{-m:-m%{-m*}}")\
+1321:     local scm_apply = rpm.expand("%__scm_apply_%{__scm}")\
+1322:     print(rpm.expand("%{uncompress:"..file.."} | "..scm_apply.." "..options.."  "..file.." "..num.."\\n"))\
+1323: else\
+1324:     print("echo 'Cannot read "..file.."'; exit 1;".."\\n")\
+1325: end}
+1326: 
+1327: # Automatically apply all patches
+1328: %autopatch(vp:)\
+1329: %{lua:\
+1330: local options = rpm.expand("%{!-v:-q} %{-p:-p%{-p*}} ")\
+1331: for i, p in ipairs(patches) do\
+1332:     print(rpm.expand("%apply_patch -m %{basename:"..p.."}  "..options..p.." "..i.."\\n"))\
+1333: end}
+1334: 
+1335: # One macro to (optionally) do it all.
+1336: # -S<scm name>	Sets the used patch application style, eg '-S git' enables
+1337: #           	usage of git repository and per-patch commits.
+1338: # -N		Disable automatic patch application
+1339: # -p<num>	Use -p<num> for patch application	
+1340: %autosetup(a:b:cDn:TvNS:p:)\
+1341: %setup %{-a} %{-b} %{-c} %{-D} %{-n} %{-T} %{!-v:-q}\
+1342: %{-S:%global __scm %{-S*}}\
+1343: %{expand:%__scm_setup_%{__scm} %{!-v:-q}}\
+1344: %{!-N:%autopatch %{-v} %{-p:-p%{-p*}}}
+1345: 
+1346: # \endverbatim
+1347: #*/
+1348: 
+1349: 
+1350: #------------------------------------------------------------------------
+1351: # standard build service macros
+1352: #
+1353: %ext_info .gz
+1354: %ext_man .gz
+1355: 
+1356: %info_add() test -x /sbin/install-info -a -f %{?2}%{?!2:%{_infodir}}/%{1}%ext_info && /sbin/install-info --info-dir=%{?2}%{?!2:%{_infodir}} %{?2}%{?!2:%{_infodir}}/%{1}%ext_info \
+1357: %{nil}
+1358: 
+1359: %info_del() test -x /sbin/install-info -a ! -f %{?2}%{?!2:%{_infodir}}/%{1}%ext_info && /sbin/install-info --quiet --delete --info-dir=%{?2}%{?!2:%{_infodir}} %{?2}%{?!2:%{_infodir}}/%{1}%ext_info \
+1360: %{nil}
+1361: 
+1362: %user_group_add() \
+1363: /usr/sbin/groupadd -o -r %{1} 2>/dev/null || :\
+1364: /usr/sbin/useradd -o -r -g %{1} -d %{2} -s %{3} -c %{4} %{1} 2>/dev/null || :\
+1365: %{nil}

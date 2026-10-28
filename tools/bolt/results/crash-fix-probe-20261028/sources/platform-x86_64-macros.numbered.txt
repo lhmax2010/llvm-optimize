@@ -1,0 +1,82 @@
+1: # Per-platform rpm configuration file.
+2: 
+3: #==============================================================================
+4: # ---- per-platform macros.
+5: #
+6: %_arch			x86_64
+7: %_build_arch		x86_64
+8: %_vendor		tizen
+9: %_os			linux
+10: %_gnu			-gnu
+11: %_target_platform	%{_target_cpu}-%{_vendor}-%{_target_os}
+12: %optflags		-O2 -g -m64 -fmessage-length=0 -Wp,-D_FORTIFY_SOURCE=2 -fstack-protector -funwind-tables -fasynchronous-unwind-tables
+13: 
+14: %__isa_name		x86
+15: %__isa_bits		64
+16: %__isa			%{__isa_name}-%{__isa_bits}
+17: 
+18: %__abi			%{nil}
+19: 
+20: # The default transaction color. This value is a set of bits to
+21: # determine file and dependency affinity for this arch.
+22: #	0	uncolored (i.e. use only arch as install hint)
+23: #	1	Elf32 permitted
+24: #	2	Elf64 permitted
+25: %_transaction_color	3
+26: 
+27: #==============================================================================
+28: # ---- configure macros.
+29: #
+30: %_prefix		/usr
+31: %_exec_prefix		/usr
+32: %_bindir		/usr/bin
+33: %_sbindir		/usr/sbin
+34: %_libexecdir		/usr/libexec
+35: %_datarootdir		%{_prefix}/share
+36: %_datadir		/usr/share
+37: %_sysconfdir		/etc
+38: %_sharedstatedir	/usr/com
+39: %_localstatedir		/var
+40: %_lib			lib64
+41: %_libdir		/usr/lib64
+42: %_includedir		/usr/include
+43: %_oldincludedir		/usr/include
+44: %_infodir		/usr/share/info
+45: %_mandir		/usr/share/man
+46: %_initddir		%{_sysconfdir}/rc.d/init.d
+47: # Deprecated misspelling, present for backwards compatibility.
+48: %_initrddir		%{_initddir}
+49: %_rundir		/run
+50: 
+51: %_defaultdocdir		%{_datadir}/doc
+52: 
+53: # Maximum number of CPU's to use when building, 0 for unlimited.
+54: #%_smp_ncpus_max 0
+55: %_smp_mflags %([ -z "$RPM_BUILD_NCPUS" ] \\\
+56: 	&& RPM_BUILD_NCPUS="`/usr/bin/getconf _NPROCESSORS_ONLN`"; \\\
+57:         ncpus_max=%{?_smp_ncpus_max}; \\\
+58:         if [ -n "$ncpus_max" ] && [ "$ncpus_max" -gt 0 ] && [ "$RPM_BUILD_NCPUS" -gt "$ncpus_max" ]; then RPM_BUILD_NCPUS="$ncpus_max"; fi; \\\
+59:         if [ "$RPM_BUILD_NCPUS" -gt 1 ]; then echo "-j$RPM_BUILD_NCPUS"; fi)
+60: 
+61: #==============================================================================
+62: # ---- Build policy macros.
+63: #
+64: #---------------------------------------------------------------------
+65: #	Expanded at end of %install scriptlet.
+66: #
+67: 
+68: %__arch_install_post   %{nil}
+69: 
+70: %__os_install_post    \
+71:     %{_rpmconfigdir}/brp-compress \
+72:     %{_rpmconfigdir}/brp-strip %{__strip} \
+73:     %{_rpmconfigdir}/brp-strip-static-archive %{__strip} \
+74:     %{_rpmconfigdir}/brp-strip-comment-note %{__strip} %{__objdump} \
+75: %{nil}
+76: 
+77: %__spec_install_post\
+78:     %{?__debug_package:%{__debug_install_post}}\
+79:     %{__arch_install_post}\
+80:     %{__os_install_post}\
+81: %{nil}
+82: 

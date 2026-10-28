@@ -512,3 +512,8 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 ## 2026-10-28：外部评审材料包
 
 以只读确认的sandbox f308fe08为准，发布patches/review-20261028/：hybrid6e9d4f2的0001、BOLT f308的0002（显式--no-binary）、8个改动文本文件完整最终版、第三轮后变更说明、hybrid首次外审摘要、README/raw索引/SHA256SUMS。Source1200仅列文件名、9,735,212B和52fd8522…SHA，不含二进制内容，包不自包含构建输入。41符号文件失败和40权限限制均透明链接；源码/提交未改变。本轮仅推GitHub bolt-v4，发布后按README逐个检查raw链接。
+
+
+## 2026-10-28：42号崩溃定位根因与临时方案
+
+LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写728B，而输出缓冲区仅35,243,528B；37/39两种BOLT都崩溃，ordinary正常，非old-text独有。原始ELF范围/对齐检查无异常，GNU objcopy和平台eu-strip均可分离符号。方案甲GNUdebug文件33,147,264B，debuglink后clang仅+104B、RUNPATH与ALLOC内容保持、15/15 TU一致；新临时chroot中的已有Tizen LLDB自动加载标准debug路径，21个clang帧全有函数名，显式symbolizer24/24。自动symbolizer经主文件debuglink仅19/24，不夸大。平台列表与自动拆包规则支持手工debug文件归入clang-debuginfo，但本轮未重打包。方案乙因带DWARF重链输入已被strip-debug就地覆盖，按要求NOT RUN，未重新链接。临时proc已正常卸载，既有输入SHA不变，源码/发布代码未改。崩溃定位：根因和函数名临时方案已验证，正式集成及源码行仍挂账；详见[42号报告](42_crash_localization_rootcause.md)。

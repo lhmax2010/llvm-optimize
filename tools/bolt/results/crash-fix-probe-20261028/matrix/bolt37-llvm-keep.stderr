@@ -1,0 +1,20 @@
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-objcopy --only-keep-debug /home/linhao/Toolchain/development/llvm-optimize/temp/runpath-fix-20261026/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/clang.bolt /home/linhao/Toolchain/development/llvm-optimize/temp/crash-fix-probe-20261028/bolt37/llvm.debug
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  libLLVM.so.22.1 0x000071b57fcf9658 llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) + 40
+1  libLLVM.so.22.1 0x000071b57fcf6375 llvm::sys::RunSignalHandlers() + 293
+2  libLLVM.so.22.1 0x000071b57fcf9dc1
+3  libc.so.6       0x000071b57d862ac0
+4  libc.so.6       0x000071b57d974277
+5  libLLVM.so.22.1 0x000071b581f50647 llvm::objcopy::elf::ELFWriter<llvm::object::ELFType<(llvm::endianness)1, true>>::writeSegmentData() + 87
+6  libLLVM.so.22.1 0x000071b581f51da6 llvm::objcopy::elf::ELFWriter<llvm::object::ELFType<(llvm::endianness)1, true>>::write() + 22
+7  libLLVM.so.22.1 0x000071b581f2c437
+8  libLLVM.so.22.1 0x000071b581f2c6fd llvm::objcopy::elf::executeObjcopyOnBinary(llvm::objcopy::CommonConfig const&, llvm::objcopy::ELFConfig const&, llvm::object::ELFObjectFileBase&, llvm::raw_ostream&) + 269
+9  libLLVM.so.22.1 0x000071b581f18e4e llvm::objcopy::executeObjcopyOnBinary(llvm::objcopy::MultiFormatConfig const&, llvm::object::Binary&, llvm::raw_ostream&) + 94
+10 libLLVM.so.22.1 0x000071b57fcd8c9e llvm::writeToOutput(llvm::StringRef, std::function<llvm::Error (llvm::raw_ostream&)>) + 350
+11 llvm-objcopy    0x000071b58371bc59
+12 llvm-objcopy    0x000071b58371c657
+13 libc.so.6       0x000071b57d84db97
+14 libc.so.6       0x000071b57d84dc55 __libc_start_main + 133
+15 llvm-objcopy    0x000071b5836fd2e1

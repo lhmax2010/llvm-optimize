@@ -1,0 +1,767 @@
+1: #!/bin/bash
+2: #find-debuginfo.sh - automagically generate debug info and file list
+3: #for inclusion in an rpm spec file.
+4: #
+5: # Usage: find-debuginfo.sh [--strict-build-id] [--strip-disable] [--strip-option] [-g] [-r] [-m] [-i] [-n]
+6: #			   [--keep-section SECTION] [--remove-section SECTION]
+7: #	 		   [-j N]
+8: #	 		   [-o debugfiles.list]
+9: #	 		   [-S debugsourcefiles.list]
+10: #			   [--run-dwz] [--dwz-low-mem-die-limit N]
+11: #			   [--dwz-max-die-limit N]
+12: #			   [--build-id-seed SEED]
+13: #			   [--unique-debug-suffix SUFFIX]
+14: #			   [--unique-debug-src-base BASE]
+15: #			   [[-l filelist]... [-p 'pattern'] -o debuginfo.list]
+16: #			   [builddir]
+17: #
+18: # The -g flag says to use strip -g instead of full strip on DSOs or EXEs.
+19: # The -r flag says to use eu-strip --reloc-debug-sections.
+20: # Use --keep-section SECTION or --remove-section SECTION to explicitly
+21: # keep a (non-allocated) section in the main executable or explicitly
+22: # remove it into the .debug file. SECTION is an extended wildcard pattern.
+23: # Both options can be given more than once.
+24: #
+25: # The --strict-build-id flag says to exit with failure status if
+26: # any ELF binary processed fails to contain a build-id note.
+27: # The -m flag says to include a .gnu_debugdata section in the main binary.
+28: # The -i flag says to include a .gdb_index section in the .debug file.
+29: # The -n flag says to not recompute the build-id.
+30: #
+31: # The -j N option will spawn N processes to do the debuginfo extraction
+32: # in parallel.
+33: #
+34: # A single -o switch before any -l or -p switches simply renames
+35: # the primary output file from debugfiles.list to something else.
+36: # A -o switch that follows a -p switch or some -l switches produces
+37: # an additional output file with the debuginfo for the files in
+38: # the -l filelist file, or whose names match the -p pattern.
+39: # The -p argument is an grep -E -style regexp matching the a file name,
+40: # and must not use anchors (^ or $).
+41: #
+42: # The --run-dwz flag instructs find-debuginfo.sh to run the dwz utility
+43: # if available, and --dwz-low-mem-die-limit and --dwz-max-die-limit
+44: # provide detailed limits.  See dwz(1) -l and -L option for details.
+45: #
+46: # If --build-id-seed SEED is given then debugedit is called to
+47: # update the build-ids it finds adding the SEED as seed to recalculate
+48: # the build-id hash.  This makes sure the build-ids in the ELF files
+49: # are unique between versions and releases of the same package.
+50: # (Use --build-id-seed "%{VERSION}-%{RELEASE}".)
+51: #
+52: # If --unique-debug-suffix SUFFIX is given then the debug files created
+53: # for <FILE> will be named <FILE>-<SUFFIX>.debug.  This makes sure .debug
+54: # are unique between package version, release and architecture.
+55: # (Use --unique-debug-suffix "-%{VERSION}-%{RELEASE}.%{_arch}".)
+56: #
+57: # If --unique-debug-src-base BASE is given then the source directory
+58: # will be called /usr/debug/src/<BASE>.  This makes sure the debug source
+59: # directories are unique between package version, release and architecture.
+60: # (Use --unique-debug-src-base "%{name}-%{VERSION}-%{RELEASE}.%{_arch}".)
+61: #
+62: # All file names in switches are relative to builddir (. if not given).
+63: #
+64: 
+65: # Figure out where we are installed so we can call other helper scripts.
+66: lib_rpm_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+67: 
+68: # With -g arg, pass it to strip on libraries or executables.
+69: strip_g=false
+70: 
+71: # with -r arg, pass --reloc-debug-sections to eu-strip.
+72: strip_r=false
+73: 
+74: # keep or remove arguments to eu-strip.
+75: keep_remove_args=
+76: 
+77: # with -m arg, add minimal debuginfo to binary.
+78: include_minidebug=false
+79: 
+80: # with -i arg, add GDB index to .debug file.
+81: include_gdb_index=false
+82: 
+83: # Barf on missing build IDs.
+84: strict=false
+85: 
+86: # With --strip-disable arg, no strip
+87: strip_disable=false
+88: 
+89: # With --strip-option arg, this will be used as arg. of eu-strip
+90: strip_option=
+91: 
+92: # With --strip-option arg for ko file, this will be used as arg. of eu-strip
+93: strip_ko_option=
+94: 
+95: # Do not recompute build IDs.
+96: no_recompute_build_id=false
+97: 
+98: # DWZ parameters.
+99: run_dwz=false
+100: dwz_low_mem_die_limit=
+101: dwz_max_die_limit=
+102: 
+103: # build id seed given by the --build-id-seed option
+104: build_id_seed=
+105: 
+106: # Arch given by --unique-debug-arch
+107: unique_debug_suffix=
+108: 
+109: # Base given by --unique-debug-src-base
+110: unique_debug_src_base=
+111: 
+112: # Number of parallel jobs to spawn
+113: n_jobs=1
+114: 
+115: BUILDDIR=.
+116: out=debugfiles.list
+117: srcout=
+118: nout=0
+119: while [ $# -gt 0 ]; do
+120:   case "$1" in
+121:   --strict-build-id)
+122:     strict=true
+123:     ;;
+124:   --run-dwz)
+125:     run_dwz=true
+126:     ;;
+127:   --dwz-low-mem-die-limit)
+128:     dwz_low_mem_die_limit=$2
+129:     shift
+130:     ;;
+131:   --dwz-max-die-limit)
+132:     dwz_max_die_limit=$2
+133:     shift
+134:     ;;
+135:   --build-id-seed)
+136:     build_id_seed=$2
+137:     shift
+138:     ;;
+139:   --unique-debug-suffix)
+140:     unique_debug_suffix=$2
+141:     shift
+142:     ;;
+143:   --unique-debug-src-base)
+144:     unique_debug_src_base=$2
+145:     shift
+146:     ;;
+147:   --strip-disable)
+148:     strip_disable=true
+149:     ;;
+150:   *--strip-option*)
+151:     strip_option=$(echo $1 | sed 's/--strip-option=//')
+152:     ;;
+153:   *--strip-ko-option*)
+154:     strip_ko_option=$(echo $1 | sed 's/--strip-ko-option=//')
+155:    ;;
+156:   -g)
+157:     strip_g=true
+158:     ;;
+159:   -m)
+160:     include_minidebug=true
+161:     ;;
+162:   -n)
+163:     no_recompute_build_id=true
+164:     ;;
+165:   -i)
+166:     include_gdb_index=true
+167:     ;;
+168:   -o)
+169:     if [ -z "${lists[$nout]}" -a -z "${ptns[$nout]}" ]; then
+170:       out=$2
+171:     else
+172:       outs[$nout]=$2
+173:       ((nout++))
+174:     fi
+175:     shift
+176:     ;;
+177:   -l)
+178:     lists[$nout]="${lists[$nout]} $2"
+179:     shift
+180:     ;;
+181:   -p)
+182:     ptns[$nout]=$2
+183:     shift
+184:     ;;
+185:   -r)
+186:     strip_r=true
+187:     ;;
+188:   --keep-section)
+189:     keep_remove_args="${keep_remove_args} --keep-section $2"
+190:     shift
+191:     ;;
+192:   --remove-section)
+193:     keep_remove_args="${keep_remove_args} --remove-section $2"
+194:     shift
+195:     ;;
+196:   -j)
+197:     n_jobs=$2
+198:     shift
+199:     ;;
+200:   -j*)
+201:     n_jobs=${1#-j}
+202:     ;;
+203:   --jobs)
+204:     n_jobs=$2
+205:     shift
+206:     ;;
+207:   -S)
+208:     srcout=$2
+209:     shift
+210:     ;;
+211:   *)
+212:     BUILDDIR=$1
+213:     shift
+214:     break
+215:     ;;
+216:   esac
+217:   shift
+218: done
+219: 
+220: if test -n "$build_id_seed" -a "$no_recompute_build_id" = "true"; then
+221:   echo >&2 "*** ERROR: --build-id-seed (unique build-ids) and -n (do not recompute build-id) cannot be used together"
+222:   exit 2
+223: fi
+224: 
+225: i=0
+226: while ((i < nout)); do
+227:   outs[$i]="$BUILDDIR/${outs[$i]}"
+228:   l=''
+229:   for f in ${lists[$i]}; do
+230:     l="$l $BUILDDIR/$f"
+231:   done
+232:   lists[$i]=$l
+233:   ((++i))
+234: done
+235: 
+236: LISTFILE="$BUILDDIR/$out"
+237: SOURCEFILE="$BUILDDIR/debugsources.list"
+238: LINKSFILE="$BUILDDIR/debuglinks.list"
+239: ELFBINSFILE="$BUILDDIR/elfbins.list"
+240: 
+241: > "$SOURCEFILE"
+242: > "$LISTFILE"
+243: > "$LINKSFILE"
+244: > "$ELFBINSFILE"
+245: 
+246: debugdir="${RPM_BUILD_ROOT}/usr/lib/debug"
+247: 
+248: strip_to_debug()
+249: {
+250:   local g=
+251:   local r=
+252: 
+253: 
+254:   if test "$strip_disable" = true ; then
+255:       exit
+256:   fi
+257: 
+258:   $strip_r && r=--reloc-debug-sections
+259:   $strip_g && case "$(file -bi "$2")" in
+260:   application/x-sharedlib*) g=-g ;;
+261:   application/x-executable*) g=-g ;;
+262:   esac
+263: 
+264:   case $2 in
+265:       *.ko)
+266:           # don't attempt to create a minimal backtrace binary for
+267:           # kernel modules as this just causes the stripping process
+268:           # to be skipped entirely
+269:           eu-strip --remove-comment $r $strip_ko_option -f "$1" "$2" || exit
+270:           ;;
+271:       *)
+272:           # Support an alternative way to choose between strip (binutils) and
+273:           # eu-strip (elfutils) to handle a large shared object (e.g. chromium)
+274:           if [ "$STRIP_DEFAULT_PACKAGE" != "binutils" ]; then
+275:               eu-strip --remove-comment $g $strip_option -f "$1" "$2" || exit
+276:           else
+277:               cp "$2" "$1"
+278:               strip --remove-section=.comment $g $strip_option "$2" || exit
+279:               objcopy --add-gnu-debuglink="$1" "$2" || exit
+280:           fi
+281:   esac
+282:   chmod 444 "$1" || exit
+283: }
+284: 
+285: add_minidebug()
+286: {
+287:   local debuginfo="$1"
+288:   local binary="$2"
+289: 
+290:   local dynsyms=`mktemp`
+291:   local funcsyms=`mktemp`
+292:   local keep_symbols=`mktemp`
+293:   local mini_debuginfo=`mktemp`
+294: 
+295:   # In the minisymtab we don't need the .debug_ sections (already removed
+296:   # by -S) but also not other non-allocated PROGBITS, NOTE or NOBITS sections.
+297:   # List and remove them explicitly. We do want to keep the allocated,
+298:   # symbol and NOBITS sections so cannot use --keep-only because that is
+299:   # too aggressive. Field $2 is the section name, $3 is the section type
+300:   # and $8 are the section flags.
+301:   local remove_sections=`readelf -W -S "$debuginfo" \
+302: 	| awk '{ if (index($2,".debug_") != 1 \
+303: 		     && ($3 == "PROGBITS" || $3 == "NOTE" || $3 == "NOBITS") \
+304: 		     && index($8,"A") == 0) \
+305: 		   printf "--remove-section "$2" " }'`
+306: 
+307:   # Extract the dynamic symbols from the main binary, there is no need to also have these
+308:   # in the normal symbol table
+309:   nm -D "$binary" --format=posix --defined-only | awk '{ print $1 }' | sort > "$dynsyms"
+310:   # Extract all the text (i.e. function) symbols from the debuginfo
+311:   # Use format sysv to make sure we can match against the actual ELF FUNC
+312:   # symbol type. The binutils nm posix format symbol type chars are
+313:   # ambigous for architectures that might use function descriptors.
+314:   nm "$debuginfo" --format=sysv --defined-only | awk -F \| '{ if ($4 ~ "FUNC") print $1 }' | sort > "$funcsyms"
+315:   # Keep all the function symbols not already in the dynamic symbol table
+316:   comm -13 "$dynsyms" "$funcsyms" > "$keep_symbols"
+317:   # Copy the full debuginfo, keeping only a minumal set of symbols and removing some unnecessary sections
+318:   objcopy -S $remove_sections --keep-symbols="$keep_symbols" "$debuginfo" "$mini_debuginfo" &> /dev/null
+319:   #Inject the compressed data into the .gnu_debugdata section of the original binary
+320:   xz "$mini_debuginfo"
+321:   mini_debuginfo="${mini_debuginfo}.xz"
+322:   objcopy --add-section .gnu_debugdata="$mini_debuginfo" "$binary"
+323:   rm -f "$dynsyms" "$funcsyms" "$keep_symbols" "$mini_debuginfo"
+324: }
+325: 
+326: # Make a relative symlink to $1 called $3$2
+327: shopt -s extglob
+328: link_relative()
+329: {
+330:   local t="$1" f="$2" pfx="$3"
+331:   local fn="${f#/}" tn="${t#/}"
+332:   local fd td d
+333: 
+334:   while fd="${fn%%/*}"; td="${tn%%/*}"; [ "$fd" = "$td" ]; do
+335:     fn="${fn#*/}"
+336:     tn="${tn#*/}"
+337:   done
+338: 
+339:   d="${fn%/*}"
+340:   if [ "$d" != "$fn" ]; then
+341:     d="${d//+([!\/])/..}"
+342:     tn="${d}/${tn}"
+343:   fi
+344: 
+345:   mkdir -p "$(dirname "$pfx$f")" && ln -snf "$tn" "$pfx$f"
+346: }
+347: 
+348: # Make a symlink in /usr/lib/debug/$2 to $1
+349: debug_link()
+350: {
+351:   local l="/usr/lib/debug$2"
+352:   local t="$1"
+353:   echo >> "$LINKSFILE" "$l $t"
+354: 
+355:   # this should correspond to what brp-symlink is doing
+356:   case $t in
+357:       /usr*)
+358:           link_relative "$t" "$l" "$RPM_BUILD_ROOT"
+359:           ;;
+360:       *)
+361:           if [ ! -e $t ]; then
+362:               link_relative "$t" "$l" "$RPM_BUILD_ROOT"
+363:           else
+364:               mkdir -p "$(dirname "$RPM_BUILD_ROOT$l")" && \
+365:                   ln -snf "$t" "$RPM_BUILD_ROOT$l"
+366:           fi
+367:           ;;
+368:   esac
+369: }
+370: 
+371: get_debugfn()
+372: {
+373:   dn=$(dirname "${1#$RPM_BUILD_ROOT}")
+374:   bn=$(basename "$1")${unique_debug_suffix}.debug
+375:   debugdn=${debugdir}${dn}
+376:   debugfn=${debugdn}/${bn}
+377: }
+378: 
+379: set -o pipefail
+380: 
+381: strict_error=ERROR
+382: $strict || strict_error=WARNING
+383: 
+384: temp=$(mktemp -d ${TMPDIR:-/tmp}/find-debuginfo.XXXXXX)
+385: trap 'rm -rf "$temp"' EXIT
+386: 
+387: # Build a list of unstripped ELF files and their hardlinks
+388: touch "$temp/primary"
+389: find "$RPM_BUILD_ROOT" ! -path "${debugdir}/*.debug" -type f \( -perm /111 -or -name "*.so*" -or -name "*.ko" \) ! -name "*.a" -print0 | sort -z |
+390: xargs --no-run-if-empty -0 stat -c '%h %D_%i %n' |
+391: while read nlinks inum f; do
+392:   case $(objdump -h $f 2>/dev/null | egrep -o '(debug[\.a-z_]*|gnu.version)') in
+393:     *debuglink*) continue ;;
+394:     *debug*) ;;
+395:     *gnu.version*)
+396:       echo "WARNING: "`echo $f | sed -e "s,^$RPM_BUILD_ROOT/*,/,"`" is already stripped!"
+397:       continue
+398:       ;;
+399:     *) continue ;;
+400:   esac
+401:   # double check that we really have an ELF file,
+402:   # to handle monodevelop-debugger-gdb and monodevelop-debugger-mdb
+403:   ftype=`/usr/bin/file $f | cut -d: -f2-`
+404:   case $ftype in
+405:     *ELF*) ;;
+406:     *)
+407:        echo "$f is not an ELF file, skipping"
+408:        continue
+409:        ;;
+410:   esac
+411:   if [ $nlinks -gt 1 ]; then
+412:     var=seen_$inum
+413:     if test -n "${!var}"; then
+414:       echo "$inum $f" >>"$temp/linked"
+415:       continue
+416:     else
+417:       read "$var" < <(echo 1)
+418:     fi
+419:   fi
+420:   echo "$nlinks $inum $f" >>"$temp/primary"
+421: done
+422: 
+423: # Strip ELF binaries
+424: do_file()
+425: {
+426:   local nlinks=$1 inum=$2 f=$3 id link linked
+427: 
+428:   get_debugfn "$f"
+429:   [ -f "${debugfn}" ] && return
+430: 
+431:   echo "extracting debug info from $f"
+432:   # See also cpio SOURCEFILE copy. Directories must match up.
+433:   debug_base_name="$RPM_BUILD_DIR"
+434:   debug_dest_name="/usr/src/debug"
+435:   if [ ! -z "$unique_debug_src_base" ]; then
+436:     debug_base_name="$BUILDDIR"
+437:     debug_dest_name="/usr/src/debug/${unique_debug_src_base}"
+438:   fi
+439:   no_recompute=
+440:   if [ "$no_recompute_build_id" = "true" ]; then
+441:     no_recompute="-n"
+442:   fi
+443:   mode=$(stat -c %a "$f")
+444:   chmod +w "$f"
+445:   id=$(${lib_rpm_dir}/debugedit -b "$debug_base_name" -d "$debug_dest_name" \
+446: 			      $no_recompute -i \
+447: 			      ${build_id_seed:+--build-id-seed="$build_id_seed"} \
+448: 			      -l "$SOURCEFILE" "$f") || exit
+449:   if [ -z "$id" ]; then
+450:     echo >&2 "*** ${strict_error}: No build ID note found in $f"
+451:     $strict && exit 2
+452:   fi
+453: 
+454:   # Add .gdb_index if requested.
+455:   if $include_gdb_index; then
+456:     if type gdb-add-index >/dev/null 2>&1; then
+457:       gdb-add-index "$f"
+458:     else
+459:       echo >&2 "*** ERROR: GDB index requested, but no gdb-add-index installed"
+460:       exit 2
+461:     fi
+462:   fi
+463: 
+464:   # A binary already copied into /usr/lib/debug doesn't get stripped,
+465:   # just has its file names collected and adjusted.
+466:   case "$dn" in
+467:   /usr/lib/debug/*)
+468:     chmod $mode "$f"
+469:     return ;;
+470:   esac
+471: 
+472:   mkdir -p "${debugdn}"
+473:   if [ -e "${BUILDDIR}/Kconfig" ] ; then
+474:       mode=$(stat -c %a "$f")
+475:       chmod +w "$f"
+476:       objcopy --only-keep-debug $f $debugfn || :
+477:       (
+478: 	  shopt -s extglob
+479: 	  strip_option="--strip-all"
+480: 	  case "$f" in
+481: 	      *.ko)
+482: 		  strip_option="--strip-debug" ;;
+483: 	      *$STRIP_KEEP_SYMTAB*)
+484: 		  if test -n "$STRIP_KEEP_SYMTAB"; then
+485: 		      strip_option="--strip-debug"
+486: 		  fi
+487: 		  ;;
+488: 	  esac
+489: 	  if test "$NO_DEBUGINFO_STRIP_DEBUG" = true ; then
+490: 	      strip_option=
+491: 	  fi
+492:           if test "$strip_disable" = true ; then
+493:               strip_option=
+494:           fi
+495: 	  objcopy --add-gnu-debuglink=$debugfn -R .comment -R .GCC.command.line $strip_option $f
+496: 	  chmod $mode $f
+497:       ) || :
+498:   else
+499:       if test -w "$f"; then
+500: 	  strip_to_debug "${debugfn}" "$f"
+501:       else
+502: 	  chmod u+w "$f"
+503: 	  strip_to_debug "${debugfn}" "$f"
+504: 	  chmod u-w "$f"
+505:       fi
+506:   fi
+507: 
+508:   # strip -g implies we have full symtab, don't add mini symtab in that case.
+509:   # It only makes sense to add a minisymtab for executables and shared
+510:   # libraries. Other executable ELF files (like kernel modules) don't need it.
+511:   if [ "$include_minidebug" = "true" -a "$strip_g" = "false" ]; then
+512:     skip_mini=true
+513:     case "$(file -bi "$f")" in
+514:       application/x-sharedlib*) skip_mini=false ;;
+515:       application/x-executable*) skip_mini=false ;;
+516:     esac
+517:     $skip_mini || add_minidebug "${debugfn}" "$f"
+518:   fi
+519: 
+520:   echo "./${f#$RPM_BUILD_ROOT}" >> "$ELFBINSFILE"
+521: 
+522:   # If this file has multiple links, make the corresponding .debug files
+523:   # all links to one file too.
+524:   if [ $nlinks -gt 1 ]; then
+525:     grep "^$inum " "$temp/linked" | while read inum linked; do
+526:       link=$debugfn
+527:       get_debugfn "$linked"
+528:       echo "hard linked $link to $debugfn"
+529:       mkdir -p "$(dirname "$debugfn")" && ln -nf "$link" "$debugfn"
+530:     done
+531:   fi
+532: }
+533: 
+534: # 16^6 - 1 or about 16 million files
+535: FILENUM_DIGITS=6
+536: run_job()
+537: {
+538:   local jobid=$1 filenum
+539:   local SOURCEFILE=$temp/debugsources.$jobid ELFBINSFILE=$temp/elfbins.$jobid
+540: 
+541:   >"$SOURCEFILE"
+542:   >"$ELFBINSFILE"
+543:   # can't use read -n <n>, because it reads bytes one by one, allowing for
+544:   # races
+545:   while :; do
+546:     filenum=$(dd status='noxfer' bs=$(( FILENUM_DIGITS + 1 )) count=1)
+547:     if test -z "$filenum"; then
+548:       break
+549:     fi
+550:     do_file $(sed -n "$(( 0x$filenum )) p" "$temp/primary")
+551:   done
+552:   echo 0 >"$temp/res.$jobid"
+553: }
+554: 
+555: n_files=$(wc -l <"$temp/primary")
+556: if [ $n_jobs -gt $n_files ]; then
+557:   n_jobs=$n_files
+558: fi
+559: if [ $n_jobs -le 1 ]; then
+560:   while read nlinks inum f; do
+561:     do_file "$nlinks" "$inum" "$f"
+562:   done <"$temp/primary"
+563: else
+564:   for ((i = 1; i <= n_files; i++)); do
+565:     printf "%0${FILENUM_DIGITS}x\\n" $i
+566:   done | (
+567:     exec 3<&0
+568:     for ((i = 0; i < n_jobs; i++)); do
+569:       # The shell redirects stdin to /dev/null for background jobs. Work
+570:       # around this by duplicating fd 0
+571:       run_job $i <&3 &
+572:     done
+573:     wait
+574:   )
+575:   for f in "$temp"/res.*; do
+576:     res=$(< "$f")
+577:     if [ "$res" !=  "0" ]; then
+578:       exit 1
+579:     fi
+580:   done
+581:   cat "$temp"/debugsources.* >"$SOURCEFILE"
+582:   cat "$temp"/elfbins.* >"$ELFBINSFILE"
+583: fi
+584: 
+585: # Invoke the DWARF Compressor utility.
+586: if $run_dwz \
+587:    && [ -d "${RPM_BUILD_ROOT}/usr/lib/debug" ]; then
+588:   readarray dwz_files < <(cd "${RPM_BUILD_ROOT}/usr/lib/debug"; find -type f -name \*.debug | LC_ALL=C sort)
+589:   if [ ${#dwz_files[@]} -gt 0 ]; then
+590:     dwz_multifile_name="${RPM_PACKAGE_NAME}-${RPM_PACKAGE_VERSION}-${RPM_PACKAGE_RELEASE}.${RPM_ARCH}"
+591:     dwz_multifile_suffix=
+592:     dwz_multifile_idx=0
+593:     while [ -f "${RPM_BUILD_ROOT}/usr/lib/debug/.dwz/${dwz_multifile_name}${dwz_multifile_suffix}" ]; do
+594:       let ++dwz_multifile_idx
+595:       dwz_multifile_suffix=".${dwz_multifile_idx}"
+596:     done
+597:     dwz_multfile_name="${dwz_multifile_name}${dwz_multifile_suffix}"
+598:     dwz_opts="-h -q -r"
+599:     [ ${#dwz_files[@]} -gt 1 ] \
+600:       && dwz_opts="${dwz_opts} -m .dwz/${dwz_multifile_name}"
+601:     mkdir -p "${RPM_BUILD_ROOT}/usr/lib/debug/.dwz"
+602:     [ -n "${dwz_low_mem_die_limit}" ] \
+603:       && dwz_opts="${dwz_opts} -l ${dwz_low_mem_die_limit}"
+604:     [ -n "${dwz_max_die_limit}" ] \
+605:       && dwz_opts="${dwz_opts} -L ${dwz_max_die_limit}"
+606:     if type dwz >/dev/null 2>&1; then
+607:       ( cd "${RPM_BUILD_ROOT}/usr/lib/debug" && dwz $dwz_opts ${dwz_files[@]} )
+608:     else
+609:       echo >&2 "*** ERROR: DWARF compression requested, but no dwz installed"
+610:       exit 2
+611:     fi
+612:     # Remove .dwz directory if empty
+613:     rmdir "${RPM_BUILD_ROOT}/usr/lib/debug/.dwz" 2>/dev/null
+614:     if [ -f "${RPM_BUILD_ROOT}/usr/lib/debug/.dwz/${dwz_multifile_name}" ]; then
+615:       id="`readelf -Wn "${RPM_BUILD_ROOT}/usr/lib/debug/.dwz/${dwz_multifile_name}" \
+616: 	     2>/dev/null | sed -n 's/^.* Build ID: \([0-9a-f]\+\)/\1/p'`"
+617:     fi
+618: 
+619:     # dwz invalidates .gnu_debuglink CRC32 in the main files.
+620:     cat "$ELFBINSFILE" |
+621:     (cd "$RPM_BUILD_ROOT"; \
+622:      xargs -d '\n' ${lib_rpm_dir}/sepdebugcrcfix usr/lib/debug)
+623:   fi
+624: fi
+625: 
+626: # We used to make a .debug symlink for each symlink whose target
+627: # has a .debug file to that file.  This is not necessary because
+628: # the debuglink section contains only the destination of those links.
+629: # Creating those links anyway results in debuginfo packages for
+630: # devel packages just because of the .so symlinks in them.
+631: 
+632: ## For each symlink whose target has a .debug file,
+633: ## make a .debug symlink to that file.
+634: #find "$RPM_BUILD_ROOT" ! -path "${debugdir}/*" -type l -print |
+635: #while read f
+636: #do
+637: #  t=$(readlink -m "$f").debug
+638: #  f=${f#$RPM_BUILD_ROOT}
+639: #  t=${t#$RPM_BUILD_ROOT}
+640: #  if [ -f "$debugdir$t" ]; then
+641: #    echo "symlinked /usr/lib/debug$t to /usr/lib/debug${f}.debug"
+642: #    debug_link "/usr/lib/debug$t" "${f}.debug"
+643: #  fi
+644: #done
+645: 
+646: if [ -s "$SOURCEFILE" ]; then
+647:   # See also debugedit invocation. Directories must match up.
+648:   debug_base_name="$RPM_BUILD_DIR"
+649:   debug_dest_name="/usr/src/debug"
+650:   if [ ! -z "$unique_debug_src_base" ]; then
+651:     debug_base_name="$BUILDDIR"
+652:     debug_dest_name="/usr/src/debug/${unique_debug_src_base}"
+653:   fi
+654: 
+655:   mkdir -p "${RPM_BUILD_ROOT}${debug_dest_name}"
+656:   # Filter out anything compiler generated which isn't a source file.
+657:   # e.g. <internal>, <built-in>, <__thread_local_inner macros>.
+658:   # Some compilers generate them as if they are part of the working
+659:   # directory (which is why we match against ^ or /).
+660: 
+661:   # Get package name from directory and then filter out all files not
+662:   # starting with this name
+663:   #remove old patch: 6428714ec2f4a0aa2b3c3b2e1b81c2cedf06e8c6
+664:   #pn=$(basename "$BUILDDIR")
+665:   LC_ALL=C sort -z -u "$SOURCEFILE" | grep -E -v -z '(^|/)<[a-z _-]+>$' |
+666:   #grep -E -z "^${pn}" |
+667:   (cd "${debug_base_name}"; cpio -pd0mL "${RPM_BUILD_ROOT}${debug_dest_name}")
+668:   # stupid cpio creates new directories in mode 0700,
+669:   # and non-standard modes may be inherented from original directories, fixup
+670:   find "${RPM_BUILD_ROOT}${debug_dest_name}" -type d -print0 |
+671:   xargs --no-run-if-empty -0 chmod 0755
+672:   find "${RPM_BUILD_ROOT}${debug_dest_name}" -type f -print0 |
+673:   xargs --no-run-if-empty -0 chmod a+r
+674: fi
+675: 
+676: if [ -d "${RPM_BUILD_ROOT}/usr/lib" -o -d "${RPM_BUILD_ROOT}/usr/src" ]; then
+677:   ((nout > 0)) ||
+678:   test ! -d "${RPM_BUILD_ROOT}/usr/lib" ||
+679:   (cd "${RPM_BUILD_ROOT}/usr/lib"; test ! -d debug || find debug -type d) |
+680:   sed 's,^,%dir /usr/lib/,' >> "$LISTFILE"
+681: 
+682:   (cd "${RPM_BUILD_ROOT}/usr"
+683:    test ! -d lib/debug || find lib/debug ! -type d
+684:    test ! -d src/debug -o -n "$srcout" || find src/debug -mindepth 1 -maxdepth 1
+685:   ) | sed 's,^,/usr/,' >> "$LISTFILE"
+686: fi
+687: 
+688: if [ -n "$srcout" ]; then
+689:   srcout="$BUILDDIR/$srcout"
+690:   > "$srcout"
+691:   if [ -d "${RPM_BUILD_ROOT}/usr/src/debug" ]; then
+692:     (cd "${RPM_BUILD_ROOT}/usr"
+693:      find src/debug -mindepth 1 -maxdepth 1
+694:     ) | sed 's,^,/usr/,' >> "$srcout"
+695:   fi
+696: fi
+697: 
+698: # Append to $1 only the lines from stdin not already in the file.
+699: append_uniq()
+700: {
+701:   grep -F -f "$1" -x -v >> "$1"
+702: }
+703: 
+704: # Helper to generate list of corresponding .debug files from a file list.
+705: filelist_debugfiles()
+706: {
+707:   local extra="$1"
+708:   shift
+709:   sed 's/^%[a-z0-9_][a-z0-9_]*([^)]*) *//
+710: s/^%[a-z0-9_][a-z0-9_]* *//
+711: /^$/d
+712: '"$extra" "$@"
+713: }
+714: 
+715: # Write an output debuginfo file list based on given input file lists.
+716: filtered_list()
+717: {
+718:   local out="$1"
+719:   shift
+720:   test $# -gt 0 || return
+721:   grep -F -f <(filelist_debugfiles 's,^.*$,/usr/lib/debug&.debug,' "$@") \
+722:   	-x $LISTFILE >> $out
+723:   sed -n -f <(filelist_debugfiles 's/[\\.*+#]/\\&/g
+724: h
+725: s,^.*$,s# &$##p,p
+726: g
+727: s,^.*$,s# /usr/lib/debug&.debug$##p,p
+728: ' "$@") "$LINKSFILE" | append_uniq "$out"
+729: }
+730: 
+731: # Write an output debuginfo file list based on an grep -E -style regexp.
+732: pattern_list()
+733: {
+734:   local out="$1" ptn="$2"
+735:   test -n "$ptn" || return
+736:   grep -E -x -e "$ptn" "$LISTFILE" >> "$out"
+737:   sed -n -r "\#^$ptn #s/ .*\$//p" "$LINKSFILE" | append_uniq "$out"
+738: }
+739: 
+740: #
+741: # When given multiple -o switches, split up the output as directed.
+742: #
+743: i=0
+744: while ((i < nout)); do
+745:   > ${outs[$i]}
+746:   filtered_list ${outs[$i]} ${lists[$i]}
+747:   pattern_list ${outs[$i]} "${ptns[$i]}"
+748:   grep -Fvx -f ${outs[$i]} "$LISTFILE" > "${LISTFILE}.new"
+749:   mv "${LISTFILE}.new" "$LISTFILE"
+750:   ((++i))
+751: done
+752: if ((nout > 0)); then
+753:   # Now add the right %dir lines to each output list.
+754:   (cd "${RPM_BUILD_ROOT}"; find usr/lib/debug -type d) |
+755:   sed 's#^.*$#\\@^/&/@{h;s@^.*$@%dir /&@p;g;}#' |
+756:   LC_ALL=C sort -ur > "${LISTFILE}.dirs.sed"
+757:   i=0
+758:   while ((i < nout)); do
+759:     sed -n -f "${LISTFILE}.dirs.sed" "${outs[$i]}" | sort -u > "${outs[$i]}.new"
+760:     cat "${outs[$i]}" >> "${outs[$i]}.new"
+761:     mv -f "${outs[$i]}.new" "${outs[$i]}"
+762:     ((++i))
+763:   done
+764:   sed -n -f "${LISTFILE}.dirs.sed" "${LISTFILE}" | sort -u > "${LISTFILE}.new"
+765:   cat "$LISTFILE" >> "${LISTFILE}.new"
+766:   mv "${LISTFILE}.new" "$LISTFILE"
+767: fi

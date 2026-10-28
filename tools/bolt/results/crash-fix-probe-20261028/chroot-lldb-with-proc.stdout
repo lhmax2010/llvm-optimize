@@ -1,0 +1,50 @@
+(lldb) command source -s 0 '/probe/probe.lldb'
+Executing commands in '/probe/probe.lldb'.
+(lldb) settings set target.disable-aslr false
+(lldb) settings set target.disable-stdio true
+(lldb) target create /usr/bin/clang-22
+Current executable set to '/usr/bin/clang-22' (x86_64).
+(lldb) image list -f -s
+[  0] /usr/bin/clang-22 /usr/lib/debug/usr/bin/clang-22.debug
+(lldb) image lookup -n llvm::sys::PrintStackTrace
+1 match found in /usr/bin/clang-22:
+        Address: clang-22[0x000000000514ce80] (clang-22.PT_LOAD[1]..text.cold + 28655232)
+        Summary: clang-22`llvm::sys::PrintStackTrace(llvm::raw_ostream&, int)
+(lldb) settings set -- target.run-args --no-default-config -fno-crash-diagnostics -fsyntax-only /probe/crash.c
+(lldb) run
+Process 921020 launched: '/usr/bin/clang-22' (x86_64)
+Process 921020 stopped
+* thread #1, name = 'clang-22', stop reason = signal SIGILL: illegal operand
+    frame #0: 0x000059aec6fbd4a8 clang-22`(anonymous namespace)::PragmaDebugHandler::HandlePragma(clang::Preprocessor&, clang::PragmaIntroducer, clang::Token&) + 3360
+clang-22`(anonymous namespace)::PragmaDebugHandler::HandlePragma:
+->  0x59aec6fbd4a8 <+3360>: ud2    
+    0x59aec6fbd4aa:         nopw   %cs:(%rax,%rax)
+    0x59aec6fbd4b9:         nopl   (%rax)
+clang-22`LexModuleName:
+    0x59aec6fbd4c0 <+0>:    pushq  %rbp
+(lldb) bt all
+* thread #1, name = 'clang-22', stop reason = signal SIGILL: illegal operand
+  * frame #0: 0x000059aec6fbd4a8 clang-22`(anonymous namespace)::PragmaDebugHandler::HandlePragma(clang::Preprocessor&, clang::PragmaIntroducer, clang::Token&) + 3360
+    frame #1: 0x000059aec209d2d9 clang-22`clang::Preprocessor::HandlePragmaDirective(clang::PragmaIntroducer) + 81
+    frame #2: 0x000059aec20a1d89 clang-22`clang::Preprocessor::HandleDirective(clang::Token&) + 457
+    frame #3: 0x000059aec1af31d3 clang-22`clang::Lexer::LexTokenInternal(clang::Token&, bool) + 9235
+    frame #4: 0x000059aec1af04bb clang-22`clang::Preprocessor::Lex(clang::Token&) + 37
+    frame #5: 0x000059aec1d419e8 clang-22`clang::ParseAST(clang::Sema&, bool, bool) + 552
+    frame #6: 0x000059aec26388aa clang-22`clang::FrontendAction::Execute() + 30
+    frame #7: 0x000059aec2630432 clang-22`clang::CompilerInstance::ExecuteAction(clang::FrontendAction&) + 302
+    frame #8: 0x000059aec2630243 clang-22`clang::ExecuteCompilerInvocation(clang::CompilerInstance*) + 195
+    frame #9: 0x000059aec262eb8a clang-22`cc1_main(llvm::ArrayRef<char const*>, char const*, void*) + 2378
+    frame #10: 0x000059aec235de57 clang-22`ExecuteCC1Tool(llvm::SmallVectorImpl<char const*>&, llvm::ToolContext const&, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>) + 341
+    frame #11: 0x000059aec235dcf1 clang-22`int llvm::function_ref<int (llvm::SmallVectorImpl<char const*>&)>::callback_fn<clang_main(int, char**, llvm::ToolContext const&)::$_0>(long, llvm::SmallVectorImpl<char const*>&) + 49
+    frame #12: 0x000059aec235dca3 clang-22`void llvm::function_ref<void ()>::callback_fn<clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const::$_0>(long) + 25
+    frame #13: 0x000059aec235dc7b clang-22`llvm::CrashRecoveryContext::RunSafely(llvm::function_ref<void ()>) + 123
+    frame #14: 0x000059aec235db6c clang-22`clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const + 300
+    frame #15: 0x000059aec235d9ad clang-22`clang::driver::Compilation::ExecuteCommand(clang::driver::Command const&, clang::driver::Command const*&, bool) const + 157
+    frame #16: 0x000059aec235d8de clang-22`clang::driver::Compilation::ExecuteJobs(clang::driver::JobList const&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&, bool) const + 94
+    frame #17: 0x000059aec235d851 clang-22`clang::driver::Driver::ExecuteCompilation(clang::driver::Compilation&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&) + 189
+    frame #18: 0x000059aec262c70d clang-22`clang_main(int, char**, llvm::ToolContext const&) + 3341
+    frame #19: 0x000059aec262b99a clang-22`main + 90
+    frame #20: 0x000079476964db97 libc.so.6`___lldb_unnamed_symbol_29b30 + 103
+    frame #21: 0x000079476964dc55 libc.so.6`__libc_start_main + 133
+    frame #22: 0x000059aec25ecfe1 clang-22`_start + 33
+(lldb) quit
