@@ -1,0 +1,365 @@
+  ftrace:branch                                      [Tracepoint event]
+       [Counts the total number of BACLEARS due to all branch types including
+        conditional and unconditional jumps,returns,and indirect branches.
+       [Counts the number of BACLEARS due to an indirect branch. Unit:
+       [Counts the number of BACLEARS due to a return branch. Unit: cpu_atom]
+  frontend_retired.branch_detect
+        branch instruction causes bubbles/empty issue slots due to a baclear.
+  frontend_retired.branch_resteer
+        branch instruction causes bubbles /empty issue slots due to a btclear.
+        branch instruction causes bubbles/empty issue slots due to a predecode
+       [Clears due to Unknown Branches. Unit: cpu_core]
+       [Retired ANT branches. Unit: cpu_core]
+       [Mispredicted Retired ANT branches. Unit: cpu_core]
+  frontend_retired.unknown_branch
+       [Retired instructions that caused clears due to being Unknown Branches.
+  br_inst_retired.all_branches
+       [Counts the total number of branch instructions retired for all branch
+       [Counts retired JCC (Jump on Conditional Code) branch instructions
+        retired includes both taken and not taken branches. Unit: cpu_atom]
+       [Counts the number of not taken JCC branch instructions retired. Unit:
+       [Counts the number of taken JCC branch instructions retired. Unit:
+  br_inst_retired.far_branch
+       [Counts the number of far branch instructions retired,includes far jump,
+       [Counts the number of near indirect JMP and near indirect CALL branch
+       [Counts the number of near indirect CALL branch instructions retired.
+       [Counts the number of near indirect JMP branch instructions retired.
+       [Counts the number of near CALL branch instructions retired. Unit:
+       [Counts the number of near RET branch instructions retired. Unit:
+       [Counts the number of taken branch instructions retired. Unit: cpu_atom]
+       [Counts the number of near relative CALL branch instructions retired.
+  br_misp_retired.all_branches
+       [Counts the total number of mispredicted branch instructions retired
+        for all branch types. Unit: cpu_atom]
+       [Counts the number of mispredicted JCC branch instructions retired.
+       [Counts the number of mispredicted not taken JCC branch instructions
+       [Counts the number of mispredicted taken JCC branch instructions
+        CALL branch instructions retired. Unit: cpu_atom]
+       [Counts the number of mispredicted near indirect CALL branch
+       [Counts the number of mispredicted near indirect JMP branch
+       [Counts the number of mispredicted near taken branch instructions
+       [Counts the number of mispredicted near RET branch instructions
+  misc_retired.lbr_inserts
+       [Counts the number of LBR entries recorded. Requires LBRs to be enabled
+        in IA32_LBR_CTL. Unit: cpu_atom]
+        the backend due to Branch Mispredict. Unit: cpu_atom]
+  topdown_fe_bound.branch_detect
+  topdown_fe_bound.branch_resteer
+  br_inst_retired.all_branches
+       [All branch instructions retired. Unit: cpu_core]
+       [Conditional branch instructions retired. Unit: cpu_core]
+       [Not taken branch instructions retired. Unit: cpu_core]
+       [Taken conditional branch instructions retired. Unit: cpu_core]
+       [Taken backward conditional branch instructions retired. Unit: cpu_core]
+       [Taken forward conditional branch instructions retired. Unit: cpu_core]
+  br_inst_retired.far_branch
+       [Far branch instructions retired. Unit: cpu_core]
+       [Indirect near branch instructions retired (excluding returns). Unit:
+       [Taken branch instructions retired. Unit: cpu_core]
+  br_misp_retired.all_branches
+       [All mispredicted branch instructions retired. Unit: cpu_core]
+  br_misp_retired.all_branches_cost
+       [All mispredicted branch instructions retired. This precise event may
+        mispredicted branch. Unit: cpu_core]
+       [Mispredicted conditional branch instructions retired. Unit: cpu_core]
+       [Mispredicted conditional branch instructions retired. This precise
+        the mispredicted branch. Unit: cpu_core]
+       [Mispredicted non-taken conditional branch instructions retired. Unit:
+       [Mispredicted non-taken conditional branch instructions retired. This
+        immediately follows the mispredicted branch. Unit: cpu_core]
+       [number of branch instructions retired that were mispredicted and
+       [number of branch instructions retired that were mispredicted and taken
+       [number of branch instructions retired that were mispredicted and taken
+        immediately follows the mispredicted branch. Unit: cpu_core]
+       [Mispredicted taken conditional branch instructions retired. This
+        immediately follows the mispredicted branch. Unit: cpu_core]
+       [number of branch instructions retired that were mispredicted and taken
+       [number of branch instructions retired that were mispredicted and taken
+        immediately follows the mispredicted branch. Unit: cpu_core]
+       [Miss-predicted near indirect branch instructions retired (excluding
+        branch. Unit: cpu_core]
+       [Mispredicted near indirect branch instructions retired (excluding
+        immediately follows the mispredicted branch. Unit: cpu_core]
+       [Number of near branch instructions retired that were mispredicted and
+       [Mispredicted taken near branch instructions retired. This precise
+        the mispredicted branch. Unit: cpu_core]
+        branch. Unit: cpu_core]
+       [retired macro-fused uops when there is a branch in the macro-fused
+       [Counts cycles after recovery from a branch misprediction or machine
+  int_misc.unknown_branch_cycles
+       [Bubble cycles of BAClear (Unknown Branch). Unit: cpu_core]
+  misc_retired.lbr_inserts
+       [LBR record is inserted. Unit: cpu_core]
+       [TMA slots wasted due to incorrect speculation by branch
+       [Total pipeline cost of Branch Misprediction related bottlenecks]
+  tma_info_bad_spec_branch_misprediction_cost
+       [Branch Misprediction Cost: Cycles representing fraction of TMA slots
+        wasted per non-speculative branch misprediction (retired JEClear)]
+        branches (lower number means higher occurrence rate)]
+        branches (lower number means higher occurrence rate)]
+        branches (lower number means higher occurrence rate)]
+       [Instructions per retired Mispredicts for indirect CALL or JMP branches
+       [Instructions per retired Mispredicts for return branches (lower number
+       [Number of Instructions per non-speculative Branch Misprediction
+  tma_info_branches_callret
+       [Fraction of branches that are CALL or RET]
+  tma_info_branches_cond_nt
+       [Fraction of branches that are non-taken conditionals]
+  tma_info_branches_cond_tk_bwd
+       [Fraction of branches that are forward taken conditionals]
+  tma_info_branches_cond_tk_fwd
+       [Fraction of branches that are forward taken conditionals]
+  tma_info_branches_jump
+       [Fraction of branches that are unconditional (direct or indirect) jumps]
+  tma_info_branches_other_branches
+       [Fraction of branches of other types (not individually covered by other
+        metrics in Info.Branches group)]
+       [Total pipeline cost of Branch Misprediction related bottlenecks]
+  tma_branch_mispredicts
+        Branch Misprediction]
+        Branch Resteers as a result of Machine Clears]
+       [Number of Instructions per non-speculative Branch Misprediction
+        Branch Resteers as a result of Branch Misprediction at execution stage]
+  tma_unknown_branches
+        new branch address clears]
+       [Total pipeline cost of Branch Misprediction related bottlenecks]
+  tma_branch_mispredicts
+        Branch Misprediction]
+        retired misprediction by non-taken conditional branches]
+        misprediction by backward-taken conditional branches]
+        misprediction by forward-taken conditional branches]
+  tma_info_bad_spec_branch_misprediction_cost
+       [Branch Misprediction Cost: Cycles representing fraction of TMA slots
+        wasted per non-speculative branch misprediction (retired JEClear)]
+        branches (lower number means higher occurrence rate)]
+        branches (lower number means higher occurrence rate)]
+        branches (lower number means higher occurrence rate)]
+       [Instructions per retired Mispredicts for indirect CALL or JMP branches
+       [Instructions per retired Mispredicts for return branches (lower number
+       [Number of Instructions per non-speculative Branch Misprediction
+        Branch Resteers as a result of Branch Misprediction at execution stage]
+        other cases of misprediction (non-retired x86 branches or other types)]
+Branches: [Grouping from Top-down Microarchitecture Analysis Metrics spreadsheet]
+  tma_info_branches_callret
+       [Fraction of branches that are CALL or RET]
+  tma_info_branches_cond_nt
+       [Fraction of branches that are non-taken conditionals]
+  tma_info_branches_cond_tk_bwd
+       [Fraction of branches that are forward taken conditionals]
+  tma_info_branches_cond_tk_fwd
+       [Fraction of branches that are forward taken conditionals]
+  tma_info_branches_jump
+       [Fraction of branches that are unconditional (direct or indirect) jumps]
+  tma_info_branches_other_branches
+       [Fraction of branches of other types (not individually covered by other
+        metrics in Info.Branches group)]
+       [Taken Branches retired Per Cycle]
+  tma_info_inst_mix_bptkbranch
+       [Branch instructions per taken branch]
+  tma_info_inst_mix_ipbranch
+       [Instructions per Branch (lower number means higher occurrence rate)]
+       [Instructions per taken branch]
+  tma_info_system_ipfarbranch
+       [Instructions per Far Branch ( Far Branches apply upon transition from
+       [Uops per taken branch]
+  tma_non_fused_branches
+        branch instructions that were not fused]
+  tma_unknown_branches
+        new branch address clears]
+  tma_bottleneck_branching_overhead
+  tma_non_fused_branches
+        branch instructions that were not fused]
+        other cases of misprediction (non-retired x86 branches or other types)]
+       [Total pipeline cost of Branch Misprediction related bottlenecks]
+  tma_branch_mispredicts
+        Branch Misprediction]
+        Branch Resteers as a result of Branch Misprediction at execution stage]
+        category not covered by Branching_Overhead nor Irregular_Overhead]
+  tma_info_branches_cond_nt
+       [Fraction of branches that are non-taken conditionals]
+  tma_info_branches_cond_tk_bwd
+       [Fraction of branches that are forward taken conditionals]
+  tma_info_branches_cond_tk_fwd
+       [Fraction of branches that are forward taken conditionals]
+  branch_frequency
+       [Branches per CPU second]
+  branch_miss_rate
+       [Branch miss rate]
+  tma_info_frontend_ipunknown_branch
+       [Instructions per speculative Unknown Branch Misprediction (BAClear)
+  tma_info_frontend_unknown_branch_cost
+        Branch detection]
+  tma_info_frontend_unknown_branches_ret
+        stalled likely due to retired branches who got branch address clears]
+  tma_info_inst_mix_bptkbranch
+       [Branch instructions per taken branch]
+  tma_info_inst_mix_ipbranch
+       [Instructions per Branch (lower number means higher occurrence rate)]
+       [Instructions per taken branch]
+       [Uops per taken branch]
+       [Taken Branches retired Per Cycle]
+       [Instructions per taken branch]
+       [Uops per taken branch]
+  tma_branch_resteers
+        Branch Resteers]
+  tma_info_frontend_unknown_branches_ret
+        stalled likely due to retired branches who got branch address clears]
+  tma_unknown_branches
+        new branch address clears]
+       [Instructions per taken branch]
+  tma_info_inst_mix_ipbranch
+       [Instructions per Branch (lower number means higher occurrence rate)]
+        Branch Resteers as a result of Machine Clears]
+  tma_info_system_ipfarbranch
+       [Instructions per Far Branch ( Far Branches apply upon transition from
+  tma_info_branches_cond_nt
+       [Fraction of branches that are non-taken conditionals]
+  tma_info_branches_cond_tk_bwd
+       [Fraction of branches that are forward taken conditionals]
+  tma_info_branches_cond_tk_fwd
+       [Fraction of branches that are forward taken conditionals]
+  tma_info_inst_mix_bptkbranch
+       [Branch instructions per taken branch]
+       [Instructions per taken branch]
+  tma_non_fused_branches
+        branch instructions that were not fused]
+  tma_bottleneck_branching_overhead
+        category not covered by Branching_Overhead nor Irregular_Overhead]
+  tma_branch_mispredicts
+        Branch Misprediction]
+  tma_branch_mispredicts
+        Branch Misprediction]
+        itlb misses,branch detection,and resteer limitations]
+  tma_branch_detect
+        frontend due to BACLEARS,which occurs when the Branch Target Buffer
+        (BTB) prediction or lack thereof,was corrected by a later branch
+  tma_branch_resteer
+        frontend due to BTCLEARS,which occurs when the Branch Target Buffer
+        (BTB) predicts a taken branch]
+  tma_branch_resteers
+        Branch Resteers]
+        retired misprediction by non-taken conditional branches]
+        misprediction by backward-taken conditional branches]
+        misprediction by forward-taken conditional branches]
+  tma_non_fused_branches
+        branch instructions that were not fused]
+        other cases of misprediction (non-retired x86 branches or other types)]
+        Branch Resteers as a result of Machine Clears]
+        Branch Resteers as a result of Branch Misprediction at execution stage]
+  tma_unknown_branches
+        new branch address clears]
+lpm_br: [breakdown of retired branch instructions]
+  lpm_br_cond_insn_between_branches
+        branches]
+       [Retired conditional branch instructions mispredicted as a percentage
+        of all conditional branches]
+       [Retired conditional not taken branch instructions]
+  lpm_br_far_insn_between_branches
+       [The number of instructions divided by the number of far branches]
+  lpm_br_taken_insn_between_branches
+       [The number of instructions divided by the number of taken branches]
+       [The number of retired taken branch instructions that were mispredicted
+        as a percentage of all taken branches]
+       [The number of taken branches that were retired per second]
+  lpm_br_total_insn_between_branches
+       [The number of instructions divided by the number of branches]
+       [The number of resync branches per second]
+       [The number of branch instructions retired,of any type,that were not
+        correctly predicted as a percentage of all branch instrucions]
+       [The number of branch instructions retired per second]
+  lpm_br_cond_insn_between_branches
+        branches]
+       [Retired conditional branch instructions mispredicted as a percentage
+        of all conditional branches]
+       [Retired conditional not taken branch instructions]
+       [Retired conditional not taken branch instructions]
+  lpm_br_cond_insn_between_branches
+        branches]
+       [Retired conditional branch instructions mispredicted as a percentage
+        of all conditional branches]
+  lpm_br_far_insn_between_branches
+       [The number of instructions divided by the number of far branches]
+  lpm_br_taken_insn_between_branches
+       [The number of instructions divided by the number of taken branches]
+       [The number of retired taken branch instructions that were mispredicted
+        as a percentage of all taken branches]
+       [The number of taken branches that were retired per second]
+  lpm_br_total_insn_between_branches
+       [The number of instructions divided by the number of branches]
+       [The number of resync branches per second]
+       [The number of branch instructions retired,of any type,that were not
+        correctly predicted as a percentage of all branch instrucions]
+       [The number of branch instructions retired per second]
+       [Branches taken per context switch]
+  tma_branch_mispredicts
+        Branch Misprediction]
+        itlb misses,branch detection,and resteer limitations]
+  tma_branch_detect
+        frontend due to BACLEARS,which occurs when the Branch Target Buffer
+        (BTB) prediction or lack thereof,was corrected by a later branch
+  tma_branch_resteer
+        frontend due to BTCLEARS,which occurs when the Branch Target Buffer
+        (BTB) predicts a taken branch]
+  tma_branch_resteers
+        Branch Resteers]
+        retired misprediction by non-taken conditional branches]
+        misprediction by backward-taken conditional branches]
+        misprediction by forward-taken conditional branches]
+  tma_non_fused_branches
+        branch instructions that were not fused]
+        other cases of misprediction (non-retired x86 branches or other types)]
+        Branch Resteers as a result of Machine Clears]
+        Branch Resteers as a result of Branch Misprediction at execution stage]
+  tma_unknown_branches
+        new branch address clears]
+  tma_branch_mispredicts
+        Branch Misprediction]
+tma_branch_mispredicts_group: [Metrics contributing to tma_branch_mispredicts category]
+        retired misprediction by non-taken conditional branches]
+        misprediction by backward-taken conditional branches]
+        misprediction by forward-taken conditional branches]
+        other cases of misprediction (non-retired x86 branches or other types)]
+tma_branch_resteers_group: [Metrics contributing to tma_branch_resteers category]
+        Branch Resteers as a result of Machine Clears]
+        Branch Resteers as a result of Branch Misprediction at execution stage]
+  tma_unknown_branches
+        new branch address clears]
+  tma_branch_resteers
+        Branch Resteers]
+        itlb misses,branch detection,and resteer limitations]
+  tma_branch_detect
+        frontend due to BACLEARS,which occurs when the Branch Target Buffer
+        (BTB) prediction or lack thereof,was corrected by a later branch
+  tma_branch_resteer
+        frontend due to BTCLEARS,which occurs when the Branch Target Buffer
+        (BTB) predicts a taken branch]
+tma_info_br_inst_mix_ipbranch:
+  tma_info_br_inst_mix_ipbranch
+       [Instructions per Branch (lower number means higher occurrence rate)]
+tma_info_br_inst_mix_ipfarbranch:
+  tma_info_br_inst_mix_ipfarbranch
+       [Instructions per Far Branch ( Far Branches apply upon transition from
+       [Instructions per retired conditional Branch Misprediction where the
+        branch was not taken]
+       [Instructions per retired conditional Branch Misprediction where the
+        branch was taken]
+       [Instructions per retired indirect call or jump Branch Misprediction]
+       [Instructions per retired return Branch Misprediction]
+       [Instructions per retired Branch Misprediction]
+tma_info_br_mispredict_bound_branch_mispredict_ratio:
+  tma_info_br_mispredict_bound_branch_mispredict_ratio
+       [Ratio of all branches which mispredict]
+tma_info_br_mispredict_bound_branch_mispredict_to_unknown_branch_ratio:
+  tma_info_br_mispredict_bound_branch_mispredict_to_unknown_branch_ratio
+       [Ratio between Mispredicted branches and unknown branches]
+       [Total pipeline cost of Branch Misprediction related bottlenecks]
+  tma_branch_mispredicts
+        Branch Misprediction]
+  tma_info_bad_spec_branch_misprediction_cost
+       [Branch Misprediction Cost: Cycles representing fraction of TMA slots
+        wasted per non-speculative branch misprediction (retired JEClear)]
+        Branch Resteers as a result of Branch Misprediction at execution stage]
+       [Instructions per taken branch]
+        Branch Resteers as a result of Machine Clears]
+  tma_non_fused_branches
+        branch instructions that were not fused]

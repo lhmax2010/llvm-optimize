@@ -1,0 +1,211 @@
+OVERVIEW: BOLT - Binary Optimization and Layout Tool
+
+USAGE: llvm-bolt [options] <executable> <executable>
+
+OPTIONS:
+
+BOLT generic options:
+
+  --bolt-id=<string>                                    - add any string to tag this execution in the output binary via bolt info section
+  --compact-code-model                                  - generate code for binaries <128MB on AArch64
+  --create-debug-names-section                          - Creates .debug_names section, if the input binary doesn't have it already, for DWARF5 CU/TUs.
+  --data=<string>                                       - <data file>
+  --data2=<string>                                      - <data file>
+  --debug-thread-count=<uint>                           - specifies thread count for the multithreading for updating DWO debug info
+  --dump-cg=<string>                                    - dump callgraph to the given file
+  --dwarf-output-path=<string>                          - Path to where .dwo files will be written out to.
+  --dyno-stats                                          - print execution info based on profile
+  --enable-bat                                          - write BOLT Address Translation tables
+  --hot-data                                            - hot data symbols support (relocation mode)
+  --hot-functions-at-end                                - if reorder-functions is used, order functions putting hottest last
+  --hot-text                                            - Generate hot text symbols. Apply this option to a precompiled binary that manually calls into hugify, such that at runtime hugify call will put hot code into 2M pages. This requires relocation.
+  --hot-text-move-sections=<sec1,sec2,sec3,...>         - list of sections containing functions used for hugifying hot text. BOLT makes sure these functions are not placed on the same page as the hot text. (default='.stub,.mover').
+  --insert-retpolines                                   - run retpoline insertion pass
+  --lite                                                - skip processing of cold functions
+  --no-threads                                          - disable multithreading
+  --print-profile-stats                                 - print profile quality/bias analysis
+  --r11-availability=<value>                            - determine the availability of r11 before indirect branches
+    =never                                              -   r11 not available
+    =always                                             -   r11 available before calls and jumps
+    =abi                                                -   r11 available before calls but not before jumps
+  --relocs                                              - use relocations in the binary (default=autodetect)
+  --remove-symtab                                       - Remove .symtab section
+  --strict                                              - trust the input to be from a well-formed source
+  --tasks-per-thread=<uint>                             - number of tasks to be created per thread
+  --thread-count=<uint>                                 - number of threads
+  --update-debug-sections                               - update DWARF debug sections of the executable
+  --use-gnu-stack                                       - use GNU_STACK program header for new segment (workaround for issues with strip/objcopy)
+  --use-old-text                                        - reuse space in old .text if possible (relocation mode)
+  -v <uint>                                             - set verbosity level for diagnostic output
+
+BOLT instrumentation options:
+
+  --conservative-instrumentation                        - disable instrumentation optimizations that sacrifice profile accuracy (for debugging, default: false)
+  --instrument-calls                                    - record profile for inter-function control flow activity (default: true)
+  --instrument-hot-only                                 - only insert instrumentation on hot functions (needs profile, default: false)
+  --instrumentation-binpath=<string>                    - path to instrumented binary in case if /proc/self/map_files is not accessible due to access restriction issues
+  --instrumentation-file=<string>                       - file name where instrumented profile will be saved (default: /tmp/prof.fdata)
+  --instrumentation-file-append-pid                     - append PID to saved profile file name (default: false)
+  --instrumentation-max-size=<uint>                     - Set max memory size of the instrumentation bump allocator default: 0x6400000)
+  --instrumentation-no-counters-clear                   - Don't clear counters across dumps (use with instrumentation-sleep-time option)
+  --instrumentation-sleep-time=<uint>                   - interval between profile writes (default: 0 = write only at program end).  This is useful for service workloads when you want to dump profile every X minutes or if you are killing the program and the profile is not being dumped at the end.
+  --instrumentation-wait-forks                          - Wait until all forks of instrumented process will finish (use with instrumentation-sleep-time option)
+
+BOLT optimization options:
+
+  --align-blocks                                        - align basic blocks
+  --align-functions=<uint>                              - align functions at a given value (relocation mode)
+  --align-functions-max-bytes=<uint>                    - maximum number of bytes to use to align functions
+  --assume-abi                                          - assume the ABI is never violated
+  --block-alignment=<uint>                              - boundary to use for alignment of basic blocks
+  --cg-from-perf-data                                   - use perf data directly when constructing the call graph for stale functions
+  --cg-ignore-recursive-calls                           - ignore recursive calls when constructing the call graph
+  --cg-use-split-hot-size                               - use hot/cold data on basic blocks to determine hot sizes for call graph functions
+  --eliminate-unreachable                               - eliminate unreachable code
+  --frame-opt=<value>                                   - optimize stack frame accesses
+    =none                                               -   do not perform frame optimization
+    =hot                                                -   perform FOP on hot functions
+    =all                                                -   perform FOP on all functions
+  --frame-opt-rm-stores                                 - apply additional analysis to remove stores (experimental)
+  --function-order=<string>                             - file containing an ordered list of functions to use for function reordering
+  --generate-function-order=<string>                    - file to dump the ordered list of functions to use for function reordering
+  --generate-link-sections=<string>                     - generate a list of function sections in a format suitable for inclusion in a linker script
+  --group-stubs                                         - share stubs across functions
+  --hugify                                              - Automatically put hot code on 2MB page(s) (hugify) at runtime. No manual call to hugify is needed in the binary (which is what --hot-text relies on).
+  --icf                                                 - fold functions with identical code
+  --icf=<value>                                         - fold functions with identical code
+    =all                                                -   Enable identical code folding
+    =1                                                  -   Enable identical code folding
+    =<empty>                                            -   Enable identical code folding
+    =none                                               -   Disable identical code folding (default)
+    =0                                                  -   Disable identical code folding (default)
+    =safe                                               -   Enable safe identical code folding
+  --icp-eliminate-loads                                 - enable load elimination using memory profiling data when performing ICP
+  --indirect-call-promotion=<value>                     - indirect call promotion
+    =none                                               -   do not perform indirect call promotion
+    =calls                                              -   perform ICP on indirect calls
+    =jump-tables                                        -   perform ICP on jump tables
+    =all                                                -   perform ICP on calls and jump tables
+  --indirect-call-promotion-calls-topn=<uint>           - limit number of targets to consider when doing indirect call promotion on calls. 0 = no limit
+  --indirect-call-promotion-jump-tables-topn=<uint>     - limit number of targets to consider when doing indirect call promotion on jump tables. 0 = no limit
+  --indirect-call-promotion-mispredict-threshold=<uint> - misprediction threshold for skipping ICP on an indirect call
+  --indirect-call-promotion-topn=<uint>                 - limit number of targets to consider when doing indirect call promotion. 0 = no limit
+  --indirect-call-promotion-use-mispredicts             - use misprediction frequency for determining whether or not ICP should be applied at a callsite.  The -indirect-call-promotion-mispredict-threshold value will be used by this heuristic
+  --inline-all                                          - inline all functions
+  --inline-ap                                           - adjust function profile after inlining
+  --inline-memcpy                                       - inline memcpy using size-specific optimized instructions (X86: 'rep movsb', AArch64: width-optimized register operations)
+  --inline-small-functions                              - inline functions if increase in size is less than defined by -inline-small-functions-bytes
+  --instrument                                          - instrument code to generate accurate profile data
+  --jt-footprint-optimize-for-icache                    - with jt-footprint-reduction, only process PIC jumptables and turn off other transformations that increase code size
+  --jt-footprint-reduction                              - make jump tables size smaller at the cost of using more instructions at jump sites
+  --jump-tables=<value>                                 - jump tables support (default=basic)
+    =none                                               -   do not optimize functions with jump tables
+    =basic                                              -   optimize functions with jump tables
+    =move                                               -   move jump tables to a separate section
+    =split                                              -   split jump tables section into hot and cold based on function execution frequency
+    =aggressive                                         -   aggressively split jump tables section based on usage of the tables
+  --memcpy1-spec=<func1,func2:cs1:cs2,func3:cs1,...>    - list of functions with call sites for which to specialize memcpy() for size 1
+  --no-inline                                           - disable all inlining (overrides other inlining options)
+  --peepholes=<value>                                   - enable peephole optimizations
+    =none                                               -   disable peepholes
+    =double-jumps                                       -   remove double jumps when able
+    =tailcall-traps                                     -   insert tail call traps
+    =useless-branches                                   -   remove useless conditional branches
+    =all                                                -   enable all peephole optimizations
+  --plt=<value>                                         - optimize PLT calls (requires linking with -znow)
+    =none                                               -   do not optimize PLT calls
+    =hot                                                -   optimize executed (hot) PLT calls
+    =all                                                -   optimize all PLT calls
+  --preserve-blocks-alignment                           - try to preserve basic block alignment
+  --print-cache-metrics                                 - calculate and print various metrics for instruction cache
+  --print-function-statistics=<uint>                    - print statistics about basic block ordering
+  --print-large-functions                               - print functions that could not be overwritten due to excessive size
+  --print-sorted-by=<value>                             - print functions sorted by order of dyno stats
+    =executed-forward-branches                          -   executed forward branches
+    =taken-forward-branches                             -   taken forward branches
+    =executed-backward-branches                         -   executed backward branches
+    =taken-backward-branches                            -   taken backward branches
+    =executed-unconditional-branches                    -   executed unconditional branches
+    =all-function-calls                                 -   all function calls
+    =indirect-calls                                     -   indirect calls
+    =PLT-calls                                          -   PLT calls
+    =executed-instructions                              -   executed instructions
+    =executed-load-instructions                         -   executed load instructions
+    =executed-store-instructions                        -   executed store instructions
+    =taken-jump-table-branches                          -   taken jump table branches
+    =taken-unknown-indirect-branches                    -   taken unknown indirect branches
+    =total-branches                                     -   total branches
+    =taken-branches                                     -   taken branches
+    =non-taken-conditional-branches                     -   non-taken conditional branches
+    =taken-conditional-branches                         -   taken conditional branches
+    =all-conditional-branches                           -   all conditional branches
+    =linker-inserted-veneer-calls                       -   linker-inserted veneer calls
+    =all                                                -   sorted by all names
+  --print-sorted-by-order=<value>                       - use ascending or descending order when printing functions ordered by dyno stats
+    =ascending                                          -   Ascending order
+    =descending                                         -   Descending order
+  --reg-reassign                                        - reassign registers so as to avoid using REX prefixes in hot code
+  --reorder-blocks=<value>                              - change layout of basic blocks in a function
+    =none                                               -   do not reorder basic blocks
+    =reverse                                            -   layout blocks in reverse order
+    =normal                                             -   perform optimal layout based on profile
+    =branch-predictor                                   -   perform optimal layout prioritizing branch predictions
+    =cache                                              -   perform optimal layout prioritizing I-cache behavior
+    =cache+                                             -   perform layout optimizing I-cache behavior
+    =ext-tsp                                            -   perform layout optimizing I-cache behavior
+    =cluster-shuffle                                    -   perform random layout of clusters
+  --reorder-data=<section1,section2,section3,...>       - list of sections to reorder
+  --reorder-data-algo=<value>                           - algorithm used to reorder data sections
+    =count                                              -   sort hot data by read counts
+    =funcs                                              -   sort hot data by hot function usage and count
+  --reorder-data-inplace                                - reorder data sections in place
+  --reorder-data-max-bytes=<uint>                       - maximum number of bytes to reorder
+  --reorder-data-max-symbols=<uint>                     - maximum number of symbols to reorder
+  --reorder-functions=<value>                           - reorder and cluster functions (works only with relocations)
+    =none                                               -   do not reorder functions
+    =exec-count                                         -   order by execution count
+    =hfsort                                             -   use hfsort algorithm
+    =hfsort+                                            -   use cache-directed sort
+    =cdsort                                             -   use cache-directed sort
+    =pettis-hansen                                      -   use Pettis-Hansen algorithm
+    =random                                             -   reorder functions randomly
+    =user                                               -   use function order specified by -function-order
+  --reorder-functions-use-hot-size                      - use a function's hot size when doing clustering
+  --runtime-hugify-lib=<string>                         - specify path of the runtime hugify library
+  --runtime-instrumentation-lib=<string>                - specify path of the runtime instrumentation library
+  --sctc-mode=<value>                                   - mode for simplify conditional tail calls
+    =always                                             -   always perform sctc
+    =preserve                                           -   only perform sctc when branch direction is preserved
+    =heuristic                                          -   use branch prediction data to control sctc
+  --sequential-disassembly                              - performs disassembly sequentially
+  --shorten-instructions                                - shorten instructions
+  --shrink-wrapping-threshold=<uint>                    - Percentage of prologue execution count to use as threshold when evaluating whether a block is cold enough to be profitable to move eligible spills there
+  --simplify-conditional-tail-calls                     - simplify conditional tail calls by removing unnecessary jumps
+  --simplify-rodata-loads                               - simplify loads from read-only sections by replacing the memory operand with the constant found in the corresponding section
+  --split-all-cold                                      - outline as many cold basic blocks as possible
+  --split-functions                                     - split functions into fragments
+  --split-strategy=<value>                              - strategy used to partition blocks into fragments
+    =profile2                                           -   split each function into a hot and cold fragment using profiling information
+    =cdsplit                                            -   split each function into a hot, warm, and cold fragment using profiling information
+    =random2                                            -   split each function into a hot and cold fragment at a randomly chosen split point (ignoring any available profiling information)
+    =randomN                                            -   split each function into N fragments at a randomly chosen split points (ignoring any available profiling information)
+    =all                                                -   split all basic blocks of each function into fragments such that each fragment contains exactly a single basic block
+  --stoke                                               - turn on the stoke analysis
+  --strip-rep-ret                                       - strip 'repz' prefix from 'repz retq' sequence (on by default)
+  --time-opts                                           - print time spent in each optimization
+  --use-aggr-reg-reassign                               - use register liveness analysis to try to find more opportunities for -reg-reassign optimization
+  --use-compact-aligner                                 - Use compact approach for aligning functions
+  --use-edge-counts                                     - use edge count data when doing clustering
+  --x86-align-branch-boundary-hot-only                  - only apply branch boundary alignment in hot code
+  --x86-strip-redundant-address-size                    - Remove redundant Address-Size override prefix
+
+Generic Options:
+
+  --help                                                - Display available options (--help-hidden for more)
+  --help-list                                           - Display list of available options (--help-list-hidden for more)
+  --version                                             - Display the version of this program
+
+Output options:
+
+  -o <string>                                           - <output file>
+  -w <string>                                           - save recorded profile to a file

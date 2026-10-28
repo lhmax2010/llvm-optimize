@@ -502,3 +502,8 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 ## 2026-10-28：41号崩溃定位探测
 
 探测已完成，待用户决定；崩溃定位方案仍挂账。现行BOLT栈20有名/7地址，符号表版+symbolizer为24/3；完整符号表版离线24/24 clang地址成功，15/15对象一致。三个ELF均无GNU build-id；hybrid原调试文件1,652,177,424B，本轮BOLT debuginfo没有clang-22.debug。符号表版增大33,142,648B。**部分完成项：llvm-objcopy --only-keep-debug发生SIGSEGV，symbols-only大小/解析未完成**；没有改代码或换方案掩盖。详见[41号报告](41_crash_localization_probe.md)。
+
+
+## 2026-10-28：40号perf/AutoFDO能力探测
+
+硬件arch_lbr、cpu_core/cpu_atom各32条分支能力可见；普通用户perf_event_paranoid=4，带/不带-b的cycles:u均拒绝（rc255），未采到有效数据。/usr/bin/perf缺当前6.17.0-1033内核工具；只读使用已有perf7.0.14也被权限拒绝。llvm-profgen/perf2bolt/llvm-profdata存在、版本可运行，但profgen转换因无数据NOT RUN。部分完成，不提权、不安装、不改系统配置，详见[40号报告](40_perf_autofdo_probe.md)。
