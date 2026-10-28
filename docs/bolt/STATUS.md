@@ -548,3 +548,14 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 关键边界：3c78318未改Toolchain project_config，父提交/该提交/本地HEAD的文件SHA均为fe00ccfb48579b473a9995d6d83682700b6b750029ac4bcb31cd26d9190ffc35。get_build_conf_text随snapshot_info取Base配置，但create_meta_for_ngbs仍读取Toolchain目录，日志没给最终NGBS _config/.rpmmacros；默认加载器是否支持独立config来源尚未确认。推荐Base RPM与Toolchain完整配置分离，先核验装配链；不改Base公共配置，不只补LLVM一个宏。
 
 本地meta修复fd60db96806a372404bd4f04e68d4ba586290147保留、未推。暂停前本地debuglink草稿提交569d734d0ccb2959e3f33494593c5cd46a01c347及346项测试/旧产物副本实验保留，未新构建、未新RPM、未推源码；打包认证仍挂账。本次只发布45号调查证据与文档到GitHub bolt-v4，不含暂停的源码/测试修改。两个快照用于构建LLVM的工具链并不完全相同，不能沿用39号精确clang SHA。
+
+
+## 2026-10-28：46号两个scm/meta/qb评审的上传前检查
+
+用户确认总部意图：Toolchain类项目使用对应主项目的代码和包，继续使用自己的project_config。用户授权仅在各自全部检查通过后推refs/for/master；本轮两个评审都触发停止条件，**均未上传，没有Gerrit change URL**。
+
+- Base：三架构新Base均缺11个包。251个实际仓库的spec扫描确认gcc-armv7hl.spec L1定义cross=armv7hl，L101条件BuildRequires展开为binutils-armv7hl；新三个架构无provider，按用户“命中即停”不上传。必装/Support/运行脚本等provider齐全，但Keep/条件Substitute有旧仓库也缺的历史项，未擅自豁免或宣称全配置检查PASS。旧clang22.1.8-3.1与新6.5解包后，ARMv7/AArch64显式MLGO两个advisor参数的最小编译4/4 PASS，非参数能力缺失。
+- Unified：当前reference已核实tizen-unified_20261027.231956，base_id为tizen-base_20261026.005418；packages与平铺debug包含三架构。自身仓库不含Base工具链，两目录没有可照搬的第二层显式DOD定义。最近成功QB1209720及三子日志为GBS，DOD创建命令0条，不能证明NGBS两层创建。现有1046仓库对新standard1030：缺17、增1、267共同仓库revision变化；新Unified+Base联合仍缺115/115/114个包名。完整1046仓库spec依赖认证因前置停止条件NOT RUN，不能把旧RPM requires风险称为新spec已证明失败。own配置的pkgconfig(gl)替换RHS无provider。
+- 元仓库最新读取master为7b2f2ae2d0e0cdc42307454c73c10be23b6d0ef5。原本地两行修复fd60db96806a372404bd4f04e68d4ba586290147未rebase、未推；Unified未生成提交/猜测配置diff。所有project_config保持不变，没有软件包构建、系统安装或QB状态操作。
+
+挂账：两个评审待缺包/目标范围和Unified两层DOD机制解决后重新认证；合入后第一次QB必须确认最终实际使用哪份project_config/_config/.rpmmacros。debuglink完整构建仍暂停。详见[46号报告](46_qb_meta_toolchain_switch.md)，原始材料位于tools/bolt/results/qb-meta-switch-20261028/。

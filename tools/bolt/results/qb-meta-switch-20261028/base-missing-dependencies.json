@@ -1,0 +1,707 @@
+{
+  "x86_64": {
+    "missing_packages": [
+      "binutils-armv7hl",
+      "coreutils-su",
+      "gcc-armv7hl",
+      "libtensorflow2-aot-runtime",
+      "tensorflow2-aot-devel",
+      "tensorflow2-lite-devel",
+      "tensorflow2-lite-flatbuf-schema",
+      "tensorflow2-lite-util",
+      "toybox-full",
+      "toybox-symlinks-full",
+      "toybox-symlinks-nslookup"
+    ],
+    "spec_hits": [
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7hl-14.2.0-1.4/gcc-armv7hl.spec",
+        "line": 101,
+        "kind": "BuildRequires",
+        "raw": "%{?cross:BuildRequires: binutils-%{cross}}",
+        "expanded": "%{?cross:BuildRequires: binutils-armv7hl}",
+        "conditions": [],
+        "section": "main",
+        "matches": [
+          {
+            "capability": "binutils-armv7hl",
+            "removed_packages": [
+              "binutils-armv7hl"
+            ],
+            "alternative_name_providers": []
+          }
+        ]
+      }
+    ],
+    "binary_requires_hits": [
+      {
+        "package": "tensorflow2-aot-devel",
+        "arch": "x86_64",
+        "requirement": {
+          "name": "tensorflow2-lite-devel",
+          "flags": "EQ",
+          "epoch": "0",
+          "ver": "2.18.0",
+          "rel": "1.1"
+        },
+        "removed_providers": [
+          "tensorflow2-lite-devel"
+        ],
+        "new_name_providers": []
+      },
+      {
+        "package": "tensorflow2-lite-flatbuf-schema",
+        "arch": "x86_64",
+        "requirement": {
+          "name": "tensorflow2-lite-devel",
+          "flags": "EQ",
+          "epoch": "0",
+          "ver": "2.18.0",
+          "rel": "1.1"
+        },
+        "removed_providers": [
+          "tensorflow2-lite-devel"
+        ],
+        "new_name_providers": []
+      },
+      {
+        "package": "toybox-symlinks-full",
+        "arch": "x86_64",
+        "requirement": {
+          "name": "toybox-full",
+          "flags": "EQ",
+          "epoch": "0",
+          "ver": "0.6.0",
+          "rel": "1.4"
+        },
+        "removed_providers": [
+          "toybox-full"
+        ],
+        "new_name_providers": []
+      }
+    ],
+    "unresolved_dependency_lines": [
+      {
+        "project": "platform/upstream/boost",
+        "file": "specs/boost-1.83.0-1.2/boost.spec",
+        "line": 106,
+        "text": "Requires:       %boost_libs1 %boost_libs2 %boost_libs3 %boost_libs4 %boost_libs5 %{?context_libs} %{?fiber_libs}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-14.2.0-1.14/gcc.spec",
+        "line": 98,
+        "text": "%{?cross:BuildRequires: binutils-%{cross}}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-14.2.0-1.14/gcc.spec",
+        "line": 309,
+        "text": "Requires:      gcc%{?cross:-%{cross}} = 14.2.0-1.14"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-aarch64-14.2.0-1.4/gcc-aarch64.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-aarch64}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-aarch64-14.2.0-1.4/gcc-aarch64.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-aarch64} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7hl-14.2.0-1.4/gcc-armv7hl.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-armv7hl}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7hl-14.2.0-1.4/gcc-armv7hl.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-armv7hl} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7l-14.2.0-1.4/gcc-armv7l.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-armv7l}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7l-14.2.0-1.4/gcc-armv7l.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-armv7l} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-riscv64-14.2.0-1.4/gcc-riscv64.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-riscv64}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-riscv64-14.2.0-1.4/gcc-riscv64.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-riscv64} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc-contrib",
+        "file": "specs/gcc-contrib-14.2.0-1.1/gcc-contrib.spec",
+        "line": 87,
+        "text": "%{?cross:BuildRequires: binutils-%{cross}}"
+      },
+      {
+        "project": "platform/upstream/jsoncpp",
+        "file": "specs/jsoncpp-1.9.6-1.13/jsoncpp.spec",
+        "line": 29,
+        "text": "Requires:   jsoncpp%{?_isa} = 1.9.6-1.13"
+      },
+      {
+        "project": "platform/upstream/openssl3",
+        "file": "qb-specs/platform__upstream__openssl3/openssl3.spec",
+        "line": 106,
+        "text": "sed -i 's/Requires: libssl libcrypto/Requires: libssl3 libcrypto3/g' ${RPM_BUILD_ROOT}%{_libdir}/pkgconfig/openssl3.pc"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 71,
+        "text": "Requires:   pcre2%{?_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 72,
+        "text": "Requires:   pcre2-utf16%{?_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 73,
+        "text": "Requires:   pcre2-utf32%{?_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 82,
+        "text": "Requires:   pcre2-devel%{_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 100,
+        "text": "Requires:   pcre2%{_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 82,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 92,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 100,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 108,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 116,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/userspace-rcu",
+        "file": "specs/userspace-rcu-0.13.2-2.1/userspace-rcu.spec",
+        "line": 27,
+        "text": "Requires:       userspace-rcu%{?_isa} = 0.13.2-2.1"
+      }
+    ]
+  },
+  "armv7l": {
+    "missing_packages": [
+      "binutils-armv7hl",
+      "coreutils-su",
+      "gcc-armv7hl",
+      "libtensorflow2-aot-runtime",
+      "tensorflow2-aot-devel",
+      "tensorflow2-lite-devel",
+      "tensorflow2-lite-flatbuf-schema",
+      "tensorflow2-lite-util",
+      "toybox-full",
+      "toybox-symlinks-full",
+      "toybox-symlinks-nslookup"
+    ],
+    "spec_hits": [
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7hl-14.2.0-1.4/gcc-armv7hl.spec",
+        "line": 101,
+        "kind": "BuildRequires",
+        "raw": "%{?cross:BuildRequires: binutils-%{cross}}",
+        "expanded": "%{?cross:BuildRequires: binutils-armv7hl}",
+        "conditions": [],
+        "section": "main",
+        "matches": [
+          {
+            "capability": "binutils-armv7hl",
+            "removed_packages": [
+              "binutils-armv7hl"
+            ],
+            "alternative_name_providers": []
+          }
+        ]
+      }
+    ],
+    "binary_requires_hits": [
+      {
+        "package": "tensorflow2-aot-devel",
+        "arch": "armv7l",
+        "requirement": {
+          "name": "tensorflow2-lite-devel",
+          "flags": "EQ",
+          "epoch": "0",
+          "ver": "2.18.0",
+          "rel": "1.1"
+        },
+        "removed_providers": [
+          "tensorflow2-lite-devel"
+        ],
+        "new_name_providers": []
+      },
+      {
+        "package": "tensorflow2-lite-flatbuf-schema",
+        "arch": "armv7l",
+        "requirement": {
+          "name": "tensorflow2-lite-devel",
+          "flags": "EQ",
+          "epoch": "0",
+          "ver": "2.18.0",
+          "rel": "1.1"
+        },
+        "removed_providers": [
+          "tensorflow2-lite-devel"
+        ],
+        "new_name_providers": []
+      },
+      {
+        "package": "toybox-symlinks-full",
+        "arch": "armv7l",
+        "requirement": {
+          "name": "toybox-full",
+          "flags": "EQ",
+          "epoch": "0",
+          "ver": "0.6.0",
+          "rel": "1.2"
+        },
+        "removed_providers": [
+          "toybox-full"
+        ],
+        "new_name_providers": []
+      }
+    ],
+    "unresolved_dependency_lines": [
+      {
+        "project": "platform/upstream/boost",
+        "file": "specs/boost-1.83.0-1.2/boost.spec",
+        "line": 106,
+        "text": "Requires:       %boost_libs1 %boost_libs2 %boost_libs3 %boost_libs4 %boost_libs5 %{?context_libs} %{?fiber_libs}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-14.2.0-1.14/gcc.spec",
+        "line": 98,
+        "text": "%{?cross:BuildRequires: binutils-%{cross}}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-14.2.0-1.14/gcc.spec",
+        "line": 309,
+        "text": "Requires:      gcc%{?cross:-%{cross}} = 14.2.0-1.14"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-aarch64-14.2.0-1.4/gcc-aarch64.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-aarch64}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-aarch64-14.2.0-1.4/gcc-aarch64.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-aarch64} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7hl-14.2.0-1.4/gcc-armv7hl.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-armv7hl}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7hl-14.2.0-1.4/gcc-armv7hl.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-armv7hl} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7l-14.2.0-1.4/gcc-armv7l.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-armv7l}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7l-14.2.0-1.4/gcc-armv7l.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-armv7l} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-riscv64-14.2.0-1.4/gcc-riscv64.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-riscv64}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-riscv64-14.2.0-1.4/gcc-riscv64.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-riscv64} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc-contrib",
+        "file": "specs/gcc-contrib-14.2.0-1.1/gcc-contrib.spec",
+        "line": 87,
+        "text": "%{?cross:BuildRequires: binutils-%{cross}}"
+      },
+      {
+        "project": "platform/upstream/jsoncpp",
+        "file": "specs/jsoncpp-1.9.6-1.13/jsoncpp.spec",
+        "line": 29,
+        "text": "Requires:   jsoncpp%{?_isa} = 1.9.6-1.13"
+      },
+      {
+        "project": "platform/upstream/openssl3",
+        "file": "qb-specs/platform__upstream__openssl3/openssl3.spec",
+        "line": 106,
+        "text": "sed -i 's/Requires: libssl libcrypto/Requires: libssl3 libcrypto3/g' ${RPM_BUILD_ROOT}%{_libdir}/pkgconfig/openssl3.pc"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 71,
+        "text": "Requires:   pcre2%{?_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 72,
+        "text": "Requires:   pcre2-utf16%{?_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 73,
+        "text": "Requires:   pcre2-utf32%{?_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 82,
+        "text": "Requires:   pcre2-devel%{_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 100,
+        "text": "Requires:   pcre2%{_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 82,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 92,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 100,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 108,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 116,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/userspace-rcu",
+        "file": "specs/userspace-rcu-0.13.2-2.1/userspace-rcu.spec",
+        "line": 27,
+        "text": "Requires:       userspace-rcu%{?_isa} = 0.13.2-2.1"
+      }
+    ]
+  },
+  "aarch64": {
+    "missing_packages": [
+      "binutils-armv7hl",
+      "coreutils-su",
+      "gcc-armv7hl",
+      "libtensorflow2-aot-runtime",
+      "tensorflow2-aot-devel",
+      "tensorflow2-lite-devel",
+      "tensorflow2-lite-flatbuf-schema",
+      "tensorflow2-lite-util",
+      "toybox-full",
+      "toybox-symlinks-full",
+      "toybox-symlinks-nslookup"
+    ],
+    "spec_hits": [
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7hl-14.2.0-1.4/gcc-armv7hl.spec",
+        "line": 101,
+        "kind": "BuildRequires",
+        "raw": "%{?cross:BuildRequires: binutils-%{cross}}",
+        "expanded": "%{?cross:BuildRequires: binutils-armv7hl}",
+        "conditions": [],
+        "section": "main",
+        "matches": [
+          {
+            "capability": "binutils-armv7hl",
+            "removed_packages": [
+              "binutils-armv7hl"
+            ],
+            "alternative_name_providers": []
+          }
+        ]
+      }
+    ],
+    "binary_requires_hits": [
+      {
+        "package": "tensorflow2-aot-devel",
+        "arch": "aarch64",
+        "requirement": {
+          "name": "tensorflow2-lite-devel",
+          "flags": "EQ",
+          "epoch": "0",
+          "ver": "2.18.0",
+          "rel": "1.1"
+        },
+        "removed_providers": [
+          "tensorflow2-lite-devel"
+        ],
+        "new_name_providers": []
+      },
+      {
+        "package": "tensorflow2-lite-flatbuf-schema",
+        "arch": "aarch64",
+        "requirement": {
+          "name": "tensorflow2-lite-devel",
+          "flags": "EQ",
+          "epoch": "0",
+          "ver": "2.18.0",
+          "rel": "1.1"
+        },
+        "removed_providers": [
+          "tensorflow2-lite-devel"
+        ],
+        "new_name_providers": []
+      },
+      {
+        "package": "toybox-symlinks-full",
+        "arch": "aarch64",
+        "requirement": {
+          "name": "toybox-full",
+          "flags": "EQ",
+          "epoch": "0",
+          "ver": "0.6.0",
+          "rel": "1.2"
+        },
+        "removed_providers": [
+          "toybox-full"
+        ],
+        "new_name_providers": []
+      }
+    ],
+    "unresolved_dependency_lines": [
+      {
+        "project": "platform/upstream/boost",
+        "file": "specs/boost-1.83.0-1.2/boost.spec",
+        "line": 106,
+        "text": "Requires:       %boost_libs1 %boost_libs2 %boost_libs3 %boost_libs4 %boost_libs5 %{?context_libs} %{?fiber_libs}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-14.2.0-1.14/gcc.spec",
+        "line": 98,
+        "text": "%{?cross:BuildRequires: binutils-%{cross}}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-14.2.0-1.14/gcc.spec",
+        "line": 309,
+        "text": "Requires:      gcc%{?cross:-%{cross}} = 14.2.0-1.14"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-aarch64-14.2.0-1.4/gcc-aarch64.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-aarch64}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-aarch64-14.2.0-1.4/gcc-aarch64.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-aarch64} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7hl-14.2.0-1.4/gcc-armv7hl.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-armv7hl}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7hl-14.2.0-1.4/gcc-armv7hl.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-armv7hl} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7l-14.2.0-1.4/gcc-armv7l.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-armv7l}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-armv7l-14.2.0-1.4/gcc-armv7l.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-armv7l} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-riscv64-14.2.0-1.4/gcc-riscv64.spec",
+        "line": 101,
+        "text": "%{?cross:BuildRequires: binutils-riscv64}"
+      },
+      {
+        "project": "platform/upstream/gcc",
+        "file": "specs/gcc-riscv64-14.2.0-1.4/gcc-riscv64.spec",
+        "line": 312,
+        "text": "Requires:      gcc%{?cross:-riscv64} = 14.2.0-1.4"
+      },
+      {
+        "project": "platform/upstream/gcc-contrib",
+        "file": "specs/gcc-contrib-14.2.0-1.1/gcc-contrib.spec",
+        "line": 87,
+        "text": "%{?cross:BuildRequires: binutils-%{cross}}"
+      },
+      {
+        "project": "platform/upstream/jsoncpp",
+        "file": "specs/jsoncpp-1.9.6-1.13/jsoncpp.spec",
+        "line": 29,
+        "text": "Requires:   jsoncpp%{?_isa} = 1.9.6-1.13"
+      },
+      {
+        "project": "platform/upstream/openssl3",
+        "file": "qb-specs/platform__upstream__openssl3/openssl3.spec",
+        "line": 106,
+        "text": "sed -i 's/Requires: libssl libcrypto/Requires: libssl3 libcrypto3/g' ${RPM_BUILD_ROOT}%{_libdir}/pkgconfig/openssl3.pc"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 71,
+        "text": "Requires:   pcre2%{?_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 72,
+        "text": "Requires:   pcre2-utf16%{?_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 73,
+        "text": "Requires:   pcre2-utf32%{?_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 82,
+        "text": "Requires:   pcre2-devel%{_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/pcre2",
+        "file": "specs/pcre2-10.47-1.1/pcre2.spec",
+        "line": 100,
+        "text": "Requires:   pcre2%{_isa} = 10.47"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 82,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 92,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 100,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 108,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/toybox",
+        "file": "qb-specs/platform__upstream__toybox/toybox.spec",
+        "line": 116,
+        "text": "Requires: toybox = 0.8.14-5%{?dist}"
+      },
+      {
+        "project": "platform/upstream/userspace-rcu",
+        "file": "specs/userspace-rcu-0.13.2-2.1/userspace-rcu.spec",
+        "line": 27,
+        "text": "Requires:       userspace-rcu%{?_isa} = 0.13.2-2.1"
+      }
+    ]
+  }
+}

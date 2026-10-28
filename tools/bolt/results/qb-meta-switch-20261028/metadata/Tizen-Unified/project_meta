@@ -1,0 +1,117 @@
+<project name="Tizen-Unified">
+  <debuginfo>
+    <enable/>
+  </debuginfo>
+  <repository name="standard">
+    <arch name="armv7l"/>
+    <arch name="aarch64"/>
+    <arch name="x86_64"/>
+    <image name="tizen-aarch64-generic-hal.ks"/>
+    <image name="tizen-armv7l-generic-hal.ks"/>
+    <image name="tizen-boot-aarch64-c4.ks"/>
+    <image name="tizen-boot-aarch64-vim3.ks"/>
+    <image name="tizen-boot-aarch64-rpi.ks"/>
+    <image name="tizen-boot-aarch64-rpi-rt.ks"/>
+    <image name="tizen-boot-aarch64-rubikpi3.ks"/>
+    <image name="tizen-boot-aarch64-orinnano.ks"/>
+    <image name="tizen-boot-armv7l-rpi.ks"/>
+    <image name="tizen-boot-armv7l-rpi-rt.ks"/>
+    <image name="tizen-headed-aarch64.ks"/>
+    <image name="tizen-headed-armv7l.ks"/>
+    <image name="tizen-headless-aarch64.ks"/>
+    <image name="tizen-headless-armv7l.ks"/>
+  </repository>
+  <repository name="standard_gcov" reference="standard">
+    <arch name="armv7l"/>
+  </repository>
+  <repository name="emulator">
+    <arch name="x86_64"/>
+    <image name="tizen-headed-emulator64-wayland.ks"/>
+  </repository>
+  <branch_candidate name="tizen">
+    <default/>
+    <org name="">
+      <branch name="tizen"/>
+      <branch name="tizen_mobile_tpk"/>
+      <branch name="tizen_wearable_tpk"/>
+      <branch name="tizen_tizeniot_tpk"/>
+    </org>
+  </branch_candidate>
+  <abs_config>
+    <abs>
+      <branch source="tizen" output="tizen_mobile_tpk"/>
+      <rootstrap url="ABS/TIZEN/Tizen/Tizen-Unified/latest/"/>
+      <packages>
+        <package repo="profile/mobile/apps/native/call-setting"/>
+        <package repo="profile/mobile/apps/native/call-ui"/>
+        <package repo="profile/mobile/apps/native/camera-app"/>
+        <package repo="profile/mobile/apps/native/gallery"/>
+        <package repo="profile/mobile/apps/native/homescreen-efl"/>
+        <package repo="profile/mobile/apps/native/lockscreen"/>
+        <package repo="profile/mobile/apps/native/message"/>
+        <package repo="profile/mobile/apps/native/music-player"/>
+        <package repo="profile/mobile/apps/native/myfiles"/>
+        <package repo="profile/mobile/apps/native/phone-contacts"/>
+        <package repo="profile/mobile/apps/native/quickpanel"/>
+        <package repo="profile/mobile/apps/native/settings"/>
+        <package repo="profile/mobile/apps/native/share-panel"/>
+        <package repo="profile/mobile/apps/native/taskmanager"/>
+        <package repo="profile/mobile/apps/native/ug-gallery-efl"/>
+        <package repo="profile/mobile/apps/native/ug-image-viewer-efl"/>
+        <package repo="profile/mobile/apps/native/ug-lockscreen-setting-efl"/>
+        <package repo="profile/mobile/apps/native/ug-myfile-efl"/>
+        <package repo="profile/mobile/apps/native/ug-setting-homescreen-efl"/>
+        <package repo="profile/mobile/apps/native/ug-setting-notification-efl"/>
+        <package repo="profile/mobile/apps/native/video-player"/>
+        <package repo="profile/mobile/apps/native/wallpaper-ui-service"/>
+        <package repo="profile/mobile/apps/native/email-app"/>
+      </packages>
+    </abs>
+    <abs>
+      <branch source="tizen" output="tizen_wearable_tpk"/>
+      <rootstrap url="ABS/TIZEN/Tizen/Tizen-Unified/latest/"/>
+      <packages>
+        <package repo="profile/wearable/apps/native/apptray-widget"/>
+        <package repo="profile/wearable/apps/native/call-setting"/>
+        <package repo="profile/wearable/apps/native/call-ui"/>
+        <package repo="profile/wearable/apps/native/idle-clock-digital"/>
+        <package repo="profile/wearable/apps/native/message"/>
+        <package repo="profile/wearable/apps/native/phone-contacts"/>
+        <package repo="profile/wearable/apps/native/taskmanager"/>
+        <package repo="platform/core/uifw/sketch"/>
+        <package repo="profile/wearable/apps/native/analog-watch"/>
+        <package repo="profile/wearable/apps/native/watch-face-editor"/>
+        <package repo="profile/wearable/apps/native/w3-home"/>
+      </packages>
+    </abs>
+    <abs>
+      <branch source="tizen" output="tizen_tizeniot_tpk"/>
+      <rootstrap url="ABS/TIZEN/Tizen/Tizen-Unified/latest/"/>
+      <packages>
+        <package repo="profile/iot/apps/native/homescreen-efl"/>
+        <package repo="profile/iot/apps/native/taskmanager"/>
+        <package repo="profile/iot/apps/native/quickpanel"/>
+        <package repo="profile/iot/apps/native/music-player"/>
+        <package repo="profile/iot/apps/native/font-viewer"/>
+        <package repo="profile/iot/apps/native/gallery"/>
+        <package repo="profile/iot/apps/native/softkey-container"/>
+        <package repo="profile/iot/apps/native/ug-setting-notification-efl"/>
+        <package repo="profile/iot/apps/native/ug-image-viewer-efl"/>
+        <package repo="profile/iot/apps/native/video-player"/>
+        <package repo="profile/iot/apps/native/ug-setting-homescreen-efl"/>
+        <package repo="profile/iot/apps/native/wallpaper-ui-service"/>
+        <package repo="profile/iot/apps/native/ug-gallery-efl"/>
+        <package repo="profile/common/apps/native/firmware-update-app-ui"/>
+        <package repo="profile/common/apps/native/recovery-app-ui"/>
+        <package repo="profile/iot/apps/native/share-panel"/>
+      </packages>
+    </abs>
+  </abs_config>
+  <use_img_addrm>
+    <disable/>
+  </use_img_addrm>
+  <maintainers>
+    <project_leader>yooduck.seo</project_leader>
+  </maintainers>
+</project>
+
