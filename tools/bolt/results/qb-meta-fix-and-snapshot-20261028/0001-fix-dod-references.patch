@@ -1,0 +1,58 @@
+From fd60db96806a372404bd4f04e68d4ba586290147 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Wed, 28 Oct 2026 20:18:24 +0800
+Subject: [PATCH] Fix generated DOD references for Base Toolchain and Dev
+
+Keep the intent of 3c78318b: both projects temporarily consume the
+Tizen-Base snapshots. Leave snapshot_info and download URLs unchanged.
+
+QB creates the default DOD project as DOD:<project name>, independently
+of the snapshot download URL. In QB 1211018 the log records:
+
+05:26:36,881 INFO  - dod create project cmd :  /root/ngbs/ngbs project -p DOD:Tizen-Base-Toolchain -m /root/gbsbuild-ROOT/build_meta/meta-dod.xml
+05:25:35,819 INFO  - Tizen-Base-Toolchain standard x86_64 broken broken repository 'DOD:Tizen-Base/standard' is unavailable
+
+The complete error is on lines 5484-5486, and the creation command is
+on line 5516. The generated DOD still downloads from Tizen-Base, but
+project_meta references a different DOD name after 3c78318b.
+
+Restore only the two references to the actual default DOD names for
+Tizen-Base-Toolchain and Tizen-Base-Dev. Explicitly configured DOD
+projects, such as the Tools target repositories, are unaffected.
+
+Change-Id: Ib11994fc5745de18f0feefb4c83e6fab64d9633e
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+---
+ TIZEN/Tizen/Tizen-Base-Dev/project_meta       | 2 +-
+ TIZEN/Tizen/Tizen-Base-Toolchain/project_meta | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/TIZEN/Tizen/Tizen-Base-Dev/project_meta b/TIZEN/Tizen/Tizen-Base-Dev/project_meta
+index 12d2f34..774c1b3 100644
+--- a/TIZEN/Tizen/Tizen-Base-Dev/project_meta
++++ b/TIZEN/Tizen/Tizen-Base-Dev/project_meta
+@@ -3,7 +3,7 @@
+     <enable/>
+   </debuginfo>
+   <repository name="standard">
+-    <path project="DOD:Tizen-Base" repository="standard" />
++    <path project="DOD:Tizen-Base-Dev" repository="standard" />
+     <arch name="armv7l"/>
+     <arch name="aarch64"/>
+     <arch name="x86_64"/>
+diff --git a/TIZEN/Tizen/Tizen-Base-Toolchain/project_meta b/TIZEN/Tizen/Tizen-Base-Toolchain/project_meta
+index 7fed9ad..2dcffed 100644
+--- a/TIZEN/Tizen/Tizen-Base-Toolchain/project_meta
++++ b/TIZEN/Tizen/Tizen-Base-Toolchain/project_meta
+@@ -3,7 +3,7 @@
+     <enable/>
+   </debuginfo>
+   <repository name="standard">
+-    <path project="DOD:Tizen-Base" repository="standard" />
++    <path project="DOD:Tizen-Base-Toolchain" repository="standard" />
+     <arch name="armv7l"/>
+     <arch name="aarch64"/>
+     <arch name="x86_64"/>
+-- 
+2.43.0
+

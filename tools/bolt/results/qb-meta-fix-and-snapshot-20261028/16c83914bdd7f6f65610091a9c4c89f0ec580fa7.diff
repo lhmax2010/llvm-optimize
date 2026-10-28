@@ -1,0 +1,33 @@
+commit 16c83914bdd7f6f65610091a9c4c89f0ec580fa7
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Fri Oct 16 13:23:35 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Fri Oct 16 13:23:56 2026 +0900
+
+    Enable DOD path for Tizen-Base-X project_meta
+    
+    NGBS build failed with "nothing provides cmake, binutils, gcc, ..."\nbecause project_meta DOD path was commented out. Without the DOD
+    path, NGBS cannot resolve base packages from the reference snapshot.
+    
+    Tizen-Base-Dev has this path enabled and builds normally. Uncomment
+    it for Tizen-Base-X to match, especially now that snapshot_info
+    points to Tizen-Base-Dev reference.
+    
+    Change-Id: I5a0fbd840c3d30ca038c7afbab72d1369cfa6bc5
+---
+ TIZEN/Tizen/Tizen-Base-X/project_meta | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/TIZEN/Tizen/Tizen-Base-X/project_meta b/TIZEN/Tizen/Tizen-Base-X/project_meta
+index f7944ec..406b4de 100644
+--- a/TIZEN/Tizen/Tizen-Base-X/project_meta
++++ b/TIZEN/Tizen/Tizen-Base-X/project_meta
+@@ -3,7 +3,7 @@
+     <enable/>
+   </debuginfo>
+   <repository name="standard">
+-    <!--path project="DOD:Tizen-Base-X" repository="standard" /-->
++    <path project="DOD:Tizen-Base-X" repository="standard" />
+     <arch name="armv7l"/>
+     <arch name="aarch64"/>
+     <arch name="x86_64"/>

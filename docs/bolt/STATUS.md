@@ -529,3 +529,11 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 ### 44号配置根因追查（2026-10-28）
 
 只读克隆scm/meta/qb master并查历史，定位3c78318b0764d892950f11ec8f460719d4eff6a7：Dongkyun Son，AuthorDate 10-26 16:19:54+09、CommitDate 10-28 12:28:41+09，merge 3ed92e4于03:29:11 UTC合入。为临时用Base RPM，把Toolchain和Dev的DOD引用与snapshot_info同时切到Base；实际QB仍创建DOD:Tizen-Base-Toolchain，引用名脱节解释两轮仓库不可用。三次项目/Ref. Snapshot/reference/仓库覆盖选项相同，解析URL变化对应配置提交，未见选错项目证据。最小建议恢复Toolchain project_meta:6为DOD:Tizen-Base-Toolchain而保留Base下载意图；若恢复原环境，还需恢复snapshot_info和候选列表。只写建议，未实施，Dev实际运行结果未知。完整32个相关历史提交diff及3组git log已存meta/，44号第8节追加、前文不变；没有QB操作、配置修改或Gerrit推送。
+
+## 2026-10-28：45号DOD本地修复与固定快照比较
+
+默认自动生成DOD按项目名命名，下载地址由snapshot_info提供；全库异名Tools引用均有显式定义，两个已有Tools QB子构建成功，不能把默认规则泛化为所有项目。Toolchain/Dev各恢复一行DOD引用，snapshot_info保留使用Base快照的意图，XML和前后内容认证PASS。本地scm/meta/qb提交fd60db96806a372404bd4f04e68d4ba586290147，未推送；总部评审挂账。详见[45号](45_qb_meta_fix_and_snapshot.md)。
+
+固定Toolchain20261013与Base20261026工具链不同：636个name+arch联合组中新增9、缺少11、EVR变503、同EVR但RPM校验变113。新build.conf SHA为840ef6de94c6d73e3fcced27dc777a399df435a0f2e4017347191a296f5f1975。后续应按工具链不同口径认证，不继承39号精确clang SHA。
+
+新build.conf不定义_toolchain，按源spec会关闭debug_package并删除/usr/lib/debug，与本次22个二进制RPM和clang-debuginfo要求冲突。已请求仅本地增加_toolchain宏的裁决，尚未获答复，未启动新完整构建，未改基线后处理。debuglink实现和夹具可以独立准备；未把“函数级已实现”写成已完成打包认证。另挂账：LLVM only-keep-debug缺陷单独修复、方案乙源码行成本实验。

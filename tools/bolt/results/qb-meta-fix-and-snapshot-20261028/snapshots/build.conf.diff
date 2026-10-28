@@ -1,0 +1,216 @@
+--- Toolchain20261013/build.conf
++++ Base20261026/build.conf
+@@ -1,26 +1,26 @@
+-%define _project Tizen-Base-Toolchain
++%define _project Tizen-Base
+ 
+ Macros:
+ %vendor Tizen
+-%_project Tizen-Base-Toolchain
+-:Macros
+-
+-
+-### from Tizen-Base-Toolchain
++%_project Tizen-Base
++:Macros
++
++
++### from Tizen-Base
+ %define _repository standard
+ 
+ Macros:
+ 
+-%distribution Tizen-Base-Toolchain / standard
+-%_project Tizen-Base-Toolchain
+-
+-### from Tizen-Base-Toolchain
++%distribution Tizen-Base / standard
++%_project Tizen-Base
++
++### from Tizen-Base
+ 
+ %_repository standard
+ :Macros
+ 
+ ################################################################################
+-# Project config for Tizen-Base-Toolchain
++# OBS Project config for Tizen:Base
+ #
+ # RE contacts:
+ #
+@@ -77,6 +77,9 @@
+ %_vendor tizen
+ %_with_tizen 1
+ 
++#### %__spec_check_pre exit 0
++#### %run_check_section 0
++
+ %opensuse_bs 1
+ %_default_patch_fuzz   2
+ 
+@@ -110,73 +113,6 @@
+ 
+ ############################# build config #####################################
+ 
+-########## compilers and utils ##########
+-
+-%ifarch armv7l aarch64
+-Macros:
+-%_with_mlgo 1
+-%mlgo_build_jobs 6
+-%mlgo_verify_configure_only 0
+-:Macros
+-%endif
+-
+-%ifarch armv7l armv7hl
+-Macros:
+-%___optflags_toolchain_gcc --param=ssp-buffer-size=4
+-:Macros
+-%endif
+-%ifarch aarch64 riscv64
+-Macros:
+-%___optflags_toolchain_gcc -feliminate-unused-debug-types
+-:Macros
+-%endif
+-%ifarch i686 x86_64
+-Macros:
+-%___optflags_toolchain_gcc --param=ssp-buffer-size=4 -feliminate-unused-debug-types
+-%___optflags_toolchain_clang -momit-leaf-frame-pointer %{?_with_mlgo:-mllvm=-regalloc-enable-advisor=release -mllvm=-enable-ml-inliner=release}
+-:Macros
+-%endif
+-
+-Macros:
+-# clang utils
+-%__ar_clang llvm-ar
+-%__ranlib_clang llvm-ranlib
+-%__cc_clang %{_host}-clang
+-%__cxx_clang %{_host}-clang++
+-%__optflags_toolchain_clang -Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}
+-
+-# gcc utils
+-%__ar_gcc gcc-ar
+-%__ranlib_gcc gcc-ranlib
+-%__cc_gcc %{_host}-gcc
+-%__cxx_gcc %{_host}-g++
+-%__optflags_toolchain_gcc -O2 -fno-inline-functions -fstack-protector-strong %{?___optflags_toolchain_gcc:%{___optflags_toolchain_gcc}}
+-
+-%_toolchain %{?_toolchain_override}%{!?_toolchain_override:clang}
+-%toolchain_is() %((echo "%_toolchain" | %{__grep} -qE "%{1}") && echo 1 || echo 0)
+-
+-%__ar %{expand:%%{__ar_%{_toolchain}}}
+-%__ranlib %{expand:%%{__ranlib_%{_toolchain}}}
+-%__cc %{expand:%%{__cc_%{_toolchain}}}
+-%__cxx %{expand:%%{__cxx_%{_toolchain}}}
+-%__optflags_toolchain %{expand:%%{__optflags_toolchain_%{_toolchain}}}
+-
+-%prep %%prep\
+-export AR=%{__ar} RANLIB=%{__ranlib};\
+-%{nil}
+-
+-%build %%build\
+-export AR=%{__ar} RANLIB=%{__ranlib};\
+-export CC=%{__cc} CXX=%{__cxx};\
+-%{nil}
+-
+-%install %{?_enable_debug_packages:%{?buildsubdir:%{debug_package}}}\
+-%%install\
+-export AR=%{__ar} RANLIB=%{__ranlib};\
+-export CC=%{__cc} CXX=%{__cxx};\
+-%{nil}
+-:Macros
+-
+ ########## targets ##########
+ 
+ %ifarch i586
+@@ -220,32 +156,24 @@
+ %ifarch armv7l
+ Preinstall: qemu-accel-%{build_hostarch}-armv7l
+ Runscripts: qemu-accel-%{build_hostarch}-armv7l
+-Preinstall: clang-accel-%{build_hostarch}-armv7l
+-Runscripts: clang-accel-%{build_hostarch}-armv7l
+ Preinstall: libmount libblkid libuuid
+ %endif
+ 
+ %ifarch armv7hl
+ Preinstall: qemu-accel-%{build_hostarch}-armv7hl
+ Runscripts: qemu-accel-%{build_hostarch}-armv7hl
+-Preinstall: clang-accel-%{build_hostarch}-armv7hl
+-Runscripts: clang-accel-%{build_hostarch}-armv7hl
+ Preinstall: libmount libblkid libuuid
+ %endif
+ 
+ %ifarch aarch64
+ Preinstall: qemu-accel-%{build_hostarch}-aarch64
+ Runscripts: qemu-accel-%{build_hostarch}-aarch64
+-Preinstall: clang-accel-%{build_hostarch}-aarch64
+-Runscripts: clang-accel-%{build_hostarch}-aarch64
+ Preinstall: libmount libblkid libuuid
+ %endif # aarch64
+ 
+ %ifarch riscv64
+ Preinstall: qemu-accel-%{build_hostarch}-riscv64
+ Runscripts: qemu-accel-%{build_hostarch}-riscv64
+-Preinstall: clang-accel-%{build_hostarch}-riscv64
+-Runscripts: clang-accel-%{build_hostarch}-riscv64
+ Preinstall: libmount libblkid libuuid
+ %endif # riscv64
+ 
+@@ -297,10 +225,9 @@
+ 
+ VMinstall: perl libmount libblkid libext2fs libuuid  grep libpcre util-linux libsmartcols procps-ng
+ 
+-Required: binutils glibc rpm-build libtool
+-
+-Support: gcc gcc-c++
+-Support: clang llvm-devel
++Required: binutils gcc glibc rpm-build libtool
++Required: gcc-c++
++
+ Support: glibc-locale
+ Support: perl
+ Support: hostname
+@@ -335,7 +262,7 @@
+ Keep: nss-softokn-freebl libmagic libmagic-data
+ Keep: setup
+ Keep: update-alternatives
+-Keep: clang llvm libllvm llvm-devel
++Keep: cpp
+ Keep: gcc-c++
+ Keep: libatomic
+ Keep: libgomp
+@@ -351,26 +278,12 @@
+ %endif
+ 
+ ########## compilation flags ##########
+-%define __optflags %{__optflags_toolchain} -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches
+-
+-Optflags: armv7l %{__optflags} -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=softfp -mthumb -Wp,-D__SOFTFP__ -D_FILE_OFFSET_BITS=64
+-Optflags: armv7hl %{__optflags} -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=hard -mthumb -D_FILE_OFFSET_BITS=64
+-Optflags: aarch64 %{__optflags} -march=armv8-a+fp+simd+crc+crypto -mtune=cortex-a53
+-Optflags: i686 %{__optflags} -fdiagnostics-color=never -m32 -march=i686 -mtune=i686 -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer -mstackrealign
+-Optflags: x86_64 %{__optflags} -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer
+-Optflags: riscv64 %{__optflags} -mabi=lp64d -march=rv64gc
+-
+-%ifarch armv7l armv7hl
+-Macros:
+-%_ldflags_arch_extra ,-O1,--hash-style=gnu
+-:Macros
+-%endif
+-%ifarch i686
+-Macros:
+-%_ldflags_arch_extra ,-z,noseparate-code
+-:Macros
+-%endif
+-Macros:
+-%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra}
+-:Macros
+-
++%define __global_cflags -O2 -fno-inline-functions -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong -Wformat-security -fmessage-length=0 -frecord-gcc-switches -Wl,-z,relro,--as-needed
++
++Optflags: armv7l %{__global_cflags} --param=ssp-buffer-size=4 -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=softfp -mthumb -Wp,-D__SOFTFP__ -Wl,-O1 -Wl,--hash-style=gnu -Wa,-mimplicit-it=thumb -D_FILE_OFFSET_BITS=64
++Optflags: armv7hl %{__global_cflags} --param=ssp-buffer-size=4 -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=hard -mthumb -Wl,-O1 -Wl,--hash-style=gnu -Wa,-mimplicit-it=thumb -D_FILE_OFFSET_BITS=64
++Optflags: aarch64 %{__global_cflags} -feliminate-unused-debug-types -Wformat -march=armv8-a+fp+simd+crc+crypto -mtune=cortex-a57.cortex-a53
++Optflags: i686 %{__global_cflags} -feliminate-unused-debug-types --param=ssp-buffer-size=4 -fdiagnostics-color=never -m32 -march=i686 -mtune=i686 -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer -mstackrealign -Wl,-z,noseparate-code
++Optflags: x86_64 %{__global_cflags} -feliminate-unused-debug-types --param=ssp-buffer-size=4 -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer
++Optflags: riscv64 %{__global_cflags} -feliminate-unused-debug-types -Wformat -mabi=lp64d -march=rv64gc
++
