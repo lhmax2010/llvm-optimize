@@ -1,0 +1,64 @@
+--- Toolchain20261013/build.conf
++++ meta-master/project_config
+@@ -1,24 +1,3 @@
+-%define _project Tizen-Base-Toolchain
+-
+-Macros:
+-%vendor Tizen
+-%_project Tizen-Base-Toolchain
+-:Macros
+-
+-
+-### from Tizen-Base-Toolchain
+-%define _repository standard
+-
+-Macros:
+-
+-%distribution Tizen-Base-Toolchain / standard
+-%_project Tizen-Base-Toolchain
+-
+-### from Tizen-Base-Toolchain
+-
+-%_repository standard
+-:Macros
+-
+ ################################################################################
+ # Project config for Tizen-Base-Toolchain
+ #
+@@ -143,7 +122,8 @@
+ %__ranlib_clang llvm-ranlib
+ %__cc_clang %{_host}-clang
+ %__cxx_clang %{_host}-clang++
+-%__optflags_toolchain_clang -Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}
++%__optflags_toolchain_clang -Os -ffunction-sections -fdata-sections -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}
++%__ldflags_toolchain_clang -Wl,--gc-sections
+ 
+ # gcc utils
+ %__ar_gcc gcc-ar
+@@ -160,6 +140,8 @@
+ %__cc %{expand:%%{__cc_%{_toolchain}}}
+ %__cxx %{expand:%%{__cxx_%{_toolchain}}}
+ %__optflags_toolchain %{expand:%%{__optflags_toolchain_%{_toolchain}}}
++# Resolve at use time so package toolchain overrides also apply to linker flags.
++%__ldflags_toolchain %{expand:%%{?__ldflags_toolchain_%{_toolchain}}}
+ 
+ %prep %%prep\
+ export AR=%{__ar} RANLIB=%{__ranlib};\
+@@ -362,7 +344,7 @@
+ 
+ %ifarch armv7l armv7hl
+ Macros:
+-%_ldflags_arch_extra ,-O1,--hash-style=gnu
++%_ldflags_arch_extra ,-O1,--hash-style=gnu,-z,max-page-size=4096
+ :Macros
+ %endif
+ %ifarch i686
+@@ -371,6 +353,5 @@
+ :Macros
+ %endif
+ Macros:
+-%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra}
+-:Macros
+-
++%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra} %{__ldflags_toolchain}
++:Macros

@@ -1,0 +1,216 @@
+commit 8739131fa8cce46a428818525d6fbf358175d585
+Author:     He Fangyu <fangyu.he@samsung.com>
+AuthorDate: Mon Oct 26 11:17:57 2026 +0800
+Commit:     He Fangyu <fangyu.he@samsung.com>
+CommitDate: Mon Oct 26 11:17:57 2026 +0800
+
+    Tizen-Base-Toolchain: limit section GC to Clang builds
+    
+    Global --gc-sections also reaches packages that override the default
+    Clang toolchain with GCC. This breaks glibc's libc_pic.os partial link:
+    GNU ld requires an explicit root symbol when combining -r with section
+    GC, but this intermediate object has no such root.
+    
+    Move --gc-sections into the Clang-specific linker flags and resolve the
+    selected flags at macro expansion time so package-level toolchain
+    overrides take effect. Preserve the common and architecture-specific
+    linker flags.
+    
+    Validation:
+    - Passed 18 RPM macro expansion checks across six architectures.
+    - Completed an aarch64 glibc GBS build using the modified project config
+      and the local gbs.conf; generated 15 binary RPMs.
+    - Confirmed libc_pic.os links successfully without --gc-sections.
+    - The glibc test suite remains skipped by the existing project config.
+    
+    Change-Id: I008d9a418fb43b7c6f857baa1af3321aa88115ef
+
+diff --git a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+index 1c9fbfb..f3d40b8 100644
+--- a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
++++ b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+@@ -123,6 +123,7 @@ Macros:
+ %__cc_clang %{_host}-clang
+ %__cxx_clang %{_host}-clang++
+ %__optflags_toolchain_clang -Os -ffunction-sections -fdata-sections -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}
++%__ldflags_toolchain_clang -Wl,--gc-sections
+ 
+ # gcc utils
+ %__ar_gcc gcc-ar
+@@ -139,6 +140,8 @@ Macros:
+ %__cc %{expand:%%{__cc_%{_toolchain}}}
+ %__cxx %{expand:%%{__cxx_%{_toolchain}}}
+ %__optflags_toolchain %{expand:%%{__optflags_toolchain_%{_toolchain}}}
++# Resolve at use time so package toolchain overrides also apply to linker flags.
++%__ldflags_toolchain %{expand:%%{?__ldflags_toolchain_%{_toolchain}}}
+ 
+ %prep %%prep\
+ export AR=%{__ar} RANLIB=%{__ranlib};\
+@@ -350,5 +353,5 @@ Macros:
+ :Macros
+ %endif
+ Macros:
+-%build_ldflags -Wl,-z,relro,--as-needed,--gc-sections%{?_ldflags_arch_extra}
++%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra} %{__ldflags_toolchain}
+ :Macros
+
+commit d3fa3e1122fe4f9778ae38bf14c82f8f2ce7f65c
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Wed Oct 21 19:22:27 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Wed Oct 21 19:22:27 2026 +0800
+
+    Add LLVM Global Compile Options
+    
+    Change-Id: Ic95a555d1e64018a3ed0257f320e3a42edcdce5a
+
+diff --git a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+index e267b05..1c9fbfb 100644
+--- a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
++++ b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+@@ -122,7 +122,7 @@ Macros:
+ %__ranlib_clang llvm-ranlib
+ %__cc_clang %{_host}-clang
+ %__cxx_clang %{_host}-clang++
+-%__optflags_toolchain_clang -Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}
++%__optflags_toolchain_clang -Os -ffunction-sections -fdata-sections -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}
+ 
+ # gcc utils
+ %__ar_gcc gcc-ar
+@@ -341,7 +341,7 @@ Optflags: riscv64 %{__optflags} -mabi=lp64d -march=rv64gc
+ 
+ %ifarch armv7l armv7hl
+ Macros:
+-%_ldflags_arch_extra ,-O1,--hash-style=gnu
++%_ldflags_arch_extra ,-O1,--hash-style=gnu,-z,max-page-size=4096
+ :Macros
+ %endif
+ %ifarch i686
+@@ -350,5 +350,5 @@ Macros:
+ :Macros
+ %endif
+ Macros:
+-%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra}
++%build_ldflags -Wl,-z,relro,--as-needed,--gc-sections%{?_ldflags_arch_extra}
+ :Macros
+
+commit 27d135c5df66b12087588cd2331bd3215192c62e
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Tue Oct 13 10:38:12 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Tue Oct 13 10:38:12 2026 +0800
+
+    Remove libc++ Related Content
+    
+    Change-Id: I150e7322e418bdb91a632e23104a1e61f9cb5e96
+
+diff --git a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+index 7f1b8c8..e267b05 100644
+--- a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
++++ b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+@@ -293,7 +293,6 @@ Support: less
+ Support: which  elfutils
+ Support: update-alternatives
+ Support: libstdc++-devel
+-Support: libc++-devel libc++abi-devel
+ Support: cpp
+ Support: libatomic
+ Support: libgomp
+@@ -302,9 +301,7 @@ Support: hal-rootstrap-checker
+ Support: app-rootstrap-checker
+ 
+ Keep: libstdc++-devel
+-Keep: libc++-devel libc++abi-devel
+ Keep: cpp gcc libstdc++
+-Keep: libc++ libc++abi
+ Keep: pam
+ Keep: binutils cpp  libmagic-data file findutils gawk gcc  gcc-c++
+ Keep: gdbm gzip libada libunwind  glibc-devel libpcre xz-lzma-compat
+
+commit e13ce91df74fe79237a3b6afe2e1443b8a8e8d00
+Author:     Hao Lin <hao.lin@samsung.com>
+AuthorDate: Mon Oct 12 14:44:55 2026 +0800
+Commit:     Hao Lin <hao.lin@samsung.com>
+CommitDate: Mon Oct 12 14:44:55 2026 +0800
+
+    Prepare Tizen-Base-Toolchain build root for libc++
+    
+    Two changes to TIZEN/Tizen/Tizen-Base-Toolchain/project_config:
+    
+    1. Remove the lld default linker (-fuse-ld=lld in build_ldflags). It
+       has not passed validation yet, so the next build uses the GNU linker
+       as before. It will be submitted again after validation. This reverts
+       commit bae4ebdd732e3c01611de2414434d4c5c162763c.
+    
+    2. Add libc++ to the build root, to build C++ packages with LLVM libc++
+       instead of libstdc++:
+       - Support: add libc++-devel and libc++abi-devel, so that every build
+         root can compile and link C++ code against libc++.
+       - Keep: keep libc++, libc++abi and their -devel packages in the
+         build root, in the same way as libstdc++ and libstdc++-devel.
+    
+    libstdc++ stays in the build root. Packages that do not select libc++
+    keep building with libstdc++ as before, and GCC builds are not changed.
+    Packages select libc++ in their own spec (build_with_libcxx under the
+    clang toolchain).
+    
+    The libc++ packages are built from packaging/libcxx-runtimes.spec in
+    platform/upstream/llvm. libcxx-runtimes is not in the current
+    Tizen-Base-Toolchain repository, so the Support entries must only take
+    effect after libcxx-runtimes has been built and its binaries are
+    published; otherwise every package in the project becomes unresolvable.
+    
+    Change-Id: I0403eb61b5c412c7ed53dc6f862c92765ead121f
+    Signed-off-by: Hao Lin <hao.lin@samsung.com>
+
+diff --git a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+index 333eabe..7f1b8c8 100644
+--- a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
++++ b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+@@ -293,6 +293,7 @@ Support: less
+ Support: which  elfutils
+ Support: update-alternatives
+ Support: libstdc++-devel
++Support: libc++-devel libc++abi-devel
+ Support: cpp
+ Support: libatomic
+ Support: libgomp
+@@ -301,7 +302,9 @@ Support: hal-rootstrap-checker
+ Support: app-rootstrap-checker
+ 
+ Keep: libstdc++-devel
++Keep: libc++-devel libc++abi-devel
+ Keep: cpp gcc libstdc++
++Keep: libc++ libc++abi
+ Keep: pam
+ Keep: binutils cpp  libmagic-data file findutils gawk gcc  gcc-c++
+ Keep: gdbm gzip libada libunwind  glibc-devel libpcre xz-lzma-compat
+@@ -350,5 +353,5 @@ Macros:
+ :Macros
+ %endif
+ Macros:
+-%build_ldflags -fuse-ld=lld -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra}
++%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra}
+ :Macros
+
+commit bae4ebdd732e3c01611de2414434d4c5c162763c
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Thu Oct 8 11:45:43 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Thu Oct 8 11:45:43 2026 +0800
+
+    Modify codes to support llvm-lld
+    
+    Change-Id: I68facad05efa7e0430b7a79697ebcfabc8325958
+
+diff --git a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+index e267b05..333eabe 100644
+--- a/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
++++ b/TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+@@ -350,5 +350,5 @@ Macros:
+ :Macros
+ %endif
+ Macros:
+-%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra}
++%build_ldflags -fuse-ld=lld -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra}
+ :Macros

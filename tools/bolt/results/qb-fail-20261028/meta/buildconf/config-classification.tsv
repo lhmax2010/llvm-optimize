@@ -1,0 +1,80 @@
+side	line	category	key	conditions	text
+old-only	1	%define	_project		%define _project Tizen-Base-Toolchain
+old-only	5	Macros	_project		%_project Tizen-Base-Toolchain
+old-only	14	Macros	distribution		%distribution Tizen-Base-Toolchain / standard
+old-only	15	Macros	_project		%_project Tizen-Base-Toolchain
+old-only	115	condition	%ifarch armv7l aarch64	%ifarch armv7l aarch64	%ifarch armv7l aarch64
+old-only	117	Macros	_with_mlgo	%ifarch armv7l aarch64	%_with_mlgo 1
+old-only	118	Macros	mlgo_build_jobs	%ifarch armv7l aarch64	%mlgo_build_jobs 6
+old-only	119	Macros	mlgo_verify_configure_only	%ifarch armv7l aarch64	%mlgo_verify_configure_only 0
+old-only	121	condition	%endif	%ifarch armv7l aarch64	%endif
+old-only	123	condition	%ifarch armv7l armv7hl	%ifarch armv7l armv7hl	%ifarch armv7l armv7hl
+old-only	125	Macros	___optflags_toolchain_gcc	%ifarch armv7l armv7hl	%___optflags_toolchain_gcc --param=ssp-buffer-size=4
+old-only	127	condition	%endif	%ifarch armv7l armv7hl	%endif
+old-only	128	condition	%ifarch aarch64 riscv64	%ifarch aarch64 riscv64	%ifarch aarch64 riscv64
+old-only	130	Macros	___optflags_toolchain_gcc	%ifarch aarch64 riscv64	%___optflags_toolchain_gcc -feliminate-unused-debug-types
+old-only	132	condition	%endif	%ifarch aarch64 riscv64	%endif
+old-only	133	condition	%ifarch i686 x86_64	%ifarch i686 x86_64	%ifarch i686 x86_64
+old-only	135	Macros	___optflags_toolchain_gcc	%ifarch i686 x86_64	%___optflags_toolchain_gcc --param=ssp-buffer-size=4 -feliminate-unused-debug-types
+old-only	136	Macros	___optflags_toolchain_clang	%ifarch i686 x86_64	%___optflags_toolchain_clang -momit-leaf-frame-pointer %{?_with_mlgo:-mllvm=-regalloc-enable-advisor=release -mllvm=-enable-ml-inliner=release}
+old-only	138	condition	%endif	%ifarch i686 x86_64	%endif
+old-only	142	Macros	__ar_clang		%__ar_clang llvm-ar
+old-only	143	Macros	__ranlib_clang		%__ranlib_clang llvm-ranlib
+old-only	144	Macros	__cc_clang		%__cc_clang %{_host}-clang
+old-only	145	Macros	__cxx_clang		%__cxx_clang %{_host}-clang++
+old-only	146	Macros	__optflags_toolchain_clang		%__optflags_toolchain_clang -Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}
+old-only	149	Macros	__ar_gcc		%__ar_gcc gcc-ar
+old-only	150	Macros	__ranlib_gcc		%__ranlib_gcc gcc-ranlib
+old-only	151	Macros	__cc_gcc		%__cc_gcc %{_host}-gcc
+old-only	152	Macros	__cxx_gcc		%__cxx_gcc %{_host}-g++
+old-only	153	Macros	__optflags_toolchain_gcc		%__optflags_toolchain_gcc -O2 -fno-inline-functions -fstack-protector-strong %{?___optflags_toolchain_gcc:%{___optflags_toolchain_gcc}}
+old-only	155	Macros	_toolchain		%_toolchain %{?_toolchain_override}%{!?_toolchain_override:clang}
+old-only	156	Macros	toolchain_is		%toolchain_is() %((echo "%_toolchain" | %{__grep} -qE "%{1}") && echo 1 || echo 0)
+old-only	158	Macros	__ar		%__ar %{expand:%%{__ar_%{_toolchain}}}
+old-only	159	Macros	__ranlib		%__ranlib %{expand:%%{__ranlib_%{_toolchain}}}
+old-only	160	Macros	__cc		%__cc %{expand:%%{__cc_%{_toolchain}}}
+old-only	161	Macros	__cxx		%__cxx %{expand:%%{__cxx_%{_toolchain}}}
+old-only	162	Macros	__optflags_toolchain		%__optflags_toolchain %{expand:%%{__optflags_toolchain_%{_toolchain}}}
+old-only	164	Macros	prep		%prep %%prep\\nexport AR=%{__ar} RANLIB=%{__ranlib};\\n%{nil}
+old-only	168	Macros	build		%build %%build\\nexport AR=%{__ar} RANLIB=%{__ranlib};\\nexport CC=%{__cc} CXX=%{__cxx};\\n%{nil}
+old-only	173	Macros	install		%install %{?_enable_debug_packages:%{?buildsubdir:%{debug_package}}}\\n%%install\\nexport AR=%{__ar} RANLIB=%{__ranlib};\\nexport CC=%{__cc} CXX=%{__cxx};\\n%{nil}
+old-only	223	preinstall	Preinstall	%ifarch armv7l	Preinstall: clang-accel-%{build_hostarch}-armv7l
+old-only	224	runscripts	Runscripts	%ifarch armv7l	Runscripts: clang-accel-%{build_hostarch}-armv7l
+old-only	231	preinstall	Preinstall	%ifarch armv7hl	Preinstall: clang-accel-%{build_hostarch}-armv7hl
+old-only	232	runscripts	Runscripts	%ifarch armv7hl	Runscripts: clang-accel-%{build_hostarch}-armv7hl
+old-only	239	preinstall	Preinstall	%ifarch aarch64	Preinstall: clang-accel-%{build_hostarch}-aarch64
+old-only	240	runscripts	Runscripts	%ifarch aarch64	Runscripts: clang-accel-%{build_hostarch}-aarch64
+old-only	247	preinstall	Preinstall	%ifarch riscv64	Preinstall: clang-accel-%{build_hostarch}-riscv64
+old-only	248	runscripts	Runscripts	%ifarch riscv64	Runscripts: clang-accel-%{build_hostarch}-riscv64
+old-only	300	required	Required		Required: binutils glibc rpm-build libtool
+old-only	302	support	Support		Support: gcc gcc-c++
+old-only	303	support	Support		Support: clang llvm-devel
+old-only	338	keep	Keep		Keep: clang llvm libllvm llvm-devel
+old-only	354	%define	__optflags		%define __optflags %{__optflags_toolchain} -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches
+old-only	356	optflags	Optflags		Optflags: armv7l %{__optflags} -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=softfp -mthumb -Wp,-D__SOFTFP__ -D_FILE_OFFSET_BITS=64
+old-only	357	optflags	Optflags		Optflags: armv7hl %{__optflags} -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=hard -mthumb -D_FILE_OFFSET_BITS=64
+old-only	358	optflags	Optflags		Optflags: aarch64 %{__optflags} -march=armv8-a+fp+simd+crc+crypto -mtune=cortex-a53
+old-only	359	optflags	Optflags		Optflags: i686 %{__optflags} -fdiagnostics-color=never -m32 -march=i686 -mtune=i686 -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer -mstackrealign
+old-only	360	optflags	Optflags		Optflags: x86_64 %{__optflags} -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer
+old-only	361	optflags	Optflags		Optflags: riscv64 %{__optflags} -mabi=lp64d -march=rv64gc
+old-only	363	condition	%ifarch armv7l armv7hl	%ifarch armv7l armv7hl	%ifarch armv7l armv7hl
+old-only	365	Macros	_ldflags_arch_extra	%ifarch armv7l armv7hl	%_ldflags_arch_extra ,-O1,--hash-style=gnu
+old-only	367	condition	%endif	%ifarch armv7l armv7hl	%endif
+old-only	368	condition	%ifarch i686	%ifarch i686	%ifarch i686
+old-only	370	Macros	_ldflags_arch_extra	%ifarch i686	%_ldflags_arch_extra ,-z,noseparate-code
+old-only	372	condition	%endif	%ifarch i686	%endif
+old-only	374	Macros	build_ldflags		%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra}
+new-only	1	%define	_project		%define _project Tizen-Base
+new-only	5	Macros	_project		%_project Tizen-Base
+new-only	14	Macros	distribution		%distribution Tizen-Base / standard
+new-only	15	Macros	_project		%_project Tizen-Base
+new-only	228	required	Required		Required: binutils gcc glibc rpm-build libtool
+new-only	229	required	Required		Required: gcc-c++
+new-only	265	keep	Keep		Keep: cpp
+new-only	281	%define	__global_cflags		%define __global_cflags -O2 -fno-inline-functions -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong -Wformat-security -fmessage-length=0 -frecord-gcc-switches -Wl,-z,relro,--as-needed
+new-only	283	optflags	Optflags		Optflags: armv7l %{__global_cflags} --param=ssp-buffer-size=4 -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=softfp -mthumb -Wp,-D__SOFTFP__ -Wl,-O1 -Wl,--hash-style=gnu -Wa,-mimplicit-it=thumb -D_FILE_OFFSET_BITS=64
+new-only	284	optflags	Optflags		Optflags: armv7hl %{__global_cflags} --param=ssp-buffer-size=4 -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=hard -mthumb -Wl,-O1 -Wl,--hash-style=gnu -Wa,-mimplicit-it=thumb -D_FILE_OFFSET_BITS=64
+new-only	285	optflags	Optflags		Optflags: aarch64 %{__global_cflags} -feliminate-unused-debug-types -Wformat -march=armv8-a+fp+simd+crc+crypto -mtune=cortex-a57.cortex-a53
+new-only	286	optflags	Optflags		Optflags: i686 %{__global_cflags} -feliminate-unused-debug-types --param=ssp-buffer-size=4 -fdiagnostics-color=never -m32 -march=i686 -mtune=i686 -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer -mstackrealign -Wl,-z,noseparate-code
+new-only	287	optflags	Optflags		Optflags: x86_64 %{__global_cflags} -feliminate-unused-debug-types --param=ssp-buffer-size=4 -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer
+new-only	288	optflags	Optflags		Optflags: riscv64 %{__global_cflags} -feliminate-unused-debug-types -Wformat -mabi=lp64d -march=rv64gc

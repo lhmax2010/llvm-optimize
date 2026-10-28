@@ -1,0 +1,50 @@
+%vendor Tizen
+%_project Tizen-Base
+
+%distribution Tizen-Base / standard
+%_project Tizen-Base
+
+### from Tizen-Base
+
+%_repository standard
+%release_name Tizen11.0/Unified
+
+%tizen_version_major 11
+%tizen_version_minor 0
+%tizen_version_patch 0
+
+%tizen_version %{tizen_version_major}.%{tizen_version_minor}
+%tizen_full_version %{tizen_version}.%{tizen_version_patch}
+%tizen %tizen_version
+%vendor tizen
+%_vendor tizen
+%_with_tizen 1
+
+#### %__spec_check_pre exit 0
+#### %run_check_section 0
+
+%opensuse_bs 1
+%_default_patch_fuzz   2
+
+%_binary_payload w5T.xzdio
+# skip package list
+%_skip_check_packages autogen bison boost expat findutils flex fribidi glibc \\\
+gmp gn golang grep libgc libgcrypt libogg libsigc++ libvorbis libxml2 libzio \\\
+m4 nspr openssl openssl1.1 perl-Devel-Symdump perl-gettext perl-Pod-Coverage \\\
+perl-Test-Pod perl-Test-Pod-Coverage perl-TimeDate procps-ng python3-mako \\\
+python3-mock python3-ply python-funcsigs python-mako python-mock python-ply \\\
+setup zlib openssl3 autoconf libxcrypt
+
+%__spec_check_pre \
+for name in %_skip_check_packages \
+do \
+    if [ "$name" = "%{name}" ]; then \
+        exit 0 \
+    fi \
+done \
+%{___build_pre} \
+%{nil}
+
+%build_hostarch x86_64
+%qemu_user_space_build 1
+

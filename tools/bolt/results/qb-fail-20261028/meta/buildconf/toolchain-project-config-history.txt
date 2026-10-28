@@ -1,0 +1,107 @@
+commit 8739131fa8cce46a428818525d6fbf358175d585
+Author:     He Fangyu <fangyu.he@samsung.com>
+AuthorDate: Mon Oct 26 11:17:57 2026 +0800
+Commit:     He Fangyu <fangyu.he@samsung.com>
+CommitDate: Mon Oct 26 11:17:57 2026 +0800
+
+    Tizen-Base-Toolchain: limit section GC to Clang builds
+    
+    Global --gc-sections also reaches packages that override the default
+    Clang toolchain with GCC. This breaks glibc's libc_pic.os partial link:
+    GNU ld requires an explicit root symbol when combining -r with section
+    GC, but this intermediate object has no such root.
+    
+    Move --gc-sections into the Clang-specific linker flags and resolve the
+    selected flags at macro expansion time so package-level toolchain
+    overrides take effect. Preserve the common and architecture-specific
+    linker flags.
+    
+    Validation:
+    - Passed 18 RPM macro expansion checks across six architectures.
+    - Completed an aarch64 glibc GBS build using the modified project config
+      and the local gbs.conf; generated 15 binary RPMs.
+    - Confirmed libc_pic.os links successfully without --gc-sections.
+    - The glibc test suite remains skipped by the existing project config.
+    
+    Change-Id: I008d9a418fb43b7c6f857baa1af3321aa88115ef
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/project_config | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+commit d3fa3e1122fe4f9778ae38bf14c82f8f2ce7f65c
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Wed Oct 21 19:22:27 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Wed Oct 21 19:22:27 2026 +0800
+
+    Add LLVM Global Compile Options
+    
+    Change-Id: Ic95a555d1e64018a3ed0257f320e3a42edcdce5a
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/project_config | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+commit 27d135c5df66b12087588cd2331bd3215192c62e
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Tue Oct 13 10:38:12 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Tue Oct 13 10:38:12 2026 +0800
+
+    Remove libc++ Related Content
+    
+    Change-Id: I150e7322e418bdb91a632e23104a1e61f9cb5e96
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/project_config | 3 ---
+ 1 file changed, 3 deletions(-)
+
+commit e13ce91df74fe79237a3b6afe2e1443b8a8e8d00
+Author:     Hao Lin <hao.lin@samsung.com>
+AuthorDate: Mon Oct 12 14:44:55 2026 +0800
+Commit:     Hao Lin <hao.lin@samsung.com>
+CommitDate: Mon Oct 12 14:44:55 2026 +0800
+
+    Prepare Tizen-Base-Toolchain build root for libc++
+    
+    Two changes to TIZEN/Tizen/Tizen-Base-Toolchain/project_config:
+    
+    1. Remove the lld default linker (-fuse-ld=lld in build_ldflags). It
+       has not passed validation yet, so the next build uses the GNU linker
+       as before. It will be submitted again after validation. This reverts
+       commit bae4ebdd732e3c01611de2414434d4c5c162763c.
+    
+    2. Add libc++ to the build root, to build C++ packages with LLVM libc++
+       instead of libstdc++:
+       - Support: add libc++-devel and libc++abi-devel, so that every build
+         root can compile and link C++ code against libc++.
+       - Keep: keep libc++, libc++abi and their -devel packages in the
+         build root, in the same way as libstdc++ and libstdc++-devel.
+    
+    libstdc++ stays in the build root. Packages that do not select libc++
+    keep building with libstdc++ as before, and GCC builds are not changed.
+    Packages select libc++ in their own spec (build_with_libcxx under the
+    clang toolchain).
+    
+    The libc++ packages are built from packaging/libcxx-runtimes.spec in
+    platform/upstream/llvm. libcxx-runtimes is not in the current
+    Tizen-Base-Toolchain repository, so the Support entries must only take
+    effect after libcxx-runtimes has been built and its binaries are
+    published; otherwise every package in the project becomes unresolvable.
+    
+    Change-Id: I0403eb61b5c412c7ed53dc6f862c92765ead121f
+    Signed-off-by: Hao Lin <hao.lin@samsung.com>
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/project_config | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+commit bae4ebdd732e3c01611de2414434d4c5c162763c
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Thu Oct 8 11:45:43 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Thu Oct 8 11:45:43 2026 +0800
+
+    Modify codes to support llvm-lld
+    
+    Change-Id: I68facad05efa7e0430b7a79697ebcfabc8325958
+
+ TIZEN/Tizen/Tizen-Base-Toolchain/project_config | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)

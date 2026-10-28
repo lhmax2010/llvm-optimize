@@ -1,0 +1,694 @@
+{
+  "removed": [
+    {
+      "line": 1,
+      "category": "%define",
+      "key": "_project",
+      "text": "%define _project Tizen-Base-Toolchain",
+      "conditions": []
+    },
+    {
+      "line": 5,
+      "category": "Macros",
+      "key": "_project",
+      "text": "%_project Tizen-Base-Toolchain",
+      "conditions": []
+    },
+    {
+      "line": 14,
+      "category": "Macros",
+      "key": "distribution",
+      "text": "%distribution Tizen-Base-Toolchain / standard",
+      "conditions": []
+    },
+    {
+      "line": 15,
+      "category": "Macros",
+      "key": "_project",
+      "text": "%_project Tizen-Base-Toolchain",
+      "conditions": []
+    },
+    {
+      "line": 115,
+      "category": "condition",
+      "key": "%ifarch armv7l aarch64",
+      "text": "%ifarch armv7l aarch64",
+      "conditions": [
+        "%ifarch armv7l aarch64"
+      ]
+    },
+    {
+      "line": 117,
+      "category": "Macros",
+      "key": "_with_mlgo",
+      "text": "%_with_mlgo 1",
+      "conditions": [
+        "%ifarch armv7l aarch64"
+      ]
+    },
+    {
+      "line": 118,
+      "category": "Macros",
+      "key": "mlgo_build_jobs",
+      "text": "%mlgo_build_jobs 6",
+      "conditions": [
+        "%ifarch armv7l aarch64"
+      ]
+    },
+    {
+      "line": 119,
+      "category": "Macros",
+      "key": "mlgo_verify_configure_only",
+      "text": "%mlgo_verify_configure_only 0",
+      "conditions": [
+        "%ifarch armv7l aarch64"
+      ]
+    },
+    {
+      "line": 121,
+      "category": "condition",
+      "key": "%endif",
+      "text": "%endif",
+      "conditions": [
+        "%ifarch armv7l aarch64"
+      ]
+    },
+    {
+      "line": 123,
+      "category": "condition",
+      "key": "%ifarch armv7l armv7hl",
+      "text": "%ifarch armv7l armv7hl",
+      "conditions": [
+        "%ifarch armv7l armv7hl"
+      ]
+    },
+    {
+      "line": 125,
+      "category": "Macros",
+      "key": "___optflags_toolchain_gcc",
+      "text": "%___optflags_toolchain_gcc --param=ssp-buffer-size=4",
+      "conditions": [
+        "%ifarch armv7l armv7hl"
+      ]
+    },
+    {
+      "line": 127,
+      "category": "condition",
+      "key": "%endif",
+      "text": "%endif",
+      "conditions": [
+        "%ifarch armv7l armv7hl"
+      ]
+    },
+    {
+      "line": 128,
+      "category": "condition",
+      "key": "%ifarch aarch64 riscv64",
+      "text": "%ifarch aarch64 riscv64",
+      "conditions": [
+        "%ifarch aarch64 riscv64"
+      ]
+    },
+    {
+      "line": 130,
+      "category": "Macros",
+      "key": "___optflags_toolchain_gcc",
+      "text": "%___optflags_toolchain_gcc -feliminate-unused-debug-types",
+      "conditions": [
+        "%ifarch aarch64 riscv64"
+      ]
+    },
+    {
+      "line": 132,
+      "category": "condition",
+      "key": "%endif",
+      "text": "%endif",
+      "conditions": [
+        "%ifarch aarch64 riscv64"
+      ]
+    },
+    {
+      "line": 133,
+      "category": "condition",
+      "key": "%ifarch i686 x86_64",
+      "text": "%ifarch i686 x86_64",
+      "conditions": [
+        "%ifarch i686 x86_64"
+      ]
+    },
+    {
+      "line": 135,
+      "category": "Macros",
+      "key": "___optflags_toolchain_gcc",
+      "text": "%___optflags_toolchain_gcc --param=ssp-buffer-size=4 -feliminate-unused-debug-types",
+      "conditions": [
+        "%ifarch i686 x86_64"
+      ]
+    },
+    {
+      "line": 136,
+      "category": "Macros",
+      "key": "___optflags_toolchain_clang",
+      "text": "%___optflags_toolchain_clang -momit-leaf-frame-pointer %{?_with_mlgo:-mllvm=-regalloc-enable-advisor=release -mllvm=-enable-ml-inliner=release}",
+      "conditions": [
+        "%ifarch i686 x86_64"
+      ]
+    },
+    {
+      "line": 138,
+      "category": "condition",
+      "key": "%endif",
+      "text": "%endif",
+      "conditions": [
+        "%ifarch i686 x86_64"
+      ]
+    },
+    {
+      "line": 142,
+      "category": "Macros",
+      "key": "__ar_clang",
+      "text": "%__ar_clang llvm-ar",
+      "conditions": []
+    },
+    {
+      "line": 143,
+      "category": "Macros",
+      "key": "__ranlib_clang",
+      "text": "%__ranlib_clang llvm-ranlib",
+      "conditions": []
+    },
+    {
+      "line": 144,
+      "category": "Macros",
+      "key": "__cc_clang",
+      "text": "%__cc_clang %{_host}-clang",
+      "conditions": []
+    },
+    {
+      "line": 145,
+      "category": "Macros",
+      "key": "__cxx_clang",
+      "text": "%__cxx_clang %{_host}-clang++",
+      "conditions": []
+    },
+    {
+      "line": 146,
+      "category": "Macros",
+      "key": "__optflags_toolchain_clang",
+      "text": "%__optflags_toolchain_clang -Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}",
+      "conditions": []
+    },
+    {
+      "line": 149,
+      "category": "Macros",
+      "key": "__ar_gcc",
+      "text": "%__ar_gcc gcc-ar",
+      "conditions": []
+    },
+    {
+      "line": 150,
+      "category": "Macros",
+      "key": "__ranlib_gcc",
+      "text": "%__ranlib_gcc gcc-ranlib",
+      "conditions": []
+    },
+    {
+      "line": 151,
+      "category": "Macros",
+      "key": "__cc_gcc",
+      "text": "%__cc_gcc %{_host}-gcc",
+      "conditions": []
+    },
+    {
+      "line": 152,
+      "category": "Macros",
+      "key": "__cxx_gcc",
+      "text": "%__cxx_gcc %{_host}-g++",
+      "conditions": []
+    },
+    {
+      "line": 153,
+      "category": "Macros",
+      "key": "__optflags_toolchain_gcc",
+      "text": "%__optflags_toolchain_gcc -O2 -fno-inline-functions -fstack-protector-strong %{?___optflags_toolchain_gcc:%{___optflags_toolchain_gcc}}",
+      "conditions": []
+    },
+    {
+      "line": 155,
+      "category": "Macros",
+      "key": "_toolchain",
+      "text": "%_toolchain %{?_toolchain_override}%{!?_toolchain_override:clang}",
+      "conditions": []
+    },
+    {
+      "line": 156,
+      "category": "Macros",
+      "key": "toolchain_is",
+      "text": "%toolchain_is() %((echo \"%_toolchain\" | %{__grep} -qE \"%{1}\") && echo 1 || echo 0)",
+      "conditions": []
+    },
+    {
+      "line": 158,
+      "category": "Macros",
+      "key": "__ar",
+      "text": "%__ar %{expand:%%{__ar_%{_toolchain}}}",
+      "conditions": []
+    },
+    {
+      "line": 159,
+      "category": "Macros",
+      "key": "__ranlib",
+      "text": "%__ranlib %{expand:%%{__ranlib_%{_toolchain}}}",
+      "conditions": []
+    },
+    {
+      "line": 160,
+      "category": "Macros",
+      "key": "__cc",
+      "text": "%__cc %{expand:%%{__cc_%{_toolchain}}}",
+      "conditions": []
+    },
+    {
+      "line": 161,
+      "category": "Macros",
+      "key": "__cxx",
+      "text": "%__cxx %{expand:%%{__cxx_%{_toolchain}}}",
+      "conditions": []
+    },
+    {
+      "line": 162,
+      "category": "Macros",
+      "key": "__optflags_toolchain",
+      "text": "%__optflags_toolchain %{expand:%%{__optflags_toolchain_%{_toolchain}}}",
+      "conditions": []
+    },
+    {
+      "line": 164,
+      "category": "Macros",
+      "key": "prep",
+      "text": "%prep %%prep\\\nexport AR=%{__ar} RANLIB=%{__ranlib};\\\n%{nil}",
+      "conditions": []
+    },
+    {
+      "line": 168,
+      "category": "Macros",
+      "key": "build",
+      "text": "%build %%build\\\nexport AR=%{__ar} RANLIB=%{__ranlib};\\\nexport CC=%{__cc} CXX=%{__cxx};\\\n%{nil}",
+      "conditions": []
+    },
+    {
+      "line": 173,
+      "category": "Macros",
+      "key": "install",
+      "text": "%install %{?_enable_debug_packages:%{?buildsubdir:%{debug_package}}}\\\n%%install\\\nexport AR=%{__ar} RANLIB=%{__ranlib};\\\nexport CC=%{__cc} CXX=%{__cxx};\\\n%{nil}",
+      "conditions": []
+    },
+    {
+      "line": 223,
+      "category": "preinstall",
+      "key": "Preinstall",
+      "text": "Preinstall: clang-accel-%{build_hostarch}-armv7l",
+      "conditions": [
+        "%ifarch armv7l"
+      ]
+    },
+    {
+      "line": 224,
+      "category": "runscripts",
+      "key": "Runscripts",
+      "text": "Runscripts: clang-accel-%{build_hostarch}-armv7l",
+      "conditions": [
+        "%ifarch armv7l"
+      ]
+    },
+    {
+      "line": 231,
+      "category": "preinstall",
+      "key": "Preinstall",
+      "text": "Preinstall: clang-accel-%{build_hostarch}-armv7hl",
+      "conditions": [
+        "%ifarch armv7hl"
+      ]
+    },
+    {
+      "line": 232,
+      "category": "runscripts",
+      "key": "Runscripts",
+      "text": "Runscripts: clang-accel-%{build_hostarch}-armv7hl",
+      "conditions": [
+        "%ifarch armv7hl"
+      ]
+    },
+    {
+      "line": 239,
+      "category": "preinstall",
+      "key": "Preinstall",
+      "text": "Preinstall: clang-accel-%{build_hostarch}-aarch64",
+      "conditions": [
+        "%ifarch aarch64"
+      ]
+    },
+    {
+      "line": 240,
+      "category": "runscripts",
+      "key": "Runscripts",
+      "text": "Runscripts: clang-accel-%{build_hostarch}-aarch64",
+      "conditions": [
+        "%ifarch aarch64"
+      ]
+    },
+    {
+      "line": 247,
+      "category": "preinstall",
+      "key": "Preinstall",
+      "text": "Preinstall: clang-accel-%{build_hostarch}-riscv64",
+      "conditions": [
+        "%ifarch riscv64"
+      ]
+    },
+    {
+      "line": 248,
+      "category": "runscripts",
+      "key": "Runscripts",
+      "text": "Runscripts: clang-accel-%{build_hostarch}-riscv64",
+      "conditions": [
+        "%ifarch riscv64"
+      ]
+    },
+    {
+      "line": 300,
+      "category": "required",
+      "key": "Required",
+      "text": "Required: binutils glibc rpm-build libtool",
+      "conditions": []
+    },
+    {
+      "line": 302,
+      "category": "support",
+      "key": "Support",
+      "text": "Support: gcc gcc-c++",
+      "conditions": []
+    },
+    {
+      "line": 303,
+      "category": "support",
+      "key": "Support",
+      "text": "Support: clang llvm-devel",
+      "conditions": []
+    },
+    {
+      "line": 338,
+      "category": "keep",
+      "key": "Keep",
+      "text": "Keep: clang llvm libllvm llvm-devel",
+      "conditions": []
+    },
+    {
+      "line": 354,
+      "category": "%define",
+      "key": "__optflags",
+      "text": "%define __optflags %{__optflags_toolchain} -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches",
+      "conditions": []
+    },
+    {
+      "line": 356,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: armv7l %{__optflags} -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=softfp -mthumb -Wp,-D__SOFTFP__ -D_FILE_OFFSET_BITS=64",
+      "conditions": []
+    },
+    {
+      "line": 357,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: armv7hl %{__optflags} -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=hard -mthumb -D_FILE_OFFSET_BITS=64",
+      "conditions": []
+    },
+    {
+      "line": 358,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: aarch64 %{__optflags} -march=armv8-a+fp+simd+crc+crypto -mtune=cortex-a53",
+      "conditions": []
+    },
+    {
+      "line": 359,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: i686 %{__optflags} -fdiagnostics-color=never -m32 -march=i686 -mtune=i686 -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer -mstackrealign",
+      "conditions": []
+    },
+    {
+      "line": 360,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: x86_64 %{__optflags} -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer",
+      "conditions": []
+    },
+    {
+      "line": 361,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: riscv64 %{__optflags} -mabi=lp64d -march=rv64gc",
+      "conditions": []
+    },
+    {
+      "line": 363,
+      "category": "condition",
+      "key": "%ifarch armv7l armv7hl",
+      "text": "%ifarch armv7l armv7hl",
+      "conditions": [
+        "%ifarch armv7l armv7hl"
+      ]
+    },
+    {
+      "line": 365,
+      "category": "Macros",
+      "key": "_ldflags_arch_extra",
+      "text": "%_ldflags_arch_extra ,-O1,--hash-style=gnu",
+      "conditions": [
+        "%ifarch armv7l armv7hl"
+      ]
+    },
+    {
+      "line": 367,
+      "category": "condition",
+      "key": "%endif",
+      "text": "%endif",
+      "conditions": [
+        "%ifarch armv7l armv7hl"
+      ]
+    },
+    {
+      "line": 368,
+      "category": "condition",
+      "key": "%ifarch i686",
+      "text": "%ifarch i686",
+      "conditions": [
+        "%ifarch i686"
+      ]
+    },
+    {
+      "line": 370,
+      "category": "Macros",
+      "key": "_ldflags_arch_extra",
+      "text": "%_ldflags_arch_extra ,-z,noseparate-code",
+      "conditions": [
+        "%ifarch i686"
+      ]
+    },
+    {
+      "line": 372,
+      "category": "condition",
+      "key": "%endif",
+      "text": "%endif",
+      "conditions": [
+        "%ifarch i686"
+      ]
+    },
+    {
+      "line": 374,
+      "category": "Macros",
+      "key": "build_ldflags",
+      "text": "%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra}",
+      "conditions": []
+    }
+  ],
+  "added": [
+    {
+      "line": 1,
+      "category": "%define",
+      "key": "_project",
+      "text": "%define _project Tizen-Base",
+      "conditions": []
+    },
+    {
+      "line": 5,
+      "category": "Macros",
+      "key": "_project",
+      "text": "%_project Tizen-Base",
+      "conditions": []
+    },
+    {
+      "line": 14,
+      "category": "Macros",
+      "key": "distribution",
+      "text": "%distribution Tizen-Base / standard",
+      "conditions": []
+    },
+    {
+      "line": 15,
+      "category": "Macros",
+      "key": "_project",
+      "text": "%_project Tizen-Base",
+      "conditions": []
+    },
+    {
+      "line": 228,
+      "category": "required",
+      "key": "Required",
+      "text": "Required: binutils gcc glibc rpm-build libtool",
+      "conditions": []
+    },
+    {
+      "line": 229,
+      "category": "required",
+      "key": "Required",
+      "text": "Required: gcc-c++",
+      "conditions": []
+    },
+    {
+      "line": 265,
+      "category": "keep",
+      "key": "Keep",
+      "text": "Keep: cpp",
+      "conditions": []
+    },
+    {
+      "line": 281,
+      "category": "%define",
+      "key": "__global_cflags",
+      "text": "%define __global_cflags -O2 -fno-inline-functions -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong -Wformat-security -fmessage-length=0 -frecord-gcc-switches -Wl,-z,relro,--as-needed",
+      "conditions": []
+    },
+    {
+      "line": 283,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: armv7l %{__global_cflags} --param=ssp-buffer-size=4 -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=softfp -mthumb -Wp,-D__SOFTFP__ -Wl,-O1 -Wl,--hash-style=gnu -Wa,-mimplicit-it=thumb -D_FILE_OFFSET_BITS=64",
+      "conditions": []
+    },
+    {
+      "line": 284,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: armv7hl %{__global_cflags} --param=ssp-buffer-size=4 -march=armv7-a -mtune=cortex-a8 -mlittle-endian -mfpu=neon -mfloat-abi=hard -mthumb -Wl,-O1 -Wl,--hash-style=gnu -Wa,-mimplicit-it=thumb -D_FILE_OFFSET_BITS=64",
+      "conditions": []
+    },
+    {
+      "line": 285,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: aarch64 %{__global_cflags} -feliminate-unused-debug-types -Wformat -march=armv8-a+fp+simd+crc+crypto -mtune=cortex-a57.cortex-a53",
+      "conditions": []
+    },
+    {
+      "line": 286,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: i686 %{__global_cflags} -feliminate-unused-debug-types --param=ssp-buffer-size=4 -fdiagnostics-color=never -m32 -march=i686 -mtune=i686 -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer -mstackrealign -Wl,-z,noseparate-code",
+      "conditions": []
+    },
+    {
+      "line": 287,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: x86_64 %{__global_cflags} -feliminate-unused-debug-types --param=ssp-buffer-size=4 -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables -fno-omit-frame-pointer",
+      "conditions": []
+    },
+    {
+      "line": 288,
+      "category": "optflags",
+      "key": "Optflags",
+      "text": "Optflags: riscv64 %{__global_cflags} -feliminate-unused-debug-types -Wformat -mabi=lp64d -march=rv64gc",
+      "conditions": []
+    }
+  ],
+  "changed_macro_names": [
+    "___optflags_toolchain_clang",
+    "___optflags_toolchain_gcc",
+    "__ar",
+    "__ar_clang",
+    "__ar_gcc",
+    "__cc",
+    "__cc_clang",
+    "__cc_gcc",
+    "__cxx",
+    "__cxx_clang",
+    "__cxx_gcc",
+    "__global_cflags",
+    "__optflags",
+    "__optflags_toolchain",
+    "__optflags_toolchain_clang",
+    "__optflags_toolchain_gcc",
+    "__ranlib",
+    "__ranlib_clang",
+    "__ranlib_gcc",
+    "_ldflags_arch_extra",
+    "_project",
+    "_toolchain",
+    "_with_mlgo",
+    "build",
+    "build_ldflags",
+    "distribution",
+    "install",
+    "mlgo_build_jobs",
+    "mlgo_verify_configure_only",
+    "prep",
+    "toolchain_is"
+  ],
+  "indirect_search_names": [
+    "AR",
+    "CC",
+    "CFLAGS",
+    "CXX",
+    "CXXFLAGS",
+    "LDFLAGS",
+    "RANLIB",
+    "___optflags_toolchain_clang",
+    "___optflags_toolchain_gcc",
+    "__ar",
+    "__ar_clang",
+    "__ar_gcc",
+    "__cc",
+    "__cc_clang",
+    "__cc_gcc",
+    "__cxx",
+    "__cxx_clang",
+    "__cxx_gcc",
+    "__global_cflags",
+    "__optflags",
+    "__optflags_toolchain",
+    "__optflags_toolchain_clang",
+    "__optflags_toolchain_gcc",
+    "__ranlib",
+    "__ranlib_clang",
+    "__ranlib_gcc",
+    "_enable_debug_packages",
+    "_ldflags_arch_extra",
+    "_project",
+    "_toolchain",
+    "_toolchain_override",
+    "_with_mlgo",
+    "build",
+    "build_ldflags",
+    "debug_package",
+    "distribution",
+    "install",
+    "mlgo_build_jobs",
+    "mlgo_verify_configure_only",
+    "optflags",
+    "prep",
+    "toolchain_is"
+  ]
+}

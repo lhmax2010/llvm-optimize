@@ -1,0 +1,285 @@
+commit 8739131fa8cce46a428818525d6fbf358175d585
+Author:     He Fangyu <fangyu.he@samsung.com>
+AuthorDate: Mon Oct 26 11:17:57 2026 +0800
+Commit:     He Fangyu <fangyu.he@samsung.com>
+CommitDate: Mon Oct 26 11:17:57 2026 +0800
+
+    Tizen-Base-Toolchain: limit section GC to Clang builds
+    
+    Global --gc-sections also reaches packages that override the default
+    Clang toolchain with GCC. This breaks glibc's libc_pic.os partial link:
+    GNU ld requires an explicit root symbol when combining -r with section
+    GC, but this intermediate object has no such root.
+    
+    Move --gc-sections into the Clang-specific linker flags and resolve the
+    selected flags at macro expansion time so package-level toolchain
+    overrides take effect. Preserve the common and architecture-specific
+    linker flags.
+    
+    Validation:
+    - Passed 18 RPM macro expansion checks across six architectures.
+    - Completed an aarch64 glibc GBS build using the modified project config
+      and the local gbs.conf; generated 15 binary RPMs.
+    - Confirmed libc_pic.os links successfully without --gc-sections.
+    - The glibc test suite remains skipped by the existing project config.
+    
+    Change-Id: I008d9a418fb43b7c6f857baa1af3321aa88115ef
+
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+
+commit d3fa3e1122fe4f9778ae38bf14c82f8f2ce7f65c
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Wed Oct 21 19:22:27 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Wed Oct 21 19:22:27 2026 +0800
+
+    Add LLVM Global Compile Options
+    
+    Change-Id: Ic95a555d1e64018a3ed0257f320e3a42edcdce5a
+
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+
+commit 27d135c5df66b12087588cd2331bd3215192c62e
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Tue Oct 13 10:38:12 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Tue Oct 13 10:38:12 2026 +0800
+
+    Remove libc++ Related Content
+    
+    Change-Id: I150e7322e418bdb91a632e23104a1e61f9cb5e96
+
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+
+commit e13ce91df74fe79237a3b6afe2e1443b8a8e8d00
+Author:     Hao Lin <hao.lin@samsung.com>
+AuthorDate: Mon Oct 12 14:44:55 2026 +0800
+Commit:     Hao Lin <hao.lin@samsung.com>
+CommitDate: Mon Oct 12 14:44:55 2026 +0800
+
+    Prepare Tizen-Base-Toolchain build root for libc++
+    
+    Two changes to TIZEN/Tizen/Tizen-Base-Toolchain/project_config:
+    
+    1. Remove the lld default linker (-fuse-ld=lld in build_ldflags). It
+       has not passed validation yet, so the next build uses the GNU linker
+       as before. It will be submitted again after validation. This reverts
+       commit bae4ebdd732e3c01611de2414434d4c5c162763c.
+    
+    2. Add libc++ to the build root, to build C++ packages with LLVM libc++
+       instead of libstdc++:
+       - Support: add libc++-devel and libc++abi-devel, so that every build
+         root can compile and link C++ code against libc++.
+       - Keep: keep libc++, libc++abi and their -devel packages in the
+         build root, in the same way as libstdc++ and libstdc++-devel.
+    
+    libstdc++ stays in the build root. Packages that do not select libc++
+    keep building with libstdc++ as before, and GCC builds are not changed.
+    Packages select libc++ in their own spec (build_with_libcxx under the
+    clang toolchain).
+    
+    The libc++ packages are built from packaging/libcxx-runtimes.spec in
+    platform/upstream/llvm. libcxx-runtimes is not in the current
+    Tizen-Base-Toolchain repository, so the Support entries must only take
+    effect after libcxx-runtimes has been built and its binaries are
+    published; otherwise every package in the project becomes unresolvable.
+    
+    Change-Id: I0403eb61b5c412c7ed53dc6f862c92765ead121f
+    Signed-off-by: Hao Lin <hao.lin@samsung.com>
+
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+
+commit bae4ebdd732e3c01611de2414434d4c5c162763c
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Thu Oct 8 11:45:43 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Thu Oct 8 11:45:43 2026 +0800
+
+    Modify codes to support llvm-lld
+    
+    Change-Id: I68facad05efa7e0430b7a79697ebcfabc8325958
+
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+
+commit d14ae536384bcfda6b3499fed501fd3e47600cd7
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Thu Oct 1 16:51:57 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Thu Oct 1 16:52:39 2026 +0900
+
+    Tizen-Base-Toolchain: update project_config
+    
+    revert "-fuse-ld=lld" from ldflags
+    
+    Change-Id: I495d9817345e64b8218dc58cd226e0bc77e2991e
+    Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+
+commit cdea61ee8eae40a1f7ab4d76a1bca00d50ac880e
+Author:     seokwon.jeong <seokwon.jung@samsung.com>
+AuthorDate: Thu Oct 1 15:01:20 2026 +0900
+Commit:     seokwon.jeong <seokwon.jung@samsung.com>
+CommitDate: Thu Oct 1 15:01:20 2026 +0900
+
+    enable tizen_tcore build
+    
+    Change-Id: Ief449403805c1d9f6329786184930b6d1a84f561
+
+M	TIZEN/Tizen/Tizen-Base-SC/project_config
+M	TIZEN/Tizen/Tizen-Unified-SC/project_config
+
+commit 79580aa642d57881db6541df99cf04316699b393
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Wed Sep 30 14:13:59 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Wed Sep 30 14:15:28 2026 +0800
+
+    Remove apparent dependence on lld
+    lld tools are placed in the main package of llvm and are not packaged separately
+    apparent dependent on lld, showing that nothing provide lld
+    
+    Change-Id: I8741f4d6e7227871af2498c27371fd87ebe734fc
+
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+
+commit eaf00da271d3d70affafb0e388a4a2332304347a
+Author:     Shanshan Liu <ss0217.liu@samsung.com>
+AuthorDate: Tue Sep 29 17:22:09 2026 +0800
+Commit:     Lin Hao <hao.lin@samsung.com>
+CommitDate: Tue Sep 29 11:04:40 2026 +0000
+
+    Modify codes to support llvm-lld.
+    
+    Change-Id: I7c855210ec6b512c911a2cad857d5fe39355bbbc
+    Signed-off-by: Shanshan Liu <ss0217.liu@samsung.com>
+
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+
+commit 701b33aeb7291a4fcf525584d4897a2a7706b355
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Mon Sep 14 15:42:40 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Mon Sep 14 15:42:40 2026 +0900
+
+    Tizen-Base-Toolchain: update project_config
+    
+    Remove libc++ from toolchain configuration
+    
+    Change-Id: I2d37173ef0e1e4b0ee7c56814a388565019aefb8
+    Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+
+commit afa7edf667d12ffdc4306a7743ae966f2b02577c
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Sat Sep 12 11:48:29 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Sat Sep 12 11:48:45 2026 +0900
+
+    Reapply "Update project_config files for Tizen-11.0"
+    
+    This reverts commit f8474c7da2718adab4a7d91472cb01f51f648152.
+    
+    Change-Id: I1b6b761830bd0f27cb4efaeff582887b2553265f
+
+M	TIZEN/Tizen/Tizen-Base-Dev/project_config
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+M	TIZEN/Tizen/Tizen-Unified-Toolchain/project_config
+
+commit f8474c7da2718adab4a7d91472cb01f51f648152
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Sat Sep 12 10:57:04 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Sat Sep 12 10:57:17 2026 +0900
+
+    Revert "Update project_config files for Tizen-11.0"
+    
+    This reverts commit 55e34668a03b569ca198b363cf22f1a7ad9b69db.
+    
+    Change-Id: I939ac2e083dc0c9e7a135edd25d2ed0c3ca32615
+
+M	TIZEN/Tizen/Tizen-Base-Dev/project_config
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+M	TIZEN/Tizen/Tizen-Unified-Toolchain/project_config
+
+commit 55e34668a03b569ca198b363cf22f1a7ad9b69db
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Sat Sep 12 09:39:17 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Sat Sep 12 09:41:41 2026 +0900
+
+    Update project_config files for Tizen-11.0
+    
+    * source: Tizen-Base Tizen-Unified
+    
+    Change-Id: I52fbc89a16989cb6615a07c035dfdac84bf9be51
+    Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+
+M	TIZEN/Tizen/Tizen-Base-Dev/project_config
+M	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+M	TIZEN/Tizen/Tizen-Unified-Toolchain/project_config
+
+commit 391390ff519f3a0ded1dae0fb474d3851dc82e2f
+Author:     Jinkun <jinkun.jang@samsung.com>
+AuthorDate: Tue Sep 8 11:11:15 2026 +0900
+Commit:     Jinkun <jinkun.jang@samsung.com>
+CommitDate: Tue Sep 8 11:11:15 2026 +0900
+
+    latest snapshot
+
+A	TIZEN/Tizen-10.0-MR/Tizen-10.0-Base-MR/project_config
+A	TIZEN/Tizen-10.0-MR/Tizen-10.0-Unified-MR/project_config
+A	TIZEN/Tizen-10.0/Tizen-10.0-Base/project_config
+A	TIZEN/Tizen-10.0/Tizen-10.0-Unified/project_config
+A	TIZEN/Tizen-10.1/Tizen-10.1-Base/project_config
+A	TIZEN/Tizen-10.1/Tizen-10.1-Unified/project_config
+A	TIZEN/Tizen-4.0/Tizen-4.0-Base/project_config
+A	TIZEN/Tizen-4.0/Tizen-4.0-Unified/project_config
+A	TIZEN/Tizen-5.0/Tizen-5.0-Base/project_config
+A	TIZEN/Tizen-5.0/Tizen-5.0-Unified/project_config
+A	TIZEN/Tizen-5.5/Tizen-5.5-Base/project_config
+A	TIZEN/Tizen-5.5/Tizen-5.5-Unified/project_config
+A	TIZEN/Tizen-6.0/Tizen-6.0-Base/project_config
+A	TIZEN/Tizen-6.0/Tizen-6.0-Unified/project_config
+A	TIZEN/Tizen-6.5/Tizen-6.5-Base/project_config
+A	TIZEN/Tizen-6.5/Tizen-6.5-Unified/project_config
+A	TIZEN/Tizen-7.0/Tizen-7.0-Base-Hotfix/project_config
+A	TIZEN/Tizen-7.0/Tizen-7.0-Base/project_config
+A	TIZEN/Tizen-7.0/Tizen-7.0-Unified-Hotfix/project_config
+A	TIZEN/Tizen-7.0/Tizen-7.0-Unified/project_config
+A	TIZEN/Tizen-8.0/Tizen-8.0-Base/project_config
+A	TIZEN/Tizen-8.0/Tizen-8.0-Unified/project_config
+A	TIZEN/Tizen-9.0/Tizen-9.0-Base/project_config
+A	TIZEN/Tizen-9.0/Tizen-9.0-Unified/project_config
+A	TIZEN/Tizen/Tizen-Base-ASAN/project_config
+A	TIZEN/Tizen/Tizen-Base-Dev/project_config
+A	TIZEN/Tizen/Tizen-Base-RISCV/project_config
+A	TIZEN/Tizen/Tizen-Base-SC/project_config
+A	TIZEN/Tizen/Tizen-Base-Toolchain/project_config
+A	TIZEN/Tizen/Tizen-Base-X-ASAN/project_config
+A	TIZEN/Tizen/Tizen-Base-X/project_config
+A	TIZEN/Tizen/Tizen-Base/project_config
+A	TIZEN/Tizen/Tizen-Rust/project_config
+A	TIZEN/Tizen/Tizen-Unified-Dev/project_config
+A	TIZEN/Tizen/Tizen-Unified-RISCV/project_config
+A	TIZEN/Tizen/Tizen-Unified-SC/project_config
+A	TIZEN/Tizen/Tizen-Unified-Toolchain/project_config
+A	TIZEN/Tizen/Tizen-Unified-X-ASAN/project_config
+A	TIZEN/Tizen/Tizen-Unified-X/project_config
+A	TIZEN/Tizen/Tizen-Unified/project_config
+A	TIZEN/Tools/Tools-devbase-tools-legacy/project_config
+A	TIZEN/Tools/Tools-devbase-tools-legacy/project_config_dod-Targets-Ubuntu-18.04
+A	TIZEN/Tools/Tools-devbase-tools-legacy/project_config_dod-Targets-Ubuntu-20.04
+A	TIZEN/Tools/Tools-devbase-tools-legacy/project_config_dod-Targets-openSUSE-Leap-42.1
+A	TIZEN/Tools/Tools-devbase-tools-legacy/project_config_dod-Targets-openSUSE-Leap-42.3
+A	TIZEN/Tools/Tools-devbase-tools/project_config
+A	TIZEN/Tools/Tools-devbase-tools/project_config_dod-Targets-Ubuntu-22.04
+A	TIZEN/Tools/Tools-devbase-tools/project_config_dod-Targets-Ubuntu-24.04
+A	TIZEN/Tools/Tools-devbase-tools/project_config_dod-Targets-Ubuntu-26.04
+A	TIZEN/Tools/Tools-devbase-tools/project_config_dod-Targets-openSUSE-Leap-15.2
+A	TIZEN/Tools/Tools-devbase-tools/project_config_dod-Targets-openSUSE-Leap-15.5
+A	TIZEN/Tools/Tools-qemu2.7.x/project_config
+A	TIZEN/Tools/Tools-qemu5.2.x/project_config
+A	TIZEN/Tools/Tools-qemu8.2.x/project_config
+A	TIZEN/Tools/Tools-qemu9.2.x/project_config

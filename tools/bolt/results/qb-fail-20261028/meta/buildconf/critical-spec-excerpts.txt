@@ -1,0 +1,118 @@
+
+### specs/iptables-1.6.1-2.1/iptables.spec
+79: CFLAGS="$CFLAGS -Wall -Werror -O2 -D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE -fno-strict-aliasing -Wno-unused-value -Wno-stringop-truncation -Wno-format-truncation -fPIC"
+80: %{?_toolchain:
+81: %if %{toolchain_is clang}
+82: CFLAGS=$(echo "$CFLAGS" | sed 's/-Wno-stringop-truncation//g')
+83: %endif
+84: }
+85: LDFLAGS="$LDFLAGS -pie -Wl,-z,relro,--as-needed"
+86: 
+
+### specs/kmod-34.2-2.1/kmod.spec
+101: 
+102: %{?_toolchain:
+103: %if !%{toolchain_is clang}
+104: CFLAGS+=" -Wno-maybe-uninitialized"
+105: %endif
+106: }
+107: %__make %{?_smp_mflags} CFLAGS+=" -fPIE" LDFLAGS+=" -pie"
+108: 
+
+### specs/readline-5.2-1.14/readline.spec
+127:   CFLAGS="$CFLAGS -Wuninitialized -Wextra -Wno-unprototyped-calls -Wno-switch-enum -pipe"
+128:   %if %{defined _toolchain}
+129:     %if %{toolchain_is gcc}
+130:       CFLAGS="$CFLAGS -ftree-loop-linear"
+131:     %endif
+132:   %else
+133:     CFLAGS="$CFLAGS -ftree-loop-linear"
+134:   %endif
+
+### specs/sed-4.1c-1.13/sed.spec
+15: BuildRequires:  automake
+16: %{?_toolchain:
+17: %if %{toolchain_is clang}
+18: BuildRequires:  compiler-rt
+19: %endif
+20: }
+21: Provides:       /bin/sed
+22: 
+49:     %__make %{?_smp_mflags} CFLAGS="$CFLAGS "%cflags_profile_generate
+50:     %if %{defined _toolchain}
+51:         %if %{toolchain_is clang}
+52:             # In case of the conflict issue of paralleling running
+53:             export LLVM_PROFILE_FILE="$PWD/sed-%p.profraw"
+54:             %__make %{?_smp_mflags} check
+55:             llvm-profdata merge -output=$PWD/sed.profdata $PWD/*.profraw
+56:             %define profile_feedback_flags %cflags_profile_feedback=$PWD/sed.profdata
+
+### specs/xmlstarlet-1.6.1-1.1/xmlstarlet.spec
+28: CFLAGS="$CFLAGS -fPIC"
+29: %{?_toolchain:
+30: %if %{toolchain_is clang}
+31: CFLAGS="$CFLAGS -Wno-error=incompatible-function-pointer-types"
+32: %endif
+33: }
+34: %if %{undefined ATTRIBUTE_UNUSED}
+35: export CFLAGS="$CFLAGS -DATTRIBUTE_UNUSED="
+
+### specs/xz-5.8.1-1.13/xz.spec
+17: 
+18: %{?_toolchain:
+19: %if %{toolchain_is clang}
+20: BuildRequires:  compiler-rt
+21: %endif
+22: }
+23: 
+24: Provides:       lzma = %{version}
+102: CFLAGS="%{optflags}"
+103: %if %{defined _toolchain}
+104:    %if %{toolchain_is clang}
+105:       %__make LLVM_PROFILE_FILE=$profiledir/default.profraw check
+106:       llvm-profdata merge -output=$profiledir/default.profdata $profiledir/default.profraw
+107:       CFLAGS="$CFLAGS %{cflags_profile_feedback}=$profiledir/default.profdata"
+108:    %else
+109:       %__make check
+
+### specs/toybox-0.6.0-1.4/toybox.spec
+99: cp %{SOURCE1} .config
+100: %{?!_toolchain:
+101: export CC="gcc"
+102: }
+103: make -j 4 CC+=" $RPM_OPT_FLAGS" CFLAGS=" $CFLAGS -fPIE -Wno-nonnull -Wno-incompatible-pointer-types" LDOPTIMIZE=" -Wl,--gc-sections -pie"
+104: cp toybox toybox-dynamic
+105: 
+
+### specs/gcc-14.2.0-1.14/gcc.spec
+29: # Always build gcc with gcc compiler
+30: %define _toolchain_override gcc
+31: 
+32: # Bootstrap build constrains for ASan config
+33: %if 0%{?asanbootstrap}
+34:   %ifarch %arm aarch64 # or #if 0#{?qemu_user_space_build}
+35:     %{error:"'asanbootstrap' supposed to be used with i586/x86_64 arch"}
+
+### specs/glibc-2.40-2.4/glibc.spec
+35: # Always build with gcc due to using extensions of gcc
+36: %define _toolchain_override gcc
+37: 
+38: Name:           glibc
+39: VCS:            platform/upstream/glibc#83bc20136921f311cd4962f207f76e3cda72d77f
+40: Summary:        Standard Shared Libraries (from the GNU C Library)
+41: License:        LGPL-2.1+ and LGPL-2.1+-with-GCC-exception and GPL-2.0+
+
+### specs/xxhash-0.8.3-1.1/xxhash.spec
+43: export CXXFLAGS="$CFLAGS"
+44: export LDFLAGS="%{?build_ldflags}"
+45: make %{?_smp_mflags} prefix=%{_prefix} libdir=%{_libdir}
+46: 
+47: %install
+48: export CFLAGS="%{optflags} -DXXH_X86DISPATCH_ALLOW_AVX=1"
+49: export CXXFLAGS="%{optflags}"
+50: export LDFLAGS="%{?build_ldflags}"
+51: make install DESTDIR=%{buildroot} prefix=%{_prefix} libdir=%{_libdir}
+52: rm -rf %{buildroot}%{_libdir}/libxxhash.a
+53: 
+54: # Remove documentation and man pages (Tizen recommendation)
+55: %remove_docs

@@ -536,4 +536,15 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 
 固定Toolchain20261013与Base20261026工具链不同：636个name+arch联合组中新增9、缺少11、EVR变503、同EVR但RPM校验变113。新build.conf SHA为840ef6de94c6d73e3fcced27dc777a399df435a0f2e4017347191a296f5f1975。后续应按工具链不同口径认证，不继承39号精确clang SHA。
 
-新build.conf不定义_toolchain，按源spec会关闭debug_package并删除/usr/lib/debug，与本次22个二进制RPM和clang-debuginfo要求冲突。已请求仅本地增加_toolchain宏的裁决，尚未获答复，未启动新完整构建，未改基线后处理。debuglink实现和夹具可以独立准备；未把“函数级已实现”写成已完成打包认证。另挂账：LLVM only-keep-debug缺陷单独修复、方案乙源码行成本实验。
+新build.conf不定义_toolchain；直接使用它会令LLVM入口切到release、关闭debug_package、去-g，并定义删除debug目录的后处理宏。用户已回复：暂停debuglink完整构建，先做项目级build.conf调查，不以单独补LLVM宏继续。NGBS最终是否合并Toolchain project_config尚不能由现有日志确认，不能把下载地址直接当作最终宏。另挂账：LLVM only-keep-debug缺陷单独修复、方案乙源码行成本实验。
+
+
+### 45号 build.conf 项目级调查（用户暂停第三件后的结果）
+
+两份固定配置全量分类：31个宏名发生变化，另有六架构Optflags、Required/Support、clang-accel预安装/运行脚本和Keep变化；Prefer/Substitute/VMinstall等相同，Repotype两份均未声明。新SHA 840ef6de94c6d73e3fcced27dc777a399df435a0f2e4017347191a296f5f1975。Toolchain source索引365份SRPM全部提取spec并验SHA；按manifest245仓库、QB实际251仓库（并集252）逐项核对，实际251仓库均有匹配QB提交的spec，逐包表和原行号见45号第7节。
+
+明确分支影响包括LLVM release/debug、sed/xz的PGO、readline GCC选项、toybox显式gcc、iptables/xmlstarlet Clang警告处理；GCC/glibc原本有GCC override，不误称它们必然由Clang换GCC。其余包仍受段入口、工具宏、选项和依赖条件影响，静态调查不等于全包实编。
+
+关键边界：3c78318未改Toolchain project_config，父提交/该提交/本地HEAD的文件SHA均为fe00ccfb48579b473a9995d6d83682700b6b750029ac4bcb31cd26d9190ffc35。get_build_conf_text随snapshot_info取Base配置，但create_meta_for_ngbs仍读取Toolchain目录，日志没给最终NGBS _config/.rpmmacros；默认加载器是否支持独立config来源尚未确认。推荐Base RPM与Toolchain完整配置分离，先核验装配链；不改Base公共配置，不只补LLVM一个宏。
+
+本地meta修复fd60db96806a372404bd4f04e68d4ba586290147保留、未推。暂停前本地debuglink草稿提交569d734d0ccb2959e3f33494593c5cd46a01c347及346项测试/旧产物副本实验保留，未新构建、未新RPM、未推源码；打包认证仍挂账。本次只发布45号调查证据与文档到GitHub bolt-v4，不含暂停的源码/测试修改。两个快照用于构建LLVM的工具链并不完全相同，不能沿用39号精确clang SHA。
