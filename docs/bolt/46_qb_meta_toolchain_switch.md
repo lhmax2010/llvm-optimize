@@ -307,3 +307,146 @@ x86子日志原文：
 [证据SHA256SUMS](../../tools/bolt/results/qb-meta-switch-20261028/SHA256SUMS)覆盖本目录材料；公开RPM体积较大，仅在本轮temp保留，GitHub保存其下载URL、原始大小/校验值、运行输出。父/子QB完整日志用gzip保存；浏览器只保存登录后的概览文本/截图和下载日志，没有保存cookie、认证头或登录表单。
 
 查找更正：QB下载入口标题是Save而非Download，按页面实际链接纠正后只读下载；依赖扫描补上宏包装内BuildRequires；debug/<arch>/初探404后检查父目录，确认实际采用平铺RPM布局，未将该404误报为快照缺少debug。全部原始输入/发布代码/项目配置未改，未删除目录，未运行cmake/ninja或软件包构建，未推Gerrit、master或sandbox。第一本地修复仍是fd60db96；两个评审均STOP/未上传。
+
+
+## 7. 用户裁决后的处理（2026-10-28）
+
+**两个评审本轮仍未上传，但停止依据已收窄。** Base 的 gcc-armv7hl 确实进入了 QB 调度和依赖计算，不能按“只编 gcc.spec”豁免；Keep/Substitute 的历史缺项则全部解除阻断。Unified 的依赖仓库和 build.conf 实际来自 Base-Toolchain，但日志不足以排除代码清单来自 meta/manifest.xml，因此按“看不出来就停”的裁决，不修改 snapshot_info、不上传。
+
+本节追加于原第1–6节之后；前文是上一轮的历史结论，未改写。本轮 Unified 的目标已变为“Unified 代码 + 原 Base-Toolchain 依赖”；上一轮两层 DOD 和二进制缺包检查不再作为此方案的阻断。17个仓库的删除也不直接判失败；只有通过来源机制检查后，才进入剩余1030仓库的 BuildRequires 认证。
+
+### 7.1 Base：不是只选 gcc.spec / binutils.spec
+
+对两份完整子日志重新逐行检索，并与45号的实际仓库清单核对：
+
+| 仓库 | 1202084 与 1211018 实际 revision | 对应实际源码包/spec |
+|---|---|---|
+| platform/upstream/gcc | `49c5060508ce8a6ed6beca375233688a6bdd9140` | gcc、gcc-aarch64、gcc-armv7l、gcc-armv7hl、gcc-riscv64；各有同名.spec |
+| platform/upstream/binutils | `518d2e0089ccf79dd8de973276207d3aa638df11` | binutils、binutils-aarch64、binutils-armv7l、binutils-armv7hl、binutils-riscv64；各有同名.spec |
+
+原始仓库映射：两份日志的 L136/L278/L417；1211018 另有 L5737。见本节证据目录的 `1202084-repo-entries.json` 和 `1211018-repo-entries.json`。251是源码仓库数量，**不是spec或源码包数量**；一个仓库可以导出多份spec。
+
+1211018 原文（`1211018-cross-spec.txt`保留每一组完整上下文）：
+
+```text
+L888: 05:22:37,293 INFO  - check package binutils-armv7hl
+L889: 05:22:37,293 INFO  - <package name="binutils-armv7hl" project="Tizen-Base-Toolchain" />
+L893: 05:22:37,293 INFO  - {'name': 'binutils-armv7hl.spec', 'md5': '', 'status': 'A'}
+L985: 05:22:46,750 INFO  - check package gcc
+L994: 05:22:46,750 INFO  - {'name': 'gcc.spec', 'md5': '', 'status': 'A'}
+L4884: 05:24:25,723 INFO  - check package gcc-armv7hl
+L4885: 05:24:25,723 INFO  - <package name="gcc-armv7hl" project="Tizen-Base-Toolchain" />
+L4889: 05:24:25,723 INFO  - {'name': 'gcc-armv7hl.spec', 'md5': '', 'status': 'A'}
+```
+
+这里不能把“包目录里有一个spec”单独当成运行证据。决定性的补充是1202084 **实际调度器**的状态与依赖原文：
+
+```text
+L1106: 07:29:38,438 INFO  - check package gcc-armv7hl
+L1107: 07:29:38,438 INFO  - info: gcc-armv7hl No files were changed.
+L1345: 08:00:20,359 INFO  - 	 binutils-armv7hl blocked
+L1425: 08:00:20,360 INFO  - 	 gcc-armv7hl blocked
+L1426: 08:00:20,360 INFO  - 		bison, flex, makeinfo, gcc-c++, zlib-devel, xz-devel, perl, binutils-armv7hl, binutils, glibc, ...
+```
+
+日志没有给出完整的 `rpmbuild ... gcc-armv7hl.spec` 命令，也不能声称它已成功编完；但它明确是 **纳入构建并计算了 binutils-armv7hl 依赖的目标**，而非被忽略的附带文件。45号已保存的 `gcc-armv7hl.spec` L1 `%define cross armv7hl`、L101 `%{?cross:BuildRequires: binutils-%{cross}}` 与上述调度结果互证。因此本轮命中“QB会编它”的停止条件，**不rebase、不上传Base评审**。没有擅自用“项目内也计划构建binutils-armv7hl”放宽用户规定的缺包门禁。
+
+旧快照 `tizen-base-toolchain_20261013.024319` 的 x86_64 primary 元数据原始 release 核对：
+
+| 包 | version-release | source RPM |
+|---|---|---|
+| gcc | 14.2.0-1.13 | gcc-14.2.0-1.13.src.rpm |
+| gcc-armv7hl | 14.2.0-1.3 | gcc-armv7hl-14.2.0-1.3.src.rpm |
+| binutils | 2.43-1.14 | binutils-2.43-1.14.src.rpm |
+| binutils-armv7hl | 2.43-1.1 | binutils-armv7hl-2.43-1.1.src.rpm |
+
+用户给出的cross release号与二进制仓库一致；45号提取的 `gcc-armv7hl-14.2.0-1.4/` 是 source 索引中另一份保留SRPM，不能用目录名代替本表的二进制release，也不能凭release较老推断QB不编它。`old-release-comparison.json`另列三架构的location、source、VCS和包校验值。
+
+### 7.2 Base：历史 Keep / Substitute 缺项豁免
+
+从原始primary解析结果重新计算提供者，按目标架构+noarch匹配包名、Provides和文件提供；没有只复述上一轮的结论。合计 **56个“架构×指令×名字”缺项，旧仓库提供者也是空，新增退化0项**：Keep为11名字×3架构=33项，Substitute为23项。本次全部按用户裁决豁免，不再阻断。每项的配置行号及旧/新提供者 `[]` 见 `provider-waivers.tsv/json`；输入primary解析文件的SHA和可复跑脚本也一并保存。
+
+| 指令 | 名字 | 缺失的目标架构 | 旧提供者 | 新提供者 | 裁决 |
+|---|---|---|---|---|---|
+| keep | `glib2` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| keep | `libada` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| keep | `libcloog` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| keep | `libmpc` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| keep | `libmpfr` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| keep | `libppl` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| keep | `libppl_c` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| keep | `nss-softokn-freebl` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| keep | `perl-libs` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| keep | `tizen-rpm-config` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| keep | `xz-lzma-compat` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| substitute | `clang-accel-x86_64-aarch64` | x86_64, armv7l | 无 | 无 | 原有缺项，豁免 |
+| substitute | `clang-accel-x86_64-armv7hl` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| substitute | `clang-accel-x86_64-armv7l` | x86_64, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| substitute | `clang-accel-x86_64-riscv64` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| substitute | `glibc-32bit` | x86_64 | 无 | 无 | 原有缺项，豁免 |
+| substitute | `glibc-devel-32bit` | x86_64 | 无 | 无 | 原有缺项，豁免 |
+| substitute | `libgcc-32bit` | x86_64 | 无 | 无 | 原有缺项，豁免 |
+| substitute | `python-accel-x86_64-aarch64` | x86_64, armv7l | 无 | 无 | 原有缺项，豁免 |
+| substitute | `python-accel-x86_64-armv7hl` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| substitute | `python-accel-x86_64-armv7l` | x86_64, aarch64 | 无 | 无 | 原有缺项，豁免 |
+| substitute | `python-accel-x86_64-riscv64` | x86_64, armv7l, aarch64 | 无 | 无 | 原有缺项，豁免 |
+
+这些“无”严格按同架构/noarch判断。例如带目标名的accel包在另一架构仓库存在，不意味着在x86_64仓库也有provider；旧、新按同一规则比较。其余Preinstall、Runscripts、Required、Support、VMinstall检查沿用第2节的通过结果；MLGO旧/新clang两目标4/4通过也保持不变。
+
+### 7.3 Unified：机制实证与不能跨过的证据缺口
+
+读取1209720父日志、1209725/26/27三个子日志和1211018完整日志，没有重新登录或操作QB。
+
+| 项目 | 1209720 / x86子构建1209727 | 1211018 |
+|---|---|---|
+| 构建方式 | 子L432 `timeout 8h gbs build --threads=30 ...` | L400 `USE_NGBS=yes`；L509 NGBS入口 |
+| 代码参考标记 | 父L1162–1164 `BUILD_REFERENCE: Ref. Snapshot`；L3915 snapshot_num_url=Unified-Toolchain/20261016.052151 | L130/L314 snapshot_num_url=Base/20261026.005418 |
+| 已解析清单 | 父L1290 MANIFEST_ORIG、L2339 MANIFEST_REF；L3921 build_pkg_list_dic共1046仓库；父L3932 `do_src_sync` | L136等四处共251仓库，已解析完成 |
+| 依赖URL | 子L317 base_path_url=Base-Toolchain/20261026.051209/repos/standard；L334启用repo.base_0、repo.base_debug_0；L339/L342分别packages/debug | L314 base_path_url=Base/20261026.005418；L331启用base两仓库，L336/L339为packages/debug |
+| build.conf来源 | 子L350–352 `get_build_conf_text`读取上述Base-Toolchain的`packages/repodata/`；L333 `buildconf=./build.conf` | L347–350同函数取Base/reference，解析为20261026.005418 |
+| 项目自身project_config | 父L3424打印PROJECT_CONFIG，L3427标题为Unified-Toolchain，L3434 FileProvides、L3435 Prefer、L3439 _with_tizen等 | L432从Toolchain元目录生成NGBS build_meta；没有最终宏文本 |
+
+关键原文（保存为 `1209727-mechanism.txt`）：
+
+```text
+L317: 06:47:51,954 INFO  - After converting, snapshot_num_url : http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20261016.052151, base_path_url : standard http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261026.051209/repos/standard, unified_path_url : , common_path_url :
+L333: 06:47:51,954 INFO  - buildconf=./build.conf
+L334: 06:47:51,954 INFO  - repos = repo.base_0,repo.base_debug_0
+L350: 06:47:51,954 INFO  - ----start get_build_conf_text-----------------------------------
+L351: 06:47:51,954 INFO  - repo_url : standard http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261026.051209/repos/standard
+L352: 06:47:51,954 INFO  - repodata_url inside get_build_conf_text: http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261026.051209/repos/standard/packages/repodata/
+```
+
+**已证实**：本次GBS的依赖和get_build_conf_text输入均使用base_path_url，实际是Base-Toolchain；code snapshot_num_url与base_path_url分开。自身PROJECT_CONFIG确实已经传入父任务变量，但**没有看到它被拼接到最终build.conf的命令、大小或最终展开文本**，所以不能把变量存在写成已应用。当前metadata的base固定号为20261013.140248，本次QB实际为20261026.051209；这里记录实值，不把当前XML冒充历史执行值。
+
+**来源歧义的逐项复核**（`manifest-ambiguity.json`）：
+
+- 父日志 MANIFEST_ORIG、MANIFEST_REF 都有1046个仓库/revision，均与固定参考快照standard.xml完全一致。
+- 父日志最终build_pkg_list_dic与参考快照一致1045项；唯一差异linux-rpi正是L1156用户显式替换的revision。
+- 但是，scm/meta/qb 的 `Tizen-Unified-Toolchain/manifest.xml` 也给出**完全相同的1046个仓库/revision**；对最终build_pkg_list_dic也是相同1045项+同一用户替换。
+- 父日志L6280–6281明确打印 `Manifest_URL` / `Not Defined (Manifest_URL)`。这不代表QB没有读取manifest，只说明该日志字段没有提供URL。
+- 全文没有snapshot_info加载记录或manifest下载URL；`MANIFEST_ORIG/REF`已经是解析后的值，未显示从snapshot XML还是meta/manifest.xml取值。检索式、命中行和输入SHA保存在 `mechanism-search.json`、`input-sha256.json`。
+
+因此，“代码从reference取、只改snapshot_info就会切换全部代码”**与现有日志相容，但仍只是推断，不能排除meta/manifest.xml的来源**。这两份manifest恰好相同，无法用内容匹配消除歧义。按用户明示“看不出来就不要改、停下报告”，Unified在机制检查处停止；没有进入1030仓库BuildRequires认证，也没有修改latest/reference/base或任何其他项目文件。
+
+下一步所缺的是QB在解析 `MANIFEST_REF/ORIG` 之前的读取日志或对应加载器代码，能明确给出来源URL/文件及字段映射；以及最终build.conf合并证据。未自行获取内部脚本、改变QB设置或触发构建来补证。17少1增的清单、267个共同仓库revision变化仍保留在第3节及原证据中，本轮没有把“未检查剩余依赖”写成通过。
+
+### 7.4 最终diff、上传状态与边界
+
+| 评审 | 本轮判定 | 本地改动 / 最终diff | Gerrit |
+|---|---|---|---|
+| Base-Toolchain / Base-Dev | STOP：cross GCC的依赖真实进入调度 | fd60db96806a372404bd4f04e68d4ba586290147原样保留，原两行DOD修复见第1节和`base-existing.diff`；本轮新增diff为空，未rebase | 未上传，无change URL |
+| Unified-Toolchain | STOP：无法确认manifest源选择机制 | 新增diff为空；snapshot_info、project_meta/config、manifest、candidate_snapshot、project_env均未改；未创建提交 | 未上传，无change URL |
+
+两项检查均未满足上传条件，因此没有执行fetch/rebase/commit/push到Gerrit，也没有访问QB做状态操作。scm/meta/qb工作区仍干净，HEAD仍fd60db96；提交说明及Change-Id保持不变。本轮只提交证据与本文/STATUS到GitHub bolt-v4。合入后首次QB核实最终编译配置的挂账继续保留。
+
+新增证据索引：
+
+- [可复跑离线审计脚本](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/audit.py)
+- [1202084 cross目标及依赖原文](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1202084-cross-spec.txt)
+- [1211018全部GCC/binutils源码包导入原文](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1211018-cross-spec.txt)
+- [56项旧/新provider逐项豁免](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/provider-waivers.tsv)
+- [旧包release与VCS](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/old-release-comparison.json)
+- [Unified父日志机制原文](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1209720-mechanism.txt)、[GBS子日志](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1209727-mechanism.txt)、[NGBS对照](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1211018-mechanism.txt)
+- [manifest内容歧义检查](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/manifest-ambiguity.json)、[全文检索](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/mechanism-search.json)
+- [输入SHA](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/input-sha256.json)、[输出SHA](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/SHA256SUMS)

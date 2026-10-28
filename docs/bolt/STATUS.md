@@ -559,3 +559,11 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 元仓库最新读取master为7b2f2ae2d0e0cdc42307454c73c10be23b6d0ef5。原本地两行修复fd60db96806a372404bd4f04e68d4ba586290147未rebase、未推；Unified未生成提交/猜测配置diff。所有project_config保持不变，没有软件包构建、系统安装或QB状态操作。
 
 挂账：两个评审待缺包/目标范围和Unified两层DOD机制解决后重新认证；合入后第一次QB必须确认最终实际使用哪份project_config/_config/.rpmmacros。debuglink完整构建仍暂停。详见[46号报告](46_qb_meta_toolchain_switch.md)，原始材料位于tools/bolt/results/qb-meta-switch-20261028/。
+
+
+## 2026-10-28：46号用户裁决后的处理
+
+- Base评审仍STOP：1202084 L1425–1426实际调度中有gcc-armv7hl及binutils-armv7hl依赖；1211018 L4884–4889单独导入gcc-armv7hl源码包及spec，不能按“只编gcc.spec”豁免。旧x86二进制gcc-armv7hl为1.3、binutils-armv7hl为1.1，主包分别1.13/1.14。fd60db96原样保留，未rebase/上传。
+- 用户豁免已落实：Keep 11名字×3架构及Substitute 23项，共56项同架构provider缺项，旧/新都无提供者、新增退化0，解除此部分阻断。
+- Unified新目标为“Unified代码 + Base-Toolchain依赖和配置”，不再沿用两层DOD方案。1209727证实依赖和get_build_conf_text取Base-Toolchain；但1046仓库清单同时与参考快照和meta/manifest.xml相同，日志没有实际manifest加载来源，按“看不出来就停止”未改snapshot_info、未进入1030仓库依赖认证、未创建或上传评审。
+- 两项Gerrit均未上传；只推GitHub bolt-v4。下一步需QB manifest加载器/读取来源证据；项目自身PROJECT_CONFIG已见父日志变量，但拼接到最终build.conf尚未证实，首次QB配置核对继续挂账。详见[46号第7节](46_qb_meta_toolchain_switch.md#7-用户裁决后的处理2026-10-28)。
