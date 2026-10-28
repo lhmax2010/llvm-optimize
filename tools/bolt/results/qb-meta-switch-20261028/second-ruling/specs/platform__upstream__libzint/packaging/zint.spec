@@ -1,0 +1,87 @@
+Name:      zint
+Version:   2.6.7
+Release:   2
+Summary:   Barcode generator library
+License:   BSD-3-Clause
+URL:       http://www.zint.org.uk
+Source:    %{name}-%{version}.tar.gz
+Group:     Development/Libraries
+Source1:   designqr.patch
+
+BuildRequires: cmake
+BuildRequires: libpng-devel
+#BuildRequires: zlib-devel
+
+%description
+Zint is a C library for encoding data in several barcode variants. The
+bundled command-line utility provides a simple interface to the library.
+Features of the library:
+- Over 50 symbologies including all ISO/IEC standards, like QR codes.
+- Unicode translation for symbologies which support Latin-1 and
+  Kanji character sets.
+- Full GS1 support including data verification and automated insertion of
+  FNC1 characters.
+- Support for encoding binary data including NULL (ASCII 0) characters.
+- Health Industry Barcode (HIBC) encoding capabilities.
+- Output in the following file formats: PNG, GIF, EPS, WMF, BMP, TIF, SVG.
+- Verification stage for SBN, ISBN and ISBN-13 data.
+
+
+
+%package devel
+Summary:       Library and header files for %{name}
+Group:         Development/Libraries
+Requires:      %{name} = %{version}-%{release}
+
+%description devel
+C library and header files needed to develop applications that use
+the Zint library. The API documentation can be found on the project website:
+http://www.zint.org.uk/zintSite/Manual.aspx
+
+%prep
+%setup -q
+
+cp %{SOURCE1} .
+patch -p1 < %{SOURCE1}
+
+%build
+MAJORVER=`echo %{version} | awk 'BEGIN {FS="."}{print $1}'`
+
+%ifarch aarch64 x86_64 riscv64
+ARCH=aarch64
+%else
+ARCH=arm
+%endif
+
+cmake . -DCMAKE_INSTALL_PREFIX=/usr -DFULLVER=%{version} -DMAJORVER=${MAJORVER} \
+-DARCH=${ARCH} -DENABLE_DEBUG=OFF -DENABLE_TEST=OFF
+make VERBOSE=1
+
+
+%install
+rm -rf %{buildroot}
+make install DESTDIR=%{buildroot}
+#rm -rf %{buildroot}/%{_datadir}/cmake
+
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
+
+%post -p /sbin/ldconfig
+%postun -p /sbin/ldconfig
+
+
+%files
+%defattr(-,root,root,-)
+#%doc COPYING readme
+%{_libdir}/libzint.so.*
+%license backend/LICENSE
+
+
+%files devel
+%defattr(-,root,root,-)
+%{_includedir}/%{name}.h
+%{_libdir}/libzint.so
+%license backend/LICENSE
+%exclude %{_datadir}/cmake/Modules/FindZint.cmake

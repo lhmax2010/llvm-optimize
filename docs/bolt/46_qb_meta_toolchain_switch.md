@@ -450,3 +450,218 @@ L352: 06:47:51,954 INFO  - repodata_url inside get_build_conf_text: http://downl
 - [Unified父日志机制原文](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1209720-mechanism.txt)、[GBS子日志](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1209727-mechanism.txt)、[NGBS对照](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1211018-mechanism.txt)
 - [manifest内容歧义检查](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/manifest-ambiguity.json)、[全文检索](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/mechanism-search.json)
 - [输入SHA](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/input-sha256.json)、[输出SHA](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/SHA256SUMS)
+
+
+## 8. 第二次裁决后的处理（2026-10-28任务续跑）
+
+**两个评审均已上传，未推master、未加reviewer。** Base缺失的binutils-armv7hl可由本项目同revision的binutils仓库自产，按新裁决不再阻断。Unified已确认代码来自快照而不是meta manifest；全部1030仓库的依赖检查通过，改动仅为latest/reference两行，建议等Base-Toolchain的新快照和相应依赖引用更新就绪后再合入。
+
+| 评审 | 提交 | Gerrit | 判定 |
+|---|---|---|---|
+| Base-Toolchain / Base-Dev DOD | `ffba0ca45811e6ee70f95f527ae47b958431c20d` | [359363](https://review.tizen.org/gerrit/c/scm/meta/qb/+/359363) | PASS，已上传 |
+| Unified-Toolchain代码来源 | `12f22a9c3cd1262f91a798d8f6439f6e3835ad31` | [359364](https://review.tizen.org/gerrit/c/scm/meta/qb/+/359364) | PASS，已上传 |
+
+两提交都独立基于当时最新master `7b2f2ae2d0e0cdc42307454c73c10be23b6d0ef5`。前第1–7节未改；本节取代第7节两个停止判定。project_config是否最终附加到构建宏链的实物核对仍待合入后首次QB，不能把本次静态审查写成QB已验证。
+
+### 8.1 Base：依赖仓库或项目自产包均可满足
+
+用户裁决：不能以“QB会编gcc-armv7hl”直接停止，应该检查它的依赖有没有提供者。第7节已经保存的证据现在按这个标准解释：
+
+```text
+1211018 L888: 05:22:37,293 INFO  - check package binutils-armv7hl
+1211018 L889: 05:22:37,293 INFO  - <package name="binutils-armv7hl" project="Tizen-Base-Toolchain" />
+1211018 L893: 05:22:37,293 INFO  - {'name': 'binutils-armv7hl.spec', 'md5': '', 'status': 'A'}
+1202084 L650: 07:29:04,101 INFO  - check package binutils-armv7hl
+1202084 L651: 07:29:04,101 INFO  - info: binutils-armv7hl No files were changed.
+1202084 L1345: 08:00:20,359 INFO  - 	 binutils-armv7hl blocked
+1202084 L1426: 08:00:20,360 INFO  - 		bison, flex, makeinfo, gcc-c++, zlib-devel, xz-devel, perl, binutils-armv7hl, binutils, glibc, ...
+```
+
+两份实际仓库清单的binutils revision均为`518d2e0089ccf79dd8de973276207d3aa638df11`，新清单导入了`binutils-armv7hl.spec`。所以gcc-armv7hl的依赖有**项目内的自产提供者**；不能把依赖仓库里没这个RPM等同于闭包缺失，也没有声称被blocked的包当时已经编完。
+
+其余10个包沿用第2节对251实际仓库spec的检查，没有命中待构建spec的依赖：
+
+| Base中缺少的包 | 本次处理 |
+|---|---|
+| `gcc-armv7hl` | 已有spec检查无命中，不阻断 |
+| `libtensorflow2-aot-runtime` | 已有spec检查无命中，不阻断 |
+| `tensorflow2-aot-devel` | 已有spec检查无命中，不阻断 |
+| `tensorflow2-lite-devel` | 已有spec检查无命中，不阻断 |
+| `tensorflow2-lite-flatbuf-schema` | 已有spec检查无命中，不阻断 |
+| `tensorflow2-lite-util` | 已有spec检查无命中，不阻断 |
+| `toybox-full` | 已有spec检查无命中，不阻断 |
+| `toybox-symlinks-full` | 已有spec检查无命中，不阻断 |
+| `toybox-symlinks-nslookup` | 已有spec检查无命中，不阻断 |
+| `coreutils-su` | 已有spec检查无命中，不阻断 |
+
+原始二进制Requires中移除包彼此的依赖，不等于当前251源码仓库会编spec的BuildRequires；本轮没有把它们混用。Keep/Substitute共56个旧有缺项继续按第7.2节豁免，MLGO四项小编译既有PASS结果沿用。
+
+fd60db96 rebase到master时无冲突。机器核对：提交说明逐字节不变，父提交为master，提交diff与原来的两行diff逐字节相同；两个XML合法。作者和提交者为Hao Lin，Change-Id仍为`Ib11994fc5745de18f0feefb4c83e6fab64d9633e`。最终diff：
+
+```diff
+diff --git a/TIZEN/Tizen/Tizen-Base-Dev/project_meta b/TIZEN/Tizen/Tizen-Base-Dev/project_meta
+index 12d2f34..774c1b3 100644
+--- a/TIZEN/Tizen/Tizen-Base-Dev/project_meta
++++ b/TIZEN/Tizen/Tizen-Base-Dev/project_meta
+@@ -3,7 +3,7 @@
+     <enable/>
+   </debuginfo>
+   <repository name="standard">
+-    <path project="DOD:Tizen-Base" repository="standard" />
++    <path project="DOD:Tizen-Base-Dev" repository="standard" />
+     <arch name="armv7l"/>
+     <arch name="aarch64"/>
+     <arch name="x86_64"/>
+diff --git a/TIZEN/Tizen/Tizen-Base-Toolchain/project_meta b/TIZEN/Tizen/Tizen-Base-Toolchain/project_meta
+index 7fed9ad..2dcffed 100644
+--- a/TIZEN/Tizen/Tizen-Base-Toolchain/project_meta
++++ b/TIZEN/Tizen/Tizen-Base-Toolchain/project_meta
+@@ -3,7 +3,7 @@
+     <enable/>
+   </debuginfo>
+   <repository name="standard">
+-    <path project="DOD:Tizen-Base" repository="standard" />
++    <path project="DOD:Tizen-Base-Toolchain" repository="standard" />
+     <arch name="armv7l"/>
+     <arch name="aarch64"/>
+     <arch name="x86_64"/>
+```
+
+推送命令：
+
+```sh
+git push origin ffba0ca45811e6ee70f95f527ae47b958431c20d:refs/for/master
+```
+
+[完整推送输出](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/base-push.txt)保留原文；Gerrit返回SUCCESS及359363链接，并提示`warning: subject >50 characters; use shorter first paragraph`。按用户要求保留原提交说明，没有为了消除警告修改标题。只读Gerrit query复核状态NEW、分支master、patch set为上述SHA，见[查询原文](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/base-gerrit-query.jsonl)。
+
+### 8.2 Unified：用Base实例区分manifest来源
+
+`3c78318b`完整diff只涉及Base-Toolchain和Base-Dev各自的project_meta、snapshot_info，共4文件；没有修改Base-Toolchain的manifest.xml。[原文diff](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/3c78318b.diff)。该manifest前后均245仓库：
+
+| 版本 | SHA256 | Git blob OID |
+|---|---|---|
+| 3c78318b^ | `9effc3e3d218eeca78d9a97acd3593a4bfd73753a6ffd50e8364438288eb273f` | `75a9167862c127f584e51811e74373237c9e5418` |
+| 3c78318b | `9effc3e3d218eeca78d9a97acd3593a4bfd73753a6ffd50e8364438288eb273f` | `75a9167862c127f584e51811e74373237c9e5418` |
+
+1211018 L136/L278/L417/L5737实际清单均251仓库；和meta相比，新增7、移除tensorflow2这1项、共同仓库revision变化18。逐项证据见[source-mechanism.json](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/source-mechanism.json)：
+
+| 类型 | 仓库 | 与Base快照比较 |
+|---|---|---|
+| 新增 | `platform/upstream/abi-compliance-checker` | revision完全一致 |
+| 新增 | `platform/upstream/abi-dumper` | revision完全一致 |
+| 新增 | `platform/upstream/abi-tracker` | revision完全一致 |
+| 新增 | `platform/upstream/abi-viewer` | revision完全一致 |
+| 新增 | `platform/upstream/ctags` | revision完全一致 |
+| 新增 | `platform/upstream/rfcdiff` | revision完全一致 |
+| 新增 | `platform/upstream/vtable-dumper` | revision完全一致 |
+| revision变化 | `platform/upstream/db4` | 一致 |
+| revision变化 | `platform/upstream/glibc` | 一致 |
+| revision变化 | `platform/upstream/libabigail` | 一致 |
+| revision变化 | `platform/upstream/libtool` | 一致 |
+| revision变化 | `platform/upstream/llvm` | 用户显式覆盖LLVM；不是快照revision |
+| revision变化 | `platform/upstream/ncurses` | 一致 |
+| revision变化 | `platform/upstream/openssl3` | 一致 |
+| revision变化 | `platform/upstream/pam` | 一致 |
+| revision变化 | `platform/upstream/qemu-accel` | 一致 |
+| revision变化 | `platform/upstream/rpm` | 一致 |
+| revision变化 | `platform/upstream/shadow-utils` | 一致 |
+| revision变化 | `platform/upstream/toybox` | 一致 |
+| revision变化 | `platform/upstream/tzdata` | 一致 |
+| revision变化 | `product/upstream/coreutils` | 一致 |
+| revision变化 | `product/upstream/findutils` | 一致 |
+| revision变化 | `product/upstream/grep` | 一致 |
+| revision变化 | `product/upstream/tar` | 一致 |
+| revision变化 | `product/upstream/which` | 一致 |
+
+不能把18个revision全写成快照版本：其中17个与Base快照相同，LLVM为用户指定的f308fe08，父1211014 L209/L363明确打印`platform/upstream/llvm@f308fe08eeaad4e219f8505449b88bd5f644ea8c`。最终251项目集合和Base快照完全一致，250个revision相同，唯一差异是这个显式覆盖；这是对用户给定结论的精确计数补充。[LLVM覆盖原文](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/1211014-llvm-override.txt)。
+
+区别于第7节“两份manifest恰好相同”，这个实例的meta manifest与实际输入确实不同，排除了代码只来自meta manifest的解释。结合1209720/1209727的原文：
+
+```text
+1209720 L1164: 06:36:26,366 INFO  - Ref. Snapshot
+1209720 L3915: 06:36:29,141 INFO  -                snapshot_num_url: http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20261016.052151
+1209727 L317: 06:47:51,954 INFO  - After converting, snapshot_num_url : http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20261016.052151, base_path_url : standard http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261026.051209/repos/standard, unified_path_url : , common_path_url :
+1209727 L334: 06:47:51,954 INFO  - repos = repo.base_0,repo.base_debug_0
+1209727 L350: 06:47:51,954 INFO  - ----start get_build_conf_text-----------------------------------
+1209727 L352: 06:47:51,954 INFO  - repodata_url inside get_build_conf_text: http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261026.051209/repos/standard/packages/repodata/
+```
+
+结论按用户本轮裁决执行：reference的snapshot_num_url选择代码清单；base_path_url选择依赖及基础build.conf。项目自身project_config保持不变；日志打印它作为变量存在，但最终拼接动作仍未直接读到，不据此宣称运行时宏装配已认证。
+
+固定新快照`Tizen-Unified/tizen-unified_20261027.231956`的standard manifest本轮重新HTTP GET成功，HTTP 200、URL、大小、SHA见[snapshot-url-provenance.json](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/snapshot-url-provenance.json)。未用会变化的reference别名替代固定输入。
+
+### 8.3 1030仓库BuildRequires闭包
+
+从新固定manifest的**每个精确revision**以只读`git archive --remote=ssh://review.tizen.org:29418/<repo> <revision> packaging`取得spec，不执行包内脚本、不构建。4个并发网络读取，nice19/ionice3，工作归档只放本任务temp。覆盖结果：
+
+| 检查 | 结果 |
+|---|---|
+| manifest仓库 / 成功获取 | 1030 / 1030 |
+| spec文件 | 1034 |
+| BuildRequires记录 | 9487 |
+| 移除仓库 / 其包名、Provides和文件能力并集 | 17 / 134 |
+| 对上述能力的BuildRequires命中 | 0 |
+| 未展开依赖宏、外部include、动态BuildRequires入口 | 均0 |
+| 只能由移除仓库满足的依赖 | 0，PASS |
+
+保留条件分支（不因某个架构/开关关闭而漏扫），处理续行、BuildRequires标签及限定形式、spec内define/global和Name/Version/Release常量。也检查了整个spec中的能力名出现和外部include/动态依赖入口。全文件文本另有2处e-tizen-data命中，分别是仍保留的common仓库中的alias定义和Provides声明，均不是BuildRequires；原文另存removed-capability-text-hits.json。此为针对**17个移除仓库产出的静态依赖闭包检查**，不是宣称全部1030包在新旧工具链上都已编译成功。
+
+提供者输入包括旧Unified-Toolchain包的VCS→仓库映射、包名/Provides/文件能力；可替代来源只包括新1030仓库自产包，以及当前snapshot_info实际指向的Base-Toolchain **20261013.140248**（三架构+noarch）。没有把旧分析用的20261013.024319冒充当前配置。由于最终对134能力的BuildRequires命中为0，没有需要靠忽略版本限定或猜测替代者放行的条目。
+
+| 不再编的仓库 | 旧快照产出的包名 | 能力数 | BR命中 |
+|---|---|---:|---:|
+| `platform/core/api/wifi` | `capi-network-wifi`, `capi-network-wifi-devel` | 12 | 0 |
+| `platform/core/connectivity/bluetooth-tools` | `bluetooth-tools`, `bluetooth-tools-no-firmware`, `bluetooth-tools-profile_common`, `bluetooth-tools-profile_ivi`, `bluetooth-tools-profile_mobile`, `bluetooth-tools-profile_wearable` | 26 | 0 |
+| `platform/core/uifw/ise-default` | `ise-default`, `ise-default-config`, `ise-default-profile_common`, `ise-default-profile_ivi`, `ise-default-profile_mobile`, `ise-default-profile_tv` | 31 | 0 |
+| `platform/core/uifw/ise-default-nui` | `org.tizen.ise-default-nui` | 4 | 0 |
+| `platform/core/uifw/libscl-ui-nui` | `libscl-ui-nui`, `libscl-ui-nui-devel` | 14 | 0 |
+| `platform/upstream/clat` | `clat` | 7 | 0 |
+| `platform/upstream/ctags` | `ctags` | 7 | 0 |
+| `profile/iot/apps/dotnet/oobe-ui` | `org.tizen.oobe` | 4 | 0 |
+| `profile/iot/apps/dotnet/setting-autofill` | `org.tizen.cssetting-autofill` | 4 | 0 |
+| `profile/iot/apps/dotnet/setting-inputmethod` | `org.tizen.cssetting-inputmethod` | 4 | 0 |
+| `profile/iot/apps/dotnet/settings` | `org.tizen.cssettings` | 4 | 0 |
+| `profile/mobile/platform/core/uifw/autofill-config` | `autofill-config-mobile` | 2 | 0 |
+| `profile/mobile/platform/core/uifw/e-tizen-data` | `e-tizen-data-profile_mobile` | 8 | 0 |
+| `profile/mobile/platform/core/uifw/isf-config` | `isf-config-mobile` | 3 | 0 |
+| `profile/tv/platform/core/uifw/autofill-config` | `autofill-config-tv` | 2 | 0 |
+| `profile/tv/platform/core/uifw/e-tizen-data` | `e-tizen-data-profile_tv` | 8 | 0 |
+| `profile/tv/platform/core/uifw/isf-config` | `isf-config-tv` | 3 | 0 |
+
+这17个仓库是固定Unified标准manifest已不包含的目标；新增1个为`platform/upstream/fluoride`。不将所有17个都泛称为profile仓库（其中也有wifi、clat、ctags等），也不把1030范围外的旧RPM当成新项目自产提供者。
+
+逐仓库revision/spec来源与SHA见[spec-acquisition.json](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/spec-acquisition.json)，spec全文位于同目录specs/；[全部BR记录](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/buildrequires-lines.json)、[命中表](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/buildrequires-hits.json)、[移除仓库→产出→能力](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/removed-repository-providers.json)、[汇总](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/closure-summary.json)。Base当前仓库的原始repomd/primary与SHA验证在[base-current/provenance.json](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/base-current/provenance.json)。分析脚本存入本结果目录，便于复核。
+
+### 8.4 Unified最终改动及上传
+
+再次fetch后master仍为`7b2f2ae2d0e0cdc42307454c73c10be23b6d0ef5`。从这个master单独detached提交，没有叠加359363。XML合法，git diff仅1文件、2行删除/2行增加；base子树和其余项目文件逐字节不变。不新增DOD、不改project_meta/config、manifest、candidate_snapshot或project_env。
+
+```diff
+diff --git a/TIZEN/Tizen/Tizen-Unified-Toolchain/snapshot_info b/TIZEN/Tizen/Tizen-Unified-Toolchain/snapshot_info
+index e70cfb8..14bc58f 100644
+--- a/TIZEN/Tizen/Tizen-Unified-Toolchain/snapshot_info
++++ b/TIZEN/Tizen/Tizen-Unified-Toolchain/snapshot_info
+@@ -1,7 +1,7 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <snapshotinfo>
+-  <latest target="tizen-unified-toolchain_20261027.063617" url="http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/"/>
+-  <reference target="tizen-unified-toolchain_20261016.052151" url="http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/"/>
++  <latest target="tizen-unified_20261027.231956" url="http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified/"/>
++  <reference target="tizen-unified_20261027.231956" url="http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified/"/>
+   <base target="tizen-base-toolchain_20261013.140248" url="http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/">
+     <repository name="standard">
+       <type name="standard"/>
+```
+
+提交说明包含代码来源证据、17个移除仓库、全量BR检查结果和合入时机，由原commit-msg hook生成Change-Id；作者、提交者和Signed-off-by都是Hao Lin。完整说明见[unified-final-commit.txt](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/unified-final-commit.txt)，结构验证见[unified-validation.json](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/unified-validation.json)。
+
+```sh
+git push origin 12f22a9c3cd1262f91a798d8f6439f6e3835ad31:refs/for/master
+```
+
+[推送原文](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/unified-push.txt)返回SUCCESS及上述change URL。**合入建议**：先让Base-Toolchain按Base代码产出新快照，再配合正常的依赖快照引用更新合入。本补丁的base仍是固定20261013.140248，单纯“等到新快照发布”不会让固定URL自动更新；总部合入时应确认正常配置更新已推进该引用。本轮没有越权改base，也没有宣称旧依赖能满足新代码的全部版本需求。
+
+### 8.5 执行边界和交付核对
+
+只上传上述两个`refs/for/master`，没有推master、sandbox或其他分支，没有添加reviewer。没有构建软件包、修改QB状态、修改LLVM源码/历史构建根、删除目录或修改VS Code配置。scm/meta/qb中只产生两个独立提交；GitHub仅追加本节、STATUS和审查证据。前文逐字节保留检查和证据索引见本目录`delivery-validation.json`与`SHA256SUMS`。

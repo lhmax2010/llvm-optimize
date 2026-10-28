@@ -1,0 +1,22 @@
+Fix generated DOD references for Base Toolchain and Dev
+
+Keep the intent of 3c78318b: both projects temporarily consume the
+Tizen-Base snapshots. Leave snapshot_info and download URLs unchanged.
+
+QB creates the default DOD project as DOD:<project name>, independently
+of the snapshot download URL. In QB 1211018 the log records:
+
+05:26:36,881 INFO  - dod create project cmd :  /root/ngbs/ngbs project -p DOD:Tizen-Base-Toolchain -m /root/gbsbuild-ROOT/build_meta/meta-dod.xml
+05:25:35,819 INFO  - Tizen-Base-Toolchain standard x86_64 broken broken repository 'DOD:Tizen-Base/standard' is unavailable
+
+The complete error is on lines 5484-5486, and the creation command is
+on line 5516. The generated DOD still downloads from Tizen-Base, but
+project_meta references a different DOD name after 3c78318b.
+
+Restore only the two references to the actual default DOD names for
+Tizen-Base-Toolchain and Tizen-Base-Dev. Explicitly configured DOD
+projects, such as the Tools target repositories, are unaffected.
+
+Change-Id: Ib11994fc5745de18f0feefb4c83e6fab64d9633e
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+

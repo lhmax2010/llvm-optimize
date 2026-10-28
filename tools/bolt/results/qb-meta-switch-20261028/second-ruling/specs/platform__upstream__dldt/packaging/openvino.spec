@@ -1,0 +1,218 @@
+%bcond_with tizen
+%if %{with tizen}
+%global debug_package %{nil}
+%global __debug_install_post %{nil}
+
+%if "%{?_lib}" == "lib64"
+%define _cmake_lib_suffix_flag %{?_cmake_lib_suffix64}
+%else
+%define _cmake_lib_suffix_flag %{nil}
+%endif
+
+%ifarch x86_64
+%define _cmake_sse_support_flag -DENABLE_SSE42=1
+%else
+%define _cmake_sse_support_flag -DENABLE_SSE42=0
+%endif
+
+%define _extra_cmake_flags %{_cmake_lib_suffix_flag} %{_cmake_sse_support_flag} -DLINUX_OS_NAME="Tizen %{tizen_full_version}"
+
+%ifarch x86_64 i686 armv7l aarch64 armv7hl
+
+%ifarch x86_64
+%define install_arch    intel64
+%endif
+
+%ifarch i686
+%define install_arch    i686
+%endif
+
+%ifarch armv7l armv7hl
+%define install_arch    armv7l
+%endif
+
+%ifarch aarch64
+%define install_arch    aarch64
+%endif
+
+%else
+%define install_arch    %{_arch}
+%endif
+
+%endif
+
+%define     external_ade_archive        ade-cbe2db61a659c2cc304c3837406f95c39dfa938e
+%define     external_ngraph_archive     ngraph-0.22.0-rc.2
+
+Name:           openvino
+Summary:        OpenVINO™ Toolkit - Deep Learning Deployment Toolkit
+Version:        2019R3
+Release:        0
+Group:          Development/Libraries
+Packager:       Wook Song <wook16.song@samsung.com>
+License:        Apache-2.0
+Source0:        %{name}-%{version}.tar.gz
+Source1:        %{name}.manifest
+Source1001:     %{external_ade_archive}.tar.gz
+Source1002:     %{external_ngraph_archive}.tar.gz
+Source1003:     openvino.pc.in
+Patch0:         0001-CMake-Do-not-call-get_linux_name-when-LINUX_OS_NAME-.patch
+Patch1:         0002-CMake-Add-a-variable-to-resolve-dependency-on-TBB-us.patch
+Patch2:         0003-VPU-CMake-Add-a-cmake-option-to-skip-downloading-MVN.patch
+Patch3:         0004-Tizen-Fix-build-breaks-on-Tizen-GCC-13.patch
+Patch4:         ngraph-fix-build-by-clang.patch
+BuildRequires:  cmake
+BuildRequires:  pkgconfig(libtbb)
+BuildRequires:  pkgconfig(libusb-1.0)
+BuildRequires:  pkg-config
+Requires:       intel-mvnc-firmware
+## Please note that when you include openvino in a Tizen image (via mic/tic),
+## you need to specify firmware type instead of intel-mvnc-firmware or
+## relying on dependency resolution.
+## E.g., add "mvnc-2x8x-firmware" to image explicitly.
+## If you want to support NCS 1 and 2 simultaneously, install both firmware
+## packages.
+
+%description
+OpenVINO™ toolkit, short for Open Visual Inference and Neural network Optimization toolkit,
+provides developers with improved neural network performance on a variety of Intel® processors
+and helps them further unlock cost-effective, real-time vision applications.
+The toolkit enables deep learning inference and easy heterogeneous execution across multiple
+Intel® platforms (CPU, Intel® Processor Graphics)—providing implementations across cloud
+architectures to edge devices. This open source distribution provides flexibility and
+availability to the developer community to innovate deep learning and AI solutions.
+
+%package devel
+Summary:        Development package for OpenVINO™ Toolkit
+Requires:       %{name} = %{version}-%{release}
+Recommends:     mvnc-2x8x-firmware
+
+%description devel
+Development package for Open Visual Inference and Neural network Optimization toolkit.
+This contains corresponding header files and static archives.
+
+%prep
+%setup -q
+%patch0 -p1
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
+cp %{SOURCE1} .
+cp %{SOURCE1001} ./inference-engine/thirdparty
+cp %{SOURCE1002} ./inference-engine/thirdparty
+cp %{SOURCE1003} .
+pushd inference-engine
+pushd thirdparty
+tar zxf %{external_ade_archive}.tar.gz
+mv %{external_ade_archive}/* ade/
+tar zxf %{external_ngraph_archive}.tar.gz
+mv %{external_ngraph_archive}/* ngraph/
+pushd ngraph/
+%patch4 -p1
+popd
+rm -rf *.tar.gz %{external_ade_archive} %{external_ngraph_archive}
+popd
+rm -rf build && mkdir -p build
+pushd build
+CFLAGS="${CFLAGS:-%optflags}"; export CFLAGS=${CFLAGS/-Wall/};
+CFLAGS=`echo ${CFLAGS} -Wno-format-truncation -Wno-unknown-warning-option -Wno-implicit-enum-enum-cast`
+CXXFLAGS="${CXXFLAGS:-%optflags}"; export CXXFLAGS=${CXXFLAGS/-Wall/};
+# Some GCC-specific warnings are not recognized by Clang. Avoid adding them
+# when building with Clang to prevent -Wunknown-warning-option errors promoted
+# to errors by -Werror.
+CXXFLAGS=`echo ${CXXFLAGS} -Wno-format-truncation -Wno-unused-const-variable -Wno-free-nonheap-object -Wno-deprecated-declarations -Wno-deprecated-copy -Wno-pessimizing-move -Wno-array-bounds -Wno-stringop-overflow -Wno-unknown-warning-option`
+FFLAGS="${FFLAGS:-%optflags}"; export FFLAGS=${FFLAGS/-Wall/};
+cmake .. \
+        -DCMAKE_C_COMPILER=%__cc \
+        -DCMAKE_CXX_COMPILER=%__cxx \
+        -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_INSTALL_PREFIX:PATH=%{_prefix} \
+        -DCMAKE_INSTALL_LIBDIR:PATH=%{_libdir} -DINCLUDE_INSTALL_DIR:PATH=%{_includedir} \
+        -DLIB_INSTALL_DIR:PATH=%{_libdir} -DSYSCONF_INSTALL_DIR:PATH=%{_sysconfdir} \
+        -DSHARE_INSTALL_PREFIX:PATH=%{_datadir} \
+        %{?_cmake_skip_rpath} -DUSE_TBB_SYSTEM_DEPS=ON -DUSE_MYRIAD_SYSTEM_DEPS=ON \
+        -DENABLE_VPU=ON -DENABLE_MYRIAD=ON -DENABLE_MYRIAD_MVNC_TESTS=OFF -DENABLE_MYRIAD_NO_BOOT=OFF \
+        -DBUILD_ADE_DOCUMENTATION=OFF -DBUILD_ADE_TUTORIAL=OFF \
+        -DBUILD_PKGCONFIG=OFF -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DBUILD_TESTS=OFF \
+        -DCLDNN__INCLUDE_EXAMPLES=OFF -DCMAKE_BUILD_TYPE=Release -DCOVERAGE=OFF \
+        -DDEVELOPMENT_PLUGIN_MODE=OFF -DENABLE_ADE_TESTING=OFF \
+        -DENABLE_AFFINITY_GENERATOR=OFF -DENABLE_ALTERNATIVE_TEMP=OFF -DENABLE_CLDNN=OFF \
+        -DENABLE_CLDNN_BUILD=OFF -DENABLE_CLDNN_TESTS=OFF -DENABLE_CPPCHECK=OFF -DENABLE_CPPLINT=OFF \
+        -DENABLE_CPPLINT_REPORT=OFF -DENABLE_CPP_CCT=OFF -DENABLE_DEBUG_SYMBOLS=OFF \
+        -DENABLE_FUZZING=OFF -DENABLE_GAPI_TESTS=OFF -DENABLE_GNA=OFF -DENABLE_LTO=OFF \
+        -DENABLE_MKL_DNN=OFF \
+        -DENABLE_OBJECT_DETECTION_TESTS=ON -DENABLE_OPENCV=OFF -DENABLE_PLUGIN_RPATH=OFF \
+        -DENABLE_PROFILING_ITT=OFF -DENABLE_PROFILING_RAW=OFF -DENABLE_PYTHON=OFF -DENABLE_ROCKHOPER=OFF \
+        -DENABLE_SAMPLES=OFF -DENABLE_SAMPLES_CORE=OFF -DENABLE_SEGMENTATION_TESTS=OFF -DENABLE_TESTS=ON \
+        -DTREAT_WARNING_AS_ERROR=OFF %{_extra_cmake_flags}
+popd
+popd
+
+%build
+pushd inference-engine
+pushd build
+%{__make} %{?_smp_mflags}
+popd
+popd
+sed -i 's|@VERSION@|%{version}|g' openvino.pc.in
+sed -i 's|@PREFIX@|%{_prefix}|g' openvino.pc.in
+sed -i 's|@LIB_INSTALL_DIR@|%{_libdir}|g' openvino.pc.in
+sed -i 's|@INCLUDE_INSTALL_DIR@|%{_includedir}|g' openvino.pc.in
+
+%install
+mkdir -p %{buildroot}%{_libdir}
+mkdir -p %{buildroot}%{_libdir}/pkgconfig
+cp openvino.pc.in %{buildroot}%{_libdir}/pkgconfig/openvino.pc
+
+pushd inference-engine/bin/%{install_arch}/Release
+install -m 644 lib/*.so %{buildroot}%{_libdir}
+install -m 644 lib/*.xml %{buildroot}%{_libdir}
+rm -rf lib/libstb_image.a
+rm -rf lib/libgflags_nothreads.a
+rm -rf lib/libgtest_main.a
+rm -rf lib/libgtest.a
+rm -rf lib/libgmock_main.a
+rm -rf lib/libgmock.a
+install -m 644 lib/*.a %{buildroot}%{_libdir}
+popd
+
+mkdir -p %{buildroot}%{_includedir}
+mkdir -p %{buildroot}%{_includedir}/builders
+mkdir -p %{buildroot}%{_includedir}/cpp
+mkdir -p %{buildroot}%{_includedir}/details
+mkdir -p %{buildroot}%{_includedir}/details/os
+mkdir -p %{buildroot}%{_includedir}/hetero
+mkdir -p %{buildroot}%{_includedir}/multi-device
+pushd inference-engine
+install -m 644 include/*.h* %{buildroot}%{_includedir}
+install -m 644 include/builders/*.h* %{buildroot}%{_includedir}/builders/
+install -m 644 include/cpp/*.h* %{buildroot}%{_includedir}/cpp/
+install -m 644 include/details/*.h* %{buildroot}%{_includedir}/details/
+install -m 644 include/details/os/*.h* %{buildroot}%{_includedir}/details/os/
+install -m 644 include/hetero/*.h* %{buildroot}%{_includedir}/hetero/
+install -m 644 include/multi-device/*.h* %{buildroot}%{_includedir}/multi-device/
+popd
+
+# Block running tests until it is stabilized
+#%check
+#pushd inference-engine/bin/%{install_arch}/Release
+#LD_LIBRARY_PATH=./lib ./InferenceEngineUnitTests
+#popd
+
+%post
+%{_sbindir}/ldconfig
+
+%postun
+%{_sbindir}/ldconfig
+
+%files
+%manifest %{name}.manifest
+%license LICENSE
+%{_libdir}/*.so
+%{_libdir}/*.xml
+
+%files devel
+%manifest %{name}.manifest
+%license LICENSE
+%{_libdir}/*.a
+%{_libdir}/pkgconfig/openvino.pc
+%{_includedir}/*

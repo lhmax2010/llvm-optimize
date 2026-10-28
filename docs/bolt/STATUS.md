@@ -567,3 +567,11 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 用户豁免已落实：Keep 11名字×3架构及Substitute 23项，共56项同架构provider缺项，旧/新都无提供者、新增退化0，解除此部分阻断。
 - Unified新目标为“Unified代码 + Base-Toolchain依赖和配置”，不再沿用两层DOD方案。1209727证实依赖和get_build_conf_text取Base-Toolchain；但1046仓库清单同时与参考快照和meta/manifest.xml相同，日志没有实际manifest加载来源，按“看不出来就停止”未改snapshot_info、未进入1030仓库依赖认证、未创建或上传评审。
 - 两项Gerrit均未上传；只推GitHub bolt-v4。下一步需QB manifest加载器/读取来源证据；项目自身PROJECT_CONFIG已见父日志变量，但拼接到最终build.conf尚未证实，首次QB配置核对继续挂账。详见[46号第7节](46_qb_meta_toolchain_switch.md#7-用户裁决后的处理2026-10-28)。
+
+
+## 2026-10-28：46号第二次裁决落实，两个meta评审已上传
+
+- Base：依赖可以来自依赖仓库或项目自产包。binutils-armv7hl已在新旧QB清单内，binutils revision相同，gcc-armv7hl依赖可由本项目提供；其余10缺包无待编spec依赖命中，56项历史provider缺项豁免继续有效。fd60db96无冲突rebase为ffba0ca45811e6ee70f95f527ae47b958431c20d，两行diff和提交说明保持不变。已上传[359363](https://review.tizen.org/gerrit/c/scm/meta/qb/+/359363)。
+- Unified：3c78318b前后245仓库meta manifest SHA相同；1211018实际251仓库与Base快照集合一致、250revision一致，LLVM为用户覆盖。结合1209720的snapshot_num_url/base_path_url分离日志，按裁决确认代码取reference、基础依赖和build.conf取base。全量1030仓库、1034spec、9487BR，17个移除仓库134能力的BR命中0，闭包PASS。
+- 独立提交12f22a9c3cd1262f91a798d8f6439f6e3835ad31只改Unified-Toolchain snapshot_info的latest/reference两行，固定到Unified20261027.231956，base和所有其他文件不变。已上传[359364](https://review.tizen.org/gerrit/c/scm/meta/qb/+/359364)。两个评审均基于7b2f2ae2d0e0cdc42307454c73c10be23b6d0ef5，没有互相叠加；只推refs/for/master、未加reviewer。
+- 挂账：建议在Base-Toolchain按Base代码产出新快照、正常流程更新base固定引用后再合入Unified评审，避免新代码搭配旧依赖。合入后第一次QB仍须确认最终使用/合并的project_config和宏。详见[46号第8节](46_qb_meta_toolchain_switch.md)。

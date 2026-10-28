@@ -1,0 +1,44 @@
+Use Unified sources for Unified Toolchain
+
+Build Tizen-Unified-Toolchain from the Tizen-Unified reference snapshot
+20261027.231956. Keep base unchanged, so dependency packages and the
+base build.conf continue to come from Tizen-Base-Toolchain. Leave the
+project's own project_config and all other project files unchanged.
+
+QB 1211018 resolves 251 source repositories from the Base snapshot,
+although 3c78318b left the 245-entry Toolchain meta manifest unchanged.
+All entries match that snapshot apart from the requested LLVM override.
+QB 1209720/1209727 separately log the reference snapshot_num_url and
+base_path_url; repository setup and get_build_conf_text use the latter.
+
+The Unified standard manifest no longer builds these 17 repositories:
+
+  platform/core/api/wifi
+  platform/core/connectivity/bluetooth-tools
+  platform/core/uifw/ise-default
+  platform/core/uifw/ise-default-nui
+  platform/core/uifw/libscl-ui-nui
+  platform/upstream/clat
+  platform/upstream/ctags
+  profile/iot/apps/dotnet/oobe-ui
+  profile/iot/apps/dotnet/setting-autofill
+  profile/iot/apps/dotnet/setting-inputmethod
+  profile/iot/apps/dotnet/settings
+  profile/mobile/platform/core/uifw/autofill-config
+  profile/mobile/platform/core/uifw/e-tizen-data
+  profile/mobile/platform/core/uifw/isf-config
+  profile/tv/platform/core/uifw/autofill-config
+  profile/tv/platform/core/uifw/e-tizen-data
+  profile/tv/platform/core/uifw/isf-config
+
+The exact-revision audit covers all 1030 remaining repositories and
+1034 specs, preserving conditional BuildRequires branches. None of
+the 9487 BuildRequires entries references the 134 capabilities recorded
+for those removed repositories. Thus none relies exclusively on their
+outputs; the existing Base-Toolchain dependency layer is retained.
+
+Merge after Base-Toolchain produces a snapshot from the Base sources,
+in coordination with its normal dependency-snapshot reference update,
+to avoid combining new Unified sources with old dependency packages.
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
