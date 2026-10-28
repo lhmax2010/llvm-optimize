@@ -1,0 +1,20 @@
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace and instructions to reproduce the bug.
+Stack dump:
+0.	Program arguments: /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-objcopy --only-keep-debug /home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/clang.symbols /home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/clang.symbols-only
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  libLLVM.so.22.1 0x00007260196f9658 llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) + 40
+1  libLLVM.so.22.1 0x00007260196f6375 llvm::sys::RunSignalHandlers() + 293
+2  libLLVM.so.22.1 0x00007260196f9dc1
+3  libc.so.6       0x0000726017262ac0
+4  libc.so.6       0x0000726017374277
+5  libLLVM.so.22.1 0x000072601b950647 llvm::objcopy::elf::ELFWriter<llvm::object::ELFType<(llvm::endianness)1, true>>::writeSegmentData() + 87
+6  libLLVM.so.22.1 0x000072601b951da6 llvm::objcopy::elf::ELFWriter<llvm::object::ELFType<(llvm::endianness)1, true>>::write() + 22
+7  libLLVM.so.22.1 0x000072601b92c437
+8  libLLVM.so.22.1 0x000072601b92c6fd llvm::objcopy::elf::executeObjcopyOnBinary(llvm::objcopy::CommonConfig const&, llvm::objcopy::ELFConfig const&, llvm::object::ELFObjectFileBase&, llvm::raw_ostream&) + 269
+9  libLLVM.so.22.1 0x000072601b918e4e llvm::objcopy::executeObjcopyOnBinary(llvm::objcopy::MultiFormatConfig const&, llvm::object::Binary&, llvm::raw_ostream&) + 94
+10 libLLVM.so.22.1 0x00007260196d8c9e llvm::writeToOutput(llvm::StringRef, std::function<llvm::Error (llvm::raw_ostream&)>) + 350
+11 llvm-objcopy    0x000072601cf94c59
+12 llvm-objcopy    0x000072601cf95657
+13 libc.so.6       0x000072601724db97
+14 libc.so.6       0x000072601724dc55 __libc_start_main + 133
+15 llvm-objcopy    0x000072601cf762e1

@@ -497,3 +497,8 @@ P2/P3未删：P2仍由review4b/real_gates.py:46及install-rehearsal/disk_budget.
 - BOLT源提交f308fe08eeaad4e219f8505449b88bd5f644ea8c，tree214bd2ff9ec7680e045b36b5b8c7e873e953846d，父hybrid6e9d4f2不变。以aa637c1显式租约推送sandbox/lhmax2025/bolt_pgo成功，推后ls-remote一致；未推refs/for、未创建分支、未操作QB。
 - 本轮根/products全部保留；构建结束的普通/proc卸载因busy失败，未强制/懒卸载或结束占用进程。续跑cgroup OOM计数0。源码/所有发布参数除OPTIONS追加flag外不变。
 - “是否采用-use-old-text”已闭合；崩溃定位方案仍挂账。QB：platform/upstream/llvm@f308fe08eeaad4e219f8505449b88bd5f644ea8c。
+
+
+## 2026-10-28：41号崩溃定位探测
+
+探测已完成，待用户决定；崩溃定位方案仍挂账。现行BOLT栈20有名/7地址，符号表版+symbolizer为24/3；完整符号表版离线24/24 clang地址成功，15/15对象一致。三个ELF均无GNU build-id；hybrid原调试文件1,652,177,424B，本轮BOLT debuginfo没有clang-22.debug。符号表版增大33,142,648B。**部分完成项：llvm-objcopy --only-keep-debug发生SIGSEGV，symbols-only大小/解析未完成**；没有改代码或换方案掩盖。详见[41号报告](41_crash_localization_probe.md)。

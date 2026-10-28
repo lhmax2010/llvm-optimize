@@ -1,0 +1,50 @@
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace, preprocessed source, and associated run script.
+Stack dump:
+0.	Program arguments: /home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/clang.ordinary --no-default-config -resource-dir=/home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/clang/22 -fno-crash-diagnostics -fsyntax-only /home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/crash.c
+1.	/home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/crash.c:1:2: current parser token 'pragma'
+ #0 0x00007ffff3965a88 llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/Unix/Signals.inc:842:13
+ #1 0x00007ffff39628a5 llvm::sys::RunSignalHandlers() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/Signals.cpp:109:18
+ #2 0x00007ffff38c6587 llvm::sys::CleanupOnSignal(unsigned long) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/Unix/Signals.inc:0:3
+ #3 0x00007ffff38c6587 (anonymous namespace)::CrashRecoveryContextImpl::HandleCrash(int, unsigned long) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/CrashRecoveryContext.cpp:71:7
+ #4 0x00007ffff38c6587 CrashRecoverySignalHandler(int) (.llvm.1795695072598778532) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/CrashRecoveryContext.cpp:390:51
+ #5 0x00007fffef262ac0 (/home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libc.so.6+0x3eac0)
+ #6 0x00007ffff75d7080 (anonymous namespace)::PragmaDebugHandler::HandlePragma(clang::Preprocessor&, clang::PragmaIntroducer, clang::Token&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Lex/Pragma.cpp:1073:9
+ #7 0x00007ffff75d00f5 std::__uniq_ptr_impl<clang::TokenLexer, std::default_delete<clang::TokenLexer>>::_M_ptr() const /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/unique_ptr.h:193:51
+ #8 0x00007ffff75d00f5 std::unique_ptr<clang::TokenLexer, std::default_delete<clang::TokenLexer>>::get() const /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/unique_ptr.h:464:21
+ #9 0x00007ffff75d00f5 std::unique_ptr<clang::TokenLexer, std::default_delete<clang::TokenLexer>>::operator bool() const /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/unique_ptr.h:481:16
+#10 0x00007ffff75d00f5 clang::Preprocessor::HandlePragmaDirective(clang::PragmaIntroducer) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Lex/Pragma.cpp:177:8
+#11 0x00007ffff75a4c86 clang::Preprocessor::HandleDirective(clang::Token&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Lex/PPDirectives.cpp:1415:9
+#12 0x00007ffff756c278 clang::Lexer::LexTokenInternal(clang::Token&, bool) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Lex/Lexer.cpp:4513:7
+#13 0x00007ffff75e30dd clang::Preprocessor::Lex(clang::Token&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Lex/Preprocessor.cpp:896:3
+#14 0x00007ffff5dcfbc0 clang::EnterExpressionEvaluationContext::EnterExpressionEvaluationContext(clang::Sema&, clang::Sema::ExpressionEvaluationContext, clang::Decl*, clang::Sema::ExpressionEvaluationContextRecord::ExpressionKind, bool) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/include/clang/Sema/EnterExpressionEvaluationContext.h:32:15
+#15 0x00007ffff5dcfbc0 clang::ParseAST(clang::Sema&, bool, bool) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Parse/ParseAST.cpp:166:38
+#16 0x00007ffff4782c8e clang::CompilerInstance::shouldBuildGlobalModuleIndex() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Frontend/CompilerInstance.cpp:89:34
+#17 0x00007ffff4782c8e clang::FrontendAction::Execute() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Frontend/FrontendAction.cpp:1317:10
+#18 0x00007ffff46b9234 llvm::Error::getPtr() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/Support/Error.h:281:12
+#19 0x00007ffff46b9234 llvm::Error::operator bool() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/Support/Error.h:241:16
+#20 0x00007ffff46b9234 clang::CompilerInstance::ExecuteAction(clang::FrontendAction&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Frontend/CompilerInstance.cpp:1006:23
+#21 0x00007ffff488dd5f clang::ExecuteCompilerInvocation(clang::CompilerInstance*) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/FrontendTool/ExecuteCompilerInvocation.cpp:310:25
+#22 0x00007ffff1fd1bb1 cc1_main(llvm::ArrayRef<char const*>, char const*, void*) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/tools/driver/cc1_main.cpp:304:15
+#23 0x00007ffff1fcdcd0 ExecuteCC1Tool(llvm::SmallVectorImpl<char const*>&, llvm::ToolContext const&, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/tools/driver/driver.cpp:226:12
+#24 0x00007ffff1fcf7fd std::__atomic_base<int>::fetch_sub(int, std::memory_order) /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/atomic_base.h:641:16
+#25 0x00007ffff1fcf7fd llvm::ThreadSafeRefCountedBase<llvm::vfs::FileSystem>::Release() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/IntrusiveRefCntPtr.h:134:32
+#26 0x00007ffff1fcf7fd llvm::IntrusiveRefCntPtrInfo<llvm::vfs::FileSystem>::release(llvm::vfs::FileSystem*) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/IntrusiveRefCntPtr.h:164:38
+#27 0x00007ffff1fcf7fd llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>::release() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/IntrusiveRefCntPtr.h:233:7
+#28 0x00007ffff1fcf7fd llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>::~IntrusiveRefCntPtr() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/IntrusiveRefCntPtr.h:196:27
+#29 0x00007ffff1fcf7fd clang_main(int, char**, llvm::ToolContext const&)::$_0::operator()(llvm::SmallVectorImpl<char const*>&) const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/tools/driver/driver.cpp:376:5
+#30 0x00007ffff1fcf7fd int llvm::function_ref<int (llvm::SmallVectorImpl<char const*>&)>::callback_fn<clang_main(int, char**, llvm::ToolContext const&)::$_0>(long, llvm::SmallVectorImpl<char const*>&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/STLFunctionalExtras.h:46:12
+#31 0x00007ffff44f60d9 clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const::$_0::operator()() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Driver/Job.cpp:442:30
+#32 0x00007ffff44f60d9 void llvm::function_ref<void ()>::callback_fn<clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const::$_0>(long) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/STLFunctionalExtras.h:46:12
+#33 0x00007ffff38c6088 llvm::function_ref<void ()>::operator()() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/STLFunctionalExtras.h:0:12
+#34 0x00007ffff38c6088 llvm::CrashRecoveryContext::RunSafely(llvm::function_ref<void ()>) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/CrashRecoveryContext.cpp:426:3
+#35 0x00007ffff44f5d14 clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Driver/Job.cpp:442:7
+#36 0x00007ffff44b29f7 clang::driver::Compilation::ExecuteCommand(clang::driver::Command const&, clang::driver::Command const*&, bool) const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Driver/Compilation.cpp:196:15
+#37 0x00007ffff44b2bce clang::driver::Compilation::ExecuteJobs(clang::driver::JobList const&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&, bool) const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Driver/Compilation.cpp:246:13
+#38 0x00007ffff44d253c llvm::SmallVectorBase<unsigned int>::empty() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/SmallVector.h:83:46
+#39 0x00007ffff44d253c clang::driver::Driver::ExecuteCompilation(clang::driver::Compilation&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Driver/Driver.cpp:2272:23
+#40 0x00007ffff1fcd4f2 clang_main(int, char**, llvm::ToolContext const&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/tools/driver/driver.cpp:414:21
+#41 0x00007ffff1fde08a main /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/clang/tools/driver/clang-driver.cpp:17:10
+#42 0x00007fffef24db97 (/home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libc.so.6+0x29b97)
+#43 0x00007fffef24dc55 __libc_start_main (/home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/libc.so.6+0x29c55)
+#44 0x00007ffff1f8abe1 _start /home/abuild/rpmbuild/BUILD/glibc-2.40/csu/../sysdeps/x86_64/start.S:117:0
+clang: error: clang frontend command failed with exit code 132 (use -v to see invocation)

@@ -1,0 +1,33 @@
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace, preprocessed source, and associated run script.
+Stack dump:
+0.	Program arguments: /home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/clang.final --no-default-config -resource-dir=/home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/clang/22 -fno-crash-diagnostics -fsyntax-only /home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/crash.c
+1.	/home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/crash.c:1:2: current parser token 'pragma'
+Stack dump without symbol names (ensure you have llvm-symbolizer in your PATH or set the environment var `LLVM_SYMBOLIZER_PATH` to point to it):
+0  clang.final 0x00007ffff3f4cea8 llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) + 40
+1  clang.final 0x00007ffff3f4a8b1 llvm::sys::RunSignalHandlers() + 293
+2  clang.final 0x00007ffff3ed9330
+3  libc.so.6   0x00007fffee862ac0
+4  clang.final 0x00007ffff6bbd4a8
+5  clang.final 0x00007ffff1c9d2d9 clang::Preprocessor::HandlePragmaDirective(clang::PragmaIntroducer) + 81
+6  clang.final 0x00007ffff1ca1d89 clang::Preprocessor::HandleDirective(clang::Token&) + 457
+7  clang.final 0x00007ffff16f31d3 clang::Lexer::LexTokenInternal(clang::Token&, bool) + 9235
+8  clang.final 0x00007ffff16f04bb clang::Preprocessor::Lex(clang::Token&) + 37
+9  clang.final 0x00007ffff19419e8 clang::ParseAST(clang::Sema&, bool, bool) + 552
+10 clang.final 0x00007ffff22388aa clang::FrontendAction::Execute() + 30
+11 clang.final 0x00007ffff2230432 clang::CompilerInstance::ExecuteAction(clang::FrontendAction&) + 302
+12 clang.final 0x00007ffff2230243 clang::ExecuteCompilerInvocation(clang::CompilerInstance*) + 195
+13 clang.final 0x00007ffff222eb8a cc1_main(llvm::ArrayRef<char const*>, char const*, void*) + 2378
+14 clang.final 0x00007ffff1f5de57
+15 clang.final 0x00007ffff1f5dcf1
+16 clang.final 0x00007ffff1f5dca3
+17 clang.final 0x00007ffff1f5dc7b llvm::CrashRecoveryContext::RunSafely(llvm::function_ref<void ()>) + 123
+18 clang.final 0x00007ffff1f5db6c clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const + 300
+19 clang.final 0x00007ffff1f5d9ad clang::driver::Compilation::ExecuteCommand(clang::driver::Command const&, clang::driver::Command const*&, bool) const + 157
+20 clang.final 0x00007ffff1f5d8de clang::driver::Compilation::ExecuteJobs(clang::driver::JobList const&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&, bool) const + 94
+21 clang.final 0x00007ffff1f5d851 clang::driver::Driver::ExecuteCompilation(clang::driver::Compilation&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&) + 189
+22 clang.final 0x00007ffff222c70d clang_main(int, char**, llvm::ToolContext const&) + 3341
+23 clang.final 0x00007ffff222b99a main + 90
+24 libc.so.6   0x00007fffee84db97
+25 libc.so.6   0x00007fffee84dc55 __libc_start_main + 133
+26 clang.final 0x00007ffff21ecfe1 _start + 33
+clang: error: clang frontend command failed with exit code 132 (use -v to see invocation)

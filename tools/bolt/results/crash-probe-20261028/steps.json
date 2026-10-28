@@ -1,0 +1,25 @@
+[
+  {
+    "step": "prepare",
+    "status": "partial",
+    "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/probe.py\", line 131, in <module>\n    try:fn();status.append({'step':name,'status':'completed'})\n        ^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/probe.py\", line 64, in prepare\n    run('only-keep-debug',[*LOADER,BUILD/'bin/llvm-objcopy','--only-keep-debug',symbols,D/'clang.symbols-only'])\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/probe.py\", line 21, in run\n    if check and p.returncode:raise RuntimeError(name+' rc='+str(p.returncode))\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: only-keep-debug rc=-11\n"
+  },
+  {
+    "step": "crash",
+    "status": "completed"
+  },
+  {
+    "step": "layout_offline",
+    "status": "partial",
+    "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/probe.py\", line 131, in <module>\n    try:fn();status.append({'step':name,'status':'completed'})\n        ^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/probe.py\", line 105, in layout_offline\n    run('offline-'+variant,[*LOADER,BUILD/'bin/llvm-symbolizer','--obj='+str(D/('clang.'+variant)),'--inlining=false'],stdin='\\n'.join(x['module_offset'] for x in addresses)+'\\n')\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/probe.py\", line 21, in run\n    if check and p.returncode:raise RuntimeError(name+' rc='+str(p.returncode))\n                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: offline-symbols-only rc=1\n"
+  },
+  {
+    "step": "sizes",
+    "status": "partial",
+    "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/probe.py\", line 131, in <module>\n    try:fn();status.append({'step':name,'status':'completed'})\n        ^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/probe.py\", line 111, in sizes\n    with p.open('rb') as f:\n         ^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/pathlib.py\", line 1015, in open\n    return io.open(self, mode, buffering, encoding, errors, newline)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: '/home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/clang.symbols-only'\n"
+  },
+  {
+    "step": "correctness",
+    "status": "completed"
+  }
+]
