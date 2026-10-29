@@ -130,3 +130,100 @@ DEBUGLINK FINISHED 2026-10-29T00:02:26.036781+08:00 status=stopped reason=BOLT_O
 本报告 raw：<https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/docs/bolt/43_debuginfo_symbols.md>。
 
 **总结论：STOP；348项测试和五项解析通过，BOLT-off debug 展开多一空行触发门禁，未启动完整构建，未推源码。**
+
+
+## 6. 修复空行与前置检查（2026-10-29）
+
+用户裁决维持 BOLT-off **全文逐字节相同**的门禁。本轮只修 spec 的依赖声明，不启动完整构建。前述停止记录原样保留；本节记录修复后的新结果。
+
+### 6.1 唯一源码改动与提交
+
+相对 `69807d06b89f5d14140854e99485182bdef9546b` 的源码 diff 只有：
+
+```diff
+ %ifarch x86_64
+ %if %{with clang_bolt}
+ BuildRequires: python3 >= 3.9
+-BuildRequires: elfutils
+-BuildRequires: xz
++BuildRequires: xz elfutils
+ %endif
+ %endif
+```
+
+| 项目 | 核对结果 |
+|---|---|
+| 新本地提交 | `3ee2d84719e4bd358c0b2366161f70f2eb788313` |
+| tree | `43d60f7523439fa0ccf4a61f668dd60622554606` |
+| 父提交 | `6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2`，不变 |
+| Change-Id | `Ic98eab90cc017f127a66e1729b44fab8b8e8fb41`，不变 |
+| 作者/提交者/Signed-off-by | `Hao Lin <hao.lin@samsung.com>` |
+| 提交说明 | 与69807d06逐字节相同 |
+| helper、profile、OPTIONS、白名单 | helper/profile全部字节不变，因此其中OPTIONS、白名单均不变 |
+
+仍在原 source worktree 的 detached HEAD 上，以单次 `git -c` 参数执行 amend/reset-author/no-edit；工作区干净，没有创建分支，没有推送源码到 Gerrit/sandbox。
+
+### 6.2 全部前置检查
+
+| 检查 | 结果 |
+|---|---|
+| 全部 helper 测试 | **348/348 PASS** |
+| 新提交 gbs export | **PASS**，固定旧快照配置，完整命令/输出保留 |
+| Tizen RPM：x86 BOLT 开 | **PASS** |
+| Tizen RPM：x86 BOLT 关 | **PASS** |
+| Tizen RPM：x86 一行回退 | **PASS** |
+| Tizen RPM：armv7l | **PASS** |
+| Tizen RPM：aarch64 | **PASS** |
+| BOLT-off debug vs f308fe08 | **逐字节相同**，15,914B |
+| BOLT-off release vs f308fe08 | **逐字节相同**，16,401B |
+| BOLT-on debug | **PASS**，有 `BuildRequires: xz elfutils` 和 `--debug-symbols`；没有release去-g段 |
+| BOLT-on release | **PASS**，没有 `--debug-symbols`；有release去-g段（elfutils依赖仍受x86+BOLT条件保护） |
+| 新spec在准备根中的依赖/构建入口解析 | **PASS**，`rpmbuild -bc --short-circuit --nobuild`退出0，未加`--nodeps`，没有执行%build |
+
+Tizen rpm/rpm-build 为 **4.14.1.1-1.7**。五项均执行 `rpmbuild -bp --nodeps --nobuild` 及 `rpmspec -P`，全部返回0，导出spec中8条Patch声明保留。这里的“解析”不执行%prep或%build。
+
+BOLT-off 比较使用 f308fe08 和新提交的**原源码spec**，避免混入GBS自动VCS头；比较完整展开文件，没有过滤空白、没有内容归一化。两对SHA256为：
+
+| 模式 | 基线与新提交共同的SHA256 |
+|---|---|
+| debug | `d2f3cad67f101b52c67be11a76ec10a5682d3948ca8b5037a3ff41709a4e7679` |
+| release | `5c4104d75104893e7a9ba130529cddabdf4f50cfa45b6c450e0cbdecba1252a5` |
+
+准备根的 `/home/abuild/.rpmmacros` 自带 `_toolchain`。本次 debug 明确传 `--define '_toolchain clang'`，release 明确传 **`--undefine _toolchain`**；后者不能只省略define，否则仍是debug模式。通过实际展开的 `--debug-symbols` 与去-g代码确认分支，两个模式均已测到。两种模式的 x86 CMake build type 本来都是 Release，不能用这个名称区分是否生成调试信息。
+
+### 6.3 已准备根的复用与晚上入口
+
+新导出保存在：
+
+```text
+W/temp/debuglink-20261028/preflight-fix-20261029/export/
+```
+
+对旧导出、新导出以及根内SOURCES逐文件核对后确认：
+
+- 所有被 `llvm.spec` 引用的 Source/Patch 字节相同，包括源码tar、8个补丁、模型输入、profile、helper、Source1005；旧根SOURCES的文件与上一轮输入匹配。
+- `llvm.spec` 只差本次BuildRequires修复及GBS自动生成的VCS提交号；导出目录里的另一份 `libcxx-runtimes.spec` 只差自动VCS号，它不是本次llvm.spec的Source/Patch输入。
+- `%prep` 正文逐字节相同；上一轮 `%prep` 已退出0。准备好的 `BUILD/llvm-22.1.8/llvm/CMakeLists.txt`、`mlgo_verify_assets/` 存在，尚无build/CMakeCache.txt。
+- 因而 **不需要重新%prep**。没有删除、重解包或重新应用补丁；保留上一轮SOURCES/llvm.spec作为旧准备记录。
+- 新版导出spec已复制到原先为空的 `home/abuild/rpmbuild/SPECS/llvm.spec`，SHA与新导出一致。使用原有三个jobs宏、`_build_create_debug 1`和原根实际宏环境做依赖检查通过；`rpm -qf /usr/bin/eu-strip`也成功。
+- 配置仍只有旧Toolchain `20261013.024319` 的 packages/debug 两仓库；build.conf SHA再次核对为 `e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945`。
+
+**输入和依赖已准备就绪，下一轮可直接开始%build。**
+`preflight-fix-20261029/ready-plan.json` 和证据中的 `readiness.json` 保存了新版提交、spec路径和**未执行**的 `rpmbuild -bc --short-circuit` argv。该命令仅是build阶段，后续完整打包仍需相应install/package阶段与原有资源、proc和日志监控。旧 `temp/debuglink-20261028/run.py`/plan仍指向旧导出/提交，作为历史脚本保留，下一轮不能原样运行它；应使用本节的新ready-plan输入。此说明避免误用旧提交，并不表示缺少依赖或需要再做%prep。
+
+本轮没有启动systemd构建服务、没有运行CMake/ninja、没有创建新RPM、没有挂载/卸载；没有删除目录或修改VS Code配置。测试、导出和文件核对按nice19/ionice3运行。
+
+### 6.4 检查脚本的准备性修正与证据
+
+所有新增材料位于 `tools/bolt/results/debuglink-20261028/preflight-fix-20261029/`，没有覆盖上一轮失败证据：
+
+- `fix.diff`、`source-identity.txt`、`unchanged.json`：唯一源码修改、作者与父提交、helper/profile不变证明。
+- `tests.*`、`export-*`、`export.stdout/stderr`：348项测试与GBS导出原文。
+- `five-parse/`、`off-byte-proof.json`：五项解析、双模式OFF字节证明与ON分支检查。
+- `export-input-comparison.json`、`export-spec.diff`、`unchanged-prep.txt`：准备输入复用依据。
+- `ready-*.json/stdout/stderr`、`readiness.json`：新根依赖检查与未执行的build argv。
+- `scripts/`、`result.json`、`SHA256SUMS`：执行脚本、总结果与证据校验和。
+
+准备脚本有两处额外假设得到修正并保留失败输出：第一处把未参与llvm构建的另一份spec自动VCS变化也当成输入变化，改为逐字证明只有VCS行变化并单列；第二处错误期待 `rpmspec -P` 输出自动生成的clang-debuginfo Name头，移除此不适用的额外断言，用已规定的debug参数和去-g分支确认模式。必需的检查没有跳过，OFF字节门禁没有归一化或放宽；完整打包认证仍留待晚上。
+
+**本节总结：所有前置检查PASS，空行问题闭合；新版spec和源码树已准备好，仅本地提交，完整构建尚未启动。**

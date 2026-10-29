@@ -587,3 +587,11 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - **STOP：BOLT-off debug展开与f308fe08多一个空行（15914→15915B），对应原草稿新增的条件BuildRequires: elfutils。按逐字节门禁停下，不忽略空白、不启动完整构建。** release展开比较及全部产物认证NOT RUN。详见[43号报告](43_debuginfo_symbols.md)。
 - 新根temp/debuglink-20261028/及本地提交保留，没有删除目录、没有Gerrit/sandbox/QB操作；准备结束后无新根残留挂载。
 - 崩溃定位：函数级代码已实现、42号临时方案已验证；正式RPM完整认证未完成，不能宣称部署可用。源码行方案成本实验、LLVM only-keep-debug修复继续挂账。scm/meta/qb评审359363、359364进展，以及合入后第一次QB使用哪份最终编译配置的核对也继续挂账。
+
+
+## 2026-10-29：43号空行修复与全部前置检查完成
+
+- 用户裁决维持OFF全文字节门禁。只把单独elfutils行合并到同一条件块的`BuildRequires: xz elfutils`，源码其余内容和提交说明不变。local detached amend为`3ee2d84719e4bd358c0b2366161f70f2eb788313`，tree `43d60f7523439fa0ccf4a61f668dd60622554606`，父hybrid6e9d4f2、Change-Id和Hao Lin署名不变。
+- 348/348测试PASS，gbs export PASS，Tizen RPM4.14.1.1五项解析PASS；OFF debug(15914B)/release(16401B)分别与f308fe08全文逐字节相同。release显式undefine _toolchain，避免根内默认宏误入debug。ON debug包含elfutils和--debug-symbols，ON release无--debug-symbols，分支检查PASS。
+- 新旧Source/Patch和%prep内容相同，旧准备根可复用，不重跑会清理源码的%prep；新版spec已放SPECS/llvm.spec，无nodeps的`-bc --short-circuit --nobuild`检查通过。新导出/ready-plan在`temp/debuglink-20261028/preflight-fix-20261029/`；旧run.py/plan保留但不可原样启动旧提交。
+- 只做轻任务，没有启动%build，没有CMake/ninja、软件包构建、Gerrit/sandbox/QB操作，没有删除目录。前置阻断已闭合，完整debuglink RPM/安装认证仍待后续。详见[43号第6节](43_debuginfo_symbols.md#6-修复空行与前置检查2026-10-29)。

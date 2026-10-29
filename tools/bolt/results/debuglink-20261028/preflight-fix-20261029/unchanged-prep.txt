@@ -1,0 +1,29 @@
+%setup -q
+# 0001-Add-support-for-Tizen-toolchain-vendor.patch
+%patch -P 0 -p1
+# 0002-Link-libclang_rt.asan.so-against-libatomic-when-nece.patch
+%patch -P 1 -p1
+# 0003-Fix-armv7l-build-when-compiler-is-clang.patch
+%patch -P 2 -p1
+# 0004-clang-add-support-for-LLVM-gold-plugin-in-case-of-ac.patch
+%patch -P 3 -p1
+# 0005-Merge-MLGO-AOT-compilation-support-and-optimization-.patch
+%patch -P 4 -p1
+# 0006-libcxxabi-declare-__gnu_unwind_frame-in-cxa_personal.patch
+%patch -P 5 -p1
+# 0007-libcxx-backport-EH-ABI-forced-unwind-handling.patch
+%patch -P 6 -p1
+# 0008-cmake-use-hybrid-LLVM-linkage-on-x86_64.patch
+%patch -P 7 -p1
+%if %{with mlgo}
+mkdir -p mlgo_verify_assets
+%ifarch armv7l
+tar -C mlgo_verify_assets -xzf %{SOURCE1002}
+%endif
+%ifarch aarch64
+tar -C mlgo_verify_assets -xzf %{SOURCE1003}
+%endif
+%ifarch x86_64
+tar -C mlgo_verify_assets -xzf %{SOURCE1004}
+%endif
+%endif

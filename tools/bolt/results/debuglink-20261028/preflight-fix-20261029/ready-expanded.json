@@ -1,0 +1,33 @@
+{
+  "argv": [
+    "sudo",
+    "-n",
+    "/usr/sbin/chroot",
+    "--userspec=1000:1000",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0",
+    "/usr/bin/env",
+    "-i",
+    "HOME=/home/abuild",
+    "USER=abuild",
+    "LOGNAME=abuild",
+    "SHELL=/bin/sh",
+    "PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin",
+    "LC_ALL=C",
+    "LANG=C",
+    "/usr/bin/rpmspec",
+    "-P",
+    "--define",
+    "jobs 8",
+    "--define",
+    "_smp_mflags -j8",
+    "--define",
+    "_costomized_smp_mflags -j20",
+    "--define",
+    "_srcdefattr (-,root,root)",
+    "--target=x86_64-tizen-linux",
+    "--define",
+    "_build_create_debug 1",
+    "/home/abuild/rpmbuild/SPECS/llvm.spec"
+  ],
+  "rc": 0
+}
