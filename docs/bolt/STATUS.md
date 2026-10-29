@@ -595,3 +595,12 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 348/348测试PASS，gbs export PASS，Tizen RPM4.14.1.1五项解析PASS；OFF debug(15914B)/release(16401B)分别与f308fe08全文逐字节相同。release显式undefine _toolchain，避免根内默认宏误入debug。ON debug包含elfutils和--debug-symbols，ON release无--debug-symbols，分支检查PASS。
 - 新旧Source/Patch和%prep内容相同，旧准备根可复用，不重跑会清理源码的%prep；新版spec已放SPECS/llvm.spec，无nodeps的`-bc --short-circuit --nobuild`检查通过。新导出/ready-plan在`temp/debuglink-20261028/preflight-fix-20261029/`；旧run.py/plan保留但不可原样启动旧提交。
 - 只做轻任务，没有启动%build，没有CMake/ninja、软件包构建、Gerrit/sandbox/QB操作，没有删除目录。前置阻断已闭合，完整debuglink RPM/安装认证仍待后续。详见[43号第6节](43_debuginfo_symbols.md#6-修复空行与前置检查2026-10-29)。
+
+
+## 2026-10-30：43号完整GBS构建入口失败，按停止条件结束
+
+- 源码3ee2d84719e4bd358c0b2366161f70f2eb788313 / tree43d60f7523439fa0ccf4a61f668dd60622554606，开始/结束工作区干净，无源码修改，未重复第6节前置认证。
+- 全新temp/debuglink-20261028/full-20261029/gbs-root，旧Toolchain快照配置和三个宏、threads30；无short-circuit/noprep，无旧%prep树复用。systemd内存24,482,979,840B/swap0/CPU1200%/nice10/ionice2-7。
+- 实际GBS约8.123秒后退出1：新local/sources/tizen_base_toolchain_standard/llvm-22.1.8-1缺失，build报告`llvm.spec is empty. This should not happen...`。控制脚本漏掉就位导出源码目录，是本地启动准备疏漏，尚未进入%prep、不是debuglink门禁失败。按用户“构建失败即停”不重试。
+- RPM0；身份、23包、90TU、安装实测及包大小/符号耗时全部NOT RUN。OOM计数0，内存峰116,064,256B；未取得完整构建磁盘峰值，结束目录占用4,857,856B不作为峰值。
+- 新根和日志保留，无删除/历史根CMake/ninja/Gerrit/sandbox/QB操作。详见[43号第7节](43_debuginfo_symbols.md#7-完整构建验证2026-10-30指定目录-full-20261029)。下一次需先就位已认证导出输入，再完整GBS构建；本轮没有实施重试。

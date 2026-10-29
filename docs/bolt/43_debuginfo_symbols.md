@@ -1,6 +1,6 @@
 # 43. debuglink 完整构建验证：前置认证停止记录
 
-本轮尚未产出新的 clang-debuginfo RPM，不能宣称正式包已带上匹配符号：关闭 BOLT 的 debug 模式展开比基线多一个空行，触发逐字节门禁后已停止。42 号临时实验的函数级定位结论仍有效，但本轮实际安装两个 RPM 后的自动加载与崩溃栈认证尚未运行。clang/debuginfo 包大小和完整构建耗时的影响尚未测得，不以符号文件实验大小代替新 RPM 数据。
+本轮完整构建在进入 %prep 前因新 GBS 导出源码目录缺失而失败，没有产出新的 clang-debuginfo，因此尚不能确认正式包带上了匹配符号。42 号临时实验仍支持函数级定位，但本轮安装 RPM 后的自动符号加载和崩溃栈验证没有执行。包大小变化、符号处理耗时和完整构建磁盘峰值均未测得；启动尝试用时8.123秒后按停止条件结束，未重试。
 
 ## 1. 范围、源码与预检查
 
@@ -227,3 +227,95 @@ W/temp/debuglink-20261028/preflight-fix-20261029/export/
 准备脚本有两处额外假设得到修正并保留失败输出：第一处把未参与llvm构建的另一份spec自动VCS变化也当成输入变化，改为逐字证明只有VCS行变化并单列；第二处错误期待 `rpmspec -P` 输出自动生成的clang-debuginfo Name头，移除此不适用的额外断言，用已规定的debug参数和去-g分支确认模式。必需的检查没有跳过，OFF字节门禁没有归一化或放宽；完整打包认证仍留待晚上。
 
 **本节总结：所有前置检查PASS，空行问题闭合；新版spec和源码树已准备好，仅本地提交，完整构建尚未启动。**
+
+
+## 7. 完整构建验证（2026-10-30，指定目录 full-20261029）
+
+**结果：FAIL，已停止。** 这次失败发生在本地构建入口，尚未运行%prep、%build、任何BOLT门禁或平台后处理；不能据此判断debuglink实现是否有产品缺陷。第6节已经通过的前置认证没有重跑，也没有被本轮宣称为完整构建认证。
+
+### 7.1 身份、全新目录和启动命令
+
+开始和结束时均核对：
+
+- HEAD：`3ee2d84719e4bd358c0b2366161f70f2eb788313`。
+- tree：`43d60f7523439fa0ccf4a61f668dd60622554606`。
+- 工作区干净，源码未修改；没有生成新源码提交。
+- 新建独立目录 `W/temp/debuglink-20261028/full-20261029/`，GBS根为其下 `gbs-root/`。没有使用此前准备根，也没有复制旧BUILD树。
+
+实际GBS命令（完整argv见 `build-command.json`）：
+
+```sh
+gbs -c /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261021-disk-footprint/gbs_llvm_qb1202084.conf build   -A x86_64   -B /home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261029/gbs-root   -c 3ee2d84719e4bd358c0b2366161f70f2eb788313 --threads=30   --define "jobs 8" --define "_smp_mflags -j8"   --define "_costomized_smp_mflags -j20"   --baselibs --style=tar --spec llvm.spec   /home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source
+```
+
+没有 `--short-circuit` 或 `--noprep`。配置仍为固定Toolchain `20261013.024319` packages/debug，build.conf SHA为 `e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945`。GBS版本2.1.0。
+
+构建在用户systemd后台服务 `debuglink-full-20261029.service` 中运行，MemoryMax **24,482,979,840 B**，MemorySwapMax=0，CPUQuota=1200%，nice10，ionice2/7；本地监控保留/home低于20GiB停止条件和门禁/身份/OOM停止检查。资源限制没有进入发布代码。
+
+初次nohup调度没有在工具调用结束后存活，没有启动GBS；随后改由持久用户systemd控制服务运行同一个监督程序。只有后者产生了一次实际GBS尝试。没有在构建失败后再启动第二次尝试。
+
+### 7.2 失败原文与责任边界
+
+`failed-package-log.txt` 全文仅13行，关键原文：
+
+```text
+L9: [    0s] /usr/bin/build: line 1215: cd: /home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261029/gbs-root/local/sources/tizen_base_toolchain_standard/llvm-22.1.8-1: No such file or directory
+L10: [    0s] llvm.spec is empty.  This should not happen...
+L12: [    0s] linhao-linux failed "build llvm.spec" at Thu Oct 29 16:50:02 UTC 2026.
+```
+
+`service.stderr`：
+
+```text
+error: <gbs>some packages failed to be built
+Finished with result: exit-code
+Main processes terminated with: code=exited/status=1
+```
+
+这是本次控制脚本的启动准备疏漏：只创建了新GBS的 `local/BUILD-ROOTS`、`local/sources`、`local/repos` 父目录，没有把已认证的导出放到GBS期待的具体source目录；这次GBS调用也没有自动补出该目录。`source-directory-inventory.json` 确认该目标目录不存在。日志不足以进一步认定GBS为何没有自动重新导出，因此不把它写成GBS产品缺陷。
+
+失败尚未到RPM脚本段，未触发任何debuglink/BOLT产品门禁。但用户明确把“构建失败”列为停止条件，本轮据此停下，不自动补目录重试，不改源码、不绕过门禁。
+
+下一次获准续跑时，应先将第6节已经认证的新导出放到该次GBS期待的 `local/sources/tizen_base_toolchain_standard/llvm-22.1.8-1/`，或确认GBS确实重新导出到那里，再完整启动；这只是提供tar/patch/spec等输入，不复用已%prep的BUILD树，也不需要short-circuit/noprep。本轮停止后未执行这项修复。
+
+### 7.3 耗时、资源与所有后续验证的状态
+
+| 项目 | 本轮结果 |
+|---|---|
+| 实际GBS退出码 | 1 |
+| GBS尝试耗时 | 8.122648508秒（不是完整构建耗时） |
+| cgroup memory.peak | 116,064,256B |
+| OOM / oom_kill / oom_group_kill | 全部0 |
+| swap峰值 | 0B |
+| 构建内门禁与22+1 RPM | NOT RUN；RPM产出0 |
+| profile及strip-all/RUNPATH两级SHA | NOT RUN |
+| 39号产品SHA及23包比较 | NOT RUN：尚无待比较新产物，未读取原件做重复核对 |
+| 90 TU | NOT RUN |
+| 新chroot安装两个RPM、LLDB自动加载、symbolizer | NOT RUN；没有新安装chroot或临时proc |
+| clang/debuginfo包大小变化 | 未测得 |
+| 分离符号与debuglink耗时 | 未测得 |
+| 完整构建磁盘峰值 | 未测得；唯一计划采样因新chroot的du/python尚未就绪而记missing |
+| 结束时新GBS目录实际占用 | 4,857,856B，单次结束值，不冒充峰值 |
+
+没有OOM或磁盘不足证据，失败由上述source目录缺失直接报告。记录的时间为北京时间2026-10-30 00:49–00:50；包日志中的UTC日期仍为10月29日。不改变用户指定的目录名。
+
+### 7.4 保留、日志及交付
+
+新目录、日志和根现场全部保留；此前所有目录及products未删除。结束后源码身份不变、工作区干净；本轮新根没有残留挂载，没有结束其他进程。没有运行CMake/ninja，没有Gerrit/sandbox推送，没有QB操作。
+
+证据位于 `tools/bolt/results/debuglink-20261028/full-20261029/`：
+
+- `plan.json`、`build-command.json`、`service-command.json`、`scripts/`：原始输入和本地控制脚本。
+- `service.stdout/stderr`、`failed-package-log.txt`、`excerpts.txt`：GBS与包日志原文。
+- `build-result.json`、`controller-result.json`、`resources.jsonl`、`du-root.jsonl`：耗时/资源/采样。
+- `source-directory-inventory.json`、`launch-notes.txt`：目录缺失与启动准备说明。
+- `result.json`、`source-final.json`、`source-status.json`、`services-final.json`、`mounts-final.json`：停止状态和保护边界。
+- `debuglink.log`、`background.stdout/stderr`：后台终态原文。
+
+后台日志末行：
+
+```text
+DEBUGLINK FINISHED 2026-10-30T00:50:02.713638+08:00 status=failed reason=build-failed
+```
+
+**本节总结：完整构建入口失败、没有进入%prep；所有构建后验证未运行，现场保留，源码未改、未推送。**
