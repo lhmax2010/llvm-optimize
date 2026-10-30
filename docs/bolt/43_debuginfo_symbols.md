@@ -416,3 +416,173 @@ DEBUGLINK FINISHED 2026-10-30T15:06:10.272934+08:00 status=failed reason=residua
 完整构建结束后的验证要求不变，详见 [validation-plan.md](../../tools/bolt/debuglink-launch-20261030/validation-plan.md)：身份链与profile计数、13a07cb7/8c2429d8两级SHA及新增debuglink链、39号原件35项SHA、23包payload差异及ar日期例外逐字证明、90TU完整对象字节比较、新chroot装包/LLDB自动加载及崩溃栈、包大小和符号处理/总耗时。**这些由完整构建结束后的执行任务继续核对，启动入口不自动将它们标PASS；本轮全部NOT RUN。**
 
 证据目录：[rehearsal-20261030](../../tools/bolt/results/debuglink-20261028/rehearsal-20261030/)。`attempt-01/`保留首次失败全文，`attempt-02/`保留通过日志；`logs-manifest.json`逐文件登记行数/大小/SHA。`all-argv-comparison.json`、`export-placement.json`、`summary.json`、`final-preservation.json`、模板diff提供复核入口。第8节追加前的文档字节数/SHA见 `provenance.json`，已检查原文前缀完全不变。
+
+## 9. 完整构建与验证（2026-10-30 至 2026-10-31，full-20261030）
+
+本轮完整 GBS 构建成功，产出 22 个二进制 RPM 和 1 个源码 RPM；clang-debuginfo 已含与最终 BOLT clang 匹配的函数符号，身份链、23 包对比和 90/90 TU 均通过。新 chroot 安装实测的首次现有 sudo 授权调用返回 `sudo: a password is required`，因此按停止条件结束，自动加载符号和安装后的崩溃栈尚未认证，整体结论为 **有问题（授权阻断）**。clang RPM 增加 3,692 B、clang-debuginfo RPM 增加 3,862,828 B，符号分离与加 debuglink 分别耗时 3.242 秒和 1.940 秒。
+
+### 9.1 范围、启动和最终状态
+
+源码始终为 `3ee2d84719e4bd358c0b2366161f70f2eb788313`，tree `43d60f7523439fa0ccf4a61f668dd60622554606`；开始及结束已跟踪/未跟踪源码状态均干净。没有修改源码、发布 helper/spec、启动脚本或前置认证，没有重新执行第 6 节测试。入口与 dca920a8 逐字相同：
+
+```sh
+/bin/sh /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/debuglink-launch-20261030/launch.sh full
+```
+
+本节 `D=W/temp/debuglink-20261028/full-20261030/`；全新构建在 `D/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0`，GBS driver 在 `D/gbs-driver`。导出、单独依赖/prep 准备及完整 GBS 自己的 prep/build/install/打包全部在本次新目录进行；没有 short-circuit、noprep 或历史根重建。
+
+GBS 主过程 `build-result.json` 原文：`"exit_code": 0`、`"seconds": 8159.097710144`，约 **2 小时 15 分 59 秒**。控制器完成后的原文为：
+
+```text
+DEBUGLINK FINISHED 2026-10-31T02:04:54.789751+08:00 status=build-ok-validation-pending reason=full-GBS-complete-follow-validation-plan
+```
+
+该状态只表示构建结束，未冒充后续认证通过。GBS 完成后把 `.build.log` 移到 success 日志目录；前台观察器两次读取旧位置报 FileNotFoundError，随后只定位到已存在的最终日志，没有重试构建或修改入口。最终完整包日志在 `D/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/logs/success/llvm-22.1.8-1/log.txt`，验证使用的原文副本为 `D/evidence/validation/full-package.log`。下面的包日志行号全部以这个副本为准。
+
+### 9.2 validation-plan 第 1–6 项结果
+
+| 项目 | 结果 | 本次原文和证据 |
+|---|---|---|
+| 1：源码、配置、宏和完整日志 | PASS | `validation/identity-check.json`；旧 Toolchain 20261013.024319、build.conf SHA `e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945`；`build-command.json` 保存完整 argv |
+| 2：所有构建内门禁与身份链 | PASS | 包日志 L23486 `BOLT_PIPELINE_PASS`；L23492 `BOLT_COMPARE_ROOT_PASS`；L24556 `BOLT_POST_GATE_PASS`；下表及 build-gates 原文 |
+| 3：基线原件与 23 包逐项比较 | PASS | `validation/baseline39-sha.stdout` 35 条 OK；`validation/rpm-compare.stdout` 最后 `RPM23_PASS`；完整逐文件记录见 rpm-comparison |
+| 4：本轮 ordinary/candidate 的 90 TU | PASS | `validation/objects.stdout` 最后 `OBJECTS_PASS current 90`；`objects-current/result.json`：`"passed": 90`、`"seconds": 1020.3656083300011` |
+| 5：全新 chroot 安装、LLDB 自动加载、崩溃偏移符号化 | **NOT RUN / 授权阻断** | 首个 chroot 调用退出 1，stderr L1 `sudo: a password is required`；未安装 RPM、未执行调试器、未挂 proc；见 9.5 |
+| 6：包大小、处理耗时和资源记录 | 已记录 | 构建期间原始记录已存在，停止后只整理这些记录，没有继续执行被阻断的验证 |
+
+| 构建内项目 | 结果/原文 |
+|---|---|
+| tool-plan / tool-verify | 113 项（111 BOLT + 2 TF）；`"planned_tasks": 113`、`"executed_tasks": 113`、`"executable_produced_by_this_build": true`，tool-build-verification.json；L22875 `BOLT_NINJA_EXIT_0` |
+| profile 双门禁 | N=23592、M=144032、S=0、U=1、Q=383；R=0.0042385453312%、S/N=0，和 39 号相同 |
+| BOLT 标识 / strip / tiny / 安全属性 / 安装基线 / RUNPATH | pipeline-result.json、identity.json 和 post-gate 结果 PASS；RUNPATH `$ORIGIN/../lib64`，没有 RPATH、构建目录或空项 |
+| 三处 real | 包日志 L23479、L23483、L24553 分别 `BOLT_REAL_GATE_PASS`，每处 8 个用例 |
+| 符号分离 | L23480 `BOLT_DEBUG_SYMBOLS_PASS`；301873 个符号、18828 个冷函数，24 个地址抽查含 main 和 cold 均可解析 |
+| debuglink / CRC | L23482 `BOLT_DEBUGLINK_PASS`；文件名 clang-22.debug、CRC32 1776780033 |
+| cache-release | L23494：`BOLT_CACHE_RELEASE removed path=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache files=13162 allocated_bytes=21622665216 seconds=13.765561442996841` |
+| Source1005 | L23965：`NATIVE_ARCHIVES_END 1793382646.6468675 PASS 225` |
+| post | L24554 的结果含 `"sha_unchanged": true`；L24556 `BOLT_POST_GATE_PASS`，两个文件的 identity 与 RPM 载荷 SHA 再次吻合 |
+| Build-ID | 最终 candidate 与 39 号基线都没有 `.note.gnu.build-id`，按用户裁决 PASS；L24921 的符号文件 Missing build-id warning 是实情，不声称生成了 build-id 链接 |
+
+身份链（完整值在 `validation/identity-check.json` 和 `build-gates/identity.json`）：
+
+```text
+strip-all 后、RUNPATH 前  13a07cb7f84bd1ceda4d851c8bd71bddf7ef0c2d4864892eba64cbbb9a0350b8
+RUNPATH 后、debuglink 前 8c2429d870f421a29a9914458bc4d4ff2ce359a15e0bdd20f39bfb4580c40bdf
+最终 clang / RPM 载荷    4f08e12d499ebd492ce4951f74915ba435f57f2e380dc6f3520f24644996cb17
+clang-22.debug / RPM    be17f7222b30b9aff8e9cb30847b7348c5b9897096e382518410dfb053c2f281
+```
+
+最终 clang 为 **152,532,400 B**，符号文件为 **35,243,936 B**、0644。`debuglink-only-elf.json` 证明相对 39 号最终 clang，程序头和加载内容相同，只新增 `.gnu_debuglink`，伴随必需的节名字符串表/节表索引等 ELF 记账变化；不把这种变化说成“整个文件头完全不变”。RUNPATH 和原有非 debuglink 节内容相同。
+
+平台后处理仅执行原链一次。L23968 启动 `find-debuginfo.sh -j8 ...`；本次全文没有 `extracting debug info ... clang-22`，也没有 39 号的 already-stripped 提示，不能拿历史提示冒充本次原文。构建内 post 与包内两个 SHA 一致，证明本次后处理没有改写自带符号文件或 clang；clang-debuginfo 的新增文件在 L24917 开始处理包之后被打包。
+
+### 9.3 23 包对比与脚本隔离
+
+只复制四个现有脚本到 `D/validation-scripts/`：common.py、compare.py、objects.py、rpm_io.py。compare/objects/rpm_io 副本逐字相同；common.py 只将 E（输出目录）和 D（本次根）两个路径定义改到本轮目录。运行前已打印全部 diff，保存于 `validation/*.py.diff`，`script-provenance.json` 保存原件和副本 SHA。历史目录里的脚本未原地执行；原未跟踪文件未提交、移动或删除。新的 chroot 准备采用本次直接命令，命令和依赖清单都记录在 D，没有修改这些副本。
+
+RPM 比较前先核对 39 号产品原有 35 条 SHA256SUMS，全部 OK。严格 ar 日期自测 2 项通过，成员顺序、每成员 SHA、日期字段之外所有字节都逐个核实；日期差异与内容相同分开统计。共有 **271 个 ar 日期差异文件**：compiler-rt 45、libomp-devel 1、llvm-static-devel 225；没有未经许可的内容差异。
+
+| 包 | 允许的内容变化数 | 新增文件数 | 载荷 mtime 变化数 | ar 日期差异文件数 | 结果 |
+|---|---:|---:|---:|---:|---|
+| clang-22.1.8-1.x86_64.rpm | 1 | 0 | 66 | 0 | PASS |
+| clang-debuginfo-22.1.8-1.x86_64.rpm | 0 | 1 | 27 | 0 | PASS |
+| clang-devel-22.1.8-1.x86_64.rpm | 0 | 0 | 237 | 0 | PASS |
+| clang-devel-debuginfo-22.1.8-1.x86_64.rpm | 0 | 0 | 4 | 0 | PASS |
+| compiler-rt-22.1.8-1.x86_64.rpm | 0 | 0 | 105 | 45 | PASS |
+| compiler-rt-debuginfo-22.1.8-1.x86_64.rpm | 0 | 0 | 17 | 0 | PASS |
+| libllvm-22.1.8-1.x86_64.rpm | 0 | 0 | 3 | 0 | PASS |
+| libllvm-debuginfo-22.1.8-1.x86_64.rpm | 0 | 0 | 4 | 0 | PASS |
+| libomp-22.1.8-1.x86_64.rpm | 0 | 0 | 3 | 0 | PASS |
+| libomp-debuginfo-22.1.8-1.x86_64.rpm | 0 | 0 | 6 | 0 | PASS |
+| libomp-devel-22.1.8-1.x86_64.rpm | 0 | 0 | 1 | 1 | PASS |
+| lldb-22.1.8-1.x86_64.rpm | 0 | 0 | 8 | 0 | PASS |
+| lldb-debuginfo-22.1.8-1.x86_64.rpm | 0 | 0 | 16 | 0 | PASS |
+| lldb-devel-22.1.8-1.x86_64.rpm | 0 | 0 | 34 | 0 | PASS |
+| lldb-devel-debuginfo-22.1.8-1.x86_64.rpm | 0 | 0 | 7 | 0 | PASS |
+| llvm-22.1.8-1.x86_64.rpm | 0 | 0 | 98 | 0 | PASS |
+| llvm-debuginfo-22.1.8-1.x86_64.rpm | 0 | 0 | 85 | 0 | PASS |
+| llvm-debugsource-22.1.8-1.x86_64.rpm | 0 | 0 | 1292 | 0 | PASS |
+| llvm-devel-22.1.8-1.x86_64.rpm | 0 | 0 | 205 | 0 | PASS |
+| llvm-devel-debuginfo-22.1.8-1.x86_64.rpm | 0 | 0 | 11 | 0 | PASS |
+| llvm-static-devel-22.1.8-1.x86_64.rpm | 0 | 0 | 225 | 225 | PASS |
+| python-clang-22.1.8-1.x86_64.rpm | 0 | 0 | 0 | 0 | PASS |
+| llvm-22.1.8-1.src.rpm | 2 | 0 | 17 | 0 | PASS |
+
+clang 的唯一内容变化为 usr/bin/clang-22；clang-debuginfo 唯一新增为 usr/lib/debug/usr/bin/clang-22.debug；源码包两项为 spec/helper。其余 20 个二进制包没有内容变化。逐路径证明、mtime 旧新值和 ar 自测原文均保存，未剥掉 `.GCC.command.line` 或修改比较规则。
+
+### 9.4 90 TU
+
+30 个历史 TU × armv7l/aarch64/x86_64 共 90 项，输入 SHA 校验后按原目标、CPU/编译参数和本轮运行库/resource-dir执行；ordinary 和 candidate 使用同一实体路径及 inode `17096023`。180 次编译退出 0，每一对完整 `.o` 相同，**90/90 PASS**，脚本测得 1020.366 秒。服务外层总耗时 17min 14.440s，峰值 4.4G、swap0，见 objects.stderr；这些不是完整 GBS 构建资源表的数据。
+
+本轮 ordinary SHA `d5090159915657b235b96f1202c058e1efd1647d6a2225ac8fdb2906aeaa501d`，candidate SHA `4f08e12d499ebd492ce4951f74915ba435f57f2e380dc6f3520f24644996cb17`。每次 argv、输入/输出 SHA、耗时与 stdout/stderr 全部保留在 `validation/objects-current/`，编译产物保留于 D/validation-work，不拿旧轮结果代替本次验证。
+
+### 9.5 新 chroot 授权阻断，停止后续验证
+
+已在全新 `D/install-test-root/` 准备本轮 LLDB、lldb-server、symbolizer、RPM 工具及解析出的运行库；逐个来源/SHA在 `validation/chroot-preparation/copied-files.json`。只把两个 RPM 复制到该根的 rpms 目录，还没有安装。随后首条现有授权调用是准备必要的 null 设备：
+
+```sh
+sudo -n /usr/sbin/chroot /home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/install-test-root /bin/mknod -m 666 /dev/null c 1 3
+```
+
+`validation/installed-test/commands.json` 记录退出码 **1**；`device-null.stderr:1` 原文：
+
+```text
+sudo: a password is required
+```
+
+现有免密码 chroot 授权不可用；该返回发生在进入 chroot 之前，设备也没有创建。按照用户“任何一项不通过即停止后续项”，**没有重试，没有改用其他提权方式，没有询问终端密码，没有执行 RPM install / LLDB / 崩溃 / symbolizer**。因而安装后的自动加载与完整崩溃帧仍 NOT RUN；构建中 24 地址符号抽查 PASS 不能替代安装测试。未生成 core，未挂载新的 proc，无需卸载。
+
+`validation-final-audit.json` 保存 findmnt 无命中（rc=1）、本轮构建/控制/对象验证服务均 inactive/MainPID=0，以及源码和启动脚本未变。所有根、products、对象文件、证据、未完成的新测试根均保留。最终 `D/validation.log` 的末行是带时间的 `DEBUGLINK FINISHED ... status=stopped reason=sudo-chroot-authorization-unavailable-install-validation-not-run`，与 controller 的 build-ok-validation-pending 分别标记构建和认证阶段。
+
+### 9.6 包大小和耗时（停止后只整理既有数据）
+
+| RPM | 39 号字节数 | 本轮字节数 | 差值 |
+|---|---:|---:|---:|
+| clang-22.1.8-1.x86_64.rpm | 69,184,557 | 69,188,249 | +3,692 |
+| clang-debuginfo-22.1.8-1.x86_64.rpm | 326,915,325 | 330,778,153 | +3,862,828 |
+
+完整 23 包大小在 `validation/package-sizes.tsv`。clang 实体增加 104 B；符号分离 3.241825 秒，加 debuglink 1.940271 秒。二者合计约 5.182 秒，仅是这两条操作的实测耗时，不代表所有额外检查的增量。GBS 总用时 **8159.098 秒**；BOLT begin（4171s）到 compare-root（5112s）为 **941 秒**，日志整数秒精度；本轮没有单独精确计时覆盖整个 llvm-bolt 进程的证据，不能用采样首尾冒充其准确运行时间。
+
+### 9.7 资源记录（不作为门禁）
+
+原始 `resources.jsonl`、`du-root.jsonl`、`bolt-process.jsonl` 均来自本次 D/evidence。`resource-summary.json` 给出每个阶段的原始锚点、采样数量、缺失数量、字节值和时间。时间均 Asia/Shanghai；普通编译起点为 2026-10-30 23:52:32，此后跨到 10-31。GBS日志时间基点 10-30 23:48:23，阶段边界精度为整秒。
+
+资源配置：systemd MemoryMax **24,482,979,840 B**（本机 MemTotal 减8GiB），MemorySwapMax=0，CPUQuota=1200%，nice10、ionice class2/priority7。GBS外层threads30，三个用户宏保持 jobs8、_smp_mflags -j8、_costomized_smp_mflags -j20；spec 实际普通 Ninja **-j6**（日志L2965），BOLT工具 **-j6**（L22529），链接池2。并未把这些本机资源限制写进发布代码。
+
+整个 GBS cgroup 的真实 `memory.peak` **20,299,001,856 B（18.905 GiB）**，包含文件缓存；`oom=0`、`oom_kill=0`、`oom_group_kill=0`、swap峰值0。memory.peak 是整个服务的累计值，未在阶段边界清零，因此**各阶段独立的真实峰值为 UNKNOWN**；下表另列 memory.current 的最大采样值，不把累计峰值错误分配给后续阶段。
+
+| 阶段 | cgroup 独立真实峰值 | cgroup memory.current 最大采样（GiB，含文件缓存） | 单进程 VmHWM 观察值（GiB） |
+|---|---|---:|---|
+| 普通编译 | UNKNOWN | 18.884 | UNKNOWN |
+| 普通安装 | UNKNOWN | 16.295 | UNKNOWN |
+| BOLT | UNKNOWN | 17.127 | 9.244（llvm-bolt，PID 2018758） |
+| 缓存释放 | UNKNOWN | 6.563 | UNKNOWN |
+| 归档转换安装 | UNKNOWN | 11.711 | UNKNOWN |
+| 平台后处理 | UNKNOWN | 7.827 | UNKNOWN |
+| 打包 | UNKNOWN | 13.522 | UNKNOWN |
+
+VmHWM 采集器只跟踪 llvm-bolt，因此即使在 BOLT 阶段也不能声称这是“所有进程的最大值”；全进程最大值 UNKNOWN。已观察到的 llvm-bolt 最大 VmHWM **9,926,148,096 B**，PID2018758，时间 2026-10-31T01:10:35.414689+08:00，命令为：
+
+```text
+/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/reference-relocs-clang-22 -o /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/clang.bolt -data=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/profile.fdata -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -split-all-cold -split-eh -dyno-stats --thread-count=1 -stale-threshold=5 -use-old-text
+```
+
+| 阶段 | 起止（本地时间） | 构建根 du 最大采样 GiB | 峰值采样时间 | 文件系统最少可用 GiB | 最少可用时间 | du 有效/总样本 |
+|---|---|---:|---|---:|---|---|
+| 普通编译 | 23:52:32–00:54:21 | 45.227 | 2026-10-31T00:54:15.089564+08:00 | 243.801 | 2026-10-31T00:54:20.567530+08:00 | 45/62 |
+| 普通安装 | 00:54:21–00:57:54 | 56.168 | 2026-10-31T00:57:15.090004+08:00 | 231.175 | 2026-10-31T00:57:53.497889+08:00 | 3/3 |
+| BOLT | 00:57:54–01:13:35 | 63.565 | 2026-10-31T01:06:15.091415+08:00 | 223.810 | 2026-10-31T01:09:49.113354+08:00 | 13/16 |
+| 缓存释放 | 01:13:35–01:13:51 | UNKNOWN | UNKNOWN | 226.460 | 2026-10-31T01:13:35.082992+08:00 | 0/0 |
+| 归档转换安装 | 01:13:51–01:50:53 | 51.344 | 2026-10-31T01:50:15.097937+08:00 | 238.300 | 2026-10-31T01:48:13.886824+08:00 | 35/37 |
+| 平台后处理 | 01:50:53–01:59:46 | 43.900 | 2026-10-31T01:56:15.099276+08:00 | 243.457 | 2026-10-31T01:53:24.359638+08:00 | 5/9 |
+| 打包 | 01:59:46–02:04:14 | 39.470 | 2026-10-31T02:03:15.100389+08:00 | 249.863 | 2026-10-31T02:04:04.790144+08:00 | 4/4 |
+
+整轮构建根最大采样 **68,252,237,824 B（63.565 GiB）**，出现在 BOLT 阶段；文件系统最少可用 **240,314,093,568 B（223.810 GiB）**。du 是约60秒一次的扫描，超时样本保留为缺失；缓存释放阶段没有 du 样本，所以该格 UNKNOWN，不按释放字节倒推，也不沿用历史值。内存/磁盘采样未覆盖到的瞬时峰值无法确认。
+
+### 9.8 证据与下一步
+
+本地所有验证输出都在 D；本轮原件、37件独立产品及SHA256SUMS、90对对象和安装根全部保留。发布证据：[full-20261030](../../tools/bolt/results/debuglink-20261028/full-20261030/)，`artifact-manifest.json` 逐项列出本地来源、原始SHA/大小、发布SHA/大小；大于1MiB的文本用 gzip 保存，解压后行号不变。脚本副本/diff、完整包日志、23包逐路径结果、90TU stdout/stderr、授权失败原文和三份原始资源记录均包含在内。
+
+未推送 Gerrit/sandbox，未操作 QB，未修改VS Code配置，未删除目录。崩溃定位状态为：**函数级代码和正式包内符号已实现并通过构建认证，安装后的自动加载/崩溃实测仍因本机授权阻断未完成**；源码行成本实验、LLVM only-keep-debug 缺陷、scm/meta/qb评审359363/359364及合入后首次QB编译配置核对继续挂账。
+
+总结论：**完整构建、身份链、23包和90/90 TU通过；新 chroot 授权不可用，安装实测未执行，整体有问题，已按要求停止。**

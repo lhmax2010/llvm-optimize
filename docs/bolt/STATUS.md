@@ -615,3 +615,14 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 人工前提：没有新增待裁决项；“晚上可以直接启动”仅指启动流程已认证，不承诺未执行的完整编译/链接/打包成功。39号实际采用gbs-root/local，gbs-driver/local出处为37号，43第8节已明确区分；CPUQuota为本次用户要求的控制层上限，构建参数不变。
 - 挂账：完整构建及身份链、23包、90TU、新chroot装包/LLDB/崩溃栈、包大小和耗时仍NOT RUN，按tools/bolt/debuglink-launch-20261030/validation-plan.md执行；GBS结束只标build-ok-validation-pending。源码行成本实验、LLVM only-keep-debug问题及此前QB相关核对仍保留，不在本轮操作QB/Gerrit/sandbox。
 - 交付：只在43末尾追加第8节，前文逐字不变；同步本STATUS及入口/证据，同一GitHub bolt-v4提交。未删除既有目录或修改VS Code配置，未向其他任务发信号。
+
+
+## 2026-10-31：43号完整构建成功，安装实测因 chroot 授权阻断停止
+
+- 按 dca920a8 未修改的 launch.sh full，在全新 temp/debuglink-20261028/full-20261030 完成完整GBS，源码3ee2d847/tree43d60f75保持干净。22二进制+1源码RPM，GBS 8159.098秒；所有构建内门禁PASS。
+- profile N23592/M144032/S0/U1/Q383；strip-all13a07cb7、RUNPATH后8c2429d8均匹配；最终含debuglink clang SHA4f08e12d499ebd492ce4951f74915ba435f57f2e380dc6f3520f24644996cb17，符号文件SHAbe17f7222b30b9aff8e9cb30847b7348c5b9897096e382518410dfb053c2f281。Build-ID不存在，与39号相同，按用户裁决通过。
+- 39号35条产品SHA全部OK；23包比较PASS，唯一授权内容变化为clang实体、debuginfo新增符号、源码spec/helper。271个ar日期差异单列证明；90/90 TU完整对象字节一致。只执行D里的路径替换脚本副本，历史未跟踪证据不动。
+- STOP：新建install-test-root首次 sudo -n /usr/sbin/chroot 调用返回1：`sudo: a password is required`。没有重试或改用其他提权；RPM安装、LLDB自动加载和崩溃符号化NOT RUN。未挂proc、未生成core；服务已结束、根和产品全部保留。整体不能标全部通过。
+- 资源只记录：cgroup总峰20,299,001,856B（含文件缓存），OOM/swap0；构建根du最大采样68,252,237,824B，最少可用240,314,093,568B。分阶段真实内存峰值未重置记录、其他进程VmHWM和无du样本阶段均标UNKNOWN；详见43第9节。
+- clang RPM +3692B，clang-debuginfo RPM +3862828B；分符号3.242秒，加debuglink1.940秒。日志末行DEBUGLINK FINISHED带时间/status=stopped；证据tools/bolt/results/debuglink-20261028/full-20261030。
+- 挂账：函数级正式包符号已有，但安装认证待有效的chroot授权后另行继续；源码行实验、llvm-objcopy only-keep-debug缺陷、scm/meta/qb评审359363/359364进展及首次QB编译配置确认仍保留。本轮只推GitHub bolt-v4，不推Gerrit/sandbox、不操作QB。

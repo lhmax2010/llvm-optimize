@@ -1,0 +1,190 @@
+{
+  "timezone": "Asia/Shanghai",
+  "build_log_zero": "2026-10-30T23:48:23+08:00",
+  "note": "Stage boundaries use whole-second log timestamps; du values are samples, not continuous maxima. memory.current includes page cache; memory.peak is cumulative for the service and cannot be attributed to later stages. VmHWM collector observes only llvm-bolt; unobserved processes/stages UNKNOWN. Preparation before %build excluded from stage table.",
+  "build_seconds": 8159.097710144,
+  "cgroup_lifetime_peak_bytes": 20299001856,
+  "oom_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+  "swap_peak": "0\n",
+  "root_sample_peak_bytes": 68252237824,
+  "root_peak_sample_time": "2026-10-31T01:06:15.091415+08:00",
+  "fs_min_free_bytes": 240314093568,
+  "fs_min_free_time": "2026-10-31T01:09:49.113354+08:00",
+  "stages": [
+    {
+      "stage": "普通编译",
+      "start": "2026-10-30T23:52:32+08:00",
+      "end": "2026-10-31T00:54:21+08:00",
+      "anchor": {
+        "seconds": 249,
+        "line": 345,
+        "text": "[  249s] Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.qng47A"
+      },
+      "resource_samples": 1846,
+      "du_samples": 62,
+      "du_valid_samples": 45,
+      "du_missing_samples": 17,
+      "memory_current_sample_peak_bytes": 20276502528,
+      "cumulative_memory_peak_bytes": 20299001856,
+      "exact_stage_memory_peak": "UNKNOWN (no reset of lifetime memory.peak)",
+      "max_process_VmHWM": null,
+      "root_sample_peak_bytes": 48562122752,
+      "root_peak_sample_time": "2026-10-31T00:54:15.089564+08:00",
+      "fs_min_free_bytes": 261779841024,
+      "fs_min_free_time": "2026-10-31T00:54:20.567530+08:00"
+    },
+    {
+      "stage": "普通安装",
+      "start": "2026-10-31T00:54:21+08:00",
+      "end": "2026-10-31T00:57:54+08:00",
+      "anchor": {
+        "seconds": 3958,
+        "line": 10688,
+        "text": "[ 3958s] Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.IiZdJv"
+      },
+      "resource_samples": 106,
+      "du_samples": 3,
+      "du_valid_samples": 3,
+      "du_missing_samples": 0,
+      "memory_current_sample_peak_bytes": 17496375296,
+      "cumulative_memory_peak_bytes": 20299001856,
+      "exact_stage_memory_peak": "UNKNOWN (no reset of lifetime memory.peak)",
+      "max_process_VmHWM": null,
+      "root_sample_peak_bytes": 60310061056,
+      "root_peak_sample_time": "2026-10-31T00:57:15.090004+08:00",
+      "fs_min_free_bytes": 248222642176,
+      "fs_min_free_time": "2026-10-31T00:57:53.497889+08:00"
+    },
+    {
+      "stage": "BOLT",
+      "start": "2026-10-31T00:57:54+08:00",
+      "end": "2026-10-31T01:13:35+08:00",
+      "anchor": {
+        "seconds": 4171,
+        "line": 16267,
+        "text": "[ 4171s] BOLT_DISK_REPORT {\"stage\": \"begin\", \"time_ns\": 1793379473990549251, \"recorded\": true, \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"device\": 2049, \"free_bytes\": 248222609408, \"build\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"root\": \"/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64\", \"scopes\": [\"clang-bolt/**\", \"tools/bolt/**\", \"lib64/libLLVMBOLT*.a\", \"bin/llvm-bolt\", \"ThinLTO cache positive allocation delta\"], \"owned_paths\": [{\"category\": \"work\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_objects\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_executable\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}], \"owned_filesystem_bytes\": {}, \"used_bytes\": 0, \"cache_path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache\", \"cache_delta_known\": false, \"cache_delta_allocated_bytes\": 0, \"cache_delta_logical_bytes\": 0, \"cache_net_allocation_delta_bytes\": null, \"filesystem_device\": 2049}"
+      },
+      "resource_samples": 466,
+      "du_samples": 16,
+      "du_valid_samples": 13,
+      "du_missing_samples": 3,
+      "memory_current_sample_peak_bytes": 18390450176,
+      "cumulative_memory_peak_bytes": 20299001856,
+      "exact_stage_memory_peak": "UNKNOWN (no reset of lifetime memory.peak)",
+      "max_process_VmHWM": {
+        "bytes": 9926148096,
+        "pid": 2018758,
+        "name": "llvm-bolt",
+        "argv": [
+          "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+          "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/reference-relocs-clang-22",
+          "-o",
+          "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/clang.bolt",
+          "-data=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/profile.fdata",
+          "-reorder-blocks=ext-tsp",
+          "-reorder-functions=cdsort",
+          "-split-functions",
+          "-split-all-cold",
+          "-split-eh",
+          "-dyno-stats",
+          "--thread-count=1",
+          "-stale-threshold=5",
+          "-use-old-text"
+        ],
+        "time": "2026-10-31T01:10:35.414689+08:00",
+        "scope": "only llvm-bolt observed; all-process maximum UNKNOWN"
+      },
+      "root_sample_peak_bytes": 68252237824,
+      "root_peak_sample_time": "2026-10-31T01:06:15.091415+08:00",
+      "fs_min_free_bytes": 240314093568,
+      "fs_min_free_time": "2026-10-31T01:09:49.113354+08:00"
+    },
+    {
+      "stage": "缓存释放",
+      "start": "2026-10-31T01:13:35+08:00",
+      "end": "2026-10-31T01:13:51+08:00",
+      "anchor": {
+        "seconds": 5112,
+        "line": 23493,
+        "text": "[ 5112s] + python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py cache-release /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt"
+      },
+      "resource_samples": 8,
+      "du_samples": 0,
+      "du_valid_samples": 0,
+      "du_missing_samples": 0,
+      "memory_current_sample_peak_bytes": 7047188480,
+      "cumulative_memory_peak_bytes": 20299001856,
+      "exact_stage_memory_peak": "UNKNOWN (no reset of lifetime memory.peak)",
+      "max_process_VmHWM": null,
+      "root_sample_peak_bytes": null,
+      "fs_min_free_bytes": 243159662592,
+      "fs_min_free_time": "2026-10-31T01:13:35.082992+08:00"
+    },
+    {
+      "stage": "归档转换安装",
+      "start": "2026-10-31T01:13:51+08:00",
+      "end": "2026-10-31T01:50:53+08:00",
+      "anchor": {
+        "seconds": 5128,
+        "line": 23514,
+        "text": "[ 5128s] NATIVE_ARCHIVES_BEGIN 1793380431.9126394"
+      },
+      "resource_samples": 1106,
+      "du_samples": 37,
+      "du_valid_samples": 35,
+      "du_missing_samples": 2,
+      "memory_current_sample_peak_bytes": 12574576640,
+      "cumulative_memory_peak_bytes": 20299001856,
+      "exact_stage_memory_peak": "UNKNOWN (no reset of lifetime memory.peak)",
+      "max_process_VmHWM": null,
+      "root_sample_peak_bytes": 55129792512,
+      "root_peak_sample_time": "2026-10-31T01:50:15.097937+08:00",
+      "fs_min_free_bytes": 255872397312,
+      "fs_min_free_time": "2026-10-31T01:48:13.886824+08:00"
+    },
+    {
+      "stage": "平台后处理",
+      "start": "2026-10-31T01:50:53+08:00",
+      "end": "2026-10-31T01:59:46+08:00",
+      "anchor": {
+        "seconds": 7350,
+        "line": 23968,
+        "text": "[ 7350s] + /usr/lib/rpm/find-debuginfo.sh -j8 --build-id-seed 22.1.8-1 --unique-debug-src-base llvm-22.1.8-1.x86_64 -S debugsourcefiles.list /home/abuild/rpmbuild/BUILD/llvm-22.1.8"
+      },
+      "resource_samples": 263,
+      "du_samples": 9,
+      "du_valid_samples": 5,
+      "du_missing_samples": 4,
+      "memory_current_sample_peak_bytes": 8404107264,
+      "cumulative_memory_peak_bytes": 20299001856,
+      "exact_stage_memory_peak": "UNKNOWN (no reset of lifetime memory.peak)",
+      "max_process_VmHWM": null,
+      "root_sample_peak_bytes": 47137435648,
+      "root_peak_sample_time": "2026-10-31T01:56:15.099276+08:00",
+      "fs_min_free_bytes": 261409923072,
+      "fs_min_free_time": "2026-10-31T01:53:24.359638+08:00"
+    },
+    {
+      "stage": "打包",
+      "start": "2026-10-31T01:59:46+08:00",
+      "end": "2026-10-31T02:04:14.300725+08:00",
+      "anchor": {
+        "seconds": 7883,
+        "line": 24559,
+        "text": "[ 7883s] Processing files: llvm-22.1.8-1.x86_64"
+      },
+      "resource_samples": 133,
+      "du_samples": 4,
+      "du_valid_samples": 4,
+      "du_missing_samples": 0,
+      "memory_current_sample_peak_bytes": 14519394304,
+      "cumulative_memory_peak_bytes": 20299001856,
+      "exact_stage_memory_peak": "UNKNOWN (no reset of lifetime memory.peak)",
+      "max_process_VmHWM": null,
+      "root_sample_peak_bytes": 42380812288,
+      "root_peak_sample_time": "2026-10-31T02:03:15.100389+08:00",
+      "fs_min_free_bytes": 268288016384,
+      "fs_min_free_time": "2026-10-31T02:04:04.790144+08:00"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/debuglink-20261028/validation/common.py
++++ /home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/validation-scripts/common.py
+@@ -1,6 +1,6 @@
+ from pathlib import Path
+ import json,hashlib,subprocess,importlib.util,shutil,os
+-E=Path(__file__).resolve().parent;BASE=E.parent;W=Path('/home/linhao/Toolchain/development/llvm-optimize');D=W/'temp/debuglink-20261028';R=D/'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0';BUILD=R/'home/abuild/rpmbuild/BUILD/llvm-22.1.8/build';WORK=BUILD/'clang-bolt';P=D/'products';OLD=W/'temp/oldtext-final-20261027/products';X=D/'validation-work'
++E=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/evidence/validation');BASE=E.parent;W=Path('/home/linhao/Toolchain/development/llvm-optimize');D=W/'temp/debuglink-20261028/full-20261030';R=D/'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0';BUILD=R/'home/abuild/rpmbuild/BUILD/llvm-22.1.8/build';WORK=BUILD/'clang-bolt';P=D/'products';OLD=W/'temp/oldtext-final-20261027/products';X=D/'validation-work'
+ s=importlib.util.spec_from_file_location('helper',W/'temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py');h=importlib.util.module_from_spec(s);s.loader.exec_module(h)
+ def sha(p):
+  with Path(p).open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
