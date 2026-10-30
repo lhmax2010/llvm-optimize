@@ -1,0 +1,11 @@
+--- 39/build-runner.py
++++ rehearsal-02/build-runner.py
+@@ -1,7 +1,7 @@
+ """Local-only build child; no production changes."""
+ import json,subprocess,time,sys
+ from pathlib import Path
+-D=Path(__file__).resolve().parent;E=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/oldtext-final-20261027');argv=json.loads((D/'build-command.json').read_text());start=time.time_ns()
++D=Path(__file__).resolve().parent;E=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/rehearsal-20261030/retry-02/evidence');argv=json.loads((D/'build-command.json').read_text());start=time.time_ns()
+ r=subprocess.run(argv)
+ cgroup=next(l.split(':',2)[2] for l in Path('/proc/self/cgroup').read_text().splitlines() if l.startswith('0::'))
+ base=Path('/sys/fs/cgroup')/cgroup.lstrip('/');stats={}

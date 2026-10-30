@@ -1,0 +1,18 @@
+--- 39/prep.py
++++ rehearsal-02/prep.py
+@@ -1,12 +1,12 @@
+ from pathlib import Path
+ import subprocess,json,configparser,time,shutil,threading,datetime
+-D=Path(__file__).resolve().parent;W=D.parent.parent;E=W.parent/'llvm-optimize-bolt/tools/bolt/results/oldtext-final-20261027';plan=json.loads((D/'plan.json').read_text());assert json.loads((E/'export-result.json').read_text())['rc']==0
++D=Path(__file__).resolve().parent;W=Path('/home/linhao/Toolchain/development/llvm-optimize');E=D/'evidence';plan=json.loads((D/'plan.json').read_text());assert json.loads((E/'export-result.json').read_text())['rc']==0
+ G=D/'gbs-root';R=G/'local/BUILD-ROOTS/scratch.x86_64.0'
+ for p in [G/'local/BUILD-ROOTS',G/'local/sources',G/'local/repos']:p.mkdir(parents=True,exist_ok=True)
+ c=configparser.ConfigParser();c.read(plan['config']);profile=c[c['general']['profile']];cmd=['sudo','-n','/usr/bin/build','--uid','1000:1000','--root',str(R),'--dist',profile['buildconf'],'--arch','x86_64','--target','x86_64-tizen-linux','--stage=-bp','--debug','--baselibs','--define','jobs 8','--define','_smp_mflags -j8','--define','_costomized_smp_mflags -j20']
+ for n in ('repo.base_0','repo.base_debug_0'):cmd+=['--repo',c[n]['url']]
+-cmd+=[str(D/'export/llvm.spec')];unit='oldtext-final-prep-20261027'
+-argv=['systemd-run','--user','--wait','--pipe','--unit='+unit,'-p','MemoryMax='+str(plan['MemoryMax_bytes']),'-p','MemorySwapMax=0','-p','Nice=10','-p','IOSchedulingClass=best-effort','-p','IOSchedulingPriority=7','-p','OOMPolicy=stop','-p','KillMode=control-group','-p','TimeoutStopSec=120',*cmd]
++cmd+=[str(D/'export/llvm.spec')];unit='debuglink-rehearsal-prep-20261030-02.service'
++argv=['systemd-run','--user','--wait','--pipe','--unit='+unit,'-p','MemoryMax='+str(plan['MemoryMax_bytes']),'-p','MemorySwapMax=0','-p','CPUQuota=1200%','-p','Nice=10','-p','IOSchedulingClass=best-effort','-p','IOSchedulingPriority=7','-p','OOMPolicy=stop','-p','KillMode=control-group','-p','TimeoutStopSec=120',*cmd]
+ (E/'prep-command.json').write_text(json.dumps(argv,indent=2)+'\n');reason='prep-unexpected-error';rc=1;start=time.time_ns()
+ try:
+  with (E/'prep.stdout').open('wb') as o,(E/'prep.stderr').open('wb') as e:

@@ -319,3 +319,100 @@ DEBUGLINK FINISHED 2026-10-30T00:50:02.713638+08:00 status=failed reason=build-f
 ```
 
 **本节总结：完整构建入口失败、没有进入%prep；所有构建后验证未运行，现场保留，源码未改、未推送。**
+
+
+## 8. 启动方式修复与白天演练（2026-10-30）
+
+**结论：演练通过，晚上可以直接启动。** 这里只证明启动流程、CMake 入口和停止清理可用，不代表完整构建或产品认证通过。前面各节保留历史原文；本节不修改第7节的失败结论。源码仍为 `3ee2d84719e4bd358c0b2366161f70f2eb788313`，tree `43d60f7523439fa0ccf4a61f668dd60622554606`，开始/结束工作树干净，没有源码修改或新源码提交。
+
+### 8.1 沿用的入口与逐项差异
+
+先澄清记录出处：39号的 `run.py:4–7` / `build-command.json` 实际用的是 **gbs-root/local**，`run.py:6` 明确先将 export 完整复制到 GBS 期待的 source 目录。**gbs-driver/local** 的已跑通处理记录在37号第3节以及 `tools/bolt/results/runpath-fix-20261026/preparatory-corrections.json`：用户拥有 sources/repos，BUILD-ROOTS 软链接指向物理新根。本轮沿用39号 export/prep/build 脚本与参数，并采用这条已经验证的驱动目录处理，不把37号的记录误记成39号当时实际用了 gbs-driver。
+
+令 D 为每次独立输出目录，沿用布局：
+
+```text
+D/export/
+D/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/
+D/gbs-driver/local/BUILD-ROOTS -> D/gbs-root/local/BUILD-ROOTS
+D/gbs-driver/local/sources/tizen_base_toolchain_standard/llvm-22.1.8-1/
+D/gbs-driver/local/repos/
+D/tmp/
+```
+
+39号已有的 export、依赖初始化/%prep、完整GBS三步全部恢复；正常的GBS再次执行自己的%prep，不使用 `--noprep`、`--short-circuit`，不复制历史BUILD树。导出先成功退出，准备成功后再按39号 `shutil.copytree` 把完整输入就位。`export-placement.json` 对每个文件记录原导出与GBS目录SHA相同；BUILD-ROOTS链接只指向本轮物理新根。
+
+| 项目 | 39号 | 本轮 | 差异性质 |
+|---|---|---|---|
+| 源码提交 | f308fe08… | 3ee2d847… | 用户指定提交替换 |
+| 源码路径 | oldtext-final-20261027/source | debuglink-tb20261026/source | 路径替换，原工作树只读 |
+| `-B` | oldtext-final-20261027/gbs-root | D/gbs-driver | 路径替换，采用37号已有驱动布局 |
+| export、root、日志、结果 | 39号各自目录 | D下对应目录，文本结果在D/evidence | 路径替换；保留所有历史目录 |
+| config / build.conf | 旧Toolchain 20261013.024319 | **同一文件、同一快照** | 无变化；build.conf SHA e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945 |
+| export参数 | llvm.spec、upstream分支/tag、outdir-directly | 相同 | 除路径/提交之外0差异 |
+| prep底层build参数 | uid1000:1000、x86_64、x86_64-tizen-linux、stage=-bp、debug、baselibs、两repo、三个宏 | 相同 | 除root/spec路径之外0差异 |
+| 完整GBS参数 | `-A x86_64 --threads=30 --define 'jobs 8' --define '_smp_mflags -j8' --define '_costomized_smp_mflags -j20' --baselibs --style=tar --spec llvm.spec` | 相同 | 除`-B`、`-c`和源码路径之外0差异 |
+| spec/CMake/ninja并行规则 | spec内mlgo_build_jobs=6、link jobs=2 | 相同 | 没有覆盖宏、改优化参数或源文件 |
+
+上述“0差异”限定为**构建配方的argv**，不是声称控制脚本文字完全相同。`all-argv-comparison.json` 对三步逐token认证，`run.py.diff`、`prep.py.diff`、`build-runner.py.diff` 保留控制脚本差异。模板原路径/SHA见入口的 `provenance.json`。
+
+控制层按本轮要求处理：仍是systemd-run、MemTotal减8GiB、swap0、nice10、ionice2/7；39号首次完整构建脚本没有显式CPUQuota，本轮按用户要求加1200%上限（不采用39号重启后resume的nice15/20GiB配置）。追加演练停止监控与停止后只针对本轮根的普通卸载。39号的重任务flock锁、/home余量低于20GiB停止、BOLT门禁/身份检查及资源日志保留。348测试/五项解析沿用第6节同一提交的通过记录，本轮未重跑这些前置认证。
+
+### 8.2 两次尝试与失败原文
+
+首次新根：`W/temp/debuglink-20261028/rehearsal-20261030/`。14:59启动，15:06已在CMake入口正常停止；**首次整轮判失败**，原因是停止后有5层本轮挂载，未满足清理要求，不是导出、依赖或%prep失败。
+
+原文保存在 `attempt-01/result.json`、`final-audit.json`、`controller.stdout`：
+
+```text
+"status": "failed"
+"reason": "residual-process-or-mount-see-final-audit"
+DEBUGLINK FINISHED 2026-10-30T15:06:10.272934+08:00 status=failed reason=residual-process-or-mount-see-final-audit
+```
+
+本轮物理根中的 `/proc` 两层、`/dev/pts` 两层、`/dev/shm` 一层残留。先通过该根的platform Python检查没有进程仍以它为根，再逐层普通 `umount -n`，全部返回0。没有 `--kill`、强制或懒卸载，没有删除目录。停止整个服务后，build程序的退出清理未能消除这些挂载；具体退出清理竞态未追踪，不将其猜测成源码、GBS导出或目录权限错误。
+
+修正仅是控制层收尾：准备结束和最终结束时，先确认自己的服务已不活动、根内无存活进程，随后只卸载该物理scratch根下允许的挂载点并复核。`final-cleanup-mounts.json` 记录每个调用。首次脚本、原始失败日志和现场完整保留；未在该根重新执行CMake/ninja。
+
+第二次在全新 `W/temp/debuglink-20261028/rehearsal-20261030/retry-02/` 重跑相同导出/prep/GBS流程。15:14:46–15:21:27，共 **401.781秒**（约6分42秒）。首轮和第二轮都没有完整构建；没有新RPM产出。
+
+### 8.3 第二次逐步结果与原文
+
+以下行号均对应证据 `attempt-02/` 中原始文件，完整长CMake命令保留在日志，表中省略的仅是展示长度。
+
+| 检查 | 结果 | 原文/证据 |
+|---|---|---|
+| 导出成功 | PASS | `export.stdout:4–5`：`info: package files have been exported to:`，下一行是本轮 `retry-02/export`；export rc=0 |
+| GBS预期位置有完整输入 | PASS | `export-placement.json`：每个导出文件与 `gbs-driver/local/sources/tizen_base_toolchain_standard/llvm-22.1.8-1/` 中副本SHA一致 |
+| 依赖安装完成 | PASS | `prep.stdout:191`：`[    8s] now installing cumulated packages`；`:317`：`[   59s] now finalizing build dir...`；随后GBS初始化也到 `rpm-build.log:533` 的 `now finalizing build dir...` |
+| 单独准备的%prep成功 | PASS | `prep.stdout:325`：`Executing(%prep)`；`:391`：`[   87s] + exit 0`；prep服务rc=0 |
+| 完整GBS自己的%prep成功 | PASS | `rpm-build.log:541`：`[  245s] Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.v5UXrZ`；`:607`：`[  256s] + exit 0` |
+| 进入%build | PASS | `rpm-build.log:608`：`[  256s] Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.fmVspt` |
+| CMake配置入口 | PASS | `rpm-build.log:658`：`[  259s] + cmake -G Ninja -DTIZEN=1 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ ... ../llvm` |
+| 即时正常停服务 | PASS | `cmake-stop.jsonl`：命中时间到systemctl stop返回 **11.036毫秒**，stop rc=0；`service.stderr:4`：`Main processes terminated with: code=killed/status=TERM` |
+| 没有进入主ninja编译 | PASS | 无 `+ ninja` / `Build files have been written to:`；CMake启动命令后即 `Terminated`。没有继续等待配置结束或运行编译目标 |
+| 清理完成 | PASS | `final-cleanup-root-processes.json` stdout为 `[]`；5次普通卸载均rc=0；`final-audit.json` 无剩余进程/挂载，服务inactive/dead |
+
+这里的CMake通过项是**已经走到配置命令入口并立即停止**，不是“CMake配置全部成功”；没有产生CMakeCache或build.ninja，不以这次演练推断后面的编译/链接是否成功。
+
+实际运行时资源属性见 `prep-live-resources.txt`、`build-live-resources.txt`，包含root build/依赖进程的cgroup及nice：MemoryMax **24,482,979,840 B**（MemTotal32,297,768KiB减8GiB）、MemorySwapMax=0、CPUQuotaPerSecUSec=12s（1200%）、Nice=10、IOSchedulingClass=2、IOSchedulingPriority=7。GBS服务采样峰值 **4,019,154,944 B**，swap0，OOM/oom_kill均0；这是本次启动演练观测值，不是完整构建峰值。
+
+停止的是本轮 `debuglink-rehearsal-20261030[-02].service`；准备服务自然结束，控制服务在检查完后自然结束。`final-preservation.json` 复核两轮全部服务均不活动、整个rehearsal子树无挂载/残留服务进程。没有停止其他任务、删除已有目录、修改VS Code设置，未操作QB或推Gerrit/sandbox。
+
+### 8.4 晚间完整构建入口（已准备，未运行）
+
+在终端执行这一条即可：
+
+```sh
+/bin/sh /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/debuglink-launch-20261030/launch.sh full
+```
+
+入口：[launch.sh](../../tools/bolt/debuglink-launch-20261030/launch.sh)，控制器：[launcher.py](../../tools/bolt/debuglink-launch-20261030/launcher.py)。shell入口通过 `/bin/sh -n`；Python代码及三份生成脚本通过语法检查。shell部分仅用POSIX sh，沿用的39号控制程序本来就是Python，不引入Bash脚本。
+
+正式目录固定为 **`W/temp/debuglink-20261028/full-20261030/`**，交付时不存在，入口会拒绝覆盖已存在目录。与通过的演练共用同一份模板生成代码、同一配置/宏/资源/锁规则，仅输出目录和服务名不同，且 `mode=full` 不触发CMake停止监控。整个GBS流程包括正常%prep、%build、%install及打包；不切阶段短路。由持久用户systemd控制服务运行，启动命令返回后不依赖当前终端持续打开。
+
+日志位置：`full-20261030/controller.stdout`、`controller.stderr`、`evidence/service.stdout`、`service.stderr`、`rpm-build.log`；终态在 `evidence/result.json`。正常GBS完成后写 **`build-ok-validation-pending`**，明确不把GBS退出0当作产品验证通过；任一失败保留原文与根现场。清理逻辑与通过的第二轮相同。
+
+完整构建结束后的验证要求不变，详见 [validation-plan.md](../../tools/bolt/debuglink-launch-20261030/validation-plan.md)：身份链与profile计数、13a07cb7/8c2429d8两级SHA及新增debuglink链、39号原件35项SHA、23包payload差异及ar日期例外逐字证明、90TU完整对象字节比较、新chroot装包/LLDB自动加载及崩溃栈、包大小和符号处理/总耗时。**这些由完整构建结束后的执行任务继续核对，启动入口不自动将它们标PASS；本轮全部NOT RUN。**
+
+证据目录：[rehearsal-20261030](../../tools/bolt/results/debuglink-20261028/rehearsal-20261030/)。`attempt-01/`保留首次失败全文，`attempt-02/`保留通过日志；`logs-manifest.json`逐文件登记行数/大小/SHA。`all-argv-comparison.json`、`export-placement.json`、`summary.json`、`final-preservation.json`、模板diff提供复核入口。第8节追加前的文档字节数/SHA见 `provenance.json`，已检查原文前缀完全不变。

@@ -604,3 +604,14 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 实际GBS约8.123秒后退出1：新local/sources/tizen_base_toolchain_standard/llvm-22.1.8-1缺失，build报告`llvm.spec is empty. This should not happen...`。控制脚本漏掉就位导出源码目录，是本地启动准备疏漏，尚未进入%prep、不是debuglink门禁失败。按用户“构建失败即停”不重试。
 - RPM0；身份、23包、90TU、安装实测及包大小/符号耗时全部NOT RUN。OOM计数0，内存峰116,064,256B；未取得完整构建磁盘峰值，结束目录占用4,857,856B不作为峰值。
 - 新根和日志保留，无删除/历史根CMake/ninja/Gerrit/sandbox/QB操作。详见[43号第7节](43_debuginfo_symbols.md#7-完整构建验证2026-10-30指定目录-full-20261029)。下一次需先就位已认证导出输入，再完整GBS构建；本轮没有实施重试。
+
+
+## 2026-10-30：43号启动方式修复与白天演练通过
+
+- 计划：复用39号export/prep/完整GBS配方与37号已有gbs-driver/local布局，演练到CMake入口即停，准备全新full-20261030晚间入口，不做完整构建。
+- 进度：两次演练完成。首轮导出/依赖/%prep/%build/CMake入口通过，因5层残留挂载判整轮失败；原文和脚本保留于rehearsal-20261030/attempt-01。增加仅本轮物理根的普通卸载收尾后，在全新retry-02重跑，全部启动与清理项目PASS，总用时401.781秒。命中CMake命令行后11.036毫秒内正常停服务，未进入主ninja编译，未产出RPM。
+- 已闭合：源码仍3ee2d84719e4bd358c0b2366161f70f2eb788313/tree43d60f7523439fa0ccf4a61f668dd60622554606，工作树干净；配置与build.conf SHA不变；三个阶段argv除路径/提交外0差异；导出文件已逐个SHA证明就位。资源24,482,979,840B/swap0/CPU1200%/nice10/ionice2-7，实际root构建进程在相应cgroup；两轮服务已结束，rehearsal整个子树残留进程/挂载0。证据：tools/bolt/results/debuglink-20261028/rehearsal-20261030/{summary,all-argv-comparison,export-placement,final-preservation}.json，原始日志及失败全文按attempt分开保留。
+- 晚间可直接执行：`/bin/sh /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/debuglink-launch-20261030/launch.sh full`。full-20261030尚不存在、未启动；入口拒绝覆盖已有目录。与通过演练共用流程，只有full模式不停在CMake，直到GBS打包结束。
+- 人工前提：没有新增待裁决项；“晚上可以直接启动”仅指启动流程已认证，不承诺未执行的完整编译/链接/打包成功。39号实际采用gbs-root/local，gbs-driver/local出处为37号，43第8节已明确区分；CPUQuota为本次用户要求的控制层上限，构建参数不变。
+- 挂账：完整构建及身份链、23包、90TU、新chroot装包/LLDB/崩溃栈、包大小和耗时仍NOT RUN，按tools/bolt/debuglink-launch-20261030/validation-plan.md执行；GBS结束只标build-ok-validation-pending。源码行成本实验、LLVM only-keep-debug问题及此前QB相关核对仍保留，不在本轮操作QB/Gerrit/sandbox。
+- 交付：只在43末尾追加第8节，前文逐字不变；同步本STATUS及入口/证据，同一GitHub bolt-v4提交。未删除既有目录或修改VS Code配置，未向其他任务发信号。

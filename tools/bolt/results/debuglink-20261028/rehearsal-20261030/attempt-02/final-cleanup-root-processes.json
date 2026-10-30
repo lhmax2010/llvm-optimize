@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "sudo",
+    "-n",
+    "/usr/sbin/chroot",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/rehearsal-20261030/retry-02/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0",
+    "/usr/bin/python3",
+    "-B",
+    "-c",
+    "import os,json\nroot=os.stat('/')\nrows=[]\nfor pid in os.listdir('/proc'):\n if not pid.isdigit() or int(pid)==os.getpid(): continue\n try:\n  s=os.stat('/proc/'+pid+'/root')\n  if (s.st_dev,s.st_ino)==(root.st_dev,root.st_ino):\n   rows.append({'pid':int(pid),'argv':open('/proc/'+pid+'/cmdline','rb').read().replace(b'\\0',b' ').decode(errors='replace')})\n except (FileNotFoundError,ProcessLookupError,PermissionError): pass\nprint(json.dumps(rows))\n"
+  ],
+  "rc": 0,
+  "stdout": "[]\n",
+  "stderr": ""
+}

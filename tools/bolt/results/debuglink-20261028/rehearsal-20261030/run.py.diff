@@ -1,0 +1,44 @@
+--- 39/run.py
++++ rehearsal-02/run.py
+@@ -1,8 +1,8 @@
+ """One isolated hybrid build; no admission, memory freeze, or timed lease rotation."""
+-import fcntl,json,os,shutil,subprocess,threading,time
++import fcntl,json,os,shutil,subprocess,threading,time,re
+ from pathlib import Path
+-W=Path('/home/linhao/Toolchain/development/llvm-optimize');D=Path(__file__).resolve().parent;E=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/oldtext-final-20261027');plan=json.loads((D/'plan.json').read_text());G=D/'gbs-root';R=G/'local/BUILD-ROOTS/scratch.x86_64.0';unit='oldtext-final-20261027.service';stop=threading.Event();reason=None
+-assert json.loads((E/'export-result.json').read_text())['rc']==0;assert all(r['PASS'] for r in json.loads((E/'five-parse/matrix.json').read_text()))
++W=Path('/home/linhao/Toolchain/development/llvm-optimize');D=Path(__file__).resolve().parent;E=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/rehearsal-20261030/retry-02/evidence');plan=json.loads((D/'plan.json').read_text());G=D/'gbs-driver';R=G/'local/BUILD-ROOTS/scratch.x86_64.0';unit='debuglink-rehearsal-20261030-02.service';stop=threading.Event();reason=None
++assert json.loads((E/'export-result.json').read_text())['rc']==0;assert plan['commit']=='3ee2d84719e4bd358c0b2366161f70f2eb788313'
+ assert json.loads((E/'prep-result.json').read_text())['rc']==0;dest=G/'local/sources/tizen_base_toolchain_standard/llvm-22.1.8-1';shutil.copytree(D/'export',dest)
+ cmd=['gbs','-c',plan['config'],'build','-A','x86_64','-B',str(G),'-c',plan['commit'],'--threads=30','--define','jobs 8','--define','_smp_mflags -j8','--define','_costomized_smp_mflags -j20','--baselibs','--style=tar','--spec','llvm.spec',plan['source']]
+ (D/'build-command.json').write_text(json.dumps(cmd,indent=2)+'\n');(E/'build-command.json').write_text(json.dumps(cmd,indent=2)+'\n')
+@@ -24,13 +24,19 @@
+ def logs():
+  global reason
+  position=0
+- while not stop.wait(2):
++ while not stop.wait(.02 if plan['mode']=='rehearsal' else 2):
+   p=R/'.build.log'
+   if p.exists():
+    with p.open('rb') as src:
+     src.seek(position);b=src.read();position+=len(b)
+    if b:
+     with (E/'rpm-build.log').open('ab') as out:out.write(b)
++    if plan['mode']=='rehearsal' and re.search(rb'\+ cmake -G Ninja(?: |\n)',b) and reason is None:
++     reason='rehearsal-CMake-start'
++     append('cmake-stop.jsonl',{'time_ns':time.time_ns(),'log':str(p),'chunk':b.decode(errors='replace')})
++     result=subprocess.run(['systemctl','--user','stop',unit],capture_output=True,text=True)
++     append('cmake-stop.jsonl',{'stop_rc':result.returncode,'stdout':result.stdout,'stderr':result.stderr,'time_ns':time.time_ns()})
++     return
+     if b'BOLT_GATE_FAILED:' in b and reason is None:
+      reason='BOLT_GATE_FAILED observed; stop without bypass'
+      (E/'gate-stop.json').write_text(json.dumps({'time_ns':time.time_ns(),'tail':b.decode(errors='replace')[-16000:]}))
+@@ -82,7 +88,7 @@
+   except OSError:
+    append('bolt-process.jsonl',{'event':'gone','time_ns':time.time_ns(),'pid':int(target.name)});break
+   stop.wait(.01)
+-argv=['systemd-run','--user','--wait','--pipe','--unit='+unit,'-p','MemoryMax='+str(plan['MemoryMax_bytes']),'-p','MemorySwapMax=0','-p','Nice=10','-p','IOSchedulingClass=best-effort','-p','IOSchedulingPriority=7','-p','OOMPolicy=stop','-p','KillMode=control-group','-p','TimeoutStopSec=120','-p','WorkingDirectory='+plan['source'],'--setenv=TMPDIR='+str(D/'tmp'),'--setenv=PYTHONDONTWRITEBYTECODE=1','python3','-B',str(D/'build-runner.py')]
++argv=['systemd-run','--user','--wait','--pipe','--unit='+unit,'-p','MemoryMax='+str(plan['MemoryMax_bytes']),'-p','MemorySwapMax=0','-p','CPUQuota=1200%','-p','Nice=10','-p','IOSchedulingClass=best-effort','-p','IOSchedulingPriority=7','-p','OOMPolicy=stop','-p','KillMode=control-group','-p','TimeoutStopSec=120','-p','WorkingDirectory='+plan['source'],'--setenv=TMPDIR='+str(D/'tmp'),'--setenv=PYTHONDONTWRITEBYTECODE=1','python3','-B',str(D/'build-runner.py')]
+ (E/'service-command.json').write_text(json.dumps(argv,indent=2)+'\n');start=time.time_ns()
+ threads=[]
+ try:
