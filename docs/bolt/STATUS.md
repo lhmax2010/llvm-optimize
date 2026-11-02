@@ -654,3 +654,14 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - STOP：单次zenity+sudo -A -k认证返回1，root_entered=false；原文`Sorry, try again.` / `sudo: no password was provided` / `sudo: 1 incorrect password attempt`。没有重试、第二次弹窗或其他提权。
 - root脚本未启动，初始化/装包/安装SHA/LLDB/崩溃符号化均NOT RUN；本轮无挂载/chroot进程/core，C的mountinfo引用为空，全部现场保留。整体有问题，安装第5项尚未闭合。
 - 43追加第12节，前文不动；证据tools/bolt/results/debuglink-20261028/install-test-20261102-resume2。未构建，未改源码/spec/helper/启动脚本，未推Gerrit/sandbox或操作QB。
+
+
+## 2026-11-02：43号安装续跑（三）全部PASS，第5项闭合
+
+- 只核对上轮root-test SHA、7个补入文件SHA、空RPM数据库和/dev/null，均未变；未重做完整预检或第1–4项。
+- resume3的root-test.sh只改E；新SHA a9efbd254767084ee39057ce7ab782241a1d37faeaec7b56e30e6eb58031fd58。旧resume2共130文件前后SHA/大小一致。
+- 按用户裁决同一次sudo -A -k最多3次zenity提示；实际1次输入即通过，只有1次sudo调用，没有记录密码。
+- RPM初始化和两个包装入C成功；clang SHA4f08e12d…、debug SHAbe17f722…、CRC1776780033均PASS，Build-ID不存在与39号相同。
+- LLDB自动加载/usr/lib/debug/usr/bin/clang-22.debug，真实SIGILL的21/21 clang帧有函数名；llvm-symbolizer逐帧一致，另main+5冷函数6/6一致。函数级定位验证闭合，源码行信息未提供。
+- proc正常卸载，root清理audit mounts=[]、processes=[]；final.exit=0，结束行status=ok phase=complete。现场保留，无删除、无重试、无构建。
+- 43追加第13节，前文保留；证据tools/bolt/results/debuglink-20261028/install-test-20261102-resume3。只推GitHub bolt-v4；源码行方案、llvm-objcopy缺陷、QB配置评审及合入后编译配置确认等其他挂账不变。

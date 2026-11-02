@@ -896,3 +896,167 @@ DEBUGLINK_INSTALL FINISHED 2026-11-02T11:05:39.522759+08:00 status=stopped reaso
 本地证据 `D/evidence/install-test-20261102-resume2/`；公开副本：[install-test-20261102-resume2](../../tools/bolt/results/debuglink-20261028/install-test-20261102-resume2/)。manifest逐项记录大小、SHA和本地来源；RPM里提取的152MB clang保留本地，只发布其元数据。第1–4项不重做，前43号章节逐字保留；只提交GitHub bolt-v4，不推Gerrit/sandbox、不操作QB、不构建。
 
 总结论：**有问题，补齐和预检全部通过，单次图形认证失败；第5项装包、LLDB及符号化仍未完成，已停止且未重试。**
+
+
+## 13. 安装实测续跑（三）（2026-11-02）
+
+**全部通过：本次单次sudo调用、第一次图形输入即认证成功，第5项装包实测已闭合。** 安装两个RPM后，LLDB无需手动指定符号文件即可自动加载clang-22.debug，真实SIGILL崩溃的21个clang自身帧全部有函数名，llvm-symbolizer对同批地址逐帧一致。main及5个冷函数也全部一致；这是函数级定位，仍不提供源码行号，第1–4项沿用既有PASS，本轮没有重做。
+
+### 13.1 仅核对未变项，不重复完整预检
+
+本轮E为 `D/evidence/install-test-20261102-resume3/`。`unchanged-check.json`记录：
+
+- resume2/root-test.sh的SHA仍为 `0224aa68fd587f40c0ad55d9409d19affde6e41731f7df4a5c90e725913ce54b`。
+- 上轮补入的rpmsign、rpmkeys、rpmspec和4个库，7/7副本SHA与上轮记录一致，没有复制、覆盖或补入新文件。
+- C/var/lib/rpm执行前为空；C/dev/null仍为字符设备1:3、0666。没有删除或重新创建设备。
+- resume2目录130个文件执行前后大小/SHA逐项一致，见resume2-before.json及resume2-after.json；没有改动旧证据。完整依赖预检沿用第12节的12/12程序、10/10转交项PASS。
+
+### 13.2 脚本及一次sudo调用
+
+root-test.sh只替换E，数据库仍是 `/var/lib/rpm`，其他测试逻辑一字不改。执行前打印的diff：
+
+```diff
+--- resume2/root-test.sh
++++ resume3/root-test.sh
+@@ -7,7 +7,7 @@
+ export LC_ALL
+ ulimit -c 0
+ C='/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/install-test-root'
+-E='/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/evidence/install-test-20261102-resume2'
++E='/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/evidence/install-test-20261102-resume3'
+ export C E
+ mounted=0
+ phase=entry
+
+```
+
+新脚本SHA256：`a9efbd254767084ee39057ce7ab782241a1d37faeaec7b56e30e6eb58031fd58`。`/bin/sh -n` PASS；`grep -nE 'install-test-20261102/|install-test-20261102-resume2' root-test.sh`退出1、无匹配。所有测试输出均通过E进入resume3；symbol-samples.json原样复制供脚本读取。
+
+askpass继续清除原有的LD/GTK/GIO相关环境变量，使用zenity标题“LLVM debuglink 装包测试：请输入 sudo 密码”。去掉单次标记，改为同一sudo调用内最多3次弹窗；取消/对话框错误会写入取消标志、返回非零，阻止进一步弹窗。只记录次数、时间、是否提交/取消，不记录密码。askpass全文执行前已打印，公开副本为askpass.sh。
+
+唯一一次提权调用（argv原文见sudo-argv.json）：
+
+```sh
+SUDO_ASKPASS="$D/evidence/install-test-20261102-resume3/askpass.sh" sudo -A -k /bin/sh "$D/evidence/install-test-20261102-resume3/root-test.sh"
+```
+
+认证记录原文：
+
+```text
+2026-11-02T14:08:16+08:00 attempt=1 opened
+2026-11-02T14:08:33+08:00 attempt=1 submitted
+
+```
+
+`sudo-result.json`：attempts=1、one_invocation=true、root_entered=true、rc=0，总计45.810秒（包括等待密码输入和全部测试）。sudo.stderr有一条IBUS连接警告，但本轮认证与测试均成功，不能把该警告视为失败原因。没有第二次sudo调用。
+
+### 13.3 装包、身份和CRC
+
+| 步骤 | 结果 | 原文证据 |
+|---|---|---|
+| 原测试根挂载/进程检查 | PASS | precheck-audit.stdout：mounts=[]、processes=[] |
+| /dev/null | PASS，跳过mknod | sudo.stdout：`DEVICE_NULL_PASS existing character 1:3 mode 0666; mknod skipped` |
+| rpm版本与初始化 | PASS | `RPM version 4.14.1`；rpm-initdb.exit=0 |
+| 安装clang、clang-debuginfo | PASS | rpm-install.exit=0，stderr为空；使用原脚本的--nodeps --noplugins |
+| 查询安装结果 | PASS | rpm-installed.stdout列出两个包，见下 |
+| 两文件SHA、debug文件权限、debuglink CRC | PASS | installed-identity.json，installed-identity.exit=0 |
+
+装包输出原文（完整输出/命令见rpm-install.stdout及rpm-install.argv）：
+
+```text
+Preparing...                          ########################################
+Updating / installing...
+clang-debuginfo-22.1.8-1              ########################################
+clang-22.1.8-1                        ########################################
+clang-22.1.8-1.x86_64
+clang-debuginfo-22.1.8-1.x86_64
+
+```
+
+安装后的身份原文：
+
+```json
+{
+  "usr/bin/clang-22": {
+    "sha256": "4f08e12d499ebd492ce4951f74915ba435f57f2e380dc6f3520f24644996cb17",
+    "bytes": 152532400,
+    "mode": "0o755"
+  },
+  "usr/lib/debug/usr/bin/clang-22.debug": {
+    "sha256": "be17f7222b30b9aff8e9cb30847b7348c5b9897096e382518410dfb053c2f281",
+    "bytes": 35243936,
+    "mode": "0o644"
+  },
+  "debuglink_crc32": 1776780033,
+  "build_id": "absent, same as 39"
+}
+
+```
+
+clang为152,532,400B；符号文件35,243,936B、0644；CRC32为1776780033。Build-ID不存在，与39号相同。测试安装只发生在C，未修改宿主的软件包或发布代码。
+
+### 13.4 自动加载、真实崩溃与地址符号化
+
+脚本只执行 `target create /usr/bin/clang-22`，没有add-symbol-file或手工指定符号。lldb-auto.stdout原文：
+
+```text
+(lldb) target create /usr/bin/clang-22
+Current executable set to '/usr/bin/clang-22' (x86_64).
+(lldb) image list -f -s
+[  0] /usr/bin/clang-22 /usr/lib/debug/usr/bin/clang-22.debug
+(lldb) image lookup -n main
+1 match found in /usr/bin/clang-22:
+        Address: clang-22[0x000000000342b940] (clang-22.PT_LOAD[1]..text + 12761408)
+        Summary: clang-22`main
+```
+
+按原脚本用最小pragma输入执行真实崩溃；完整调用栈在lldb-auto.stdout，节选：
+
+```text
+* thread #1, name = 'clang-22', stop reason = signal SIGILL: illegal operand
+  * frame #0: 0x0000632beadbd4a8 clang-22`(anonymous namespace)::PragmaDebugHandler::HandlePragma(clang::Preprocessor&, clang::PragmaIntroducer, clang::Token&) + 3360
+    frame #19: 0x0000632be642b99a clang-22`main + 90
+    frame #22: 0x0000632be63ecfe1 clang-22`_start + 33
+```
+
+23个栈帧中有21个属于clang-22，21/21都有函数名；另外2个是libc帧，不计入clang判据（其中1个libc符号未命名）。取本次LLDB给出的slide `0x632be3000000`，从这21个绝对地址扣除slide后，交给 `/opt/symbolizer/llvm-symbolizer --obj=/usr/lib/debug/usr/bin/clang-22.debug --no-inlines --demangle`，全部与LLDB名字逐字一致。输入/输出原文分别在symbolizer.stdin、symbolizer.stdout及symbolizer.stderr；symbolization-result.json逐帧记录绝对地址、偏移和两边函数名。
+
+额外抽查main和5个冷函数，共6/6两种工具一致，5/5冷函数通过。例如：
+
+```text
+(lldb) image lookup -a 0x42d3000
+      Address: clang-22[0x00000000042d3000] (clang-22.PT_LOAD[1]..text.cold + 13475840)
+      Summary: clang-22`tensorflow::XlaCompiledCpuFunction::MakeXlaRuntimeDescriptorTable() (.cold)
+```
+
+`symbolization-result.json`原文关键字段：`PASS=true`、`clang_frames=21`、`named_clang_frames=21`、`cold_samples=5`、`source_line_information=false`。确认函数级符号定位，不把无源码行信息误报为源码级调试。
+
+### 13.5 正常卸载与现场保留
+
+原脚本finally路径在14:09:02执行正常卸载：
+
+```sh
+/usr/sbin/chroot "$C" /bin/umount /proc
+/usr/bin/findmnt -rn -o TARGET,SOURCE,FSTYPE
+```
+
+proc-umount.exit=0、stderr为空；清理audit读取mountinfo和/proc进程root/cwd/exe，原文：
+
+```json
+{
+  "mounts": [],
+  "processes": []
+}
+
+```
+
+本次proc挂载已移除、无C内残留进程；findmnt全文保留在cleanup-findmnt.stdout，其他历史根挂载未处理。root脚本设置 `ulimit -c 0`，没有生成core；没有删除测试根、旧目录或文件。结束原文：
+
+```text
+DEBUGLINK_INSTALL FINISHED 2026-11-02T14:09:02+08:00 status=ok phase=complete
+
+```
+
+全部步骤退出码均0，见summary.json及各*.exit。证据公开在[install-test-20261102-resume3](../../tools/bolt/results/debuglink-20261028/install-test-20261102-resume3/)，manifest逐文件记录本地来源、大小和SHA。第1–4项不重做；没有改源码/spec/helper/启动脚本，没有构建、Gerrit/sandbox推送或QB操作。
+
+总结论：**全部通过，第5项装包实测闭合，LLDB自动加载及21/21崩溃帧、main和5个冷函数的符号化一致；函数级崩溃定位已验证，源码行方案仍挂账。**
