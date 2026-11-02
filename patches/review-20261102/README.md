@@ -1,5 +1,7 @@
 # clang hybrid + BOLT 外部评审材料（2026-11-02）
 
+评审方请阅读 [0002-text-only.diff](0002-text-only.diff)，而不是 12.7 MB 的完整补丁；此文件仅排除 profile 二进制，完整补丁用于完整应用。
+
 本包取代 `patches/review-20261028/` 的旧材料；旧目录原样保留。本轮仅更正 BOLT 提交说明中的三个段落，代码 tree 与已验证的 3ee2d847 完全相同，没有重新构建，也没有推送 Gerrit、sandbox 或操作 QB。
 
 ## 改动目标与补丁顺序
@@ -84,6 +86,7 @@ debuglink实体为152,532,400B，符号文件35,243,936B。相对39号，clang R
 | 文件 | 用途 |
 |---|---|
 | [0001-cmake-use-hybrid-LLVM-linkage-on-x86_64.patch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/patches/review-20261102/0001-cmake-use-hybrid-LLVM-linkage-on-x86_64.patch) | 完整混合链接补丁 |
+| [0002-text-only.diff](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/patches/review-20261102/0002-text-only.diff) | 评审用，不含 profile 二进制；完整补丁见 [0002-packaging-optimize-x86_64-clang-with-BOLT.patch](0002-packaging-optimize-x86_64-clang-with-BOLT.patch) |
 | [0002-packaging-optimize-x86_64-clang-with-BOLT.patch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/patches/review-20261102/0002-packaging-optimize-x86_64-clang-with-BOLT.patch) | 完整BOLT补丁，包含profile二进制 |
 | [0001-commit-message.txt](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/patches/review-20261102/0001-commit-message.txt) | hybrid完整说明 |
 | [0002-commit-message.txt](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/patches/review-20261102/0002-commit-message.txt) | 新BOLT完整说明 |
