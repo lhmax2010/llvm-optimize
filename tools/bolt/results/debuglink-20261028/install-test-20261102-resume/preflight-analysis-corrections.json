@@ -1,0 +1,8 @@
+{
+  "initial_script": "preflight.py",
+  "initial_issue": [
+    "libgcc_s.so.1 mode 0644 was incorrectly treated as an executable program; shared libraries require readable loadable ELF, not executable mode",
+    "shlex on unrelated multiline popt alias lines raised ValueError: No closing quotation before exec-entry reporting"
+  ],
+  "correction": "Read-only report generator now checks executable permission only for entry programs and interpreters; parses only exec entries; normalizes dependency paths. Original script and original program report retained. Missing rpmsign/rpmkeys/rpmspec remain blocking; no files other than authorized rpmdb copied; no authentication or product execution."
+}

@@ -635,3 +635,12 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - /dev/null创建PASS，chroot rpm --version返回4.14.1；rpm --dbpath /var/lib/rpm --initdb退出1：`rpm: --initdb: No such file or directory`。只读确认rpmpopt:181委派rpmdb，而测试根漏带/usr/bin/rpmdb；本轮构建根有该文件。这是测试准备遗漏，不是产品debuglink门禁失败。
 - 按停止条件未补拷/重试：两个RPM尚未安装，安装SHA、LLDB自动加载、真实崩溃/地址符号化全部NOT RUN。本次没有挂proc/core，root清理审计mounts/processes均为空，全部现场保留。
 - 结论有问题，第5项仍待续跑。证据tools/bolt/results/debuglink-20261028/install-test-20261102；43追加第10节，前文不改。源码/spec/helper/启动脚本未改，未构建、未推Gerrit/sandbox、未操作QB。此前源码行、only-keep-debug及QB相关挂账保持。
+
+
+## 2026-11-02：43号安装续跑，rpmdb补齐，完整预检仍阻断
+
+- 普通用户从本轮构建根复制/usr/bin/rpmdb到install-test-root，来源/副本SHA均b28b40ea816cd37c2949f094da3904a28a1346e11b8ccf5412ec4c91e6f600ff，19280B；依赖闭包18个ELF对象，库已齐，不新增库。
+- 12个脚本所需程序（含RPM中待安装clang）及其解释器/NEEDED检查PASS。/dev/null为1:3、0666；原/var/lib/rpm为空，保留。
+- STOP：全部rpmpopt exec项中3/10通过，7/10因rpmsign、rpmkeys、rpmspec缺失失败。遵守“每个转交目标都齐全”的判据，不按当前步骤用不到豁免、不擅自补拷。
+- 未进入root脚本修改/执行，未弹窗、未sudo、未装包、未跑LLDB/崩溃或symbolizer。第1–4项不重做，继续沿用已通过记录。旧root-test.sh不应直接重跑，之后仍需按授权处理已有/dev/null。
+- 本轮无新挂载/chroot进程、无删除。43末尾追加第11节，证据tools/bolt/results/debuglink-20261028/install-test-20261102-resume。整体有问题，第5项仍未完成；源码和发布代码未改，只推GitHub bolt-v4。

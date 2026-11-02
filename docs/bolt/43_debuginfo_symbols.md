@@ -678,3 +678,94 @@ DEBUGLINK_INSTALL FINISHED 2026-11-02T09:22:45+08:00 status=failed phase=install
 本地证据 `D/evidence/install-test-20261102/`；公开副本：[install-test-20261102](../../tools/bolt/results/debuglink-20261028/install-test-20261102/)，包含最终脚本全文、askpass脚本（无密码）、一次sudo argv/stdout/stderr、每条命令的argv/退出码/原文、准备SHA、只读根因与清理记录。manifest.json逐文件登记来源、大小和SHA。原43号文档第1–9节逐字保留，未改写此前成功或失败记录。
 
 总结论：**有问题；图形授权已解决，因测试根漏带 rpmdb 在初始化阶段停止，第5项安装和调试验证仍未完成。**
+
+## 11. 安装实测续跑（2026-11-02，弹窗前预检停止）
+
+**结论：有问题；已补齐指定的 rpmdb，但完整预检发现另三个 rpmpopt 转交程序缺失，本轮没有弹窗或执行特权脚本。** 第1–4项不重做、沿用前次通过记录；没有构建、装包、运行调试器或改变产品文件。按照用户“预检有任何一项不通过即停止”的要求，没有擅自补入其余工具或进入第3步。
+
+### 11.1 已补文件与动态库
+
+用普通用户把本轮构建根的 `/usr/bin/rpmdb` 复制到 `D/install-test-root/usr/bin/rpmdb`，只新增这个文件，没有覆盖既有文件。来源和副本大小均 **19,280 B**，两个 SHA256 相同且符合指定值：
+
+```text
+b28b40ea816cd37c2949f094da3904a28a1346e11b8ccf5412ec4c91e6f600ff
+```
+
+来源完整路径为 `D/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/rpmdb`。`copied-files.json` 记录来源/目的路径、字节数与两份SHA；`rpmdb-dependencies.json` 逐项记录依赖。rpmdb递归依赖闭包共18个ELF对象，所需动态库在C中已经存在，**新增动态库0个**。只从本轮构建根读取，没有改其文件、执行构建或提权。
+
+### 11.2 所有 chroot 程序与 ELF 依赖预检
+
+从root-test.sh及clang RPM脚本确认执行程序集合，包括通过popt转交的rpmdb和postinstall的ldconfig。`rpm -qp --scripts` 原文仍为 `postinstall program: /sbin/ldconfig`、`postuninstall program: /sbin/ldconfig`。下表的clang来自待安装RPM的CPIO成员，不假称它已经装入C。
+
+| 程序 | 文件/执行位检查 | 解释器 | 递归依赖 | 结果 |
+|---|---|---|---|---|
+| `/usr/bin/rpm` | 存在且可执行 | `/lib64/ld-linux-x86-64.so.2` 存在 | 18 个ELF对象，依赖齐全 | PASS |
+| `/usr/bin/rpmdb` | 存在且可执行 | `/lib64/ld-linux-x86-64.so.2` 存在 | 18 个ELF对象，依赖齐全 | PASS |
+| `/sbin/ldconfig` | 存在且可执行 | 无 PT_INTERP（静态程序） | 1 个ELF对象，依赖齐全 | PASS |
+| `/bin/mknod` | 存在且可执行 | `/lib64/ld-linux-x86-64.so.2` 存在 | 3 个ELF对象，依赖齐全 | PASS |
+| `/bin/mount` | 存在且可执行 | `/lib64/ld-linux-x86-64.so.2` 存在 | 5 个ELF对象，依赖齐全 | PASS |
+| `/bin/umount` | 存在且可执行 | `/lib64/ld-linux-x86-64.so.2` 存在 | 5 个ELF对象，依赖齐全 | PASS |
+| `/bin/sh` | 存在且可执行 | `/lib64/ld-linux-x86-64.so.2` 存在 | 3 个ELF对象，依赖齐全 | PASS |
+| `/usr/bin/env` | 存在且可执行 | `/lib64/ld-linux-x86-64.so.2` 存在 | 3 个ELF对象，依赖齐全 | PASS |
+| `/usr/bin/lldb` | 存在且可执行 | `/lib64/ld-linux-x86-64.so.2` 存在 | 19 个ELF对象，依赖齐全 | PASS |
+| `/usr/bin/lldb-server` | 存在且可执行 | `/lib64/ld-linux-x86-64.so.2` 存在 | 18 个ELF对象，依赖齐全 | PASS |
+| `/opt/symbolizer/llvm-symbolizer` | 存在且可执行 | `/lib64/ld-linux-x86-64.so.2` 存在 | 11 个ELF对象，依赖齐全 | PASS |
+| `/usr/bin/clang-22` | RPM载荷0755，尚未安装 | `/lib64/ld-linux-x86-64.so.2` 存在 | 9 个ELF对象，依赖齐全 | PASS |
+
+检查使用普通用户的 `readelf -W -l -d` 读取ELF，不运行这些目标程序。所有解释器和库路径都在C内解析，绝对符号链接也按C为根；禁止借宿主库补缺。按各对象RPATH/RUNPATH、`$ORIGIN`和C内默认 `/lib64:/usr/lib64:/lib:/usr/lib` 查找，并保存每条NEEDED的解析路径；C当前没有ld.so.cache，没有通过LD_LIBRARY_PATH借外部库。共享库要求可读、可加载，不要求文件执行位；入口程序和解释器要求执行位。
+
+待安装clang成员 `/usr/bin/clang-22` 声明模式0755，大小152,532,400B，SHA为 `4f08e12d499ebd492ce4951f74915ba435f57f2e380dc6f3520f24644996cb17`；RUNPATH为 `$ORIGIN/../lib64`，据其安装后路径计算ORIGIN再查C内库。临时提取仅用于本次ELF预检，保存于本轮证据目录，未替代安装验证，也未重做此前RPM内容比较。详见 `rpm-clang-metadata.json`、`program-preflight-final.json` 与 `elf-readelf-final/` 全文。
+
+只读报告脚本有两处分析修正：初版误要求共享库具有执行位，把0644的libgcc_s.so.1误列为不可执行；另对非exec的多行popt别名逐行使用shlex，遇到未闭合引号而中断。修正报告工具后按正确ELF权限区分、只解析exec行，并归一依赖路径；初版脚本/初版结果和修正说明都保留。这些不是产品执行失败、未修改C内任何库，亦未越过下面真实缺项的门禁。
+
+### 11.3 rpmpopt 全部 exec 项：3/10通过，7/10失败
+
+C内找到的rpmpopt配置为 `usr/lib/rpm/rpmpopt-4.14.1`。10条exec的逐行原文、选项、目标、搜索路径、依赖闭包都在 `rpmpopt-preflight.json`。按root脚本的PATH `/usr/sbin:/usr/bin:/sbin:/bin` 查找：
+
+| 配置行号 | 选项 | 转交程序 | C内状态 | 结果 |
+|---:|---|---|---|---|
+| 174 | `--addsign` | `rpmsign` | **缺失** | FAIL |
+| 175 | `--delsign` | `rpmsign` | **缺失** | FAIL |
+| 176 | `--resign` | `rpmsign` | **缺失** | FAIL |
+| 178 | `--checksig` | `rpmkeys` | **缺失** | FAIL |
+| 179 | `-K` | `rpmkeys` | **缺失** | FAIL |
+| 180 | `--import` | `rpmkeys` | **缺失** | FAIL |
+| 181 | `--initdb` | `rpmdb` | 存在、ELF依赖齐全 | PASS |
+| 182 | `--rebuilddb` | `rpmdb` | 存在、ELF依赖齐全 | PASS |
+| 183 | `--verifydb` | `rpmdb` | 存在、ELF依赖齐全 | PASS |
+| 184 | `--specfile` | `rpmspec` | **缺失** | FAIL |
+
+缺失的不同目标共三个：**rpmsign、rpmkeys、rpmspec**。虽然当前装包路径并不会调用全部签名或spec查询选项，用户本轮要求是“每个exec目标都在C内且依赖齐全”，因此这些项目仍是阻断，不能自行按“这次用不到”豁免。缺失目标的动态库检查是NOT RUN，不能把它们算依赖通过。
+
+`preflight-summary.json` 原文：
+
+```json
+{
+  "programs_passed": 12,
+  "programs_total": 12,
+  "exec_entries_passed": 3,
+  "exec_entries_total": 10,
+  "missing_exec_targets": ["rpmsign", "rpmkeys", "rpmspec"],
+  "dev_null_pass": true,
+  "database": "/var/lib/rpm",
+  "ld_so_cache_exists": false,
+  "PASS": false
+}
+```
+
+### 11.4 上轮残留、脚本和未执行项目
+
+- `/dev/null` 原件是字符设备1:3、权限0666，检查通过。未删除、重建、改权限；后续获准执行时应跳过mknod。
+- `C/var/lib/rpm` 存在，但内容清单为空（`rpm_directory_inventory: []`）；本轮无需改用 `/var/lib/rpm-20261102`，也没有删除或重建原目录。清单及元数据见 `residual-preflight.json`。
+- 因exec项预检失败，按停止条件**未进入root-test.sh修改/语法检查/执行阶段**。`root-test.diff`为空，原脚本SHA仍为 `3dec5b3186cbdb4cff59ac153610e8d1fed43792b86003e9ecb93e6d5b65ce53`，没有新脚本SHA。`script-status.json` 写明后续需要的dev/null跳过处理和仍使用原数据库路径；不把旧脚本宣称为可直接续跑的新版。
+- 图形认证0次、sudo/root调用0次；初始化数据库、安装两个RPM、安装后两个SHA/CRC、LLDB自动加载、真实崩溃及同批地址符号化/冷函数抽查均 **NOT RUN**。
+
+本轮仅有rpmdb补拷以及普通用户只读预检，没有在失败后补入三项缺失工具，没有第二次认证或重跑产品步骤。
+
+### 11.5 清理和证据
+
+本轮没有创建挂载或chroot进程，因此没有卸载/结束进程操作。`/proc/self/mountinfo` 中本测试根引用为 `[]`，`findmnt -rn -o TARGET,SOURCE,FSTYPE` 原文保存于findmnt.stdout；其余历史根的挂载未处理。测试根、全部历史目录及这次提取的RPM成员均保留，无删除。
+
+本地新证据：`D/evidence/install-test-20261102-resume/`；公开副本：[install-test-20261102-resume](../../tools/bolt/results/debuglink-20261028/install-test-20261102-resume/)。manifest记录每个公开文件来源、大小、SHA；152MB的只读提取clang保留在本地，仅发布其元数据，不重复上传二进制。43号前文不改、STATUS同步；本轮只推GitHub bolt-v4，没有修改源码/spec/helper/启动脚本，没有Gerrit/sandbox或QB操作。
+
+总结论：**有问题，rpmdb已补齐；完整预检被缺失的rpmsign/rpmkeys/rpmspec阻断，尚未进入认证和装包。**
