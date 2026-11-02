@@ -1,0 +1,34 @@
+--- 3ee2d84719e4bd358c0b2366161f70f2eb788313/message
++++ 219f23edaffbd84434caf912e261ddb72a4eee2e/message
+@@ -50,8 +50,10 @@
+ 0.856351167, AArch64 0.847699213. ARM independent-20/holdout-10:
+ 0.858165628/0.868458776; AArch64 independent-20/holdout-10:
+ 0.847858623/0.847902567. These results cover this LLVM workload, not
+-general application or runtime performance. The packaged clang grows by
+-43,293,584 bytes (+31.0%).
++general application or runtime performance. With -use-old-text the
++packaged clang is 152,532,400 bytes, 12,602,968 bytes (+9.0%) larger
++than the stripped ordinary clang; the .gnu_debuglink section adds 104
++bytes.
+ 
+ The final clang has no .symtab, DWARF sections or BOLT identity note.
+ In debug builds, clang-debuginfo supplies matching function symbols
+@@ -69,12 +71,13 @@
+ clang/tools/driver/cc1_main.cpp, clang/tools/driver/cc1as_main.cpp,
+ clang/tools/driver/cc1gen_reproducer_main.cpp,
+ clang/tools/driver/driver.cpp.
+-Crash localization requires retained build-side identity/rewrite
+-records, the pre-strip BOLT ELF, matching ordinary ELF, tool and profile
+-identities.
++In release builds, where no symbol file is shipped, crash localization
++requires the build-side identity/rewrite records, the pre-strip BOLT
++ELF, the matching ordinary ELF, and the tool and profile identities.
+ 
+-Quickbuild x86_64 completed %install on this same implementation before
+-the Source-order fix. Still open: full release-mode build; accel/worker
++An earlier revision completed %install on Quickbuild x86_64;
++this revision is pending Quickbuild
++verification. Still open: full release-mode build; accel/worker
+ identity; cleanup cannot be guaranteed without matching /proc;
+ performance outside LLVM workloads. The Ninja job limit does not cap
+ linker memory. Maintenance notes:

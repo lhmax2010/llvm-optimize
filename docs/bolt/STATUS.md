@@ -687,3 +687,13 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 最终/home可用234376536064B；规划需求226231549952B（两个根各1.5×43号历史采样峰值+20GiB），PASS，真实PGO增长尚待实测；夜间再次检查。资源规则只在本地试验脚本。
 - 晚上入口：/bin/sh /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/pgo-resource-20261102/launch.sh full。本轮没有执行它，没有插桩clang完整编译、训练或PGO打包。PGO导致BOLT匹配失败时保留原门禁并停止，不绕过。
 - 47号设计/原始证据已准备，仅推GitHub bolt-v4；不推Gerrit/sandbox、不操作QB。结论：晚上可以启动。其他既有挂账继续保留。
+
+
+## 2026-11-02：debuglink BOLT提交说明与外部评审包更新（不推源码）
+
+- 独立克隆W/temp/review-20261102/source，detached amend仅修改三个指定句子；新BOLT提交 **219f23edaffbd84434caf912e261ddb72a4eee2e**，tree仍为43d60f7523439fa0ccf4a61f668dd60622554606，父hybrid6e9d4f2；原作者（含时间）、Change-Id、Signed-off-by不变，提交者Hao Lin。源码没有diff，新提交未推Gerrit/sandbox。
+- 用户补充裁决采用stripped ordinary比较。原保全ordinary SHA d5090159…、1793485376B含DWARF；只复制到本轮size-baseline内，用full-20261030同一个llvm-strip及--strip-all，工具SHA d5699b8f…；得到139929432B、SHA eab52018354b9bdd3bdd34b21cfb7731c28883b509fe371566b246c3a5e391cc，原件重新SHA核对不变。
+- N=152532400−139929432=12602968B；P=9.006659871241384%→9.0%。历史+31.0%实为183223048−139929464=43293584（01:190、03:28/34）；183224160是后来的37号candidate。139930576是混合两个时期数字的算式，不是查到的实测基线。本次与旧RPM基线32B的具体ELF成因未确认，不推测。
+- 新评审包patches/review-20261102/含相对67619ec8的两份完整format-patch（含Source1200二进制）、8个完整文本文件、两份提交说明、三处diff、尺寸原始证据、README及SHA256SUMS。两份补丁独立index顺序应用得到同一tree，PASS。旧review-20261028目录原样保留，新README注明取代关系。
+- README关联39号old-text、43号第9节完整构建/23包/90TU、第13节装包/21帧符号化、37号RUNPATH，说明debug/release、回退、release完整构建及源码行/only-keep-debug/QB验证等挂账。
+- 原PGO源码工作区与temp/pgo-resource-20261102全部未改；未构建、未操作QB、未推Gerrit或sandbox。仅更新GitHub bolt-v4评审材料，原代码tree的认证继续有效。
