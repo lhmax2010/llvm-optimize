@@ -675,3 +675,15 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 只读SSH查询：scm/meta/qb 359363已MERGED，Code-Review+2/Verified+1（另作者+1）；359364为NEW、Code-Review+1，Dongkyun Son建议使用usual sync-up process（原文见43第14节）。没有密码交互、评审写入或打分。
 - 359363合入状态已闭合；359364进展、首次QB实际编译配置确认、源码行方案与llvm-objcopy缺陷等挂账继续保留。
 - 43追加第14节，前文不改；证据tools/bolt/results/debuglink-20261028/sandbox-update-20261102。本轮没有构建、删除或修改VS Code配置。
+
+
+## 2026-11-02：PGO资源试验设计、前置检查与配置演练完成（47号）
+
+- 发布源码3ee2d847/tree43d60f75及spec/helper/Source未改；本地source-D detached试验提交4ff8ceb44b04b48f6299b6ddf7c5b147ad788b54仅增加LLVM_PROFDATA_FILE，不推送。A基于full-20261030原配置只加LLVM_BUILD_INSTRUMENTED=IR。
+- 前置检查：既有348测试PASS、试验12测试PASS、GBS两次export退出0、TizenRPM五项解析5/5、13 ARM+10 AArch64训练输入23/23 SHA一致、7个编译器/工具与原根SHA相同。固定build.conf SHA e5187fd7…不变。
+- 新根配置缺的profile runtime用历史同版本构建产物引导，只复制到新根；夜间先构建A自身runtime，再clang。阶段C只读使用同源码历史构建的llvm-profdata。A/B/C/D独立服务，2s全进程采样、5s statvfs、边界du；D子阶段用同FD memory.peak重置，已通过80MiB自测。边界du不能当真正瞬时峰值，短命进程可能漏采，47明确限制。
+- 首次测试因宿主PATH缺cmake报8个错误，使用既有CMake修正环境后通过；rehearsal-01配置成功但采样线程在cgroup退出后读FD失败，不采信其旧status=ok。修复仅试验采样器，rehearsal-02/03均在全新根配置成功、未进入LLVM Ninja。所有失败原文保留。
+- 最终rehearsal-03配置耗时38.301s、cgroup峰值560349184B；结束行status=ok reason=configure-only-no-ninja，服务全部停止、无残留阶段进程和挂载。全部根保留，未删除目录。
+- 最终/home可用234376536064B；规划需求226231549952B（两个根各1.5×43号历史采样峰值+20GiB），PASS，真实PGO增长尚待实测；夜间再次检查。资源规则只在本地试验脚本。
+- 晚上入口：/bin/sh /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/pgo-resource-20261102/launch.sh full。本轮没有执行它，没有插桩clang完整编译、训练或PGO打包。PGO导致BOLT匹配失败时保留原门禁并停止，不绕过。
+- 47号设计/原始证据已准备，仅推GitHub bolt-v4；不推Gerrit/sandbox、不操作QB。结论：晚上可以启动。其他既有挂账继续保留。

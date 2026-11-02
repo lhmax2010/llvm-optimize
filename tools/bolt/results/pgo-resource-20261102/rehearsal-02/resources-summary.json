@@ -1,0 +1,166 @@
+{
+  "scope": "/home/linhao/Toolchain/development/llvm-optimize/temp/pgo-resource-20261102/rehearsal-02",
+  "limitations": [
+    "cgroup includes file cache",
+    "VmHWM is lifetime high-water mark of observed processes; <2s processes may be missed",
+    "du only at stage/log boundaries; disk maximum is boundary-observed, not true instantaneous peak",
+    "D substage peaks use one open memory.peak FD reset at observed anchors; boundary lag recorded by timestamps"
+  ],
+  "stages": [
+    {
+      "stage": "stage-A/A",
+      "result": {
+        "rc": 0,
+        "start_ns": 1793604221579052084,
+        "end_ns": 1793604251633222983,
+        "stats": {
+          "memory.peak": "483840000\n",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+          "memory.swap.peak": "0\n",
+          "memory.max": "24482979840\n",
+          "memory.swap.max": "0\n",
+          "cpu.max": "1200000 100000\n"
+        }
+      },
+      "cgroup_peak_bytes": 483840000,
+      "seconds": 30.054170899,
+      "process_VmHWM_max": {
+        "time_ns": 1793604251583741331,
+        "phase": "setup",
+        "pid": 2360633,
+        "starttime_ticks": "49327777",
+        "name": "cmake",
+        "cmdline": "cmake -G Ninja -DTIZEN=1 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_HOST_TRIPLE=x86_64-tizen-linux-gnu -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-tizen-linux-gnu -DLLVM_TARGET_TRIPLE_ENV=x86_64-tizen-linux-gnu -DCMAKE_ASM_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument -DCMAKE_C_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument -DCMAKE_CXX_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument -DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -DLLVM_USE_LINKER=lld -DLLVM_ENABLE_LTO=Thin -DCMAKE_RANLIB=/usr/bin/llvm-ranlib -DCMAKE_AR=/usr/bin/llvm-ar -DLLVM_ENABLE_ASSERTIONS=No -DLLVM_ENABLE_RTTI=ON -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64;BPF -DCLANG_ENABLE_ARCMT=OFF -DLLVM_BUILD_LLVM_DYLIB=ON -DCLANG_BUILD_CLANG_DYLIB=ON -DLLVM_LINK_LLVM_DYLIB=ON -DCLANG_LINK_CLANG_DYLIB=ON -DTIZEN_HYBRID_LINK=ON -DBUILD_SHARED_LIBS=OFF -DLLVM_TOOL_LLVM_DRIVER_BUILD=OFF -DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF -DLLVM_BUILD_EXAMPLES=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_BUILD_TESTS=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_ENABLE_DOXYGEN=OFF -DLLVM_BUILD_DOCS=OFF -DLLVM_INCLUDE_DOCS=OFF -DLLVM_OPTIMIZED_TABLEGEN=ON -DCMAKE_INSTALL_PREFIX=/usr -DLLVM_LIBDIR_SUFFIX=64 -DCLANG_RESOURCE_DIR=../lib64/clang/22 -DLLVM_BINUTILS_INCDIR=/usr/include -DLLVM_PARALLEL_COMPILE_JOBS=6 -DLLVM_PARALLEL_LINK_JOBS=2 -DTENSORFLOW_AOT_PATH=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/mlgo_sysroot -DLLVM_MLGO_EXPORT_TF_XLA_RUNTIME=OFF -DLLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/xla_compiled_cpu_function.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/cpu_function_runtime.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/custom_call_status.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/executable_run_options.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o -DLLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.h -DLLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.o -DLLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.h -DLLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.o -DLLVM_BUILD_INSTRUMENTED=IR ../llvm ",
+        "VmHWM_bytes": 318201856,
+        "VmRSS_bytes": 318201856
+      },
+      "root_boundary_disk_max": {
+        "boundary_ns": 1793604252050970160,
+        "phase": "ended",
+        "scan_start_ns": 1793604252051652945,
+        "scan_end_ns": 1793604252293359308,
+        "rc": 0,
+        "stdout": "7088373760\t/\n",
+        "stderr": "",
+        "bytes": 7088373760
+      },
+      "filesystem_available_min": {
+        "time_ns": 1793604251583741331,
+        "phase": "setup",
+        "available_bytes": 242174828544,
+        "device": 2049
+      },
+      "subphases": [
+        {
+          "phase": "setup",
+          "cgroup_peak": {
+            "time_ns": 1793604252050970160,
+            "phase": "setup",
+            "memory_peak_bytes": 483840000,
+            "method": "same memory.peak FD reset at observed log boundary",
+            "anchor": "service-end"
+          },
+          "process_VmHWM_max": {
+            "time_ns": 1793604251583741331,
+            "phase": "setup",
+            "pid": 2360633,
+            "starttime_ticks": "49327777",
+            "name": "cmake",
+            "cmdline": "cmake -G Ninja -DTIZEN=1 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_HOST_TRIPLE=x86_64-tizen-linux-gnu -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-tizen-linux-gnu -DLLVM_TARGET_TRIPLE_ENV=x86_64-tizen-linux-gnu -DCMAKE_ASM_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument -DCMAKE_C_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument -DCMAKE_CXX_FLAGS=  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument -DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -DLLVM_USE_LINKER=lld -DLLVM_ENABLE_LTO=Thin -DCMAKE_RANLIB=/usr/bin/llvm-ranlib -DCMAKE_AR=/usr/bin/llvm-ar -DLLVM_ENABLE_ASSERTIONS=No -DLLVM_ENABLE_RTTI=ON -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64;BPF -DCLANG_ENABLE_ARCMT=OFF -DLLVM_BUILD_LLVM_DYLIB=ON -DCLANG_BUILD_CLANG_DYLIB=ON -DLLVM_LINK_LLVM_DYLIB=ON -DCLANG_LINK_CLANG_DYLIB=ON -DTIZEN_HYBRID_LINK=ON -DBUILD_SHARED_LIBS=OFF -DLLVM_TOOL_LLVM_DRIVER_BUILD=OFF -DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF -DLLVM_BUILD_EXAMPLES=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_BUILD_TESTS=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_ENABLE_DOXYGEN=OFF -DLLVM_BUILD_DOCS=OFF -DLLVM_INCLUDE_DOCS=OFF -DLLVM_OPTIMIZED_TABLEGEN=ON -DCMAKE_INSTALL_PREFIX=/usr -DLLVM_LIBDIR_SUFFIX=64 -DCLANG_RESOURCE_DIR=../lib64/clang/22 -DLLVM_BINUTILS_INCDIR=/usr/include -DLLVM_PARALLEL_COMPILE_JOBS=6 -DLLVM_PARALLEL_LINK_JOBS=2 -DTENSORFLOW_AOT_PATH=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/mlgo_sysroot -DLLVM_MLGO_EXPORT_TF_XLA_RUNTIME=OFF -DLLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/xla_compiled_cpu_function.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/cpu_function_runtime.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/custom_call_status.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/executable_run_options.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o -DLLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.h -DLLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.o -DLLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.h -DLLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.o -DLLVM_BUILD_INSTRUMENTED=IR ../llvm ",
+            "VmHWM_bytes": 318201856,
+            "VmRSS_bytes": 318201856
+          },
+          "root_boundary_disk_max": {
+            "boundary_ns": 1793604221536735693,
+            "phase": "setup",
+            "scan_start_ns": 1793604221537245233,
+            "scan_end_ns": 1793604222582630026,
+            "rc": 0,
+            "stdout": "7023198208\t/\n",
+            "stderr": "",
+            "bytes": 7023198208
+          },
+          "filesystem_available_min": {
+            "time_ns": 1793604251583741331,
+            "phase": "setup",
+            "available_bytes": 242174828544,
+            "device": 2049
+          }
+        }
+      ]
+    },
+    {
+      "stage": "stage-A/prepare",
+      "result": {
+        "rc": 0,
+        "start_ns": 1793604124072156046,
+        "end_ns": 1793604198399740844,
+        "stats": {
+          "memory.peak": "7850110976\n",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\n",
+          "memory.swap.peak": "0\n",
+          "memory.max": "24482979840\n",
+          "memory.swap.max": "0\n",
+          "cpu.max": "1200000 100000\n"
+        }
+      },
+      "cgroup_peak_bytes": 7850110976,
+      "seconds": 74.327584798,
+      "process_VmHWM_max": {
+        "time_ns": 1793604160094648468,
+        "phase": "setup",
+        "pid": 2360157,
+        "starttime_ticks": "49319139",
+        "name": "rpm",
+        "cmdline": "rpm --ignorearch --nodeps -Uh --oldpackage --ignoresize --verbose --nodigest --nosignature .init_b_cache/manifest ",
+        "VmHWM_bytes": 22781952,
+        "VmRSS_bytes": 22781952
+      },
+      "root_boundary_disk_max": {
+        "boundary_ns": 1793604198558905800,
+        "phase": "ended",
+        "scan_start_ns": 1793604198559435194,
+        "scan_end_ns": 1793604211740125605,
+        "rc": 0,
+        "stdout": "7022051328\t/\n",
+        "stderr": "",
+        "bytes": 7022051328
+      },
+      "filesystem_available_min": {
+        "time_ns": 1793604194139141764,
+        "phase": "setup",
+        "available_bytes": 243021787136,
+        "device": 2049
+      },
+      "subphases": [
+        {
+          "phase": "setup",
+          "cgroup_peak": {
+            "time_ns": 1793604198558905800,
+            "phase": "setup",
+            "memory_peak_bytes": 7850110976,
+            "method": "same memory.peak FD reset at observed log boundary",
+            "anchor": "service-end"
+          },
+          "process_VmHWM_max": {
+            "time_ns": 1793604160094648468,
+            "phase": "setup",
+            "pid": 2360157,
+            "starttime_ticks": "49319139",
+            "name": "rpm",
+            "cmdline": "rpm --ignorearch --nodeps -Uh --oldpackage --ignoresize --verbose --nodigest --nosignature .init_b_cache/manifest ",
+            "VmHWM_bytes": 22781952,
+            "VmRSS_bytes": 22781952
+          },
+          "root_boundary_disk_max": "UNKNOWN",
+          "filesystem_available_min": {
+            "time_ns": 1793604194139141764,
+            "phase": "setup",
+            "available_bytes": 243021787136,
+            "device": 2049
+          }
+        }
+      ]
+    }
+  ]
+}

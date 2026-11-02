@@ -1,0 +1,10 @@
+--- original/packaging/llvm.spec
++++ experiment/packaging/llvm.spec
+@@ -339,6 +339,7 @@
+     -DLLVM_INLINER_MODEL_PATH=none \
+     -DLLVM_RAEVICT_MODEL_PATH=none \
+ %endif
++    -DLLVM_PROFDATA_FILE=/home/abuild/pgo-resource/clang.profdata \
+     ../llvm
+ 
+ %if 0%{mlgo_verify_configure_only}
