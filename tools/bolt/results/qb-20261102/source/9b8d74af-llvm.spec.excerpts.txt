@@ -1,0 +1,143 @@
+1: %define keepstatic 1
+2: 
+3: # MLGO AOT support for LLVM MLGO (Ahead-of-Time compilation)
+4: # TODO: switch back to a project_config-controlled macro after MLGO is enabled
+5: # for all required arches.
+6: # %%bcond_with mlgo
+7: %ifarch armv7l aarch64 x86_64
+8: %bcond_without mlgo
+9: %endif
+10: 
+11: %if %{defined _toolchain}
+12: %define _toolchain_override clang
+13: %define llvm_release_build 0
+14: %else
+15: %define llvm_release_build 1
+16: %endif
+17: 
+18: %define llvm_version 22
+19: 
+20: %define sdk_install_prefix /home/owner/share/tmp/sdk_tools/lldb
+21: %define sdk_bin_dir %{sdk_install_prefix}/bin
+22: %define sdk_lib_dir %{sdk_install_prefix}/%{_lib}
+23: 
+24: %if 0%{llvm_release_build}
+25: # Disable debug packages building
+26: %define debug_package %{nil}
+27: %define __debug_install_post %{_rpmconfigdir}/find-debuginfo.sh %{?_find_debuginfo_opts} %{?_find_debuginfo_strip_opts} %{?_find_debuginfo_ko_strip_opts} "%{_builddir}/%{?buildsubdir}"\
+28: 	rm -rf "%{buildroot}/usr/lib/debug"\
+29: 	rm -rf "%{buildroot}/usr/src/debug"
+30: %endif
+
+62: %if 0%{llvm_release_build}
+63: BuildRequires: sed
+64: %endif
+65: BuildRequires: ninja
+66: 
+67: %if %{undefined _toolchain}
+68: %ifarch x86_64
+69: BuildRequires: clang, llvm, libllvm
+70: %{!?_toolchain: %define _toolchain clang}
+71: %endif
+72: %endif
+73: 
+74: 
+75: Requires: libllvm = %{version}-%{release}
+
+176: %endif
+177: %ifarch x86_64
+178: tar -C mlgo_verify_assets -xzf %{SOURCE1004}
+179: %endif
+180: %endif
+181: 
+182: %build
+183: %if 0%{llvm_release_build}
+184: # Not to build debug info
+185: RELCFLAGS=$(echo $CFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+186: export CFLAGS=${RELCFLAGS}
+187: RELCXXFLAGS=$(echo $CXXFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+188: export CXXFLAGS=${RELCXXFLAGS}
+189: RELFFLAGS=$(echo $FFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\)|dwarf-[[:digit:]]\\?* *g')
+190: export FFLAGS=${RELFFLAGS}
+191: %endif
+192: 
+193: cp %{SOURCE1001} .
+194: %{?asan:%gcc_unforce_options}
+195: 
+196: %ifarch armv7l
+197: export QEMU_RESERVED_VA=0x100000000
+198: %endif
+199: 
+200: %ifarch x86_64
+201: # Strip pre-existing optimization flags and remove performance-harming flags, then force -O3 + ThinLTO
+202: OPTFLAGS_CFLAGS=$(echo "$CFLAGS" | sed \
+203:     -e 's/\-O[0-9sz]//g' \
+204:     -e 's/\-Ofast//g' \
+205:     -e 's/\-fstack-protector-strong//g' \
+206:     -e 's/\-fstack-protector-all//g' \
+207:     -e 's/\-fstack-protector//g' \
+208:     -e 's/\-fno-inline-functions//g' \
+209:     -e 's/\-fno-omit-frame-pointer//g' \
+210:     -e 's/\-momit-leaf-frame-pointer//g')
+211: OPTFLAGS_CXXFLAGS=$(echo "$CXXFLAGS" | sed \
+212:     -e 's/\-O[0-9sz]//g' \
+213:     -e 's/\-Ofast//g' \
+214:     -e 's/\-fstack-protector-strong//g' \
+215:     -e 's/\-fstack-protector-all//g' \
+216:     -e 's/\-fstack-protector//g' \
+217:     -e 's/\-fno-inline-functions//g' \
+218:     -e 's/\-fno-omit-frame-pointer//g' \
+219:     -e 's/\-momit-leaf-frame-pointer//g')
+220: export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+221: export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+222: %endif
+
+232: mkdir -p build
+233: cd build
+234: cmake \
+235:     -G Ninja \
+236:     -DTIZEN=1 \
+237: %ifarch x86_64
+238:     -DCMAKE_C_COMPILER=clang \
+239:     -DCMAKE_CXX_COMPILER=clang++ \
+240: %else
+241:     -DCMAKE_C_COMPILER=%__cc \
+242:     -DCMAKE_CXX_COMPILER=%__cxx \
+243: %endif
+244:     -DLLVM_HOST_TRIPLE=%{_host} \
+245:     -DLLVM_DEFAULT_TARGET_TRIPLE=%{_host} \
+246:     -DLLVM_TARGET_TRIPLE_ENV=%{_host} \
+247:     -DCMAKE_ASM_FLAGS="$CFLAGS" \
+248:     -DCMAKE_C_FLAGS="$CFLAGS" \
+249:     -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
+250: %if %{defined _toolchain}
+251:     -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+252:     -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+253:     -DLLVM_USE_LINKER=lld \
+254:     -DLLVM_ENABLE_LTO=Thin \
+255:     -DCMAKE_RANLIB=%{_bindir}/llvm-ranlib \
+256:     -DCMAKE_AR=%{_bindir}/llvm-ar \
+257: %endif
+258:     -DLLVM_ENABLE_ASSERTIONS=No \
+259:     -DLLVM_ENABLE_RTTI=ON \
+260: %ifarch x86_64 i686
+
+425: rm -rf %{buildroot}%{_libdir}/debug/*
+426: rm -rf %{buildroot}/usr/lib/libear/*
+427: rm -rf %{buildroot}/usr/lib/libscanbuild/*
+428: 
+429: %ifarch x86_64
+430: # Run after compilation has finished; these workers do not overlap build jobs.
+431: # Preserve the standard RPM post-processing, including archive strip -g.
+432: rm -rf "%{_builddir}/%{buildsubdir}/build/native-archive-conversion"
+433: python3 %{SOURCE1005} --root "%{buildroot}" \
+434:     --build "%{_builddir}/%{buildsubdir}/build" \
+435:     --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
+436:     --arch x86_64 \
+437:     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+438:     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+439:     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+440:     --jobs 4 --address-space-bytes 4294967296 || exit 1
+441: %endif
+442: 
+443: %post -n clang -p /sbin/ldconfig

@@ -1,0 +1,30 @@
+commit 9b8d74af825d3caab67f8ff7cbc19fcda8a7ad64
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Fri Oct 16 11:24:26 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Mon Nov 2 09:56:39 2026 +0900
+
+    Revert "Revert clang bootstrap + ThinLTO, fall back to GCC"
+    
+    This reverts commit f999bd406c0a70fe8107aa992164fe6945c5d46a.
+    
+    Change-Id: I5779f1689f330ee006bcbda377feeccf15040e85
+
+commit f999bd406c0a70fe8107aa992164fe6945c5d46a
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Fri Oct 16 11:03:12 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Fri Oct 16 11:13:11 2026 +0900
+
+    Revert clang bootstrap + ThinLTO, fall back to GCC
+    
+    The clang bootstrap + ThinLTO optimization (7e4dc62) caused severe build
+    time regression on x86_64 because -fno-inline-functions from project.conf
+    disables all function inlining in clang, unlike GCC.
+    
+    Revert to the original GCC-based build by undoing:
+    - 7e4dc62d8ac0 (optimize llvm performance: clang, -O3, ThinLTO)
+    - cb67996861d0 (remove -fno-inline-functions)
+    - 67619ec8bbba (fix llvm-static-devel with ThinLTO: native archive conversion)
+    
+    Change-Id: Ib6ff9acd34c042b88ba6f74ee7d29950d1107c0d

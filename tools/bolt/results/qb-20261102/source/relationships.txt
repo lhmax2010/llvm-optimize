@@ -1,0 +1,18 @@
+$ git show -s --format=%H %T %P 9b8d74af 67619ec8 f999bd40 3ee2d847
+9b8d74af825d3caab67f8ff7cbc19fcda8a7ad64 7b49745738b5512fbbed890e67e6a3861e1e39a5 f999bd406c0a70fe8107aa992164fe6945c5d46a
+67619ec8bbbac7238a6cfc33a481ccfbcd12206f 7b49745738b5512fbbed890e67e6a3861e1e39a5 cb67996861d070d68fec2b4c623eed7d20ba2e23
+f999bd406c0a70fe8107aa992164fe6945c5d46a 164670a4ed101c881e1c3cd6f40d8c7667997417 67619ec8bbbac7238a6cfc33a481ccfbcd12206f
+3ee2d84719e4bd358c0b2366161f70f2eb788313 43d60f7523439fa0ccf4a61f668dd60622554606 6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2
+
+$ git log -8 --format=%H %P %s 67619ec8
+67619ec8bbbac7238a6cfc33a481ccfbcd12206f cb67996861d070d68fec2b4c623eed7d20ba2e23 packaging: fix llvm-static-devel with ThinLTO
+cb67996861d070d68fec2b4c623eed7d20ba2e23 7e4dc62d8ac01f90488a0cc8e0f34f8373228c84 remove '-fno-inline-functions' compile options
+7e4dc62d8ac01f90488a0cc8e0f34f8373228c84 2d23367d74afbf2bb1e9e4013fce072b3a154109 optimize llvm performance 1. Use -O3 2. Using thin-lto 3. Static link libllvm
+2d23367d74afbf2bb1e9e4013fce072b3a154109 6771dbc48b7e3db2ec53919a8eebd3514374137b packaging: select Clang explicitly for libc++ runtimes
+6771dbc48b7e3db2ec53919a8eebd3514374137b 8dfebafe1a477b3dcc678ee4cb18a3a4306d5a7c libcxx: backport EH ABI forced-unwind handling
+8dfebafe1a477b3dcc678ee4cb18a3a4306d5a7c fd7a4929c0e424d564cdd1f0c55af9153dcea321 libcxxabi: declare __gnu_unwind_frame in cxa_personality (#189787)
+fd7a4929c0e424d564cdd1f0c55af9153dcea321 9ad40bd946a75b44d8e05de8ba3263a5ce2ed885 Merge MLGO AOT compilation support and optimization improvements
+9ad40bd946a75b44d8e05de8ba3263a5ce2ed885 9576175b59fa577c940eff1712a59b129ae03f03 clang: add support for LLVM gold plugin in case of accelerated environment
+
+$ git diff --name-status 67619ec8 9b8d74af
+

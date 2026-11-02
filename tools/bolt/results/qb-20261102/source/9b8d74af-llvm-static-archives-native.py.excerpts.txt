@@ -1,0 +1,62 @@
+189: def classify_options(argv, arch='x86_64'):
+190:     """Certified policy, not arbitrary compiler-option replay; consume operands."""
+191:     if arch not in CERTIFIED_OPTIMIZATION:
+192:         raise ValueError('uncertified architecture: '+arch)
+193:     rows, optimizations, dwarfs, contractions = [], [], [], []
+194:     switches = {key: [] for key in ('function-sections', 'data-sections',
+195:                                   'unique-section-names', 'addrsig')}
+196:     operand_options = {'-D', '-I', '-isystem', '-resource-dir', '-o', '-MT', '-MF', '-x'}
+197:     exact_ir = {'-fomit-frame-pointer', '-fno-omit-frame-pointer', '-fexceptions',
+198:                 '-fno-exceptions', '-fasynchronous-unwind-tables', '-funwind-tables',
+199:                 '-fno-asynchronous-unwind-tables', '-fno-unwind-tables', '-fno-common',
+200:                 '-ftrapping-math', '-m64', '-fPIC', '-fPIE', '-fpic', '-fpie',
+201:                 '-fno-pic', '-fno-pie', '-fno-semantic-interposition'}
+202:     exact_ir.update({'-fvisibility-inlines-hidden', '-fno-visibility-inlines-hidden'})
+203:     index = 0
+
+238:               or token.startswith('-std=')):
+239:             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
+240:         elif token == '-flto=thin':
+241:             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+242:         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
+243:                                '-fdiagnostics-color=')) or token in
+244:               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+245:                '-pedantic', '-pipe', '-c', '-MD', '--driver-mode=g++')):
+246:             category, reason = 'irrelevant', 'diagnostics, preprocessing or driver action'
+247:         elif not token.startswith('-') and re.search(r'\.(?:c|cc|cpp|cxx|C|ii|i|bc|ll|o|obj|s|S)$', token):
+248:             category, reason = 'irrelevant', 'input/output path'
+249:         if category is None:
+250:             raise ValueError('unclassified original command token: '+token)
+251:         rows.append(dict(index=index, token=token, category=category, reason=reason))
+252:         index += 1
+253:     if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
+254:         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
+255:     if not dwarfs or dwarfs[-1] != '-gdwarf-4':
+256:         raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
+257:     effective = {}
+258:     for key, values in switches.items():
+
+315:     if 'Code Model' in levels:
+316:         raise ValueError('explicit code model requires separate certification')
+317:     if command_id not in metadata:
+318:         raise ValueError('missing original command: backend policy cannot be certified')
+319:     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+320:         lambda match: chr(int(match[1], 16)), metadata[command_id]))
+321:     policy = classify_options(recorded_command, arch)
+322:     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+323:              *BACKEND_FLAGS, '-ffp-contract='+policy['fp_contract'], '-c']
+324:     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
+325:               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+
+639:                     relocs = pic_relocations(target.read_bytes())
+640:                     atomic_json(source.parent/'relocations.json', relocs)
+641:                     return dict(ordinal=member['ordinal'], name=member['name'], preserved=True,
+642:                                 relocation_check=relocs)
+643:                 text_ir = source.with_suffix('.ll')
+644:                 with text_ir.open('wb') as out:
+645:                     command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
+646:                 with text_ir.open() as lines:
+647:                     settings = ir_settings(lines, arch=arch)
+648:                 atomic_json(source.parent/'ir-settings.json', settings)
+649:                 text_ir.unlink()
+650:                 record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')

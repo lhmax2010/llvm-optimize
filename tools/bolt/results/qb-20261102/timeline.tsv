@@ -1,0 +1,200 @@
+build	arch	line	seconds	raw
+1215143	x86_64	321	59	[   59s] Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.vv1bpm
+1215143	x86_64	388	75	[   75s] Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.eQgFRp
+1215143	x86_64	3008	100	[  100s] + ninja -d keeprsp -j 6
+1215143	x86_64	10731	4041	[ 4041s] Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.iffLCT
+1215143	x86_64	16310	4071	[ 4071s] BOLT_DISK_REPORT {"stage": "begin", "time_ns": 1793603336865373346, "recorded": true, "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build", "device": 66305, "free_bytes": 311981395968, "build": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build", "work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "root": "/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-4.1.x86_64", "scopes": ["clang-bolt/**", "tools/bolt/**", "lib64/libLLVMBOLT*.a", "bin/llvm-bolt", "ThinLTO cache positive allocation delta"], "owned_paths": [{"category": "work", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "allocated_bytes": 0, "logical_file_bytes": 0}, {"category": "tool_objects", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt", "allocated_bytes": 0, "logical_file_bytes": 0}, {"category": "tool_executable", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt", "allocated_bytes": 0, "logical_file_bytes": 0}], "owned_filesystem_bytes": {}, "used_bytes": 0, "cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache", "cache_delta_known": false, "cache_delta_allocated_bytes": 0, "cache_delta_logical_bytes": 0, "cache_net_allocation_delta_bytes": null, "filesystem_device": 66305}
+1215143	x86_64	16318	4071	[ 4071s] + echo BOLT_PROC_OK
+1215143	x86_64	16319	4071	[ 4071s] BOLT_PROC_OK
+1215143	x86_64	16325	4095	[ 4095s] + bolt_step manifest-copy cp install_manifest.txt /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-manifest-before.txt
+1215143	x86_64	16328	4095	[ 4095s] + bolt_checked manifest-copy /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/manifest-copy.log python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step manifest-copy /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/manifest-copy.log -- cp install_manifest.txt /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-manifest-before.txt
+1215143	x86_64	16336	4095	[ 4095s] + bolt_step ordinary-copy cp -p bin/clang-22 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22
+1215143	x86_64	16339	4095	[ 4095s] + bolt_checked ordinary-copy /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-copy.log python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step ordinary-copy /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-copy.log -- cp -p bin/clang-22 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22
+1215143	x86_64	16347	4096	[ 4096s] + bolt_checked link-command /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/link-command.log python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step link-command /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/link-command.log --output /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/link.original -- ninja -t commands -s bin/clang-22
+1215143	x86_64	16357	4099	[ 4099s] + bolt_step configure cmake -S ../llvm -B . '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
+1215143	x86_64	16360	4099	[ 4099s] + bolt_checked configure /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/configure.log python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step configure /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/configure.log -- cmake -S ../llvm -B . '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
+1215143	x86_64	22197	4109	[ 4109s] + bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
+1215143	x86_64	22200	4109	[ 4109s] + bolt_checked dry-run-begin /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/dry-run-begin.log python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step dry-run-begin /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/dry-run-begin.log -- /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
+1215143	x86_64	22204	4109	[ 4109s] ++ python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step dry-run-begin /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/dry-run-begin.log -- /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
+1215143	x86_64	22205	4109	[ 4109s] + bolt_output=BOLT_TOOL_DRY_RUN_BEGIN
+1215143	x86_64	22206	4109	[ 4109s] + printf '%s\n' BOLT_TOOL_DRY_RUN_BEGIN
+1215143	x86_64	22207	4109	[ 4109s] BOLT_TOOL_DRY_RUN_BEGIN
+1215143	x86_64	22210	4109	[ 4109s] + bolt_checked tool-dry-run /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-dry-run.log python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step tool-dry-run /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-dry-run.log --output /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-dry-run.txt -- ninja -n llvm-bolt
+1215143	x86_64	22554	4110	[ 4110s] + bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
+1215143	x86_64	22557	4110	[ 4110s] + bolt_checked dry-run-end /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/dry-run-end.log python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step dry-run-end /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/dry-run-end.log -- /bin/echo BOLT_TOOL_DRY_RUN_END
+1215143	x86_64	22561	4110	[ 4110s] ++ python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step dry-run-end /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/dry-run-end.log -- /bin/echo BOLT_TOOL_DRY_RUN_END
+1215143	x86_64	22562	4110	[ 4110s] + bolt_output=BOLT_TOOL_DRY_RUN_END
+1215143	x86_64	22563	4110	[ 4110s] + printf '%s\n' BOLT_TOOL_DRY_RUN_END
+1215143	x86_64	22564	4110	[ 4110s] BOLT_TOOL_DRY_RUN_END
+1215143	x86_64	22572	4111	[ 4111s] + bolt_checked tool-build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-build.txt python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step tool-build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-build.txt --success-marker BOLT_NINJA_EXIT_0 -- ninja -j 6 llvm-bolt
+1215143	x86_64	22576	4111	[ 4111s] ++ python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step tool-build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-build.txt --success-marker BOLT_NINJA_EXIT_0 -- ninja -j 6 llvm-bolt
+1215143	x86_64	22690	4267	[ 4267s] BOLT_NINJA_EXIT_0'
+1215143	x86_64	22804	4267	[ 4267s] BOLT_NINJA_EXIT_0'
+1215143	x86_64	22918	4267	[ 4267s] BOLT_NINJA_EXIT_0
+1215143	x86_64	23520	4268	[ 4268s] BOLT_DISK_REPORT {"stage": "tool-built", "time_ns": 1793603534555926650, "recorded": true, "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "device": 66305, "free_bytes": 279024074752, "build": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build", "work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "root": "/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-4.1.x86_64", "scopes": ["clang-bolt/**", "tools/bolt/**", "lib64/libLLVMBOLT*.a", "bin/llvm-bolt", "ThinLTO cache positive allocation delta"], "owned_paths": [{"category": "work", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "allocated_bytes": 1995583488, "logical_file_bytes": 1995505644}, {"category": "tool_objects", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt", "allocated_bytes": 146677760, "logical_file_bytes": 146220305}, {"category": "tool_executable", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt", "allocated_bytes": 566865920, "logical_file_bytes": 566862784}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTCore.a", "allocated_bytes": 32727040, "logical_file_bytes": 32726484}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTPasses.a", "allocated_bytes": 58335232, "logical_file_bytes": 58331192}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTProfile.a", "allocated_bytes": 16060416, "logical_file_bytes": 16059382}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRewrite.a", "allocated_bytes": 33910784, "logical_file_bytes": 33908010}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRuntimeLibs.a", "allocated_bytes": 1105920, "logical_file_bytes": 1104318}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTTargetX86.a", "allocated_bytes": 3297280, "logical_file_bytes": 3294190}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTUtils.a", "allocated_bytes": 1228800, "logical_file_bytes": 1225252}], "owned_filesystem_bytes": {"66305": 4088827904}, "used_bytes": 4088827904, "cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache", "cache_delta_known": true, "cache_delta_allocated_bytes": 1233035264, "cache_delta_logical_bytes": 1231602440, "cache_net_allocation_delta_bytes": 1233035264, "filesystem_device": 66305}
+1215143	x86_64	23522	4447	[ 4447s] BOLT_REAL_GATE_PASS {"work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/prestrip-real", "cases": 8, "seconds": 19.832660672000202}
+1215143	x86_64	23524	4460	[ 4460s] BOLT_REAL_GATE_PASS {"work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/preinstall-real", "cases": 8, "seconds": 5.368714199000351}
+1215143	x86_64	23526	4460	[ 4460s] + echo BOLT_PIPELINE_PASS
+1215143	x86_64	23527	4460	[ 4460s] BOLT_PIPELINE_PASS
+1215143	x86_64	23529	4461	[ 4461s] BOLT_DISK_REPORT {"stage": "pipeline", "time_ns": 1793603727326327474, "recorded": true, "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "device": 66305, "free_bytes": 276799442944, "build": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build", "work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "root": "/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-4.1.x86_64", "scopes": ["clang-bolt/**", "tools/bolt/**", "lib64/libLLVMBOLT*.a", "bin/llvm-bolt", "ThinLTO cache positive allocation delta"], "owned_paths": [{"category": "work", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "allocated_bytes": 2899755008, "logical_file_bytes": 2899920516}, {"category": "tool_objects", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt", "allocated_bytes": 146677760, "logical_file_bytes": 146220305}, {"category": "tool_executable", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt", "allocated_bytes": 566870016, "logical_file_bytes": 566862784}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTCore.a", "allocated_bytes": 32727040, "logical_file_bytes": 32726484}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTPasses.a", "allocated_bytes": 58335232, "logical_file_bytes": 58331192}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTProfile.a", "allocated_bytes": 16060416, "logical_file_bytes": 16059382}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRewrite.a", "allocated_bytes": 33910784, "logical_file_bytes": 33908010}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRuntimeLibs.a", "allocated_bytes": 1105920, "logical_file_bytes": 1104318}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTTargetX86.a", "allocated_bytes": 3297280, "logical_file_bytes": 3294190}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTUtils.a", "allocated_bytes": 1228800, "logical_file_bytes": 1225252}], "owned_filesystem_bytes": {"66305": 4993003520}, "used_bytes": 4993003520, "cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache", "cache_delta_known": true, "cache_delta_allocated_bytes": 1233035264, "cache_delta_logical_bytes": 1231602440, "cache_net_allocation_delta_bytes": 1233035264, "filesystem_device": 66305}
+1215143	x86_64	23532	4528	[ 4528s] + echo BOLT_COMPARE_ROOT_PASS
+1215143	x86_64	23533	4528	[ 4528s] BOLT_COMPARE_ROOT_PASS
+1215143	x86_64	23535	4529	[ 4529s] BOLT_CACHE_RELEASE removed path=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache files=13162 allocated_bytes=21630160896 seconds=0.8987349100007123
+1215143	x86_64	23555	4529	[ 4529s] NATIVE_ARCHIVES_BEGIN 1793603795.3496177
+1215143	x86_64	24006	12327	[12327s] NATIVE_ARCHIVES_END 1793611593.8946126 PASS 225
+1215143	x86_64	24009	12344	[12344s] + /usr/lib/rpm/find-debuginfo.sh -j12 --build-id-seed 22.1.8-4.1 --unique-debug-src-base llvm-22.1.8-4.1.x86_64 -S debugsourcefiles.list /home/abuild/rpmbuild/BUILD/llvm-22.1.8
+1215143	x86_64	24603	13280	[13280s] BOLT_REAL_GATE_PASS {"work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/post-gate/real", "cases": 8, "seconds": 134.9726624619998}
+1215143	x86_64	24605	13280	[13280s] + echo BOLT_POST_GATE_PASS
+1215143	x86_64	24606	13280	[13280s] BOLT_POST_GATE_PASS
+1215143	x86_64	24608	13280	[13280s] BOLT_DISK_REPORT {"stage": "post", "time_ns": 1793612546637459562, "recorded": true, "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "device": 66305, "free_bytes": 329365827584, "build": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build", "work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "root": "/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-4.1.x86_64", "scopes": ["clang-bolt/**", "tools/bolt/**", "lib64/libLLVMBOLT*.a", "bin/llvm-bolt", "ThinLTO cache positive allocation delta"], "owned_paths": [{"category": "work", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "allocated_bytes": 3054448640, "logical_file_bytes": 3054464661}, {"category": "tool_objects", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt", "allocated_bytes": 146677760, "logical_file_bytes": 146220305}, {"category": "tool_executable", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt", "allocated_bytes": 566870016, "logical_file_bytes": 566862784}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTCore.a", "allocated_bytes": 32727040, "logical_file_bytes": 32726484}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTPasses.a", "allocated_bytes": 58335232, "logical_file_bytes": 58331192}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTProfile.a", "allocated_bytes": 16060416, "logical_file_bytes": 16059382}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRewrite.a", "allocated_bytes": 33910784, "logical_file_bytes": 33908010}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRuntimeLibs.a", "allocated_bytes": 1105920, "logical_file_bytes": 1104318}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTTargetX86.a", "allocated_bytes": 3297280, "logical_file_bytes": 3294190}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTUtils.a", "allocated_bytes": 1228800, "logical_file_bytes": 1225252}], "owned_filesystem_bytes": {"66305": 3914661888}, "used_bytes": 3914661888, "cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache", "cache_delta_known": true, "cache_delta_allocated_bytes": 0, "cache_delta_logical_bytes": 0, "cache_net_allocation_delta_bytes": -20397125632, "filesystem_device": 66305}
+1215143	x86_64	24609	13283	[13283s] Processing files: llvm-22.1.8-4.1.x86_64
+1215143	x86_64	24700	13285	[13285s] Processing files: llvm-debugsource-22.1.8-4.1.x86_64
+1215143	x86_64	24706	13351	[13351s] Processing files: llvm-devel-22.1.8-4.1.x86_64
+1215143	x86_64	24719	13364	[13364s] Processing files: llvm-static-devel-22.1.8-4.1.x86_64
+1215143	x86_64	24859	13383	[13383s] Processing files: llvm-debuginfo-22.1.8-4.1.x86_64
+1215143	x86_64	24948	13394	[13394s] Processing files: llvm-devel-debuginfo-22.1.8-4.1.x86_64
+1215143	x86_64	25055	13453	[13453s] Wrote: /home/abuild/rpmbuild/SRPMS/llvm-22.1.8-4.1.src.rpm
+1215143	x86_64	25056	13468	[13468s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/llvm-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25057	13538	[13538s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/llvm-debugsource-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25058	13551	[13551s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/llvm-devel-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25059	13570	[13570s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/llvm-static-devel-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25060	13582	[13582s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/libllvm-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25061	13599	[13599s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/clang-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25062	13607	[13607s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/clang-devel-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25063	13615	[13615s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/lldb-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25064	13623	[13623s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/lldb-devel-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25065	13628	[13628s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/compiler-rt-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25066	13629	[13629s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/libomp-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25067	13629	[13629s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/libomp-devel-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25068	13629	[13629s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/python-clang-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25069	13673	[13673s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/llvm-debuginfo-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25070	13674	[13674s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/llvm-devel-debuginfo-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25071	13702	[13702s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/libllvm-debuginfo-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25072	13751	[13751s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/clang-debuginfo-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25073	13757	[13757s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/clang-devel-debuginfo-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25074	13772	[13772s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/lldb-debuginfo-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25075	13786	[13786s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/lldb-devel-debuginfo-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25076	13788	[13788s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/compiler-rt-debuginfo-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25077	13790	[13790s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/libomp-debuginfo-22.1.8-4.1.x86_64.rpm
+1215143	x86_64	25088	13792	[13792s] 3e772eda34e2 finished "build llvm.spec" at Mon Nov  2 09:50:58 UTC 2026.
+1215143	armv7l	345	143	[  143s] Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.hH5Yl8
+1215143	armv7l	412	161	[  161s] Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.xYHShq
+1215143	armv7l	2236	253	[  253s] + ninja -j 6
+1215143	armv7l	9490	3679	[ 3679s] Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.ntC3jE
+1215143	armv7l	15007	3707	[ 3707s] + /usr/lib/rpm/find-debuginfo.sh -j12 --build-id-seed 22.1.8-4.1 --unique-debug-src-base llvm-22.1.8-4.1.arm -S debugsourcefiles.list /home/abuild/rpmbuild/BUILD/llvm-22.1.8
+1215143	armv7l	19250	3841	[ 3841s] Processing files: llvm-22.1.8-4.1.armv7l
+1215143	armv7l	19341	3843	[ 3843s] Processing files: llvm-debugsource-22.1.8-4.1.armv7l
+1215143	armv7l	19347	3862	[ 3862s] Processing files: llvm-devel-22.1.8-4.1.armv7l
+1215143	armv7l	19359	3867	[ 3867s] Processing files: llvm-static-devel-22.1.8-4.1.armv7l
+1215143	armv7l	19491	3878	[ 3878s] Processing files: llvm-debuginfo-22.1.8-4.1.armv7l
+1215143	armv7l	19580	3879	[ 3879s] Processing files: llvm-devel-debuginfo-22.1.8-4.1.armv7l
+1215143	armv7l	19679	3903	[ 3903s] Wrote: /home/abuild/rpmbuild/SRPMS/llvm-22.1.8-4.1.src.rpm
+1215143	armv7l	19680	3910	[ 3910s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/llvm-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19681	3935	[ 3935s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/llvm-debugsource-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19682	3942	[ 3942s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/llvm-devel-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19683	3995	[ 3995s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/llvm-static-devel-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19684	4007	[ 4007s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/libllvm-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19685	4019	[ 4019s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/clang-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19686	4026	[ 4026s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/clang-devel-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19687	4030	[ 4030s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/lldb-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19688	4034	[ 4034s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/lldb-devel-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19689	4038	[ 4038s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/compiler-rt-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19690	4039	[ 4039s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/libomp-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19691	4039	[ 4039s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/libomp-devel-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19692	4039	[ 4039s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/python-clang-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19693	4050	[ 4050s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/llvm-debuginfo-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19694	4051	[ 4051s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/llvm-devel-debuginfo-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19695	4081	[ 4081s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/libllvm-debuginfo-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19696	4104	[ 4104s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/clang-debuginfo-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19697	4110	[ 4110s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/clang-devel-debuginfo-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19698	4120	[ 4120s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/lldb-debuginfo-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19699	4130	[ 4130s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/lldb-devel-debuginfo-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19700	4131	[ 4131s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/compiler-rt-debuginfo-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19701	4132	[ 4132s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/libomp-debuginfo-22.1.8-4.1.armv7l.rpm
+1215143	armv7l	19712	4134	[ 4134s] 3e772eda34e2 finished "build llvm.spec" at Mon Nov  2 07:10:00 UTC 2026.
+1215143	aarch64	344	144	[  144s] Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.3iWlI8
+1215143	aarch64	411	165	[  165s] Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.sc9rKb
+1215143	aarch64	2671	252	[  252s] + ninja -j 6
+1215143	aarch64	10314	4192	[ 4192s] Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.YuYqAn
+1215143	aarch64	15871	4285	[ 4285s] + /usr/lib/rpm/find-debuginfo.sh -j12 --build-id-seed 22.1.8-4.1 --unique-debug-src-base llvm-22.1.8-4.1.aarch64 -S debugsourcefiles.list /home/abuild/rpmbuild/BUILD/llvm-22.1.8
+1215143	aarch64	20150	4579	[ 4579s] Processing files: llvm-22.1.8-4.1.aarch64
+1215143	aarch64	20241	4579	[ 4579s] Processing files: llvm-debugsource-22.1.8-4.1.aarch64
+1215143	aarch64	20247	4588	[ 4588s] Processing files: llvm-devel-22.1.8-4.1.aarch64
+1215143	aarch64	20260	4590	[ 4590s] Processing files: llvm-static-devel-22.1.8-4.1.aarch64
+1215143	aarch64	20396	4598	[ 4598s] Processing files: llvm-debuginfo-22.1.8-4.1.aarch64
+1215143	aarch64	20485	4601	[ 4601s] Processing files: llvm-devel-debuginfo-22.1.8-4.1.aarch64
+1215143	aarch64	20589	4623	[ 4623s] Wrote: /home/abuild/rpmbuild/SRPMS/llvm-22.1.8-4.1.src.rpm
+1215143	aarch64	20590	4633	[ 4633s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/llvm-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20591	4643	[ 4643s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/llvm-debugsource-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20592	4649	[ 4649s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/llvm-devel-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20593	4695	[ 4695s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/llvm-static-devel-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20594	4706	[ 4706s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/libllvm-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20595	4713	[ 4713s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/clang-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20596	4717	[ 4717s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/clang-devel-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20597	4724	[ 4724s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/lldb-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20598	4732	[ 4732s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/lldb-devel-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20599	4736	[ 4736s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/compiler-rt-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20600	4736	[ 4736s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/libomp-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20601	4736	[ 4736s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/libomp-devel-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20602	4736	[ 4736s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/python-clang-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20603	4748	[ 4748s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/llvm-debuginfo-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20604	4749	[ 4749s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/llvm-devel-debuginfo-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20605	4761	[ 4761s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/libllvm-debuginfo-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20606	4784	[ 4784s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/clang-debuginfo-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20607	4789	[ 4789s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/clang-devel-debuginfo-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20608	4799	[ 4799s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/lldb-debuginfo-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20609	4808	[ 4808s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/lldb-devel-debuginfo-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20610	4810	[ 4810s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/compiler-rt-debuginfo-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20611	4811	[ 4811s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/libomp-debuginfo-22.1.8-4.1.aarch64.rpm
+1215143	aarch64	20622	4814	[ 4814s] 3e772eda34e2 finished "build llvm.spec" at Mon Nov  2 07:21:21 UTC 2026.
+1214821	x86_64	319	59	[   59s] Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.SjfEC9
+1214821	x86_64	377	72	[   72s] Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.APp5zY
+1214821	x86_64	3006	97	[   97s] + ninja -j 6
+1214821	x86_64	10730	4160	[ 4160s] Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.T2S3cq
+1214821	x86_64	16312	4163	[ 4163s] NATIVE_ARCHIVES_BEGIN 1793600674.3412266
+1214821	x86_64	16342	4166	[ 4166s] ValueError: unclassified original command token: -feliminate-unused-debug-types
+1214821	x86_64	16350	4166	[ 4166s] 4d457d78d534 failed "build llvm.spec" at Mon Nov  2 06:24:37 UTC 2026.
+1214821	armv7l	331	31	[   31s] Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.9AsliN
+1214821	armv7l	389	53	[   53s] Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.W7SIn2
+1214821	armv7l	2207	145	[  145s] + ninja -j 6
+1214821	armv7l	57389	4922	[ 4922s] Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.E9DuV7
+1214821	armv7l	62900	4925	[ 4925s] + /usr/lib/rpm/find-debuginfo.sh /home/abuild/rpmbuild/BUILD/llvm-22.1.8
+1214821	armv7l	63110	4997	[ 4997s] Processing files: llvm-22.1.8-5.1.armv7l
+1214821	armv7l	63119	4999	[ 4999s] Processing files: llvm-devel-22.1.8-5.1.armv7l
+1214821	armv7l	63128	5001	[ 5001s] Processing files: llvm-static-devel-22.1.8-5.1.armv7l
+1214821	armv7l	63222	5015	[ 5015s] Wrote: /home/abuild/rpmbuild/SRPMS/llvm-22.1.8-5.1.src.rpm
+1214821	armv7l	63223	5029	[ 5029s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/llvm-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63224	5039	[ 5039s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/llvm-devel-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63225	5048	[ 5048s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/llvm-static-devel-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63226	5058	[ 5058s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/libllvm-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63227	5071	[ 5071s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/clang-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63228	5076	[ 5076s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/clang-devel-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63229	5086	[ 5086s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/lldb-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63230	5096	[ 5096s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/lldb-devel-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63231	5104	[ 5104s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/compiler-rt-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63232	5104	[ 5104s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/libomp-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63233	5104	[ 5104s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/libomp-devel-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63234	5104	[ 5104s] Wrote: /home/abuild/rpmbuild/RPMS/armv7l/python-clang-22.1.8-5.1.armv7l.rpm
+1214821	armv7l	63245	5105	[ 5105s] 4d457d78d534 finished "build llvm.spec" at Mon Nov  2 02:34:27 UTC 2026.
+1214821	aarch64	331	35	[   35s] Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.d6TyfR
+1214821	aarch64	389	60	[   60s] Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.5q3KuJ
+1214821	aarch64	2641	147	[  147s] + ninja -j 6
+1214821	aarch64	15136	5718	[ 5718s] Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.KTawSK
+1214821	aarch64	20687	5722	[ 5722s] + /usr/lib/rpm/find-debuginfo.sh /home/abuild/rpmbuild/BUILD/llvm-22.1.8
+1214821	aarch64	20933	5797	[ 5797s] Processing files: llvm-22.1.8-5.1.aarch64
+1214821	aarch64	20942	5800	[ 5800s] Processing files: llvm-devel-22.1.8-5.1.aarch64
+1214821	aarch64	20951	5803	[ 5803s] Processing files: llvm-static-devel-22.1.8-5.1.aarch64
+1214821	aarch64	21045	5819	[ 5819s] Wrote: /home/abuild/rpmbuild/SRPMS/llvm-22.1.8-5.1.src.rpm
+1214821	aarch64	21046	5846	[ 5846s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/llvm-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21047	5858	[ 5858s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/llvm-devel-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21048	5871	[ 5871s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/llvm-static-devel-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21049	5882	[ 5882s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/libllvm-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21050	5901	[ 5901s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/clang-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21051	5905	[ 5905s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/clang-devel-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21052	5917	[ 5917s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/lldb-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21053	5928	[ 5928s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/lldb-devel-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21054	5938	[ 5938s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/compiler-rt-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21055	5938	[ 5938s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/libomp-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21056	5938	[ 5938s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/libomp-devel-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21057	5938	[ 5938s] Wrote: /home/abuild/rpmbuild/RPMS/aarch64/python-clang-22.1.8-5.1.aarch64.rpm
+1214821	aarch64	21068	5940	[ 5940s] 4d457d78d534 finished "build llvm.spec" at Mon Nov  2 02:48:22 UTC 2026.

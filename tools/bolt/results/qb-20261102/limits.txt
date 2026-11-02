@@ -1,0 +1,8 @@
+QB overview A selects f308fe08, not 3ee2d847; manifest and RPM VCS agree.
+get_build_conf_text logs a reference URL, not the downloaded file hash or final worker build.conf. Fixed-snapshot hashes in this report are repository evidence, not a claimed worker-file SHA.
+Direct build_profiling/gbs_reports URLs on the child returned the overview, not a profiling table.
+The first guessed debug/x86_64/ directory was HTTP404: the actual debug RPMs are directly in debug/.
+The log-advertised summary.xml public URL returned HTTP404; failure enumeration uses full child log and public failed-directory listings.
+RPMs are retained locally under temp/qb-20261102/rpms; repository contains URL/size/SHA and query/extraction evidence, not 396 MB of duplicate binary RPMs.
+SRPM VCS queries use HTTP Range bytes=0-1048575; SHA applies only to the header prefix, not whole SRPM.
+Toolchain latest differs from reference: latest 20261030.120529 has LLVM VCS f999bd40; reference 20261013.024319 has cb679968. Neither meets the exact 67619ec8 archive-comparison condition. latest/builddata/build.xml returned 404; actual metadata is latest/build.xml.

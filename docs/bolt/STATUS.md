@@ -715,3 +715,13 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - BOLT 新提交 `5aff6c0c3ab663872cf997a13bb9242bac474092`，tree `b4b7d4e1913ea26ef75638147831b7abed9fe51f`；父 hybrid `38477c9b6e1401e5e1fe01fafa282ab92cf53887` 未变；Change-Id、署名不变。相对首轮只改 strip_layout 实现及对应说明；spec/profile/OPTIONS/白名单不变。
 - 新提交 GBS export 和 Tizen RPM 五项解析 PASS，OFF 两模式差异仍只有首轮已说明的 Source/空行与 hybrid 断言。review-20261103 的补丁、全文文件、blob/ls-tree、README 和 SHA256SUMS 已刷新，两份补丁重放得到相同 tree。轻量门禁闭合，不表示 release/full-build/QB 等发布前验收完成；精确67619ec8旧RPM缺口仍如实保留。
 - 本轮没有完整构建、没有推送 Gerrit/sandbox；PGO 相关目录保持不动。报告最新结论见 [48 §20](48_review_fixes.md#20-用户裁决后仅归一化三个节表定位字段第-7-项闭合)。
+
+
+## 2026-11-02：QB 1215143 / 1214821 只读调查（49号）
+
+- 1215143三架构均成功，但概览、RBS manifest、clang与debuginfo RPM及SRPM VCS一致指向 **f308fe08**，不是任务预期的3ee2d847。x86为debug模式，项目初始-Os但spec最终-O3；BOLT匹配N23592/M144032/S0/U1/Q383，R=0.004238545331242318%，tool113任务及全部既有门禁通过。begin→compare-root457s，最长输出间隔301s在Source1005归档转换。
+- QB clang为152532296B、SHA8c2429d8…，精确等于full-20261030加debuglink前的文件；无.gnu_debuglink，clang-debuginfo无clang-22.debug，CRC不适用。**debuglink版本的QB验证仍未由这次成功闭合**，43号本地安装实测结论不受影响。
+- 1214821为Tizen-Base-Dev；仅x86 LLVM在%install的Source1005失败，原文`ValueError: unclassified original command token: -feliminate-unused-debug-types`。普通7634项编译链接已结束；x86实际Clang22.1.8，ARM两架构GNU14.2.0且成功。根因是GCC项目flags与转换器认证策略不兼容，非BOLT/hybrid或编译器缺失。
+- 9b8d74af父f999bd40，tree精确等于67619ec8，diff文件0；含356627静态库转换，不含hybrid/BOLT。当前远端tizen_base为f999bd40。固定快照build.conf SHA：Toolchain e5187fd7…、Base-Dev 8ace286a…；QB未打印worker最终配置SHA/project_config拼接过程，不能冒充已确认运行时整文件相同。
+- C条件核对：Toolchain latest=20261030.120529，SRPM VCS f999bd40；reference=20261013.024319，SRPM VCS cb679968；均非67619ec8，按要求不下载static-devel、不作归档等价比较。
+- 报告 [49_qb_1215143_1214821.md](49_qb_1215143_1214821.md)，证据 tools/bolt/results/qb-20261102。修复候选仅写建议，没有改源码/spec、运行构建、推Gerrit/sandbox或操作QB；PGO两处保护目录未触碰。
