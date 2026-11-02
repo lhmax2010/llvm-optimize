@@ -769,3 +769,130 @@ C内找到的rpmpopt配置为 `usr/lib/rpm/rpmpopt-4.14.1`。10条exec的逐行�
 本地新证据：`D/evidence/install-test-20261102-resume/`；公开副本：[install-test-20261102-resume](../../tools/bolt/results/debuglink-20261028/install-test-20261102-resume/)。manifest记录每个公开文件来源、大小、SHA；152MB的只读提取clang保留在本地，仅发布其元数据，不重复上传二进制。43号前文不改、STATUS同步；本轮只推GitHub bolt-v4，没有修改源码/spec/helper/启动脚本，没有Gerrit/sandbox或QB操作。
 
 总结论：**有问题，rpmdb已补齐；完整预检被缺失的rpmsign/rpmkeys/rpmspec阻断，尚未进入认证和装包。**
+
+## 12. 安装实测续跑（二）（2026-11-02）
+
+**结论：有问题，完整预检已全部通过，但本次单次图形认证失败，root脚本未启动。** 指定的3个RPM工具和4个缺失动态库均已从本轮构建根补入并核对SHA；12个程序及10条popt转交项全部通过。按照一次认证、任何失败即停的要求，没有再次弹窗、改用其他提权或重跑；装包、LLDB和符号化仍未执行，第1–4项未重做。
+
+### 12.1 补齐内容与来源
+
+所有新增文件均由普通用户从 `D/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0` 复制到 C；复制前确认3个源程序存在，不从其他位置替代。已有C文件不覆盖，新文件以独占创建方式写入。下表来源为构建根内解析符号链接后的实际文件，目标为C内位置；每行来源与副本SHA相同。
+
+| 构建根内来源 | C内新增路径 | 字节数 | 来源与副本 SHA256 |
+|---|---|---:|---|
+| `/usr/bin/rpmsign` | `/usr/bin/rpmsign` | 15000 | `38dc907f8e4ef103843cdca3d0834866bb2cc61ebf54af6337e42134709b8828` |
+| `/usr/bin/rpmkeys` | `/usr/bin/rpmkeys` | 15016 | `95eea179377426b36a3e4b87f8356c20a3728fd8f917a53c1907ebcf07c4d425` |
+| `/usr/bin/rpmspec` | `/usr/bin/rpmspec` | 19352 | `1e083a82db632cd8e049dcb9dc35a42b41df1033c9cb2ab6a5f3f5f06f461850` |
+| `/usr/lib64/librpmsign.so.3.1.0` | `/lib64/librpmsign.so.3` | 27008 | `35139d4780ec00cbc629aa8a262c7cecb9ae0b4ee41a10f171a20fcc1eddf5ae` |
+| `/usr/lib64/librpmbuild.so.3.1.0` | `/lib64/librpmbuild.so.3` | 218360 | `ca695830593cdc814befc86c7849f126081a8b6e558d696f39b3de71b2828d04` |
+| `/usr/lib64/libmagic.so.1.0.0` | `/lib64/libmagic.so.1` | 146504 | `094940f9c3d22bc520bfba76e83c8ca6fbb04e79da1e1cf95bc6163679bc7f73` |
+| `/usr/lib64/libdw-0.189.so` | `/lib64/libdw.so.1` | 577440 | `8f3a09a0960e896a5bc136f8b93e5dea0e1ae4911be10bd2235fa565b09a03d0` |
+
+合计3个程序、4个动态库，联合递归依赖闭包24个ELF对象。`copied-files.json` 保存完整绝对路径和两份SHA；`copy-dependencies.json` 记录每一条NEEDED的来源、C内解析路径及是否新增。没有覆盖、删除或修改任何既有库文件；源码/spec/helper/启动脚本不动。
+
+### 12.2 完整预检结果
+
+复制上一轮修正后的只读预检脚本到本轮目录，只替换输出路径，`preflight-path.diff` 保存该差异。重新从本次clang RPM提取成员用于ELF预检，没有安装或执行候选，提取文件只留在本地证据目录。检查结果 `preflight-summary.json`：
+
+```json
+{
+  "programs_passed": 12,
+  "programs_total": 12,
+  "exec_entries_passed": 10,
+  "exec_entries_total": 10,
+  "missing_exec_targets": [],
+  "dev_null_pass": true,
+  "database": "/var/lib/rpm",
+  "ld_so_cache_exists": false,
+  "PASS": true
+}
+```
+
+- rpm、rpmdb、ldconfig、mknod、mount、umount、sh、env、lldb、lldb-server、llvm-symbolizer以及RPM中的clang-22，入口存在/执行位、PT_INTERP和全部递归NEEDED检查均PASS。clang依其RPM内RUNPATH `$ORIGIN/../lib64` 和C内默认库路径查找；没有借宿主库补缺。
+- rpmpopt全部10条exec（rpmsign三项、rpmkeys三项、rpmdb三项、rpmspec一项）与各目标的动态库闭包均PASS。原文和行号见 `rpmpopt-preflight.json`，所有ELF原文见 `elf-readelf-final/`。
+- C/dev/null为字符设备1:3、0666；未删除重建。C/var/lib/rpm仍为空，继续使用原数据库目录，没有切换路径或删除目录。
+
+### 12.3 最终脚本：两处获准修改
+
+最初仅准备了跳过已合格/dev/null的单处修改。随后发现原脚本E硬编码为旧证据目录；经用户明确补充授权，最终再只改E为 `D/evidence/install-test-20261102-resume2`，其余测试步骤和 `/var/lib/rpm` 不变。旧目录在执行前后核对44个文件的大小/SHA，全部相同，见old-evidence-before.json和old-evidence-after.json。
+
+执行前打印的完整diff：
+
+```diff
+--- original/root-test.sh
++++ resume2/root-test.sh
+@@ -7,7 +7,7 @@
+ export LC_ALL
+ ulimit -c 0
+ C='/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/install-test-root'
+-E='/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/evidence/install-test-20261102'
++E='/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/evidence/install-test-20261102-resume2'
+ export C E
+ mounted=0
+ phase=entry
+@@ -65,9 +65,10 @@
+ printf '%s\n' "$(date -Iseconds)" > "$E/root-entry.txt"
+ phase=precheck
+ run precheck-audit audit
+-[ ! -e "$C/dev/null" ] && [ ! -L "$C/dev/null" ]
+ phase=device
+-run device-null /usr/sbin/chroot "$C" /bin/mknod -m 666 /dev/null c 1 3
++[ ! -L "$C/dev/null" ] && [ -c "$C/dev/null" ]
++[ "$(stat -c '%t:%T:%a' "$C/dev/null")" = '1:3:666' ]
++printf '%s\n' 'DEVICE_NULL_PASS existing character 1:3 mode 0666; mknod skipped'
+ mkdir -p "$C/var/cache/ldconfig"
+ phase=install
+ run rpm-version /usr/sbin/chroot "$C" /usr/bin/rpm --version
+
+```
+
+最终 `root-test.sh` SHA256：
+
+```text
+0224aa68fd587f40c0ad55d9409d19affde6e41731f7df4a5c90e725913ce54b
+```
+
+`/bin/sh -n` 退出0；用 `grep -nF 'install-test-20261102/' root-test.sh` 确认无匹配，记录 `OLD_EVIDENCE_PATH_GREP: no matches`。所有证据输出均经E；没有遗留不带-resume2后缀的旧证据路径。`script-final-checks.json`、root-test.diff和脚本全文均保留。
+
+### 12.4 单次图形认证失败，后续全部未执行
+
+复用第10节已记录的zenity+SUDO_ASKPASS+sudo -A -k方式，新askpass只修改一次性标记路径到本轮目录。执行命令只有一次：
+
+```sh
+SUDO_ASKPASS="$D/evidence/install-test-20261102-resume2/askpass.sh" sudo -A -k /bin/sh "$D/evidence/install-test-20261102-resume2/root-test.sh"
+```
+
+sudo-result.json记录：`"rc": 1`、`"seconds": 2.913638984959107`、`"root_entered": false`、`"one_invocation": true`。sudo.stdout为空；sudo.stderr的认证错误原文：
+
+```text
+Sorry, try again.
+sudo: no password was provided
+sudo: 1 incorrect password attempt
+```
+
+同一stderr还有zenity的IBUS连接警告；现有证据只足以确认认证没有通过，不据此断言用户取消、输入内容或图形警告就是原因。密码没有写入仓库、日志、环境变量或终端。一次性标记阻止sudo失败后的再次图形提示，没有第二次sudo调用或其他提权方式。
+
+| 步骤 | 本轮结果 | 证据/说明 |
+|---|---|---|
+| 3工具+缺库保全 | PASS | copied-files.json，两端SHA相同 |
+| 12程序/10exec完整预检 | PASS | preflight-summary.json PASS=true |
+| 脚本diff、SHA、语法、旧路径检查 | PASS | root-test.diff、script-final-checks.json |
+| 图形认证 | **FAIL** | sudo-result.json rc1/root_entered=false，sudo.stderr原文 |
+| root入口、初始化RPM数据库、安装两个RPM | NOT RUN | root-entry.txt未产生，root脚本没有启动 |
+| 安装后两SHA及CRC、LLDB自动符号加载 | NOT RUN | 无安装/调试器执行 |
+| 真实崩溃、同批地址symbolizer、冷函数抽查 | NOT RUN | 无崩溃/符号化执行 |
+| 清理 | 无本轮挂载或chroot进程需要清理 | root未进入，/proc/self/mountinfo中C引用为空 |
+
+### 12.5 保留、清理检查与交付
+
+root脚本未启动，所以没有新增挂载、chroot进程或core。普通用户读取 `/proc/self/mountinfo`，C引用为 `[]`；`findmnt -rn -o TARGET,SOURCE,FSTYPE` 的全文在cleanup-findmnt.stdout。没有卸载或结束任何其他任务的挂载/进程。新增文件、两个提取产物和所有历史目录均保留。
+
+本轮末行（由非特权收尾写入，明确不是root脚本成功记录）：
+
+```text
+DEBUGLINK_INSTALL FINISHED 2026-11-02T11:05:39.522759+08:00 status=stopped reason=graphical-authentication-failed-root-not-entered
+```
+
+本地证据 `D/evidence/install-test-20261102-resume2/`；公开副本：[install-test-20261102-resume2](../../tools/bolt/results/debuglink-20261028/install-test-20261102-resume2/)。manifest逐项记录大小、SHA和本地来源；RPM里提取的152MB clang保留本地，只发布其元数据。第1–4项不重做，前43号章节逐字保留；只提交GitHub bolt-v4，不推Gerrit/sandbox、不操作QB、不构建。
+
+总结论：**有问题，补齐和预检全部通过，单次图形认证失败；第5项装包、LLDB及符号化仍未完成，已停止且未重试。**

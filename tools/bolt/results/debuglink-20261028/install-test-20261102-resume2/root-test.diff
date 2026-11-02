@@ -1,0 +1,24 @@
+--- original/root-test.sh
++++ resume2/root-test.sh
+@@ -7,7 +7,7 @@
+ export LC_ALL
+ ulimit -c 0
+ C='/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/install-test-root'
+-E='/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/evidence/install-test-20261102'
++E='/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/evidence/install-test-20261102-resume2'
+ export C E
+ mounted=0
+ phase=entry
+@@ -65,9 +65,10 @@
+ printf '%s\n' "$(date -Iseconds)" > "$E/root-entry.txt"
+ phase=precheck
+ run precheck-audit audit
+-[ ! -e "$C/dev/null" ] && [ ! -L "$C/dev/null" ]
+ phase=device
+-run device-null /usr/sbin/chroot "$C" /bin/mknod -m 666 /dev/null c 1 3
++[ ! -L "$C/dev/null" ] && [ -c "$C/dev/null" ]
++[ "$(stat -c '%t:%T:%a' "$C/dev/null")" = '1:3:666' ]
++printf '%s\n' 'DEVICE_NULL_PASS existing character 1:3 mode 0666; mknod skipped'
+ mkdir -p "$C/var/cache/ldconfig"
+ phase=install
+ run rpm-version /usr/sbin/chroot "$C" /usr/bin/rpm --version

@@ -644,3 +644,13 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - STOP：全部rpmpopt exec项中3/10通过，7/10因rpmsign、rpmkeys、rpmspec缺失失败。遵守“每个转交目标都齐全”的判据，不按当前步骤用不到豁免、不擅自补拷。
 - 未进入root脚本修改/执行，未弹窗、未sudo、未装包、未跑LLDB/崩溃或symbolizer。第1–4项不重做，继续沿用已通过记录。旧root-test.sh不应直接重跑，之后仍需按授权处理已有/dev/null。
 - 本轮无新挂载/chroot进程、无删除。43末尾追加第11节，证据tools/bolt/results/debuglink-20261028/install-test-20261102-resume。整体有问题，第5项仍未完成；源码和发布代码未改，只推GitHub bolt-v4。
+
+
+## 2026-11-02：43号安装续跑（二），完整预检PASS，单次图形认证失败
+
+- 普通用户从本轮构建根新增rpmsign/rpmkeys/rpmspec及librpmsign/librpmbuild/libmagic/libdw共7个文件，来源/副本SHA相同，不覆盖既有文件。
+- 重新完整预检12/12程序及10/10 rpmpopt exec全部PASS；dev/null为1:3、0666，RPM数据库目录为空。第1–4项未重做。
+- 按用户补充裁决，root-test.sh仅改dev/null处理和E输出路径；原数据库路径不变。新SHA0224aa68fd587f40c0ad55d9409d19affde6e41731f7df4a5c90e725913ce54b，sh -n PASS，无旧证据路径残留；旧目录44文件SHA/大小全部不变。
+- STOP：单次zenity+sudo -A -k认证返回1，root_entered=false；原文`Sorry, try again.` / `sudo: no password was provided` / `sudo: 1 incorrect password attempt`。没有重试、第二次弹窗或其他提权。
+- root脚本未启动，初始化/装包/安装SHA/LLDB/崩溃符号化均NOT RUN；本轮无挂载/chroot进程/core，C的mountinfo引用为空，全部现场保留。整体有问题，安装第5项尚未闭合。
+- 43追加第12节，前文不动；证据tools/bolt/results/debuglink-20261028/install-test-20261102-resume2。未构建，未改源码/spec/helper/启动脚本，未推Gerrit/sandbox或操作QB。

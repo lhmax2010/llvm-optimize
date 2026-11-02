@@ -1,0 +1,11 @@
+--- previous/preflight-final.py
++++ current/preflight.py
+@@ -1,7 +1,7 @@
+ from pathlib import Path, PurePosixPath
+ import subprocess, json, re, os, shlex, stat, hashlib, posixpath
+ D=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030')
+-C=D/'install-test-root'; E=D/'evidence/install-test-20261102-resume'
++C=D/'install-test-root'; E=D/'evidence/install-test-20261102-resume2'
+ raw=E/'elf-readelf-final';raw.mkdir(exist_ok=True)
+ def resolve(rel):
+     queue=list(PurePosixPath(rel).parts);parts=[];hops=0
