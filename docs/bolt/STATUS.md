@@ -665,3 +665,13 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - LLDB自动加载/usr/lib/debug/usr/bin/clang-22.debug，真实SIGILL的21/21 clang帧有函数名；llvm-symbolizer逐帧一致，另main+5冷函数6/6一致。函数级定位验证闭合，源码行信息未提供。
 - proc正常卸载，root清理audit mounts=[]、processes=[]；final.exit=0，结束行status=ok phase=complete。现场保留，无删除、无重试、无构建。
 - 43追加第13节，前文保留；证据tools/bolt/results/debuglink-20261028/install-test-20261102-resume3。只推GitHub bolt-v4；源码行方案、llvm-objcopy缺陷、QB配置评审及合入后编译配置确认等其他挂账不变。
+
+
+## 2026-11-02：debuglink提交已更新sandbox，QB评审状态查询
+
+- 源码工作区干净；HEAD3ee2d84719e4bd358c0b2366161f70f2eb788313、tree43d60f7523439fa0ccf4a61f668dd60622554606、父6e9d4f2；作者/提交者/Signed-off-by均Hao Lin，Change-Id不变，全部推前核对PASS。
+- 按用户指定唯一命令，pack.threads=2、force-with-lease指定f308fe08，更新sandbox/lhmax2025/bolt_pgo。退出0；推后ls-remote精确为3ee2d84719e4bd358c0b2366161f70f2eb788313。未改源码或提交说明，未推refs/for/其他源码分支。
+- QB软件包行：platform/upstream/llvm@3ee2d84719e4bd358c0b2366161f70f2eb788313；由用户启动，本轮不操作QB。
+- 只读SSH查询：scm/meta/qb 359363已MERGED，Code-Review+2/Verified+1（另作者+1）；359364为NEW、Code-Review+1，Dongkyun Son建议使用usual sync-up process（原文见43第14节）。没有密码交互、评审写入或打分。
+- 359363合入状态已闭合；359364进展、首次QB实际编译配置确认、源码行方案与llvm-objcopy缺陷等挂账继续保留。
+- 43追加第14节，前文不改；证据tools/bolt/results/debuglink-20261028/sandbox-update-20261102。本轮没有构建、删除或修改VS Code配置。

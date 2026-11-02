@@ -1060,3 +1060,178 @@ DEBUGLINK_INSTALL FINISHED 2026-11-02T14:09:02+08:00 status=ok phase=complete
 全部步骤退出码均0，见summary.json及各*.exit。证据公开在[install-test-20261102-resume3](../../tools/bolt/results/debuglink-20261028/install-test-20261102-resume3/)，manifest逐文件记录本地来源、大小和SHA。第1–4项不重做；没有改源码/spec/helper/启动脚本，没有构建、Gerrit/sandbox推送或QB操作。
 
 总结论：**全部通过，第5项装包实测闭合，LLDB自动加载及21/21崩溃帧、main和5个冷函数的符号化一致；函数级崩溃定位已验证，源码行方案仍挂账。**
+
+
+## 14. sandbox 更新（2026-11-02）
+
+带debuglink的已验证提交已按用户授权更新至 `sandbox/lhmax2025/bolt_pgo`，远端核对PASS。没有修改源码、提交说明或创建分支，没有推refs/for或操作QB；本节只记录发布与只读评审查询，第13节的安装验证结论不变。
+
+### 14.1 推送前只读核对
+
+源码工作树为 `W/temp/debuglink-tb20261026/source`。`git status --porcelain=v1 --untracked-files=all`退出0、输出为空，已跟踪及未跟踪状态均干净。完整身份和原提交说明保存于source-identity.stdout，核对结果：
+
+| 项目 | 实际值 | 判定 |
+|---|---|---|
+| HEAD | `3ee2d84719e4bd358c0b2366161f70f2eb788313` | PASS |
+| tree | `43d60f7523439fa0ccf4a61f668dd60622554606` | PASS |
+| 父提交 | `6e9d4f2bc77e20ba96d586680bb4f4c25eace7d2` | PASS |
+| 作者 | `Hao Lin <hao.lin@samsung.com>` | PASS |
+| 提交者 | `Hao Lin <hao.lin@samsung.com>` | PASS |
+| Signed-off-by | `Hao Lin <hao.lin@samsung.com>` | PASS |
+| Change-Id | `Ic98eab90cc017f127a66e1729b44fab8b8e8fb41` | PASS |
+
+`git ls-remote origin refs/heads/sandbox/lhmax2025/bolt_pgo`推前原文：
+
+```text
+f308fe08eeaad4e219f8505449b88bd5f644ea8c	refs/heads/sandbox/lhmax2025/bolt_pgo
+
+```
+
+### 14.2 指定命令与原样输出
+
+只执行一次指定的源仓库推送命令，没有使用其他强推方式：
+
+```sh
+git -c pack.threads=2 push --force-with-lease=refs/heads/sandbox/lhmax2025/bolt_pgo:f308fe08eeaad4e219f8505449b88bd5f644ea8c origin 3ee2d84719e4bd358c0b2366161f70f2eb788313:refs/heads/sandbox/lhmax2025/bolt_pgo
+
+```
+
+退出码0；stdout/stderr合并原样保存于push-output.txt（保留服务端进度输出）：
+
+```text
+remote: 
+remote: Processing changes: refs: 1        
+remote: Processing changes: refs: 1, done            
+To ssh://review.tizen.org:29418/platform/upstream/llvm
+ + f308fe08eeaa...3ee2d84719e4 3ee2d84719e4bd358c0b2366161f70f2eb788313 -> sandbox/lhmax2025/bolt_pgo (forced update)
+
+```
+
+推后同一ls-remote命令原文：
+
+```text
+3ee2d84719e4bd358c0b2366161f70f2eb788313	refs/heads/sandbox/lhmax2025/bolt_pgo
+
+```
+
+确认远端精确指向指定debuglink提交。仅更新此sandbox分支；hybrid父提交未变。
+
+### 14.3 scm/meta/qb 两项评审，只读查询
+
+按要求执行以下两项查询；SSH增加 `-o BatchMode=yes -o ConnectTimeout=20` 防止要求终端输入密码，stdin为/dev/null；均成功，无需密码输入：
+
+```sh
+ssh -p 29418 review.tizen.org gerrit query --format=JSON --current-patch-set change:359363
+ssh -p 29418 review.tizen.org gerrit query --format=JSON --current-patch-set change:359364
+```
+
+为保存评审意见全文，各补一次只读的同类查询，加 `--comments --all-approvals`。实际argv、退出码、stdout和stderr均留存（review-359363/359364-current/comments.*）。没有修改评审、打分、加reviewer或回复评论。
+
+#### 359363：MERGED
+
+评审：[359363](https://review.tizen.org/gerrit/c/scm/meta/qb/+/359363)；当前PS1，revision `ffba0ca45811e6ee70f95f527ae47b958431c20d`。以下为查询返回原文，时间换算为Asia/Shanghai。
+
+| 时间 | 评审人 | 意见原文 |
+|---|---|---|
+| 2026-10-28T22:51:40+08:00 | Lin Hao | Uploaded patch set 1. |
+| 2026-10-28T23:53:29+08:00 | Lin Hao | Patch Set 1: Code-Review+1 |
+| 2026-10-29T07:11:19+08:00 | Dongkyun Son | Patch Set 1: Code-Review+2 |
+| 2026-10-29T07:13:22+08:00 | Dongkyun Son | Patch Set 1: Verified+1 |
+| 2026-10-29T07:13:26+08:00 | Dongkyun Son | Change has been successfully merged |
+
+当前patch set打分原文（保留类型和值）：
+
+```json
+[
+  {
+    "type": "Code-Review",
+    "description": "Code-Review",
+    "value": "1",
+    "grantedOn": 1793202809,
+    "by": {
+      "name": "Lin Hao",
+      "email": "hao.lin@samsung.com",
+      "username": "lhmax2025"
+    }
+  },
+  {
+    "type": "Code-Review",
+    "description": "Code-Review",
+    "value": "2",
+    "grantedOn": 1793229079,
+    "by": {
+      "name": "Dongkyun Son",
+      "email": "dongkyun.s@samsung.com",
+      "username": "dkson95"
+    }
+  },
+  {
+    "type": "Verified",
+    "description": "Verified",
+    "value": "1",
+    "grantedOn": 1793229202,
+    "by": {
+      "name": "Dongkyun Son",
+      "email": "dongkyun.s@samsung.com",
+      "username": "dkson95"
+    }
+  },
+  {
+    "type": "SUBM",
+    "value": "1",
+    "grantedOn": 1793229206,
+    "by": {
+      "name": "Dongkyun Son",
+      "email": "dongkyun.s@samsung.com",
+      "username": "dkson95"
+    }
+  }
+]
+```
+#### 359364：NEW
+
+评审：[359364](https://review.tizen.org/gerrit/c/scm/meta/qb/+/359364)；当前PS1，revision `12f22a9c3cd1262f91a798d8f6439f6e3835ad31`。以下为查询返回原文，时间换算为Asia/Shanghai。
+
+| 时间 | 评审人 | 意见原文 |
+|---|---|---|
+| 2026-10-28T23:10:59+08:00 | Lin Hao | Uploaded patch set 1. |
+| 2026-10-28T23:53:01+08:00 | Lin Hao | Patch Set 1: Code-Review+1 |
+| 2026-10-29T07:21:19+08:00 | Dongkyun Son | Patch Set 1:<br><br>(1 comment) |
+
+当前patch set打分原文（保留类型和值）：
+
+```json
+[
+  {
+    "type": "Code-Review",
+    "description": "Code-Review",
+    "value": "1",
+    "grantedOn": 1793202781,
+    "by": {
+      "name": "Lin Hao",
+      "email": "hao.lin@samsung.com",
+      "username": "lhmax2025"
+    }
+  }
+]
+```
+
+Dongkyun Son，`/PATCHSET_LEVEL`，评审意见原文：
+
+```text
+usual sync-up process - https://github.sec.samsung.net/SRTS/skill-registry/tree/main/skills/quickbuild-sync is prefered way
+```
+
+359363已合入；359364尚未合入，当前只有Code-Review+1。以上是查询时的状态，不将评审建议视为本轮修改授权。合入后第一次QB仍需确认实际使用的编译配置，本轮没有操作QB或检查新的构建。
+
+### 14.4 QB 软件包行和证据
+
+用户启动QB时使用：
+
+```text
+platform/upstream/llvm@3ee2d84719e4bd358c0b2366161f70f2eb788313
+```
+
+本轮证据：[sandbox-update-20261102](../../tools/bolt/results/debuglink-20261028/sandbox-update-20261102/)，manifest逐个记录大小和SHA。43号前文逐字保留，STATUS同步，只推GitHub bolt-v4记录。
+
+总结论：**sandbox更新成功，远端为3ee2d847；359363 MERGED，359364 NEW。由用户启动QB。**
