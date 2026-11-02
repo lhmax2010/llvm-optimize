@@ -626,3 +626,12 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 资源只记录：cgroup总峰20,299,001,856B（含文件缓存），OOM/swap0；构建根du最大采样68,252,237,824B，最少可用240,314,093,568B。分阶段真实内存峰值未重置记录、其他进程VmHWM和无du样本阶段均标UNKNOWN；详见43第9节。
 - clang RPM +3692B，clang-debuginfo RPM +3862828B；分符号3.242秒，加debuglink1.940秒。日志末行DEBUGLINK FINISHED带时间/status=stopped；证据tools/bolt/results/debuglink-20261028/full-20261030。
 - 挂账：函数级正式包符号已有，但安装认证待有效的chroot授权后另行继续；源码行实验、llvm-objcopy only-keep-debug缺陷、scm/meta/qb评审359363/359364进展及首次QB编译配置确认仍保留。本轮只推GitHub bolt-v4，不推Gerrit/sandbox、不操作QB。
+
+
+## 2026-11-02：43号第5项补做，图形授权成功、RPM初始化因准备缺项停止
+
+- 第1–4项不重做，沿用完整构建/身份/23包/90TU通过记录。仅继续D/install-test-root第5项。
+- 找到并复用25号已实证的sudo -A -k + zenity SUDO_ASKPASS机制；一次标记防重复弹窗，单次root POSIX sh脚本包办全部操作/清理，执行前全文和SHA已打印。图形认证成功，没有保存密码。
+- /dev/null创建PASS，chroot rpm --version返回4.14.1；rpm --dbpath /var/lib/rpm --initdb退出1：`rpm: --initdb: No such file or directory`。只读确认rpmpopt:181委派rpmdb，而测试根漏带/usr/bin/rpmdb；本轮构建根有该文件。这是测试准备遗漏，不是产品debuglink门禁失败。
+- 按停止条件未补拷/重试：两个RPM尚未安装，安装SHA、LLDB自动加载、真实崩溃/地址符号化全部NOT RUN。本次没有挂proc/core，root清理审计mounts/processes均为空，全部现场保留。
+- 结论有问题，第5项仍待续跑。证据tools/bolt/results/debuglink-20261028/install-test-20261102；43追加第10节，前文不改。源码/spec/helper/启动脚本未改，未构建、未推Gerrit/sandbox、未操作QB。此前源码行、only-keep-debug及QB相关挂账保持。

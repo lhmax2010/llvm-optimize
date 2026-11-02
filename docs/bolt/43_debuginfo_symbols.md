@@ -586,3 +586,95 @@ VmHWM 采集器只跟踪 llvm-bolt，因此即使在 BOLT 阶段也不能声称�
 未推送 Gerrit/sandbox，未操作 QB，未修改VS Code配置，未删除目录。崩溃定位状态为：**函数级代码和正式包内符号已实现并通过构建认证，安装后的自动加载/崩溃实测仍因本机授权阻断未完成**；源码行成本实验、LLVM only-keep-debug 缺陷、scm/meta/qb评审359363/359364及合入后首次QB编译配置核对继续挂账。
 
 总结论：**完整构建、身份链、23包和90/90 TU通过；新 chroot 授权不可用，安装实测未执行，整体有问题，已按要求停止。**
+
+## 10. 安装实测（第 5 项补做，2026-11-02）
+
+**结论：有问题，已按停止条件结束。** 图形认证成功，只调用一次 sudo，创建 `/dev/null` 成功；在 RPM 数据库初始化时因测试根漏带 `/usr/bin/rpmdb` 失败。两个 RPM 尚未安装，安装后 SHA、LLDB 自动加载、真实崩溃和同批地址符号化均未执行；第 9 节已通过的第 1–4 项本轮没有重做，原结论保持。
+
+### 10.1 认证方式、执行范围和准备
+
+先只读查阅启动入口和历史记录。当前 GBS 的 `full-20261030/prep.py:6`、`run.py:18` 使用既有 `sudo -n` 授权，**入口本身没有图形认证代码**。此前成功的图形认证实证位于：
+
+- `tools/bolt/results/install-rehearsal-20261015/askpass.sh:1–7`：`SUDO_ASKPASS` 调用 `zenity --password`，一次性 mkdir 标记阻止重复弹窗，清理 LD/GTK/GIO 环境变量。
+- 同目录 `in_scope.py:4–5`：`sudo -A -k`，一次调用包办需 root 的工作。
+- `docs/bolt/25_real_install_rehearsal.md:36,97`：该图形方式已成功用于构建树 `%install` 演练；曾遇到的 Snap GTK/GIO 污染及清理方式有原始记录。
+
+本次复用这一套已实证的图形 sudo 机制，不改用 pkexec、终端密码或其他方法。先非特权核对 `/usr/bin/zenity --version` 返回 `4.0.1`/rc0；随后用新的 askpass 包装器显示一次密码框。认证成功，`sudo-result.json` 为 `"rc": 1`、`"root_entered": true`、`"one_invocation": true`，53.519 秒包括等待认证和脚本执行；rc1来自后面的初始化失败，而非认证失败。未保存密码或认证内容，未记录 askpass stdout；原有图形环境仅出现非致命 IBUS 连接警告。
+
+全部特权步骤及 finally 清理都在本次新生成的 POSIX sh `root-test.sh` 中；执行前打印了最终脚本全文并通过 `/bin/sh -n`。其 SHA256：
+
+```text
+3dec5b3186cbdb4cff59ac153610e8d1fed43792b86003e9ecb93e6d5b65ce53  root-test.sh
+bbccf03d1f124545791881eb89eeff80c8b0d22ccab662dd80ea5a16cc93fbcd  askpass.sh
+```
+
+只执行一次：
+
+```sh
+SUDO_ASKPASS="$D/evidence/install-test-20261102/askpass.sh" sudo -A -k /bin/sh "$D/evidence/install-test-20261102/root-test.sh"
+```
+
+沿用 `D/install-test-root/`，未替换历史根。准备时核对12个已有工具/RPM的大小和SHA，记录在 `preparation-existing.json`；仅在该根新增 `probe/install-20261102/crash.c` 和 `probe.lldb`（来源为最小 pragma crash 用例及本轮 identity 中 main/5个冷函数地址，逐文件SHA见 `preparation-additions.json`）。授权后创建该根 `/dev/null`（字符设备1:3，0666）及 `var/cache/ldconfig`，未拷贝或改动源码、spec、helper、发布参数和启动脚本。
+
+### 10.2 逐步结果与失败原文
+
+| 步骤 | 结果 | 原文证据 |
+|---|---|---|
+| 单次图形认证 | PASS | sudo-result.json：root_entered=true；root-entry.txt记录进入root脚本时间；没有第二次sudo调用 |
+| 本次根挂载/进程前检 | PASS | precheck-audit.stdout：`"mounts": []`、`"processes": []` |
+| 创建 `/dev/null` | PASS | device-null.exit：`0` |
+| chroot RPM 工具可启动 | PASS | rpm-version.stdout:1：`RPM version 4.14.1`；exit=0 |
+| RPM 数据库初始化 | **FAIL** | rpm-initdb.exit：`1`；rpm-initdb.stderr:1：`rpm: --initdb: No such file or directory` |
+| 安装 clang 和 clang-debuginfo RPM | NOT RUN | 初始化失败即退出，没有调用 rpm-install，也没有伪造安装日志 |
+| 安装文件SHA / CRC | NOT RUN | 未安装；第9节包内身份认证仍有效，但不替代安装后的检查 |
+| LLDB自动加载、image list/lookup | NOT RUN | 未调用调试器 |
+| 真实崩溃完整栈及同批地址符号化、冷函数抽查 | NOT RUN | 没有产生崩溃或core，没有执行symbolizer |
+| 清理检查 | PASS | cleanup-audit.stdout：mounts/processes均为空；没有挂载过本次proc，因此未调用umount |
+
+失败的实际命令（rpm-initdb.argv，逐参数存证）：
+
+```sh
+/usr/sbin/chroot "$D/install-test-root" /usr/bin/rpm --dbpath /var/lib/rpm --initdb
+```
+
+```text
+rpm: --initdb: No such file or directory
+```
+
+停止后只读检查找到直接原因。测试根 `/usr/lib/rpm/rpmpopt-4.14.1:181` 原文为：
+
+```text
+rpm exec --initdb rpmdb --initdb
+```
+
+该配置将 `rpm --initdb` 转交给独立的 `rpmdb` 程序。`initdb-readonly-diagnosis.json` 证明测试根 `/usr/bin/rpmdb` 不存在，而本次构建根的同名文件存在，大小 **19,280 B**、SHA256 **b28b40ea816cd37c2949f094da3904a28a1346e11b8ccf5412ec4c91e6f600ff**；两个根里的 rpmpopt 文件相同，SHA256 **6fbec6abf7d3b0e05a9930bab4385f536ec392cb5d5c909aa30af5448466c519**。
+
+这是本地测试根准备遗漏：此前按 ELF 动态库依赖复制 rpm 工具，没有覆盖 popt 配置委派的外部可执行程序。本轮准备核对仍未提前发现这项缺失，责任在测试准备，**不能据此判定 debuglink 产品失败**。按用户“任何一步失败就停止后续步骤”，没有在失败后补拷 rpmdb、没有重试初始化、没有第二次认证；需要后续授权续跑时先检查并补齐 RPM 命令委派工具及其依赖，再进行安装测试。本轮没有实施该修复。
+
+### 10.3 清理、保留与交付
+
+整个特权脚本设 `ulimit -c 0`，正常退出或失败均进入清理。失败发生在 proc-mount 之前，故本次没有挂载 proc、devpts或其他文件系统；未删除测试根、设备节点或任何目录。
+
+清理命令与检查原文已保存：
+
+```sh
+/usr/bin/findmnt -rn -o TARGET,SOURCE,FSTYPE
+# root-test.sh 内 audit()：扫描 /proc/self/mountinfo 与 /proc/*/{root,cwd,exe,cmdline}
+```
+
+```json
+{
+  "mounts": [],
+  "processes": []
+}
+```
+
+findmnt 全文保存在 cleanup-findmnt.stdout，扫描只判定本次 install-test-root；宿主其他历史根的挂载原样保留，没有处理。清理不结束其他进程、不使用强制或懒卸载。最后一行：
+
+```text
+DEBUGLINK_INSTALL FINISHED 2026-11-02T09:22:45+08:00 status=failed phase=install
+```
+
+本地证据 `D/evidence/install-test-20261102/`；公开副本：[install-test-20261102](../../tools/bolt/results/debuglink-20261028/install-test-20261102/)，包含最终脚本全文、askpass脚本（无密码）、一次sudo argv/stdout/stderr、每条命令的argv/退出码/原文、准备SHA、只读根因与清理记录。manifest.json逐文件登记来源、大小和SHA。原43号文档第1–9节逐字保留，未改写此前成功或失败记录。
+
+总结论：**有问题；图形授权已解决，因测试根漏带 rpmdb 在初始化阶段停止，第5项安装和调试验证仍未完成。**

@@ -1,0 +1,16 @@
+settings set target.disable-aslr false
+settings set target.disable-stdio true
+target create /usr/bin/clang-22
+image list -f -s
+image lookup -n main
+image lookup -a 0x342b940
+image lookup -a 0x42d2c5c
+image lookup -a 0x42d3000
+image lookup -a 0x42d3280
+image lookup -a 0x42d3680
+image lookup -a 0x42d3f9a
+settings set -- target.run-args --no-default-config -fno-crash-diagnostics -fsyntax-only /probe/install-20261102/crash.c
+run
+bt all
+image list -o -f -s
+quit
