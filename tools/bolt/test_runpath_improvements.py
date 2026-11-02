@@ -35,7 +35,7 @@ class RunpathTests(Base):
         with patch.object(h,'call',side_effect=h.GateError('cmake failed')),self.assertRaisesRegex(h.GateError,'cmake failed'):self.adjust()
     def test_layout_change(self):
         self.setup_elf('$ORIGIN/../lib64:')
-        with patch.object(h,'rpath_layout',side_effect=[{'bytes':1},{'bytes':2}]),self.assertRaisesRegex(h.GateError,'layout'):self.adjust()
+        with patch.object(h,'rpath_layout',side_effect=[{'bytes':1,'allowed_ranges':[]},{'bytes':2}]),self.assertRaisesRegex(h.GateError,'layout'):self.adjust()
     def test_missing_baseline(self):
         with self.assertRaisesRegex(h.GateError,'installed-baseline missing'):h.adjust_rpath(self.d/'none',self.d/'missing',self.d,{})
     def test_installed_non_path_security_failure(self):

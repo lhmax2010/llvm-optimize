@@ -1,0 +1,414 @@
+test_debug_extracts_and_adds_debuglink (test_debuglink_modes.DebugModeTests.test_debug_extracts_and_adds_debuglink) ... ERROR
+test_release_default_no_symbol_file_or_debuglink (test_debuglink_modes.DebugModeTests.test_release_default_no_symbol_file_or_debuglink) ... ERROR
+test_only_standard_debug_file_allowed (test_debuglink_symbols.DebugPackageTests.test_only_standard_debug_file_allowed) ... ERROR
+test_other_new_file_rejected (test_debuglink_symbols.DebugPackageTests.test_other_new_file_rejected) ... ERROR
+test_release_does_not_allow_debugfile (test_debuglink_symbols.DebugPackageTests.test_release_does_not_allow_debugfile) ... ERROR
+test_unproven_debug_file (test_debuglink_symbols.DebugPackageTests.test_unproven_debug_file) ... ERROR
+test_wrong_debug_sha (test_debuglink_symbols.DebugPackageTests.test_wrong_debug_sha) ... ERROR
+test_24_symbols_main_and_cold (test_debuglink_symbols.DebuglinkTests.test_24_symbols_main_and_cold) ... ERROR
+test_add_debuglink_rejects_layout_change (test_debuglink_symbols.DebuglinkTests.test_add_debuglink_rejects_layout_change) ... ERROR
+test_atomic_install_symbols (test_debuglink_symbols.DebuglinkTests.test_atomic_install_symbols) ... ERROR
+test_changed_debug (test_debuglink_symbols.DebuglinkTests.test_changed_debug) ... ERROR
+test_compare_root_still_rejects_early_debug_install (test_debuglink_symbols.DebuglinkTests.test_compare_root_still_rejects_early_debug_install) ... ok
+test_debug_elf_sections_only (test_debuglink_symbols.DebuglinkTests.test_debug_elf_sections_only) ... ERROR
+test_debuglink_and_final_identity (test_debuglink_symbols.DebuglinkTests.test_debuglink_and_final_identity) ... ERROR
+test_incomplete_symbolizer_output (test_debuglink_symbols.DebuglinkTests.test_incomplete_symbolizer_output) ... ERROR
+test_install_existing_debug_rejected (test_debuglink_symbols.DebuglinkTests.test_install_existing_debug_rejected) ... ERROR
+test_install_write_failure_keeps_clang (test_debuglink_symbols.DebuglinkTests.test_install_write_failure_keeps_clang) ... ERROR
+test_loaded_content_change_detected (test_debuglink_symbols.DebuglinkTests.test_loaded_content_change_detected) ... ERROR
+test_missing_debug (test_debuglink_symbols.DebuglinkTests.test_missing_debug) ... ERROR
+test_missing_link (test_debuglink_symbols.DebuglinkTests.test_missing_link) ... ERROR
+test_missing_symtab (test_debuglink_symbols.DebuglinkTests.test_missing_symtab) ... ERROR
+test_post_changed_debug (test_debuglink_symbols.DebuglinkTests.test_post_changed_debug) ... ERROR
+test_post_debug_identity (test_debuglink_symbols.DebuglinkTests.test_post_debug_identity) ... ERROR
+test_post_missing_debug (test_debuglink_symbols.DebuglinkTests.test_post_missing_debug) ... ERROR
+test_post_wrong_debug_mode (test_debuglink_symbols.DebuglinkTests.test_post_wrong_debug_mode) ... ERROR
+test_symbolizer_failure (test_debuglink_symbols.DebuglinkTests.test_symbolizer_failure) ... ERROR
+test_symtab_mismatch (test_debuglink_symbols.DebuglinkTests.test_symtab_mismatch) ... ERROR
+test_unproven_link (test_debuglink_symbols.DebuglinkTests.test_unproven_link) ... ERROR
+test_wrong_basename (test_debuglink_symbols.DebuglinkTests.test_wrong_basename) ... ERROR
+test_wrong_crc (test_debuglink_symbols.DebuglinkTests.test_wrong_crc) ... ERROR
+
+======================================================================
+ERROR: test_debug_extracts_and_adds_debuglink (test_debuglink_modes.DebugModeTests.test_debug_extracts_and_adds_debuglink)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_modes.py", line 33, in test_debug_extracts_and_adds_debuglink
+    def test_debug_extracts_and_adds_debuglink(self):self.exercise(True)
+                                                     ^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_modes.py", line 14, in exercise
+    mocks={name:stack.enter_context(patch.object(h,name)) for name in
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 526, in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1458, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1431, in get_original
+    raise AttributeError(
+AttributeError: <module 'bolt_helper' from '/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/evidence/pre-debuglink-helper.py'> does not have the attribute 'separate_debug_symbols'
+
+======================================================================
+ERROR: test_release_default_no_symbol_file_or_debuglink (test_debuglink_modes.DebugModeTests.test_release_default_no_symbol_file_or_debuglink)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_modes.py", line 32, in test_release_default_no_symbol_file_or_debuglink
+    def test_release_default_no_symbol_file_or_debuglink(self):self.exercise(False)
+                                                               ^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_modes.py", line 14, in exercise
+    mocks={name:stack.enter_context(patch.object(h,name)) for name in
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 526, in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1458, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1431, in get_original
+    raise AttributeError(
+AttributeError: <module 'bolt_helper' from '/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/evidence/pre-debuglink-helper.py'> does not have the attribute 'separate_debug_symbols'
+
+======================================================================
+ERROR: test_only_standard_debug_file_allowed (test_debuglink_symbols.DebugPackageTests.test_only_standard_debug_file_allowed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 139, in test_only_standard_debug_file_allowed
+    self.setup_package();self.assertTrue(h.package_compare(self.old,self.new,'debug',self.proof)['pass'])
+    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 135, in setup_package
+    self.new=copy.deepcopy(self.old);key='debuginfo/'+h.DEBUG_INSTALL_PATH
+                                                      ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'DEBUG_INSTALL_PATH'
+
+======================================================================
+ERROR: test_other_new_file_rejected (test_debuglink_symbols.DebugPackageTests.test_other_new_file_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 147, in test_other_new_file_rejected
+    self.setup_package();self.new['files']['debuginfo/extra']={'type':'file'}
+    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 135, in setup_package
+    self.new=copy.deepcopy(self.old);key='debuginfo/'+h.DEBUG_INSTALL_PATH
+                                                      ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'DEBUG_INSTALL_PATH'
+
+======================================================================
+ERROR: test_release_does_not_allow_debugfile (test_debuglink_symbols.DebugPackageTests.test_release_does_not_allow_debugfile)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 150, in test_release_does_not_allow_debugfile
+    self.setup_package()
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 135, in setup_package
+    self.new=copy.deepcopy(self.old);key='debuginfo/'+h.DEBUG_INSTALL_PATH
+                                                      ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'DEBUG_INSTALL_PATH'
+
+======================================================================
+ERROR: test_unproven_debug_file (test_debuglink_symbols.DebugPackageTests.test_unproven_debug_file)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 141, in test_unproven_debug_file
+    self.setup_package()
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 135, in setup_package
+    self.new=copy.deepcopy(self.old);key='debuginfo/'+h.DEBUG_INSTALL_PATH
+                                                      ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'DEBUG_INSTALL_PATH'
+
+======================================================================
+ERROR: test_wrong_debug_sha (test_debuglink_symbols.DebugPackageTests.test_wrong_debug_sha)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 144, in test_wrong_debug_sha
+    self.setup_package();self.proof['debug_file']['sha256']='wrong'
+    ^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 135, in setup_package
+    self.new=copy.deepcopy(self.old);key='debuginfo/'+h.DEBUG_INSTALL_PATH
+                                                      ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'DEBUG_INSTALL_PATH'
+
+======================================================================
+ERROR: test_24_symbols_main_and_cold (test_debuglink_symbols.DebuglinkTests.test_24_symbols_main_and_cold)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 72, in test_24_symbols_main_and_cold
+    result=self.symbols();self.assertEqual(len(result['samples']),24)
+           ^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 69, in symbols
+    with patch.object(h,'symbol_records',return_value=rows),patch.object(h,'call',side_effect=call):
+  File "/usr/lib/python3.12/unittest/mock.py", line 1458, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1431, in get_original
+    raise AttributeError(
+AttributeError: <module 'bolt_helper' from '/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/evidence/pre-debuglink-helper.py'> does not have the attribute 'symbol_records'
+
+======================================================================
+ERROR: test_add_debuglink_rejects_layout_change (test_debuglink_symbols.DebuglinkTests.test_add_debuglink_rejects_layout_change)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 86, in test_add_debuglink_rejects_layout_change
+    self.setup_link();work=self.d/'work';work.mkdir();shutil.copyfile(self.candidate,work/'clang.candidate');shutil.copyfile(self.debug,work/'clang-22.debug')
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_atomic_install_symbols (test_debuglink_symbols.DebuglinkTests.test_atomic_install_symbols)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 99, in test_atomic_install_symbols
+    def test_atomic_install_symbols(self):self.installed()
+                                          ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 93, in installed
+    self.setup_link();root=self.d/'root';(root/'usr/bin').mkdir(parents=True);elf(root/'usr/bin/clang-22',bolt=False)
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_changed_debug (test_debuglink_symbols.DebuglinkTests.test_changed_debug)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 36, in test_changed_debug
+    self.setup_link();self.debug.write_bytes(self.debug.read_bytes()+b'x')
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_debug_elf_sections_only (test_debuglink_symbols.DebuglinkTests.test_debug_elf_sections_only)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 55, in test_debug_elf_sections_only
+    self.assertEqual(len(h.symbol_records(self.before)),2)
+                         ^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'symbol_records'
+
+======================================================================
+ERROR: test_debuglink_and_final_identity (test_debuglink_symbols.DebuglinkTests.test_debuglink_and_final_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 30, in test_debuglink_and_final_identity
+    self.setup_link();h.validate_identity(self.identity,self.candidate)
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_incomplete_symbolizer_output (test_debuglink_symbols.DebuglinkTests.test_incomplete_symbolizer_output)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 78, in test_incomplete_symbolizer_output
+    with patch.object(h,'symbol_records',return_value=self.functions()),patch.object(h,'call',side_effect=call),self.assertRaisesRegex(h.GateError,'every debug address'):
+  File "/usr/lib/python3.12/unittest/mock.py", line 1458, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1431, in get_original
+    raise AttributeError(
+AttributeError: <module 'bolt_helper' from '/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/evidence/pre-debuglink-helper.py'> does not have the attribute 'symbol_records'
+
+======================================================================
+ERROR: test_install_existing_debug_rejected (test_debuglink_symbols.DebuglinkTests.test_install_existing_debug_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 125, in test_install_existing_debug_rejected
+    root,state=self.installed()
+               ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 93, in installed
+    self.setup_link();root=self.d/'root';(root/'usr/bin').mkdir(parents=True);elf(root/'usr/bin/clang-22',bolt=False)
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_install_write_failure_keeps_clang (test_debuglink_symbols.DebuglinkTests.test_install_write_failure_keeps_clang)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 101, in test_install_write_failure_keeps_clang
+    self.setup_link();root=self.d/'root';(root/'usr/bin').mkdir(parents=True);entity=root/'usr/bin/clang-22';elf(entity,bolt=False);old=h.digest(entity);real=h.shutil.copyfile
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_loaded_content_change_detected (test_debuglink_symbols.DebuglinkTests.test_loaded_content_change_detected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 81, in test_loaded_content_change_detected
+    self.setup_link();before=h.debuglink_layout(self.candidate)
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_missing_debug (test_debuglink_symbols.DebuglinkTests.test_missing_debug)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 33, in test_missing_debug
+    self.setup_link();self.debug.unlink()
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_missing_link (test_debuglink_symbols.DebuglinkTests.test_missing_link)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 46, in test_missing_link
+    self.setup_link();elf(self.candidate,stripped=True)
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_missing_symtab (test_debuglink_symbols.DebuglinkTests.test_missing_symtab)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 58, in test_missing_symtab
+    with self.assertRaisesRegex(h.GateError,'symtab'):h.symbol_records(p)
+                                                      ^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'symbol_records'
+
+======================================================================
+ERROR: test_post_changed_debug (test_debuglink_symbols.DebuglinkTests.test_post_changed_debug)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 119, in test_post_changed_debug
+    root,state=self.installed();(root/h.DEBUG_INSTALL_PATH).write_bytes(b'changed')
+               ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 93, in installed
+    self.setup_link();root=self.d/'root';(root/'usr/bin').mkdir(parents=True);elf(root/'usr/bin/clang-22',bolt=False)
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_post_debug_identity (test_debuglink_symbols.DebuglinkTests.test_post_debug_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 114, in test_post_debug_identity
+    root,state=self.installed();r=self.post(root,state);self.assertIn('SHAs unchanged',r['debug']['find_debuginfo_skip_basis'])
+               ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 93, in installed
+    self.setup_link();root=self.d/'root';(root/'usr/bin').mkdir(parents=True);elf(root/'usr/bin/clang-22',bolt=False)
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_post_missing_debug (test_debuglink_symbols.DebuglinkTests.test_post_missing_debug)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 116, in test_post_missing_debug
+    root,state=self.installed();(root/h.DEBUG_INSTALL_PATH).unlink()
+               ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 93, in installed
+    self.setup_link();root=self.d/'root';(root/'usr/bin').mkdir(parents=True);elf(root/'usr/bin/clang-22',bolt=False)
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_post_wrong_debug_mode (test_debuglink_symbols.DebuglinkTests.test_post_wrong_debug_mode)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 122, in test_post_wrong_debug_mode
+    root,state=self.installed();(root/h.DEBUG_INSTALL_PATH).chmod(0o755)
+               ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 93, in installed
+    self.setup_link();root=self.d/'root';(root/'usr/bin').mkdir(parents=True);elf(root/'usr/bin/clang-22',bolt=False)
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_symbolizer_failure (test_debuglink_symbols.DebuglinkTests.test_symbolizer_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 75, in test_symbolizer_failure
+    with self.assertRaisesRegex(h.GateError,'lookup failed'):self.symbols(True)
+                                                             ^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 69, in symbols
+    with patch.object(h,'symbol_records',return_value=rows),patch.object(h,'call',side_effect=call):
+  File "/usr/lib/python3.12/unittest/mock.py", line 1458, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1431, in get_original
+    raise AttributeError(
+AttributeError: <module 'bolt_helper' from '/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/evidence/pre-debuglink-helper.py'> does not have the attribute 'symbol_records'
+
+======================================================================
+ERROR: test_symtab_mismatch (test_debuglink_symbols.DebuglinkTests.test_symtab_mismatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 61, in test_symtab_mismatch
+    with self.assertRaisesRegex(h.GateError,'symtab count'):h.verify_debug_symbols(a,b,'symbolizer',self.d)
+                                                            ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'verify_debug_symbols'
+
+======================================================================
+ERROR: test_unproven_link (test_debuglink_symbols.DebuglinkTests.test_unproven_link)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 49, in test_unproven_link
+    self.setup_link();del self.identity['debug_file']
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_wrong_basename (test_debuglink_symbols.DebuglinkTests.test_wrong_basename)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 42, in test_wrong_basename
+    self.setup_link();p=self.d/'other.debug';shutil.copyfile(self.debug,p)
+    ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+======================================================================
+ERROR: test_wrong_crc (test_debuglink_symbols.DebuglinkTests.test_wrong_crc)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 39, in test_wrong_crc
+    self.setup_link()
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_debuglink_symbols.py", line 23, in setup_link
+    self.layout=h.debuglink_layout(self.candidate)
+                ^^^^^^^^^^^^^^^^^^
+AttributeError: module 'bolt_helper' has no attribute 'debuglink_layout'
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.696s
+
+FAILED (errors=29)

@@ -105,8 +105,11 @@ class DebuglinkTests(Base):
         with patch.object(h.shutil,'copyfile',side_effect=copy),self.assertRaises(OSError):h.install_candidate(root,self.candidate,self.d/'state.json',self.identity)
         self.assertEqual(h.digest(entity),old)
     def post(self,root,state):
+        ordinary=self.d/'build/clang-bolt/ordinary'
+        ordinary.parent.mkdir(parents=True,exist_ok=True)
+        (self.d/'debugfiles.list').write_text('/'+h.DEBUG_INSTALL_PATH+'\n')
         with patch.object(h,'security_compare',return_value={}),patch.object(h,'installed_security',return_value={}),patch.object(h,'tiny_gate',return_value=[]),patch.object(h,'real_gate',return_value={}):
-            return h.post_gate(root,state,self.d/'ordinary',self.d/'post')
+            return h.post_gate(root,state,ordinary,self.d/'post')
     def test_post_debug_identity(self):
         root,state=self.installed();r=self.post(root,state);self.assertIn('SHAs unchanged',r['debug']['find_debuginfo_skip_basis'])
     def test_post_missing_debug(self):

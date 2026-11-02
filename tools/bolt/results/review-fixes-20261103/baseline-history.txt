@@ -1,0 +1,9 @@
+32_cache_release.md:5: 以下为2026-10-22停止快照，最终结果见第13节。 第一次未改 9e5675f 的构建停在普通 LLVM 链接；分段暂停后，等待内存准入达到 60 分钟上限。BOLT 实际增量尚未测得；释放后的整轮峰值及后处理降幅尚未测得；clang 与 RPM 一致性尚未验证。不得用历史 97 GB 缓存代替本次测量。
+32_cache_release.md:9: 本地源提交 `d20e873b2c7dfac10fab9235e2b781dad08dc4c7`，父 `67619ec8bbbac7238a6cfc33a481ccfbcd12206f`，在 `9e5675f57d122549997caffa39b655dfefc46fee` 上 amend。保留 Change-Id `Ic98eab90cc017f127a66e1729b44fab8b8e8fb41`；作者、提交者和 Signed-off-by 为 Hao Lin。不改全局配置、不访问 Gerrit。
+32_cache_release.md:13: spec 仅在 `echo BOLT_COMPARE_ROOT_PASS` 后新增以下三行，移除这三行后与 9e5675f 全文逐字节相同：
+32_cache_release.md:34: - profile 和 Source1005 与 9e5675f 字节相同。生产 helper 与测试镜像相同。
+32_cache_release.md:66: | 第一轮 9e5675f 完整构建 | 未完成：普通 LLVM 链接阶段暂停后，内存准入等待超时 |
+32_cache_release.md:180: 完整chroot的**已观测峰值241,288,712,192B=224.718GiB**，在静态库转换归档安装阶段；外层GBS根最高242,613,411,840B有权限盲区，单独保留，不与chroot混用。BOLT重链期间观测到234,118,369,280B，较BOLT开始附近的226,526,859,264B多约7.070GiB；这是瞬时中间文件及缓存增量的采样，不等于四次disk-report时点值，也不能称为ON/OFF整轮净峰值差。基线静态库转换临时目录最高采样7,443,349,504B，结束后按原Source1005清理。没有重跑BOLT-OFF构建。
+32_cache_release.md:406: 推前远端为 `9e5675f57d122549997caffa39b655dfefc46fee`，使用精确租约：
+32_cache_release.md:409: git push --force-with-lease=refs/heads/sandbox/lhmax2025/bolt_pgo:9e5675f57d122549997caffa39b655dfefc46fee origin 3d3b4bf564fd8edec793e49e6de75b5fa7007d16:refs/heads/sandbox/lhmax2025/bolt_pgo
+32_cache_release.md:419:  + 9e5675f57d12...3d3b4bf564fd 3d3b4bf564fd8edec793e49e6de75b5fa7007d16 -> sandbox/lhmax2025/bolt_pgo (forced update)

@@ -1,0 +1,140 @@
+--- 219f23ed
++++ HEAD
+@@ -2,11 +2,12 @@
+ 
+ Enable BOLT by default on x86_64: ordinary install, snapshot, append
+ bolt configuration, certify the dry-run and parallel llvm-bolt build,
+-relink clang with emit-relocs, strip debug, rewrite, check
+-profile/security/tiny targets, strip all, compare-root, native archive
+-conversion, candidate replacement, and one unchanged platform post chain
+-followed by the final identity gate. Other architectures retain the
+-baseline behavior. Roll back in Quickbuild with the one-line
++relink with emit-relocs, strip debug, rewrite, tiny/real checks, strip
++all, RUNPATH repair, debug-mode debuglink, security and tiny/real
++checks, compare-root, native archive conversion, candidate replacement,
++one unchanged platform post chain, and the post gate. Only after
++compare-root may BOLT change the buildroot. Other architectures retain
++the baseline behavior. Roll back in Quickbuild with the one-line
+ bcond_without -> bcond_with change; Source1200/1201 are declared
+ unconditionally because gbs inserts generated Patch declarations after
+ the last Source line, and conditional Sources would hide those
+@@ -17,13 +18,14 @@
+ is available for local builds. Only enabled %build adds -d keeprsp. No
+ project configuration change is required.
+ 
+-No disk-space thresholds are imposed; each stage records free space.
+-If a step fails because its disk is full, stop before replacing the
+-packaged clang and report current free space, estimated requirements
+-and shortfall from actual file sizes measured in this build.
+-If a failed step's log is unavailable, report unknown rather than
+-guessing its cause.
+-Release the in-tree ThinLTO cache after the compare-root gate passes.
++No disk-space thresholds are imposed; each stage records free space. A
++candidate preparation failure prevents its installation. Installation or
++post-processing failures abort the RPM build; the failed BUILDROOT is
++not rolled back as a whole. Diagnostics report available evidence and
++requirements/shortfall estimated from actual file sizes measured in this
++build. A readable log without disk-failure evidence is unconfirmed; an
++unavailable log is unknown. Release the in-tree ThinLTO cache after the
++compare-root gate passes.
+ 
+ The binary Source is the existing profile v2, trained on 13 ARM plus 10
+ AArch64 source files. Compressed size 9,735,212 bytes; SHA256
+@@ -44,44 +46,43 @@
+ candidate uses the historical same-source llvm-bolt; delivery builds its
+ own llvm-bolt in the tree.
+ 
+-LLVM C++ -O3 single-file qualification uses 30 rows from 20 distinct
+-sources, five samples per side, alternating roles at the same compiler
+-path/inode. Candidate/ordinary geometric mean: x86_64 0.855890085, ARM
+-0.856351167, AArch64 0.847699213. ARM independent-20/holdout-10:
+-0.858165628/0.868458776; AArch64 independent-20/holdout-10:
+-0.847858623/0.847902567. These results cover this LLVM workload, not
+-general application or runtime performance. With -use-old-text the
+-packaged clang is 152,532,400 bytes, 12,602,968 bytes (+9.0%) larger
+-than the stripped ordinary clang; the .gnu_debuglink section adds 104
+-bytes.
++Historical LLVM C++ -O3 single-file qualification used 30 rows from 20
++distinct sources, five samples per side, alternating roles at the same
++compiler path/inode. Candidate/ordinary geometric mean: x86_64
++0.855890085, ARM 0.856351167, AArch64 0.847699213. x86_64
++independent-20/holdout-10: 0.854398975/0.858880117. ARM
++independent-20/holdout-10: 0.858165628/0.868458776; AArch64
++independent-20/holdout-10: 0.847858623/0.847902567. These are historical
++measurements, not a remeasurement of the final debuglink artifact; they
++cover this LLVM workload, not general application or runtime
++performance. With -use-old-text the packaged clang is 152,532,400 bytes,
++12,602,968 bytes (+9.0%) larger than the stripped ordinary clang; the
++.gnu_debuglink section adds 104 bytes.
+ 
+-The final clang has no .symtab, DWARF sections or BOLT identity note.
+-In debug builds, clang-debuginfo supplies matching function symbols
+-in clang-22.debug,
+-linked from the executable by a verified .gnu_debuglink and CRC.
+-Use eu-strip because LLVM only-keep-debug crashes on the BOLT ELF
+-segment layout. The symbol file provides function-level localization,
+-not source lines. Verify the full symtab and cold-fragment addresses,
+-unchanged program headers and loaded sections, and both installed SHAs.
+-Release builds retain fully stripped clang without a symbol file or
+-debuglink.
+-Debugsource still omits these five clang-exclusive sources (ordinary
+-DWARF proof retained):
++The final clang has no .symtab, DWARF sections or BOLT identity note. In
++debug builds, clang-debuginfo supplies matching function symbols in
++clang-22.debug, linked from the executable by a verified .gnu_debuglink
++and CRC. Use eu-strip because LLVM only-keep-debug crashes with SIGSEGV
++(-11) on the BOLT ELF segment layout. The symbol file provides
++function-level localization, not source lines. Verify the full symtab
++and cold-fragment addresses, unchanged program headers and loaded
++sections, and both installed SHAs. Release builds retain fully stripped
++clang without a symbol file or debuglink. Debugsource still omits these
++five clang-exclusive sources (ordinary DWARF proof retained):
+ build/tools/clang/tools/driver/clang-driver.cpp,
+ clang/tools/driver/cc1_main.cpp, clang/tools/driver/cc1as_main.cpp,
+ clang/tools/driver/cc1gen_reproducer_main.cpp,
+-clang/tools/driver/driver.cpp.
+-In release builds, where no symbol file is shipped, crash localization
+-requires the build-side identity/rewrite records, the pre-strip BOLT
+-ELF, the matching ordinary ELF, and the tool and profile identities.
++clang/tools/driver/driver.cpp. In release builds, where no symbol file
++is shipped, crash localization requires the build-side identity/rewrite
++records, the pre-strip BOLT ELF, the matching ordinary ELF, and the tool
++and profile identities.
+ 
+-An earlier revision completed %install on Quickbuild x86_64;
+-this revision is pending Quickbuild
+-verification. Still open: full release-mode build; accel/worker
+-identity; cleanup cannot be guaranteed without matching /proc;
+-performance outside LLVM workloads. The Ninja job limit does not cap
+-linker memory. Maintenance notes:
+-header of packaging/clang-bolt-helper.py
++An earlier revision completed %install on Quickbuild x86_64; this
++revision is pending Quickbuild verification. Still open: full
++release-mode build; accel/worker identity; cleanup cannot be guaranteed
++without matching /proc; performance outside LLVM workloads. The Ninja
++job limit does not cap linker memory. Maintenance notes: header of
++packaging/clang-bolt-helper.py
+ 
+ Match the BOLT candidate RUNPATH to the ordinary CMake-installed clang
+ using an in-place CMake RPATH_CHANGE and preserve all other ELF bytes.
+@@ -89,8 +90,18 @@
+ the exact task set independently of completion order. Check real LLVM C
+ and C++ objects before strip, before install and after RPM processing.
+ 
+-Adopt -use-old-text: compared with that layout, clang is about 16.75%
+-smaller, with identical generated object files.
++Adopt -use-old-text: compared with the previous appended-text layout
++(183,224,160 bytes), clang is 16.75% smaller at 152,532,296 bytes before
++the debuglink, with identical generated object files.
++
++Handle SIGTERM and SIGHUP cooperatively and clean up the command process
++group before exiting. Freeze all ELF bytes outside the original
++RUNPATH/RPATH string ranges during path repair. Compare program headers
++and LOAD bytes across strip-all. Require the platform debugfiles.list to
++contain clang-22.debug in debug-mode post checks. Bound each run-step
++command to 14400 seconds, reporting its step name and elapsed time on
++timeout. Preserve unexpected helper exceptions with a diagnostic and
++traceback.
+ 
+ Change-Id: Ic98eab90cc017f127a66e1729b44fab8b8e8fb41
+ Signed-off-by: Hao Lin <hao.lin@samsung.com>

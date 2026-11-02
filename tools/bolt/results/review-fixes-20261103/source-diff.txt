@@ -1,0 +1,344 @@
+diff --git a/clang/tools/driver/CMakeLists.txt b/clang/tools/driver/CMakeLists.txt
+index b7f70845f695..3d8acd37075a 100644
+--- a/clang/tools/driver/CMakeLists.txt
++++ b/clang/tools/driver/CMakeLists.txt
+@@ -45,6 +45,7 @@ if(TIZEN_HYBRID_LINK)
+     message(FATAL_ERROR "Tizen hybrid requires component archives and separate drivers")
+   endif()
+   set(tizen_static_link DISABLE_LLVM_LINK_LLVM_DYLIB)
++  # add_llvm_executable is a macro and never clears USE_SHARED; reset it here.
+   set(USE_SHARED "")
+   set(CLANG_LINK_CLANG_DYLIB OFF) # Directory-local; other clang tools keep ON.
+ endif()
+diff --git a/lld/tools/lld/CMakeLists.txt b/lld/tools/lld/CMakeLists.txt
+index 10e89babffa1..eeb81ecd6f9d 100644
+--- a/lld/tools/lld/CMakeLists.txt
++++ b/lld/tools/lld/CMakeLists.txt
+@@ -9,6 +9,7 @@ if(TIZEN_HYBRID_LINK)
+     message(FATAL_ERROR "Tizen hybrid requires component archives and separate drivers")
+   endif()
+   set(tizen_static_link DISABLE_LLVM_LINK_LLVM_DYLIB)
++  # add_llvm_executable is a macro and never clears USE_SHARED; reset it here.
+   set(USE_SHARED "")
+ endif()
+ 
+diff --git a/llvm/cmake/modules/AddLLVM.cmake b/llvm/cmake/modules/AddLLVM.cmake
+index b00748adb4fb..3f345d5f0a0a 100644
+--- a/llvm/cmake/modules/AddLLVM.cmake
++++ b/llvm/cmake/modules/AddLLVM.cmake
+@@ -1048,6 +1048,10 @@ function(tizen_hybrid_llvm_interface name)
+   cmake_parse_arguments(H "" ""
+     "LINK_COMPONENTS;LINK_LIBS;DEPENDS;OBJLIBS;ADDITIONAL_HEADERS" ${ARGN})
+   llvm_map_components_to_libnames(components ${H_LINK_COMPONENTS} ${LLVM_LINK_COMPONENTS})
++  if(NOT components)
++    message(FATAL_ERROR
++      "${name}: empty LLVM component interface; declare LINK_COMPONENTS or disable TIZEN_HYBRID_LINK")
++  endif()
+   set(static_consumer "$<BOOL:$<TARGET_PROPERTY:TIZEN_STATIC_LLVM>>")
+   set(replacement "$<$<NOT:${static_consumer}>:LLVM>")
+   foreach(component IN LISTS components)
+diff --git a/llvm/tools/llvm-ar/CMakeLists.txt b/llvm/tools/llvm-ar/CMakeLists.txt
+index 2bb0025a0033..56f7a13c885f 100644
+--- a/llvm/tools/llvm-ar/CMakeLists.txt
++++ b/llvm/tools/llvm-ar/CMakeLists.txt
+@@ -17,6 +17,7 @@ if(TIZEN_HYBRID_LINK)
+     message(FATAL_ERROR "Tizen hybrid requires component archives and separate drivers")
+   endif()
+   set(tizen_static_link DISABLE_LLVM_LINK_LLVM_DYLIB)
++  # add_llvm_executable is a macro and never clears USE_SHARED; reset it here.
+   set(USE_SHARED "")
+ endif()
+ 
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 0aceb0330305..a74ae3656225 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -176,9 +176,22 @@ def wait_group_exit(group, timeout=10):
+                 (group, ', '.join('%d:%s' % item for item in members)))
+         time.sleep(.02)
+ 
++_CANCEL_SIGNAL = None
++
++
++def record_cancel(signum, frame):
++    global _CANCEL_SIGNAL
++    _CANCEL_SIGNAL = signum
++
++
++def check_cancel():
++    require(_CANCEL_SIGNAL is None, 'cancelled by signal %s' % _CANCEL_SIGNAL)
++
++
+ def peek_child_exit(process, timeout):
+     deadline = time.monotonic()+timeout if timeout is not None else None
+     while True:
++        check_cancel()
+         status = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+         if status is not None:
+             return status.si_status if status.si_code == os.CLD_EXITED else -status.si_status
+@@ -207,6 +220,7 @@ def call(argv, log, cwd=None, timeout=300):
+              {'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None,
+               'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+         with log.open('wb') as output:
++            check_cancel()
+             process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
+                                        stderr=subprocess.STDOUT, start_new_session=True)
+             rc = peek_child_exit(process, timeout)
+@@ -522,29 +536,54 @@ def installed_security(baseline, candidate):
+             'candidate_sha256': digest(candidate)}
+ 
+ 
+-def rpath_layout(path):
+-    """Freeze headers and every file byte except the two permitted sections."""
++def rpath_layout(path, allowed_ranges=None):
++    """Freeze all bytes except the original path strings, including their NULs."""
+     elf = ELF(path)
+     try:
+-        allowed = sorted((s[4], s[4]+s[5]) for name, s in elf.by_name.items()
+-                         if name in ('.dynamic', '.dynstr'))
++        dynamic = elf.by_name.get('.dynamic')
++        strings = elf.by_name.get('.dynstr')
++        if allowed_ranges is None:
++            allowed_ranges = []
++            if dynamic:
++                require(dynamic[5] % 16 == 0, 'invalid dynamic table size')
++                for offset in range(dynamic[4], dynamic[4]+dynamic[5], 16):
++                    tag, value = elf.unpack('<qQ', offset)
++                    if tag in (15, 29):
++                        require(strings is not None, 'RPATH without dynstr')
++                        elf.string(strings[4], strings[5], value)
++                        start = strings[4]+value
++                        end = elf.mm.find(b'\0', start, strings[4]+strings[5])+1
++                        allowed_ranges.append((start, end))
++        allowed = sorted(allowed_ranges)
+         cursor = 0; frozen = hashlib.sha256()
+         for start, end in allowed:
+-            require(start >= cursor, 'overlapping RPATH sections')
++            require(cursor <= start < end <= len(elf.mm), 'invalid or overlapping RPATH ranges')
+             frozen.update(elf.mm[cursor:start]); cursor = end
+         frozen.update(elf.mm[cursor:])
+-        dynamic = elf.by_name.get('.dynamic')
+-        tags = [struct.unpack_from('<qQ', elf.mm, i)[0]
+-                for i in range(dynamic[4], dynamic[4]+dynamic[5], 16)] if dynamic else []
+         return {'file_bytes': len(elf.mm), 'program_headers': elf.phdrs,
+-                'section_headers': elf.sections, 'dynamic_tags': tags,
+-                'unchanged_bytes_sha256': frozen.hexdigest(),
+-                'code_sections': {name: hashlib.sha256(elf.mm[s[4]:s[4]+s[5]]).hexdigest()
+-                                  for name, s in elf.by_name.items() if s[2] & 4 and s[1] != 8}}
++                'section_headers': elf.sections, 'allowed_ranges': allowed,
++                'unchanged_bytes_sha256': frozen.hexdigest()}
+     finally:
+         elf.close()
+ 
+ 
++def strip_layout(path):
++    """Keep program headers and every loaded byte fixed across strip-all."""
++    elf = ELF(path)
++    try:
++        return {'program_headers': elf.phdrs,
++                'loads': [{'header': p, 'sha256': hashlib.sha256(
++                    elf.mm[p[2]:p[2]+p[5]]).hexdigest()} for p in elf.loads]}
++    finally:
++        elf.close()
++
++
++def verify_strip_layout(before, after):
++    original, stripped = strip_layout(before), strip_layout(after)
++    require(original == stripped, 'strip-all changed program headers or LOAD content')
++    return {'preserved': True, 'layout': original}
++
++
+ def cmake_literal(value):
+     require('\x00' not in value, 'NUL in CMake argument')
+     delimiter = '='
+@@ -570,7 +609,7 @@ def adjust_rpath(candidate, baseline, work, identity):
+         atomic_text(script, 'file(RPATH_CHANGE FILE '+cmake_literal(str(candidate))+
+                     ' OLD_RPATH '+cmake_literal(old[key])+' NEW_RPATH '+cmake_literal(new[key])+')\n')
+         call(['cmake', '-P', str(script)], work/'candidate-rpath.log', timeout=60)
+-    require(rpath_layout(candidate) == layout, 'RPATH_CHANGE changed ELF layout or non-path content')
++    require(rpath_layout(candidate, layout['allowed_ranges']) == layout, 'RPATH_CHANGE changed ELF layout or non-path content')
+     actual = security_properties(candidate)
+     require({k: actual[k] for k in keys} == new, 'ELF RPATH differs from installed-baseline')
+     log = work/'candidate-readelf.log'
+@@ -953,6 +992,19 @@ def install_candidate(root, candidate, state, identity, announce=False, identity
+             except OSError: pass
+         raise
+ 
++def debugfiles_gate(ordinary, identity):
++    if 'debug_file' not in identity:
++        return {'required': False}
++    # find-debuginfo.sh writes this default list in the RPM build directory.
++    path = Path(ordinary).parent.parent.parent/'debugfiles.list'
++    require(path.is_file(), 'debugfiles list missing: '+str(path))
++    lines = path.read_text().splitlines()
++    expected = '/'+DEBUG_INSTALL_PATH
++    require(any(line.strip() in (expected, '.'+expected) for line in lines),
++            'debugfiles list omits '+expected+': '+str(path))
++    return {'required': True, 'path': str(path), 'sha256': digest(path), 'listed': expected}
++
++
+ def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
+     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
+     entity = root/'usr/bin/clang-22'; require(digest(entity) == state['installed_sha256'], 'clang changed during RPM post-processing')
+@@ -975,6 +1027,7 @@ def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
+         # Platform find-debuginfo skips files already carrying a debuglink.
+         # Both payload SHAs must survive its original, single post chain.
+         debug['find_debuginfo_skip_basis'] = 'preinstalled debuglink; clang and debug SHAs unchanged'
++        debug['package_list'] = debugfiles_gate(ordinary, state['identity'])
+     no_bolt_products(root)
+     security = security_compare(ordinary, str(entity), ignore_paths=True)
+     baseline = Path(ordinary).parent/'installed-baseline.json'
+@@ -1457,7 +1510,7 @@ def disk_diagnose(step, log, error=None, build=None, work=None, root=None):
+     """Read-only, failure evidence only; failures here never replace the error."""
+     text, available = disk_failure_log(log)
+     evidence = disk_evidence(log,error,log_text=text)
+-    cause = 'disk' if evidence else ('not-disk' if available else 'unknown')
++    cause = 'disk' if evidence else ('unconfirmed' if available else 'unknown')
+     value = {'cause': cause, 'step': step, 'free_bytes': None}
+     if cause == 'unknown':
+         value.update(used_bytes=None,reason='日志不可用，无法判定原因')
+@@ -1519,8 +1572,9 @@ def diagnose_safely(step, log, error=None):
+ 
+ def run_step(step, log, argv, output=None, success_marker=None):
+     os.environ['BOLT_STEP_LOG'] = str(log)
++    started = time.monotonic()
+     try:
+-        text = call(argv,log,timeout=None)
++        text = call(argv,log,timeout=14400)
+         if success_marker:
+             with Path(log).open('a') as stream:
+                 require(stream.write(success_marker+'\n')==len(success_marker)+1,'short build-success marker write');stream.flush();os.fsync(stream.fileno())
+@@ -1532,6 +1586,11 @@ def run_step(step, log, argv, output=None, success_marker=None):
+         # Preserve the failed command's actual output even when its exit is nonzero.
+         try: print(Path(log).read_text(errors='replace'),end='',flush=True)
+         except Exception: pass
++        if isinstance(error, GateError) and 'TIMEOUT:' in str(error):
++            failure = GateError('TIMEOUT: step=%s elapsed_seconds=%.3f; %s' %
++                                (step, time.monotonic()-started, error))
++            failure.bolt_log = str(log)
++            raise failure from error
+         raise
+ 
+ 
+@@ -1551,6 +1610,7 @@ def pipeline(build, work, bolt, cache=None, debug_symbols=False):
+     real_prestrip = real_gate(work/'ordinary-clang-22',work/'clang.bolt',build,work/'prestrip-real',build/'lib64/clang/22')
+     debug_info = separate_debug_symbols(build, work) if debug_symbols else None
+     identity = strip_all(str(build/'bin/llvm-strip'),work/'clang.bolt',work/'clang.candidate',work/'identity.json')
++    identity['strip_layout'] = verify_strip_layout(work/'clang.bolt', work/'clang.candidate')
+     identity = adjust_rpath(work/'clang.candidate',baseline,work,identity)
+     if debug_info is not None:
+         identity = add_debuglink(build,work,identity,debug_info)
+@@ -1782,6 +1842,11 @@ def main():
+     print(json.dumps(result,ensure_ascii=False),flush=True)
+ 
+ def cli():
++    global _CANCEL_SIGNAL
++    previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGHUP)}
++    _CANCEL_SIGNAL = None
++    for sig in previous:
++        signal.signal(sig, record_cancel)
+     try:
+         main()
+         return 0
+@@ -1791,6 +1856,16 @@ def cli():
+         diagnose_safely(step,log,error)
+         print('BOLT_GATE_FAILED: '+str(error),file=sys.stderr)
+         return 1
++    except Exception as error:
++        step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
++        log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
++        diagnose_safely(step,log,error)
++        print('BOLT_GATE_FAILED: unexpected %s: %s' % (type(error).__name__, error), file=sys.stderr)
++        raise
++    finally:
++        for sig, handler in previous.items():
++            signal.signal(sig, handler)
++        _CANCEL_SIGNAL = None
+ 
+ 
+ if __name__=='__main__':
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index a20d52c61bb3..7a51be894f83 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -418,6 +418,18 @@ ninja -j %{mlgo_build_jobs}
+ %else
+ ninja -j %{mlgo_build_jobs}
+ %endif
++%ifarch x86_64
++# These drivers must retain component linkage even when BOLT is disabled.
++for hybrid_tool in bin/clang-22 bin/lld bin/llvm-ar; do
++    test -f "$hybrid_tool" || { echo "TIZEN_HYBRID_LINK_FAILED missing $hybrid_tool" >&2; exit 1; }
++    hybrid_dynamic=$(readelf -dW "$hybrid_tool") || exit 1
++    if printf '%s\n' "$hybrid_dynamic" | grep -E '\(NEEDED\).*\[(libLLVM[^]]*\.so|libclang-cpp[^]]*\.so)'; then
++        echo "TIZEN_HYBRID_LINK_FAILED shared LLVM/Clang dependency: $hybrid_tool" >&2
++        exit 1
++    fi
++done
++echo TIZEN_HYBRID_LINK_OK
++%endif
+ 
+ %install
+ cd build
+@@ -426,6 +438,7 @@ cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
+ %if %{with clang_bolt}
+ 
+ # Reject debug-named buildroots before any BOLT action.
++# Keep the ordinary install and BOLT payload under the same platform debug-path policy.
+ case $(printf '%s' '%{buildroot}' | LC_ALL=C tr '[:upper:]' '[:lower:]') in
+   *debug*) echo 'BOLT buildroot absolute path contains debug' >&2; exit 1 ;;
+ esac
+@@ -455,7 +468,7 @@ bolt_step() {
+   shift
+   bolt_checked "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" python3 -B %{SOURCE1201} run-step "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" -- "$@"
+ }
+-python3 -B %{SOURCE1201} disk-report begin
++python3 -B %{SOURCE1201} disk-report begin || true
+ echo "BOLT_BUILDROOT_OK %{buildroot}"
+ python3 -B %{SOURCE1201} preflight || exit 1
+ python3 -B %{SOURCE1201} certified || exit 1
+@@ -476,23 +489,23 @@ bolt_step configure cmake -S ../llvm -B . \
+   -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
+ # Only certified BOLT tasks and the paired configure-refreshed TF anchor.
+ bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
+-LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- ninja -n llvm-bolt
++bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- env LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -n llvm-bolt
+ bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
+ python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
+ cat "$BOLT_WORK/tool-plan.json"
+ python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
+-LC_ALL=C NINJA_STATUS='[%%f/%%t] ' bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- ninja -j %{mlgo_build_jobs} llvm-bolt
++bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -j %{mlgo_build_jobs} llvm-bolt
+ python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+ cat "$BOLT_WORK/tool-build-verification.json"
+-python3 -B %{SOURCE1201} disk-report tool-built
++python3 -B %{SOURCE1201} disk-report tool-built || true
+ %if %{llvm_release_build}
+ python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
+ %else
+ python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" --debug-symbols || exit 1
+ %endif
+ echo BOLT_PIPELINE_PASS
+-python3 -B %{SOURCE1201} disk-report pipeline
++python3 -B %{SOURCE1201} disk-report pipeline || true
+ # BOLT configuration/build/rewrite must not change the ordinary installation.
+ # Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
+ python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
+@@ -500,7 +513,7 @@ python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.
+ echo BOLT_COMPARE_ROOT_PASS
+ # No subsequent step consumes this ThinLTO cache.
+ # Release it only inside the enabled x86_64 BOLT block.
+-python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK"
++python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK" || true
+ # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
+ %endif
+ %endif
+@@ -796,6 +809,6 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+     %{__bolt_original_spec_install_post} \
+     python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
+     echo BOLT_POST_GATE_PASS \
+-    python3 -B %{SOURCE1201} disk-report post
++    python3 -B %{SOURCE1201} disk-report post || true
+ %endif
+ %endif

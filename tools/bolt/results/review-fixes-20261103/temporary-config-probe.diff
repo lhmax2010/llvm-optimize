@@ -1,0 +1,10 @@
+--- 6e9d4f2/AddLLVM.cmake
++++ new-root-only-probe/AddLLVM.cmake
+@@ -1048,6 +1048,7 @@
+   cmake_parse_arguments(H "" ""
+     "LINK_COMPONENTS;LINK_LIBS;DEPENDS;OBJLIBS;ADDITIONAL_HEADERS" ${ARGN})
+   llvm_map_components_to_libnames(components ${H_LINK_COMPONENTS} ${LLVM_LINK_COMPONENTS})
++  file(APPEND "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/hybrid-component-probe.tsv" "${name}\t${components}\n")
+   set(static_consumer "$<BOOL:$<TARGET_PROPERTY:TIZEN_STATIC_LLVM>>")
+   set(replacement "$<$<NOT:${static_consumer}>:LLVM>")
+   foreach(component IN LISTS components)

@@ -72,7 +72,7 @@ def fault_driver(kind, root):
                 if Path(dst)==entity:raise OSError(errno.ENOSPC,'No space left on device')
                 return real(src,dst)
             manager=patch.object(h.os,'replace',replace)
-    elif kind in ('not-disk','diagnostic-exception','unknown'):
+    elif kind in ('unconfirmed','diagnostic-exception','unknown'):
         log=work/'gate.log'
         if kind!='unknown':log.write_text('fixture original gate failure\n')
         os.environ['BOLT_STEP_LOG']=str(log)
@@ -100,7 +100,7 @@ class CopytreeEvidenceTests(Base):
 
 class DiskFaultTests(Base):
     def run_fault(self,kind):
-        root=self.d/kind;root.mkdir();p=subprocess.run([sys.executable,'-B',__file__,'--fault',kind,str(root)],capture_output=True,text=True,timeout=30)
+        root=self.d/kind;root.mkdir();p=subprocess.run([sys.executable,'-B','-c',"import importlib.util,runpy,sys; from pathlib import Path; helper,file=sys.argv[1:3]; sys.path.insert(0,str(Path(file).parent)); s=importlib.util.spec_from_file_location('bolt_helper',helper); m=importlib.util.module_from_spec(s); sys.modules['bolt_helper']=m; s.loader.exec_module(m); sys.argv=sys.argv[2:]; runpy.run_path(file,run_name='__main__')",h.__file__,__file__,'--fault',kind,str(root)],capture_output=True,text=True,timeout=30)
         evidence=os.environ.get('BOLT_TEST_EVIDENCE')
         if evidence:
             d=Path(evidence);d.mkdir(parents=True,exist_ok=True)
@@ -128,7 +128,7 @@ class DiskFaultTests(Base):
     def test_install_alias_enospc_preserves_entity(self):self.disk_fault('install-alias')
     def test_install_rename_enospc_preserves_entity(self):self.disk_fault('install-rename')
     def test_non_disk_original_error(self):
-        p,rows,state=self.run_fault('not-disk');self.assertEqual(len(rows),1);self.assertEqual(rows[0]['cause'],'not-disk');self.assertNotIn('estimated_total_bytes',rows[0]);self.assertEqual(p.stderr,'BOLT_GATE_FAILED: fixture original gate failure\n')
+        p,rows,state=self.run_fault('unconfirmed');self.assertEqual(len(rows),1);self.assertEqual(rows[0]['cause'],'unconfirmed');self.assertNotIn('estimated_total_bytes',rows[0]);self.assertEqual(p.stderr,'BOLT_GATE_FAILED: fixture original gate failure\n')
     def test_missing_log_unknown_cli(self):
         p,rows,state=self.run_fault('unknown');self.assertEqual(len(rows),1)
         self.assertEqual(rows[0]['cause'],'unknown');self.assertEqual(rows[0]['reason'],'日志不可用，无法判定原因')
@@ -173,7 +173,7 @@ class DiskObservationTests(Base):
         build,work,root=fixture(self.d)
         log=work/'ordinary.log';log.write_text('ordinary gate failure\n')
         with patch.object(h.shutil,'disk_usage',return_value=type('Disk',(),{'free':0})()),contextlib.redirect_stdout(io.StringIO()):value=h.disk_diagnose('step',log,build=build,work=work)
-        self.assertEqual(value,{'cause':'not-disk','step':'step','free_bytes':0})
+        self.assertEqual(value,{'cause':'unconfirmed','step':'step','free_bytes':0})
     def test_unrelated_log_and_error_text_are_not_evidence(self):
         build,work,root=fixture(self.d);(work/'other.log').write_text('ENOSPC')
         with contextlib.redirect_stdout(io.StringIO()):value=h.disk_diagnose('step','-',h.GateError('No space left on device'),build,work)

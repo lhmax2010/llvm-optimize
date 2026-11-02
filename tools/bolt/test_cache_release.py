@@ -73,7 +73,7 @@ class CacheReleaseTests(Base):
             h.disk_diagnose('post',log,build=self.build,work=self.work)
         self.assertTrue(after['recorded']);self.assertEqual(after['cache_delta_allocated_bytes'],0)
         self.assertEqual(after['cache_net_allocation_delta_bytes'],-allocated)
-        self.assertIn('"cause": "not-disk"',out.getvalue())
+        self.assertIn('"cause": "unconfirmed"',out.getvalue())
         log.write_text('No space left on device')
         with contextlib.redirect_stdout(io.StringIO()) as out:
             h.disk_diagnose('post',log,build=self.build,work=self.work)

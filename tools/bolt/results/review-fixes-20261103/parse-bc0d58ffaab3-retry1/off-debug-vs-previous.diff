@@ -1,0 +1,19 @@
+--- previous
++++ new
+@@ -281,6 +281,16 @@
+ 
+ # Full build using ninja (already in build/ directory after cd build)
+ ninja -j 6
++# These drivers must retain component linkage even when BOLT is disabled.
++for hybrid_tool in bin/clang-22 bin/lld bin/llvm-ar; do
++    test -f "$hybrid_tool" || { echo "TIZEN_HYBRID_LINK_FAILED missing $hybrid_tool" >&2; exit 1; }
++    hybrid_dynamic=$(readelf -dW "$hybrid_tool") || exit 1
++    if printf '%s\n' "$hybrid_dynamic" | grep -E '\(NEEDED\).*\[(libLLVM[^]]*\.so|libclang-cpp[^]]*\.so)'; then
++        echo "TIZEN_HYBRID_LINK_FAILED shared LLVM/Clang dependency: $hybrid_tool" >&2
++        exit 1
++    fi
++done
++echo TIZEN_HYBRID_LINK_OK
+ 
+ 
+ %install

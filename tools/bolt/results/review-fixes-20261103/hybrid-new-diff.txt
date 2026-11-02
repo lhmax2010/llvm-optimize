@@ -1,0 +1,74 @@
+diff --git a/clang/tools/driver/CMakeLists.txt b/clang/tools/driver/CMakeLists.txt
+index b7f70845f695..3d8acd37075a 100644
+--- a/clang/tools/driver/CMakeLists.txt
++++ b/clang/tools/driver/CMakeLists.txt
+@@ -45,6 +45,7 @@ if(TIZEN_HYBRID_LINK)
+     message(FATAL_ERROR "Tizen hybrid requires component archives and separate drivers")
+   endif()
+   set(tizen_static_link DISABLE_LLVM_LINK_LLVM_DYLIB)
++  # add_llvm_executable is a macro and never clears USE_SHARED; reset it here.
+   set(USE_SHARED "")
+   set(CLANG_LINK_CLANG_DYLIB OFF) # Directory-local; other clang tools keep ON.
+ endif()
+diff --git a/lld/tools/lld/CMakeLists.txt b/lld/tools/lld/CMakeLists.txt
+index 10e89babffa1..eeb81ecd6f9d 100644
+--- a/lld/tools/lld/CMakeLists.txt
++++ b/lld/tools/lld/CMakeLists.txt
+@@ -9,6 +9,7 @@ if(TIZEN_HYBRID_LINK)
+     message(FATAL_ERROR "Tizen hybrid requires component archives and separate drivers")
+   endif()
+   set(tizen_static_link DISABLE_LLVM_LINK_LLVM_DYLIB)
++  # add_llvm_executable is a macro and never clears USE_SHARED; reset it here.
+   set(USE_SHARED "")
+ endif()
+ 
+diff --git a/llvm/cmake/modules/AddLLVM.cmake b/llvm/cmake/modules/AddLLVM.cmake
+index b00748adb4fb..3f345d5f0a0a 100644
+--- a/llvm/cmake/modules/AddLLVM.cmake
++++ b/llvm/cmake/modules/AddLLVM.cmake
+@@ -1048,6 +1048,10 @@ function(tizen_hybrid_llvm_interface name)
+   cmake_parse_arguments(H "" ""
+     "LINK_COMPONENTS;LINK_LIBS;DEPENDS;OBJLIBS;ADDITIONAL_HEADERS" ${ARGN})
+   llvm_map_components_to_libnames(components ${H_LINK_COMPONENTS} ${LLVM_LINK_COMPONENTS})
++  if(NOT components)
++    message(FATAL_ERROR
++      "${name}: empty LLVM component interface; declare LINK_COMPONENTS or disable TIZEN_HYBRID_LINK")
++  endif()
+   set(static_consumer "$<BOOL:$<TARGET_PROPERTY:TIZEN_STATIC_LLVM>>")
+   set(replacement "$<$<NOT:${static_consumer}>:LLVM>")
+   foreach(component IN LISTS components)
+diff --git a/llvm/tools/llvm-ar/CMakeLists.txt b/llvm/tools/llvm-ar/CMakeLists.txt
+index 2bb0025a0033..56f7a13c885f 100644
+--- a/llvm/tools/llvm-ar/CMakeLists.txt
++++ b/llvm/tools/llvm-ar/CMakeLists.txt
+@@ -17,6 +17,7 @@ if(TIZEN_HYBRID_LINK)
+     message(FATAL_ERROR "Tizen hybrid requires component archives and separate drivers")
+   endif()
+   set(tizen_static_link DISABLE_LLVM_LINK_LLVM_DYLIB)
++  # add_llvm_executable is a macro and never clears USE_SHARED; reset it here.
+   set(USE_SHARED "")
+ endif()
+ 
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index f6cd8c6c64b5..67e97e5ac2c8 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -394,6 +394,18 @@ cmake \
+ 
+ # Full build using ninja (already in build/ directory after cd build)
+ ninja -j %{mlgo_build_jobs}
++%ifarch x86_64
++# These drivers must retain component linkage even when BOLT is disabled.
++for hybrid_tool in bin/clang-22 bin/lld bin/llvm-ar; do
++    test -f "$hybrid_tool" || { echo "TIZEN_HYBRID_LINK_FAILED missing $hybrid_tool" >&2; exit 1; }
++    hybrid_dynamic=$(readelf -dW "$hybrid_tool") || exit 1
++    if printf '%s\n' "$hybrid_dynamic" | grep -E '\(NEEDED\).*\[(libLLVM[^]]*\.so|libclang-cpp[^]]*\.so)'; then
++        echo "TIZEN_HYBRID_LINK_FAILED shared LLVM/Clang dependency: $hybrid_tool" >&2
++        exit 1
++    fi
++done
++echo TIZEN_HYBRID_LINK_OK
++%endif
+ 
+ %install
+ cd build

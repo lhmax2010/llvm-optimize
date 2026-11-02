@@ -697,3 +697,13 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 新评审包patches/review-20261102/含相对67619ec8的两份完整format-patch（含Source1200二进制）、8个完整文本文件、两份提交说明、三处diff、尺寸原始证据、README及SHA256SUMS。两份补丁独立index顺序应用得到同一tree，PASS。旧review-20261028目录原样保留，新README注明取代关系。
 - README关联39号old-text、43号第9节完整构建/23包/90TU、第13节装包/21帧符号化、37号RUNPATH，说明debug/release、回退、release完整构建及源码行/only-keep-debug/QB验证等挂账。
 - 原PGO源码工作区与temp/pgo-resource-20261102全部未改；未构建、未操作QB、未推Gerrit或sandbox。仅更新GitHub bolt-v4评审材料，原代码tree的认证继续有效。
+
+## 2026-11-02：外部评审修订（48；第 7 项阻断，不能开始完整构建）
+
+- 按用户要求，仅在 `W/temp/review-20261102/source` detached HEAD 上生成两个本地提交：hybrid `38477c9b6e1401e5e1fe01fafa282ab92cf53887`（父 67619ec8，tree 0ce98bed0e7e92780ca6d9f8d316d1ee422fb8d6）；BOLT `bc0d58ffaab37dbcd88098ccb4c3734570345593`（父新 hybrid，tree d2a5e457ecd5d439a9dd50b67fb561a5f0d67eb3）。两者保留 Change-Id，作者/提交者/签署均 Hao Lin。未推 Gerrit/sandbox。
+- 空组件探针：原 hybrid 完整配方配置，在新根副本用临时记录探针覆盖 96 个静态接口，空组件 0；因此加入 FATAL_ERROR，生产 guard 再配置成功。三个驱动的 x86 NEEDED 断言在 BOLT ON/OFF 均执行，三处 USE_SHARED 注释补齐；五个上游强制静态工具已逐项核对 docs/53 原文。
+- BOLT 新增协作式 SIGTERM/SIGHUP 清理、精确 RUNPATH 字符串字节门禁、严格 strip LOAD 门禁、debugfiles.list 进包检查、14400 秒 run-step 超时、意外异常诊断；磁盘无证据标签改 unconfirmed；disk-report/cache-release 容错及子进程 Ninja 环境明确传递。profile、OPTIONS、111+2 白名单、Source1005 不变。
+- 375 个夹具 PASS；旧 helper debuglink 负控制退出 1；GBS export/Tizen RPM 五项解析 PASS。真实 RUNPATH（13a07cb7→8c2429d8）和 full-20261030 debugfiles.list PASS。关闭 BOLT 的两模式展开与新 hybrid 相差两个 Source 和既有条件块的 14 行空行；与 3ee OFF 仅差本轮 NEEDED 断言，完整原文保留，不声称全文只差两行。
+- **严格 strip 门禁真实复核 BLOCKED**：程序头和五个 LOAD 的偏移/地址/大小/标志均相同，但首个 LOAD 包含 ELF 头；strip 删除非加载节后，e_shoff/e_shnum/e_shstrndx 共 6 字节变化。原要求的 LOAD 原始 SHA 不相同。已询问是否允许仅归一化这三个字段；没有收到裁决，未把例外写进 helper。当前 BOLT 提交会在此停止，**不能用于夜间完整构建或上传**。
+- 没有能确证为精确 67619ec8 完整构建的保全 RPM：已知基线为 9e5675f（BOLT ON）或 f111162e-dirty，未冒用其完成第16项包比较。四个非默认目标在新建 67619ec8/hybrid 配置图里都不在 all 闭包。
+- 新报告 [48_review_fixes.md](48_review_fixes.md)、材料 [review-20261103](../../patches/review-20261103/README.md)、证据 [review-fixes-20261103](../../tools/bolt/results/review-fixes-20261103/)。旧评审包与历史产物保留，PGO 源码/试验目录未改，无完整构建，无 QB 操作。发布前挂账仍含 release 完整构建、本 revision QB、正常依赖装包、Clang/LLD 组件消费者、accel/worker、ARM 根及资源实测。

@@ -13,12 +13,13 @@ class DebugModeTests(Base):
         with contextlib.ExitStack() as stack:
             mocks={name:stack.enter_context(patch.object(h,name)) for name in
                 ('replay_script','call','rewrite','tiny_gate','real_gate','separate_debug_symbols',
-                 'strip_all','adjust_rpath','add_debuglink','security_compare')}
+                 'strip_all','verify_strip_layout','adjust_rpath','add_debuglink','security_compare')}
             mocks['replay_script'].return_value='script'
             mocks['rewrite'].return_value={}
             mocks['real_gate'].return_value={}
             mocks['security_compare'].return_value={}
             mocks['strip_all'].return_value=identity
+            mocks['verify_strip_layout'].return_value={'preserved':True}
             mocks['adjust_rpath'].return_value=identity
             mocks['add_debuglink'].return_value=identity
             mocks['separate_debug_symbols'].return_value={'symbols':True}
@@ -29,5 +30,6 @@ class DebugModeTests(Base):
             self.assertEqual(mocks['tiny_gate'].call_count,2)
             self.assertEqual(mocks['real_gate'].call_count,2)
             self.assertEqual(result['identity'],identity)
+            self.assertEqual(mocks['verify_strip_layout'].call_count,1)
     def test_release_default_no_symbol_file_or_debuglink(self):self.exercise(False)
     def test_debug_extracts_and_adds_debuglink(self):self.exercise(True)
