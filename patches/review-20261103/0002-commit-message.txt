@@ -96,12 +96,13 @@ the debuglink, with identical generated object files.
 
 Handle SIGTERM and SIGHUP cooperatively and clean up the command process
 group before exiting. Freeze all ELF bytes outside the original
-RUNPATH/RPATH string ranges during path repair. Compare program headers
-and LOAD bytes across strip-all. Require the platform debugfiles.list to
-contain clang-22.debug in debug-mode post checks. Bound each run-step
-command to 14400 seconds, reporting its step name and elapsed time on
-timeout. Preserve unexpected helper exceptions with a diagnostic and
-traceback.
+RUNPATH/RPATH string ranges during path repair. Compare all ELF/program
+header fields and LOAD bytes across strip-all, normalizing only e_shoff,
+e_shnum and e_shstrndx because strip relocates the nonloaded section
+table. Require the platform debugfiles.list to contain clang-22.debug in
+debug-mode post checks. Bound each run-step command to 14400 seconds,
+reporting its step name and elapsed time on timeout. Preserve unexpected
+helper exceptions with a diagnostic and traceback.
 
 Change-Id: Ic98eab90cc017f127a66e1729b44fab8b8e8fb41
 Signed-off-by: Hao Lin <hao.lin@samsung.com>

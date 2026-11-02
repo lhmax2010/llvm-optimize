@@ -166,6 +166,42 @@ class StripLayoutTests(Base):
         with self.assertRaisesRegex(h.GateError,'LOAD'):h.verify_strip_layout(self.a,self.b)
 
 
+    def test_entry_changed(self):
+        self.setup_elf();data=bytearray(self.b.read_bytes())
+        struct.pack_into('<Q',data,24,0x400101);self.b.write_bytes(data)
+        with self.assertRaises(h.GateError):h.verify_strip_layout(self.a,self.b)
+    def test_phoff_changed_with_identical_program_headers(self):
+        self.setup_elf();data=bytearray(self.a.read_bytes())
+        phoff=len(data);data.extend(data[64:120])
+        self.a.write_bytes(data)
+        struct.pack_into('<Q',data,32,phoff);self.b.write_bytes(data)
+        # Both tables are valid and equal; the ELF header offset itself differs.
+        self.assertEqual(h.strip_layout(self.a)['program_headers'],h.strip_layout(self.b)['program_headers'])
+        with self.assertRaises(h.GateError):h.verify_strip_layout(self.a,self.b)
+    def test_only_three_section_table_fields_changed(self):
+        self.setup_elf();data=bytearray(self.a.read_bytes())
+        e=h.ELF(self.a)
+        try:
+            headers=[list(x) for x in e.sections]
+            text_end=e.by_name['.text'][4]+e.by_name['.text'][5]
+        finally:e.close()
+        # Put the ELF header inside LOAD, as in the real clang. Both valid
+        # section tables are present in both files; only the locators change.
+        struct.pack_into('<Q',data,64+8,0)
+        struct.pack_into('<Q',data,64+32,text_end)
+        struct.pack_into('<Q',data,64+40,text_end)
+        newer=[headers[0],headers[2],headers[3],headers[4],headers[1]]
+        newer[3][6]=2  # symtab now links to strtab at index 2
+        shoff=len(data)
+        data.extend(b''.join(struct.pack('<IIQQQQIIQQ',*x) for x in newer))
+        self.a.write_bytes(data)
+        struct.pack_into('<Q',data,40,shoff)
+        struct.pack_into('<H',data,60,len(newer))
+        struct.pack_into('<H',data,62,4)
+        self.b.write_bytes(data)
+        self.assertTrue(h.verify_strip_layout(self.a,self.b)['preserved'])
+
+
 class ProductionConstantsTests(Base):
     def test_profile_options_and_whitelist_unchanged(self):
         import ast

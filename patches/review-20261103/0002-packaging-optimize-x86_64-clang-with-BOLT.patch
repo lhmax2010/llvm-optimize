@@ -1,4 +1,4 @@
-From bc0d58ffaab37dbcd88098ccb4c3734570345593 Mon Sep 17 00:00:00 2001
+From 5aff6c0c3ab663872cf997a13bb9242bac474092 Mon Sep 17 00:00:00 2001
 From: Hao Lin <hao.lin@samsung.com>
 Date: Thu, 29 Oct 2026 13:22:21 +0800
 Subject: [PATCH] packaging: optimize x86_64 clang with BOLT
@@ -99,29 +99,30 @@ the debuglink, with identical generated object files.
 
 Handle SIGTERM and SIGHUP cooperatively and clean up the command process
 group before exiting. Freeze all ELF bytes outside the original
-RUNPATH/RPATH string ranges during path repair. Compare program headers
-and LOAD bytes across strip-all. Require the platform debugfiles.list to
-contain clang-22.debug in debug-mode post checks. Bound each run-step
-command to 14400 seconds, reporting its step name and elapsed time on
-timeout. Preserve unexpected helper exceptions with a diagnostic and
-traceback.
+RUNPATH/RPATH string ranges during path repair. Compare all ELF/program
+header fields and LOAD bytes across strip-all, normalizing only e_shoff,
+e_shnum and e_shstrndx because strip relocates the nonloaded section
+table. Require the platform debugfiles.list to contain clang-22.debug in
+debug-mode post checks. Bound each run-step command to 14400 seconds,
+reporting its step name and elapsed time on timeout. Preserve unexpected
+helper exceptions with a diagnostic and traceback.
 
 Change-Id: Ic98eab90cc017f127a66e1729b44fab8b8e8fb41
 Signed-off-by: Hao Lin <hao.lin@samsung.com>
 ---
- packaging/clang-bolt-helper.py   | 1872 ++++++++++++++++++++++++++++++
+ packaging/clang-bolt-helper.py   | 1888 ++++++++++++++++++++++++++++++
  packaging/clang-bolt-v2.fdata.xz |  Bin 0 -> 9735212 bytes
  packaging/llvm.spec              |  126 ++
- 3 files changed, 1998 insertions(+)
+ 3 files changed, 2014 insertions(+)
  create mode 100644 packaging/clang-bolt-helper.py
  create mode 100644 packaging/clang-bolt-v2.fdata.xz
 
 diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..a74ae36562255803f638259f58c8218dccf3b8f8
+index 0000000000000000000000000000000000000000..1b321112b788fef6b4c214518f3ce68f84261e9e
 --- /dev/null
 +++ b/packaging/clang-bolt-helper.py
-@@ -0,0 +1,1872 @@
+@@ -0,0 +1,1888 @@
 +#!/usr/bin/env python3
 +"""Tizen clang BOLT gates. Python >= 3.9; shell commands use POSIX sh.
 +
@@ -692,12 +693,28 @@ index 0000000000000000000000000000000000000000..a74ae36562255803f638259f58c8218d
 +
 +
 +def strip_layout(path):
-+    """Keep program headers and every loaded byte fixed across strip-all."""
++    """Freeze ELF/program headers and LOAD bytes, except section-table locators."""
 +    elf = ELF(path)
 +    try:
-+        return {'program_headers': elf.phdrs,
-+                'loads': [{'header': p, 'sha256': hashlib.sha256(
-+                    elf.mm[p[2]:p[2]+p[5]]).hexdigest()} for p in elf.loads]}
++        # These fields only locate/describe the nonloaded section table. Removing
++        # nonloaded sections during strip changes them, not execution or symbol
++        # addresses: e_shoff [40,48), e_shnum [60,62), e_shstrndx [62,64).
++        ignored = ((40, 48), (60, 62), (62, 64))
++
++        def normalized_sha256(start, size):
++            end = start+size; cursor = start; digest = hashlib.sha256()
++            for low, high in ignored:
++                low, high = max(start, low), min(end, high)
++                if low < high:
++                    digest.update(elf.mm[cursor:low])
++                    digest.update(b'\0'*(high-low)); cursor = high
++            digest.update(elf.mm[cursor:end])
++            return digest.hexdigest()
++
++        return {'elf_header_sha256': normalized_sha256(0, 64),
++                'program_headers': elf.phdrs,
++                'loads': [{'header': p, 'sha256': normalized_sha256(p[2], p[5])}
++                          for p in elf.loads]}
 +    finally:
 +        elf.close()
 +

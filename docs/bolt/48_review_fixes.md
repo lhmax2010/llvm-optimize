@@ -1,6 +1,8 @@
 # 48 外部评审修订与轻量认证
 
-本轮**未达到全部上传前门禁**：375 项夹具、GBS 导出、Tizen RPM 五项解析、真实 RUNPATH 和 debugfiles 清单检查通过，但严格的 strip-all LOAD 字节门禁拒绝了历史认证产物。原因已定位：移除非加载符号表会改变落在首个 LOAD 内的三个 ELF 节表定位字段，共 6 个字节；没有自行加入例外。两个本地提交及评审包已保留，**当前 BOLT 提交不能用于夜间完整构建或上传 Gerrit**，等待用户决定是否仅归一化这三个字段。
+第 7 项已按用户裁决闭合：只归一化三个完整 ELF 节表定位字段，其余 ELF 头、程序头和 LOAD 内容仍严格比较，真实产物复核通过。全部 378 项测试通过，新的 BOLT 提交已重新导出并完成 Tizen RPM 五项解析；本轮没有运行完整构建或推送 Gerrit/sandbox。精确 67619ec8 完整构建 RPM 不可确证的材料缺口，以及发布前验收事项仍保留，不据此宣布完整产品认证通过。
+
+**阅读说明：第 1–19 节保留首轮 `440aaa2` 的执行与阻断历史；本次用户裁决后的最终状态见第 20 节，以该节为准。**
 
 执行日期：2026-11-02（目录按任务要求命名 20261103）。方案来源均为本轮外部评审及用户逐项要求；实现、测试和下述边界分析由本次执行完成。不把历史验证算作本 revision 的完整构建验证。
 
@@ -215,3 +217,53 @@ RPM 首次版本探针误把 `rpm --version` 的显示值 `4.14.1` 当作发行�
 ## 19. 交付与下一步
 
 本轮仅向 GitHub bolt-v4 提交代码审查材料、测试及文档。第 7 项应先由用户裁决：是否允许仅归一化 ELF header 的 e_shoff/e_shnum/e_shstrndx，仍冻结所有程序头、所有 LOAD 的地址/偏移/大小/标志和其余每个字节；或坚持原始 LOAD SHA 相同并保持阻断。**未得到裁决前，不应以此 BOLT 提交启动完整构建。**
+
+## 20. 用户裁决后：仅归一化三个节表定位字段（第 7 项闭合）
+
+用户明确批准：LOAD 内容计算 SHA 前，只把 **e_shoff（文件偏移 40–47，8 字节）、e_shnum（60–61，2 字节）、e_shstrndx（62–63，2 字节）**三个完整字段置零。不是仅放过当前发生变化的 6 个字节，也不跳过整个 ELF 头。
+
+### 20.1 实现与边界
+
+`strip_layout` 的唯一生产代码变化是引入上述三个固定区间的归一化 SHA。程序头的全部字段仍逐项相同，LOAD header 仍包含地址、文件偏移、filesz/memsz、flags 和 alignment。另独立计算归一化后 **整个 64 字节 ELF 头**的 SHA，即使某个 ELF 的 header 不属于 LOAD，也不能漏检 e_phoff、e_phnum、e_phentsize、e_entry、e_shentsize、e_flags 等其他字段。
+
+代码注释说明：这三个字段仅定位/描述不加载的节表，strip 移除非加载节后会改变，不影响执行或符号地址。没有改 profile、OPTIONS、白名单、spec、其他 helper 函数或 hybrid 提交。
+
+### 20.2 夹具与真实文件复核
+
+新增三项：
+
+- 改 `e_entry` → FAIL。
+- 改 `e_phoff`，指向另一份**有效且内容完全相同**的程序头表 → FAIL，证明检查的是 ELF 字段本身，不仅依赖解析错误。
+- 两份文件预置相同的两套有效节表，把 ELF 头放进 LOAD，只改变 e_shoff/e_shnum/e_shstrndx 三字段 → PASS。
+
+既有 LOAD 地址/内容变化拒绝及移除非加载符号表通过的夹具继续通过。全部结果：
+
+```text
+Ran 378 tests in 11.162s
+OK
+```
+
+原文：[tests-section-locators.stderr](../../tools/bolt/results/review-fixes-20261103/tests-section-locators.stderr)、[stdout](../../tools/bolt/results/review-fixes-20261103/tests-section-locators.stdout)。
+
+再次使用 §6 的 full-20261030 原始 clang.bolt 和由同一 strip 工具重现、SHA 精确匹配其 identity 的 strip-all 文件；没有重新链接或重跑 BOLT。真实变化如下（与 §7 首轮观测相同）：
+
+| 字段 | 完整归一化范围 | 原值 | 新值 |
+|---|---|---:|---:|
+| e_shoff | [40,48) | 185673536 | 152529864 |
+| e_shnum | [60,62) | 43 | 38 |
+| e_shstrndx | [62,64) | 40 | 37 |
+
+输入 SHA `de2ae6e3ed1040505151c9b88b66ef1b6383f51058e6535d0a107287a1658e9d`；strip-all 后 SHA `13a07cb7f84bd1ceda4d851c8bd71bddf7ef0c2d4864892eba64cbbb9a0350b8`。五个 LOAD 归一化后的 SHA、完整程序头以及归一化 ELF 头都一致，`preserved: true`。RUNPATH（13a07cb7→8c2429d8）和真实 debugfiles.list 也再次通过。
+
+完整输入路径、helper SHA、每个 LOAD 的 header/SHA、字段值和三项门禁结果：[section-locators-real-gates.json](../../tools/bolt/results/review-fixes-20261103/section-locators-real-gates.json)。首轮原始 SHA 不同的证据保留，不追溯改成原始字节相同。
+
+### 20.3 新提交和最终轻量检查
+
+- hybrid 未变：`38477c9b6e1401e5e1fe01fafa282ab92cf53887`。
+- BOLT amend：`5aff6c0c3ab663872cf997a13bb9242bac474092`。
+- BOLT tree：`b4b7d4e1913ea26ef75638147831b7abed9fe51f`；父提交为上述 hybrid。
+- 作者、提交者、Signed-off-by 为 Hao Lin；Change-Id 仍为 `Ic98eab90cc017f127a66e1729b44fab8b8e8fb41`。说明同步写明三个字段例外，其余执行流程不变。
+- 新提交 GBS export 和 Tizen RPM 五项解析 PASS；debug/release OFF 展开差异与首轮一致，spec 本轮没有修改。原文在 [section-locators-parse-5aff6c0c3ab6/](../../tools/bolt/results/review-fixes-20261103/section-locators-parse-5aff6c0c3ab6/)。
+- 新评审包两份 format-patch 顺序应用到 67619ec8 的独立 index，生成相同最终 tree；完整文本、blob OID、递归 ls-tree 和 SHA256SUMS 已刷新。旧 review-20261102 包不变。
+
+当前轻量检查已闭合；第 16 项不可确证的旧 RPM 基线仍如实标记，完整构建和发布前验收没有冒充 PASS。本轮只推送 GitHub bolt-v4 的材料，不运行完整构建，不推送 Gerrit/sandbox。

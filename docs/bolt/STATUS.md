@@ -707,3 +707,11 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - **严格 strip 门禁真实复核 BLOCKED**：程序头和五个 LOAD 的偏移/地址/大小/标志均相同，但首个 LOAD 包含 ELF 头；strip 删除非加载节后，e_shoff/e_shnum/e_shstrndx 共 6 字节变化。原要求的 LOAD 原始 SHA 不相同。已询问是否允许仅归一化这三个字段；没有收到裁决，未把例外写进 helper。当前 BOLT 提交会在此停止，**不能用于夜间完整构建或上传**。
 - 没有能确证为精确 67619ec8 完整构建的保全 RPM：已知基线为 9e5675f（BOLT ON）或 f111162e-dirty，未冒用其完成第16项包比较。四个非默认目标在新建 67619ec8/hybrid 配置图里都不在 all 闭包。
 - 新报告 [48_review_fixes.md](48_review_fixes.md)、材料 [review-20261103](../../patches/review-20261103/README.md)、证据 [review-fixes-20261103](../../tools/bolt/results/review-fixes-20261103/)。旧评审包与历史产物保留，PGO 源码/试验目录未改，无完整构建，无 QB 操作。发布前挂账仍含 release 完整构建、本 revision QB、正常依赖装包、Clang/LLD 组件消费者、accel/worker、ARM 根及资源实测。
+
+### 2026-11-02 续：第 7 项按用户裁决闭合
+
+- 用户批准仅归一化 ELF64 的 e_shoff [40,48)、e_shnum [60,62)、e_shstrndx [62,64) 三个完整字段；其余 ELF 头、全部程序头字段、LOAD 地址/偏移/大小/标志和其余字节严格冻结。实现另独立比较归一化后的整个 ELF 头，不以 header 是否属于 LOAD 为前提。
+- 378 项测试全部通过，含 e_entry 改动失败、e_phoff 指向另一份有效且相同程序头表仍失败、仅改变三个节表定位字段通过。full-20261030 实物 strip、RUNPATH、debugfiles 三项离线复核 PASS；字段原值/新值保存在 48 号 §20（185673536→152529864、43→38、40→37）。首轮失败证据保留，第7项不再阻断。
+- BOLT 新提交 `5aff6c0c3ab663872cf997a13bb9242bac474092`，tree `b4b7d4e1913ea26ef75638147831b7abed9fe51f`；父 hybrid `38477c9b6e1401e5e1fe01fafa282ab92cf53887` 未变；Change-Id、署名不变。相对首轮只改 strip_layout 实现及对应说明；spec/profile/OPTIONS/白名单不变。
+- 新提交 GBS export 和 Tizen RPM 五项解析 PASS，OFF 两模式差异仍只有首轮已说明的 Source/空行与 hybrid 断言。review-20261103 的补丁、全文文件、blob/ls-tree、README 和 SHA256SUMS 已刷新，两份补丁重放得到相同 tree。轻量门禁闭合，不表示 release/full-build/QB 等发布前验收完成；精确67619ec8旧RPM缺口仍如实保留。
+- 本轮没有完整构建、没有推送 Gerrit/sandbox；PGO 相关目录保持不动。报告最新结论见 [48 §20](48_review_fixes.md#20-用户裁决后仅归一化三个节表定位字段第-7-项闭合)。

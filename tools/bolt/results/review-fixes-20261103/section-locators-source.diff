@@ -1,0 +1,37 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index a74ae3656225..1b321112b788 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -568,12 +568,28 @@ def rpath_layout(path, allowed_ranges=None):
+ 
+ 
+ def strip_layout(path):
+-    """Keep program headers and every loaded byte fixed across strip-all."""
++    """Freeze ELF/program headers and LOAD bytes, except section-table locators."""
+     elf = ELF(path)
+     try:
+-        return {'program_headers': elf.phdrs,
+-                'loads': [{'header': p, 'sha256': hashlib.sha256(
+-                    elf.mm[p[2]:p[2]+p[5]]).hexdigest()} for p in elf.loads]}
++        # These fields only locate/describe the nonloaded section table. Removing
++        # nonloaded sections during strip changes them, not execution or symbol
++        # addresses: e_shoff [40,48), e_shnum [60,62), e_shstrndx [62,64).
++        ignored = ((40, 48), (60, 62), (62, 64))
++
++        def normalized_sha256(start, size):
++            end = start+size; cursor = start; digest = hashlib.sha256()
++            for low, high in ignored:
++                low, high = max(start, low), min(end, high)
++                if low < high:
++                    digest.update(elf.mm[cursor:low])
++                    digest.update(b'\0'*(high-low)); cursor = high
++            digest.update(elf.mm[cursor:end])
++            return digest.hexdigest()
++
++        return {'elf_header_sha256': normalized_sha256(0, 64),
++                'program_headers': elf.phdrs,
++                'loads': [{'header': p, 'sha256': normalized_sha256(p[2], p[5])}
++                          for p in elf.loads]}
+     finally:
+         elf.close()
+ 
