@@ -725,3 +725,12 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 9b8d74af父f999bd40，tree精确等于67619ec8，diff文件0；含356627静态库转换，不含hybrid/BOLT。当前远端tizen_base为f999bd40。固定快照build.conf SHA：Toolchain e5187fd7…、Base-Dev 8ace286a…；QB未打印worker最终配置SHA/project_config拼接过程，不能冒充已确认运行时整文件相同。
 - C条件核对：Toolchain latest=20261030.120529，SRPM VCS f999bd40；reference=20261013.024319，SRPM VCS cb679968；均非67619ec8，按要求不下载static-devel、不作归档等价比较。
 - 报告 [49_qb_1215143_1214821.md](49_qb_1215143_1214821.md)，证据 tools/bolt/results/qb-20261102。修复候选仅写建议，没有改源码/spec、运行构建、推Gerrit/sandbox或操作QB；PGO两处保护目录未触碰。
+
+
+## 2026-11-02：50号固定项目参数，轻量测试环境错误后停止
+
+- 新detached提交 `a379c766e17d12ba7738ff6079adb39645c0a740`，tree `37c8c6d3f249b5948db1517d84a79a4d53c9a112`，父5aff6c0c；hybrid38477c9b/BOLT5aff6c0c未改；新Change-Id Ic76505ddb122f1e06271ff7462e24eceee4d400a，Hao Lin署名。只改spec x86参数片段与Source1005 release分支，未推Gerrit/sandbox。
+- 按用户补充裁决，完整token规范化打印NORMALIZED，额外过滤打印DROPPED；Toolchain独立shell副本C/CXX/LD输出与QB1215143逐字节相同，DROPPED为空。来源差异已披露：QB C/CXX字符串显式带function/data-sections，本地full-20261030没有，不能预先宣称产物相同。
+- **停止**：显式helper测试378项中366通过、12 ERROR，均FileNotFoundError: cmake。48号已记录过host-tools入口，本轮未加入PATH是执行准备错误；按本任务任一轻量检查不通过即停，未修环境重跑。
+- 新夹具/转换器既有测试、GBS导出、展开/五项解析、T/D入口与演练、正式磁盘准入、完整构建、包/90TU验证均未执行。source提交未取得构建资格；两个新构建根不存在，无后台构建服务。
+- 报告[50_project_flag_independence.md](50_project_flag_independence.md)，证据tools/bolt/results/final-20261103；W/temp/final-20261103/monitor.log带时间status=stopped结束行。没有改PGO保护目录，没有运行历史根cmake/ninja或删除目录。

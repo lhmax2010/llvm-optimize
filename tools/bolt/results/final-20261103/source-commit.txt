@@ -1,0 +1,31 @@
+commit a379c766e17d12ba7738ff6079adb39645c0a740
+Author:     Hao Lin <hao.lin@samsung.com>
+AuthorDate: Mon Nov 2 23:10:05 2026 +0800
+Commit:     Hao Lin <hao.lin@samsung.com>
+CommitDate: Mon Nov 2 23:10:05 2026 +0800
+
+    packaging: isolate x86 LLVM flags and support release archives
+    
+    QB 1214821 failed in Source1005 when Base-Dev GCC project flags
+    reached the forced Clang build. Its release mode also removes DWARF
+    options that the archive converter previously required.
+    
+    Pin the x86_64 compile and link policy to the effective Toolchain
+    command from QB 1215143. Preserve project architecture options and
+    the existing debug/release choice. Match whole tokens: report the
+    established cleanup in TIZEN_LLVM_NORMALIZED_FLAGS and extra rejected
+    project options in TIZEN_LLVM_DROPPED_FLAGS. Do not alter other arches.
+    
+    Accept an original command without any debug option as release and
+    omit debug emission flags from archive conversion. Keep DWARF-4
+    certification when debug options exist and reject unknown options.
+    Reject unexpected debug sections in a converted release object.
+    
+    Qualification must compare exact Toolchain flag strings, compiler
+    identities, all RPM payloads and 90 translation units against the
+    certified build. The local configure string lacks the explicit
+    function/data-section flags present in the QB input; do not infer
+    binary identity from configuration alone.
+    
+    Change-Id: Ic76505ddb122f1e06271ff7462e24eceee4d400a
+    Signed-off-by: Hao Lin <hao.lin@samsung.com>

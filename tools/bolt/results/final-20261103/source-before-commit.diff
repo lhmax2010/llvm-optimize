@@ -1,0 +1,161 @@
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index d839b8062ff9183e5a2d1540790dc225c213c686..637e37165fdf2f8243f25923412efe60a45546f9 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -252,7 +252,10 @@ def classify_options(argv, arch='x86_64'):
+         index += 1
+     if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
+         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
+-    if not dwarfs or dwarfs[-1] != '-gdwarf-4':
++    # A release command has no -g options at all. Once any debug option is
++    # present, retain the certified DWARF-4 requirement (including bare -g).
++    has_debug_options = any(token.startswith('-g') for token in argv)
++    if has_debug_options and (not dwarfs or dwarfs[-1] != '-gdwarf-4'):
+         raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
+     effective = {}
+     for key, values in switches.items():
+@@ -262,7 +265,7 @@ def classify_options(argv, arch='x86_64'):
+     contraction = contractions[-1] if contractions else DEFAULTS['fp-contract']
+     if contraction not in ('on', 'off', 'fast'):
+         raise ValueError('uncertified FP contraction value: '+contraction)
+-    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1],
++    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1] if dwarfs else None,
+                 switches=effective, fp_contract=contraction,
+                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
+ 
+@@ -319,8 +322,10 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+         lambda match: chr(int(match[1], 16)), metadata[command_id]))
+     policy = classify_options(recorded_command, arch)
++    backend_flags = [flag for flag in BACKEND_FLAGS
++                     if policy['dwarf'] is not None or not flag.startswith('-g')]
+     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+-             *BACKEND_FLAGS, '-ffp-contract='+policy['fp_contract'], '-c']
++             *backend_flags, '-ffp-contract='+policy['fp_contract'], '-c']
+     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
+               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
+@@ -649,6 +654,8 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                 text_ir.unlink()
+                 record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
+                 data = target.read_bytes()
++                if settings['policy']['dwarf'] is None and elf_details(data)[1]:
++                    raise ValueError('release conversion unexpectedly emitted debug sections')
+                 relocs = pic_relocations(data)
+                 atomic_json(source.parent/'relocations.json', relocs)
+                 if settings['pic_level'] and relocs['forbidden']:
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 7a51be894f830043acbf25e4d822fa1af51d4a06..d911fd5258d84324e992e34a611fb75b3695c3af 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -214,27 +214,89 @@ export QEMU_RESERVED_VA=0x100000000
+ %endif
+ 
+ %ifarch x86_64
+-# Strip pre-existing optimization flags and remove performance-harming flags, then force -O3 + ThinLTO
+-OPTFLAGS_CFLAGS=$(echo "$CFLAGS" | sed \
+-    -e 's/\-O[0-9sz]//g' \
+-    -e 's/\-Ofast//g' \
+-    -e 's/\-fstack-protector-strong//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector//g' \
+-    -e 's/\-fno-inline-functions//g' \
+-    -e 's/\-fno-omit-frame-pointer//g' \
+-    -e 's/\-momit-leaf-frame-pointer//g')
+-OPTFLAGS_CXXFLAGS=$(echo "$CXXFLAGS" | sed \
+-    -e 's/\-O[0-9sz]//g' \
+-    -e 's/\-Ofast//g' \
+-    -e 's/\-fstack-protector-strong//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector//g' \
+-    -e 's/\-fno-inline-functions//g' \
+-    -e 's/\-fno-omit-frame-pointer//g' \
+-    -e 's/\-momit-leaf-frame-pointer//g')
+-export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+-export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
++TIZEN_LLVM_RELEASE=%{llvm_release_build}
++# BEGIN TIZEN_LLVM_FIXED_FLAGS
++# The x86_64 policy is the certified Toolchain command (QB 1215143).
++# Only architecture and debug-mode options are inherited. Token matching is
++# exact: stripping -fstack-protector must never leave a -strong suffix.
++tizen_llvm_flags()
++{
++    tizen_llvm_kind=$1
++    tizen_llvm_input=$2
++    tizen_llvm_release=$3
++    tizen_llvm_arch=
++    tizen_llvm_debug_head=
++    tizen_llvm_debug_tail=
++    TIZEN_LLVM_NORMALIZED=
++    TIZEN_LLVM_DROPPED=
++    tizen_llvm_saved_ifs=$IFS
++    IFS=' 	
++'
++    case $- in *f*) tizen_llvm_glob_off=1 ;; *) tizen_llvm_glob_off=0; set -f ;; esac
++    for tizen_llvm_token in $tizen_llvm_input; do
++        case $tizen_llvm_token in
++            -O0|-O1|-O2|-O3|-Os|-Oz|-Og|-Ofast|\
++            -fstack-protector|-fstack-protector-strong|-fstack-protector-all|\
++            -momit-leaf-frame-pointer|-fno-omit-frame-pointer)
++                TIZEN_LLVM_NORMALIZED="${TIZEN_LLVM_NORMALIZED}${TIZEN_LLVM_NORMALIZED:+ }$tizen_llvm_token"
++                continue ;;
++            -m64|-march=*|-mtune=*|-msse*|-mfpmath=*)
++                tizen_llvm_arch="${tizen_llvm_arch}${tizen_llvm_arch:+ }$tizen_llvm_token"
++                continue ;;
++            -g|-g[0-9]|-ggdb*|-gdwarf-*|-gline*|-gsplit-*|-gno-*)
++                if test "$tizen_llvm_release" = 0; then
++                    tizen_llvm_debug_head="${tizen_llvm_debug_head}${tizen_llvm_debug_head:+ }$tizen_llvm_debug_tail"
++                    tizen_llvm_debug_tail=$tizen_llvm_token
++                fi
++                continue ;;
++        esac
++        case $tizen_llvm_kind:$tizen_llvm_token in
++            CFLAGS:-ffunction-sections|CXXFLAGS:-ffunction-sections|\
++            CFLAGS:-fdata-sections|CXXFLAGS:-fdata-sections|\
++            CFLAGS:-Wno-unused-command-line-argument|CXXFLAGS:-Wno-unused-command-line-argument|\
++            CFLAGS:-Wno-error=unused-but-set-variable|CXXFLAGS:-Wno-error=unused-but-set-variable|\
++            CFLAGS:-Wno-error=unused-command-line-argument|CXXFLAGS:-Wno-error=unused-command-line-argument|\
++            CFLAGS:-pipe|CXXFLAGS:-pipe|CFLAGS:-Wall|CXXFLAGS:-Wall|\
++            CFLAGS:-Wp,-D_FORTIFY_SOURCE=2|CXXFLAGS:-Wp,-D_FORTIFY_SOURCE=2|\
++            CFLAGS:-fexceptions|CXXFLAGS:-fexceptions|CFLAGS:-Wformat|CXXFLAGS:-Wformat|\
++            CFLAGS:-Wformat-security|CXXFLAGS:-Wformat-security|\
++            CFLAGS:-fmessage-length=0|CXXFLAGS:-fmessage-length=0|\
++            CFLAGS:-frecord-gcc-switches|CXXFLAGS:-frecord-gcc-switches|\
++            CFLAGS:-fdiagnostics-color=never|CXXFLAGS:-fdiagnostics-color=never|\
++            CFLAGS:-fasynchronous-unwind-tables|CXXFLAGS:-fasynchronous-unwind-tables|\
++            CFLAGS:-flto=thin|CXXFLAGS:-flto=thin|\
++            CFLAGS:-fomit-frame-pointer|CXXFLAGS:-fomit-frame-pointer|\
++            LDFLAGS:-Wl,-z,relro,--as-needed|LDFLAGS:-Wl,--gc-sections) ;;
++            *) TIZEN_LLVM_DROPPED="${TIZEN_LLVM_DROPPED}${TIZEN_LLVM_DROPPED:+ }$tizen_llvm_token" ;;
++        esac
++    done
++    IFS=$tizen_llvm_saved_ifs
++    if test "$tizen_llvm_glob_off" = 0; then set +f; fi
++    case $tizen_llvm_kind in
++        CFLAGS|CXXFLAGS)
++            # Preserve the exact certified CMake string, including whitespace,
++            # option order and the repeated warning option. Do not inherit
++            # other project flags, even when the project selects GCC.
++            TIZEN_LLVM_RESULT=" -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   $tizen_llvm_debug_head -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never $tizen_llvm_arch -fasynchronous-unwind-tables  $tizen_llvm_debug_tail -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument" ;;
++        LDFLAGS)
++            TIZEN_LLVM_RESULT="-Wl,-z,relro,--as-needed -Wl,--gc-sections${tizen_llvm_arch:+ }$tizen_llvm_arch${tizen_llvm_debug_head:+ }$tizen_llvm_debug_head${tizen_llvm_debug_tail:+ }$tizen_llvm_debug_tail" ;;
++        *) return 1 ;;
++    esac
++}
++tizen_llvm_flags CFLAGS "$CFLAGS" "$TIZEN_LLVM_RELEASE"
++CFLAGS=$TIZEN_LLVM_RESULT
++tizen_llvm_normalized_c=$TIZEN_LLVM_NORMALIZED
++tizen_llvm_dropped_c=$TIZEN_LLVM_DROPPED
++tizen_llvm_flags CXXFLAGS "$CXXFLAGS" "$TIZEN_LLVM_RELEASE"
++CXXFLAGS=$TIZEN_LLVM_RESULT
++tizen_llvm_normalized_cxx=$TIZEN_LLVM_NORMALIZED
++tizen_llvm_dropped_cxx=$TIZEN_LLVM_DROPPED
++tizen_llvm_flags LDFLAGS "$LDFLAGS" "$TIZEN_LLVM_RELEASE"
++LDFLAGS=$TIZEN_LLVM_RESULT
++printf 'TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_normalized_c" "$tizen_llvm_normalized_cxx" "$TIZEN_LLVM_NORMALIZED"
++printf 'TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_dropped_c" "$tizen_llvm_dropped_cxx" "$TIZEN_LLVM_DROPPED"
++export CFLAGS CXXFLAGS LDFLAGS
++# END TIZEN_LLVM_FIXED_FLAGS
+ %endif
+ 
+ # Set up MLGO AOT model paths from bundled verify assets
