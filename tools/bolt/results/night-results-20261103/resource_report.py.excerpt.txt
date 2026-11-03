@@ -1,0 +1,14 @@
+20:
+21: def critical_stop(D,audit=None):
+22:  E=D/'evidence'
+23:  if audit and (audit['mounts']['stdout'] or audit['remaining_build_processes']):return 'residual-process-or-mount'
+24:  if (E/'cleanup-failure.txt').exists():return 'cleanup-failed'
+25:  if (E/'disk-stop.json').exists():return 'disk-stop'
+26:  failure=D/'validation/failure.txt'
+27:  if failure.exists() and 'disk-stop:' in failure.read_text():return 'disk-stop'
+28:  for r in rows(E/'resources.jsonl')+[read(E/'build-result.json',{}).get('stats',{})]:
+29:   for line in str(r.get('memory.events','')).splitlines():
+30:    x=line.split()
+31:    if len(x)==2 and x[0] in ('oom','oom_kill') and x[1].isdigit() and int(x[1]):return 'memory-oom-stop'
+32:  if audit and re.search(r'Result=oom-kill',audit.get('services',{}).get('stdout','')):return 'memory-oom-stop'
+33:  return None

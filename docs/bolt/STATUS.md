@@ -788,3 +788,13 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 T认证产物自测23/23包、90/90 TU PASS，14项字节/归档/参数夹具、5项启动检查、8项集成检查及release C-2正反夹具PASS。D真实release成员、MODULE、post与D/T90TU留待完整构建后自动验证；认证装包留到明早。阶段资源缺采样标UNKNOWN，命令记录差异必须逐字节证明，不跳过整节/成员。
 
 演练后/home可用263,345,737,728B（245.260GiB）；按51号两根峰值、根外开销、20GiB保留量及20%峰值余量共188,531,890,586B（175.584GiB），余74,813,847,142B（69.676GiB），空间规划通过。本轮没有启动full/night，两个完整根不存在。启动命令和全部判据见 [53_night_validation_prep.md](53_night_validation_prep.md)。T普通失败仍跑D；磁盘/OOM/残留/无法确认清理则停止。
+
+## 2026-11-04：夜间 T/D 已结束，有问题（54号）
+
+- 用户指定的 night 启动命令执行一次；启动前/home可用243.179GiB、两个full根和night.log均不存在、无其他GBS。T/D由入口自动串行执行，没有手动启动D或重试。
+- T与D的GBS均exit0（12943.782s / 4173.033s），产出分别22+1、12+1个RPM；构建内BOLT/转换/post日志成功。**自动构建后验证未完成**：T在validate.py:100读累计日志时MemoryError；D控制器在构建后验证阶段被OOM杀死。最终 `NIGHT 已结束 2026-11-04T04:13:34.194671+08:00 status=stopped reason=memory-oom-stop`。
+- 只读定位：入口日志游标bytes变量anchor被阶段循环覆盖为str，导致日志反复从头追加；T/D累计日志46.43GB/15.08GB，canonical GBS日志各约18MB。验证一次性读入大日志；T的Python MemoryError未归类为critical，入口自动继续D，D的systemd OOM触发最终停止。入口、源码均未修改；原始大日志和现场均保留。
+- T strip-all=13a07cb7…、RUNPATH后=8c2429d8…匹配，最终=6c63c5c2…不匹配4f08e12d…；全文件比较证明仅.gnu_debuglink CRC的4字节变化，其余字节相同。符号文件也变化，CRC差异不属于已批准的命令记录节例外，不能判为通过。23包内容比较、T90TU、D真实成员复测/产物参数扫描/MODULE加载/D对T90TU均NOT RUN；未冒用历史自测结果。
+- D profile N=23592 M=144032 S=23 U=1 Q=383，R=0.1017251%，在原门槛内；转换器输出225归档、3853转换成员、11原生成员，debug_members=0（尚未独立RPM成员复核）。D无debuginfo/debugsource包。T/D的CMAKE_MODULE_LINKER_FLAGS均精确为 `-Wl,-z,relro,--as-needed -Wl,--gc-sections`。
+- T原资源表原样交付；D原表缺失，另标明用本次原始采样只读汇总。当前记录/home可用141,717,905,408B（131.985GiB）；最终停止原因不是磁盘不足。可读/proc与findmnt无本次构建残留，未手动清理、未做装包/LLDB、未推Gerrit/sandbox或操作QB。
+- 详见 [54_night_results.md](54_night_results.md)，证据 `tools/bolt/results/night-results-20261103/`。后续须由用户决定修复验证入口、处理符号/CRC差异和补做剩余验证；本轮不重试。

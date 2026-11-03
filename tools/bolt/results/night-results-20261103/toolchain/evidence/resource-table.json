@@ -1,0 +1,97 @@
+{
+  "cgroup_lifetime_peak_includes_file_cache": 19148963840,
+  "phases": [
+    {
+      "phase": "ordinary-build",
+      "start_ns": 1793719562401319142,
+      "end_ns": 1793726883687509860,
+      "seconds": 7321.286190718,
+      "anchor": "[  254s] Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.WL4Z1u",
+      "cgroup_sampled_max_bytes": 19146416128,
+      "bolt_VmHWM_bytes": null,
+      "root_du_sampled_max_bytes": 47920926720,
+      "filesystem_min_available_bytes": 196272267264
+    },
+    {
+      "phase": "ordinary-install",
+      "start_ns": 1793726883687509860,
+      "end_ns": 1793727211836551388,
+      "seconds": 328.149041528,
+      "anchor": "[ 7576s] Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.jiuMur",
+      "cgroup_sampled_max_bytes": 14991839232,
+      "bolt_VmHWM_bytes": null,
+      "root_du_sampled_max_bytes": 60357607424,
+      "filesystem_min_available_bytes": 182595039232
+    },
+    {
+      "phase": "BOLT",
+      "start_ns": 1793727211836551388,
+      "end_ns": 1793728681660171587,
+      "seconds": 1469.823620199,
+      "anchor": "[ 7904s] BOLT_DISK_REPORT {\"stage\": \"begin\", \"time_ns\": 1793727209948554186, \"recorded\": true, \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"device\": 2049, \"free_bytes\": 182597431296, \"build\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"root\": \"/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64\", \"scopes\": [\"clang-bolt/**\", \"tools/bolt/**\", \"lib64/libLLVMBOLT*.a\", \"bin/llvm-bolt\", \"ThinLTO cache positive allocation delta\"], \"owned_paths\": [{\"category\": \"work\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_objects\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_executable\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}], \"owned_filesystem_bytes\": {}, \"used_bytes\": 0, \"cache_path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache\", \"cache_delta_known\": false, \"cache_delta_allocated_bytes\": 0, \"cache_delta_logical_bytes\": 0, \"cache_net_allocation_delta_bytes\": null, \"filesystem_device\": 2049}",
+      "cgroup_sampled_max_bytes": 16283660288,
+      "bolt_VmHWM_bytes": 9931661312,
+      "root_du_sampled_max_bytes": 70485561344,
+      "filesystem_min_available_bytes": 163517423616
+    },
+    {
+      "phase": "cache-release",
+      "start_ns": 1793728681660193214,
+      "end_ns": 1793728692013518172,
+      "seconds": 10.353324958,
+      "anchor": "[ 9373s] + python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py cache-release /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+      "cgroup_sampled_max_bytes": 3645648896,
+      "bolt_VmHWM_bytes": null,
+      "root_du_sampled_max_bytes": null,
+      "filesystem_min_available_bytes": 164688289792
+    },
+    {
+      "phase": "archive-conversion",
+      "start_ns": 1793728692013518172,
+      "end_ns": 1793731243116929441,
+      "seconds": 2551.103411269,
+      "anchor": "[ 9384s] NATIVE_ARCHIVES_BEGIN 1793728690.6573484",
+      "cgroup_sampled_max_bytes": 10596343808,
+      "bolt_VmHWM_bytes": null,
+      "root_du_sampled_max_bytes": 55093010432,
+      "filesystem_min_available_bytes": 160152088576
+    },
+    {
+      "phase": "platform-post",
+      "start_ns": 1793731243116929441,
+      "end_ns": 1793731942973981694,
+      "seconds": 699.857052253,
+      "anchor": "[11935s] + /usr/lib/rpm/find-debuginfo.sh -j8 --build-id-seed 22.1.8-1 --unique-debug-src-base llvm-22.1.8-1.x86_64 -S debugsourcefiles.list /home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+      "cgroup_sampled_max_bytes": 7375040512,
+      "bolt_VmHWM_bytes": null,
+      "root_du_sampled_max_bytes": 47143387136,
+      "filesystem_min_available_bytes": 162207100928
+    },
+    {
+      "phase": "packaging",
+      "start_ns": 1793731942973981694,
+      "end_ns": 1793732241839175107,
+      "seconds": 298.865193413,
+      "anchor": "[12635s] Processing files: llvm-22.1.8-1.x86_64",
+      "cgroup_sampled_max_bytes": 10014306304,
+      "bolt_VmHWM_bytes": null,
+      "root_du_sampled_max_bytes": 42598031360,
+      "filesystem_min_available_bytes": 163214110720
+    }
+  ],
+  "missing_means": "UNKNOWN; no extrapolation",
+  "cgroup_phase_metric": "sampled memory.current maximum, not independent memory.peak",
+  "conditions": {
+    "commit": "9e39fa8a61392652bb28b75fc26216675bcad1d5",
+    "tree": "cbc33271f8a9a7a5bd4de3c806bed6182c268e98",
+    "status": "",
+    "buildconf_sha256": "e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945",
+    "source": "/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261102/source",
+    "config": "/home/linhao/Toolchain/development/llvm-optimize/temp/final-20261103/configs/toolchain/gbs.conf",
+    "mode": "full",
+    "MemoryMax_bytes": 24482979840,
+    "CPUQuota": "1200%",
+    "prep_unit": "night-toolchain-full-prep-20261103.service",
+    "build_unit": "night-toolchain-full-20261103.service"
+  }
+}

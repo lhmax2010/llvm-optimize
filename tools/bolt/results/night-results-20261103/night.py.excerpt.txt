@@ -1,0 +1,12 @@
+31:      print('NIGHT_PROGRESS',datetime.datetime.now().astimezone().isoformat(),project,'service='+state,'tail='+repr(tail),flush=True)
+32:     time.sleep(5)
+33:    result=L.json.loads((D/'evidence/result.json').read_text()) if (D/'evidence/result.json').exists() else {'status':'failed','reason':'controller-ended-without-result'}
+34:    service=subprocess.check_output(['systemctl','--user','show',unit,'-p','Result'],text=True)
+35:    if 'oom-kill' in service:result={'status':'stopped','reason':'memory-oom-stop'}
+36:    print('NIGHT_PROJECT 已结束',datetime.datetime.now().astimezone().isoformat(),project,result,flush=True)
+37:    results.append(dict(project=project,**result));L.save(N/'night-progress.json',results)
+38:    critical=critical_stop(D,L.json.loads((D/'evidence/final-audit.json').read_text()) if (D/'evidence/final-audit.json').exists() else None)
+39:    if critical or result['status']=='stopped' or not (D/'evidence/final-audit.json').exists():
+40:     reason=critical or result['reason'];status='stopped';break
+41:   else:
+42:    status='ok' if all(r['status']=='ok' for r in results) else 'failed';reason='serial-builds-and-validation-finished'

@@ -1,0 +1,15 @@
+94: def main(args):
+95:  D=args.root;O=args.output or D/'validation';O.mkdir(parents=True,exist_ok=False);R,BUILD,WORK=rootpaths(D);result={'status':'failed','project':args.project,'checks':{},'historical_selftest':args.certified_selftest}
+96:  try:
+97:   verify_manifest(CERT/'products',O)
+98:   logpath=D/'evidence/rpm-build-final.log'
+99:   if not logpath.exists():logpath=D/'evidence/rpm-build.log'
+100:   log=logpath.read_text(errors='replace');lines=log.splitlines();anchors={}
+101:   needed=['BOLT_NINJA_EXIT_0','BOLT_PIPELINE_PASS','BOLT_COMPARE_ROOT_PASS','BOLT_CACHE_RELEASE','BOLT_POST_GATE_PASS','NATIVE_ARCHIVES_END']
+102:   if args.project=='toolchain':needed+=['BOLT_DEBUG_SYMBOLS_PASS','BOLT_DEBUGLINK_PASS']
+103:   if not args.certified_selftest:needed+=['TIZEN_HYBRID_LINK_OK']
+104:   for token in needed:
+105:    hit=[dict(line=i,text=t) for i,t in enumerate(lines,1) if token in t and '+ echo ' not in t and '+ printf ' not in t];assert hit,('missing anchor',token);anchors[token]=hit
+106:   real=[dict(line=i,text=t) for i,t in enumerate(lines,1) if 'BOLT_REAL_GATE_PASS' in t and '+ echo ' not in t];assert len(real)>=3;anchors['BOLT_REAL_GATE_PASS']=real
+107:   for token in ['BOLT_PROC_OK','BOLT_PROC_MISSING','BOLT_TOOL_DRY_RUN_BEGIN','BOLT_TOOL_DRY_RUN_END','BOLT_DISK_REPORT','BOLT_DISK_DIAGNOSIS']:
+108:    anchors[token]=[dict(line=i,text=t) for i,t in enumerate(lines,1) if token in t and '+ echo ' not in t and '+ printf ' not in t]
