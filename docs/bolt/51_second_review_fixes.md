@@ -151,3 +151,45 @@ Toolchain C/CXX/LDFLAGS 与 QB1215143 认证字符串逐字相同；Base-Dev C/C
 - 只提交并推送证据仓库 GitHub bolt-v4；三个源码提交未推送 Gerrit/sandbox，未操作 QB，未触碰 PGO 现场。
 
 最终结论：**可以送审**。轻量检查和两个启动演练全部通过；完整构建、RPM/90TU 新产物认证仍未运行。
+
+
+## 9. sandbox 更新与磁盘清单（2026-11-03，推送前停止）
+
+本次用户已授权把三个提交推送到 Gerrit 的 sandbox/lhmax2025/bolt_pgo，但指定源码克隆的 origin 实际指向本机另一份源码仓库。按“任一推送前核对不符即停止”执行：**未运行 push，未修改 remote 配置，未继续磁盘盘点**。前述轻量验证结论不变。
+
+### 9.1 只读核对
+
+| 项目 | 结果 |
+|---|---|
+| `git status --porcelain=v1 --untracked-files=all` | rc=0，输出为空；工作区干净 |
+| HEAD | 9e39fa8a61392652bb28b75fc26216675bcad1d5，PASS |
+| 三层父链 | 9e39fa8a → f2553114 → d4d6ca16 → 67619ec8，PASS |
+| 三个作者、提交者、Signed-off-by | 均 Hao Lin <hao.lin@samsung.com>，PASS |
+| 三个 Change-Id | 与本文第1节逐个相同，PASS |
+| origin 目标 | 本地路径，不是 Gerrit，停止 |
+| origin 的指定 sandbox 引用 | ls-remote rc=0，输出为空，无法满足预期3ee2d847 |
+
+`git remote -v` 原文：
+
+```text
+origin	/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source (fetch)
+origin	/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source (push)
+```
+
+执行的查询：
+
+```sh
+git ls-remote origin refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+stdout、stderr 均为空，退出码0。这里查到的是 **origin 所指的本地仓库**，不能据此说 Gerrit 分支不存在或 SHA 已变化。本轮未直接查询 Gerrit，Gerrit 当前 SHA 标为 UNKNOWN，也没有“推后 SHA”。43号§14记录的是另一份源码工作区的 Gerrit origin，不适用于当前这个独立克隆。
+
+指定 push 命令未执行，因此没有伪造的推送返回原文。没有向本地旧源码仓库写引用，没有改任何源码或 Git remote 配置，也没有改用其他推送方式。
+
+### 9.2 磁盘清单状态
+
+磁盘盘点、三组目录总量、两轮完整构建所需空间及缺口均 **NOT RUN**：本任务要求推送前任一项不符合即停止。未使用旧盘点数字冒充当前值，未删除或移动文件。需先明确当前克隆的 Gerrit origin 设置后，才可按同一指定租约命令续跑，并继续本次只读盘点。
+
+全部原始核对记录：[preflight.json](../../tools/bolt/results/second-review-20261104/sandbox-update-20261103/preflight.json)，同目录包含工作区、三份提交身份、remote 与 ls-remote 的 stdout/stderr。
+
+本轮结论：**推送前目标核对未通过，sandbox 未更新，磁盘盘点未执行；仅发布停止记录。**
