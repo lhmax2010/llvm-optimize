@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 123, in <module>
+    p=argparse.ArgumentParser();p.add_argument('--project',choices=['toolchain','basedev'],required=True);p.add_argument('--root',type=Path,required=True);p.add_argument('--peer',type=Path);p.add_argument('--output',type=Path);p.add_argument('--certified-selftest',action='store_true');main(p.parse_args())
+                                                                                                                                                                                                                                                                                              ^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 108, in main
+    manifests=rpm_compare(D,O,CERT,not args.certified_selftest)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 36, in rpm_compare
+    new,old=packages(D),packages(oldD);assert len(new)==23 and set(new)==set(old),(len(new),set(new)^set(old));rows=[];manifests={}
+            ^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 26, in packages
+    p=subprocess.run(['rpm','-qp','--qf','%{NAME}\t%{ARCH}',str(rpm)],capture_output=True,text=True);assert p.returncode==0,(rpm,p.stderr);key=p.stdout.strip();assert key not in out,('duplicate package',key);out[key]=rpm
+                                                                                                                                                                       ^^^^^^^^^^^^^^
+AssertionError: ('duplicate package', 'llvm\tx86_64')

@@ -1,0 +1,10 @@
+{
+  "status": "failed",
+  "project": "toolchain",
+  "checks": {
+    "anchors": "PASS",
+    "new_flags": "NOT APPLICABLE to historical log; separately tested using 51 real logs"
+  },
+  "historical_selftest": true,
+  "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py\", line 108, in main\n    manifests=rpm_compare(D,O,CERT,not args.certified_selftest)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py\", line 36, in rpm_compare\n    new,old=packages(D),packages(oldD);assert len(new)==23 and set(new)==set(old),(len(new),set(new)^set(old));rows=[];manifests={}\n            ^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py\", line 26, in packages\n    p=subprocess.run(['rpm','-qp','--qf','%{NAME}\\t%{ARCH}',str(rpm)],capture_output=True,text=True);assert p.returncode==0,(rpm,p.stderr);key=p.stdout.strip();assert key not in out,('duplicate package',key);out[key]=rpm\n                                                                                                                                                                       ^^^^^^^^^^^^^^\nAssertionError: ('duplicate package', 'llvm\\tx86_64')\n"
+}

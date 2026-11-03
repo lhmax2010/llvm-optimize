@@ -780,3 +780,11 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 删除执行窗口/home可用空间从152,217,346,048B升至285,199,704,064B（265.613GiB），df净增123.849GiB。文件系统可用空间会随其他写入变化，时间/原文见52号。
 - 十个路径均不存在，父目录其他条目元数据比较一致；products、full-20261030、PGO、配置、源码和证据保留。未构建、未改源码、未推Gerrit/sandbox、未操作QB。
 - [52_disk_cleanup.md](52_disk_cleanup.md)与tools/bolt/results/disk-cleanup-20261103/存证；结束标记DISK_CLEANUP FINISHED status=ok。
+
+## 2026-11-03：夜间 T/D 白天准备（53号）
+
+新入口 `tools/bolt/night-launch-20261103/launch.sh SOURCE_SHA night` 已准备；源码仍为9e39fa8a61392652bb28b75fc26216675bcad1d5，未改LLVM源码、spec或历史入口。Toolchain和Base-Dev两个演练串行到真实CMake入口后停止，参数与51号一致，WARNING=0，服务已停止、无残留进程/挂载。
+
+T认证产物自测23/23包、90/90 TU PASS，14项字节/归档/参数夹具、5项启动检查、8项集成检查及release C-2正反夹具PASS。D真实release成员、MODULE、post与D/T90TU留待完整构建后自动验证；认证装包留到明早。阶段资源缺采样标UNKNOWN，命令记录差异必须逐字节证明，不跳过整节/成员。
+
+演练后/home可用263,345,737,728B（245.260GiB）；按51号两根峰值、根外开销、20GiB保留量及20%峰值余量共188,531,890,586B（175.584GiB），余74,813,847,142B（69.676GiB），空间规划通过。本轮没有启动full/night，两个完整根不存在。启动命令和全部判据见 [53_night_validation_prep.md](53_night_validation_prep.md)。T普通失败仍跑D；磁盘/OOM/残留/无法确认清理则停止。

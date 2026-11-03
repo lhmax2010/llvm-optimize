@@ -1,0 +1,63 @@
+[
+  {
+    "case": "real clang one code byte changed",
+    "PASS": true,
+    "rejected": "bytes outside command records differ",
+    "offset": 41938961,
+    "old_sha": "4f08e12d499ebd492ce4951f74915ba435f57f2e380dc6f3520f24644996cb17",
+    "new_sha": "20461ec2d9f5cca13801c7bc12e5b8524f8578fb45a2305ab6df7171b550ba6a"
+  },
+  {
+    "case": "DROPPED token inserted",
+    "PASS": true,
+    "rejected": "('dropped option retained', {'-fno-inline-functions'})",
+    "sha256": "a62384f11030e0f2b74ff6c475d4a0f21ef19f34285662f459801a19be2c6626"
+  },
+  {
+    "case": "MODULE rule expansion fixture",
+    "PASS": true,
+    "result": [
+      {
+        "output": "lib64/fixture.so",
+        "rule": "CXX_MODULE_LIBRARY_LINKER__fixture_Release",
+        "variables": {
+          "in": "object.o",
+          "out": "lib64/fixture.so",
+          "LINK_FLAGS": "-Wl,-z,relro,--as-needed -Wl,--gc-sections",
+          "TARGET_FILE": "lib64/fixture.so",
+          "PRE_LINK": ": &&",
+          "POST_BUILD": ":",
+          "LINK_LIBRARIES": "lib64/libLLVM.so"
+        },
+        "command": ": && clang -Wl,-z,relro,--as-needed -Wl,--gc-sections -shared object.o -o lib64/fixture.so lib64/libLLVM.so && :"
+      }
+    ]
+  },
+  {
+    "case": "dlopen known shared library",
+    "PASS": true
+  },
+  {
+    "case": "dlopen invalid library",
+    "PASS": true,
+    "rejected": "/home/linhao/Toolchain/development/llvm-optimize/temp/night-20261103/scratch-checks/corrupt-clang: cannot dynamically load position-independent executable"
+  },
+  {
+    "case": "ordinary-failure",
+    "PASS": true,
+    "critical": null,
+    "D_permitted": true
+  },
+  {
+    "case": "disk-failure",
+    "PASS": true,
+    "critical": "disk-stop",
+    "D_permitted": false
+  },
+  {
+    "case": "oom-failure",
+    "PASS": true,
+    "critical": "memory-oom-stop",
+    "D_permitted": false
+  }
+]
