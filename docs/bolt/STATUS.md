@@ -763,3 +763,11 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 该独立克隆的origin实际为本地W/temp/debuglink-tb20261026/source，fetch/push均不是Gerrit；`git ls-remote origin refs/heads/sandbox/lhmax2025/bolt_pgo`返回0但无引用，不满足指定目标的前置核对。未执行push，未修改remote配置或旧源码仓库引用。
 - 按任一项不符合即停止：磁盘清单及空间缺口估算NOT RUN。Gerrit真实当前SHA未查询，UNKNOWN，不能将本地origin的空结果解释成Gerrit分支变化。
 - 详见[51号§9](51_second_review_fixes.md#9-sandbox-更新与磁盘清单2026-11-03推送前停止)。本轮只推送GitHub证据和停止记录，不操作QB、不运行构建、不删除目录。
+
+
+## 2026-11-03：使用完整Gerrit地址完成sandbox更新；磁盘仅盘点
+
+- 用户追加授权直接使用ssh://review.tizen.org:29418/platform/upstream/llvm；不改remote配置。推前3ee2d847精确匹配、源码HEAD9e39fa8a且clean；指定force-with-lease命令执行一次成功，推后远端精确为 `9e39fa8a61392652bb28b75fc26216675bcad1d5`。三层提交/Change-Id未变，未推refs/for。服务器只有标题>50字符warning，原文已存证，没有改提交说明。
+- /home扫描结束可用163,685,830,656B（152.444GiB）。137个一级目录限时du：28个>5GiB、11个UNKNOWN；修改时间明确为目录自身mtime。oldtext-final有VS Code打开和proc挂载，保留。认证products、full-20261030、PGO、原始RPM和源码保留；未核实唯一性的交用户判断。
+- 两根参考需求150.158GiB（43号两倍采样峰值+两份根外开销+20GiB保留），只余2.286GiB；加20%采样峰值规划余量后需175.584GiB，建议先释放约24GiB。五个已结束演练子根为优先候选：三项可见du合计19.571GiB、两项UNKNOWN，不保证净回收量，未删任何文件。
+- [51号§9.3–9.6](51_second_review_fixes.md#93-用户授权完整-gerrit-地址续跑2026-11-03)记录推送原文、按保留/可删/用户判断分组的目录表、证据与空间公式。没有运行构建或操作QB；本轮仅更新GitHub证据文档。

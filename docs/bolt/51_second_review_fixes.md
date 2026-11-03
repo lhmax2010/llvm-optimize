@@ -193,3 +193,163 @@ stdout、stderr 均为空，退出码0。这里查到的是 **origin 所指的�
 全部原始核对记录：[preflight.json](../../tools/bolt/results/second-review-20261104/sandbox-update-20261103/preflight.json)，同目录包含工作区、三份提交身份、remote 与 ls-remote 的 stdout/stderr。
 
 本轮结论：**推送前目标核对未通过，sandbox 未更新，磁盘盘点未执行；仅发布停止记录。**
+
+
+### 9.3 用户授权完整 Gerrit 地址续跑（2026-11-03）
+
+用户随后授权直接使用 `ssh://review.tizen.org:29418/platform/upstream/llvm`，不修改任何 remote 配置。本节续接前述停止记录，前文原样保留。重新核对源码 HEAD 为9e39fa8a、工作区完全干净；同一 Gerrit 地址推前的分支精确等于3ee2d847。使用已有 SSH 密钥，设置 `GIT_SSH_COMMAND='ssh -o BatchMode=yes'` 禁止终端密码交互，没有索要或保存密码。
+
+推前原文：
+
+```text
+3ee2d84719e4bd358c0b2366161f70f2eb788313	refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+只执行一次指定推送命令：
+
+```sh
+git -c pack.threads=2 push --force-with-lease=refs/heads/sandbox/lhmax2025/bolt_pgo:3ee2d84719e4bd358c0b2366161f70f2eb788313 ssh://review.tizen.org:29418/platform/upstream/llvm 9e39fa8a61392652bb28b75fc26216675bcad1d5:refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+退出码0，合并 stdout/stderr 原文：
+
+```text
+remote: 
+remote: Processing changes: refs: 1        
+remote: Processing changes: refs: 1, done            
+remote: commit 9e39fa8: warning: subject >50 characters; use shorter first paragraph        
+To ssh://review.tizen.org:29418/platform/upstream/llvm
+ + 3ee2d84719e4...9e39fa8a6139 9e39fa8a61392652bb28b75fc26216675bcad1d5 -> sandbox/lhmax2025/bolt_pgo (forced update)
+```
+
+标题超过50字符的 warning 如实保留，没有因此改提交说明。推后用同一完整地址 `git ls-remote` 核对：
+
+```text
+9e39fa8a61392652bb28b75fc26216675bcad1d5	refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+推送的是三层提交链，本文第1节的三个 SHA/Change-Id/署名不变；没有推 refs/for 或任何其他 Gerrit 分支，没有操作QB。QB软件包写法：
+
+```text
+platform/upstream/llvm@9e39fa8a61392652bb28b75fc26216675bcad1d5
+```
+
+### 9.4 只读磁盘盘点方法与边界
+
+- W/temp 的 **137个一级真实目录**逐项运行 `nice -n 19 ionice -c3 du -sx -B1 <路径>`，每项30秒；不跟随目录软链接，不跨文件系统。28项测得大于5GiB，11项超时，全部UNKNOWN项也列出，避免漏掉可能的大目录。其余98项不超过5GiB，完整结果仍保留。
+- 下表“修改时间”是 **目录自身的 stat mtime**，不是所有后代文件的最大mtime，更不是最后使用时间；本轮没有为了猜测使用时间再做不限时的整树扫描。精细子根的 `du --time` 原文另存。
+- `†` 表示du有权限错误，大小仅为可见部分；超时一律UNKNOWN，不拿38号旧值补齐。没有提权或改权限。分组大小是各目录独立du的算术和，未做全盘硬链接去重，不等于净可回收空间承诺。
+- 来源对照 docs/bolt/38、相关构建/实验文档及本地四层以内的资产标记。记录 products、保全目录、RPM、源码树和SHA256SUMS路径；**未做全盘逐文件SHA去重，未能确认唯一性的全部保留或交用户判断**。GitHub上的文本/哈希记录不能替代本地二进制原件。
+- lsof只发布W/temp匹配项；权限盲区不等于没有使用者。oldtext-final仍有VS Code的147条打开记录及一个proc挂载，直接保留。du自身的扫描打开不算其他任务占用。没有结束进程或卸载挂载；删除前仍须另行完整复查。
+- 所有表格均是建议，不是删除执行单；本轮没有删除、移动文件，亦没有运行任何构建。
+
+当前 df 原文（扫描结束时）：
+
+```text
+Filesystem         1B-blocks          Used    Available Use% Mounted on
+/dev/sda1      1967844950016 1704122507264 163685830656  92% /home
+```
+
+/home 为 `/dev/sda1`，可用 **163,685,830,656 B（152.444 GiB）。没有把其他盘的空间加进来。
+
+分组表中的路径均相对 `W/temp/`；详细来源行号、资产原路径、du argv/退出码/原文见 [classified.json](../../tools/bolt/results/second-review-20261104/sandbox-direct-20261103/classified.json) 和 [units.json](../../tools/bolt/results/second-review-20261104/sandbox-direct-20261103/units.json)。
+
+#### 建议可删
+
+1项；父目录总大小 **UNKNOWN**，不计作零占用。可拆出的精确子根见9.5节。
+
+| 路径 | 实占GiB | 目录mtime（+08:00） | 构建/实验与出处 | 未发布资产、建议理由 |
+|---|---:|---|---|---|
+| `second-review-20261104` | UNKNOWN | 2026-11-03T14:11:34 | second-review-20261104；文档51；51_second_review_fixes.md:15 | 两次演练已结束，日志/参数/清理/合成夹具结果已发布；没有完整 LLVM 构建产物，导出、包缓存、临时工具和合成 bitcode 可重建。本轮已把根顶层5份发布日志复制入证据；重跑测试须重新准备绝对路径工具。 未上传的临时二进制可由脚本再生，不是认证成品。 |
+
+#### 建议保留
+
+27项；已测可见du合计 **274.289 GiB**，另有 **9项UNKNOWN**。UNKNOWN不计作零占用。
+
+| 路径 | 实占GiB | 目录mtime（+08:00） | 构建/实验与出处 | 未发布资产、建议理由 |
+|---|---:|---|---|---|
+| `gbs-root-x86_64-debuginfo-j4-v2` | 84.157† | 2026-09-17T11:57:22 |  archive fix；R1 普通/BOLT v2 旧树；；文档31、38；38_temp_cleanup_inventory.md:74 | 旧 R1 明确受保护的普通构建树；不是本轮可删项。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `review-round3-continue-20261012` | 26.396 | 2026-10-12T19:35:08 |  archive fix；四路转换评审3；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:86 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `arm-source-root-probes-20261010` | 18.378 | 2026-10-11T01:22:40 |  ARM/archive fix；ARM源文件/根内探测；；文档31、34、38；38_temp_cleanup_inventory.md:89 | ARM sysroot/验证资产；不替主线决定弃用。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `release-x86-full-build-20261013` | 16.188 | 2026-10-13T22:37:23 |  release归因；续跑监测、补丁和打包证据；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:90 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `bolt-v4-20261013` | 16.150 | 2026-10-13T13:23:08 |  BOLT；BOLT 隔离源库/导出/早期草案；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:91 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `release-attribution-20261013` | 14.101 | 2026-10-13T18:33:36 |  release归因；发布归因与转换证据；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:92 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `crash-fix-probe-20261028` | 11.055 | 2026-10-28T14:08:09 | crash-fix-probe-20261028；文档42；42_crash_localization_rootcause.md:10 | objcopy 缺陷、符号文件与 LLDB 实测临时产物；源码行方案/缺陷仍挂账，副本唯一性未认证。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `archive-fix-full-build-20260927` | 10.566 | 2026-09-27T21:59:30 |  archive fix；历史完整构建/临时RPM仓库；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:96 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `archive-fix-v2-final-20261009` | 10.339 | 2026-10-09T19:03:23 |  docs35原22RPM：T/archive-fix-v2-final-20261009/rpms-docs35；原件保留 ；文档24、38；38_temp_cleanup_inventory.md:55 | 含 rpms-docs35 原始22包及来源记录，明确保留。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `llvm-strip-alternative-20260929` | 9.642 | 2026-09-29T21:43:34 |  llvm-strip；替代strip证据；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:98 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `llvm-strip-x86_64-20261009` | 9.473 | 2026-10-09T18:56:09 |  llvm-strip；llvm-strip打包证据；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:99 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `arm-archive-stage1-c-newrepo-20261010` | 9.236 | 2026-10-10T12:23:45 |  ARM/archive fix；C1 导出/原仓库证据；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:100 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `archive-followup-review-20261014` | 9.090 | 2026-10-14T16:18:28 |  archive fix；归档后续评审/上传核对；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:101 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `bolt-on-hybrid-20261024` | 7.854 | 2026-10-26T18:49:40 |  先保全未有同SHA副本的RPM/关键文件，再删除此构建根；root系统目录需另行授权sudo ；文档33、34、37；38_temp_cleanup_inventory.md:47 | products、perf-runtime 和保全 RPM 是后续包/性能对照；二进制未随 GitHub 文本证据发布。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `hybrid-sandbox-20261019` | 5.663 | 2026-10-19T13:59:49 |  hybrid；hybrid发布；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:110 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `hybrid-local-20261023` | 5.595 | 2026-10-26T18:48:06 |  先保全未有同SHA副本的RPM/关键文件，再删除此构建根；root系统目录需另行授权sudo ；文档38、41；main 53；38_temp_cleanup_inventory.md:46 | 保全的 hybrid RPM/关键二进制，原构建根清理后这是对照资产。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `hybrid-link-20261015` | 5.338 | 2026-10-15T20:16:03 |  hybrid；hybrid；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:111 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `llvm-optimize-intranet-20261020` | 5.069 | 2026-10-20T21:22:42 |  hybrid；可续传；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:113 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `bolt-v4-20261022-cache-release` | UNKNOWN | 2026-10-26T21:51:27 |  先保全未有同SHA副本的RPM/关键文件，再删除此构建根；root系统目录需另行授权sudo ；文档32、34、38；38_temp_cleanup_inventory.md:44 | baseline/revised-products、preserved-before-delete 是已认证静态版本原件；根已清理不代表剩余 products 可删。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `debuglink-20261028` | UNKNOWN | 2026-10-30T23:45:54 | debuglink-20261028；文档43、47、51；47_pgo_resource_experiment.md:8 | full-20261030/products、原始转换成员、llvm-profdata/runtime 仍供身份验证和 PGO 使用；GitHub 只发布报告/哈希等证据。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `debuglink-tb20261026` | UNKNOWN | 2026-10-28T20:53:39 | debuglink-tb20261026；文档45、47；43_debuginfo_symbols.md:19 | 受保护原源码工作区，PGO 启动输入；不得清理整个父目录。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `final-20261103` | UNKNOWN | 2026-11-03T12:04:05 | final-20261103；文档50、51；50_project_flag_independence.md:13 | configs/build.conf 和未来启动入口依赖仍需使用；只可另行评估已结束 rehearsal/gbs-root 子目录，不能整删父目录。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `gbs-root-x86_64-archivefix-v2` | UNKNOWN | 2026-10-19T14:41:08 |  docs38的22RPM仍在gbs-root-x86_64-archivefix-v2/.../rpmbuild/RPMS/x86_64；不把它们说成67619ec8新构建 ；文档24、31、38；38_temp_cleanup_inventory.md:56 | 静态库修复历史根和受保护原始 RPM 组；不把后来的包冒充新基线。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `oldtext-final-20261027` | UNKNOWN | 2026-10-28T01:56:17 | oldtext-final-20261027；文档39、41、42、43；41_crash_localization_probe.md:21 | 已认证 products/符号实验输入；本轮 lsof 还看到 VS Code 打开文件。 本轮有进程打开文件，不建议删除。 存在挂载引用，不处理。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `pgo-resource-20261102` | UNKNOWN | 2026-11-02T15:38:13 | pgo-resource-20261102；文档47；47_pgo_resource_experiment.md:11 | 尚待执行的 PGO 试验现场、source-D、两次演练和训练准备；不以已提交设计文档代替现场。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `review-20261103` | UNKNOWN | 2026-11-02T20:39:53 | review-20261103；文档50；50_project_flag_independence.md:152 | 检查/演练准备输入，未证明所有现场均有发布副本；源码/工具依赖保留。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `runpath-fix-20261026` | UNKNOWN | 2026-10-27T15:20:12 | runpath-fix-20261026；文档37、39；37_runpath_and_improvements.md:35 | 认证 products、old-text 实验与测量输入；原始二进制不能从 GitHub 文本恢复。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+
+#### 需要用户判断
+
+11项；已测可见du合计 **184.843 GiB**，另有 **1项UNKNOWN**。UNKNOWN不计作零占用。
+
+| 路径 | 实占GiB | 目录mtime（+08:00） | 构建/实验与出处 | 未发布资产、建议理由 |
+|---|---:|---|---|---|
+| `archive-index-fix-rpm-20260923` | 50.906 | 2026-09-23T23:15:49 |  archive fix；H 唯一 RPM 解包基线；；文档38（历史盘点）；38_temp_cleanup_inventory.md:77 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `arm-archive-tls-thumb-20261010` | 30.505 | 2026-10-10T18:23:59 |  ARM/archive fix；ARM Thumb/TLS与全量转换；；文档38（历史盘点）；38_temp_cleanup_inventory.md:85 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `review-round4-20261012` | 25.811 | 2026-10-12T23:54:49 |  archive fix；四路转换评审4及停止证据；；文档38（历史盘点）；38_temp_cleanup_inventory.md:87 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `archive-fix-rebind-20260923` | 22.625 | 2026-09-23T15:21:46 |  archive fix；旧profile重绑定/归档试验；；文档38（历史盘点）；38_temp_cleanup_inventory.md:88 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `gbs-root-x86_64-archivefix` | 13.630† | 2026-09-27T21:59:30 |  docs38的22RPM仍在gbs-root-x86_64-archivefix-v2/.../rpmbuild/RPMS/x86_64；不把它们说成67619ec8新构建 ；文档38（历史盘点）；38_temp_cleanup_inventory.md:56 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `arm-archive-stage1-20261010` | 11.923 | 2026-10-10T11:01:54 |  ARM/archive fix；ARM阶段1/x86转换输入；；文档38（历史盘点）；38_temp_cleanup_inventory.md:94 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `archive-fix-v2-build-20260929` | 11.661 | 2026-10-08T22:05:47 |  archive fix；v2续跑/恢复证据；；文档38（历史盘点）；38_temp_cleanup_inventory.md:95 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `static-native-conversion-20260924` | 6.307 | 2026-09-24T01:18:43 |  archive fix；早期转换失败证据；；文档38（历史盘点）；38_temp_cleanup_inventory.md:107 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `toolchain-hybrid-trial` | 5.754 | 2026-09-22T21:54:54 |  hybrid；隔离旧混合载荷；；文档38（历史盘点）；38_temp_cleanup_inventory.md:108 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `hybrid-trial-20260922` | 5.720 | 2026-09-22T22:12:48 |  hybrid；隔离旧混合试验；；文档38（历史盘点）；38_temp_cleanup_inventory.md:109 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+| `bench_results` | UNKNOWN | 2026-09-22T00:21:32 |  BOLT；真实TU/预处理/profile/性能输入；；文档38（历史盘点）；38_temp_cleanup_inventory.md:106 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |
+
+低于5GiB也必须保留的项目：`review-20261102/source`（当前源码提交）、`bolt-v4-20261021-disk-footprint/`中的配置/build.conf、30TU/90份输入和34号C/C++资产、profile原件和采集脚本。它们不因未进入大目录表而成为可删对象。
+
+### 9.5 可优先讨论的精确子根
+
+父目录含配置/脚本时不能整删。下面均为已经结束、只做到CMake入口的演练根，不含本项目完整构建产出的认证RPM；依赖包、导出源码及临时配置可以按原输入重建。50/51号已经发布演练文本证据，**保留父目录的configs、export、evidence、脚本和所有products**。某些宿主探针/合成夹具引用其中的工具路径；删后要重跑轻量检查必须先重新准备工具，不能直接使用失效的绝对路径。
+
+| 候选精确路径（相对W/temp） | du GiB | 证据及边界 |
+|---|---:|---|
+| `final-20261103/toolchain-rehearsal/gbs-root` | 6.540† | 50号演练；不扩展到父目录；删除前再查进程、挂载和保全 |
+| `final-20261103/basedev-rehearsal/gbs-root` | 6.491† | 50号演练；不扩展到父目录；删除前再查进程、挂载和保全 |
+| `final-20261103/basedev-rehearsal/retry-02/gbs-root` | UNKNOWN | 50号演练；不扩展到父目录；删除前再查进程、挂载和保全 |
+| `second-review-20261104/toolchain-rehearsal/gbs-root` | 6.540† | 51号演练；不扩展到父目录；删除前再查进程、挂载和保全 |
+| `second-review-20261104/basedev-rehearsal/gbs-root` | UNKNOWN | 51号演练；不扩展到父目录；删除前再查进程、挂载和保全 |
+
+五个子根中三项可见du合计 **19.571 GiB**，另两项UNKNOWN；三项均存在权限盲区，不能保证净释放量。它们属于上述父目录，不再加进一级目录分组总量，避免重复计算。详细原文：[rebuildable-subroots.json](../../tools/bolt/results/second-review-20261104/sandbox-direct-20261103/rebuildable-subroots.json)。
+
+### 9.6 今晚T/D两根的空间估算
+
+按43号§9.7的整根最大采样 **68,252,237,824 B（63.565GiB）**计算。这个数是60秒采样的历史下界，无法保证捕获瞬时高水位；Base-Dev新release构建也还没有完整实测。为同时保留两根，使用两份峰值作规划，不预先扣掉T结束后可能释放的缓存。
+
+| 项目 | 字节 | GiB |
+|---|---:|---:|
+| 两根历史峰值 | 136,504,475,648 | 127.130 |
+| 两份根外开销（50号演练较大值1,625,841,664B/根） | 3,251,683,328 | 3.028 |
+| 运行保留量，仅本地规划 | 21,474,836,480 | 20.000 |
+| 参考需求合计 | 161,230,995,456 | 150.158 |
+| 当前/home可用 | 163,685,830,656 | 152.444 |
+| 参考需求的缺口 | 0 | 0.000 |
+| 参考需求之外余量 | 2,454,835,200 | 2.286 |
+| 再对两根采样峰值加20%后的建议总量 | 188,531,890,586 | 175.584 |
+| 达到建议总量需释放 | 24,846,059,930 | 23.140 |
+
+基础估算尚能容纳两根，算术缺口为0，但只有约2.29GiB的额外余量，不宜把它解释成足够可靠的完整构建容量。建议在用户批准后先释放 **约24GiB**（把23.14GiB向上取整），再重读df。20%只是本次规划余量，不写入spec/helper，也不是新的发布门槛；本轮没有启动构建或修改现有本地入口。
+
+三项已测子根的可见合计19.571GiB不足以单独证明达到24GiB；另两项UNKNOWN不能填入猜测数。因此只给候选，等用户逐项决定，执行后以df实增为准。
+
+原始证据：[sandbox-direct-20261103](../../tools/bolt/results/second-review-20261104/sandbox-direct-20261103/)，包括推送原文、137项du、权限/超时输出、目录mtime、引用文档行号、浅层资产标记、lsof/mount匹配和空间公式。源目录/已有产物均未修改。
+
+本次续跑结论：**sandbox已更新并核对为9e39fa8a；磁盘建议清单已完成，未执行任何删除。**
