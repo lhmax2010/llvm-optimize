@@ -771,3 +771,12 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - /home扫描结束可用163,685,830,656B（152.444GiB）。137个一级目录限时du：28个>5GiB、11个UNKNOWN；修改时间明确为目录自身mtime。oldtext-final有VS Code打开和proc挂载，保留。认证products、full-20261030、PGO、原始RPM和源码保留；未核实唯一性的交用户判断。
 - 两根参考需求150.158GiB（43号两倍采样峰值+两份根外开销+20GiB保留），只余2.286GiB；加20%采样峰值规划余量后需175.584GiB，建议先释放约24GiB。五个已结束演练子根为优先候选：三项可见du合计19.571GiB、两项UNKNOWN，不保证净回收量，未删任何文件。
 - [51号§9.3–9.6](51_second_review_fixes.md#93-用户授权完整-gerrit-地址续跑2026-11-03)记录推送原文、按保留/可删/用户判断分组的目录表、证据与空间公式。没有运行构建或操作QB；本轮仅更新GitHub证据文档。
+
+
+## 2026-11-03：用户批准的十个目录清理完成（52号）
+
+- 按用户精确清单删除五个已结束演练gbs-root及五个旧实验目录，10/10完成、0跳过；没有扩展到父/同级目录。第6–10项顶层/du及71个RPM的本次SHA清单先保存，未复制RPM。
+- 每项真实目录/realpath、挂载、全权限/proc（含maps）和用户服务检查通过；一次zenity + sudo -A、一次输入成功。前五项root不可写目录用root删除，后五项UID1000删除；rm均带--one-file-system。
+- 删除执行窗口/home可用空间从152,217,346,048B升至285,199,704,064B（265.613GiB），df净增123.849GiB。文件系统可用空间会随其他写入变化，时间/原文见52号。
+- 十个路径均不存在，父目录其他条目元数据比较一致；products、full-20261030、PGO、配置、源码和证据保留。未构建、未改源码、未推Gerrit/sandbox、未操作QB。
+- [52_disk_cleanup.md](52_disk_cleanup.md)与tools/bolt/results/disk-cleanup-20261103/存证；结束标记DISK_CLEANUP FINISHED status=ok。

@@ -1,0 +1,23 @@
+{
+  "pid": 3506085,
+  "before": "idle (class 3)",
+  "after": "best-effort class 2 priority 7",
+  "command": [
+    "ionice",
+    "-c2",
+    "-n7",
+    "-p",
+    "3506085"
+  ],
+  "reason": "Own read-only preparation process remained in blk_mq_get_tag for several minutes; idle I/O was starved. No other process priority or system setting changed. nice remains 19.",
+  "followup": {
+    "pids": [
+      3506085,
+      3507766
+    ],
+    "class": 2,
+    "priority": 4,
+    "reason": "Priority 7 also remained blocked on filesystem metadata; only our read-only preparation and its du child use normal best-effort I/O, nice remains 19.",
+    "child_result": "du PID 3507766 had already ended: ionice reported No such process; no retry. Parent change succeeded."
+  }
+}
