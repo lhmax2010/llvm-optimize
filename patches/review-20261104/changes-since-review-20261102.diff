@@ -1,0 +1,447 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 1b321112b788fef6b4c214518f3ce68f84261e9e..eeadcdaf85b1f7f126dd8e9bf0fa8883292cffb8 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -2,6 +2,9 @@
+ """Tizen clang BOLT gates. Python >= 3.9; shell commands use POSIX sh.
+ 
+ Maintenance notes (fail closed; preserve actual/expected values and logs):
++- run-step allows 14400 seconds: local tool builds took 108--157 seconds,
++  while QB 1215143 took 13792 seconds for the entire x86_64 LLVM package.
++  This generous command timeout is not a local resource admission rule.
+ - No disk-space admission thresholds: profile, BOLT and clang sizes change,
+   so fixed budgets become stale. Record actual allocation/free space only;
+   diagnose a failed step from its errno/log and estimate from this build.
+@@ -111,6 +114,7 @@ def digest(path):
+     h = hashlib.sha256()
+     with open(path, 'rb') as f:
+         while True:
++            check_cancel()
+             b = f.read(1024 * 1024)
+             if not b:
+                 break
+@@ -177,15 +181,25 @@ def wait_group_exit(group, timeout=10):
+         time.sleep(.02)
+ 
+ _CANCEL_SIGNAL = None
++_ACTIVE_GROUP = None
+ 
+ 
+ def record_cancel(signum, frame):
+     global _CANCEL_SIGNAL
++    if _CANCEL_SIGNAL is not None:
++        # Kill the active descendant group before honoring an immediate second
++        # signal. The leader stays unreaped until call() has cleaned its group.
++        if _ACTIVE_GROUP is not None:
++            try: os.killpg(_ACTIVE_GROUP, signal.SIGKILL)
++            except ProcessLookupError: pass
++        signal.signal(signum, signal.SIG_DFL)
++        os.kill(os.getpid(), signum)
++        return
+     _CANCEL_SIGNAL = signum
+ 
+ 
+ def check_cancel():
+-    require(_CANCEL_SIGNAL is None, 'cancelled by signal %s' % _CANCEL_SIGNAL)
++    require(_CANCEL_SIGNAL is None, 'CANCELLED: cancelled by signal %s' % _CANCEL_SIGNAL)
+ 
+ 
+ def peek_child_exit(process, timeout):
+@@ -210,6 +224,7 @@ def reap_child(process, timeout=1):
+         time.sleep(.01)
+ 
+ def call(argv, log, cwd=None, timeout=300):
++    global _ACTIVE_GROUP
+     log = Path(log); log.parent.mkdir(parents=True, exist_ok=True)
+     process = None; reaped = False; primary = None
+     try:
+@@ -223,12 +238,14 @@ def call(argv, log, cwd=None, timeout=300):
+             check_cancel()
+             process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
+                                        stderr=subprocess.STDOUT, start_new_session=True)
++            _ACTIVE_GROUP = process.pid
+             rc = peek_child_exit(process, timeout)
+             if rc != 0:
+-                primary = 'COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
++                primary = 'COMMAND_ERROR: COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
+                 raise GateError(primary)
+             require(reap_child(process) == rc, 'child exit status changed while reaping')
+             reaped = True
++            _ACTIVE_GROUP = None
+         text = log.read_text(errors='replace')
+         metadata = log.with_suffix(log.suffix+'.argv.json')
+         invocation = json.loads(metadata.read_text())
+@@ -236,7 +253,8 @@ def call(argv, log, cwd=None, timeout=300):
+         return text
+     except BaseException as error:
+         if primary is None:
+-            primary = ('TIMEOUT: ' if isinstance(error, subprocess.TimeoutExpired) else 'COMMAND_ERROR: ')+str(error)
++            primary = (str(error) if str(error).startswith('CANCELLED:') else
++                       ('TIMEOUT: ' if isinstance(error, subprocess.TimeoutExpired) else 'COMMAND_ERROR: ')+str(error))
+         cleanup = []
+         if process is not None and not reaped:
+             # Keep the un-reaped leader as a PGID anchor until group cleanup ends.
+@@ -256,12 +274,16 @@ def call(argv, log, cwd=None, timeout=300):
+                 cleanup.append(str(failure))
+         if isinstance(error, (KeyboardInterrupt, SystemExit)):
+             raise
++        if _CANCEL_SIGNAL is not None:
++            primary = 'CANCELLED: cancelled by signal %s' % _CANCEL_SIGNAL
+         message = primary+' (see '+str(log)+')'
+         if cleanup:
+             message += '; cleanup error: '+'; '.join(cleanup)
+         failure = GateError(message)
+         failure.bolt_log = str(log)
+         raise failure from error
++    finally:
++        _ACTIVE_GROUP = None
+ 
+ def profile_unpack(source, output):
+     output = Path(output)
+@@ -269,7 +291,11 @@ def profile_unpack(source, output):
+     output.parent.mkdir(parents=True, exist_ok=True)
+     try:
+         with lzma.open(source, 'rb') as src, output.open('xb') as dst:
+-            shutil.copyfileobj(src, dst, 1024 * 1024)
++            while True:
++                check_cancel()
++                chunk = src.read(1024 * 1024)
++                if not chunk: break
++                require(dst.write(chunk) == len(chunk), 'short profile write')
+         profile_identity(output)
+     except Exception:
+         if output.exists():
+@@ -537,6 +563,7 @@ def installed_security(baseline, candidate):
+ 
+ 
+ def rpath_layout(path, allowed_ranges=None):
++    # adjust_rpath has already enforced at most one RPATH/RUNPATH tag.
+     """Freeze all bytes except the original path strings, including their NULs."""
+     elf = ELF(path)
+     try:
+@@ -872,7 +899,9 @@ def inventory(root, hash_files=True):
+     def traversal_error(error):
+         raise GateError('inventory traversal failed: '+str(error)) from error
+     for folder, dirs, names in os.walk(root, followlinks=False, onerror=traversal_error):
++        check_cancel()
+         for name in sorted(dirs + names):
++            check_cancel()
+             p = Path(folder)/name; key = p.relative_to(root).as_posix(); st = p.lstat()
+             if stat.S_ISLNK(st.st_mode):
+                 files[key] = {'type': 'symlink', 'target': os.readlink(p)}
+@@ -1582,6 +1611,7 @@ def disk_diagnose(step, log, error=None, build=None, work=None, root=None):
+ 
+ 
+ def diagnose_safely(step, log, error=None):
++    if error is not None and str(error).startswith('CANCELLED:'): return None
+     try: return disk_diagnose(step,log,error)
+     except Exception: return None
+ 
+@@ -1591,6 +1621,7 @@ def run_step(step, log, argv, output=None, success_marker=None):
+     started = time.monotonic()
+     try:
+         text = call(argv,log,timeout=14400)
++        check_cancel()
+         if success_marker:
+             with Path(log).open('a') as stream:
+                 require(stream.write(success_marker+'\n')==len(success_marker)+1,'short build-success marker write');stream.flush();os.fsync(stream.fileno())
+@@ -1859,12 +1890,14 @@ def main():
+ 
+ def cli():
+     global _CANCEL_SIGNAL
+-    previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGHUP)}
++    previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)}
+     _CANCEL_SIGNAL = None
+     for sig in previous:
+         signal.signal(sig, record_cancel)
+     try:
+         main()
++        require(_CANCEL_SIGNAL is None,
++                'CANCELLED: cancelled by signal %s after work completed' % _CANCEL_SIGNAL)
+         return 0
+     except (GateError, OSError, ValueError, lzma.LZMAError) as error:
+         step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index 637e37165fdf2f8243f25923412efe60a45546f9..d95dfc1f14cbab48b6623fbc8a4bdc105cf442c3 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -270,7 +270,7 @@ def classify_options(argv, arch='x86_64'):
+                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
+ 
+ 
+-def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
++def ir_settings(lines, require_recorded_options=True, arch='x86_64', debug_info=None):
+     """Read LLVM 22 textual metadata/attributes without modifying input IR."""
+     retained, metadata = [], {}
+     triple, command_id = None, None
+@@ -321,6 +321,11 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+         raise ValueError('missing original command: backend policy cannot be certified')
+     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+         lambda match: chr(int(match[1], 16)), metadata[command_id]))
++    found_debug = 'yes' if any(token.startswith('-g') for token in recorded_command) else 'no'
++    if debug_info is not None and debug_info != found_debug:
++        raise ValueError('debug-info expected %s, found %s (expected=%s found=%s)' %
++                         ('debug' if debug_info == 'yes' else 'release',
++                          'debug' if found_debug == 'yes' else 'release', debug_info, found_debug))
+     policy = classify_options(recorded_command, arch)
+     backend_flags = [flag for flag in BACKEND_FLAGS
+                      if policy['dwarf'] is not None or not flag.startswith('-g')]
+@@ -592,15 +597,17 @@ def cleanup_evidence(output):
+             path.unlink()
+ 
+ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3, command=None):
++            address_space_bytes=4*1024**3, command=None, debug_info=None):
+     root, output, build = Path(root).resolve(), Path(output).resolve(), Path(build).resolve()
+     if arch not in CERTIFIED_OPTIMIZATION or jobs < 1 or address_space_bytes < 1:
+         raise ValueError('invalid architecture or resource parameters')
++    if debug_info not in ('yes', 'no'):
++        raise ValueError('debug-info expected=yes|no found='+str(debug_info))
+     reset_evidence(root, output, build)
+     command = command or Commands(address_space_bytes)
+     summary = dict(started=time.time(), input_root=str(root), output_root=str(output),
+                    arch=arch, workers=jobs, as_bytes=address_space_bytes, archives=[],
+-                   status='CONVERTING', missing_symbols_by_type={})
++                   status='CONVERTING', debug_info=debug_info, missing_symbols_by_type={})
+     def save():
+         atomic_json(output/'summary.json', summary)
+     save()
+@@ -610,6 +617,8 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+         summary['scanned_archives'] = len(archives)
+         summary['native_archives_skipped'] = sum(not data['bitcode'] for archive, data in archives)
++        # Preserved native members retain their bytes, including any debug sections.
++        summary['native_members_preserved'] = sum(data['machine'] for archive, data in archives)
+         for archive, before in archives:
+             command.check()
+             if not before['bitcode']:
+@@ -649,7 +658,7 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                 with text_ir.open('wb') as out:
+                     command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
+                 with text_ir.open() as lines:
+-                    settings = ir_settings(lines, arch=arch)
++                    settings = ir_settings(lines, arch=arch, debug_info=debug_info)
+                 atomic_json(source.parent/'ir-settings.json', settings)
+                 text_ir.unlink()
+                 record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
+@@ -735,14 +744,14 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+ 
+ 
+ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3):
++            address_space_bytes=4*1024**3, debug_info=None):
+     root, output = Path(root).resolve(), Path(output).resolve()
+     command = Commands(address_space_bytes)
+     old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
+     result = None
+     try:
+         print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
+-        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command)
++        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command, debug_info)
+         command.check()
+         result['status'] = 'INSTALLING'
+         atomic_json(output/'summary.json', result)
+@@ -781,6 +790,7 @@ def install_main():
+     parser.add_argument('--build', type=Path, required=True)
+     parser.add_argument('--evidence', type=Path, required=True)
+     parser.add_argument('--arch', choices=['x86_64'], required=True)
++    parser.add_argument('--debug-info', choices=['yes', 'no'], required=True)
+     parser.add_argument('--compiler', type=Path, required=True)
+     parser.add_argument('--disassembler', type=Path, required=True)
+     parser.add_argument('--nm', type=Path, required=True)
+@@ -788,7 +798,7 @@ def install_main():
+     parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
+     args = parser.parse_args()
+     install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+-            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes)
++            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info)
+ 
+ 
+ if __name__ == '__main__':
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index d911fd5258d84324e992e34a611fb75b3695c3af..b6cb759ec86885630f635bb381ed105ab3496f26 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -62,7 +62,7 @@ BuildRequires: util-linux
+ 
+ %{!?mlgo_build_jobs: %define mlgo_build_jobs 6}
+ %{!?mlgo_verify_configure_only: %define mlgo_verify_configure_only 0}
+-
++# binutils-devel below also supplies readelf for the hybrid linkage assertion.
+ BuildRequires: cmake
+ BuildRequires: python3
+ BuildRequires: python3-devel
+@@ -219,19 +219,26 @@ TIZEN_LLVM_RELEASE=%{llvm_release_build}
+ # The x86_64 policy is the certified Toolchain command (QB 1215143).
+ # Only architecture and debug-mode options are inherited. Token matching is
+ # exact: stripping -fstack-protector must never leave a -strong suffix.
++TIZEN_LLVM_EXPECTED_DROPPED=${TIZEN_LLVM_EXPECTED_DROPPED-'-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'}
+ tizen_llvm_flags()
+ {
+     tizen_llvm_kind=$1
+     tizen_llvm_input=$2
+     tizen_llvm_release=$3
++    case $tizen_llvm_release in 0|1) ;; *)
++        echo "TIZEN_LLVM_FIXED_FLAGS_FAILED invalid TIZEN_LLVM_RELEASE=$tizen_llvm_release" >&2
++        return 1 ;;
++    esac
++    tizen_llvm_debug_sequence=
++    TIZEN_LLVM_UNREVIEWED=
+     tizen_llvm_arch=
+     tizen_llvm_debug_head=
+     tizen_llvm_debug_tail=
+     TIZEN_LLVM_NORMALIZED=
+     TIZEN_LLVM_DROPPED=
+-    tizen_llvm_saved_ifs=$IFS
+-    IFS=' 	
+-'
++    tizen_llvm_ifs_set=${IFS+x}
++    tizen_llvm_saved_ifs=${IFS-}
++    unset IFS
+     case $- in *f*) tizen_llvm_glob_off=1 ;; *) tizen_llvm_glob_off=0; set -f ;; esac
+     for tizen_llvm_token in $tizen_llvm_input; do
+         case $tizen_llvm_token in
+@@ -240,10 +247,16 @@ tizen_llvm_flags()
+             -momit-leaf-frame-pointer|-fno-omit-frame-pointer)
+                 TIZEN_LLVM_NORMALIZED="${TIZEN_LLVM_NORMALIZED}${TIZEN_LLVM_NORMALIZED:+ }$tizen_llvm_token"
+                 continue ;;
++            -march=native|-mtune=native)
++                if test "$tizen_llvm_ifs_set" = x; then IFS=$tizen_llvm_saved_ifs; else unset IFS; fi
++                if test "$tizen_llvm_glob_off" = 0; then set +f; fi
++                echo "TIZEN_LLVM_FIXED_FLAGS_FAILED host-dependent option: $tizen_llvm_token" >&2
++                return 1 ;;
+             -m64|-march=*|-mtune=*|-msse*|-mfpmath=*)
+                 tizen_llvm_arch="${tizen_llvm_arch}${tizen_llvm_arch:+ }$tizen_llvm_token"
+                 continue ;;
+-            -g|-g[0-9]|-ggdb*|-gdwarf-*|-gline*|-gsplit-*|-gno-*)
++            -g|-g[0-9]|-ggdb*|-gdwarf-*|-gline*|-gno-*)
++                tizen_llvm_debug_sequence="${tizen_llvm_debug_sequence}${tizen_llvm_debug_sequence:+ }$tizen_llvm_token"
+                 if test "$tizen_llvm_release" = 0; then
+                     tizen_llvm_debug_head="${tizen_llvm_debug_head}${tizen_llvm_debug_head:+ }$tizen_llvm_debug_tail"
+                     tizen_llvm_debug_tail=$tizen_llvm_token
+@@ -267,11 +280,24 @@ tizen_llvm_flags()
+             CFLAGS:-flto=thin|CXXFLAGS:-flto=thin|\
+             CFLAGS:-fomit-frame-pointer|CXXFLAGS:-fomit-frame-pointer|\
+             LDFLAGS:-Wl,-z,relro,--as-needed|LDFLAGS:-Wl,--gc-sections) ;;
+-            *) TIZEN_LLVM_DROPPED="${TIZEN_LLVM_DROPPED}${TIZEN_LLVM_DROPPED:+ }$tizen_llvm_token" ;;
++            *)
++                TIZEN_LLVM_DROPPED="${TIZEN_LLVM_DROPPED}${TIZEN_LLVM_DROPPED:+ }$tizen_llvm_token"
++                case " $TIZEN_LLVM_EXPECTED_DROPPED " in
++                    *" $tizen_llvm_token "*) ;;
++                    *) TIZEN_LLVM_UNREVIEWED="${TIZEN_LLVM_UNREVIEWED}${TIZEN_LLVM_UNREVIEWED:+ }$tizen_llvm_token" ;;
++                esac ;;
++
+         esac
+     done
+-    IFS=$tizen_llvm_saved_ifs
++    if test "$tizen_llvm_ifs_set" = x; then IFS=$tizen_llvm_saved_ifs; else unset IFS; fi
+     if test "$tizen_llvm_glob_off" = 0; then set +f; fi
++    case $tizen_llvm_kind:$tizen_llvm_release in
++        CFLAGS:0|CXXFLAGS:0)
++            if test "$tizen_llvm_debug_sequence" != '-g2 -gdwarf-4 -g'; then
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]"
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]" >&2
++            fi ;;
++    esac
+     case $tizen_llvm_kind in
+         CFLAGS|CXXFLAGS)
+             # Preserve the exact certified CMake string, including whitespace,
+@@ -279,22 +305,36 @@ tizen_llvm_flags()
+             # other project flags, even when the project selects GCC.
+             TIZEN_LLVM_RESULT=" -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   $tizen_llvm_debug_head -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never $tizen_llvm_arch -fasynchronous-unwind-tables  $tizen_llvm_debug_tail -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument" ;;
+         LDFLAGS)
++            # Executable/shared linker flags are explicit in the spec, not read
++            # from LDFLAGS. CMAKE_MODULE_LINKER_FLAGS is initialized from this
++            # environment value, unchanged from the Toolchain project value.
+             TIZEN_LLVM_RESULT="-Wl,-z,relro,--as-needed -Wl,--gc-sections${tizen_llvm_arch:+ }$tizen_llvm_arch${tizen_llvm_debug_head:+ }$tizen_llvm_debug_head${tizen_llvm_debug_tail:+ }$tizen_llvm_debug_tail" ;;
+         *) return 1 ;;
+     esac
+ }
+-tizen_llvm_flags CFLAGS "$CFLAGS" "$TIZEN_LLVM_RELEASE"
++tizen_llvm_report_warnings()
++{
++    if test -n "$1$2$3"; then
++        tizen_llvm_warning="TIZEN_LLVM_FLAGS_WARNING unreviewed project options dropped: CFLAGS=[$1] CXXFLAGS=[$2] LDFLAGS=[$3] (manual review of the build log required)"
++        printf '%%s\n' "$tizen_llvm_warning"
++        printf '%%s\n' "$tizen_llvm_warning" >&2
++    fi
++}
++tizen_llvm_flags CFLAGS "$CFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
+ CFLAGS=$TIZEN_LLVM_RESULT
+ tizen_llvm_normalized_c=$TIZEN_LLVM_NORMALIZED
+ tizen_llvm_dropped_c=$TIZEN_LLVM_DROPPED
+-tizen_llvm_flags CXXFLAGS "$CXXFLAGS" "$TIZEN_LLVM_RELEASE"
++tizen_llvm_unreviewed_c=$TIZEN_LLVM_UNREVIEWED
++tizen_llvm_flags CXXFLAGS "$CXXFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
+ CXXFLAGS=$TIZEN_LLVM_RESULT
+ tizen_llvm_normalized_cxx=$TIZEN_LLVM_NORMALIZED
+ tizen_llvm_dropped_cxx=$TIZEN_LLVM_DROPPED
+-tizen_llvm_flags LDFLAGS "$LDFLAGS" "$TIZEN_LLVM_RELEASE"
++tizen_llvm_unreviewed_cxx=$TIZEN_LLVM_UNREVIEWED
++tizen_llvm_flags LDFLAGS "$LDFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
+ LDFLAGS=$TIZEN_LLVM_RESULT
+ printf 'TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_normalized_c" "$tizen_llvm_normalized_cxx" "$TIZEN_LLVM_NORMALIZED"
+ printf 'TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_dropped_c" "$tizen_llvm_dropped_cxx" "$TIZEN_LLVM_DROPPED"
++tizen_llvm_report_warnings "$tizen_llvm_unreviewed_c" "$tizen_llvm_unreviewed_cxx" "$TIZEN_LLVM_UNREVIEWED"
+ export CFLAGS CXXFLAGS LDFLAGS
+ # END TIZEN_LLVM_FIXED_FLAGS
+ %endif
+@@ -482,12 +522,28 @@ ninja -j %{mlgo_build_jobs}
+ %endif
+ %ifarch x86_64
+ # These drivers must retain component linkage even when BOLT is disabled.
+-for hybrid_tool in bin/clang-22 bin/lld bin/llvm-ar; do
+-    test -f "$hybrid_tool" || { echo "TIZEN_HYBRID_LINK_FAILED missing $hybrid_tool" >&2; exit 1; }
+-    hybrid_dynamic=$(readelf -dW "$hybrid_tool") || exit 1
+-    if printf '%s\n' "$hybrid_dynamic" | grep -E '\(NEEDED\).*\[(libLLVM[^]]*\.so|libclang-cpp[^]]*\.so)'; then
++for hybrid_tool in bin/clang-22 bin/lld bin/llvm-ar bin/llvm-tblgen bin/clang-tblgen bin/lldb-tblgen bin/llvm-config bin/llvm-exegesis; do
++    if ! test -f "$hybrid_tool"; then
++        case "$hybrid_tool" in
++            bin/clang-22|bin/lld|bin/llvm-ar)
++                echo "TIZEN_HYBRID_LINK_FAILED missing $hybrid_tool" >&2; exit 1 ;;
++            *) echo "TIZEN_HYBRID_LINK_SKIP $hybrid_tool"; continue ;;
++        esac
++    fi
++    hybrid_dynamic=$(LC_ALL=C readelf -dW "$hybrid_tool") || {
++        echo "TIZEN_HYBRID_LINK_FAILED readelf: $hybrid_tool" >&2; exit 1;
++    }
++    if LC_ALL=C grep -E '\(NEEDED\).*\[(libLLVM[^]]*\.so|libclang-cpp[^]]*\.so)' <<EOF_HYBRID_DYNAMIC
++$hybrid_dynamic
++EOF_HYBRID_DYNAMIC
++    then
+         echo "TIZEN_HYBRID_LINK_FAILED shared LLVM/Clang dependency: $hybrid_tool" >&2
+         exit 1
++    else
++        hybrid_grep_status=$?
++        test "$hybrid_grep_status" = 1 || {
++            echo "TIZEN_HYBRID_LINK_FAILED grep status=$hybrid_grep_status: $hybrid_tool" >&2; exit 1;
++        }
+     fi
+ done
+ echo TIZEN_HYBRID_LINK_OK
+@@ -551,11 +607,13 @@ bolt_step configure cmake -S ../llvm -B . \
+   -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
+ # Only certified BOLT tasks and the paired configure-refreshed TF anchor.
+ bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
++# LC_ALL=C applies only to this ninja invocation.
+ bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- env LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -n llvm-bolt
+ bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
+ python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
+ cat "$BOLT_WORK/tool-plan.json"
+ python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
++# LC_ALL=C applies only to this ninja invocation.
+ bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -j %{mlgo_build_jobs} llvm-bolt
+ python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+@@ -618,6 +676,11 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+     --build "%{_builddir}/%{buildsubdir}/build" \
+     --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
+     --arch x86_64 \
++%if %{llvm_release_build}
++    --debug-info no \
++%else
++    --debug-info yes \
++%endif
+     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \

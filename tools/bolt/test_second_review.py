@@ -96,7 +96,7 @@ class SecondProcessTests(Base):
     def test_nonzero_live_grandchild(self):
         pidfile=self.d/'pid'
         code='import os,subprocess,sys\np=subprocess.Popen([sys.executable,"-c","import time;time.sleep(60)"])\nopen('+repr(str(pidfile))+',"w").write(str(p.pid))\nsys.exit(7)'
-        with self.assertRaisesRegex(h.GateError,'^COMMAND_FAILED rc=7:'):
+        with self.assertRaisesRegex(h.GateError,'^COMMAND_ERROR: COMMAND_FAILED rc=7:'):
             h.call([sys.executable,'-c',code],self.d/'nonzero.log')
         pid=int(pidfile.read_text())
         try:self.assertIn(h.proc_stat('/proc/%d/stat'%pid)[1],('Z','X'))
@@ -130,7 +130,7 @@ class SecondProcessTests(Base):
         previous=signal.getsignal(signal.SIGCHLD)
         try:
             signal.signal(signal.SIGCHLD,signal.SIG_IGN)
-            with self.assertRaisesRegex(h.GateError,'^COMMAND_FAILED rc=7:'):h.call(['/bin/sh','-c','exit 7'],self.d/'ignored.log')
+            with self.assertRaisesRegex(h.GateError,'^COMMAND_ERROR: COMMAND_FAILED rc=7:'):h.call(['/bin/sh','-c','exit 7'],self.d/'ignored.log')
             self.assertEqual(signal.getsignal(signal.SIGCHLD),signal.SIG_DFL)
             self.assertTrue(json.loads((self.d/'ignored.log.argv.json').read_text())['SIGCHLD_reset_to_default'])
         finally:signal.signal(signal.SIGCHLD,previous)

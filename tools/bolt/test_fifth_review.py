@@ -102,6 +102,11 @@ elif phase=='cleanup':
   time.sleep(.3)
   return original(*a,**kw)
  h.wait_group_exit=cleanup
+ original_peek=h.peek_child_exit
+ def peek(process,timeout):
+  while not all(p.exists() and p.stat().st_size for p in (Path(heartbeat),Path(heartbeat+'.child'))): time.sleep(.01)
+  raise h.GateError('fixture cleanup trigger')
+ h.peek_child_exit=peek
 code=CODE_TOKEN
 sys.argv=['helper','run-step','cancel',log,'--','/bin/sh','-c','exec '+h.quote(sys.executable)+' -c '+h.quote(code)+' '+h.quote(heartbeat)]
 sys.exit(h.cli())
@@ -113,12 +118,12 @@ sys.exit(h.cli())
             while not all(x.exists() and x.stat().st_size for x in targets) and p.poll() is None and time.monotonic()<end:time.sleep(.01)
             self.assertTrue(all(x.exists() and x.stat().st_size for x in targets),'probe did not become ready')
             descendants=[] if phase=='before' else [int(x.read_text().split()[0]) for x in [child_heartbeat,heartbeat]]
-            os.kill(p.pid,sig)
+            if phase!='cleanup':os.kill(p.pid,sig)
             if phase=='cleanup':
                 while not ready.exists() and p.poll() is None and time.monotonic()<end:time.sleep(.01)
                 self.assertTrue(ready.exists());os.kill(p.pid,sig)
             out,err=p.communicate(timeout=12)
-            self.assertNotEqual(p.returncode,0);self.assertIn('signal '+str(sig),err)
+            self.assertNotEqual(p.returncode,0);self.assertIn('CANCELLED: cancelled by signal '+str(sig),err)
             sizes=[x.stat().st_size if x.exists() else 0 for x in [heartbeat,child_heartbeat]];time.sleep(.15)
             self.assertEqual(sizes,[x.stat().st_size if x.exists() else 0 for x in [heartbeat,child_heartbeat]])
             states={}

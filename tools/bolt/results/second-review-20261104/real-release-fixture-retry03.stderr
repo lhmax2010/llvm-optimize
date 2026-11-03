@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/real_release_fixture.py", line 24, in <module>
+    run('synthetic-compiler-interpreter',['patchelf','--set-interpreter',str(R/'usr/lib64/ld-linux-x86-64.so.2'),str(compiler)])
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/real_release_fixture.py", line 16, in run
+    p=subprocess.run(argv,cwd=X,capture_output=True,text=True)
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/usr/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'patchelf'

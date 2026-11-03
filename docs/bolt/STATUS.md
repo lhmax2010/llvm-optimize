@@ -745,3 +745,13 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - 今晚入口见[50号§7](50_project_flag_independence.md#7-轻量检查与演练续)，先T验证后D，full模式本轮没有执行。演练后按两份历史峰值＋两份根外实测占用＋20GiB保留重新分项核对满足；演练前额外20%保守参考及重试后的变化均明列于50号，不冒充强制门槛。
 - T的strip-all/RUNPATH/最终SHA保持硬要求；ordinary/debug/static成员仅允许严格证明为命令记录节的差异，ar日期单列，90TU仍必做。上一轮停止记录保留，不把轻量PASS冒充产物认证。
 - 仅推GitHub bolt-v4，无Gerrit/sandbox/QB操作，不触碰PGO现场和历史根。
+
+
+## 2026-11-03：第二轮外部评审修复与用户 warning 裁决（51号）
+
+- 三层 detached 源码提交依次为 hybrid `d4d6ca16b55a9afcb64a30ebf634f340f968267b` → BOLT `f2553114b05cbb022ff3ac062dbac284e1029df4` → fixed flags `9e39fa8a61392652bb28b75fc26216675bcad1d5`；最终 tree `cbc33271f8a9a7a5bd4de3c806bed6182c268e98`，三个 Change-Id 不变，Hao Lin 署名。仅本地，未推 Gerrit/sandbox。
+- 混合链接 readelf/grep 错误失败关闭并检查五个可选静态工具；BOLT 补齐 SIGINT、纯 Python/尾部取消、第二信号立即终止与 CANCELLED 独立诊断；不改 profile/OPTIONS/白名单。
+- **用户裁决覆盖原第8、9条**：未知项目参数丢弃，三组汇总 TIZEN_LLVM_FLAGS_WARNING 在 stdout/stderr 各打印一次，继续构建；非认证 debug 序列 warning 后继续。预期四个 dropped 只审计；非法 release、march/mtune=native 仍失败。精确恢复 IFS/$-，保留三处 `|| exit 1`。
+- full-20261030 的3853个转换成员全部带-g；Source1005新增必填--debug-info yes/no、逐成员核对模式。原生成员原样保留、不作release调试节断言，summary计数。Claude C-2八项通过，其中真实工具合成release正/负例2/2；真实完整release成员复测仍挂账。
+- 最终393项helper、42项参数/转换器、12项两配置完整展开、Tizen RPM五项解析全部PASS。ARM全文与5aff6c0c字节相同。T/D新根演练各一次到CMake即停止，无Ninja；T dropped为空，D恰为四个预期token，两者warning均0、实际参数符合预期，服务/进程/挂载清理PASS。
+- [51_second_review_fixes.md](51_second_review_fixes.md) 与 patches/review-20261104/ 刷新，结论**可以送审**。本轮未运行完整构建；BOLT关闭完整构建、67619ec8精确RPM基线、release真实成员等缺口如实保留。新根保留，后续完整构建须重新核对磁盘容量。

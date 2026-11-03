@@ -1,0 +1,209 @@
+--- 5aff6c0c
++++ second-review
+@@ -67,6 +67,9 @@
+ BuildRequires: python3
+ BuildRequires: python3-devel
+ BuildRequires: patchelf
++
++
++
+ BuildRequires: binutils-devel
+ BuildRequires: libxml2-devel
+ 
+@@ -196,27 +199,120 @@
+ 
+ 
+ 
+-# Strip pre-existing optimization flags and remove performance-harming flags, then force -O3 + ThinLTO
+-OPTFLAGS_CFLAGS=$(echo "$CFLAGS" | sed \
+-    -e 's/\-O[0-9sz]//g' \
+-    -e 's/\-Ofast//g' \
+-    -e 's/\-fstack-protector-strong//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector//g' \
+-    -e 's/\-fno-inline-functions//g' \
+-    -e 's/\-fno-omit-frame-pointer//g' \
+-    -e 's/\-momit-leaf-frame-pointer//g')
+-OPTFLAGS_CXXFLAGS=$(echo "$CXXFLAGS" | sed \
+-    -e 's/\-O[0-9sz]//g' \
+-    -e 's/\-Ofast//g' \
+-    -e 's/\-fstack-protector-strong//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector//g' \
+-    -e 's/\-fno-inline-functions//g' \
+-    -e 's/\-fno-omit-frame-pointer//g' \
+-    -e 's/\-momit-leaf-frame-pointer//g')
+-export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+-export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
++TIZEN_LLVM_RELEASE=0
++# BEGIN TIZEN_LLVM_FIXED_FLAGS
++# The x86_64 policy is the certified Toolchain command (QB 1215143).
++# Only architecture and debug-mode options are inherited. Token matching is
++# exact: stripping -fstack-protector must never leave a -strong suffix.
++TIZEN_LLVM_EXPECTED_DROPPED=${TIZEN_LLVM_EXPECTED_DROPPED-'-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'}
++tizen_llvm_flags()
++{
++    tizen_llvm_kind=$1
++    tizen_llvm_input=$2
++    tizen_llvm_release=$3
++    case $tizen_llvm_release in 0|1) ;; *)
++        echo "TIZEN_LLVM_FIXED_FLAGS_FAILED invalid TIZEN_LLVM_RELEASE=$tizen_llvm_release" >&2
++        return 1 ;;
++    esac
++    tizen_llvm_debug_sequence=
++    tizen_llvm_unreviewed=
++    tizen_llvm_arch=
++    tizen_llvm_debug_head=
++    tizen_llvm_debug_tail=
++    TIZEN_LLVM_NORMALIZED=
++    TIZEN_LLVM_DROPPED=
++    tizen_llvm_ifs_set=${IFS+x}
++    tizen_llvm_saved_ifs=${IFS-}
++    unset IFS
++    case $- in *f*) tizen_llvm_glob_off=1 ;; *) tizen_llvm_glob_off=0; set -f ;; esac
++    for tizen_llvm_token in $tizen_llvm_input; do
++        case $tizen_llvm_token in
++            -O0|-O1|-O2|-O3|-Os|-Oz|-Og|-Ofast|\
++            -fstack-protector|-fstack-protector-strong|-fstack-protector-all|\
++            -momit-leaf-frame-pointer|-fno-omit-frame-pointer)
++                TIZEN_LLVM_NORMALIZED="${TIZEN_LLVM_NORMALIZED}${TIZEN_LLVM_NORMALIZED:+ }$tizen_llvm_token"
++                continue ;;
++            -march=native|-mtune=native)
++                tizen_llvm_unreviewed="${tizen_llvm_unreviewed}${tizen_llvm_unreviewed:+ }$tizen_llvm_token"
++                continue ;;
++            -m64|-march=*|-mtune=*|-msse*|-mfpmath=*)
++                tizen_llvm_arch="${tizen_llvm_arch}${tizen_llvm_arch:+ }$tizen_llvm_token"
++                continue ;;
++            -g|-g[0-9]|-ggdb*|-gdwarf-*|-gline*|-gno-*)
++                tizen_llvm_debug_sequence="${tizen_llvm_debug_sequence}${tizen_llvm_debug_sequence:+ }$tizen_llvm_token"
++                if test "$tizen_llvm_release" = 0; then
++                    tizen_llvm_debug_head="${tizen_llvm_debug_head}${tizen_llvm_debug_head:+ }$tizen_llvm_debug_tail"
++                    tizen_llvm_debug_tail=$tizen_llvm_token
++                fi
++                continue ;;
++        esac
++        case $tizen_llvm_kind:$tizen_llvm_token in
++            CFLAGS:-ffunction-sections|CXXFLAGS:-ffunction-sections|\
++            CFLAGS:-fdata-sections|CXXFLAGS:-fdata-sections|\
++            CFLAGS:-Wno-unused-command-line-argument|CXXFLAGS:-Wno-unused-command-line-argument|\
++            CFLAGS:-Wno-error=unused-but-set-variable|CXXFLAGS:-Wno-error=unused-but-set-variable|\
++            CFLAGS:-Wno-error=unused-command-line-argument|CXXFLAGS:-Wno-error=unused-command-line-argument|\
++            CFLAGS:-pipe|CXXFLAGS:-pipe|CFLAGS:-Wall|CXXFLAGS:-Wall|\
++            CFLAGS:-Wp,-D_FORTIFY_SOURCE=2|CXXFLAGS:-Wp,-D_FORTIFY_SOURCE=2|\
++            CFLAGS:-fexceptions|CXXFLAGS:-fexceptions|CFLAGS:-Wformat|CXXFLAGS:-Wformat|\
++            CFLAGS:-Wformat-security|CXXFLAGS:-Wformat-security|\
++            CFLAGS:-fmessage-length=0|CXXFLAGS:-fmessage-length=0|\
++            CFLAGS:-frecord-gcc-switches|CXXFLAGS:-frecord-gcc-switches|\
++            CFLAGS:-fdiagnostics-color=never|CXXFLAGS:-fdiagnostics-color=never|\
++            CFLAGS:-fasynchronous-unwind-tables|CXXFLAGS:-fasynchronous-unwind-tables|\
++            CFLAGS:-flto=thin|CXXFLAGS:-flto=thin|\
++            CFLAGS:-fomit-frame-pointer|CXXFLAGS:-fomit-frame-pointer|\
++            LDFLAGS:-Wl,-z,relro,--as-needed|LDFLAGS:-Wl,--gc-sections) ;;
++            *)
++                TIZEN_LLVM_DROPPED="${TIZEN_LLVM_DROPPED}${TIZEN_LLVM_DROPPED:+ }$tizen_llvm_token"
++                case " $TIZEN_LLVM_EXPECTED_DROPPED " in
++                    *" $tizen_llvm_token "*) ;;
++                    *) tizen_llvm_unreviewed="${tizen_llvm_unreviewed}${tizen_llvm_unreviewed:+ }$tizen_llvm_token" ;;
++                esac ;;
++
++        esac
++    done
++    if test "$tizen_llvm_ifs_set" = x; then IFS=$tizen_llvm_saved_ifs; else unset IFS; fi
++    if test "$tizen_llvm_glob_off" = 0; then set +f; fi
++    if test -n "$tizen_llvm_unreviewed"; then
++        echo "TIZEN_LLVM_FIXED_FLAGS_FAILED unreviewed=[$tizen_llvm_unreviewed]; 逐个评审后，加入固定参数集或预期丢弃清单" >&2
++        return 1
++    fi
++    case $tizen_llvm_kind:$tizen_llvm_release in
++        CFLAGS:0|CXXFLAGS:0)
++            if test "$tizen_llvm_debug_sequence" != '-g2 -gdwarf-4 -g'; then
++                echo "TIZEN_LLVM_FIXED_FLAGS_FAILED debug sequence=[$tizen_llvm_debug_sequence] expected=[-g2 -gdwarf-4 -g]; recertification required" >&2
++                return 1
++            fi ;;
++    esac
++    case $tizen_llvm_kind in
++        CFLAGS|CXXFLAGS)
++            # Preserve the exact certified CMake string, including whitespace,
++            # option order and the repeated warning option. Do not inherit
++            # other project flags, even when the project selects GCC.
++            TIZEN_LLVM_RESULT=" -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   $tizen_llvm_debug_head -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never $tizen_llvm_arch -fasynchronous-unwind-tables  $tizen_llvm_debug_tail -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument" ;;
++        LDFLAGS)
++            # Executable/shared linker flags are explicit in the spec, not read
++            # from LDFLAGS. CMAKE_MODULE_LINKER_FLAGS is initialized from this
++            # environment value, unchanged from the Toolchain project value.
++            TIZEN_LLVM_RESULT="-Wl,-z,relro,--as-needed -Wl,--gc-sections${tizen_llvm_arch:+ }$tizen_llvm_arch${tizen_llvm_debug_head:+ }$tizen_llvm_debug_head${tizen_llvm_debug_tail:+ }$tizen_llvm_debug_tail" ;;
++        *) return 1 ;;
++    esac
++}
++tizen_llvm_flags CFLAGS "$CFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++CFLAGS=$TIZEN_LLVM_RESULT
++tizen_llvm_normalized_c=$TIZEN_LLVM_NORMALIZED
++tizen_llvm_dropped_c=$TIZEN_LLVM_DROPPED
++tizen_llvm_flags CXXFLAGS "$CXXFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++CXXFLAGS=$TIZEN_LLVM_RESULT
++tizen_llvm_normalized_cxx=$TIZEN_LLVM_NORMALIZED
++tizen_llvm_dropped_cxx=$TIZEN_LLVM_DROPPED
++tizen_llvm_flags LDFLAGS "$LDFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++LDFLAGS=$TIZEN_LLVM_RESULT
++printf 'TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[%s] CXXFLAGS=[%s] LDFLAGS=[%s]\n' "$tizen_llvm_normalized_c" "$tizen_llvm_normalized_cxx" "$TIZEN_LLVM_NORMALIZED"
++printf 'TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[%s] CXXFLAGS=[%s] LDFLAGS=[%s]\n' "$tizen_llvm_dropped_c" "$tizen_llvm_dropped_cxx" "$TIZEN_LLVM_DROPPED"
++export CFLAGS CXXFLAGS LDFLAGS
++# END TIZEN_LLVM_FIXED_FLAGS
+ 
+ # Set up MLGO AOT model paths from bundled verify assets
+ MLGO_AOT_DIR="$PWD/mlgo_verify_assets"
+@@ -284,12 +380,28 @@
+ # Full build using ninja (already in build/ directory after cd build)
+ ninja -d keeprsp -j 6 || exit 1
+ # These drivers must retain component linkage even when BOLT is disabled.
+-for hybrid_tool in bin/clang-22 bin/lld bin/llvm-ar; do
+-    test -f "$hybrid_tool" || { echo "TIZEN_HYBRID_LINK_FAILED missing $hybrid_tool" >&2; exit 1; }
+-    hybrid_dynamic=$(readelf -dW "$hybrid_tool") || exit 1
+-    if printf '%s\n' "$hybrid_dynamic" | grep -E '\(NEEDED\).*\[(libLLVM[^]]*\.so|libclang-cpp[^]]*\.so)'; then
++for hybrid_tool in bin/clang-22 bin/lld bin/llvm-ar bin/llvm-tblgen bin/clang-tblgen bin/lldb-tblgen bin/llvm-config bin/llvm-exegesis; do
++    if ! test -f "$hybrid_tool"; then
++        case "$hybrid_tool" in
++            bin/clang-22|bin/lld|bin/llvm-ar)
++                echo "TIZEN_HYBRID_LINK_FAILED missing $hybrid_tool" >&2; exit 1 ;;
++            *) echo "TIZEN_HYBRID_LINK_SKIP $hybrid_tool"; continue ;;
++        esac
++    fi
++    hybrid_dynamic=$(LC_ALL=C readelf -dW "$hybrid_tool") || {
++        echo "TIZEN_HYBRID_LINK_FAILED readelf: $hybrid_tool" >&2; exit 1;
++    }
++    if LC_ALL=C grep -E '\(NEEDED\).*\[(libLLVM[^]]*\.so|libclang-cpp[^]]*\.so)' <<EOF_HYBRID_DYNAMIC
++$hybrid_dynamic
++EOF_HYBRID_DYNAMIC
++    then
+         echo "TIZEN_HYBRID_LINK_FAILED shared LLVM/Clang dependency: $hybrid_tool" >&2
+         exit 1
++    else
++        hybrid_grep_status=$?
++        test "$hybrid_grep_status" = 1 || {
++            echo "TIZEN_HYBRID_LINK_FAILED grep status=$hybrid_grep_status: $hybrid_tool" >&2; exit 1;
++        }
+     fi
+ done
+ echo TIZEN_HYBRID_LINK_OK
+@@ -354,11 +466,13 @@
+   -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
+ # Only certified BOLT tasks and the paired configure-refreshed TF anchor.
+ bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
++# LC_ALL=C applies only to this ninja invocation.
+ bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/parse/rpmbuild/SOURCES/clang-bolt-helper.py run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- env LC_ALL=C NINJA_STATUS='[%f/%t] ' ninja -n llvm-bolt
+ bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
+ python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/parse/rpmbuild/SOURCES/clang-bolt-helper.py tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
+ cat "$BOLT_WORK/tool-plan.json"
+ python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/parse/rpmbuild/SOURCES/clang-bolt-helper.py tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
++# LC_ALL=C applies only to this ninja invocation.
+ bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/parse/rpmbuild/SOURCES/clang-bolt-helper.py run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C NINJA_STATUS='[%f/%t] ' ninja -j 6 llvm-bolt
+ python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/parse/rpmbuild/SOURCES/clang-bolt-helper.py tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+@@ -414,6 +528,7 @@
+     --build "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/parse/rpmbuild/BUILD/llvm-22.1.8/build" \
+     --evidence "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/parse/rpmbuild/BUILD/llvm-22.1.8/build/native-archive-conversion" \
+     --arch x86_64 \
++    --debug-info yes \
+     --compiler "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/parse/rpmbuild/BUILD/llvm-22.1.8/build/bin/clang-22" \
+     --disassembler "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/parse/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-dis" \
+     --nm "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/parse/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-nm" \

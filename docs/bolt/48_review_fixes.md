@@ -66,6 +66,8 @@ BOLT_GATE_FAILED: COMMAND_ERROR: cancelled by signal 15 (see /tmp/tmpbuto5xp7/st
 
 完整六行含 PID 状态、退出码和 stderr，见 [tests-final-complete.stdout](../../tools/bolt/results/review-fixes-20261103/tests-final-complete.stdout) 的 `CANCELLATION_PROBE`。测试仅在探针 wrapper 内加入定时等待以命中竞态窗口，不在生产 helper 加测试开关。
 
+本节上面的 stderr 是首轮历史实测，保留原样。第二轮（[51 号](51_second_review_fixes.md)）把上述六个探针的**当前期望**统一改为 `BOLT_GATE_FAILED: CANCELLED: cancelled by signal N`；另补 SIGINT 和二次信号测试。清理期探针先由命令错误进入清理，再发首个取消信号；连续两次信号另测为默认信号终止，不能要求它再输出 GateError。新原文见 [helper-certified.stdout](../../tools/bolt/results/second-review-20261104/helper-certified.stdout)。
+
 ## 6. RUNPATH 精确字节门禁
 
 可变范围只从改写前的 DT_RPATH/DT_RUNPATH 字符串计算（含 NUL），并带入改写后比较；不再放过整个 `.dynamic`、`.dynstr`。所有其他文件字节、程序头和节头冻结。DT_FINI、DT_RELA、非路径 dynstr 字节负例失败；缩短路径、去尾部空项、原路径相同通过。

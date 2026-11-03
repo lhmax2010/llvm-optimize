@@ -1,0 +1,13 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 970a13b4142b..9376a24f38de 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -273,6 +273,8 @@ def call(argv, log, cwd=None, timeout=300):
+                 cleanup.append(str(failure))
+         if isinstance(error, (KeyboardInterrupt, SystemExit)):
+             raise
++        if _CANCEL_SIGNAL is not None:
++            primary = 'CANCELLED: cancelled by signal %s' % _CANCEL_SIGNAL
+         message = primary+' (see '+str(log)+')'
+         if cleanup:
+             message += '; cleanup error: '+'; '.join(cleanup)
