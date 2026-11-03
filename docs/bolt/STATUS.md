@@ -734,3 +734,14 @@ LLVM only-keep-debug 的 PT_PHDR 越界写已实证：旧偏移140,509,184、写
 - **停止**：显式helper测试378项中366通过、12 ERROR，均FileNotFoundError: cmake。48号已记录过host-tools入口，本轮未加入PATH是执行准备错误；按本任务任一轻量检查不通过即停，未修环境重跑。
 - 新夹具/转换器既有测试、GBS导出、展开/五项解析、T/D入口与演练、正式磁盘准入、完整构建、包/90TU验证均未执行。source提交未取得构建资格；两个新构建根不存在，无后台构建服务。
 - 报告[50_project_flag_independence.md](50_project_flag_independence.md)，证据tools/bolt/results/final-20261103；W/temp/final-20261103/monitor.log带时间status=stopped结束行。没有改PGO保护目录，没有运行历史根cmake/ninja或删除目录。
+
+
+## 2026-11-03：50号轻量检查与两套演练闭合（未运行完整构建）
+
+- 源码仍a379c766（tree37c8c6d3），父5aff6c0c/祖父38477c9b未改；无发布代码改动。
+- 恢复48§13的host-tools/cmake后，显式helper378/378 PASS；显式新Source1005既有24项与新增11项全部PASS。
+- GBS export、双build.conf的12组完整展开比较、Tizen RPM4.14.1.1五项解析PASS；ARM逐字节同父提交，x86及OFF只差参数块。
+- T/D真实演练均到CMake即正常停止；T参数精确匹配QB1215143，D输出固定参数与架构参数，NORMALIZED/DROPPED原文存证。两根保留，服务/挂载/进程清理通过。
+- 今晚入口见[50号§7](50_project_flag_independence.md#7-轻量检查与演练续)，先T验证后D，full模式本轮没有执行。演练后按两份历史峰值＋两份根外实测占用＋20GiB保留重新分项核对满足；演练前额外20%保守参考及重试后的变化均明列于50号，不冒充强制门槛。
+- T的strip-all/RUNPATH/最终SHA保持硬要求；ordinary/debug/static成员仅允许严格证明为命令记录节的差异，ar日期单列，90TU仍必做。上一轮停止记录保留，不把轻量PASS冒充产物认证。
+- 仅推GitHub bolt-v4，无Gerrit/sandbox/QB操作，不触碰PGO现场和历史根。

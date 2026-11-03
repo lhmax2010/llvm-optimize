@@ -1,0 +1,32 @@
+--- attempt1
++++ retry
+@@ -90,12 +90,20 @@
+             # Poll the build log before CMake can finish and reach the package's ninja.
+             text = text.replace("while not stop.wait(2):\n  p=R/'.build.log'",
+                                 "while not stop.wait(.02 if plan['mode']=='rehearsal' else 2):\n  p=R/'.build.log'")
++            text = text.replace(" position=0\n", " position=0;anchor=b''\n")
++            text = text.replace("    src.seek(position);b=src.read();position+=len(b)",
++                                "    src.seek(max(0,position-len(anchor)))\n"
++                                "    if src.read(len(anchor))!=anchor or p.stat().st_size<position:\n"
++                                "     append('log-restarts.jsonl',{'time_ns':time.time_ns(),'old_position':position});position=0\n"
++                                "    src.seek(position);b=src.read();position+=len(b)\n"
++                                "    src.seek(max(0,position-128));anchor=src.read(min(position,128))")
+             marker = "    if b'BOLT_GATE_FAILED:' in b and reason is None:"
+             guard = """    if plan['mode']=='rehearsal' and re.search(rb'\\+ cmake -G Ninja(?: |\\n)',b) and reason is None:
+      reason='rehearsal-CMake-start'
+      append('cmake-stop.jsonl',{'time_ns':time.time_ns(),'log':str(p),'chunk':b.decode(errors='replace')})
+      result=subprocess.run(['systemctl','--user','stop',unit],capture_output=True,text=True)
+      append('cmake-stop.jsonl',{'stop_rc':result.returncode,'stdout':result.stdout,'stderr':result.stderr,'time_ns':time.time_ns()})
++     shutil.copyfile(p,E/'rpm-build-final.log')
+      return
+ """
+             assert marker in text
+@@ -214,7 +222,7 @@
+         result = json.loads((E / 'controller-result.json').read_text())
+         if plan['mode'] == 'rehearsal':
+             assert result['reason'] == 'rehearsal-CMake-start', result
+-            log = (E / 'rpm-build.log').read_text(errors='replace')
++            log = (E / 'rpm-build-final.log').read_text(errors='replace')
+             assert 'Executing(%prep)' in log and 'Executing(%build)' in log
+             assert '+ cmake -G Ninja' in log
+             assert not any(x in log for x in ('+ ninja ', 'BOLT_PIPELINE_PASS', 'Build files have been written to:'))

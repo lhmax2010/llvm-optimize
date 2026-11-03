@@ -1,0 +1,79 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/debuglink-launch-20261030/launcher.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/final-launch-20261103/launcher.py
+@@ -20,12 +20,15 @@
+ W = B.parent / 'llvm-optimize'
+ T = Path(__file__).resolve().parent
+ OLD = B / 'tools/bolt/results/oldtext-final-20261027'
+-SOURCE = W / 'temp/debuglink-tb20261026/source'
+-COMMIT = '3ee2d84719e4bd358c0b2366161f70f2eb788313'
+-TREE = '43d60f7523439fa0ccf4a61f668dd60622554606'
+-CONFIG = W / 'temp/bolt-v4-20261021-disk-footprint/gbs_llvm_qb1202084.conf'
++SOURCE = W / 'temp/review-20261102/source'
++COMMIT = 'a379c766e17d12ba7738ff6079adb39645c0a740'
++TREE = '37c8c6d3f249b5948db1517d84a79a4d53c9a112'
++PROJECT = os.environ.get('FINAL_PROJECT', 'toolchain')
++assert PROJECT in ('toolchain', 'basedev')
++CONFIG = W / ('temp/final-20261103/configs/' + PROJECT + '/gbs.conf')
+ BUILDCONF = CONFIG.parent / 'build.conf'
+-BUILD_SHA = 'e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945'
++BUILD_SHA = {'toolchain':'e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945',
++             'basedev':'8ace286a5f98f2e02a79be275a64c22a86ea2b0034174c1e293381e181ce3f6a'}[PROJECT]
+ LOCK = W.parent / 'heavy-stage.lock'
+ 
+ 
+@@ -97,6 +100,8 @@
+ """
+             assert marker in text
+             text = text.replace(marker, guard + marker)
++        if name == 'run.py' and PROJECT == 'basedev':
++            text = text.replace("if file.exists() and reason is None:", "if False and file.exists() and reason is None:")
+         (D / name).write_text(text)
+         compile(text, str(D / name), 'exec')
+     # Use exactly 39's export invocation, substituting only commit/source/output.
+@@ -104,6 +109,7 @@
+     export = [COMMIT if x == 'f308fe08eeaad4e219f8505449b88bd5f644ea8c' else
+               str(D / 'export') if x.endswith('/oldtext-final-20261027/export') else
+               str(SOURCE) if x.endswith('/oldtext-final-20261027/source') else x for x in export]
++    export[export.index('-c') + 1] = str(CONFIG)
+     save(D / 'export-command.json', export)
+ 
+ 
+@@ -234,7 +240,7 @@
+         if audit['mounts']['stdout'] or audit['remaining_build_processes']:
+             status, reason = 'failed', 'residual-process-or-mount-see-final-audit'
+         save(E / 'result.json', {'status': status, 'reason': reason, 'start_ns': start, 'end_ns': time.time_ns()})
+-        print('DEBUGLINK FINISHED', datetime.datetime.now().astimezone().isoformat(), 'status=' + status, 'reason=' + reason, flush=True)
++        print('FINAL_PROJECT_FLAGS 已结束', datetime.datetime.now().astimezone().isoformat(), 'status=' + status, 'reason=' + reason, flush=True)
+     return 0 if status in ('ok', 'build-ok-validation-pending') else 1
+ 
+ 
+@@ -243,7 +249,7 @@
+     mode = 'rehearsal' if selection.startswith('rehearsal') else 'full'
+     suffix = '-02' if selection == 'rehearsal-02' else ''
+     identity = check_source()
+-    D = W / ('temp/debuglink-20261028/' + mode + '-20261030')
++    D = W / ('temp/final-20261103/' + (PROJECT if mode == 'full' else PROJECT + '-rehearsal'))
+     if suffix:
+         D = D / 'retry-02'
+     assert not D.exists(), 'fresh root required; preserve existing directory: ' + str(D)
+@@ -254,16 +260,16 @@
+     (D / 'evidence').mkdir()
+     plan = dict(identity, source=str(SOURCE), config=str(CONFIG), mode=mode,
+                 MemoryMax_bytes=mem - 8 * 1024**3, CPUQuota='1200%',
+-                prep_unit='debuglink-' + mode + '-prep-20261030' + suffix + '.service',
+-                build_unit='debuglink-' + mode + '-20261030' + suffix + '.service')
++                prep_unit='final-flags-' + PROJECT + '-' + mode + '-prep-20261103' + suffix + '.service',
++                build_unit='final-flags-' + PROJECT + '-' + mode + '-20261103' + suffix + '.service')
+     save(D / 'plan.json', plan)
+     materialize(D, plan)
+-    unit = 'debuglink-' + mode + '-controller-20261030' + suffix + '.service'
++    unit = 'final-flags-' + PROJECT + '-' + mode + '-controller-20261103' + suffix + '.service'
+     argv = ['systemd-run', '--user', '--unit=' + unit, *properties(plan),
+             '-p', 'WorkingDirectory=' + str(SOURCE),
+             '-p', 'StandardOutput=append:' + str(D / 'controller.stdout'),
+             '-p', 'StandardError=append:' + str(D / 'controller.stderr'),
+-            '--setenv=TMPDIR=' + str(D / 'tmp'), '--setenv=PYTHONDONTWRITEBYTECODE=1',
++            '--setenv=FINAL_PROJECT=' + PROJECT, '--setenv=TMPDIR=' + str(D / 'tmp'), '--setenv=PYTHONDONTWRITEBYTECODE=1',
+             '/usr/bin/python3', '-B', str(T / 'launcher.py'), '--worker', str(D)]
+     save(D / 'controller-command.json', argv)
+     subprocess.run(argv, check=True)

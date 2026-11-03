@@ -1,0 +1,106 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/debuglink-launch-20261030/launcher.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/final-launch-20261103/launcher.py
+@@ -20,12 +20,15 @@
+ W = B.parent / 'llvm-optimize'
+ T = Path(__file__).resolve().parent
+ OLD = B / 'tools/bolt/results/oldtext-final-20261027'
+-SOURCE = W / 'temp/debuglink-tb20261026/source'
+-COMMIT = '3ee2d84719e4bd358c0b2366161f70f2eb788313'
+-TREE = '43d60f7523439fa0ccf4a61f668dd60622554606'
+-CONFIG = W / 'temp/bolt-v4-20261021-disk-footprint/gbs_llvm_qb1202084.conf'
++SOURCE = W / 'temp/review-20261102/source'
++COMMIT = 'a379c766e17d12ba7738ff6079adb39645c0a740'
++TREE = '37c8c6d3f249b5948db1517d84a79a4d53c9a112'
++PROJECT = os.environ.get('FINAL_PROJECT', 'toolchain')
++assert PROJECT in ('toolchain', 'basedev')
++CONFIG = W / ('temp/final-20261103/configs/' + PROJECT + '/gbs.conf')
+ BUILDCONF = CONFIG.parent / 'build.conf'
+-BUILD_SHA = 'e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945'
++BUILD_SHA = {'toolchain':'e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945',
++             'basedev':'8ace286a5f98f2e02a79be275a64c22a86ea2b0034174c1e293381e181ce3f6a'}[PROJECT]
+ LOCK = W.parent / 'heavy-stage.lock'
+ 
+ 
+@@ -87,16 +90,26 @@
+             # Poll the build log before CMake can finish and reach the package's ninja.
+             text = text.replace("while not stop.wait(2):\n  p=R/'.build.log'",
+                                 "while not stop.wait(.02 if plan['mode']=='rehearsal' else 2):\n  p=R/'.build.log'")
++            text = text.replace(" position=0\n", " position=0;anchor=b''\n")
++            text = text.replace("    src.seek(position);b=src.read();position+=len(b)",
++                                "    src.seek(max(0,position-len(anchor)))\n"
++                                "    if src.read(len(anchor))!=anchor or p.stat().st_size<position:\n"
++                                "     append('log-restarts.jsonl',{'time_ns':time.time_ns(),'old_position':position});position=0\n"
++                                "    src.seek(position);b=src.read();position+=len(b)\n"
++                                "    src.seek(max(0,position-128));anchor=src.read(min(position,128))")
+             marker = "    if b'BOLT_GATE_FAILED:' in b and reason is None:"
+             guard = """    if plan['mode']=='rehearsal' and re.search(rb'\\+ cmake -G Ninja(?: |\\n)',b) and reason is None:
+      reason='rehearsal-CMake-start'
+      append('cmake-stop.jsonl',{'time_ns':time.time_ns(),'log':str(p),'chunk':b.decode(errors='replace')})
+      result=subprocess.run(['systemctl','--user','stop',unit],capture_output=True,text=True)
+      append('cmake-stop.jsonl',{'stop_rc':result.returncode,'stdout':result.stdout,'stderr':result.stderr,'time_ns':time.time_ns()})
++     shutil.copyfile(p,E/'rpm-build-final.log')
+      return
+ """
+             assert marker in text
+             text = text.replace(marker, guard + marker)
++        if name == 'run.py' and PROJECT == 'basedev':
++            text = text.replace("if file.exists() and reason is None:", "if False and file.exists() and reason is None:")
+         (D / name).write_text(text)
+         compile(text, str(D / name), 'exec')
+     # Use exactly 39's export invocation, substituting only commit/source/output.
+@@ -104,6 +117,7 @@
+     export = [COMMIT if x == 'f308fe08eeaad4e219f8505449b88bd5f644ea8c' else
+               str(D / 'export') if x.endswith('/oldtext-final-20261027/export') else
+               str(SOURCE) if x.endswith('/oldtext-final-20261027/source') else x for x in export]
++    export[export.index('-c') + 1] = str(CONFIG)
+     save(D / 'export-command.json', export)
+ 
+ 
+@@ -208,7 +222,7 @@
+         result = json.loads((E / 'controller-result.json').read_text())
+         if plan['mode'] == 'rehearsal':
+             assert result['reason'] == 'rehearsal-CMake-start', result
+-            log = (E / 'rpm-build.log').read_text(errors='replace')
++            log = (E / 'rpm-build-final.log').read_text(errors='replace')
+             assert 'Executing(%prep)' in log and 'Executing(%build)' in log
+             assert '+ cmake -G Ninja' in log
+             assert not any(x in log for x in ('+ ninja ', 'BOLT_PIPELINE_PASS', 'Build files have been written to:'))
+@@ -234,7 +248,7 @@
+         if audit['mounts']['stdout'] or audit['remaining_build_processes']:
+             status, reason = 'failed', 'residual-process-or-mount-see-final-audit'
+         save(E / 'result.json', {'status': status, 'reason': reason, 'start_ns': start, 'end_ns': time.time_ns()})
+-        print('DEBUGLINK FINISHED', datetime.datetime.now().astimezone().isoformat(), 'status=' + status, 'reason=' + reason, flush=True)
++        print('FINAL_PROJECT_FLAGS 已结束', datetime.datetime.now().astimezone().isoformat(), 'status=' + status, 'reason=' + reason, flush=True)
+     return 0 if status in ('ok', 'build-ok-validation-pending') else 1
+ 
+ 
+@@ -243,7 +257,7 @@
+     mode = 'rehearsal' if selection.startswith('rehearsal') else 'full'
+     suffix = '-02' if selection == 'rehearsal-02' else ''
+     identity = check_source()
+-    D = W / ('temp/debuglink-20261028/' + mode + '-20261030')
++    D = W / ('temp/final-20261103/' + (PROJECT if mode == 'full' else PROJECT + '-rehearsal'))
+     if suffix:
+         D = D / 'retry-02'
+     assert not D.exists(), 'fresh root required; preserve existing directory: ' + str(D)
+@@ -254,16 +268,16 @@
+     (D / 'evidence').mkdir()
+     plan = dict(identity, source=str(SOURCE), config=str(CONFIG), mode=mode,
+                 MemoryMax_bytes=mem - 8 * 1024**3, CPUQuota='1200%',
+-                prep_unit='debuglink-' + mode + '-prep-20261030' + suffix + '.service',
+-                build_unit='debuglink-' + mode + '-20261030' + suffix + '.service')
++                prep_unit='final-flags-' + PROJECT + '-' + mode + '-prep-20261103' + suffix + '.service',
++                build_unit='final-flags-' + PROJECT + '-' + mode + '-20261103' + suffix + '.service')
+     save(D / 'plan.json', plan)
+     materialize(D, plan)
+-    unit = 'debuglink-' + mode + '-controller-20261030' + suffix + '.service'
++    unit = 'final-flags-' + PROJECT + '-' + mode + '-controller-20261103' + suffix + '.service'
+     argv = ['systemd-run', '--user', '--unit=' + unit, *properties(plan),
+             '-p', 'WorkingDirectory=' + str(SOURCE),
+             '-p', 'StandardOutput=append:' + str(D / 'controller.stdout'),
+             '-p', 'StandardError=append:' + str(D / 'controller.stderr'),
+-            '--setenv=TMPDIR=' + str(D / 'tmp'), '--setenv=PYTHONDONTWRITEBYTECODE=1',
++            '--setenv=FINAL_PROJECT=' + PROJECT, '--setenv=TMPDIR=' + str(D / 'tmp'), '--setenv=PYTHONDONTWRITEBYTECODE=1',
+             '/usr/bin/python3', '-B', str(T / 'launcher.py'), '--worker', str(D)]
+     save(D / 'controller-command.json', argv)
+     subprocess.run(argv, check=True)
