@@ -798,3 +798,12 @@ T认证产物自测23/23包、90/90 TU PASS，14项字节/归档/参数夹具、
 - D profile N=23592 M=144032 S=23 U=1 Q=383，R=0.1017251%，在原门槛内；转换器输出225归档、3853转换成员、11原生成员，debug_members=0（尚未独立RPM成员复核）。D无debuginfo/debugsource包。T/D的CMAKE_MODULE_LINKER_FLAGS均精确为 `-Wl,-z,relro,--as-needed -Wl,--gc-sections`。
 - T原资源表原样交付；D原表缺失，另标明用本次原始采样只读汇总。当前记录/home可用141,717,905,408B（131.985GiB）；最终停止原因不是磁盘不足。可读/proc与findmnt无本次构建残留，未手动清理、未做装包/LLDB、未推Gerrit/sandbox或操作QB。
 - 详见 [54_night_results.md](54_night_results.md)，证据 `tools/bolt/results/night-results-20261103/`。后续须由用户决定修复验证入口、处理符号/CRC差异和补做剩余验证；本轮不重试。
+
+
+## 2026-11-04：QB 1215801 / 1215600 身份核对（57号）
+
+- 用户给定的两个编号与预期不符：1215801=Tizen-Unified，1215600=Tizen-Unified-Toolchain，均非 Base-Toolchain/Base-Dev。父构建 Recommended，standard 三架构子构建均 Successful。开始/耗时与计算结束时间、软件包行原文均已存证。
+- 两份产出快照的 standard manifest 各1030个仓库，均不含 platform/upstream/llvm；父/x86日志没有9e39fa8a。实际 LLVM 编译版本为不适用（没有该包构建），不能用总体成功认定9e39fa8a通过。
+- 保存两个父构建和两个x86子构建完整日志gzip、概览、manifest、产物索引。没有LLVM包日志（对应地址404），没有clang或clang-debuginfo RPM；FLAGS/BOLT/profile及本地SHA/包名/字节差异比较不适用，未借用其他快照产物。
+- 本地night的T最终clang=6c63c5c2…、符号=59607550…、D最终clang=1664b9d2…已只读重新核对。54号未完成的验证不在本轮重做；night目录、源码、QB均未改。
+- 详见 [57_qb_1215801_1215600.md](57_qb_1215801_1215600.md)。后续需要实际编译9e39fa8a的两个Base项目QB链接；本轮只推GitHub bolt-v4。
