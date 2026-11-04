@@ -96,7 +96,9 @@ def stage_d(d,profile):
 def worker(mode,d):
  status='failed';reason='unexpected';roots=[]
  try:
-  assert json.loads((E/'prepare.json').read_text())['PASS'];assert disk_budget()['PASS']
+  budget=disk_budget();save(d/'disk-budget-at-worker.json',budget)
+  if budget.get('BUDGET_MARGIN_WARNING'):print(budget['BUDGET_MARGIN_WARNING'],flush=True)
+  assert json.loads((E/'prepare.json').read_text())['PASS'];assert budget['PASS']
   with (W.parent/'heavy-stage.lock').open('a+') as lock:
    fcntl.flock(lock,fcntl.LOCK_EX)
    ad=d/'stage-A';roots.append(ad);prepare_root(ad,'baseline');stage_a(ad,mode=='rehearsal')
@@ -130,7 +132,7 @@ def worker(mode,d):
 def launch(mode):
  assert mode in ['rehearsal','full']
  if mode=='full':assert json.loads((E/'ready.json').read_text())['PASS'],'daytime preflight/rehearsal not certified'
- assert disk_budget()['PASS'];save(E/'disk-budget-at-launch.json',disk_budget())
+ budget=disk_budget();save(E/'disk-budget-at-launch.json',budget);assert budget['PASS']
  if mode=='rehearsal':
   n=1
   while (P/f'rehearsal-{n:02}').exists():n+=1

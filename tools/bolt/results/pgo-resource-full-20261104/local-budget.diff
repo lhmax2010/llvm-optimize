@@ -1,0 +1,74 @@
+diff --git a/tools/bolt/pgo-resource-20261102/common.py b/tools/bolt/pgo-resource-20261102/common.py
+index 99079c97..fdabf3df 100644
+--- a/tools/bolt/pgo-resource-20261102/common.py
++++ b/tools/bolt/pgo-resource-20261102/common.py
+@@ -26,7 +26,11 @@ def props():
+ def root(d):return d/'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0'
+ def prefix(r):return ['sudo','-n','/usr/sbin/chroot','--userspec=1000:1000',str(r),'/usr/bin/env','-i','HOME=/home/abuild','USER=abuild','LOGNAME=abuild','SHELL=/bin/sh','PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin','LC_ALL=C','LANG=C']
+ def disk_budget():
+- s=os.statvfs('/home');free=s.f_bavail*s.f_frsize;peak=68252237824
+- # Two roots at 1.5x the observed full build peak, plus 20 GiB headroom.
+- required=3*peak+20*1024**3
+- return dict(available_bytes=free,historical_peak_bytes=peak,root_count=2,multiplier=1.5,reserve_bytes=20*1024**3,required_bytes=required,PASS=free>=required)
++ s=os.statvfs('/home');free=s.f_bavail*s.f_frsize;peak=70485561344
++ # Target includes 20% margin; the user-approved minimum omits that margin.
++ target=(24*peak+9)//10+20*1024**3
++ minimum=2*peak+20*1024**3
++ result=dict(available_bytes=free,historical_peak_bytes=peak,root_count=2,multiplier=1.2,reserve_bytes=20*1024**3,target_budget_bytes=target,minimum_start_bytes=minimum,required_bytes=minimum,target_shortfall_bytes=max(0,target-free),PASS=free>=minimum)
++ if minimum<=free<target:
++  result['BUDGET_MARGIN_WARNING']=f'BUDGET_MARGIN_WARNING available_bytes={free} target_budget_bytes={target} shortfall_bytes={target-free}; possible 20GiB runtime stop'
++ return result
+diff --git a/tools/bolt/pgo-resource-20261102/driver.py b/tools/bolt/pgo-resource-20261102/driver.py
+index 71ca373c..8d6358ec 100644
+--- a/tools/bolt/pgo-resource-20261102/driver.py
++++ b/tools/bolt/pgo-resource-20261102/driver.py
+@@ -96,7 +96,9 @@ def stage_d(d,profile):
+ def worker(mode,d):
+  status='failed';reason='unexpected';roots=[]
+  try:
+-  assert json.loads((E/'prepare.json').read_text())['PASS'];assert disk_budget()['PASS']
++  budget=disk_budget();save(d/'disk-budget-at-worker.json',budget)
++  if budget.get('BUDGET_MARGIN_WARNING'):print(budget['BUDGET_MARGIN_WARNING'],flush=True)
++  assert json.loads((E/'prepare.json').read_text())['PASS'];assert budget['PASS']
+   with (W.parent/'heavy-stage.lock').open('a+') as lock:
+    fcntl.flock(lock,fcntl.LOCK_EX)
+    ad=d/'stage-A';roots.append(ad);prepare_root(ad,'baseline');stage_a(ad,mode=='rehearsal')
+@@ -130,7 +132,7 @@ def worker(mode,d):
+ def launch(mode):
+  assert mode in ['rehearsal','full']
+  if mode=='full':assert json.loads((E/'ready.json').read_text())['PASS'],'daytime preflight/rehearsal not certified'
+- assert disk_budget()['PASS'];save(E/'disk-budget-at-launch.json',disk_budget())
++ budget=disk_budget();save(E/'disk-budget-at-launch.json',budget);assert budget['PASS']
+  if mode=='rehearsal':
+   n=1
+   while (P/f'rehearsal-{n:02}').exists():n+=1
+diff --git a/tools/bolt/pgo-resource-20261102/test_experiment.py b/tools/bolt/pgo-resource-20261102/test_experiment.py
+index b21bb476..647ec49f 100644
+--- a/tools/bolt/pgo-resource-20261102/test_experiment.py
++++ b/tools/bolt/pgo-resource-20261102/test_experiment.py
+@@ -1,6 +1,8 @@
+ import unittest,json,shlex,ast
+ from common import *
+ from monitor import phase_for
++from unittest.mock import patch
++from types import SimpleNamespace
+ class Tests(unittest.TestCase):
+  def test_training_count(self):
+   rows=json.loads((E/'training.json').read_text());self.assertEqual(len(rows),23);self.assertEqual(sum(r['target'].startswith('armv7l') for r in rows),13)
+@@ -22,7 +24,15 @@ class Tests(unittest.TestCase):
+  def test_phases(self):
+   for text,phase in [('Executing(%build)','ordinary-compile'),('Executing(%install)','ordinary-install'),('BOLT_COMPARE_ROOT_PASS','cache-release'),('BOLT_CACHE_RELEASE removed','archive-install'),('/usr/lib/rpm/find-debuginfo.sh','platform-post'),('Processing files: llvm','packaging')]:self.assertEqual(phase_for(text,'prior'),phase)
+  def test_disk_budget_known_formula(self):
+-  d=disk_budget();self.assertEqual(d['required_bytes'],3*68252237824+20*1024**3)
++  d=disk_budget();self.assertEqual(d['target_budget_bytes'],(24*70485561344+9)//10+20*1024**3);self.assertEqual(d['required_bytes'],2*70485561344+20*1024**3)
+  def test_rehearsal_config_only(self):
+   tree=ast.parse((T/'driver.py').read_text());self.assertTrue(any(isinstance(n,ast.If) and ast.unparse(n.test)=='not rehearsal' for n in ast.walk(tree)))
++ def budget_at(self,free):
++  with patch('common.os.statvfs',return_value=SimpleNamespace(f_bavail=free,f_frsize=1)):return disk_budget()
++ def test_budget_above_target(self):
++  target=disk_budget()['target_budget_bytes'];d=self.budget_at(target+1);self.assertTrue(d['PASS']);self.assertNotIn('BUDGET_MARGIN_WARNING',d);self.assertEqual(d['target_shortfall_bytes'],0)
++ def test_budget_between_minimum_and_target(self):
++  limits=disk_budget();free=(limits['minimum_start_bytes']+limits['target_budget_bytes'])//2;d=self.budget_at(free);self.assertTrue(d['PASS']);w=d['BUDGET_MARGIN_WARNING'];self.assertIn('available_bytes='+str(free),w);self.assertIn('target_budget_bytes='+str(limits['target_budget_bytes']),w);self.assertIn('shortfall_bytes='+str(limits['target_budget_bytes']-free),w)
++ def test_budget_below_minimum(self):
++  d=self.budget_at(disk_budget()['minimum_start_bytes']-1);self.assertFalse(d['PASS']);self.assertNotIn('BUDGET_MARGIN_WARNING',d)
+ if __name__=='__main__':unittest.main(verbosity=2)

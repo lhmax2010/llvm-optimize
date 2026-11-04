@@ -102,6 +102,32 @@ full-20261030 的历史**采样下界**为 68,252,237,824B（63.565GiB），不�
 
 初始可用261,475,123,200B，预算通过（`preflight/disk-budget.json`）。最终演练结束后的实际可用空间和余量见第6节及 `disk-budget-final.json`。只统计 `/home`，不与 `/var/tmp` 相加。本轮多次演练根和导出副本占用已包含在最终可用空间中，没有为了过预算删除目录。
 
+### 4.1 2026-11-04 用户批准的预算调整
+
+保留上述11月2日原预检记录。今晚采用43号的68,252,237,824 B与54号夜间T的
+70,485,561,344 B中较大者，即70,485,561,344 B（65.644794 GiB），规划系数从1.5改为1.2：
+
+```text
+修改前：2 × 68,252,237,824 × 1.5 + 20 GiB = 226,231,549,952 B（210.695 GiB）
+修改后：2 × 70,485,561,344 × 1.2 + 20 GiB = 190,640,183,706 B（177.548 GiB，向上取整字节；启动分档约177.6 GiB）
+无余量预算：2 × 70,485,561,344 + 20 GiB = 162,445,959,168 B（151.290 GiB，启动分档约151.3 GiB）
+```
+
+原因是使用最近实测的较大采样下界，并按用户批准降低本地实验余量；这不是PGO增长率的实测。
+运行中低于20 GiB正常停止的规则未变，未改任何发布spec/helper/Source。
+仅改common.py预算常量/公式和相应测试预期后，`test_experiment.py` **12/12 PASS**，
+原文见 `tools/bolt/results/pgo-resource-full-20261104/tests.stderr`。
+用户随后明确裁决：目标预算只记录，最低启动预算才作为PASS门槛；介于两者之间时，
+预算JSON和controller.stdout首行都写BUDGET_MARGIN_WARNING（可用、目标、差额）。
+低于最低预算仍拒绝，其他流程不变。原12项加高于目标/介于两者/低于最低3个边界夹具，
+**15/15 PASS**，见tests-approved.stderr。入口内部已演练的免密sudo -n获用户明确允许，
+不新增提权方式、不弹窗，认证失败就按原入口停止，不重试。
+
+本次启动可用183,273,168,896B（170.686GiB），
+比目标少7,367,014,810B（6.861GiB），
+但高于最低启动预算，按裁决PASS。唯一指定launch.sh full已于2026-11-04执行一次。
+启动、清理和最终测量结果见58号文档。
+
 ## 5. 与 QB 的差别及可外推范围
 
 本机 Intel Core Ultra 7 265、20 logical CPU；内核与完整 lscpu 原文在 `preflight/host.txt`。本地 GBS 与 QB NGBS 不同；QB 1202084 日志有 JOBS_N=12、WORKER_N=28，且曾三架构同 worker 并行。本试验串行 A→B→C→D、限12核配额，只做 x86_64 构建和交叉目标训练；不能把本地耗时、页缓存峰值或文件系统最低余量直接当作 QB 机器需求。
@@ -223,3 +249,12 @@ python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/pgo-
 ```
 
 总结论：白天检查及最终配置演练全部通过，晚上可以启动；本轮未运行完整构建。
+
+
+## 11. 2026-11-04 完整实验结束（58号）
+
+按用户批准的目标/最低双预算启动一次：可用183,273,168,896B（170.686GiB），比目标少7,367,014,810B（6.861GiB），高于最低启动预算；budget JSON和controller首行均有BUDGET_MARGIN_WARNING。原12项及新增3项预算边界检查共15/15 PASS。
+
+A/B/C完成，23份profraw共746,313,472B，合并profdata 52,528,216B。D普通编译/安装及BOLT工具构建完成，llvm-bolt在85.3%陈旧函数profile处按原5%门槛失败；没有打包成功、没有重试。结束行：`PGO_RESOURCE 已结束 2026-11-04T23:47:45.378355+08:00 status=failed reason=D: rc=1 reason=None; see /home/linhao/Toolchain/development/llvm-optimize/temp/pgo-resource-20261102/full/stage-D/evidence/D`。
+
+各阶段独立memory.peak、进程VmHWM、边界磁盘和profile统计见[58号结果](58_pgo_resource_results.md)；原report.py已执行exit0。所有根与产物保留，未额外提权、未改发布代码或启动其他构建。

@@ -834,3 +834,12 @@ T认证产物自测23/23包、90/90 TU PASS，14项字节/归档/参数夹具、
 - 本地T符号对QB1216409 PASS，仅.comment标识和相应布局；两边GCC命令记录完全相同。本地Toolchain快照20261013.024319、QB20261030.061318；Base-Dev两边均20261030.061217。
 - 两轮独立16G/swap0服务，无OOM，全部已结束；原始GBS时间资源表已重算，缺采样写UNKNOWN。只删除获批两个重复rpm-build.log，df释放61,506,420,736B（57.282GiB）；产品/原始成功日志/旧validation均保留。
 - 详见 [55_night_revalidation.md](55_night_revalidation.md)。整体仍有严格产物差异，等待用户裁决；本轮只推GitHub bolt-v4。
+
+
+## 2026-11-04：PGO资源实验已结束（58号，D门禁失败）
+
+- 用户批准本地预算改为目标177.548GiB（仅记录）/最低151.290GiB（门槛），原12项+3项边界检查15/15 PASS；运行中20GiB停止线不变。仅清理获批validation临时文件副本，JSON/文本/输入/原始RPM/所有根保留。
+- 指定launch.sh full只启动一次，初始可用170.686GiB，低目标6.861GiB，预算JSON与controller首行均打印BUDGET_MARGIN_WARNING；使用入口原有免密sudo -n，没有新增认证方式。
+- A/B/C PASS：插桩clang完成、23训练全通过，profraw 746,313,472B，profdata 52,528,216B（8c60fb56…）。D普通构建/安装、工具113项通过；llvm-bolt因15638/18343=85.3%陈旧profile超过原5%门槛退出1，未进入compare-root/cache-release/转换/打包；没有重试或修改门禁。
+- 结束：`PGO_RESOURCE 已结束 2026-11-04T23:47:45.378355+08:00 status=failed reason=D: rc=1 reason=None; see /home/linhao/Toolchain/development/llvm-optimize/temp/pgo-resource-20261102/full/stage-D/evidence/D`。没有OOM，最低/home可用78.011GiB；内核cgroup峰值A6.731/B1.380/C1.699/D20.213GiB（含文件缓存）。全部根和失败现场保留，正常清理后无本次残留挂载/阶段进程。
+- 原report.py已汇总。根du只有边界采样，普通编译出口扫描超时，连续磁盘峰值UNKNOWN；按稳定A根与D边界记录组合最大85.007GiB，不能冒充连续同时扫描。详见[58_pgo_resource_results.md](58_pgo_resource_results.md)，原始证据tools/bolt/results/pgo-resource-full-20261104/。尚需用户决定是否为PGO输入重新采BOLT profile；本轮只推GitHub bolt-v4。

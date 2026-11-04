@@ -26,7 +26,11 @@ def props():
 def root(d):return d/'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0'
 def prefix(r):return ['sudo','-n','/usr/sbin/chroot','--userspec=1000:1000',str(r),'/usr/bin/env','-i','HOME=/home/abuild','USER=abuild','LOGNAME=abuild','SHELL=/bin/sh','PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin','LC_ALL=C','LANG=C']
 def disk_budget():
- s=os.statvfs('/home');free=s.f_bavail*s.f_frsize;peak=68252237824
- # Two roots at 1.5x the observed full build peak, plus 20 GiB headroom.
- required=3*peak+20*1024**3
- return dict(available_bytes=free,historical_peak_bytes=peak,root_count=2,multiplier=1.5,reserve_bytes=20*1024**3,required_bytes=required,PASS=free>=required)
+ s=os.statvfs('/home');free=s.f_bavail*s.f_frsize;peak=70485561344
+ # Target includes 20% margin; the user-approved minimum omits that margin.
+ target=(24*peak+9)//10+20*1024**3
+ minimum=2*peak+20*1024**3
+ result=dict(available_bytes=free,historical_peak_bytes=peak,root_count=2,multiplier=1.2,reserve_bytes=20*1024**3,target_budget_bytes=target,minimum_start_bytes=minimum,required_bytes=minimum,target_shortfall_bytes=max(0,target-free),PASS=free>=minimum)
+ if minimum<=free<target:
+  result['BUDGET_MARGIN_WARNING']=f'BUDGET_MARGIN_WARNING available_bytes={free} target_budget_bytes={target} shortfall_bytes={target-free}; possible 20GiB runtime stop'
+ return result
