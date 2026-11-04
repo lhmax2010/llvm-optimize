@@ -807,3 +807,11 @@ T认证产物自测23/23包、90/90 TU PASS，14项字节/归档/参数夹具、
 - 保存两个父构建和两个x86子构建完整日志gzip、概览、manifest、产物索引。没有LLVM包日志（对应地址404），没有clang或clang-debuginfo RPM；FLAGS/BOLT/profile及本地SHA/包名/字节差异比较不适用，未借用其他快照产物。
 - 本地night的T最终clang=6c63c5c2…、符号=59607550…、D最终clang=1664b9d2…已只读重新核对。54号未完成的验证不在本轮重做；night目录、源码、QB均未改。
 - 详见 [57_qb_1215801_1215600.md](57_qb_1215801_1215600.md)。后续需要实际编译9e39fa8a的两个Base项目QB链接；本轮只推GitHub bolt-v4。
+
+
+## 2026-11-04：正确编号 QB 1216409 / 1216410 核对（57号）
+
+- 1216409=Tizen-Base-Toolchain，1216410=Tizen-Base-Dev；概览软件包行、产出manifest与下载的clang RPM VCS均确认实际源码9e39fa8a61392652bb28b75fc26216675bcad1d5。两父构建及三架构子构建成功，六份LLVM包日志均位于succeeded并正常结束。
+- x86两项目NORMALIZED/DROPPED去时间前缀后分别与night本地T/D逐字相同，WARNING均0。profile全部计数一致：T S=0、R=0.004238545331%；D S=23、R=0.101725087950%。111+2任务、tool-verify113/113、三次real、pipeline/compare-root/cache-release/post和归档225均PASS；T debug-symbols/debuglink PASS，D按release无这两项。
+- T22+1、D12+1包名清单分别与本地相同。D最终clang=1664b9d2…，与本地全文件相同；T最终=e08724d8…，对本地6c63c5c2…仅.gnu_debuglink CRC四字节变化（偏移152529896–152529899）。QB符号=9942e19c…，与本地59607550…不同但其CRC与QB clang匹配。符号文件差异已逐字定位到命令记录排列、.comment GCC版本记录及相关两字节节头/一字节尾部填充；不将其说成整文件相同或擅自放宽认证。
+- [57_qb_1216409_1216410.md](57_qb_1216409_1216410.md)及tools/bolt/results/qb-1216409-1216410/保存完整日志gzip、原文行号、RPM来源/SHA、精确字节比较。错误编号旧报告此前已提交，本轮保留不改。只读采集，没有修改night或源码，没有构建、QB操作、Gerrit/sandbox推送；54号未完成的23包内容/90TU/安装验证不在本轮补做。
