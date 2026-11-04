@@ -36,3 +36,30 @@
 分阶段内存是 `memory.current` 的采样最大值，不冒充独立阶段 `memory.peak`。
 
 详细结果与尚待真实 release 数据的项目见 docs/bolt/53_night_validation_prep.md。
+
+## 55 号修订：保留产物重新验证
+
+`revalidate.py` 不构建、不挂载、不调用 sudo。它要求两根的 `validation-02/`
+尚不存在，再在独立的 16 GiB、swap=0 的 systemd 用户服务里先 T 后 D。
+本轮额外限制 CPUQuota=200%，nice10、ionice2/7。普通比较失败会如实保留并继续
+独立项；MemoryError 或验证服务 OOM 停止队列，不再启动 D。
+
+日志只读 `gbs-driver/local/repos/*/x86_64/logs/success/llvm-*/log.txt`，超过
+1 GiB 拒绝，逐行筛选，不读取累计 `evidence/rpm-build.log`。RPM 也只在
+`gbs-driver/local/repos` 查找；认证基线的 `products` 是显式选择，不作回退。
+`log_support.py` 按原始 `[NNNNs]` 锚点划阶段，以开头的 UTC 开始行映射原始采样。
+
+`section_compare.py` 实现用户批准的三个记录节例外，逐个记录内容与结构变化。
+`.comment` 只接受编译器/链接器标识；`.GCC.command.line` 比较字符串计数。
+`.symtab`、`.strtab` 和代码等非记录节仍严格比较。`checks.debuglink_proof`
+仅在符号文件的严格比较通过后允许 CRC 四字节变化；不能因为可符号化就放行。
+历史 53 号的“节大小必须相同”判据由 55 号批准的记录节规则取代。
+
+`test_revalidation.py` 保留全部夹具，`NIGHT_TEST_ROOT` 可指定一个不存在的新目录。
+禁止原地执行有固定历史输出路径的 `test_integration.py`；本轮使用新夹具目录。
+详细执行结果见 `docs/bolt/55_night_revalidation.md`，不能把入口修复等同于产物认证通过。
+
+真实包验证补充：ELF 允许重名节，比较器按有序实例核对；不额外要求名称唯一。
+不同 RPM 共用同名普通文件时，仅在 SHA 完全相同的情况下复用提取副本，
+不同内容或符号链接均失败；不覆盖已有副本。补检入口保留首次失败结果，
+`correct_duplicate_sections.py` 只重算误拒输入，`resume_release_checks.py` 只补 release 项。

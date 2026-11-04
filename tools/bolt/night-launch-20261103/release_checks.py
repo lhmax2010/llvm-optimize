@@ -21,6 +21,20 @@ def library_links(man,payload):
    rows.append(dict(path=name,rpm_target=v['target'],scratch_target=target))
  return rows
 
+def extract_package_payload(rpm,chosen,payload,files):
+ # Multiple RPMs can legitimately own identical headers. Never overwrite a
+ # previous payload: reuse only a regular file with the exact expected SHA.
+ existing=[];missing=set()
+ for name in chosen:
+  p=payload/name
+  if p.exists() or p.is_symlink():
+   assert p.is_file() and not p.is_symlink(),('payload overlap is not regular',name)
+   actual=sha(p);assert actual==files[name]['sha256'],('conflicting RPM payload',name,actual,files[name]['sha256'])
+   existing.append(dict(path=name,sha256=actual,rpm=str(rpm)))
+  else:missing.add(name)
+ if missing:extract_selected(rpm,missing,payload)
+ return existing
+
 def check_native_archive(data,record):
  ms=[m for m in members(data) if m['name'] not in ('/','//','/SYM64/')];assert len(ms)==record['members']
  results={r['ordinal']:r for r in record['results']};converted=preserved=0
@@ -113,14 +127,14 @@ def release_checks(D,O,peer,log,identity):
  assert 'debug_file' not in identity and 'debuglink' not in identity,'release identity has debug symbols'
  assert '.gnu_debuglink' not in sections((WORK/'clang.candidate').read_bytes())
  post=WORK/'post-gate/post-result.json';assert post.is_file();save(O/'helper-post-gate.json',json.loads(post.read_text()))
- lines=log.splitlines();hits=[i for i,t in enumerate(lines) if 'find-debuginfo' in t or ('clang-22' in t and ('extract' in t.lower() or 'strip' in t.lower()))];save(O/'platform-post-excerpts.json',[dict(line=j+1,text=lines[j]) for j in sorted({j for i in hits for j in range(max(0,i-2),min(len(lines),i+4))})]);assert any('find-debuginfo' in t for t in lines),'platform post evidence absent'
+ save(O/'platform-post-excerpts.json',[dict(line=i,text=t) for i,t in log.items() if 'find-debuginfo' in t or ('clang-22' in t and ('extract' in t.lower() or 'strip' in t.lower()))]);assert any('find-debuginfo' in t for t in log.values()),'platform post evidence absent'
  # Extract only fresh copies of payload regular files to scan recorded options,
  # and use those exact module bytes for dlopen. Hardlink aliases are not executables here.
- payload=O/'payload';filemap={};scanned=0
+ payload=O/'payload';filemap={};scanned=0;overlaps=[]
  for key,files in man.items():
   if key.endswith('\tsrc'):continue
   chosen={n for n,v in files.items() if stat.S_ISREG(v['mode']) and v['bytes']>0}
-  if chosen:extract_selected(pk[key],chosen,payload)
+  if chosen:overlaps.extend(extract_package_payload(pk[key],chosen,payload,files));save(O/'extraction-overlaps.json',overlaps)
   for name in chosen:
    p=payload/name;assert sha(p)==files[name]['sha256'],('RPM hardlink payload extraction mismatch',name);filemap[name]=p
    with p.open('rb') as f:magic=f.read(8)

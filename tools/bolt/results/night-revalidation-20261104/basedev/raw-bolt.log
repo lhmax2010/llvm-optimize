@@ -1,0 +1,79 @@
+BOLT-INFO: shared object or position-independent executable detected
+BOLT-INFO: Target architecture: x86_64
+BOLT-INFO: BOLT version: <unknown>
+BOLT-INFO: first alloc address is 0x0
+BOLT-INFO: creating new program header table at address 0x8600000, offset 0x8600000
+BOLT-INFO: enabling relocation mode
+BOLT-WARNING: split function detected on input : _ZN10tensorflow22XlaCompiledCpuFunctionC2ERKNS0_10StaticDataENS0_9AllocModeE.cold. The support is limited in relocation mode
+BOLT-WARNING: Failed to analyze 2804 relocations
+BOLT-INFO: pre-processing profile using branch profile reader
+BOLT-WARNING: jump past end detected at 0x27f0b69 in function _ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x27f3576 in function _ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x2d00c5b in function _ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x2f1e9be in function _ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x2f1ea78 in function _ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x2f1f725 in function _ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x2f1fbb5 in function _ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x3095740 in function _ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.16369883096672426180/1 : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x6cb9d17 in function _ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE : replacing with nop.
+BOLT-WARNING: jump past end detected at 0x6cba126 in function _ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE : replacing with nop.
+BOLT-INFO: forcing -jump-tables=move as PIC jump table was detected in function _ZN5Eigen8internal21queryCacheSizes_intelERiS1_S1_i
+Warning: request a ThreadPool with 20 threads, but LLVM_ENABLE_THREADS has been turned off
+BOLT-WARNING: 21 collisions detected while hashing binary objects. Use -v=1 to see the list.
+BOLT-INFO: 23592 out of 144032 functions in the binary (16.4%) have non-empty execution profile
+BOLT-INFO: 383 functions with profile could not be optimized
+BOLT-WARNING: 23 (0.1% of all profiled) functions have invalid (possibly stale) profile. Use -report-stale to see the list.
+BOLT-WARNING: 1004909918 out of 140739851572 samples in the binary (0.7%) belong to functions with invalid (possibly stale) profile.
+BOLT-INFO: profile for 1 objects was ignored
+BOLT-INFO: profile quality metrics for the hottest 1000 functions (reporting top 5% values): function CFG discontinuity 0.00%; call graph flow conservation gap 0.00%; CFG flow conservation gap 0.00% (weighted) 0.00% (worst); exception handling usage 0.00% (of total BBEC) 0.00% (of total InvokeEC)
+BOLT-INFO: validate-mem-refs updated 4 object references
+BOLT-INFO: 1251241 instructions were shortened
+BOLT-INFO: removed 131187 empty blocks
+BOLT-INFO: basic block reordering modified layout of 18731 functions (79.40% of profiled, 12.97% of total)
+BOLT-INFO: UCE removed 5 blocks and 150 bytes of code
+BOLT-INFO: splitting separates 11781828 hot bytes from 13245302 cold bytes (47.08% of split functions is hot).
+BOLT-INFO: 41 Functions were reordered by LoopInversionPass
+BOLT-INFO: program-wide dynostats after all optimizations before SCTC and FOP:
+
+         83763205861 : executed forward branches
+         37382792672 : taken forward branches
+         22149275475 : executed backward branches
+         10595412058 : taken backward branches
+         11607272236 : executed unconditional branches
+         17208961493 : all function calls
+          2925375252 : indirect calls
+          1320399820 : PLT calls
+        810004236582 : executed instructions
+        193578712586 : executed load instructions
+        106435648723 : executed store instructions
+          2607086256 : taken jump table branches
+                   0 : taken unknown indirect branches
+        117519753572 : total branches
+         59585476966 : taken branches
+         57934276606 : non-taken conditional branches
+         47978204730 : taken conditional branches
+        105912481336 : all conditional branches
+
+         84203124358 : executed forward branches (+0.5%)
+          6684539213 : taken forward branches (-82.1%)
+         21709356978 : executed backward branches (-2.0%)
+          9987273054 : taken backward branches (-5.7%)
+          4063354211 : executed unconditional branches (-65.0%)
+         17208961493 : all function calls (=)
+          2925375252 : indirect calls (=)
+          1320399820 : PLT calls (=)
+        797903552389 : executed instructions (-1.5%)
+        193578712586 : executed load instructions (=)
+        106435648723 : executed store instructions (=)
+          2607086256 : taken jump table branches (=)
+                   0 : taken unknown indirect branches (=)
+        109975835547 : total branches (-6.4%)
+         20735166478 : taken branches (-65.2%)
+         89240669069 : non-taken conditional branches (+54.0%)
+         16671812267 : taken conditional branches (-65.3%)
+        105912481336 : all conditional branches (=)
+
+BOLT-INFO: SCTC: patched 926 tail calls (921 forward) tail calls (5 backward) from a total of 932 while removing 22 double jumps and removing 937 basic blocks totalling 4643 bytes of code. CTCs total execution count is 47403332 and the number of times CTCs are taken is 13255019
+BOLT-INFO: using original .text for new code with 0x200000 alignment
+BOLT-INFO: setting __hot_start to 0x2800000
+BOLT-INFO: setting __hot_end to 0x36099f4

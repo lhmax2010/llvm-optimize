@@ -823,3 +823,14 @@ T认证产物自测23/23包、90/90 TU PASS，14项字节/归档/参数夹具、
 - 用57号已有QB1216409/本地夜间T证据核对：两边.comment仅标识字符串，PASS；.GCC.command.line的2335种字符串及次数、顺序和节SHA其实全部相同，仅受.comment缩短2B影响整体前移2B。已纠正57号此前“排列不同”的错误表述，保留原始逐字节差异证据。
 - 用户确认T本地快照20261013.024319、QB1216409快照20261030.061318不同，是.comment差异来源；Base-Dev两边均20261030.061217。57号第8节先完整记录，待55号位置确认后写入其对应部分。
 - 本地与fetch后的origin/bolt-v4尚无55号文档或其第二/三部分结果，已请求路径；不创建冒名的完整验证结果、不重跑90TU/23包、不将现有QB对比标作整项夜间重验证PASS。
+
+
+## 2026-11-04：夜间入口修复与重新验证完成（55号，有问题）
+
+- 用户已把此前追加判据替换为完整新任务，55号从头实施；此前“结果位置待确认”状态已关闭。仅修本地入口/验证器，未改LLVM源码/spec/helper、未重新构建、未做装包/LLDB。
+- 修复日志游标覆盖、流式读取canonical GBS日志并设1GiB上限、内存错误/OOM停止串行队列、严格gbs-driver RPM定位和原始日志阶段计时；32项回归测试PASS。实际验证又修复合法重名ELF节解析与共享RPM头文件提取，原失败及定向补检全部保留。
+- T对认证版严格比较FAIL：普通clang和符号文件存在.symtab/.strtab差异；最终clang虽仅debuglink CRC四字节变化且CRC正确，但符号文件不通过，不能放行。23包4PASS/19FAIL；T90TU为90/90。
+- D全部验证在提取器专项补检后PASS：3853转换成员无调试节、1975原生成员仅计数、真实release正反例PASS、5802记录节无DROPPED token、两项MODULE加载PASS、90TU对T为90/90；D12+1包，无debuginfo/debugsource。原failed结果与更正后的result-effective.json并存。
+- 本地T符号对QB1216409 PASS，仅.comment标识和相应布局；两边GCC命令记录完全相同。本地Toolchain快照20261013.024319、QB20261030.061318；Base-Dev两边均20261030.061217。
+- 两轮独立16G/swap0服务，无OOM，全部已结束；原始GBS时间资源表已重算，缺采样写UNKNOWN。只删除获批两个重复rpm-build.log，df释放61,506,420,736B（57.282GiB）；产品/原始成功日志/旧validation均保留。
+- 详见 [55_night_revalidation.md](55_night_revalidation.md)。整体仍有严格产物差异，等待用户裁决；本轮只推GitHub bolt-v4。

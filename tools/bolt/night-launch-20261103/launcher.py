@@ -104,6 +104,7 @@ def materialize(D, plan):
      result=subprocess.run(['systemctl','--user','stop',unit],capture_output=True,text=True)
      append('cmake-stop.jsonl',{'stop_rc':result.returncode,'stdout':result.stdout,'stderr':result.stderr,'time_ns':time.time_ns()})
      shutil.copyfile(p,E/'rpm-build-final.log')
+     shutil.copyfile(p,E/'rpm-build.log')
      return
 """
             assert marker in text
@@ -114,8 +115,8 @@ def materialize(D, plan):
             addition = """
     for ln in b.decode(errors='replace').splitlines():
      if '+ echo ' in ln or '+ printf ' in ln:continue
-     for phase,anchor in [('ordinary-build','Executing(%build)'),('ordinary-install','Executing(%install)'),('BOLT','BOLT_DISK_REPORT'),('cache-release',' cache-release '),('cache-release','BOLT_CACHE_RELEASE removed'),('archive-conversion','NATIVE_ARCHIVES_BEGIN'),('platform-post','find-debuginfo'),('packaging','Processing files:')]:
-      if anchor in ln:append('phase-events.jsonl',{'time_ns':time.time_ns(),'phase':phase,'text':ln})
+     for phase,phase_anchor in [('ordinary-build','Executing(%build)'),('ordinary-install','Executing(%install)'),('BOLT','BOLT_DISK_REPORT'),('cache-release',' cache-release '),('cache-release','BOLT_CACHE_RELEASE removed'),('archive-conversion','NATIVE_ARCHIVES_BEGIN'),('platform-post','find-debuginfo'),('packaging','Processing files:')]:
+      if phase_anchor in ln:append('phase-events.jsonl',{'time_ns':time.time_ns(),'phase':phase,'text':ln})
      if 'BOLT_COMPARE_ROOT_PASS' in ln:append('phase-events.jsonl',{'time_ns':time.time_ns(),'phase':'BOLT','kind':'end','text':ln})
 """
             assert needle in text
@@ -236,6 +237,8 @@ def worker(D):
             assert 'Executing(%prep)' in log and 'Executing(%build)' in log
             assert '+ cmake -G Ninja' in log
             assert not any(x in log for x in ('+ ninja ', 'BOLT_PIPELINE_PASS', 'Build files have been written to:'))
+            from log_support import audit_log_copy
+            save(E/'log-copy-audit.json',audit_log_copy(D))
             status, reason = 'ok', 'rehearsal-complete-at-CMake'
         else:
             assert result['rc'] == 0 and result['reason'] is None, result

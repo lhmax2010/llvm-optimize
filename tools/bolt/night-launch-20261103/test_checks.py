@@ -18,7 +18,7 @@ def arc(data,date=b'1'):
  return b'!<arch>\n'+b'm.o/            '+date.ljust(12)+b'0     0     100644  '+str(len(data)).encode().ljust(10)+b'`\n'+data+(b'\n' if len(data)%2 else b'')
 class Tests(unittest.TestCase):
  def test_command_bytes(self):
-  x=command_byte_proof(elf(b'-g\0'),elf(b'-O\0'));self.assertEqual(x['differing_ranges'][0]['file_offset'],69)
+  x=command_byte_proof(elf(b'-g\0'),elf(b'-O\0'));self.assertFalse(next(r for r in x['record_sections'] if r['section']=='.GCC.command.line')['content_equal'])
  def test_code_byte_fails(self):
   x=bytearray(elf());x[64]^=1
   with self.assertRaises(AssertionError):content_proof(elf(),bytes(x))
@@ -27,6 +27,10 @@ class Tests(unittest.TestCase):
   with self.assertRaises(AssertionError):content_proof(elf(),bytes(x))
  def test_size_change_fails(self):
   with self.assertRaises(AssertionError):content_proof(elf(),elf()+b'\0')
+ def test_duplicate_section_names(self):
+  # Preserve the ordered occurrences instead of imposing ELF name uniqueness.
+  x=bytearray(elf());off=struct.unpack_from('<Q',x,40)[0];struct.pack_into('<I',x,off+2*64,1)
+  self.assertEqual(content_proof(x,x)['classification'],'identical')
  def test_ar_dates(self):
   x=ar_proof(arc(elf()),arc(elf(),b'2'));self.assertEqual(x['classification'],'allowed-ar-date-difference');self.assertTrue(x['member_content_sha_equal'])
  def test_ar_command_and_date(self):self.assertEqual(ar_proof(arc(elf(b'-g\0')),arc(elf(b'-O\0'),b'2'))['classification'],'ar-command-record-difference')

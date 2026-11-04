@@ -1,0 +1,34 @@
+{
+  "status": "failed",
+  "project": "toolchain",
+  "checks": {
+    "anchors": {
+      "status": "PASS"
+    },
+    "flags": {
+      "status": "PASS"
+    },
+    "profile": {
+      "status": "PASS"
+    },
+    "identity-chain": {
+      "status": "FAIL",
+      "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py\", line 105, in check\n    value=fn();result['checks'][name]={'status':'PASS'};print('CHECK_PASS',name,flush=True);return value\n          ^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py\", line 134, in <lambda>\n    check('identity-chain',lambda:extra_identity(D,O,args.project))\n                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py\", line 96, in extra_identity\n    proof={'classification':'identical'} if oldsha==newsha else file_proof(old,new)\n                                                                ^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/section_compare.py\", line 122, in file_proof\n    if error is not None:raise kind(error)\n                         ^^^^^^^^^^^^^^^^^\nAssertionError: ('non-record section changed', '.symtab')\n"
+    },
+    "three-stage-sha-and-certified-debuglink": {
+      "status": "FAIL",
+      "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py\", line 105, in check\n    value=fn();result['checks'][name]={'status':'PASS'};print('CHECK_PASS',name,flush=True);return value\n          ^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py\", line 142, in stages\n    row['proof']=debuglink_proof(CERT/'products/binaries/clang.candidate',WORK/'clang.candidate',CERT/'products/binaries/clang-22.debug',WORK/'clang-22.debug')\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/checks.py\", line 66, in debuglink_proof\n    symbol_proof=file_proof(old_symbols,new_symbols)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/section_compare.py\", line 122, in file_proof\n    if error is not None:raise kind(error)\n                         ^^^^^^^^^^^^^^^^^\nAssertionError: ('non-record section changed', '.symtab')\n"
+    },
+    "current-debugfiles-and-debuglink": {
+      "status": "PASS"
+    },
+    "rpm23": {
+      "status": "FAIL",
+      "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py\", line 105, in check\n    value=fn();result['checks'][name]={'status':'PASS'};print('CHECK_PASS',name,flush=True);return value\n          ^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py\", line 149, in <lambda>\n    check('rpm23',lambda:rpm_compare(D,O,CERT,not args.certified_selftest))\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py\", line 61, in rpm_compare\n    assert all(r['PASS'] for r in rows),('RPM content differences outside approved rules',[r['package'] for r in rows if not r['PASS']])\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: ('RPM content differences outside approved rules', ['clang\\tx86_64', 'clang-debuginfo\\tx86_64', 'clang-devel\\tx86_64', 'clang-devel-debuginfo\\tx86_64', 'compiler-rt\\tx86_64', 'libllvm\\tx86_64', 'libllvm-debuginfo\\tx86_64', 'libomp\\tx86_64', 'libomp-debuginfo\\tx86_64', 'libomp-devel\\tx86_64', 'lldb\\tx86_64', 'lldb-debuginfo\\tx86_64', 'lldb-devel\\tx86_64', 'lldb-devel-debuginfo\\tx86_64', 'llvm\\tx86_64', 'llvm-debuginfo\\tx86_64', 'llvm-devel\\tx86_64', 'llvm-devel-debuginfo\\tx86_64', 'llvm-static-devel\\tx86_64'])\n"
+    },
+    "objects90": {
+      "status": "PASS"
+    }
+  },
+  "historical_selftest": false
+}

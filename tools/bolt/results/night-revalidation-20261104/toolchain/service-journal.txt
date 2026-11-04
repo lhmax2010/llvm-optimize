@@ -1,0 +1,74 @@
+Started night-revalidation-toolchain-20261104.service - /usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py --project toolchain --root /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261103/toolchain --peer /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261103/toolchain --output /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261103/toolchain/validation-02.
+CHECK_PASS anchors
+CHECK_PASS flags
+CHECK_PASS profile
+CHECK_FAIL identity-chain Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 105, in check
+    value=fn();result['checks'][name]={'status':'PASS'};print('CHECK_PASS',name,flush=True);return value
+          ^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 134, in <lambda>
+    check('identity-chain',lambda:extra_identity(D,O,args.project))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 96, in extra_identity
+    proof={'classification':'identical'} if oldsha==newsha else file_proof(old,new)
+                                                                ^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/section_compare.py", line 122, in file_proof
+    if error is not None:raise kind(error)
+                         ^^^^^^^^^^^^^^^^^
+AssertionError: ('non-record section changed', '.symtab')
+CHECK_FAIL three-stage-sha-and-certified-debuglink Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 105, in check
+    value=fn();result['checks'][name]={'status':'PASS'};print('CHECK_PASS',name,flush=True);return value
+          ^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 142, in stages
+    row['proof']=debuglink_proof(CERT/'products/binaries/clang.candidate',WORK/'clang.candidate',CERT/'products/binaries/clang-22.debug',WORK/'clang-22.debug')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/checks.py", line 66, in debuglink_proof
+    symbol_proof=file_proof(old_symbols,new_symbols)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/section_compare.py", line 122, in file_proof
+    if error is not None:raise kind(error)
+                         ^^^^^^^^^^^^^^^^^
+AssertionError: ('non-record section changed', '.symtab')
+CHECK_PASS current-debugfiles-and-debuglink
+RPM_FAIL clang	x86_64
+RPM_FAIL clang-debuginfo	x86_64
+RPM_FAIL clang-devel	x86_64
+RPM_FAIL clang-devel-debuginfo	x86_64
+RPM_FAIL compiler-rt	x86_64
+RPM_PASS compiler-rt-debuginfo	x86_64
+RPM_FAIL libllvm	x86_64
+RPM_FAIL libllvm-debuginfo	x86_64
+RPM_FAIL libomp	x86_64
+RPM_FAIL libomp-debuginfo	x86_64
+RPM_FAIL libomp-devel	x86_64
+RPM_FAIL lldb	x86_64
+RPM_FAIL lldb-debuginfo	x86_64
+RPM_FAIL lldb-devel	x86_64
+RPM_FAIL lldb-devel-debuginfo	x86_64
+RPM_PASS llvm	src
+RPM_FAIL llvm	x86_64
+RPM_FAIL llvm-debuginfo	x86_64
+RPM_PASS llvm-debugsource	x86_64
+RPM_FAIL llvm-devel	x86_64
+RPM_FAIL llvm-devel-debuginfo	x86_64
+RPM_FAIL llvm-static-devel	x86_64
+RPM_PASS python-clang	x86_64
+CHECK_FAIL rpm23 Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 105, in check
+    value=fn();result['checks'][name]={'status':'PASS'};print('CHECK_PASS',name,flush=True);return value
+          ^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 149, in <lambda>
+    check('rpm23',lambda:rpm_compare(D,O,CERT,not args.certified_selftest))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/validate.py", line 61, in rpm_compare
+    assert all(r['PASS'] for r in rows),('RPM content differences outside approved rules',[r['package'] for r in rows if not r['PASS']])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('RPM content differences outside approved rules', ['clang\tx86_64', 'clang-debuginfo\tx86_64', 'clang-devel\tx86_64', 'clang-devel-debuginfo\tx86_64', 'compiler-rt\tx86_64', 'libllvm\tx86_64', 'libllvm-debuginfo\tx86_64', 'libomp\tx86_64', 'libomp-debuginfo\tx86_64', 'libomp-devel\tx86_64', 'lldb\tx86_64', 'lldb-debuginfo\tx86_64', 'lldb-devel\tx86_64', 'lldb-devel-debuginfo\tx86_64', 'llvm\tx86_64', 'llvm-debuginfo\tx86_64', 'llvm-devel\tx86_64', 'llvm-devel-debuginfo\tx86_64', 'llvm-static-devel\tx86_64'])
+OBJECT_ROLE_DONE reference
+OBJECT_ROLE_DONE candidate
+CHECK_PASS objects90
+VALIDATION 已结束 2026-11-04T17:15:02.748718+08:00 status=failed
+night-revalidation-toolchain-20261104.service: Main process exited, code=exited, status=1/FAILURE
+night-revalidation-toolchain-20261104.service: Failed with result 'exit-code'.
+night-revalidation-toolchain-20261104.service: Consumed 21min 21.201s CPU time, 4.3G memory peak, 0B memory swap peak.

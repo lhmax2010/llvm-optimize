@@ -31,6 +31,8 @@ assert not re.search(r'\+ ninja ',log)
 expected_drop='' if project=='toolchain' else '-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'
 assert rows['TIZEN_LLVM_DROPPED_FLAGS']['payload']=='TIZEN_LLVM_DROPPED_FLAGS CFLAGS=['+expected_drop+'] CXXFLAGS=['+expected_drop+'] LDFLAGS=[]'
 assert 'TIZEN_LLVM_FIXED_FLAGS_FAILED' not in log
+from log_support import audit_log_copy
+rows['log_copy']=audit_log_copy(root)
 rows.update(project=project,result=r,cmake={'line':lineno,'text':text,'argv':argv,'flags':cm},LDFLAGS={'line':ll,'text':lt,'value':ldval},PASS=True)
 assert not re.search(r'(?:^|\] )TIZEN_LLVM_FLAGS_WARNING ',log,re.M)
 (E/(project+'-rehearsal-audit.json')).write_text(json.dumps(rows,indent=2)+'\n')

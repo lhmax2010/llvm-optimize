@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/night-revalidation-20261104/section-audit.py", line 25, in <module>
+    r=audit(a,b);(E/(label+'-sections.json')).write_text(json.dumps(r,indent=2)+'\n');print(label,'changed sections',[(x['section'],x['old_size'],x['new_size']) for x in r['sections'] if not x['contents_equal']],'symbol changes',len(r['symbol_differences']))
+      ^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/night-revalidation-20261104/section-audit.py", line 22, in audit
+    if x['content'][at:at+24]!=y['content'][at:at+24]:symbol_differences.append(dict(index=at//24,old_file_offset=x['offset']+at,new_file_offset=y['offset']+at,old=symbol(x['content'],at,st_a),new=symbol(y['content'],at,st_b)))
+                                                                                                                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/night-revalidation-20261104/section-audit.py", line 20, in symbol
+    z=struct.unpack_from('<IBBHQQ',data,at);raw=bytes(st);end=raw.find(b'\0',z[0]);return dict(name=raw[z[0]:end].decode(errors='replace'),st_name=z[0],info=z[1],other=z[2],shndx=z[3],value=z[4],size=z[5])
+                                                ^^^^^^^^^
+KeyboardInterrupt

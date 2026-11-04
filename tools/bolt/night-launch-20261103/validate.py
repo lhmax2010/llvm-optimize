@@ -2,6 +2,7 @@
 from pathlib import Path
 import argparse,os,json,subprocess,shutil,time,traceback,stat,importlib.util,re,mmap
 from checks import *
+from log_support import log_summary, canonical_log
 from rpm_io import manifest
 from rpm_extract import extract_selected
 W=Path('/home/linhao/Toolchain/development/llvm-optimize')
@@ -18,10 +19,10 @@ def run(argv,out,cwd=None,env=None,timeout=600):
 
 def free():assert shutil.disk_usage('/home').free>=20*1024**3,'disk-stop: /home below 20GiB'
 def loader(R,b):return [R/'lib64/ld-linux-x86-64.so.2','--library-path',str(R/'lib64')+':'+str(R/'usr/lib64'),b]
-def packages(D):
- P=D/'products'; rpms=sorted(P.glob('RPMS/*.rpm'))+sorted(P.glob('SRPMS/*.rpm'))
- if not rpms:rpms=sorted((D/'gbs-root/local').glob('repos/**/*.rpm'))
- assert rpms,'no RPM products';out={}
+def packages(D,certified=False):
+ P=D/'products' if certified else D/'gbs-driver/local/repos'
+ rpms=(sorted(P.glob('RPMS/*.rpm'))+sorted(P.glob('SRPMS/*.rpm'))) if certified else sorted(P.glob('**/*.rpm'))
+ assert rpms,('no RPM products at required location',str(P));out={}
  for rpm in rpms:
   p=subprocess.run(['rpm','-qp','--qf','%{NAME}\t%{ARCH}',str(rpm)],capture_output=True,text=True);assert p.returncode==0,(rpm,p.stderr);key=p.stdout.strip();key=key.split('\t')[0]+'\tsrc' if rpm.name.endswith('.src.rpm') else key;assert key not in out,('duplicate package',key);out[key]=rpm
  return out
@@ -33,7 +34,7 @@ def verify_manifest(P,O):
  save(O/'certified-sha-check.json',rows)
 
 def rpm_compare(D,O,oldD,source_allowed):
- new,old=packages(D),packages(oldD);assert len(new)==23 and set(new)==set(old),(len(new),set(new)^set(old));rows=[];manifests={}
+ new,old=packages(D),packages(oldD,certified=True);assert len(new)==23 and set(new)==set(old),(len(new),set(new)^set(old));rows=[];manifests={}
  for key in sorted(new):
   free();aa=manifest(old[key]);bb=aa if old[key]==new[key] else manifest(new[key]);manifests[key]=bb;assert set(aa)==set(bb),(key,'paths added/removed',set(aa)^set(bb))
   changes=[];times=[];proofs=[]
@@ -49,10 +50,15 @@ def rpm_compare(D,O,oldD,source_allowed):
    x,y=folder/'old'/name,folder/'new'/name
    if key.endswith('\tsrc') and source_allowed:
     export=D/'export'/name;assert export.is_file() and sha(export)==sha(y),(name,'source payload is not the exact pinned export');proof=dict(classification='declared-source-export-change',export=str(export),old_sha=sha(x),new_sha=sha(y))
-   else:proof=content_proof(x.read_bytes(),y.read_bytes())
+   else:
+    try:
+     if key=='clang\tx86_64' and name=='usr/bin/clang-22':proof=debuglink_proof(x,y,CERT/'products/binaries/clang-22.debug',rootpaths(D)[2]/'clang-22.debug')
+     else:proof=file_proof(x,y)
+    except AssertionError as error:proof=dict(classification='FAIL',error=str(error))
    proofs.append(dict(path=name,**proof))
-  row=dict(package=key,old_rpm=str(old[key]),new_rpm=str(new[key]),files=len(aa),content_changes=proofs,payload_mtime_changes=times,ar_date_only_files=sum(p['classification']=='allowed-ar-date-difference' for p in proofs),command_record_files=sum('command-record' in p['classification'] for p in proofs),PASS=True)
-  rows.append(row);save(O/'rpm23.json',rows);save(O/(key.replace('\t','-')+'-manifest.json'),bb);print('RPM_PASS',key,flush=True)
+  row=dict(package=key,old_rpm=str(old[key]),new_rpm=str(new[key]),files=len(aa),content_changes=proofs,payload_mtime_changes=times,ar_date_only_files=sum(p['classification']=='allowed-ar-date-difference' for p in proofs),command_record_files=sum('command-record' in p['classification'] for p in proofs),PASS=not any(p['classification']=='FAIL' for p in proofs))
+  rows.append(row);save(O/'rpm23.json',rows);save(O/(key.replace('\t','-')+'-manifest.json'),bb);print('RPM_PASS' if row['PASS'] else 'RPM_FAIL',key,flush=True)
+ assert all(r['PASS'] for r in rows),('RPM content differences outside approved rules',[r['package'] for r in rows if not r['PASS']])
  return manifests
 
 def objects(D,O,reference):
@@ -87,54 +93,75 @@ def extra_identity(D,O,project):
  if project=='toolchain':
   for name in ['ordinary-clang-22','clang-22.debug']:
    old=CERT/'products/binaries'/name;new=WORK/name;oldsha,newsha=sha(old),sha(new)
-   proof={'classification':'identical'} if oldsha==newsha else content_proof(old.read_bytes(),new.read_bytes())
+   proof={'classification':'identical'} if oldsha==newsha else file_proof(old,new)
    proofs[name]=dict(old_sha256=oldsha,new_sha256=newsha,**proof)
  save(O/'identity-chain-extra.json',dict(prestrip_sha=identity['before_sha256'],installed_sha=state['installed_sha256'],comparisons=proofs,PASS=True))
 
 def main(args):
- D=args.root;O=args.output or D/'validation';O.mkdir(parents=True,exist_ok=False);R,BUILD,WORK=rootpaths(D);result={'status':'failed','project':args.project,'checks':{},'historical_selftest':args.certified_selftest}
+ D=args.root;O=args.output or D/'validation';O.mkdir(parents=True,exist_ok=False);R,BUILD,WORK=rootpaths(D)
+ result={'status':'failed','project':args.project,'checks':{},'historical_selftest':args.certified_selftest}
+ def check(name,fn):
+  try:
+   value=fn();result['checks'][name]={'status':'PASS'};print('CHECK_PASS',name,flush=True);return value
+  except MemoryError:raise
+  except Exception:
+   error=traceback.format_exc();result['checks'][name]={'status':'FAIL','error':error}
+   with (O/'failure.txt').open('a') as f:f.write(name+'\n'+error+'\n')
+   print('CHECK_FAIL',name,error,flush=True)
+  finally:save(O/'result.json',result)
  try:
+  # Infrastructure/provenance failures stop this validation; independent content
+  # checks below retain failures and continue, never convert them into PASS.
   verify_manifest(CERT/'products',O)
-  logpath=D/'evidence/rpm-build-final.log'
-  if not logpath.exists():logpath=D/'evidence/rpm-build.log'
-  log=logpath.read_text(errors='replace');lines=log.splitlines();anchors={}
-  needed=['BOLT_NINJA_EXIT_0','BOLT_PIPELINE_PASS','BOLT_COMPARE_ROOT_PASS','BOLT_CACHE_RELEASE','BOLT_POST_GATE_PASS','NATIVE_ARCHIVES_END']
-  if args.project=='toolchain':needed+=['BOLT_DEBUG_SYMBOLS_PASS','BOLT_DEBUGLINK_PASS']
-  if not args.certified_selftest:needed+=['TIZEN_HYBRID_LINK_OK']
-  for token in needed:
-   hit=[dict(line=i,text=t) for i,t in enumerate(lines,1) if token in t and '+ echo ' not in t and '+ printf ' not in t];assert hit,('missing anchor',token);anchors[token]=hit
-  real=[dict(line=i,text=t) for i,t in enumerate(lines,1) if 'BOLT_REAL_GATE_PASS' in t and '+ echo ' not in t];assert len(real)>=3;anchors['BOLT_REAL_GATE_PASS']=real
-  for token in ['BOLT_PROC_OK','BOLT_PROC_MISSING','BOLT_TOOL_DRY_RUN_BEGIN','BOLT_TOOL_DRY_RUN_END','BOLT_DISK_REPORT','BOLT_DISK_DIAGNOSIS']:
-   anchors[token]=[dict(line=i,text=t) for i,t in enumerate(lines,1) if token in t and '+ echo ' not in t and '+ printf ' not in t]
-  save(O/'anchors.json',anchors);result['checks']['anchors']='PASS'
-  if args.certified_selftest:result['checks']['new_flags']='NOT APPLICABLE to historical log; separately tested using 51 real logs'
-  else:save(O/'flags.json',flags_check(log,args.project));result['checks']['flags']='PASS'
-  pipeline=json.loads((WORK/'pipeline-result.json').read_text());save(O/'profile-and-pipeline.json',pipeline)
-  if args.project=='toolchain':assert pipeline['counts']==COUNTS
-  else:assert pipeline['counts']['R']<.05 and pipeline['counts']['S_over_N']<.05
-  save(O/'profile-log-excerpts.json',[dict(line=i,text=t) for i,t in enumerate(lines,1) if re.search(r'BOLT-(INFO|WARNING).*profile|profile.*functions|mismatch|unmatched',t,re.I)])
+  logpath=canonical_log(D);log=log_summary(logpath);lines=log['selected'];save(O/'log-input.json',{k:v for k,v in log.items() if k!='selected'})
+  def anchors_check():
+   anchors={};needed=['BOLT_NINJA_EXIT_0','BOLT_PIPELINE_PASS','BOLT_COMPARE_ROOT_PASS','BOLT_CACHE_RELEASE','BOLT_POST_GATE_PASS','NATIVE_ARCHIVES_END']
+   if args.project=='toolchain':needed+=['BOLT_DEBUG_SYMBOLS_PASS','BOLT_DEBUGLINK_PASS']
+   if not args.certified_selftest:needed+=['TIZEN_HYBRID_LINK_OK']
+   for token in needed+['BOLT_REAL_GATE_PASS','BOLT_PROC_OK','BOLT_PROC_MISSING','BOLT_TOOL_DRY_RUN_BEGIN','BOLT_TOOL_DRY_RUN_END','BOLT_DISK_REPORT','BOLT_DISK_DIAGNOSIS']:
+    hit=[dict(line=i,text=t) for i,t in lines.items() if token in t and '+ echo ' not in t and '+ printf ' not in t];anchors[token]=hit
+    if token in needed:assert hit,('missing anchor',token)
+   save(O/'anchors.json',anchors);assert len(anchors['BOLT_REAL_GATE_PASS'])>=3
+  check('anchors',anchors_check)
+  if not args.certified_selftest:check('flags',lambda:save(O/'flags.json',flags_check(lines,args.project)))
+  def profile():
+   pipeline=json.loads((WORK/'pipeline-result.json').read_text());save(O/'profile-and-pipeline.json',pipeline)
+   if args.project=='toolchain':assert pipeline['counts']==COUNTS
+   else:assert pipeline['counts']['R']<.05 and pipeline['counts']['S_over_N']<.05
+   save(O/'profile-log-excerpts.json',[dict(line=i,text=t) for i,t in lines.items() if re.search(r'BOLT-(INFO|WARNING).*profile|profile.*functions|mismatch|unmatched',t,re.I)])
+  check('profile',profile)
   identity=json.loads((WORK/'identity.json').read_text());save(O/'identity.json',identity);assert sha(WORK/'clang.candidate')==identity['after_sha256']
-  extra_identity(D,O,args.project)
+  check('identity-chain',lambda:extra_identity(D,O,args.project))
   if args.project=='toolchain':
-   for key,expected in EXPECTED.items():
-    if identity[key]!=expected:
-     if key!='after_sha256':raise AssertionError((key,'SHA mismatch; original stage bytes unavailable for strict byte proof',identity[key],expected))
-     save(O/(key+'-difference.json'),content_proof((CERT/'products/binaries/clang.candidate').read_bytes(),(WORK/'clang.candidate').read_bytes()))
-   debug=(WORK/'clang-22.debug').read_bytes();assert hashlib.sha256(debug).hexdigest()==identity['debug_file']['sha256'];proof=debuglink_check((WORK/'clang.candidate').read_bytes(),debug);assert proof['crc32']==identity['debug_file']['crc32'];save(O/'debuglink.json',proof)
-   lists=list(BUILD.parent.glob('**/debugfiles.list'));assert lists and any('clang-22.debug' in p.read_text() for p in lists);save(O/'debugfiles.json',[dict(path=str(p),text=p.read_text()) for p in lists])
-   manifests=rpm_compare(D,O,CERT,not args.certified_selftest)
-   pk=packages(D);ck=next(k for k in pk if k=='clang\tx86_64');dk=next(k for k in pk if k=='clang-debuginfo\tx86_64')
-   assert manifests[ck]['usr/bin/clang-22']['sha256']==identity['after_sha256'];assert manifests[dk]['usr/lib/debug/usr/bin/clang-22.debug']['sha256']==identity['debug_file']['sha256']
-   objects(D,O,CERT/'products/binaries/clang.candidate');result['checks'].update(identity='PASS',rpm23='PASS',debuglink='PASS',objects90='PASS')
+   def stages():
+    rows=[]
+    for key,expected in EXPECTED.items():
+     row=dict(stage=key,expected=expected,actual=identity[key]);rows.append(row)
+     if identity[key]!=expected:
+      if key!='after_sha256':row['PASS']=False;save(O/'three-stage-sha.json',rows);raise AssertionError(row)
+      row['proof']=debuglink_proof(CERT/'products/binaries/clang.candidate',WORK/'clang.candidate',CERT/'products/binaries/clang-22.debug',WORK/'clang-22.debug')
+     row['PASS']=True;save(O/'three-stage-sha.json',rows)
+   check('three-stage-sha-and-certified-debuglink',stages)
+   def debugfiles():
+    debug=(WORK/'clang-22.debug').read_bytes();assert hashlib.sha256(debug).hexdigest()==identity['debug_file']['sha256'];proof=debuglink_check((WORK/'clang.candidate').read_bytes(),debug);assert proof['crc32']==identity['debug_file']['crc32'];save(O/'debuglink.json',proof)
+    lists=list(BUILD.parent.glob('**/debugfiles.list'));assert lists and any('clang-22.debug' in p.read_text() for p in lists);save(O/'debugfiles.json',[dict(path=str(p),text=p.read_text()) for p in lists])
+   check('current-debugfiles-and-debuglink',debugfiles)
+   check('rpm23',lambda:rpm_compare(D,O,CERT,not args.certified_selftest))
+   check('objects90',lambda:objects(D,O,CERT/'products/binaries/clang.candidate'))
   else:
    from release_checks import release_checks
-   release_checks(D,O,args.peer,log,identity)
-   reference=rootpaths(args.peer)[2]/'clang.candidate';assert reference.is_file(),'T final clang absent: D/T 90 TU unavailable';objects(D,O,reference);result['checks'].update(release='PASS',objects90='PASS')
-  result['status']='ok'
- except BaseException:
-  result['error']=traceback.format_exc();(O/'failure.txt').write_text(result['error']);raise
+   check('release',lambda:release_checks(D,O,args.peer,lines,identity))
+   reference=rootpaths(args.peer)[2]/'clang.candidate';assert reference.is_file(),'T final clang absent'
+   check('objects90',lambda:objects(D,O,reference))
+  result['status']='ok' if all(c['status']=='PASS' for c in result['checks'].values()) else 'failed'
+ except BaseException as error:
+  if isinstance(error,MemoryError):result.update(status='stopped',reason='memory-stop')
+  result['error']=traceback.format_exc()
+  with (O/'failure.txt').open('a') as f:f.write(result['error'])
+  traceback.print_exc()
  finally:
   save(O/'result.json',result);print('VALIDATION 已结束',__import__('datetime').datetime.now().astimezone().isoformat(),'status='+result['status'],flush=True)
+ return 0 if result['status']=='ok' else 1
 
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--project',choices=['toolchain','basedev'],required=True);p.add_argument('--root',type=Path,required=True);p.add_argument('--peer',type=Path);p.add_argument('--output',type=Path);p.add_argument('--certified-selftest',action='store_true');main(p.parse_args())
+ p=argparse.ArgumentParser();p.add_argument('--project',choices=['toolchain','basedev'],required=True);p.add_argument('--root',type=Path,required=True);p.add_argument('--peer',type=Path);p.add_argument('--output',type=Path);p.add_argument('--certified-selftest',action='store_true');__import__('sys').exit(main(p.parse_args()))
