@@ -1,0 +1,162 @@
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L122: 
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L123: 以下命令中的 W/B/Q 按第 1 节展开；完整绝对路径 argv 在 `stage.json`：
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L124: 
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L125: ```bash
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L126: /lib64/ld-linux-x86-64.so.2 \
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L127:   --library-path "$W/temp/toolchain-runtime-baseline/libxml2/usr/lib64" \
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L128:   "$B/bin/llvm-bolt" "$Q/stripped/bin/clang-22" \
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L129:   -instrument --thread-count=1 \
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L130:   -runtime-instrumentation-lib="$B/lib64/libbolt_rt_instr.a" \
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L131:   -instrumentation-file="$Q/profiles/clang" \
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L132:   -instrumentation-file-append-pid \
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L133:   -instrumentation-binpath="$Q/instrumented/bin/clang-22" \
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L134:   -o "$Q/instrumented/bin/clang-22"
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L135: ```
+/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md:L136: 
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L1: #!/usr/bin/env python3
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L2: """Run the baseline's 13 compile workloads once with BOLT instrumentation.
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L3: 
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L4: Uses the unchanged historical generator, flags, real inputs, resource directory,
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L5: and ARM target. Each case also runs the baseline once to report instrumentation
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L6: overhead, not performance gains. The instrumented binary must already use a unique
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L7: --instrumentation-file prefix under --profile-dir and append PID to each file.
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L8: """
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L9: import argparse
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L10: import importlib.util
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L11: import json
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L12: import os
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L13: from pathlib import Path
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L14: import tempfile
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L15: import time
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L16: from types import SimpleNamespace
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L17: 
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L18: import bench_toolchain as bench
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L19: 
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L20: 
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L21: def main():
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L22:     p=argparse.ArgumentParser(description=__doc__)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L23:     p.add_argument('--compiler',type=Path,required=True,help='instrumented clang++ invocation')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L24:     p.add_argument('--baseline',type=Path,required=True,help='baseline clang++ invocation')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L25:     p.add_argument('--baseline-result',type=Path,required=True)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L26:     p.add_argument('--loader',type=Path,required=True)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L27:     p.add_argument('--library-path',type=Path,help='same independent runtime directory as the formal baseline')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L28:     p.add_argument('--merge-fdata',type=Path,required=True)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L29:     p.add_argument('--sysroot',type=Path,required=True)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L30:     p.add_argument('--resource-dir',type=Path,required=True)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L31:     p.add_argument('--profile-dir',type=Path,required=True)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L32:     p.add_argument('--output',type=Path,required=True,help='new temp/ evidence directory')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L33:     p.add_argument('--cpu',type=int,default=2)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L34:     a=p.parse_args()
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L35:     for k in ['compiler','baseline','baseline_result','loader','merge_fdata','sysroot','resource_dir','profile_dir','output']:
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L36:         setattr(a,k,getattr(a,k).absolute())
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L37:     if a.output.exists() or not a.output.is_relative_to(bench.WORKSPACE/'temp'):p.error('new temp/ output required')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L38:     if a.cpu not in os.sched_getaffinity(0):p.error('CPU unavailable')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L39:     baseline=json.loads(a.baseline_result.read_text());protocol=baseline['protocol']
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L40:     for k in ['sysroot','resource_dir']:
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L41:         if str(getattr(a,k))!=protocol[k]:p.error(k+' differs from baseline')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L42:     if a.compiler.name!=a.baseline.name:p.error('both compilers must use identical invocation names')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L43:     if list(a.profile_dir.glob('*')):p.error('profile directory must be empty before training')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L44:     a.profile_dir.mkdir(parents=True,exist_ok=True);a.output.mkdir();raw=a.output/'raw';raw.mkdir()
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L45:     result=dict(status='RUNNING',baseline_protocol_hash=baseline['protocol_hash'],cases=[])
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L46:     args=SimpleNamespace(cpu_set=[a.cpu],load_threshold=protocol['load_threshold'],timeout=600,aslr=protocol['aslr'])
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L47:     runner=None;started=time.monotonic()
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L48:     try:
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L49:         with tempfile.TemporaryDirectory(prefix='bolt-profile-',dir='/dev/shm') as tmp:
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L50:             directory=Path(tmp);runner=bench.Runner(args,directory,raw)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L51:             spec=importlib.util.spec_from_file_location('synthetic',bench.INPUTS/'generate_synthetic.py')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L52:             generator=importlib.util.module_from_spec(spec);spec.loader.exec_module(generator)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L53:             cases=[]
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L54:             for name,scale in zip('ABC',protocol['scales']):
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L55:                 generated=directory/('generated-'+name);generator.generate(generated,scale)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L56:                 path=generated/(name+'.cpp')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L57:                 cases.append(dict(name=name,path=path,flags=['-std=c++17','-O2'],sha256=bench.digest(path)))
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L58:             cases+=bench.real_inputs(bench.INPUTS/'real_tu')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L59:             prefix=[str(a.loader)]
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L60:             if a.library_path:prefix+=['--library-path',str(a.library_path.resolve())]
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L61:             expected={c['name']:(c['sha256'],c['flags']) for c in protocol['inputs']}
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L62:             actual={c['name']:(c['sha256'],c['flags']) for c in cases}
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L63:             if actual!=expected or len(cases)!=13:raise RuntimeError('training inputs/flags differ from formal baseline')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L64:             result['inputs_equal_baseline']=True
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L65:             for case in cases:
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L66:                 row=dict(name=case['name'],input_sha256=case['sha256'],flags=case['flags'])
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L67:                 common=bench.compiler_flags(a,a.resource_dir)+case['flags']+(
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L68:                     ['-x','c++-cpp-output'] if case['name'].startswith('real_') else [])+[
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L69:                     '-c',str(case['path']),'-o',str(directory/'output.o')]
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L70:                 previous=set(a.profile_dir.glob('*'))
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L71:                 for label,compiler in [('baseline',a.baseline),('instrumented',a.compiler)]:
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L72:                     row[label]=runner.command(prefix+[str(compiler)]+common,tag=label+'-'+case['name'])
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L73:                     bench.verify_object(directory/'output.o');(directory/'output.o').unlink()
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L74:                 created=set(a.profile_dir.glob('*'))-previous
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L75:                 if not created or any(f.stat().st_size==0 for f in created):raise RuntimeError('missing/empty profile for '+case['name'])
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L76:                 row['profiles']=[dict(path=str(f),bytes=f.stat().st_size,sha256=bench.digest(f)) for f in sorted(created)]
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L77:                 row['instrumented_over_baseline_wall']=row['instrumented']['wall_s']/row['baseline']['wall_s']
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L78:                 result['cases'].append(row);bench.save(a.output/'result.json',result)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L79:                 print(case['name'],'PROFILE_CREATED',len(created),flush=True)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L80:             profiles=sorted(a.profile_dir.glob('*'));merged=a.output/'merged.fdata'
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L81:             result['merge']=runner.command(prefix+[str(a.merge_fdata),'-o',str(merged)]+list(map(str,profiles)),tag='merge-fdata')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L82:             result['merged_profile']=dict(path=str(merged),bytes=merged.stat().st_size,sha256=bench.digest(merged))
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L83:             if not merged.stat().st_size:raise RuntimeError('empty merged profile')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L84:         result.update(status='PASS',scratch_removed=not directory.exists(),
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/collect_bolt_profile.py:L85:                       instrumented_compile_wall_s=sum(c['instrumented']['wall_s'] for c in result['cases']))
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L37:     for key in ('compiler','baseline','loader','merge_fdata'):
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L38:         path=getattr(a,key).absolute(); setattr(a,key,path); bench.native_elf(path)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L39:     if a.compiler.name != a.baseline.name: p.error('driver basenames must match')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L40:     old = sorted(a.profile_dir.glob('clang.*.fdata'))
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L41:     if len(old) != 13: p.error('expected exactly 13 original profiles; refuse retry/ambiguous inventory')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L42:     old_hashes={str(f.absolute()):bench.digest(f) for f in old}
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L43:     a.output.mkdir(parents=True); raw=a.output/'raw';raw.mkdir()
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L44:     result=dict(status='RUNNING',profile_version=2,target=bench.AARCH64_TARGET,
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L45:                 instrumented_sha256=bench.digest(a.compiler),baseline_sha256=bench.digest(a.baseline),
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L46:                 original_profiles=old_hashes,units=[],new_profiles=[])
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L47:     def save(): bench.save(a.output/'result.json',result)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L48:     start=time.monotonic();runner=None
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L49:     try:
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L50:         args=SimpleNamespace(cpu_set=[a.cpu],load_threshold=len(os.sched_getaffinity(0))/2,
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L51:                              timeout=300,aslr='off')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L52:         with tempfile.TemporaryDirectory(prefix='bolt-profile-v2-',dir='/dev/shm') as scratch:
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L53:             cwd=Path(scratch);runner=bench.Runner(args,cwd,raw)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L54:             prefix=[str(a.loader),'--library-path',str(a.library_path.absolute())]
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L55:             for unit in units:
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L56:                 before=set(a.profile_dir.glob('clang.*.fdata'))
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L57:                 common=['--driver-mode=g++']+bench.compiler_flags(a,a.resource_dir,bench.AARCH64_TARGET)+unit['flags']+[
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L58:                     '-x','c++-cpp-output','-c',str(unit['path']),'-o',str(cwd/'output.o')]
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L59:                 row=dict(name=unit['name'],input_sha256=unit['sha256'],flags=unit['flags'],measurements={})
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L60:                 result['units'].append(row)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L61:                 for label,compiler in [('baseline',a.baseline),('instrumented',a.compiler)]:
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L62:                     rec=runner.command(prefix+[str(compiler)]+common,tag=label+'-'+unit['name'])
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L63:                     bench.verify_object(cwd/'output.o',bench.AARCH64_TARGET)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L64:                     row['measurements'][label]=rec
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L65:                     (cwd/'output.o').unlink()
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L66:                 created=set(a.profile_dir.glob('clang.*.fdata'))-before
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L67:                 if len(created)!=1: raise RuntimeError('expected one PID profile per TU: '+repr(created))
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L68:                 profile=created.pop()
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L69:                 if not profile.stat().st_size: raise RuntimeError('empty profile')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L70:                 row['profile']=dict(path=str(profile.absolute()),sha256=bench.digest(profile),bytes=profile.stat().st_size)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L71:                 result['new_profiles'].append(row['profile'])
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L72:                 row['instrumentation_wall_ratio']=row['measurements']['instrumented']['wall_s']/row['measurements']['baseline']['wall_s']
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L73:                 save();print(unit['name'],'PROFILE_PASS',flush=True)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L74:             result['collection_wall_s']=time.monotonic()-start
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L75:             if {str(f.absolute()):bench.digest(f) for f in old} != old_hashes:
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L76:                 raise RuntimeError('original profiles changed')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L77:             profiles=old+[Path(x['path']) for x in result['new_profiles']]
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L78:             if set(a.profile_dir.glob('clang.*.fdata'))!=set(profiles):
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L79:                 raise RuntimeError('unexpected concurrent profile writer')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L80:             merged=runner.command(prefix+[str(a.merge_fdata)]+list(map(str,profiles)),tag='merge-23-profiles')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L81:             output=a.output/'merged-v2.fdata';shutil.copyfile(merged['stdout'],output)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L82:             if not output.stat().st_size: raise RuntimeError('empty merged profile')
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L83:             result['merged_profile']=dict(path=str(output),sha256=bench.digest(output),bytes=output.stat().st_size,
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L84:                                           armv7l_profiles=13,aarch64_profiles=10,measurement=merged)
+/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/extend_bolt_profile_aarch64.py:L85:         result.update(status='PASS',original_profiles_unchanged=True,scratch_removed=not cwd.exists())
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1538: def pipeline(build, work, bolt, cache=None, debug_symbols=False):
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1539:     build, work = Path(build).absolute(), Path(work).absolute()
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1540:     baseline = work/'installed-baseline.json'
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1541:     require(baseline.is_file(), 'installed-baseline missing: '+str(baseline))
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1542:     edge = (work/'link.original').read_text()
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1543:     reference = work/'reference-relocs-clang-22'
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1544:     require(not reference.exists(), 'relink output must be new')
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1545:     script = work/'reference-relocs.sh'
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1546:     atomic_text(script,replay_script(edge,reference,work/'reference-relocs.d',cache))
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1547:     call(['/bin/sh',str(script)],work/'reference-relocs.log',cwd=build,timeout=1800)
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1548:     call([str(build/'bin/llvm-strip'),'--strip-debug',str(reference)],work/'reference-strip.log',timeout=600)
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1549:     result = rewrite(str(bolt),str(work/'profile.fdata'),str(reference),str(work/'clang.bolt'),work/'rewrite')
+/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source/packaging/clang-bolt-helper.py:L1550:     tiny_gate(str(work/'ordinary-clang-22'),str(work/'clang.bolt'),work/'prestrip-gate',str(build/'lib64/clang/22'))
