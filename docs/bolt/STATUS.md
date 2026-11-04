@@ -843,3 +843,22 @@ T认证产物自测23/23包、90/90 TU PASS，14项字节/归档/参数夹具、
 - A/B/C PASS：插桩clang完成、23训练全通过，profraw 746,313,472B，profdata 52,528,216B（8c60fb56…）。D普通构建/安装、工具113项通过；llvm-bolt因15638/18343=85.3%陈旧profile超过原5%门槛退出1，未进入compare-root/cache-release/转换/打包；没有重试或修改门禁。
 - 结束：`PGO_RESOURCE 已结束 2026-11-04T23:47:45.378355+08:00 status=failed reason=D: rc=1 reason=None; see /home/linhao/Toolchain/development/llvm-optimize/temp/pgo-resource-20261102/full/stage-D/evidence/D`。没有OOM，最低/home可用78.011GiB；内核cgroup峰值A6.731/B1.380/C1.699/D20.213GiB（含文件缓存）。全部根和失败现场保留，正常清理后无本次残留挂载/阶段进程。
 - 原report.py已汇总。根du只有边界采样，普通编译出口扫描超时，连续磁盘峰值UNKNOWN；按稳定A根与D边界记录组合最大85.007GiB，不能冒充连续同时扫描。详见[58_pgo_resource_results.md](58_pgo_resource_results.md)，原始证据tools/bolt/results/pgo-resource-full-20261104/。尚需用户决定是否为PGO输入重新采BOLT profile；本轮只推GitHub bolt-v4。
+
+
+## 2026-11-05：三项无人值守调查已结束（59/60号）
+
+- 第一项：前置调查完成，实际PGO+BOLT插桩/训练/优化 **NOT RUN**。D根缺merge-fdata可执行文件及BOLT插桩runtime，按保守规则停止；没有替换工具或重编。复制件、正式OPTIONS、23训练输入出处和PGO+BOLT资源估算（未知项明确标注）见[59号](59_pgo_bolt_followup.md)，提交 `7d7e1cd99e828dac50d10dc745e04a4c6d075c86`，已推GitHub。
+- 第二项：已通过公开地址取得QB T22+1、D12+1共36个RPM。比较规则8个正反例通过。D的12个二进制包内容PASS；T的python-clang PASS，debugsource的12,142条路径仅release目录名变化、内容一致，其余20个二进制包严格FAIL。两源码包仅spec有内容差异（除VCS/Release外，GBS导出的8条patch命令写法不同），未放宽。536条T/1条D失败文件原文和逐包元数据均保留。
+- 第三项：55号449个拒绝文件全部审计。110,591条名字变化符合.llvm数字后缀；210条属性例外集中在ompdModule.so及其.debug。200个变化归档索引的目标成员名称与次序均不变。单TU旧/新参数模块哈希不同，新参数重复两次整个bitcode SHA相同。compiler-rt中1,237个受影响成员的节序和ALLOC内容均相同，旧命令已经有函数/数据分节选项，差异来自重复记录这些token与文件位置变化。AddLLVM的4行新增检查与混合链接提交源码完全一致。
+- 通用debuglink重判85/133 PASS、48 FAIL；独立CRC校验133/133均匹配各自符号文件，FAIL仍因符号文件的非记录节或程序头变化。MODULE须按名字对齐，最终8个ALLOC节内容不同；MODULE链接参数新增--gc-sections已证实，但未隔离重链接，具体字节因果仍 **未解释**，不当作新门禁豁免。
+- 第二/三项报告与完整证据见[60号](60_baseline_attribution.md)，提交 `b2fa686fda8c3afe1def995192bfb312711dcb86`，已推GitHub。原始逐次失败、按序遍历初稿与按节名校正结果都保留；最终MODULE范围以module-named-sections.json为准。
+- 本轮不改LLVM源码/spec/helper/Source1200，不改三个受保护历史根，没有sudo、弹窗、软件包构建、删除、QB/Gerrit/sandbox操作。重操作均在独立systemd用户服务运行，MemoryMax=MemTotal−8GiB、swap0、CPUQuota1200%、nice10、ionice2/7；运行中30GiB停止线未触发，已取得的memory.events全为oom=0/oom_kill=0。没有本轮活动服务；两个失败下载前置服务的终态记录保留，没有reset-failed。
+- 收尾时/home可用 `53138251776` B（49.489 GiB）；本次公开RPM、解包文件、单TU产物和所有历史根保留。需要用户后续决定如何补齐D来源插桩工具，以及是否做MODULE隔离链接实验；本轮不自行继续。
+
+结束行原文：
+
+```text
+ITEM1 已结束 2026-11-05T00:11:43.545431+08:00 status=stopped reason=missing-D-root-merge-fdata-and-instrumentation-runtime
+ITEM2 已结束 2026-11-05T00:41:25.825515+08:00 status=differences reason=comparison-complete
+ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files-audited-module-byte-causality-unproven
+```
