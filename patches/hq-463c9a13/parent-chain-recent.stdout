@@ -1,0 +1,684 @@
+commit 463c9a133a6dfea9adf1e6c8e07ab705cbf2a587
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Mon Nov 2 22:22:34 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Tue Nov 3 15:59:19 2026 +0900
+
+    packaging: classify -feliminate-unused-debug-types and mirror recorded backend policy
+    
+    The x86_64 native-archive-conversion step rejects unknown tokens recorded in
+    the IR llvm.commandline metadata. Tizen's default CFLAGS inject
+    -feliminate-unused-debug-types and --param, which the classifier did not
+    know. Also, profiles without -gdwarf-4 or -ffunction-sections in CFLAGS
+    (release builds strip them) failed the certified sanity checks even after
+    classification.
+    
+    - classify -feliminate-unused-debug-types as frontend semantics (debug-type
+      emission is already materialized in the input IR)
+    - consume --param / --param= as driver tuning operands
+    - derive the replay backend policy from the recorded command instead of a
+      fixed flag set: -f/-fno- per section switch, and -g -gdwarf-4 only when
+      the original command recorded debug options
+    - keep unique-section-names/addrsig certification and the -gdwarf-4
+      requirement when debug options are present (fail-closed)
+    
+    Toolchain-profile replay flags are byte-identical to the previous policy;
+    Dev-profile (no debug, no section flags) now replays faithfully.
+    
+    Fixes QuickBuild 1214821 (x86_64 %install failure:
+    ValueError: unclassified original command token: -feliminate-unused-debug-types).
+    
+    Co-Authored-By: Cline SR
+    Change-Id: I1c0d0bcccb1dc3c64efbb635e3e6f3de6748209e
+
+commit cf4b6777d056131e2534ecb460c5575327d99646
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Fri Oct 16 11:24:26 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Tue Nov 3 15:50:55 2026 +0900
+
+    Revert "Revert clang bootstrap + ThinLTO, fall back to GCC"
+    
+    This reverts commit f999bd406c0a70fe8107aa992164fe6945c5d46a.
+    
+    Change-Id: I5779f1689f330ee006bcbda377feeccf15040e85
+
+commit f999bd406c0a70fe8107aa992164fe6945c5d46a
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Fri Oct 16 11:03:12 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Fri Oct 16 11:13:11 2026 +0900
+
+    Revert clang bootstrap + ThinLTO, fall back to GCC
+    
+    The clang bootstrap + ThinLTO optimization (7e4dc62) caused severe build
+    time regression on x86_64 because -fno-inline-functions from project.conf
+    disables all function inlining in clang, unlike GCC.
+    
+    Revert to the original GCC-based build by undoing:
+    - 7e4dc62d8ac0 (optimize llvm performance: clang, -O3, ThinLTO)
+    - cb67996861d0 (remove -fno-inline-functions)
+    - 67619ec8bbba (fix llvm-static-devel with ThinLTO: native archive conversion)
+    
+    Change-Id: Ib6ff9acd34c042b88ba6f74ee7d29950d1107c0d
+
+commit 67619ec8bbbac7238a6cfc33a481ccfbcd12206f
+Author:     FatTank <hao.lin@samsung.com>
+AuthorDate: Fri Oct 9 16:58:36 2026 +0800
+Commit:     FatTank <hao.lin@samsung.com>
+CommitDate: Fri Oct 9 17:49:19 2026 +0800
+
+    packaging: fix llvm-static-devel with ThinLTO
+    
+    ThinLTO leaves LLVM bitcode in the static archives. The GNU strip invoked
+    by brp-strip-static-archive does not understand these members but can
+    return success while dropping or truncating the archive symbol index.
+    Even with an intact index, GNU ld without LTO or an LLVM plugin cannot
+    link bitcode members.
+    
+    At the end of %install, convert bitcode members to native objects using
+    an explicitly certified backend policy, then rebuild deterministic GNU
+    archives and their indexes. Preserve existing native members, original
+    member order and duplicate member names. Leave the standard RPM
+    post-processing unchanged; the final archives contain no DWARF after
+    standard strip processing.
+    
+    Apply the conversion only on x86_64, to all installed archives containing
+    bitcode, including libarcher_static.a from libomp-devel (also owned by
+    llvm-static-devel). Leave armv7l and aarch64 for separate certification.
+    Tool compilation and linkage are unchanged.
+    
+    The x86_64 host tools also cross-compile ARM packages through accel,
+    which extracts tools rather than static archives. Consumers of the
+    x86_64 static-devel archives build x86_64 targets.
+    
+    Fail closed on unclassified original compiler options, an uncertified
+    LLVM major version or incompatible IR metadata. Such changes require
+    option-policy review and recertification; this is not generic option
+    replay.
+    
+    This fix targets LLVM recipes using -O3 and ThinLTO. A recipe without
+    ThinLTO is a no-op (NATIVE_ARCHIVES_SKIP) when its installed archives are
+    already native. When ThinLTO is enabled, the original compiler options
+    must match the certified policy or %install fails pending recertification.
+    
+    Validation used the certified LLVM 22 x86_64 recipe: one full build plus
+    incremental continuation, with build/compile/link concurrency 6/6/2 and
+    debuginfo -j4. All 225 development archives contain native objects and
+    complete symbol indexes. All 45 compiler-rt archives retain identical
+    member ELF bytes and index mappings; only ar header timestamps differ.
+    Non-archive files, including clang, lld and llvm-ar, are byte-identical
+    to the pre-fix baseline. A fresh independent %install reconverts and
+    passes; rerunning the converter on that same tree reports SKIP.
+    
+    Host and Tizen consumer tests pass with plugin-free GNU ld without LTO
+    and with lld. They exercise LLVM IR parsing and the O2 pass pipeline,
+    in-process lld ELF linking, and, on the host, shared-library loading and
+    section garbage collection. Tizen tests use the same 113 installed
+    package versions as the earlier validated environment; 107 Base RPMs
+    were recovered from its cache and checked against archived repository
+    checksums.
+    
+    Change-Id: Id4eb147e7ec4764d58a81110cf7bf57d21b64ac8
+    Signed-off-by: FatTank <hao.lin@samsung.com>
+
+commit cb67996861d070d68fec2b4c623eed7d20ba2e23
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Wed Sep 30 16:41:10 2026 +0800
+Commit:     fangyu fangyu.he <fangyu.he@samsung.com>
+CommitDate: Wed Sep 30 08:40:39 2026 +0000
+
+    remove '-fno-inline-functions' compile options
+    
+    `-fno-inline-functions` is a compilation option intended for GCC in the project conf of tizen-base-dev.
+    LLVM recognizes this option, but its handling is completely different from GCC's.
+    This causes projects built with LLVM to have no function inlining at all, severely degrading the performance of the resulting binaries.
+    This is the reason why the LLVM build time on the x86_64 architecture was excessively long.(https://quickbuild.tizen.org/build/1182759)
+    
+    verify:
+    https://quickbuild.tizen.org/build/1186390
+    
+    Change-Id: Idd7d3139708f3bc65b9ce7e9edf24156159ee54c
+
+commit 7e4dc62d8ac01f90488a0cc8e0f34f8373228c84
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Thu Sep 24 12:55:12 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Thu Sep 24 13:17:19 2026 +0800
+
+    optimize llvm performance
+    1. Use -O3
+    2. Using thin-lto
+    3. Static link libllvm
+    
+    Change-Id: Idcd75c5d5a57368aeae1081f0664be042c2ee707
+
+commit 2d23367d74afbf2bb1e9e4013fce072b3a154109
+Author:     He Fangyu <fangyu.he@samsung.com>
+AuthorDate: Wed Sep 2 18:07:18 2026 +0800
+Commit:     He Fangyu <fangyu.he@samsung.com>
+CommitDate: Wed Sep 2 18:12:46 2026 +0800
+
+    packaging: select Clang explicitly for libc++ runtimes
+    
+    Select the target-prefixed Clang drivers directly in the libc++ runtimes
+    CMake configuration.  The previous package-local _toolchain_override did
+    not affect the RPM compiler macros in the Tizen-Base build environment, so
+    GCC was still selected and rejected the Clang-only --rtlib=libgcc option.
+    
+    When an aarch64 GCC-default environment invokes this Clang-only package,
+    normalize only the GCC-specific composite -mtune value to cortex-a53.  This
+    matches the value already supplied by the LLVM project configuration; all
+    other environment flags remain unchanged.
+    
+    The resulting spec was built in the armv7l and aarch64 GCC-default and LLVM
+    environments.  All four builds used Clang 22.1.8, completed successfully,
+    linked libc++ and libc++abi against libgcc_s.so.1, and installed the five
+    checked forced-unwind header changes.
+    
+    Change-Id: Id2ae25c37e9319e2303bbd527fe695cb22ee95cd
+    Signed-off-by: He Fangyu <fangyu.he@samsung.com>
+
+commit 6771dbc48b7e3db2ec53919a8eebd3514374137b
+Author:     lhmax2025 <hao.lin@samsung.com>
+AuthorDate: Tue Sep 1 16:15:34 2026 +0900
+Commit:     Lin Hao <hao.lin@samsung.com>
+CommitDate: Tue Sep 1 13:24:35 2026 +0000
+
+    libcxx: backport EH ABI forced-unwind handling
+    
+    Squash the changes from sandbox/lhmax2025/libcxx-ehabi-backport:
+    
+    - packaging: add libc++ runtimes spec
+    - libc++abi: preserve foreign forced-unwind state
+    - libc++abi: expose GNU forced-unwind marker type
+    - libcxx: preserve forced unwind in consumer-instantiated handlers
+    - libcxx: preserve forced unwind in library-delivered handlers
+    
+    Change-Id: I0dfaf3ae6c88db033f1aff9167d64ffa211cdf2e
+    Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+
+commit 8dfebafe1a477b3dcc678ee4cb18a3a4306d5a7c
+Author:     Khem Raj <khem.raj@oss.qualcomm.com>
+AuthorDate: Mon Apr 27 00:35:24 2026 -0700
+Commit:     liushanshan <ss0217.liu@samsung.com>
+CommitDate: Fri Aug 7 12:42:05 2026 +0800
+
+    libcxxabi: declare __gnu_unwind_frame in cxa_personality (#189787)
+    
+    ARM EHABI builds of libcxxabi fail with clang-22+ because
+    cxa_personality.cpp calls __gnu_unwind_frame without a visible
+    declaration, triggering:
+    
+      error: use of undeclared identifier '__gnu_unwind_frame'
+    
+    Add an extern "C" forward declaration before the EHABI unwind helper so
+    the source compiles correctly.
+    Change-Id: Ib28e3abd3650821a8ad839c73358b47dedced448
+    Signed-off-by: Khem Raj <khem.raj@oss.qualcomm.com>
+    GitOrigin-RevId: 8119f1854948b50358bbfaea08f207f51970f06c
+    Source: https://llvm.googlesource.com/llvm-project/libcxxabi/+/9ec73b8fbfe9ce60ecfd08b6dd692cf9d7a10eec
+
+commit fd7a4929c0e424d564cdd1f0c55af9153dcea321
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Tue Jul 7 10:27:53 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Wed Jul 22 21:31:32 2026 +0900
+
+    Merge MLGO AOT compilation support and optimization improvements
+    
+    This squash merge integrates the sandbox/lhmax2025/mlgo branch with:
+    
+    - MLGO AOT (Ahead-of-Time) compilation support for LLVM regalloc models
+      * Support for ARM (armv7l) and AArch64 architectures
+      * Pre-compiled MLGO models included (mlgo_arm_model, mlgo_aarch_model, mlgo_x86_model)
+      * TensorFlow AOT compiler integration via TensorFlowCompile.cmake
+    
+    - Build system enhancements
+      * Refactored packaging with project_config-driven mlgo bcond
+      * XLA runtime support (pre-compiled .o files)
+      * BCC compilation issue fixes
+      * Architecture-specific optimizations
+    
+    - Configuration updates
+      * Updated llvm.spec with MLGO AOT targets and xla_runtime artifacts
+      * Enhanced CMakeLists.txt for MLGO AOT compilation workflow
+      * TENSORFLOW_AOT_COMPILER path configuration for Tizen package layout
+    
+    This enables machine learning-guided code generation in LLVM builds while reducing
+    external dependency requirements by using pre-compiled models.
+    
+    Note: Documentation from sandbox/lhmax2025/mlgo excluded from this merge.
+    
+    Change-Id: Ibe498ca241e7f5b30c29a4073c8edc8ee7165665
+    Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+    Signed-off-by: fangyu.he <fangyu.he@samsung.com>
+    Signed-off-by: lhmax2025 <hao.lin@samsung.com>
+
+commit 9ad40bd946a75b44d8e05de8ba3263a5ce2ed885
+Author:     Konstantin Baladurin <k.baladurin@samsung.com>
+AuthorDate: Mon Apr 15 20:36:54 2019 +0300
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Wed Jul 22 21:31:29 2026 +0900
+
+    clang: add support for LLVM gold plugin in case of accelerated
+    environment
+    
+    Change-Id: I5e29abefacef0f25e44cf4d3f030a8ba762586d2
+
+commit 9576175b59fa577c940eff1712a59b129ae03f03
+Author:     Pavel Kudrevatykh <p.kudrevatyh@partner.samsung.com>
+AuthorDate: Mon Aug 18 19:07:40 2025 +0300
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Wed Jul 22 21:31:22 2026 +0900
+
+    Fix armv7l build when compiler is clang
+    
+    By default, compiler_rt for armv7l is built with flag -mfloat-abi=soft.
+    In prjconfig we specify flag -mfloat-abi=softfp.
+    For gcc this doesn't cause problems, but for clang it causes error "no fp registers".
+    Also, libraries of compiler_rt are built for arm and armv4t, which is redundant.
+    
+    Change arch and flags for arm.
+    Define correctly CMAKE_ASM_FLAGS.
+    
+    Change-Id: Ic3dd8c37054a106262171d6a82fe00911ef45245
+    (cherry picked from commit 9b5cb26fefe3e6ec60be09d298f388ea5f75595e)
+
+commit 43db58633333a74a1eb6366a75272ab859bfa638
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Mon Jul 20 21:51:37 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Wed Jul 22 21:30:27 2026 +0900
+
+    packaging: bump-up version to 22.1.8
+    
+    Change-Id: I80a1c626f03efb9d165f98391a5f969c3326d1a0
+    Signed-off-by: liushanshan <ss0217.liu@samsung.com>
+    Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+
+commit f31417256f953cc5d26cd188704c89ad41572b50
+Author:     Łukasz Stelmach <l.stelmach@samsung.com>
+AuthorDate: Wed Apr 26 12:53:28 2023 +0200
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Mon Jul 20 21:38:05 2026 +0900
+
+    Link libclang_rt.asan.so against libatomic when necessary
+    
+    To build libclang_rt.asan.so on RISC-V it is required to link it against
+    libatomic.
+    
+    Change-Id: Iafdc20fc8ecffeeaa289e03b01267bbabdd48a9e
+    Signed-off-by: Łukasz Stelmach <l.stelmach@samsung.com>
+
+commit 53accdc47cd72c0daf61bf70e52946b2d8d80f2e
+Author:     Slava Barinov <v.barinov@samsung.com>
+AuthorDate: Thu Sep 2 23:51:42 2021 +0300
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Mon Jul 20 21:31:33 2026 +0900
+
+    Add support for Tizen toolchain vendor
+    
+    Port of
+    ebf1682d714e4b6c1487ea0e136cf7c1ec30f46d
+    8845ba7f79513b7e362fed80bb57b708352ddbbd
+    
+    Change-Id: I67d99460b74711b120843505c9663036d7ee4ccb
+    Signed-off-by: Slava Barinov <v.barinov@samsung.com>
+    Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+
+commit 3d723549f6037bdab5be47aaa6e6354fd3707d89
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Mon Jul 20 21:07:27 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Mon Jul 20 21:15:26 2026 +0900
+
+    Add packaging
+    
+    Squash and merge for the spec updates
+    
+    Change-Id: I449a063d32a8aa38650349c4a0588f5cd06599c3
+    Signed-off-by: Slava Barinov <v.barinov@samsung.com>
+    Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+    Signed-off-by: Hyungju Lee <leee.lee@samsung.com>
+    Signed-off-by: Alexander Soldatov <soldatov.a@samsung.com>
+    Signed-off-by: Seung-Woo Kim <sw0312.kim@samsung.com>
+    Signed-off-by: Łukasz Stelmach <l.stelmach@samsung.com>
+    Signed-off-by: Hyunggi Lee <hyunggi.lee@samsung.com>
+    Signed-off-by: Pavel Kudrevatykh <p.kudrevatyh@partner.samsung.com>
+    Signed-off-by: Vadim Solomin <v.solomin@partner.samsung.com>
+    Signed-off-by: Hoegeun Kwon <hoegeun.kwon@samsung.com>
+    Signed-off-by: fangyu fangyu.he <fangyu.he@samsung.com>
+    Signed-off-by: Kai Cheng <kai.cheng@samsung.com>
+
+commit ca7933e47d3a3451d81e72ac174dcb5aa28b59d1
+Author:     William Tran-Viet <wtranviet@proton.me>
+AuthorDate: Wed Apr 29 06:15:45 2026 -0400
+Commit:     Douglas Yung <douglas.yung@sony.com>
+CommitDate: Mon Jun 15 22:33:53 2026 +0000
+
+    [libc++] Disable mistakenly enabled `optional<T&>` constructors for `optional<T>` (#194446)
+    
+    Resolves #194415
+    
+    - A constructor specifically meant for `optional<T&>` was left enabled
+    for `optional<T>`
+    - Fix it, and add a test to check for regression.
+    - This patch also corrects the constraints for `optional(optional<U>&)`
+    and `optional(const optional<U>&)` , as they were incorrectly
+    disallowing [valid conversions](https://godbolt.org/z/1r5Ea7z5M)
+    - Also, correct the `noexcept` specification.
+    - Add tests for both corrections.
+    
+    (cherry picked from commit 239189ca28847aa4797368827107c22c32080509)
+
+commit 208ef916cf2062f833913a767e6aafc2c9b543fc
+Author:     Folkert de Vries <folkert@folkertdev.nl>
+AuthorDate: Fri Jun 5 20:15:22 2026 +0200
+Commit:     Douglas Yung <douglas.yung@sony.com>
+CommitDate: Mon Jun 15 17:41:49 2026 +0000
+
+    [WebAssembly] narrow instructions use signed saturation (#201798)
+    
+    Fixes https://github.com/llvm/llvm-project/issues/201780
+    
+    Per
+    https://www.w3.org/TR/wasm-core-2/#-hrefop-narrowmathrmnarrowmathsfu_m-n-i
+    the saturation is signed, the truncation is unsigned.
+    
+    (cherry picked from commit c19fa5be5f47d8747f523509382b12997f2bd25f)
+
+commit e80beda6e2558f03f17351f6805e95c8687a82a9
+Author:     Florian Hahn <flo@fhahn.com>
+AuthorDate: Thu Mar 12 21:51:23 2026 +0000
+Commit:     Douglas Yung <douglas.yung@sony.com>
+CommitDate: Fri Jun 12 19:10:51 2026 +0000
+
+    [VPlan] Account for any-of costs in legacy cost model
+    
+    Some VPlan transforms, like vectorizing fmin without fast-math,
+    introduce AnyOfs, which have costs assigned in the VPlan-based cost
+    model, but not the legacy cost model. Account for their cost like done
+    for other similar VPInstrctions, like EVL.
+    
+    Fixes https://github.com/llvm/llvm-project/issues/185867.
+    
+    (cherry picked from commit 475cc4fe0b4065775db470bb512c9c9142242e55)
+
+commit 3397c37d5d31e4d4cf1226ba1c36824aa2287252
+Author:     Rong "Mantle" Bao <rong.bao@csmantle.top>
+AuthorDate: Fri May 8 08:14:18 2026 +0800
+Commit:     Douglas Yung <douglas.yung@sony.com>
+CommitDate: Fri Jun 12 03:23:06 2026 +0000
+
+    Inline stack probes immediately after `allocateStack` in `eliminateCallFramePseudoInstr` (#195456)
+    
+    [ Upstream commit 589faedadf141e5e63f7a1e92a0327fc9bdc9b09 ]
+    
+    Revert `bltu` in probing loops to `blt` because commit
+    f162be248636046a20e71209e139347e084b637a isn't applied on release/22.x
+    yet.
+    
+    Link: https://github.com/llvm/llvm-project/pull/192485 ("[RISCV] Use
+     unsigned comparison for stack clash probing loop")
+    
+    ---
+    
+    This PR adds a call to `inlineStackProbe` immediately after
+    `allocateStack` in `eliminateCallFramePseudoInstr`. This allows code
+    generation for stack probe pseudoinstructions in non-entry BBs.
+    
+    Fixes #195454.
+
+commit 1f5aee55a3fc26c87fc689011053d8069dd3d849
+Author:     Feng Zou <feng.zou@intel.com>
+AuthorDate: Sun Jun 7 10:14:56 2026 +0200
+Commit:     Douglas Yung <douglas.yung@sony.com>
+CommitDate: Wed Jun 10 17:51:28 2026 +0000
+
+    [DAG] Narrow vselect mask to vXi1 in foldToMaskedStore (#201609)
+    
+    foldToMaskedStore (added in
+    https://github.com/llvm/llvm-project/commit/1c0ac80d4a9ef6c21914f2317003979952c2a2c3)
+    rewrites
+      store(vselect(cond, x, load(ptr)), ptr) -> masked_store(x, ptr, cond)
+    passing the vselect condition straight through as the store mask. A
+    masked
+    store follows the IR convention of a vXi1 mask, but the condition can be
+    a
+    wider boolean vector. On AVX512F targets without VLX, a maxnum/minnum
+    store-back lowers the NaN test with a legacy packed (CMPP) comparison
+    whose
+    result is a vXi32/vXi64 vector, so the masked store is created with a
+    wide
+    mask and LowerMSTORE asserts:
+    
+      Assertion `Mask.getSimpleValueType().getScalarType() == MVT::i1 &&
+                 "Unexpected mask type"' failed.
+    
+    When the matching vXi1 type is legal, narrow the mask to it before
+    building
+    the masked store. Targets where vXi1 is illegal (e.g. AVX/AVX2) keep the
+    wide
+    mask and continue to lower it as a blend/vmaskmov, and targets whose
+    vselect
+    condition is already vXi1 (e.g. AArch64 SVE, RISC-V RVV) are unaffected.
+    
+    This fixes the crash at the source and lets the X86 LowerMSTORE keep its
+    invariant of only ever seeing a vXi1 mask (no target-specific
+    workaround).
+    
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+    (cherry picked from commit e6bd7887070e92bba3615de04d3fdefde4beb2de)
+
+commit 070e505ce21d5bb0aae18704ec3a2660f59b7e3c
+Author:     Andrew Ng <andrew.ng@sony.com>
+AuthorDate: Tue Jun 9 11:55:05 2026 +0100
+Commit:     Douglas Yung <douglas.yung@sony.com>
+CommitDate: Wed Jun 10 17:50:22 2026 +0000
+
+    [LLD][ELF] Add missing initialization of Symbol `used` member.
+    
+    On the "main" branch, Symbol no longer has the `used` member which was
+    moved in PR #190117 (commit 6a874161). Therefore, when the cherry pick
+    from PR #198129 (commit 905a88b9) was merged to the "release/22.x"
+    branch, the initialization of `used` was lost.
+
+commit 761b9134dd9beda6f133fdc19a42b148834cb06b
+Author:     Bidhan <bidhan619@gmail.com>
+AuthorDate: Wed May 20 00:39:54 2026 +0545
+Commit:     Douglas Yung <douglas.yung@sony.com>
+CommitDate: Wed Jun 10 17:46:45 2026 +0000
+
+    [BPF] treat compiler fence as codegen no-op (#196734)
+    
+    The BPF backend has no instruction-selection pattern for
+    `ISD::ATOMIC_FENCE`, so LLVM IR containing a fence instruction crashes
+    with `Cannot select: AtomicFence...`.
+    
+    **Rust code snippet**
+    
+    ```
+    #[unsafe(no_mangle)]
+    pub fn entrypoint(_input: *mut u8) -> u64 {
+        core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
+        0
+    }
+    ```
+    
+    **LLVM IR**
+    
+    ```
+    ; ModuleID = 'linked_module'
+    source_filename = "linked_module"
+    target datalayout = "e-m:e-p:64:64-i64:64-i128:128-n32:64-S128"
+    target triple = "bpfel"
+    
+    ; Function Attrs: mustprogress nofree norecurse nosync nounwind willreturn
+    define dso_local noundef i64 @entrypoint(ptr noundef readnone captures(none) %0) unnamed_addr #0 {
+      fence syncscope("singlethread") seq_cst
+      ret i64 0
+    }
+    
+    attributes #0 = { mustprogress nofree norecurse nosync nounwind willreturn "target-cpu"="generic" }
+    
+    !llvm.ident = !{!0}
+    
+    !0 = !{!"rustc version 1.97.0-nightly (f53b654a8 2026-04-30)"}
+    ```
+    
+    **Error**
+    
+    ```
+    LLVM ERROR: Cannot select: 0x7fcf7701a1c0: ch = AtomicFence 0x7fcf75718df8, TargetConstant:i64<7>, TargetConstant:i64<0>
+    In function: entrypoint
+    
+    Stack dump:
+              0.    Running pass 'Function Pass Manager' on module 'linked_module'.
+              1.    Running pass 'BPF DAG->DAG Pattern Instruction Selection' on function '@entrypoint'
+    ```
+    
+    -----
+    
+    **Fix**
+    
+    This patch lowers single-thread (compiler) fences to `ISD::MEMBARRIER`
+    (no-op) and produces an error for cross-thread (runtime) fences.
+
+commit 724301d98c6ef981111a077489358de10ec14127
+Author:     Abinaya Saravanan <asaravan@qti.qualcomm.com>
+AuthorDate: Thu Jun 4 23:24:11 2026 +0530
+Commit:     llvmbot <llvmbot@llvm.org>
+CommitDate: Thu Jun 4 18:23:46 2026 +0000
+
+    Fix "Cannot select" crash on bitcast between f64 and int vector types (#201509)
+    
+    All of i64, f64, v2i32, v4i16, v8i8 are assigned to the DoubleRegs
+    register class (64-bit register pairs). A bitcast between any two of
+    these types is a machine-level no-op (ie. the same physical register is
+    reinterpreted with a different type).
+    
+    HexagonPatterns.td had NopCast_pat entries for all int-to-int bitcasts
+    within DoubleRegs, and explicit patterns for f64 <-> i64, but was
+    missing patterns for f64 <-> v2i32, f64 <-> v4i16, and f64 <-> v8i8. The
+    same gap existed in IntRegs for f32 <-> v2i16 and f32 <-> v4i8.
+    
+    Without a tableGen pattern for "f64 = bitcast v2i32" node, the
+    instruction selector crashed with:
+    
+      LLVM ERROR: Cannot select: t26: f64 = bitcast t6
+        t6: v2i32,ch = CopyFromReg t0, Register:v2i32 %2
+    
+    Fix by adding the five missing NopCast_pat entries.
+    
+    Fixes: https://github.com/llvm/llvm-project/issues/195495
+    (cherry picked from commit c005f737e764fab61a02ca5587cf43a16716b5fc)
+
+commit 60c18c6aeaedc70e0c1c95be2e9397e788e3b142
+Author:     Cullen Rhodes <cullen.rhodes@arm.com>
+AuthorDate: Tue Jun 2 06:45:33 2026 +0100
+Commit:     llvmbot <llvmbot@llvm.org>
+CommitDate: Thu Jun 4 06:24:34 2026 +0000
+
+    [CMake][Release] Use llvm-bitcode-strip on Darwin for build with -ffat-lto-objects (#200764)
+    
+    Building with --fat-lto-objects was added in #140381 (cff9ae7a15a5). On
+    macOS the tests are failing when building release binaries with many
+    "The file was not recognized as a valid object file" errors, e.g.:
+    
+      2026-01-16T12:54:26.0928880Z
+    
+    /Users/runner/work/llvm-project/llvm-project/build/tools/clang/stage2-instrumented-bins/tools/clang/stage2-bins/_CPack_Packages/Darwin/TXZ/LLVM-22.1.0-rc1-macOS-ARM64/bin/llvm-strip:
+      error:
+    
+    '/Users/runner/work/llvm-project/llvm-project/build/tools/clang/stage2-instrumented-bins/tools/clang/stage2-bins/_CPack_Packages/Darwin/TXZ/LLVM-22.1.0-rc1-macOS-ARM64/lib/libLLVMAArch64AsmParser.a(AArch64AsmParser.cpp.o)':
+      The file was not recognized as a valid object file
+    
+    It's assuming bitcode is embedded in section .llvm.lto
+    (llvm/lib/Object/ObjectFile.cpp:80) but on MachO it's in
+    __LLVM,__bitcode (llvm/lib/Object/MachOObjectFile.cpp:2184)
+    
+    llvm-bitcode-strip is a driver for the MachO bitcode_strip utility which
+    handles this. Use this instead.
+    
+    Fixes #176398.
+    
+    Assisted-by: codex
+    (cherry picked from commit b8e768f6ae95343ac542b195265572ecd063fc2b)
+
+commit b65aa9b5ea8d15276cb4f02214039708af045cbd
+Author:     Younan Zhang <zyn7109@gmail.com>
+AuthorDate: Mon Jun 1 20:36:12 2026 +0800
+Commit:     Douglas Yung <douglas.yung@sony.com>
+CommitDate: Tue Jun 2 15:40:37 2026 +0000
+
+    [Clang] Profile the NNS of UnresolvedUsingType and CXXThisType correctly in concept hashing (#199617)
+    
+    They were sometimes incorrect because the written type doesn't contain
+    an NNS which contains template parameters we're interested in.
+    
+    No release note because the bug broke MS STL and I want to backport it
+    to the last 22.x release
+    
+    Fixes https://github.com/llvm/llvm-project/issues/198663
+    
+    (cherry picked from commit 06ffb655904657e847854eee1c7c76ccdc75b254)
+
+commit b4fe3880d09bf3d396bde45cd481449da31e5e17
+Author:     Cullen Rhodes <cullen.rhodes@arm.com>
+AuthorDate: Tue Jun 2 06:58:49 2026 +0000
+Commit:     Cullen Rhodes <cullen.rhodes@arm.com>
+CommitDate: Tue Jun 2 06:58:49 2026 +0000
+
+    Bump version to 22.1.8
+
+commit a255c1ed36a1d06f79bd2633ba9f8d900153007c
+Author:     Derek Schuff <dschuff@chromium.org>
+AuthorDate: Fri May 29 08:38:12 2026 -0700
+Commit:     Cullen Rhodes <cullen.rhodes@arm.com>
+CommitDate: Mon Jun 1 07:23:32 2026 +0000
+
+    [WebAssembly] Avoid crash in LateEHPrepare with empty cleanup pads (#200322)
+    
+    WebAssemblyLateEHPrepare::addCatchRefsAndThrowRefs was using
+    Catch->getIterator()->getNextNode() to find the insertion position
+    after the CATCH (or CATCH_ALL) instruction in an EH pad.
+    If the CATCH/CATCH_ALL instruction is the last instruction in the basic
+    block, getNextNode() returns nullptr, which causees a crash when passed
+    to BuildMI. This patch fixes it by using std::next(Catch->getIterator())
+    which returns MBB.end() if the catch is the last instruction, and the
+    overload of BuildMI that takes an iterator correctly handles BB.end().
+    
+    Fixes #197077
+    
+    Assisted-By: Gemini
+    (cherry picked from commit dc40fccbc1f8fcd6d53c970efe199fc02464b986)
+
+commit a2b77904509333f5c9aa8e71427c694961e417c9
+Author:     Dominik Steenken <dost@de.ibm.com>
+AuthorDate: Fri May 29 14:16:22 2026 +0200
+Commit:     Cullen Rhodes <cullen.rhodes@arm.com>
+CommitDate: Mon Jun 1 07:21:42 2026 +0000
+
+    [SystemZ] Fix off-by-one error in backend (#200141)
+    
+    When combineCCMask is called on a TM node with two constant operands,
+    and all of the bits in the mask are active, the existing APInt bit
+    access goes off the overall length of the integer by one. This commit
+    fixes that by using the index value of the leftmost active bit, rather
+    than the number of active bits.
+    
+    (cherry picked from commit 78eca55b542b6bca573f34a1b359fa949c3a8c89)
+
+commit 2615295c15bab420d8134aff473c098a48403d42
+Author:     Nikolas Klauser <nikolasklauser@berlin.de>
+AuthorDate: Thu May 28 19:35:34 2026 +0200
+Commit:     Cullen Rhodes <cullen.rhodes@arm.com>
+CommitDate: Mon Jun 1 07:19:52 2026 +0000
+
+    [libc++] Fix multi{map,set}::extract not returning the first matching element (#199703)
+    
+    According to [associative.reqmts] `extract(k)` returns the _first_
+    element in the container with key equivalent to k.
+    
+    (cherry picked from commit 72871f6fa1f1edc3df45d01b67f5093ff9d8e8b5)

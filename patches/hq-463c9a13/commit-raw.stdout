@@ -1,0 +1,31 @@
+tree 14e1e50474e40540bd4a5c6723ae587e384a51da
+parent cf4b6777d056131e2534ecb460c5575327d99646
+author Dongkyun Son <dongkyun.s@samsung.com> 1793625754 +0900
+committer Dongkyun Son <dongkyun.s@samsung.com> 1793689159 +0900
+
+packaging: classify -feliminate-unused-debug-types and mirror recorded backend policy
+
+The x86_64 native-archive-conversion step rejects unknown tokens recorded in
+the IR llvm.commandline metadata. Tizen's default CFLAGS inject
+-feliminate-unused-debug-types and --param, which the classifier did not
+know. Also, profiles without -gdwarf-4 or -ffunction-sections in CFLAGS
+(release builds strip them) failed the certified sanity checks even after
+classification.
+
+- classify -feliminate-unused-debug-types as frontend semantics (debug-type
+  emission is already materialized in the input IR)
+- consume --param / --param= as driver tuning operands
+- derive the replay backend policy from the recorded command instead of a
+  fixed flag set: -f/-fno- per section switch, and -g -gdwarf-4 only when
+  the original command recorded debug options
+- keep unique-section-names/addrsig certification and the -gdwarf-4
+  requirement when debug options are present (fail-closed)
+
+Toolchain-profile replay flags are byte-identical to the previous policy;
+Dev-profile (no debug, no section flags) now replays faithfully.
+
+Fixes QuickBuild 1214821 (x86_64 %install failure:
+ValueError: unclassified original command token: -feliminate-unused-debug-types).
+
+Co-Authored-By: Cline SR
+Change-Id: I1c0d0bcccb1dc3c64efbb635e3e6f3de6748209e

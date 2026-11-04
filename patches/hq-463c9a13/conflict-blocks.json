@@ -1,0 +1,14 @@
+[
+  {
+    "path": "packaging/llvm-static-archives-native.py",
+    "start_line": 259,
+    "end_line": 268,
+    "text": "<<<<<<< HEAD\n    # A release command has no -g options at all. Once any debug option is\n    # present, retain the certified DWARF-4 requirement (including bare -g).\n    has_debug_options = any(token.startswith('-g') for token in argv)\n    if has_debug_options and (not dwarfs or dwarfs[-1] != '-gdwarf-4'):\n        raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))\n=======\n    if dwarfs and dwarfs[-1] != '-gdwarf-4':\n        raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:]))\n>>>>>>> 463c9a133a6d (packaging: classify -feliminate-unused-debug-types and mirror recorded backend policy)\n"
+  },
+  {
+    "path": "packaging/llvm-static-archives-native.py",
+    "start_line": 345,
+    "end_line": 353,
+    "text": "<<<<<<< HEAD\n             *backend_flags, '-ffp-contract='+policy['fp_contract'], '-c']\n=======\n             *(('-f'+key) if policy['switches'][key] else ('-fno-'+key)\n               for key in SWITCH_KEYS)]\n    if policy['dwarf']:\n        flags += ['-g', policy['dwarf']]\n    flags += ['-ffp-contract='+policy['fp_contract'], '-c']\n>>>>>>> 463c9a133a6d (packaging: classify -feliminate-unused-debug-types and mirror recorded backend policy)\n"
+  }
+]

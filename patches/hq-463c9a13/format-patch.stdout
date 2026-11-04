@@ -1,0 +1,120 @@
+From 463c9a133a6dfea9adf1e6c8e07ab705cbf2a587 Mon Sep 17 00:00:00 2001
+From: Dongkyun Son <dongkyun.s@samsung.com>
+Date: Mon, 2 Nov 2026 22:22:34 +0900
+Subject: [PATCH] packaging: classify -feliminate-unused-debug-types and mirror
+ recorded backend policy
+
+The x86_64 native-archive-conversion step rejects unknown tokens recorded in
+the IR llvm.commandline metadata. Tizen's default CFLAGS inject
+-feliminate-unused-debug-types and --param, which the classifier did not
+know. Also, profiles without -gdwarf-4 or -ffunction-sections in CFLAGS
+(release builds strip them) failed the certified sanity checks even after
+classification.
+
+- classify -feliminate-unused-debug-types as frontend semantics (debug-type
+  emission is already materialized in the input IR)
+- consume --param / --param= as driver tuning operands
+- derive the replay backend policy from the recorded command instead of a
+  fixed flag set: -f/-fno- per section switch, and -g -gdwarf-4 only when
+  the original command recorded debug options
+- keep unique-section-names/addrsig certification and the -gdwarf-4
+  requirement when debug options are present (fail-closed)
+
+Toolchain-profile replay flags are byte-identical to the previous policy;
+Dev-profile (no debug, no section flags) now replays faithfully.
+
+Fixes QuickBuild 1214821 (x86_64 %install failure:
+ValueError: unclassified original command token: -feliminate-unused-debug-types).
+
+Co-Authored-By: Cline SR
+Change-Id: I1c0d0bcccb1dc3c64efbb635e3e6f3de6748209e
+---
+ packaging/llvm-static-archives-native.py | 29 ++++++++++++++++--------
+ 1 file changed, 20 insertions(+), 9 deletions(-)
+
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index d839b8062ff9183e5a2d1540790dc225c213c686..218b95e098c5352632113beb2d5bc312f55f1669 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -172,8 +172,12 @@ def inspect(path):
+ CERTIFIED_LLVM_MAJOR = 22
+ CERTIFIED_OPTIMIZATION = {'x86_64': '-O3'}
+ CERTIFIED_TRIPLES = {'x86_64': {'x86_64-tizen-linux-gnu'}}
++SWITCH_KEYS = ('function-sections', 'data-sections', 'unique-section-names', 'addrsig')
+ BACKEND_FLAGS = ['-ffunction-sections', '-fdata-sections',
+-                 '-funique-section-names', '-faddrsig', '-g', '-gdwarf-4']
++                 '-funique-section-names', '-faddrsig']
++# Replay mirrors the recorded command: section/symbol emission and debug emission
++# follow the original backend policy (-f/-fno- per switch; -g -gdwarf-4 only when
++# the original command recorded debug options).
+ # LLVM 22 clang/Driver/ToolChains/Clang.cpp:2797, 6228, 7992-7999.
+ DEFAULTS = {'unique-section-names': True, 'addrsig': True, 'fp-contract': 'on'}
+ 
+@@ -191,15 +195,15 @@ def classify_options(argv, arch='x86_64'):
+     if arch not in CERTIFIED_OPTIMIZATION:
+         raise ValueError('uncertified architecture: '+arch)
+     rows, optimizations, dwarfs, contractions = [], [], [], []
+-    switches = {key: [] for key in ('function-sections', 'data-sections',
+-                                  'unique-section-names', 'addrsig')}
+-    operand_options = {'-D', '-I', '-isystem', '-resource-dir', '-o', '-MT', '-MF', '-x'}
++    switches = {key: [] for key in SWITCH_KEYS}
++    operand_options = {'-D', '-I', '-isystem', '-resource-dir', '-o', '-MT', '-MF', '-x', '--param'}
+     exact_ir = {'-fomit-frame-pointer', '-fno-omit-frame-pointer', '-fexceptions',
+                 '-fno-exceptions', '-fasynchronous-unwind-tables', '-funwind-tables',
+                 '-fno-asynchronous-unwind-tables', '-fno-unwind-tables', '-fno-common',
+                 '-ftrapping-math', '-m64', '-fPIC', '-fPIE', '-fpic', '-fpie',
+                 '-fno-pic', '-fno-pie', '-fno-semantic-interposition'}
+     exact_ir.update({'-fvisibility-inlines-hidden', '-fno-visibility-inlines-hidden'})
++    exact_ir.update({'-feliminate-unused-debug-types'})
+     index = 0
+     while index < len(argv):
+         token = argv[index]
+@@ -239,7 +243,7 @@ def classify_options(argv, arch='x86_64'):
+             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
+         elif token == '-flto=thin':
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+-        elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
++        elif (token.startswith(('-W', '-D', '-I', '--target=', '--param=', '-fmessage-length=',
+                                '-fdiagnostics-color=')) or token in
+               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+                '-pedantic', '-pipe', '-c', '-MD', '--driver-mode=g++')):
+@@ -252,17 +256,20 @@ def classify_options(argv, arch='x86_64'):
+         index += 1
+     if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
+         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
+-    if not dwarfs or dwarfs[-1] != '-gdwarf-4':
+-        raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
++    if dwarfs and dwarfs[-1] != '-gdwarf-4':
++        raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:]))
+     effective = {}
+     for key, values in switches.items():
+         effective[key] = values[-1] if values else DEFAULTS.get(key, False)
++    # Replay emits the original value explicitly; only the section-naming defaults
++    # that the certified backend relies on must remain enabled.
++    for key in ('unique-section-names', 'addrsig'):
+         if not effective[key]:
+             raise ValueError('original command does not enable '+key)
+     contraction = contractions[-1] if contractions else DEFAULTS['fp-contract']
+     if contraction not in ('on', 'off', 'fast'):
+         raise ValueError('uncertified FP contraction value: '+contraction)
+-    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1],
++    return dict(tokens=rows, optimization=optimizations[-1], dwarf=dwarfs[-1] if dwarfs else None,
+                 switches=effective, fp_contract=contraction,
+                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
+ 
+@@ -320,7 +327,11 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+         lambda match: chr(int(match[1], 16)), metadata[command_id]))
+     policy = classify_options(recorded_command, arch)
+     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+-             *BACKEND_FLAGS, '-ffp-contract='+policy['fp_contract'], '-c']
++             *(('-f'+key) if policy['switches'][key] else ('-fno-'+key)
++               for key in SWITCH_KEYS)]
++    if policy['dwarf']:
++        flags += ['-g', policy['dwarf']]
++    flags += ['-ffp-contract='+policy['fp_contract'], '-c']
+     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
+               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
+-- 
+2.43.0
+

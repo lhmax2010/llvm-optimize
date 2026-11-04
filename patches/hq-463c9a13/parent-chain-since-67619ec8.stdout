@@ -1,0 +1,74 @@
+commit 463c9a133a6dfea9adf1e6c8e07ab705cbf2a587
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Mon Nov 2 22:22:34 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Tue Nov 3 15:59:19 2026 +0900
+
+    packaging: classify -feliminate-unused-debug-types and mirror recorded backend policy
+    
+    The x86_64 native-archive-conversion step rejects unknown tokens recorded in
+    the IR llvm.commandline metadata. Tizen's default CFLAGS inject
+    -feliminate-unused-debug-types and --param, which the classifier did not
+    know. Also, profiles without -gdwarf-4 or -ffunction-sections in CFLAGS
+    (release builds strip them) failed the certified sanity checks even after
+    classification.
+    
+    - classify -feliminate-unused-debug-types as frontend semantics (debug-type
+      emission is already materialized in the input IR)
+    - consume --param / --param= as driver tuning operands
+    - derive the replay backend policy from the recorded command instead of a
+      fixed flag set: -f/-fno- per section switch, and -g -gdwarf-4 only when
+      the original command recorded debug options
+    - keep unique-section-names/addrsig certification and the -gdwarf-4
+      requirement when debug options are present (fail-closed)
+    
+    Toolchain-profile replay flags are byte-identical to the previous policy;
+    Dev-profile (no debug, no section flags) now replays faithfully.
+    
+    Fixes QuickBuild 1214821 (x86_64 %install failure:
+    ValueError: unclassified original command token: -feliminate-unused-debug-types).
+    
+    Co-Authored-By: Cline SR
+    Change-Id: I1c0d0bcccb1dc3c64efbb635e3e6f3de6748209e
+
+ packaging/llvm-static-archives-native.py | 29 ++++++++++++++++++++---------
+ 1 file changed, 20 insertions(+), 9 deletions(-)
+
+commit cf4b6777d056131e2534ecb460c5575327d99646
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Fri Oct 16 11:24:26 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Tue Nov 3 15:50:55 2026 +0900
+
+    Revert "Revert clang bootstrap + ThinLTO, fall back to GCC"
+    
+    This reverts commit f999bd406c0a70fe8107aa992164fe6945c5d46a.
+    
+    Change-Id: I5779f1689f330ee006bcbda377feeccf15040e85
+
+ packaging/llvm-static-archives-native.py | 788 +++++++++++++++++++++++++++++++
+ packaging/llvm.spec                      |  67 ++-
+ 2 files changed, 853 insertions(+), 2 deletions(-)
+
+commit f999bd406c0a70fe8107aa992164fe6945c5d46a
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Fri Oct 16 11:03:12 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Fri Oct 16 11:13:11 2026 +0900
+
+    Revert clang bootstrap + ThinLTO, fall back to GCC
+    
+    The clang bootstrap + ThinLTO optimization (7e4dc62) caused severe build
+    time regression on x86_64 because -fno-inline-functions from project.conf
+    disables all function inlining in clang, unlike GCC.
+    
+    Revert to the original GCC-based build by undoing:
+    - 7e4dc62d8ac0 (optimize llvm performance: clang, -O3, ThinLTO)
+    - cb67996861d0 (remove -fno-inline-functions)
+    - 67619ec8bbba (fix llvm-static-devel with ThinLTO: native archive conversion)
+    
+    Change-Id: Ib6ff9acd34c042b88ba6f74ee7d29950d1107c0d
+
+ packaging/llvm-static-archives-native.py | 788 -------------------------------
+ packaging/llvm.spec                      |  67 +--
+ 2 files changed, 2 insertions(+), 853 deletions(-)

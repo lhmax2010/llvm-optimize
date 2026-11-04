@@ -1,0 +1,386 @@
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 8240282641a3afad12370eb7d03af57b7c4e9c13..b6cb759ec86885630f635bb381ed105ab3496f26 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -1,3 +1,10 @@
++# Quickbuild sandbox: x86_64 BOLT is on by default; other architectures unchanged.
++%ifarch x86_64
++%bcond_without clang_bolt
++%else
++%bcond_with clang_bolt
++%endif
++
+ %define keepstatic 1
+ 
+ # MLGO AOT support for LLVM MLGO (Ahead-of-Time compilation)
+@@ -45,14 +52,17 @@ Source1002: mlgo_arm_model.tar.gz
+ Source1003: mlgo_aarch_model.tar.gz
+ Source1004: mlgo_x86_model.tar.gz
+ Source1005: llvm-static-archives-native.py
++Source1200: clang-bolt-v2.fdata.xz
++Source1201: clang-bolt-helper.py
+ 
+ %ifarch x86_64
+ BuildRequires: util-linux
+ %endif
+ 
++
+ %{!?mlgo_build_jobs: %define mlgo_build_jobs 6}
+ %{!?mlgo_verify_configure_only: %define mlgo_verify_configure_only 0}
+-
++# binutils-devel below also supplies readelf for the hybrid linkage assertion.
+ BuildRequires: cmake
+ BuildRequires: python3
+ BuildRequires: python3-devel
+@@ -63,6 +73,12 @@ BuildRequires: libxml2-devel
+ BuildRequires: sed
+ %endif
+ BuildRequires: ninja
++%ifarch x86_64
++%if %{with clang_bolt}
++BuildRequires: python3 >= 3.9
++BuildRequires: xz elfutils
++%endif
++%endif
+ 
+ %if %{undefined _toolchain}
+ %ifarch x86_64
+@@ -198,27 +214,129 @@ export QEMU_RESERVED_VA=0x100000000
+ %endif
+ 
+ %ifarch x86_64
+-# Strip pre-existing optimization flags and remove performance-harming flags, then force -O3 + ThinLTO
+-OPTFLAGS_CFLAGS=$(echo "$CFLAGS" | sed \
+-    -e 's/\-O[0-9sz]//g' \
+-    -e 's/\-Ofast//g' \
+-    -e 's/\-fstack-protector-strong//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector//g' \
+-    -e 's/\-fno-inline-functions//g' \
+-    -e 's/\-fno-omit-frame-pointer//g' \
+-    -e 's/\-momit-leaf-frame-pointer//g')
+-OPTFLAGS_CXXFLAGS=$(echo "$CXXFLAGS" | sed \
+-    -e 's/\-O[0-9sz]//g' \
+-    -e 's/\-Ofast//g' \
+-    -e 's/\-fstack-protector-strong//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector//g' \
+-    -e 's/\-fno-inline-functions//g' \
+-    -e 's/\-fno-omit-frame-pointer//g' \
+-    -e 's/\-momit-leaf-frame-pointer//g')
+-export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+-export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
++TIZEN_LLVM_RELEASE=%{llvm_release_build}
++# BEGIN TIZEN_LLVM_FIXED_FLAGS
++# The x86_64 policy is the certified Toolchain command (QB 1215143).
++# Only architecture and debug-mode options are inherited. Token matching is
++# exact: stripping -fstack-protector must never leave a -strong suffix.
++TIZEN_LLVM_EXPECTED_DROPPED=${TIZEN_LLVM_EXPECTED_DROPPED-'-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'}
++tizen_llvm_flags()
++{
++    tizen_llvm_kind=$1
++    tizen_llvm_input=$2
++    tizen_llvm_release=$3
++    case $tizen_llvm_release in 0|1) ;; *)
++        echo "TIZEN_LLVM_FIXED_FLAGS_FAILED invalid TIZEN_LLVM_RELEASE=$tizen_llvm_release" >&2
++        return 1 ;;
++    esac
++    tizen_llvm_debug_sequence=
++    TIZEN_LLVM_UNREVIEWED=
++    tizen_llvm_arch=
++    tizen_llvm_debug_head=
++    tizen_llvm_debug_tail=
++    TIZEN_LLVM_NORMALIZED=
++    TIZEN_LLVM_DROPPED=
++    tizen_llvm_ifs_set=${IFS+x}
++    tizen_llvm_saved_ifs=${IFS-}
++    unset IFS
++    case $- in *f*) tizen_llvm_glob_off=1 ;; *) tizen_llvm_glob_off=0; set -f ;; esac
++    for tizen_llvm_token in $tizen_llvm_input; do
++        case $tizen_llvm_token in
++            -O0|-O1|-O2|-O3|-Os|-Oz|-Og|-Ofast|\
++            -fstack-protector|-fstack-protector-strong|-fstack-protector-all|\
++            -momit-leaf-frame-pointer|-fno-omit-frame-pointer)
++                TIZEN_LLVM_NORMALIZED="${TIZEN_LLVM_NORMALIZED}${TIZEN_LLVM_NORMALIZED:+ }$tizen_llvm_token"
++                continue ;;
++            -march=native|-mtune=native)
++                if test "$tizen_llvm_ifs_set" = x; then IFS=$tizen_llvm_saved_ifs; else unset IFS; fi
++                if test "$tizen_llvm_glob_off" = 0; then set +f; fi
++                echo "TIZEN_LLVM_FIXED_FLAGS_FAILED host-dependent option: $tizen_llvm_token" >&2
++                return 1 ;;
++            -m64|-march=*|-mtune=*|-msse*|-mfpmath=*)
++                tizen_llvm_arch="${tizen_llvm_arch}${tizen_llvm_arch:+ }$tizen_llvm_token"
++                continue ;;
++            -g|-g[0-9]|-ggdb*|-gdwarf-*|-gline*|-gno-*)
++                tizen_llvm_debug_sequence="${tizen_llvm_debug_sequence}${tizen_llvm_debug_sequence:+ }$tizen_llvm_token"
++                if test "$tizen_llvm_release" = 0; then
++                    tizen_llvm_debug_head="${tizen_llvm_debug_head}${tizen_llvm_debug_head:+ }$tizen_llvm_debug_tail"
++                    tizen_llvm_debug_tail=$tizen_llvm_token
++                fi
++                continue ;;
++        esac
++        case $tizen_llvm_kind:$tizen_llvm_token in
++            CFLAGS:-ffunction-sections|CXXFLAGS:-ffunction-sections|\
++            CFLAGS:-fdata-sections|CXXFLAGS:-fdata-sections|\
++            CFLAGS:-Wno-unused-command-line-argument|CXXFLAGS:-Wno-unused-command-line-argument|\
++            CFLAGS:-Wno-error=unused-but-set-variable|CXXFLAGS:-Wno-error=unused-but-set-variable|\
++            CFLAGS:-Wno-error=unused-command-line-argument|CXXFLAGS:-Wno-error=unused-command-line-argument|\
++            CFLAGS:-pipe|CXXFLAGS:-pipe|CFLAGS:-Wall|CXXFLAGS:-Wall|\
++            CFLAGS:-Wp,-D_FORTIFY_SOURCE=2|CXXFLAGS:-Wp,-D_FORTIFY_SOURCE=2|\
++            CFLAGS:-fexceptions|CXXFLAGS:-fexceptions|CFLAGS:-Wformat|CXXFLAGS:-Wformat|\
++            CFLAGS:-Wformat-security|CXXFLAGS:-Wformat-security|\
++            CFLAGS:-fmessage-length=0|CXXFLAGS:-fmessage-length=0|\
++            CFLAGS:-frecord-gcc-switches|CXXFLAGS:-frecord-gcc-switches|\
++            CFLAGS:-fdiagnostics-color=never|CXXFLAGS:-fdiagnostics-color=never|\
++            CFLAGS:-fasynchronous-unwind-tables|CXXFLAGS:-fasynchronous-unwind-tables|\
++            CFLAGS:-flto=thin|CXXFLAGS:-flto=thin|\
++            CFLAGS:-fomit-frame-pointer|CXXFLAGS:-fomit-frame-pointer|\
++            LDFLAGS:-Wl,-z,relro,--as-needed|LDFLAGS:-Wl,--gc-sections) ;;
++            *)
++                TIZEN_LLVM_DROPPED="${TIZEN_LLVM_DROPPED}${TIZEN_LLVM_DROPPED:+ }$tizen_llvm_token"
++                case " $TIZEN_LLVM_EXPECTED_DROPPED " in
++                    *" $tizen_llvm_token "*) ;;
++                    *) TIZEN_LLVM_UNREVIEWED="${TIZEN_LLVM_UNREVIEWED}${TIZEN_LLVM_UNREVIEWED:+ }$tizen_llvm_token" ;;
++                esac ;;
++
++        esac
++    done
++    if test "$tizen_llvm_ifs_set" = x; then IFS=$tizen_llvm_saved_ifs; else unset IFS; fi
++    if test "$tizen_llvm_glob_off" = 0; then set +f; fi
++    case $tizen_llvm_kind:$tizen_llvm_release in
++        CFLAGS:0|CXXFLAGS:0)
++            if test "$tizen_llvm_debug_sequence" != '-g2 -gdwarf-4 -g'; then
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]"
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]" >&2
++            fi ;;
++    esac
++    case $tizen_llvm_kind in
++        CFLAGS|CXXFLAGS)
++            # Preserve the exact certified CMake string, including whitespace,
++            # option order and the repeated warning option. Do not inherit
++            # other project flags, even when the project selects GCC.
++            TIZEN_LLVM_RESULT=" -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   $tizen_llvm_debug_head -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never $tizen_llvm_arch -fasynchronous-unwind-tables  $tizen_llvm_debug_tail -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument" ;;
++        LDFLAGS)
++            # Executable/shared linker flags are explicit in the spec, not read
++            # from LDFLAGS. CMAKE_MODULE_LINKER_FLAGS is initialized from this
++            # environment value, unchanged from the Toolchain project value.
++            TIZEN_LLVM_RESULT="-Wl,-z,relro,--as-needed -Wl,--gc-sections${tizen_llvm_arch:+ }$tizen_llvm_arch${tizen_llvm_debug_head:+ }$tizen_llvm_debug_head${tizen_llvm_debug_tail:+ }$tizen_llvm_debug_tail" ;;
++        *) return 1 ;;
++    esac
++}
++tizen_llvm_report_warnings()
++{
++    if test -n "$1$2$3"; then
++        tizen_llvm_warning="TIZEN_LLVM_FLAGS_WARNING unreviewed project options dropped: CFLAGS=[$1] CXXFLAGS=[$2] LDFLAGS=[$3] (manual review of the build log required)"
++        printf '%%s\n' "$tizen_llvm_warning"
++        printf '%%s\n' "$tizen_llvm_warning" >&2
++    fi
++}
++tizen_llvm_flags CFLAGS "$CFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++CFLAGS=$TIZEN_LLVM_RESULT
++tizen_llvm_normalized_c=$TIZEN_LLVM_NORMALIZED
++tizen_llvm_dropped_c=$TIZEN_LLVM_DROPPED
++tizen_llvm_unreviewed_c=$TIZEN_LLVM_UNREVIEWED
++tizen_llvm_flags CXXFLAGS "$CXXFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++CXXFLAGS=$TIZEN_LLVM_RESULT
++tizen_llvm_normalized_cxx=$TIZEN_LLVM_NORMALIZED
++tizen_llvm_dropped_cxx=$TIZEN_LLVM_DROPPED
++tizen_llvm_unreviewed_cxx=$TIZEN_LLVM_UNREVIEWED
++tizen_llvm_flags LDFLAGS "$LDFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++LDFLAGS=$TIZEN_LLVM_RESULT
++printf 'TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_normalized_c" "$tizen_llvm_normalized_cxx" "$TIZEN_LLVM_NORMALIZED"
++printf 'TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_dropped_c" "$tizen_llvm_dropped_cxx" "$TIZEN_LLVM_DROPPED"
++tizen_llvm_report_warnings "$tizen_llvm_unreviewed_c" "$tizen_llvm_unreviewed_cxx" "$TIZEN_LLVM_UNREVIEWED"
++export CFLAGS CXXFLAGS LDFLAGS
++# END TIZEN_LLVM_FIXED_FLAGS
+ %endif
+ 
+ # Set up MLGO AOT model paths from bundled verify assets
+@@ -279,8 +397,11 @@ cmake \
+     -DLLVM_BUILD_LLVM_DYLIB=ON \
+     -DCLANG_BUILD_CLANG_DYLIB=ON \
+ %ifarch x86_64
+-    -DLLVM_LINK_LLVM_DYLIB=OFF \
+-    -DCLANG_LINK_CLANG_DYLIB=OFF \
++    -DLLVM_LINK_LLVM_DYLIB=ON \
++    -DCLANG_LINK_CLANG_DYLIB=ON \
++    -DTIZEN_HYBRID_LINK=ON \
++    -DBUILD_SHARED_LIBS=OFF \
++    -DLLVM_TOOL_LLVM_DRIVER_BUILD=OFF \
+ %else
+ %if %{defined _toolchain}
+     -DLLVM_LINK_LLVM_DYLIB=ON \
+@@ -390,11 +511,132 @@ cmake \
+ %endif
+ 
+ # Full build using ninja (already in build/ directory after cd build)
++%ifarch x86_64
++%if %{with clang_bolt}
++ninja -d keeprsp -j %{mlgo_build_jobs} || exit 1
++%else
+ ninja -j %{mlgo_build_jobs}
++%endif
++%else
++ninja -j %{mlgo_build_jobs}
++%endif
++%ifarch x86_64
++# These drivers must retain component linkage even when BOLT is disabled.
++for hybrid_tool in bin/clang-22 bin/lld bin/llvm-ar bin/llvm-tblgen bin/clang-tblgen bin/lldb-tblgen bin/llvm-config bin/llvm-exegesis; do
++    if ! test -f "$hybrid_tool"; then
++        case "$hybrid_tool" in
++            bin/clang-22|bin/lld|bin/llvm-ar)
++                echo "TIZEN_HYBRID_LINK_FAILED missing $hybrid_tool" >&2; exit 1 ;;
++            *) echo "TIZEN_HYBRID_LINK_SKIP $hybrid_tool"; continue ;;
++        esac
++    fi
++    hybrid_dynamic=$(LC_ALL=C readelf -dW "$hybrid_tool") || {
++        echo "TIZEN_HYBRID_LINK_FAILED readelf: $hybrid_tool" >&2; exit 1;
++    }
++    if LC_ALL=C grep -E '\(NEEDED\).*\[(libLLVM[^]]*\.so|libclang-cpp[^]]*\.so)' <<EOF_HYBRID_DYNAMIC
++$hybrid_dynamic
++EOF_HYBRID_DYNAMIC
++    then
++        echo "TIZEN_HYBRID_LINK_FAILED shared LLVM/Clang dependency: $hybrid_tool" >&2
++        exit 1
++    else
++        hybrid_grep_status=$?
++        test "$hybrid_grep_status" = 1 || {
++            echo "TIZEN_HYBRID_LINK_FAILED grep status=$hybrid_grep_status: $hybrid_tool" >&2; exit 1;
++        }
++    fi
++done
++echo TIZEN_HYBRID_LINK_OK
++%endif
+ 
+ %install
+ cd build
+ cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
++%ifarch x86_64
++%if %{with clang_bolt}
++
++# Reject debug-named buildroots before any BOLT action.
++# Keep the ordinary install and BOLT payload under the same platform debug-path policy.
++case $(printf '%s' '%{buildroot}' | LC_ALL=C tr '[:upper:]' '[:lower:]') in
++  *debug*) echo 'BOLT buildroot absolute path contains debug' >&2; exit 1 ;;
++esac
++BOLT_BUILD="$PWD"
++BOLT_WORK="$PWD/clang-bolt"
++BOLT_INSTALL_ROOT="%{buildroot}"
++BOLT_PROFILE_SOURCE="%{SOURCE1200}"
++export BOLT_BUILD BOLT_WORK BOLT_INSTALL_ROOT BOLT_PROFILE_SOURCE
++bolt_fail() {
++  python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || true
++  exit 1
++}
++bolt_checked() {
++  bolt_stage=$1
++  bolt_log=$2
++  shift 2
++  if bolt_output=$("$@" 2>&1); then
++    printf '%%s\n' "$bolt_output" || bolt_fail "$bolt_stage-output" -
++  else
++    printf '%%s\n' "$bolt_output" || true
++    printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || true
++    exit 1
++  fi
++}
++bolt_step() {
++  bolt_stage=$1
++  shift
++  bolt_checked "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" python3 -B %{SOURCE1201} run-step "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" -- "$@"
++}
++python3 -B %{SOURCE1201} disk-report begin || true
++echo "BOLT_BUILDROOT_OK %{buildroot}"
++python3 -B %{SOURCE1201} preflight || exit 1
++python3 -B %{SOURCE1201} certified || exit 1
++if [ -r /proc/self/stat ]; then echo BOLT_PROC_OK; else echo BOLT_PROC_MISSING; fi
++# One relink: emit-relocs, then LLVM strip-debug, BOLT and full strip.
++# The handed-off build owns its original ThinLTO cache; do not duplicate it.
++mkdir -p "$BOLT_WORK" || exit 1
++# File-list baseline is the actual ordinary CMake install, not a name whitelist.
++python3 -B %{SOURCE1201} installed-baseline "%{buildroot}" "$BOLT_WORK/installed-baseline.json" || exit 1
++python3 -B %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
++bolt_step manifest-copy cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt"
++bolt_step ordinary-copy cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22"
++bolt_checked link-command "$BOLT_WORK/link-command.log" python3 -B %{SOURCE1201} run-step link-command "$BOLT_WORK/link-command.log" --output "$BOLT_WORK/link.original" -- ninja -t commands -s bin/clang-22
++python3 -B %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || exit 1
++bolt_step configure cmake -S ../llvm -B . \
++  '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' \
++  -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \
++  -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
++# Only certified BOLT tasks and the paired configure-refreshed TF anchor.
++bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
++# LC_ALL=C applies only to this ninja invocation.
++bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- env LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -n llvm-bolt
++bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
++python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
++cat "$BOLT_WORK/tool-plan.json"
++python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
++# LC_ALL=C applies only to this ninja invocation.
++bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -j %{mlgo_build_jobs} llvm-bolt
++python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
++  "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
++cat "$BOLT_WORK/tool-build-verification.json"
++python3 -B %{SOURCE1201} disk-report tool-built || true
++%if %{llvm_release_build}
++python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
++%else
++python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" --debug-symbols || exit 1
++%endif
++echo BOLT_PIPELINE_PASS
++python3 -B %{SOURCE1201} disk-report pipeline || true
++# BOLT configuration/build/rewrite must not change the ordinary installation.
++# Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
++python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
++  "$BOLT_WORK/install-after-pipeline.json" || exit 1
++echo BOLT_COMPARE_ROOT_PASS
++# No subsequent step consumes this ThinLTO cache.
++# Release it only inside the enabled x86_64 BOLT block.
++python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK" || true
++# Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
++%endif
++%endif
+ ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
+ 
+ ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
+@@ -434,12 +676,25 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+     --build "%{_builddir}/%{buildsubdir}/build" \
+     --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
+     --arch x86_64 \
++%if %{llvm_release_build}
++    --debug-info no \
++%else
++    --debug-info yes \
++%endif
+     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+     --jobs 4 --address-space-bytes 4294967296 || exit 1
+ %endif
+ 
++%ifarch x86_64
++%if %{with clang_bolt}
++# Candidate is fully stripped before the one unchanged platform post-processing chain.
++python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
++  "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || exit 1
++
++%endif
++%endif
+ %post -n clang -p /sbin/ldconfig
+ %postun -n clang -p /sbin/ldconfig
+ 
+@@ -671,3 +926,14 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ 
+ %files -n python-clang
+ %{python3_sitelib}/clang
++%ifarch x86_64
++%if %{with clang_bolt}
++
++%global __bolt_original_spec_install_post %{__spec_install_post}
++%define __spec_install_post \
++    %{__bolt_original_spec_install_post} \
++    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
++    echo BOLT_POST_GATE_PASS \
++    python3 -B %{SOURCE1201} disk-report post || true
++%endif
++%endif

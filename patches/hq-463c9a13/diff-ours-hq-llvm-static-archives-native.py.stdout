@@ -1,0 +1,175 @@
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index d95dfc1f14cbab48b6623fbc8a4bdc105cf442c3..218b95e098c5352632113beb2d5bc312f55f1669 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -172,8 +172,12 @@ def inspect(path):
+ CERTIFIED_LLVM_MAJOR = 22
+ CERTIFIED_OPTIMIZATION = {'x86_64': '-O3'}
+ CERTIFIED_TRIPLES = {'x86_64': {'x86_64-tizen-linux-gnu'}}
++SWITCH_KEYS = ('function-sections', 'data-sections', 'unique-section-names', 'addrsig')
+ BACKEND_FLAGS = ['-ffunction-sections', '-fdata-sections',
+-                 '-funique-section-names', '-faddrsig', '-g', '-gdwarf-4']
++                 '-funique-section-names', '-faddrsig']
++# Replay mirrors the recorded command: section/symbol emission and debug emission
++# follow the original backend policy (-f/-fno- per switch; -g -gdwarf-4 only when
++# the original command recorded debug options).
+ # LLVM 22 clang/Driver/ToolChains/Clang.cpp:2797, 6228, 7992-7999.
+ DEFAULTS = {'unique-section-names': True, 'addrsig': True, 'fp-contract': 'on'}
+ 
+@@ -191,15 +195,15 @@ def classify_options(argv, arch='x86_64'):
+     if arch not in CERTIFIED_OPTIMIZATION:
+         raise ValueError('uncertified architecture: '+arch)
+     rows, optimizations, dwarfs, contractions = [], [], [], []
+-    switches = {key: [] for key in ('function-sections', 'data-sections',
+-                                  'unique-section-names', 'addrsig')}
+-    operand_options = {'-D', '-I', '-isystem', '-resource-dir', '-o', '-MT', '-MF', '-x'}
++    switches = {key: [] for key in SWITCH_KEYS}
++    operand_options = {'-D', '-I', '-isystem', '-resource-dir', '-o', '-MT', '-MF', '-x', '--param'}
+     exact_ir = {'-fomit-frame-pointer', '-fno-omit-frame-pointer', '-fexceptions',
+                 '-fno-exceptions', '-fasynchronous-unwind-tables', '-funwind-tables',
+                 '-fno-asynchronous-unwind-tables', '-fno-unwind-tables', '-fno-common',
+                 '-ftrapping-math', '-m64', '-fPIC', '-fPIE', '-fpic', '-fpie',
+                 '-fno-pic', '-fno-pie', '-fno-semantic-interposition'}
+     exact_ir.update({'-fvisibility-inlines-hidden', '-fno-visibility-inlines-hidden'})
++    exact_ir.update({'-feliminate-unused-debug-types'})
+     index = 0
+     while index < len(argv):
+         token = argv[index]
+@@ -239,7 +243,7 @@ def classify_options(argv, arch='x86_64'):
+             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
+         elif token == '-flto=thin':
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+-        elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
++        elif (token.startswith(('-W', '-D', '-I', '--target=', '--param=', '-fmessage-length=',
+                                '-fdiagnostics-color=')) or token in
+               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+                '-pedantic', '-pipe', '-c', '-MD', '--driver-mode=g++')):
+@@ -252,14 +256,14 @@ def classify_options(argv, arch='x86_64'):
+         index += 1
+     if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
+         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
+-    # A release command has no -g options at all. Once any debug option is
+-    # present, retain the certified DWARF-4 requirement (including bare -g).
+-    has_debug_options = any(token.startswith('-g') for token in argv)
+-    if has_debug_options and (not dwarfs or dwarfs[-1] != '-gdwarf-4'):
+-        raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
++    if dwarfs and dwarfs[-1] != '-gdwarf-4':
++        raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:]))
+     effective = {}
+     for key, values in switches.items():
+         effective[key] = values[-1] if values else DEFAULTS.get(key, False)
++    # Replay emits the original value explicitly; only the section-naming defaults
++    # that the certified backend relies on must remain enabled.
++    for key in ('unique-section-names', 'addrsig'):
+         if not effective[key]:
+             raise ValueError('original command does not enable '+key)
+     contraction = contractions[-1] if contractions else DEFAULTS['fp-contract']
+@@ -270,7 +274,7 @@ def classify_options(argv, arch='x86_64'):
+                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
+ 
+ 
+-def ir_settings(lines, require_recorded_options=True, arch='x86_64', debug_info=None):
++def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+     """Read LLVM 22 textual metadata/attributes without modifying input IR."""
+     retained, metadata = [], {}
+     triple, command_id = None, None
+@@ -321,16 +325,13 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64', debug_info=
+         raise ValueError('missing original command: backend policy cannot be certified')
+     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+         lambda match: chr(int(match[1], 16)), metadata[command_id]))
+-    found_debug = 'yes' if any(token.startswith('-g') for token in recorded_command) else 'no'
+-    if debug_info is not None and debug_info != found_debug:
+-        raise ValueError('debug-info expected %s, found %s (expected=%s found=%s)' %
+-                         ('debug' if debug_info == 'yes' else 'release',
+-                          'debug' if found_debug == 'yes' else 'release', debug_info, found_debug))
+     policy = classify_options(recorded_command, arch)
+-    backend_flags = [flag for flag in BACKEND_FLAGS
+-                     if policy['dwarf'] is not None or not flag.startswith('-g')]
+     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+-             *backend_flags, '-ffp-contract='+policy['fp_contract'], '-c']
++             *(('-f'+key) if policy['switches'][key] else ('-fno-'+key)
++               for key in SWITCH_KEYS)]
++    if policy['dwarf']:
++        flags += ['-g', policy['dwarf']]
++    flags += ['-ffp-contract='+policy['fp_contract'], '-c']
+     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
+               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
+@@ -597,17 +598,15 @@ def cleanup_evidence(output):
+             path.unlink()
+ 
+ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3, command=None, debug_info=None):
++            address_space_bytes=4*1024**3, command=None):
+     root, output, build = Path(root).resolve(), Path(output).resolve(), Path(build).resolve()
+     if arch not in CERTIFIED_OPTIMIZATION or jobs < 1 or address_space_bytes < 1:
+         raise ValueError('invalid architecture or resource parameters')
+-    if debug_info not in ('yes', 'no'):
+-        raise ValueError('debug-info expected=yes|no found='+str(debug_info))
+     reset_evidence(root, output, build)
+     command = command or Commands(address_space_bytes)
+     summary = dict(started=time.time(), input_root=str(root), output_root=str(output),
+                    arch=arch, workers=jobs, as_bytes=address_space_bytes, archives=[],
+-                   status='CONVERTING', debug_info=debug_info, missing_symbols_by_type={})
++                   status='CONVERTING', missing_symbols_by_type={})
+     def save():
+         atomic_json(output/'summary.json', summary)
+     save()
+@@ -617,8 +616,6 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+         summary['scanned_archives'] = len(archives)
+         summary['native_archives_skipped'] = sum(not data['bitcode'] for archive, data in archives)
+-        # Preserved native members retain their bytes, including any debug sections.
+-        summary['native_members_preserved'] = sum(data['machine'] for archive, data in archives)
+         for archive, before in archives:
+             command.check()
+             if not before['bitcode']:
+@@ -658,13 +655,11 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                 with text_ir.open('wb') as out:
+                     command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
+                 with text_ir.open() as lines:
+-                    settings = ir_settings(lines, arch=arch, debug_info=debug_info)
++                    settings = ir_settings(lines, arch=arch)
+                 atomic_json(source.parent/'ir-settings.json', settings)
+                 text_ir.unlink()
+                 record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
+                 data = target.read_bytes()
+-                if settings['policy']['dwarf'] is None and elf_details(data)[1]:
+-                    raise ValueError('release conversion unexpectedly emitted debug sections')
+                 relocs = pic_relocations(data)
+                 atomic_json(source.parent/'relocations.json', relocs)
+                 if settings['pic_level'] and relocs['forbidden']:
+@@ -744,14 +739,14 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+ 
+ 
+ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3, debug_info=None):
++            address_space_bytes=4*1024**3):
+     root, output = Path(root).resolve(), Path(output).resolve()
+     command = Commands(address_space_bytes)
+     old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
+     result = None
+     try:
+         print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
+-        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command, debug_info)
++        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command)
+         command.check()
+         result['status'] = 'INSTALLING'
+         atomic_json(output/'summary.json', result)
+@@ -790,7 +785,6 @@ def install_main():
+     parser.add_argument('--build', type=Path, required=True)
+     parser.add_argument('--evidence', type=Path, required=True)
+     parser.add_argument('--arch', choices=['x86_64'], required=True)
+-    parser.add_argument('--debug-info', choices=['yes', 'no'], required=True)
+     parser.add_argument('--compiler', type=Path, required=True)
+     parser.add_argument('--disassembler', type=Path, required=True)
+     parser.add_argument('--nm', type=Path, required=True)
+@@ -798,7 +792,7 @@ def install_main():
+     parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
+     args = parser.parse_args()
+     install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+-            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info)
++            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes)
+ 
+ 
+ if __name__ == '__main__':
