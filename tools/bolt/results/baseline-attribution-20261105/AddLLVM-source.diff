@@ -1,0 +1,13 @@
+--- /home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261030/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/cmake/modules/AddLLVM.cmake
++++ /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261103/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/cmake/modules/AddLLVM.cmake
+@@ -1048,6 +1048,10 @@
+   cmake_parse_arguments(H "" ""
+     "LINK_COMPONENTS;LINK_LIBS;DEPENDS;OBJLIBS;ADDITIONAL_HEADERS" ${ARGN})
+   llvm_map_components_to_libnames(components ${H_LINK_COMPONENTS} ${LLVM_LINK_COMPONENTS})
++  if(NOT components)
++    message(FATAL_ERROR
++      "${name}: empty LLVM component interface; declare LINK_COMPONENTS or disable TIZEN_HYBRID_LINK")
++  endif()
+   set(static_consumer "$<BOOL:$<TARGET_PROPERTY:TIZEN_STATIC_LLVM>>")
+   set(replacement "$<$<NOT:${static_consumer}>:LLVM>")
+   foreach(component IN LISTS components)
