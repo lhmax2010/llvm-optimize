@@ -1,0 +1,37 @@
+/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/bolt/tools/merge-fdata/merge-fdata.cpp
+341:
+342:   // The final reduction has non-trivial cost, make sure each thread has at
+343:   // least 4 tasks.
+344:   ThreadPoolStrategy S = optimal_concurrency(
+345:       std::max(Filenames.size() / 4, static_cast<size_t>(1)));
+346:   DefaultThreadPool Pool(S);
+347:   DenseMap<llvm::thread::id, ProfileTy> ParsedProfiles(
+348:       Pool.getMaxConcurrency());
+349:   for (const auto &Filename : Filenames)
+350:     Pool.async(ParseProfile, std::cref(Filename), std::ref(ParsedProfiles));
+351:   Pool.wait();
+352:
+353:   ProfileTy MergedProfile;
+354:   for (const auto &[Thread, Profile] : ParsedProfiles) {
+355:     for (const auto &[Key, Value] : Profile.Branch)
+356:       MergedProfile.Branch[Key] += Value;
+357:     for (const auto &[Key, Value] : Profile.Memory)
+358:       MergedProfile.Memory[Key] += Value;
+359:   }
+360:
+361:   if (BoltedCollection.value_or(false))
+362:     output() << "boltedcollection\n";
+363:   if (NoLBRCollection.value_or(false))
+364:     output() << "no_lbr\n";
+365:   for (const auto &[Key, Value] : MergedProfile.Branch) {
+366:     output() << Key << " ";
+367:     if (!NoLBRCollection.value_or(false))
+368:       output() << Value.Mispred << " ";
+369:     output() << Value.Exec << "\n";
+370:   }
+371:   for (const auto &[Key, Value] : MergedProfile.Memory)
+372:     output() << Key << ' ' << Value.Exec << '\n';
+373:
+374:   errs() << "Profile from " << Filenames.size() << " files merged.\n";
+375: }
+376:

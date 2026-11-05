@@ -1,0 +1,2587 @@
+[
+  {
+    "directory": "gbs-root-x86_64-debuginfo-j4-v2",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "gbs-root-x86_64-debuginfo-j4-v2",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/make_report.py",
+        "line": 138,
+        "text": "| 历史R1 | `T/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` | f111历史资格实验环境，仍有1da7历史llvm-bolt及旧基准；不能与上两根混同 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/annotate.py",
+        "line": 10,
+        "text": "put('gbs-root-x86_64-debuginfo-j4-v2','f111162e 配方','R1 普通/BOLT v2 旧树','bolt/docs/bolt/02_inventory.md:21; main/docs/41_disk_inventory.md:69','是，历史认证基线','历史工具和性能资料依赖此根；A5 保留','保留','历史 llvm-bolt 1da7…与基线输入仍用于认证','A5；原生 clang/strip/resource-dir 也不要分拆')"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/sandbox-direct-20261103/classify.py",
+        "line": 21,
+        "text": "'gbs-root-x86_64-debuginfo-j4-v2':('建议保留','31、38','旧 R1 明确受保护的普通构建树；不是本轮可删项。'),"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/pgo-bolt-followup-20261105/resume/summarize.py",
+        "line": 30,
+        "text": "report='''\\n\\n## 5. 2026-11-05 补齐工具后的实测（本节起为最新结果）\\n\\n用户本轮允许复用同版本工具，或缺失时在新目录构建两个目标。实际找到16号原采集工具，未运行cmake/ninja，也没有编译任何目标。原工具对应13号§1记录的源码提交`f111162e94aa48ed367c9d2c039456c70e7160ae`；其bolt树与`3ee2d847`均为`3b71c6953c01c28c95956fcf79906e4ed1fc052c`。对旧根bolt/实际1,154个文件逐个计算Git blob hash，与3ee逐个一致，额外文件0；CMakeCache版本和两个工具--version均为22.1.8。完整证据：resume/bolt-source-comparison.json、versions.json。\\n\\n旧工具根：`W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/`，只读；复制到`W/temp/pgo-bolt-followup-20261105/tools/`。\\n\\n|工具|原路径（相对build）|字节|复制前后SHA256|\\n|---|---|---:|---|\\n'''"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/report.py",
+        "line": 48,
+        "text": " elif name=='gbs-root-x86_64-debuginfo-j4-v2':advice='保留';reason='34号性能输入的x86 sysroot和历史工具来源；旧保护未解除，本次未纳入整根清理'"
+      }
+    ]
+  },
+  {
+    "directory": "gbs-root-x86_64-debuginfo-j4-v2",
+    "category": "main-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/26_archive_index_fix.md",
+        "line": 21,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/21_spec_integration_v3.md",
+        "line": 17,
+        "text": "`R1=W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0`；"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/33_llvm_strip_alternative.md",
+        "line": 17,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/18_spec_integration.md",
+        "line": 28,
+        "text": "R1  = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/14_bolt_feasibility.md",
+        "line": 21,
+        "text": "R1 = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/14_bolt_feasibility.md",
+        "line": 158,
+        "text": "  --root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/14_bolt_feasibility.md",
+        "line": 165,
+        "text": "systemd-run --user --scope --unit=llvm-baseline-316e793fe71144eeabc8da0da49f2164.scope -p MemoryMax=18G -p MemorySwapMax=0 nice -n 15 ionice -c3 gbs chroot --root /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/14_bolt_feasibility.md",
+        "line": 190,
+        "text": "/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/bolt-relocs-6a5e8e81bccb/clang-22"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/14_bolt_feasibility.md",
+        "line": 258,
+        "text": "  --build-root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/25_archive_index_fix.md",
+        "line": 22,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0`，指定全静态基线根，只读核查 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/13_baseline_build.md",
+        "line": 43,
+        "text": "| R1 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0`（独立续跑根） |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/13_baseline_build.md",
+        "line": 503,
+        "text": "  --root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/13_baseline_build.md",
+        "line": 511,
+        "text": "/usr/bin/time -v -o /home/linhao/Toolchain/development/llvm-optimize/temp/baseline-resume-20260917/run/time-v.txt systemd-run --user --scope --unit=llvm-baseline-99f508b75f0346a4ad607267cc6079e9.scope -p MemoryMax=18G -p MemorySwapMax=0 nice -n 15 ionice -c3 gbs chroot --root /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/13_baseline_build.md",
+        "line": 572,
+        "text": "\tCommand being timed: \"systemd-run --user --scope --unit=llvm-baseline-99f508b75f0346a4ad607267cc6079e9.scope -p MemoryMax=18G -p MemorySwapMax=0 nice -n 15 ionice -c3 gbs chroot --root /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0\""
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/13_baseline_build.md",
+        "line": 790,
+        "text": "  --build-root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/34_archive_fix_v2_build.md",
+        "line": 22,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/27_static_archive_native_conversion.md",
+        "line": 30,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/29_static_archive_native_conversion_v3.md",
+        "line": 21,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/51_gnu_strip_merged_validation.md",
+        "line": 28,
+        "text": "| R0 | `temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0`，只读 GNU strip、loader/库和 brp 脚本 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/30_archive_fix_full_build.md",
+        "line": 20,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/16_bolt_final.md",
+        "line": 33,
+        "text": "R1 = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/17_bolt_holdout.md",
+        "line": 27,
+        "text": "R1  = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/17_bolt_holdout.md",
+        "line": 293,
+        "text": "  --build-root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/17_bolt_holdout.md",
+        "line": 298,
+        "text": "  --build-root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/15_bolt_measurement.md",
+        "line": 25,
+        "text": "R1 = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/28_static_archive_native_conversion_v2.md",
+        "line": 25,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/41_disk_inventory.md",
+        "line": 69,
+        "text": "| `W/temp/gbs-root-x86_64-debuginfo-j4-v2` | 172.727† | 2026-09-18 12:40 | S01（关联；创建者未逐目录确证）；GBS构建根 | 产物/忽略目录；非独立Git根 | docs/13、docs/15；本任务保留边界 | **保留**：docs/13基线R0与RPM，后续比较依赖 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/20_spec_integration_v2.md",
+        "line": 1162,
+        "text": "R1  = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      }
+    ]
+  },
+  {
+    "directory": "gbs-root-x86_64-debuginfo-j4-v2",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/33_llvm_strip_alternative.md",
+        "line": 17,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/34_archive_fix_v2_build.md",
+        "line": 22,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/25_archive_index_fix.md",
+        "line": 22,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0`，指定全静态基线根，只读核查 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/30_archive_fix_full_build.md",
+        "line": 20,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/13_baseline_build.md",
+        "line": 43,
+        "text": "| R1 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0`（独立续跑根） |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/13_baseline_build.md",
+        "line": 503,
+        "text": "  --root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/13_baseline_build.md",
+        "line": 511,
+        "text": "/usr/bin/time -v -o /home/linhao/Toolchain/development/llvm-optimize/temp/baseline-resume-20260917/run/time-v.txt systemd-run --user --scope --unit=llvm-baseline-99f508b75f0346a4ad607267cc6079e9.scope -p MemoryMax=18G -p MemorySwapMax=0 nice -n 15 ionice -c3 gbs chroot --root /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/13_baseline_build.md",
+        "line": 572,
+        "text": "\tCommand being timed: \"systemd-run --user --scope --unit=llvm-baseline-99f508b75f0346a4ad607267cc6079e9.scope -p MemoryMax=18G -p MemorySwapMax=0 nice -n 15 ionice -c3 gbs chroot --root /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0\""
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/13_baseline_build.md",
+        "line": 790,
+        "text": "  --build-root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/15_bolt_measurement.md",
+        "line": 25,
+        "text": "R1 = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/21_spec_integration_v3.md",
+        "line": 17,
+        "text": "`R1=W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0`；"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/41_disk_inventory.md",
+        "line": 69,
+        "text": "| `W/temp/gbs-root-x86_64-debuginfo-j4-v2` | 172.727† | 2026-09-18 12:40 | S01（关联；创建者未逐目录确证）；GBS构建根 | 产物/忽略目录；非独立Git根 | docs/13、docs/15；本任务保留边界 | **保留**：docs/13基线R0与RPM，后续比较依赖 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/17_bolt_holdout.md",
+        "line": 27,
+        "text": "R1  = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/17_bolt_holdout.md",
+        "line": 293,
+        "text": "  --build-root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/17_bolt_holdout.md",
+        "line": 298,
+        "text": "  --build-root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/29_static_archive_native_conversion_v3.md",
+        "line": 21,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/16_bolt_final.md",
+        "line": 33,
+        "text": "R1 = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/28_static_archive_native_conversion_v2.md",
+        "line": 25,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/26_archive_index_fix.md",
+        "line": 21,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/20_spec_integration_v2.md",
+        "line": 1162,
+        "text": "R1  = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/01_bolt_v4_design.md",
+        "line": 53,
+        "text": "当前spec项目列表：clang;lldb;clang-tools-extra;lld;compiler-rt;openmp；没有bolt。现成llvm-bolt位于历史R1/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt，R1为W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0；648678768B，SHA256 1da7bb735f7bc1afab9a863154260699b0b0f88c6fd05b99231dd21ef653fd5a。自报LLVM22.1.8、BOLT revision unknown，必须用SHA/源构建记录定位，不能把unknown当版本证明。perf2bolt是llvm-bolt软链接；merge-fdata独立；首版都不调用后二者。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/27_static_archive_native_conversion.md",
+        "line": 30,
+        "text": "| R0 | `W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/18_spec_integration.md",
+        "line": 28,
+        "text": "R1  = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/14_bolt_feasibility.md",
+        "line": 21,
+        "text": "R1 = W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/14_bolt_feasibility.md",
+        "line": 158,
+        "text": "  --root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/14_bolt_feasibility.md",
+        "line": 165,
+        "text": "systemd-run --user --scope --unit=llvm-baseline-316e793fe71144eeabc8da0da49f2164.scope -p MemoryMax=18G -p MemorySwapMax=0 nice -n 15 ionice -c3 gbs chroot --root /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/14_bolt_feasibility.md",
+        "line": 190,
+        "text": "/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/bolt-relocs-6a5e8e81bccb/clang-22"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/14_bolt_feasibility.md",
+        "line": 258,
+        "text": "  --build-root temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0 \\"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/59_pgo_bolt_followup.md",
+        "line": 77,
+        "text": "旧工具根：`W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/`，只读；复制到`W/temp/pgo-bolt-followup-20261105/tools/`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 21,
+        "text": "R1=`W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0`；W为主工作区。历史clang/profile均来自f111162e配方，BOLT工具是docs/15在R1增量启用bolt项目的实验构建产物。RPM基线是docs/13最终RPM解包的clang，不是旧公开动态快照。历史带relocs ELF来自docs/14单clang重链；去debug输入来自docs/15。v1来自docs/16；v2来自docs/20附录D。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 28,
+        "text": "| clang-relocs | `/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/bolt-relocs-6a5e8e81bccb/clang-22` | 3560474952 | `6bfc85a8cce9952c4bcbea1a4ea169fb6199c379c18527df7d349f375e52caaf` | 是 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 31,
+        "text": "| llvm-bolt | `/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt` | 648678768 | `1da7bb735f7bc1afab9a863154260699b0b0f88c6fd05b99231dd21ef653fd5a` | 是 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 32,
+        "text": "| perf2bolt | `/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/perf2bolt` | 648678768 | `1da7bb735f7bc1afab9a863154260699b0b0f88c6fd05b99231dd21ef653fd5a` | 是 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 33,
+        "text": "| merge-fdata | `/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/merge-fdata` | 11891568 | `9a725e368f39cc9fbaaf32fe8698ea3e1d120fee7de565373e376e3fc759a6a7` | 是 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 34,
+        "text": "| llvm-strip | `/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-strip` | 98946648 | `64503737dd079f750cfea7b427582682657df2c6a4cff2f394be46336a0d89aa` | 是 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 35,
+        "text": "| GNU-strip | `/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/strip` | 167536 | `ee80ec36060dc467f57a3c7ae7155affbfcd39cec254892cffa45096a9f5e7ec` | 是 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 36,
+        "text": "| eu-strip | `/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/eu-strip` | 347328 | `96b2656d473cbac24283c950fa55d842c21dcdae9b6d49cd18f4c89054a86738` | 是 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 37,
+        "text": "| objcopy | `/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/objcopy` | 167528 | `88f57a67278e0031ed2ce91569955d0d3d618af43821997b095fac2c80ab7bbf` | 是 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 64,
+        "text": "| gbs-root-x86_64-debuginfo-j4-v2 | 存在；cache 23848f0d…，图133b142f… | 1793477048B，d25e9960… | f111162e历史完整树，已增量加bolt；仅用来读历史工具，不能代cb679968 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 101,
+        "text": "| R65 `T/gbs-root-x86_64-debuginfo-j4-v2` | 175.754† / 188,714,885,120 | H；2026-10-13 18:39:24 | f111162e 配方；实存 VCS=f111162e94aa48ed367c9d2c039456c70e7160ae-dirty；R1 普通/BOLT v2 旧树。[bolt/docs/bolt/02_inventory.md:21](https://github.com/lhmax2010/llvm-optimize/blob/4513444f57a6e5e99d15607aa0de2418d1bf1671/docs/bolt/02_inventory.md#L21); [main/docs/41_disk_inventory.md:69](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/41_disk_inventory.md#L69)；exported-vcs.json（原spec L33） | 历史工具和性能资料依赖此根；A5 保留。保护：是，历史认证基线 | U0；main patch / hybrid 线 | **保留**：历史 llvm-bolt 1da7…与基线输入仍用于认证。A5；原生 clang/strip/resource-dir 也不要分拆 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 102,
+        "text": "| R66 `T/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild` | 168.450‡ / 180,871,905,280 | H；2026-09-18 12:40:56 | f111162e 配方；实存 VCS=f111162e94aa48ed367c9d2c039456c70e7160ae-dirty；内含 rpmbuild；R1 普通/BOLT v2 旧树。[bolt/docs/bolt/02_inventory.md:21](https://github.com/lhmax2010/llvm-optimize/blob/4513444f57a6e5e99d15607aa0de2418d1bf1671/docs/bolt/02_inventory.md#L21); [main/docs/41_disk_inventory.md:69](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/41_disk_inventory.md#L69)；exported-vcs.json（原spec L33） | 内含于 R65；已计入父目录；历史工具和性能资料依赖此根；A5 保留。保护：是，历史认证基线 | U0；main patch / hybrid 线 | **随父目录保留**：历史 llvm-bolt 1da7…与基线输入仍用于认证。A5；原生 clang/strip/resource-dir 也不要分拆 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 103,
+        "text": "| R67 `T/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build` | 155.501‡ / 166,967,783,424 | H；2026-09-18 12:40:56 | f111162e 配方；实存 VCS=f111162e94aa48ed367c9d2c039456c70e7160ae-dirty；内含 build；R1 普通/BOLT v2 旧树。[bolt/docs/bolt/02_inventory.md:21](https://github.com/lhmax2010/llvm-optimize/blob/4513444f57a6e5e99d15607aa0de2418d1bf1671/docs/bolt/02_inventory.md#L21); [main/docs/41_disk_inventory.md:69](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/41_disk_inventory.md#L69)；exported-vcs.json（原spec L33） | 内含于 R66；已计入父目录；历史工具和性能资料依赖此根；A5 保留。保护：是，历史认证基线 | U0；main patch / hybrid 线 | **随父目录保留**：历史 llvm-bolt 1da7…与基线输入仍用于认证。A5；原生 clang/strip/resource-dir 也不要分拆 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 104,
+        "text": "| R68 `T/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache` | 91.597‡ / 98,351,468,544 | H；2026-09-18 12:40:38 | f111162e 配方；实存 VCS=f111162e94aa48ed367c9d2c039456c70e7160ae-dirty；内含 lto.cache；R1 普通/BOLT v2 旧树。[bolt/docs/bolt/02_inventory.md:21](https://github.com/lhmax2010/llvm-optimize/blob/4513444f57a6e5e99d15607aa0de2418d1bf1671/docs/bolt/02_inventory.md#L21); [main/docs/41_disk_inventory.md:69](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/41_disk_inventory.md#L69)；exported-vcs.json（原spec L33） | 内含于 R67；已计入父目录；历史工具和性能资料依赖此根；A5 保留。保护：是，历史认证基线 | U0；main patch / hybrid 线 | **随父目录保留**：历史 llvm-bolt 1da7…与基线输入仍用于认证。A5；原生 clang/strip/resource-dir 也不要分拆 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 105,
+        "text": "| R69 `T/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS` | 9.474‡ / 10,173,038,592 | H；2026-09-17 13:47:22 | f111162e 配方；实存 VCS=f111162e94aa48ed367c9d2c039456c70e7160ae-dirty；内含 RPMS；R1 普通/BOLT v2 旧树。[bolt/docs/bolt/02_inventory.md:21](https://github.com/lhmax2010/llvm-optimize/blob/4513444f57a6e5e99d15607aa0de2418d1bf1671/docs/bolt/02_inventory.md#L21); [main/docs/41_disk_inventory.md:69](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/41_disk_inventory.md#L69)；exported-vcs.json（原spec L33） | 内含于 R66；已计入父目录；历史工具和性能资料依赖此根；A5 保留。保护：是，历史认证基线 | U0；main patch / hybrid 线 | **随父目录保留**：历史 llvm-bolt 1da7…与基线输入仍用于认证。A5；原生 clang/strip/resource-dir 也不要分拆 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 158,
+        "text": "| 历史R1 | `T/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0` | f111历史资格实验环境，仍有1da7历史llvm-bolt及旧基准；不能与上两根混同 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 192,
+        "text": "| A5 historical-bolt-tool | `T/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt` | 648,678,768 | `1da7bb735f7bc1afab9a863154260699b0b0f88c6fd05b99231dd21ef653fd5a` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 74,
+        "text": "| `W/temp/gbs-root-x86_64-debuginfo-j4-v2`<br>84.157† | 2026-10-13T17:42:53+08:00 | archive fix；R1 普通/BOLT v2 旧树；源码 f111162e 配方；实存 VCS=f111162e94aa48ed367c9d2c039456c70e7160ae-dirty；历史轮有记录；是否还要重跑/后续用途待确认。[bolt-v4/docs/bolt/02_inventory.md:21](https://github.com/lhmax2010/llvm-optimize/blob/4aad31b261906bc159811411181ffc9e91e02958/docs/bolt/02_inventory.md#L21)；[main/docs/41_disk_inventory.md:69](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/41_disk_inventory.md#L69) | **保留**：34号性能输入的x86 sysroot和历史工具来源；旧保护未解除，本次未纳入整根清理 | 无可见进程/活动overlay；脚本引用54处；外部硬链接inode 0；root目录1844；不可写目录1842；遍历错误3。已核验资产36条（含输入/RPM/报告），见catalog；不等于都应新增保存。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 149,
+        "text": "| `W/temp/gbs-root-x86_64-debuginfo-j4-v2` | `local` | 84.157† |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 325,
+        "text": "--- /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 326,
+        "text": "CHECK OK /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache  size: 92G"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 327,
+        "text": "Delete /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache ? [y/N] DELETED /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache in 18s"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/51_second_review_fixes.md",
+        "line": 271,
+        "text": "| `gbs-root-x86_64-debuginfo-j4-v2` | 84.157† | 2026-09-17T11:57:22 |  archive fix；R1 普通/BOLT v2 旧树；；文档31、38；38_temp_cleanup_inventory.md:74 | 旧 R1 明确受保护的普通构建树；不是本轮可删项。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/05_draft_and_stop.md",
+        "line": 65,
+        "text": "R1=`W/temp/gbs-root-x86_64-debuginfo-j4-v2/local/BUILD-ROOTS/scratch.x86_64.0`。允许的只读metadata chroot已确认Python3.14.2、unshare/mount/rpmspec存在、原/proc未挂载、LLVMConfig.cmake路径存在；rpm4.14的macrobody扩展未识别，原post完整展开含FD、check-buildroot、compress、archive strip、python-hardlink、find-docs、ISU、hal/app检查，不能省略。"
+      }
+    ]
+  },
+  {
+    "directory": "gbs-root-x86_64-archivefix-v2",
+    "category": "main-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/tools/test_certified_x86_release_build.py",
+        "line": 48,
+        "text": "                         'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock'):"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/tools/run_certified_x86_release_build.py",
+        "line": 55,
+        "text": "              W/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock'):"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/tools/test_archive_fix_trial.py",
+        "line": 89,
+        "text": "            root=Path(tmp)/'temp/gbs-root-x86_64-archivefix-v2';root.mkdir(parents=True)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/tools/build_llvm_x86_64.py",
+        "line": 166,
+        "text": "    if root.resolve() != (WORKSPACE/'temp/gbs-root-x86_64-archivefix-v2').resolve():"
+      }
+    ]
+  },
+  {
+    "directory": "gbs-root-x86_64-archivefix-v2",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/test_archive_fix_trial.py",
+        "line": 89,
+        "text": "            root=Path(tmp)/'temp/gbs-root-x86_64-archivefix-v2';root.mkdir(parents=True)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/build_llvm_x86_64.py",
+        "line": 166,
+        "text": "    if root.resolve() != (WORKSPACE/'temp/gbs-root-x86_64-archivefix-v2').resolve():"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/make_report.py",
+        "line": 122,
+        "text": "T/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/make_report.py",
+        "line": 137,
+        "text": "| docs35/38旧Rnew、docs25 overlay的lower | `T/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0` | 原始下层只读，含旧普通工具及docs38包；main hybrid52也复用工具；本轮没有直接执行树内工具 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/source-order-20261016/attempt-version-display/root_parse.py",
+        "line": 3,
+        "text": "E=Path(__file__).resolve().parent;W=E.parents[1];L=W/'temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0';M=E/'merged';G=1024**3"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/source-order-20261016/attempt-version-display/root_parse.py",
+        "line": 61,
+        "text": " project=W/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/install-rehearsal-20261015/finalize-first.py",
+        "line": 30,
+        "text": "save('final-recovery.json',{'own_mounts':mounts,'cgroup_exists':cg.exists(),'project_lock_exists':(E.parents[1]/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock').exists(),'abuild_survivors':read('supervisor-exit.json')['remaining_abuild_pids'],'lower_unchanged':True,'source_unchanged':True})"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/install-rehearsal-20261015/finalize-first.py",
+        "line": 34,
+        "text": "s+='''## B：发现问题（本地演练时限中止，未完成）\\n\\n停止步骤：只带 emit-relocs 的 clang 重链。宿主监护按55分钟计算截止主动SIGKILL abuild进程，预留卸载/审计时间，原文：\\n\\n```text\\nshared lock 3300-second deadline, leaving 300 seconds for cleanup/audit\\n```\\n\\n没有观测到源代码产品门禁失败。rpmbuild退出码-9来自上述资源时限终止，不是匹配度、strip、安全属性或post失败；这些步骤尚未运行。本地结果不能据此断言QB会失败。本根初始缓存仅61文件/14,977,512B，与历史温缓存预演条件不同；不把耗时差异作为QB必败证据。\\n\\n## 执行范围与结果\\n\\n下层：W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0；这是docs38历史构建树，不称作67619ec8新构建物。仅将506dc25的spec/helper/profile/converter作为演练输入，不改源码。upper/work/merged均为本会话新目录、同一文件系统，所有写入在overlay；未在下层或坏配置的/var/tmp树运行cmake/ninja/-P。\\n\\n成功认证的一次sudo -A调用包办overlay、/proc、临时/dev及必要节点、chroot abuild、卸载。原RPM入口PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin，clang/clang++解析/bin/clang和/bin/clang++；宏_toolchain=clang，debug模式，_smp_mflags=-j4。完整argv、实际生成install/post脚本和原始日志均保存。\\n\\n| 项目 | 结果 | 事实 |\\n| --- | --- | --- |\\n| 普通CMake安装 | PASS | install-before.json为5,429路径；仅执行一次普通安装 |\\n| preflight/certified | PASS | Python3.14.2，LLVM22.1.8，认证111 BOLT+2 TF；profile未压缩SHA d9b132f9… |\\n| 路径与proc | PASS | BOLT_BUILDROOT_OK、BOLT_PROC_OK；没有MISSING |\\n| 真实dry-run/tool-plan | PASS | 总113：102对象、7静态库、1可执行、1生成，另TF刷新2；ninja_diagnostics=[] |\\n| 实际-j1构建/tool-verify | PASS | BOLT_NINJA_EXIT_0；planned=executed=113；工具此前不存在、本次产出true |\\n| TF归档 | PASS | 前后及预构建归档均f15c565d30a981c22c71cbcf823030302cf51d19a381f4cc82e44626688be1ed |\\n| clang emit-relocs重链 | INTERRUPTED | 计算截止时仍未结束，不能视作合格BOLT输入 |\\n| strip-debug/BOLT匹配/标识/strip-all/安全/两次tiny | NOT RUN | N/M/S/U/Q、R、S/N与候选SHA均未知；没有BOLT_PIPELINE_PASS |\\n| compare-root | NOT RUN | 无BOLT_COMPARE_ROOT_PASS |\\n| 静态归档转换及候选install | NOT RUN | 未执行；保全的构建目录summary是历史docs38记录，与旧摘要相同，不能冒作新输出 |\\n| 平台后处理及post尾检 | NOT RUN | find-debuginfo实际执行0次；无BOLT_POST_GATE_PASS；post路径/cmake计数未知 |\\n| 最终ninja no-work | NOT RUN | 按停止规则未在中止后继续产品步骤；不伪造no-work原文 |\\n| 卸载/进程/锁/下层审计 | PASS | 见下节；全部成功回收，未延长持锁上限 |\\n\\n'''"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/install-rehearsal-20261015/root_wrapper.py",
+        "line": 3,
+        "text": "E=Path(__file__).resolve().parent;W=E.parents[1];L=W/'temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0';M=E/'merged';P=Path('home/abuild/rpmbuild/BUILD/llvm-22.1.8');G=1024**3"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/install-rehearsal-20261015/prepare.py",
+        "line": 3,
+        "text": "E=Path(__file__).resolve().parent;W=E.parents[1];S=W/'temp/bolt-v4-20261013/v41/llvm-source';L=W/'temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0';P=L/'home/abuild/rpmbuild/BUILD/llvm-22.1.8';G=1024**3"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/source-order-20261016/root_parse.py",
+        "line": 3,
+        "text": "E=Path(__file__).resolve().parent;W=E.parents[1];L=W/'temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0';M=E/'merged-certified';G=1024**3"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/source-order-20261016/root_parse.py",
+        "line": 61,
+        "text": " project=W/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/annotate.py",
+        "line": 12,
+        "text": "put('gbs-root-x86_64-archivefix-v2','f111162e + docs35/38 配方','Rnew；docs38 llvm-strip 根','main/docs/38_llvm_strip_x86_64.md:27; main/docs/52_hybrid_link_tizen_base.md:49','是，Rnew/B','D25 upper 的历史 lower；main hybrid52 工具环境；删后旧 overlay 无法重挂，hybrid 复验失去工具','保留','同时被 BOLT 演练与 main hybrid 引用','原始普通 clang、strip、资源目录；R/RPMS 是 docs38 包，非 docs35')"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/install-rehearsal-20261015/launch.py",
+        "line": 4,
+        "text": "lock=W/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock';record=None;fd=None"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/install-rehearsal-20261015/finalize.py",
+        "line": 30,
+        "text": "save('final-recovery.json',{'own_mounts':mounts,'cgroup_exists':cg.exists(),'project_lock_exists':(E.parents[1]/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock').exists(),'abuild_survivors':read('supervisor-exit.json')['remaining_abuild_pids'],'lower_unchanged':True,'source_unchanged':True})"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/install-rehearsal-20261015/finalize.py",
+        "line": 34,
+        "text": "s+='''## B：发现问题（本地演练时限中止，未完成）\\n\\n停止步骤：只带 emit-relocs 的 clang 重链。宿主监护按55分钟计算截止主动SIGKILL abuild进程，预留卸载/审计时间，原文：\\n\\n```text\\nshared lock 3300-second deadline, leaving 300 seconds for cleanup/audit\\n```\\n\\n没有观测到源代码产品门禁失败。rpmbuild退出码-9来自上述资源时限终止，不是匹配度、strip、安全属性或post失败；这些步骤尚未运行。本地结果不能据此断言QB会失败。本根初始缓存仅61文件/14,977,512B，与历史温缓存预演条件不同；不把耗时差异作为QB必败证据。\\n\\n## 执行范围与结果\\n\\n下层：W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0；这是docs38历史构建树，不称作67619ec8新构建物。仅将506dc25的spec/helper/profile/converter作为演练输入，不改源码。upper/work/merged均为本会话新目录、同一文件系统，所有写入在overlay；未在下层或坏配置的/var/tmp树运行cmake/ninja/-P。\\n\\n成功认证的一次sudo -A调用包办overlay、/proc、临时/dev及必要节点、chroot abuild、卸载。原RPM入口PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin，clang/clang++解析/bin/clang和/bin/clang++；宏_toolchain=clang，debug模式，_smp_mflags=-j4。完整argv、实际生成install/post脚本和原始日志均保存。\\n\\n| 项目 | 结果 | 事实 |\\n| --- | --- | --- |\\n| 普通CMake安装 | PASS | install-before.json为5,429路径；仅执行一次普通安装 |\\n| preflight/certified | PASS | Python3.14.2，LLVM22.1.8，认证111 BOLT+2 TF；profile未压缩SHA d9b132f9… |\\n| 路径与proc | PASS | BOLT_BUILDROOT_OK、BOLT_PROC_OK；没有MISSING |\\n| 真实dry-run/tool-plan | PASS | 总113：102对象、7静态库、1可执行、1生成，另TF刷新2；ninja_diagnostics=[] |\\n| 实际-j1构建/tool-verify | PASS | BOLT_NINJA_EXIT_0；planned=executed=113；工具此前不存在、本次产出true |\\n| TF归档 | PASS | 前后及预构建归档均f15c565d30a981c22c71cbcf823030302cf51d19a381f4cc82e44626688be1ed |\\n| clang emit-relocs重链 | INTERRUPTED | 计算截止时仍未结束，不能视作合格BOLT输入 |\\n| strip-debug/BOLT匹配/标识/strip-all/安全/两次tiny | NOT RUN | N/M/S/U/Q、R、S/N与候选SHA均未知；没有BOLT_PIPELINE_PASS |\\n| compare-root | NOT RUN | 无BOLT_COMPARE_ROOT_PASS |\\n| 静态归档转换及候选install | NOT RUN | 未执行；保全的构建目录summary是历史docs38记录，与旧摘要相同，不能冒作新输出 |\\n| 平台后处理及post尾检 | NOT RUN | find-debuginfo实际执行0次；无BOLT_POST_GATE_PASS；post路径/cmake计数未知 |\\n| 最终ninja no-work | NOT RUN | 按停止规则未在中止后继续产品步骤；不伪造no-work原文 |\\n| 卸载/进程/锁/下层审计 | PASS | 见下节；全部成功回收，未延长持锁上限 |\\n\\n'''"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/source-order-20261016/attempt-prep-count/root_parse.py",
+        "line": 3,
+        "text": "E=Path(__file__).resolve().parent;W=E.parents[1];L=W/'temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0';M=E/'merged-parse';G=1024**3"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/source-order-20261016/attempt-prep-count/root_parse.py",
+        "line": 61,
+        "text": " project=W/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/narrow-disk-20261019/root_wrapper.py",
+        "line": 4,
+        "text": "E=Path(__file__).resolve().parent;W=E.parents[1];L=W/'temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0';M=E/'merged-rpm';G=1024**3"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/narrow-disk-20261019/root_wrapper.py",
+        "line": 70,
+        "text": " project=W/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/narrow-disk-20261019/close_results.py",
+        "line": 15,
+        "text": "project=W/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/sandbox-direct-20261103/classify.py",
+        "line": 22,
+        "text": "'gbs-root-x86_64-archivefix-v2':('建议保留','24、31、38','静态库修复历史根和受保护原始 RPM 组；不把后来的包冒充新基线。'),"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/source-order-20261016/attempt-rpmspec-without/root_parse.py",
+        "line": 3,
+        "text": "E=Path(__file__).resolve().parent;W=E.parents[1];L=W/'temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0';M=E/'merged-final';G=1024**3"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/source-order-20261016/attempt-rpmspec-without/root_parse.py",
+        "line": 61,
+        "text": " project=W/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/disk-diagnostics-20261019/root_wrapper.py",
+        "line": 4,
+        "text": "E=Path(__file__).resolve().parent;W=E.parents[1];L=W/'temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0';M=E/'merged-rpm';G=1024**3"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/disk-diagnostics-20261019/root_wrapper.py",
+        "line": 66,
+        "text": " project=W/'temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/report.py",
+        "line": 77,
+        "text": "restore={str(T/'toolchain-archivefix-v2-final'):'docs35原22RPM：T/archive-fix-v2-final-20261009/rpms-docs35；原件保留',str(T/'toolchain-llvm-strip'):'docs38的22RPM仍在gbs-root-x86_64-archivefix-v2/.../rpmbuild/RPMS/x86_64；不把它们说成67619ec8新构建',str(T/'toolchain-release-x86-20261013'):'docs49交接树/var/tmp/llvm-optimize-x86-archivefix-20261013/.../rpmbuild/RPMS/x86_64；该树仅删缓存，RPM保留',str(T/'bolt-v4-20261016-source-order/upper-parse'):'docs26解析实验已结束；upper-parse不是原始输入，报告/脚本/导出留在父目录；原下层保留','/var/tmp/llvm-optimize-archivefix-v2-final-20261009/independent-install':'docs35独立安装载荷；原RPM及外部验收报告保留；重跑需重建DESTDIR'}"
+      }
+    ]
+  },
+  {
+    "directory": "gbs-root-x86_64-archivefix-v2",
+    "category": "main-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/49_round4_revision_and_x86_build.md",
+        "line": 68,
+        "text": "Rnew=`W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`，B=`Rnew/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`，G=`Rnew/home/abuild/review49-release-x86_64`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/32_archive_fix_v2.md",
+        "line": 24,
+        "text": "| Rnew | `W/temp/gbs-root-x86_64-archivefix-v2`，未初始化 GBS |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/52_hybrid_link_tizen_base.md",
+        "line": 49,
+        "text": "工具来自未交接的历史根 `temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`：Clang/LLD 22.1.8、CMake 3.31.2、Ninja 1.13.1，原构建环境包 clang/llvm 22.1.8-1.6；版本原文：[configuration-tools.txt](52_hybrid_link_evidence/configuration-tools.txt)。不以此证明最新快照完整构建。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 75,
+        "text": "Rnew构建树：`W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/38_llvm_strip_x86_64.md",
+        "line": 27,
+        "text": "| Rnew | `W/temp/gbs-root-x86_64-archivefix-v2` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/34_archive_fix_v2_build.md",
+        "line": 20,
+        "text": "| Rnew | `W/temp/gbs-root-x86_64-archivefix-v2` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/51_gnu_strip_merged_validation.md",
+        "line": 27,
+        "text": "| B旧 | `temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`，只读 compiler-rt 原件 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/49_release_attribution.md",
+        "line": 139,
+        "text": "|opt|`/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/opt`|`c842412e6854a534898139eb24b2769b00284502f900a3af13f2f21d02848322`|"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/49_release_attribution.md",
+        "line": 140,
+        "text": "|llvm-diff|`/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-diff`|`227c137b0ae007eb4be57c5a788f0e7ad34ea6f6a3415af4cf9cc164460bda05`|"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/49_release_attribution.md",
+        "line": 141,
+        "text": "|llvm-objdump|`/home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-objdump`|`a9448cb80dd2464ee55762f2d741459f39138c84a4b68d5f328ae71df2568daa`|"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/47_review_round4_package.md",
+        "line": 17,
+        "text": "- Rnew=`W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`；各根B=`R/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/46_review_round3_package.md",
+        "line": 23,
+        "text": "| x86工具 | `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/{clang-22,llvm-dis,llvm-nm}` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/46_review_round3_package.md",
+        "line": 102,
+        "text": "宏取docs/38同一x86根 `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`，包 `rpm-build-4.14.1.1-1.4.x86_64`，`usr/lib/rpm/tizen_macros:34–38`："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/37_target_recipe_policy_check.md",
+        "line": 28,
+        "text": "| R | `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`，docs/35 原根，只读 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/35_archive_fix_v2_final.md",
+        "line": 25,
+        "text": "| Rnew | `W/temp/gbs-root-x86_64-archivefix-v2` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/39_arm_archive_conversion_feasibility.md",
+        "line": 19,
+        "text": "| RX | `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`，仅查询已装宏/CMake，不执行构建 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/41_disk_inventory.md",
+        "line": 70,
+        "text": "| `W/temp/gbs-root-x86_64-archivefix-v2` | 70.971† | 2026-10-09 21:37 | S01（关联；创建者未逐目录确证）；GBS构建根 | 产物/忽略目录；非独立Git根 | docs/39_arm_archive_conversion_feasibility.md:19；docs/38_llvm_strip_x86_64.md:27 | **保留**：Rnew及构建树，ARM/x86回归输入；用户指定保留 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/41_disk_inventory.md",
+        "line": 292,
+        "text": "| Rnew | `W/temp/gbs-root-x86_64-archivefix-v2` | 70.971 | 当前构建/续跑根，用户指定 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/41_disk_inventory.md",
+        "line": 293,
+        "text": "| B | `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build` | 66.031 | ARM实施前x86全量回归的225个原始归档 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/36_archive_fix_tizen_consumers.md",
+        "line": 23,
+        "text": "16:49:54取得项目独占锁：`W/temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock`，"
+      }
+    ]
+  },
+  {
+    "directory": "gbs-root-x86_64-archivefix-v2",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/38_llvm_strip_x86_64.md",
+        "line": 27,
+        "text": "| Rnew | `W/temp/gbs-root-x86_64-archivefix-v2` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/34_archive_fix_v2_build.md",
+        "line": 20,
+        "text": "| Rnew | `W/temp/gbs-root-x86_64-archivefix-v2` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/37_target_recipe_policy_check.md",
+        "line": 28,
+        "text": "| R | `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`，docs/35 原根，只读 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/32_archive_fix_v2.md",
+        "line": 24,
+        "text": "| Rnew | `W/temp/gbs-root-x86_64-archivefix-v2`，未初始化 GBS |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/41_disk_inventory.md",
+        "line": 70,
+        "text": "| `W/temp/gbs-root-x86_64-archivefix-v2` | 70.971† | 2026-10-09 21:37 | S01（关联；创建者未逐目录确证）；GBS构建根 | 产物/忽略目录；非独立Git根 | docs/39_arm_archive_conversion_feasibility.md:19；docs/38_llvm_strip_x86_64.md:27 | **保留**：Rnew及构建树，ARM/x86回归输入；用户指定保留 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/41_disk_inventory.md",
+        "line": 292,
+        "text": "| Rnew | `W/temp/gbs-root-x86_64-archivefix-v2` | 70.971 | 当前构建/续跑根，用户指定 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/41_disk_inventory.md",
+        "line": 293,
+        "text": "| B | `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build` | 66.031 | ARM实施前x86全量回归的225个原始归档 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/39_arm_archive_conversion_feasibility.md",
+        "line": 19,
+        "text": "| RX | `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`，仅查询已装宏/CMake，不执行构建 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 75,
+        "text": "Rnew构建树：`W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/36_archive_fix_tizen_consumers.md",
+        "line": 23,
+        "text": "16:49:54取得项目独占锁：`W/temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock`，"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/46_review_round3_package.md",
+        "line": 23,
+        "text": "| x86工具 | `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/{clang-22,llvm-dis,llvm-nm}` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/46_review_round3_package.md",
+        "line": 102,
+        "text": "宏取docs/38同一x86根 `W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0`，包 `rpm-build-4.14.1.1-1.4.x86_64`，`usr/lib/rpm/tizen_macros:34–38`："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/35_archive_fix_v2_final.md",
+        "line": 25,
+        "text": "| Rnew | `W/temp/gbs-root-x86_64-archivefix-v2` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 65,
+        "text": "| gbs-root-x86_64-archivefix-v2 | 存在；cache d9970d73…，图81216d3d… | 同历史clang SHA | f111162e归档修复旧完整树，项目列表无bolt；归档会话持有锁，不续跑 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/02_inventory.md",
+        "line": 84,
+        "text": "开场归档会话使用W/temp/review-round4-20261012/hold_lock.py，O_CREAT|O_EXCL同时占用W/temp/.llvm-optimize-exclusive.lock和W/temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock；记录pid/session/start；只有拥有者记录匹配才删除。锁记录与脚本只读复制到inventory/archive-*。以后任何重任务须由归档会话明确释放/移交、只读确认进程及根身份后再按该机制取得两锁；禁止删除“看似过时”锁。本轮未获取、等待、释放或发信号干扰这些锁。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 94,
+        "text": "| R58 `T/gbs-root-x86_64-archivefix-v2` | 79.287† / 85,133,877,248 | H；2026-10-19 14:41:08 | f111162e + docs35/38 配方；实存 VCS=f111162e94aa48ed367c9d2c039456c70e7160ae-dirty；Rnew；docs38 llvm-strip 根。[main/docs/38_llvm_strip_x86_64.md:27](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/38_llvm_strip_x86_64.md#L27); [main/docs/52_hybrid_link_tizen_base.md:49](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/52_hybrid_link_tizen_base.md#L49)；exported-vcs.json（原spec L36） | D25 upper 的历史 lower；main hybrid52 工具环境；删后旧 overlay 无法重挂，hybrid 复验失去工具；docs26 Source-order与docs27磁盘修订解析upper也以此为lower。保护：是，Rnew/B | U0；main patch / hybrid 线 | **保留**：同时被 BOLT 演练与 main hybrid 引用。原始普通 clang、strip、资源目录；R/RPMS 是 docs38 包，非 docs35；A13 为本次实测clang |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 95,
+        "text": "| R59 `T/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild` | 69.505‡ / 74,630,057,984 | H；2026-10-09 20:54:04 | f111162e + docs35/38 配方；实存 VCS=f111162e94aa48ed367c9d2c039456c70e7160ae-dirty；内含 rpmbuild；Rnew；docs38 llvm-strip 根。[main/docs/38_llvm_strip_x86_64.md:27](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/38_llvm_strip_x86_64.md#L27); [main/docs/52_hybrid_link_tizen_base.md:49](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/52_hybrid_link_tizen_base.md#L49)；exported-vcs.json（原spec L36） | 内含于 R58；已计入父目录；D25 upper 的历史 lower；main hybrid52 工具环境；删后旧 overlay 无法重挂，hybrid 复验失去工具；docs26 Source-order与docs27磁盘修订解析upper也以此为lower。保护：是，Rnew/B | U0；main patch / hybrid 线 | **随父目录保留**：同时被 BOLT 演练与 main hybrid 引用。原始普通 clang、strip、资源目录；R/RPMS 是 docs38 包，非 docs35；A13 为本次实测clang |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 96,
+        "text": "| R60 `T/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build` | 66.031‡ / 70,899,859,456 | H；2026-10-09 20:32:35 | f111162e + docs35/38 配方；实存 VCS=f111162e94aa48ed367c9d2c039456c70e7160ae-dirty；内含 build；Rnew；docs38 llvm-strip 根。[main/docs/38_llvm_strip_x86_64.md:27](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/38_llvm_strip_x86_64.md#L27); [main/docs/52_hybrid_link_tizen_base.md:49](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/52_hybrid_link_tizen_base.md#L49)；exported-vcs.json（原spec L36） | 内含于 R59；已计入父目录；D25 upper 的历史 lower；main hybrid52 工具环境；删后旧 overlay 无法重挂，hybrid 复验失去工具；docs26 Source-order与docs27磁盘修订解析upper也以此为lower。保护：是，Rnew/B | U0；main patch / hybrid 线 | **随父目录保留**：同时被 BOLT 演练与 main hybrid 引用。原始普通 clang、strip、资源目录；R/RPMS 是 docs38 包，非 docs35；A13 为本次实测clang |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 142,
+        "text": "T/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 157,
+        "text": "| docs35/38旧Rnew、docs25 overlay的lower | `T/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0` | 原始下层只读，含旧普通工具及docs38包；main hybrid52也复用工具；本轮没有直接执行树内工具 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 200,
+        "text": "| A13 Rnew ordinary clang | `T/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/clang-22` | 1,793,477,048 | `d25e99607c9ea23bf2e50da5075c21f0145f6da24a39a4228d2fd8026ead70cf` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/24_rebase_recertification.md",
+        "line": 34,
+        "text": "`GateError: docs35 RPM SHA changed: /home/linhao/Toolchain/development/llvm-optimize/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/RPMS/x86_64/clang-22.1.8-1.x86_64.rpm`"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 56,
+        "text": "| `W/temp/toolchain-llvm-strip` | 46.256 | docs38的22RPM仍在gbs-root-x86_64-archivefix-v2/.../rpmbuild/RPMS/x86_64；不把它们说成67619ec8新构建 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 75,
+        "text": "| `W/temp/gbs-root-x86_64-archivefix-v2`<br>79.287† | 2026-10-13T14:36:47+08:00 | archive fix；Rnew；docs38 llvm-strip 根；源码 f111162e + docs35/38 配方；实存 VCS=f111162e94aa48ed367c9d2c039456c70e7160ae-dirty；历史轮有记录；是否还要重跑/后续用途待确认。[main/docs/38_llvm_strip_x86_64.md:27](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/38_llvm_strip_x86_64.md#L27)；[main/docs/52_hybrid_link_tizen_base.md:49](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/52_hybrid_link_tizen_base.md#L49) | **保留（待用户判断）**：旧主线结果/保护范围或复现输入，尚无明确弃用裁决 | 无可见进程/活动overlay；脚本引用196处；外部硬链接inode 22；root目录1844；不可写目录1842；遍历错误3。已核验资产32条（含输入/RPM/报告），见catalog；不等于都应新增保存。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 148,
+        "text": "| `W/temp/gbs-root-x86_64-archivefix-v2` | `local` | 79.287† |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 195,
+        "text": "- `W/temp/gbs-root-x86_64-archivefix-v2`（79.287GiB）：旧主线结果/保护范围或复现输入，尚无明确弃用裁决；[main/docs/38_llvm_strip_x86_64.md:27](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/38_llvm_strip_x86_64.md#L27)；[main/docs/52_hybrid_link_tizen_base.md:49](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/52_hybrid_link_tizen_base.md#L49)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/51_second_review_fixes.md",
+        "line": 293,
+        "text": "| `gbs-root-x86_64-archivefix-v2` | UNKNOWN | 2026-10-19T14:41:08 |  docs38的22RPM仍在gbs-root-x86_64-archivefix-v2/.../rpmbuild/RPMS/x86_64；不把它们说成67619ec8新构建 ；文档24、31、38；38_temp_cleanup_inventory.md:56 | 静态库修复历史根和受保护原始 RPM 组；不把后来的包冒充新基线。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/51_second_review_fixes.md",
+        "line": 309,
+        "text": "| `gbs-root-x86_64-archivefix` | 13.630† | 2026-09-27T21:59:30 |  docs38的22RPM仍在gbs-root-x86_64-archivefix-v2/.../rpmbuild/RPMS/x86_64；不把它们说成67619ec8新构建 ；文档38（历史盘点）；38_temp_cleanup_inventory.md:56 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/25_real_install_rehearsal.md",
+        "line": 34,
+        "text": "下层：W/temp/gbs-root-x86_64-archivefix-v2/local/BUILD-ROOTS/scratch.x86_64.0；这是docs38历史构建树，不称作67619ec8新构建物。仅将506dc25的spec/helper/profile/converter作为演练输入，不改源码。upper/work/merged均为本会话新目录、同一文件系统，所有写入在overlay；未在下层或坏配置的/var/tmp树运行cmake/ninja/-P。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/STATUS.md",
+        "line": 60,
+        "text": "归档会话开场使用W/temp/review-round4-20261012/hold_lock.py，以O_CREAT|O_EXCL同时占用W/temp/.llvm-optimize-exclusive.lock与W/temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock，JSON含pid/session/start；只有拥有者匹配记录才删除。脚本/记录只读封存E/inventory/archive-*。以后重任务先由归档会话明确释放/移交，再核验树身份/无重进程并按该机制取得锁；不能删“看似过时”的锁。本轮没有获取、等待、释放锁或向拥有者发信号。后续新根的锁路径随移交重新固定。"
+      }
+    ]
+  },
+  {
+    "directory": "arm-archive-tls-thumb-20261010",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "arm-archive-tls-thumb-20261010",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/annotate.py",
+        "line": 22,
+        "text": "put('arm-archive-tls-thumb-20261010','cb679968 输入；ARM helper 多轮修订','ARM Thumb/TLS与全量转换','main/docs/46_review_round3_package.md:22; main/docs/44_arm_source_review_round1.md:27','是，ARM输入','review3/review4 依赖 aarch64-input；VS Code 正打开子目录','保留','正在被编辑器读取，且是认证输入')"
+      }
+    ]
+  },
+  {
+    "directory": "arm-archive-tls-thumb-20261010",
+    "category": "main-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 1656,
+        "text": "本节承接§11的停止；历史§1–§11不改判。本轮用户授权补充GD/LD/TLSDESC策略、修正Thumb、重新做x86全量回归，再按armv7l→aarch64顺序执行；仍禁止未知类型自动放行。`E12=/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010`。原始命令、输出、逐成员证据只保存在该目录。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/50_archive_followup_review.md",
+        "line": 290,
+        "text": "| aarch64 | docs/40 §12 标准完整 `%build` 的 212 档，3,699 个 bitcode 成员 | `temp/arm-archive-tls-thumb-20261010/aarch64-ir-census/**` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/47_review_round4_package.md",
+        "line": 18,
+        "text": "- E5=`W/temp/arm-archive-stage1-20261010`，x86输入在`E5/x86-input`；ARM32输入为`W/temp/arm-archive-standard-build-20261010/armv7l-input`，AArch64输入为`W/temp/arm-archive-tls-thumb-20261010/aarch64-input`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/44_arm_source_review_round1.md",
+        "line": 27,
+        "text": "| AArch64输入 | `W/temp/arm-archive-tls-thumb-20261010/aarch64-input/usr/lib64`，212档；旧普查在同证据目录aarch64-ir-census |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/44_arm_source_review_round1.md",
+        "line": 395,
+        "text": "**210/210个after SHA与docs/40 §12全部相同。** 旧基准为`temp/arm-archive-tls-thumb-20261010/armv7l-conversion/summary.json`，逐档值见E4/armv7l-comparison-result.json。依本轮授权，不重跑三套消费者及两种strip；沿用该目录`consumers-native-rerun`、`consumers-gnu`、`consumers-llvm`各7项PASS和`strip-gnu`、`strip-llvm`结果，其SHA及状态另存E4/armv7l-reused-evidence.json。没有把旧native首次辅助失败当成成功，也不把沿用写成新实测。105/106新夹具仍须另跑。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/44_arm_source_review_round1.md",
+        "line": 413,
+        "text": "**212/212个after SHA与docs/40 §12全部相同**，逐档值在E4/aarch64-comparison-result.json；旧基准为`temp/arm-archive-tls-thumb-20261010/aarch64-conversion/summary.json`。依授权沿用其`aarch64-consumers-native/gnu/llvm`各7项PASS和`aarch64-strip-gnu/llvm`结果，未重跑；文件摘要与PASS核对记录在E4/aarch64-reused-evidence.json。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/46_review_round3_package.md",
+        "line": 22,
+        "text": "| AArch64输入 | `W/temp/arm-archive-tls-thumb-20261010/aarch64-input` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/46_review_round3_package.md",
+        "line": 206,
+        "text": "历史沿用的证据目录均在`temp/arm-archive-tls-thumb-20261010/`：ARM32为`consumers-native-rerun/`、`consumers-gnu/`、`consumers-llvm/`、`strip-gnu/`、`strip-llvm/`；AArch64为`aarch64-consumers-native/`、`aarch64-consumers-gnu/`、`aarch64-consumers-llvm/`、`aarch64-strip-gnu/`、`aarch64-strip-llvm/`。本轮仅依据所有整档after SHA全同沿用这些记录，未重新运行消费者或strip，不增加历史运行次数。（出处：docs/40 §12、docs/44；本轮两个*-result.json comparisons全表。）"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/43_arm_conversion_review_package.md",
+        "line": 20,
+        "text": "- E12=`W/temp/arm-archive-tls-thumb-20261010`"
+      }
+    ]
+  },
+  {
+    "directory": "arm-archive-tls-thumb-20261010",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 1656,
+        "text": "本节承接§11的停止；历史§1–§11不改判。本轮用户授权补充GD/LD/TLSDESC策略、修正Thumb、重新做x86全量回归，再按armv7l→aarch64顺序执行；仍禁止未知类型自动放行。`E12=/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010`。原始命令、输出、逐成员证据只保存在该目录。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/44_arm_source_review_round1.md",
+        "line": 27,
+        "text": "| AArch64输入 | `W/temp/arm-archive-tls-thumb-20261010/aarch64-input/usr/lib64`，212档；旧普查在同证据目录aarch64-ir-census |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/44_arm_source_review_round1.md",
+        "line": 395,
+        "text": "**210/210个after SHA与docs/40 §12全部相同。** 旧基准为`temp/arm-archive-tls-thumb-20261010/armv7l-conversion/summary.json`，逐档值见E4/armv7l-comparison-result.json。依本轮授权，不重跑三套消费者及两种strip；沿用该目录`consumers-native-rerun`、`consumers-gnu`、`consumers-llvm`各7项PASS和`strip-gnu`、`strip-llvm`结果，其SHA及状态另存E4/armv7l-reused-evidence.json。没有把旧native首次辅助失败当成成功，也不把沿用写成新实测。105/106新夹具仍须另跑。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/44_arm_source_review_round1.md",
+        "line": 413,
+        "text": "**212/212个after SHA与docs/40 §12全部相同**，逐档值在E4/aarch64-comparison-result.json；旧基准为`temp/arm-archive-tls-thumb-20261010/aarch64-conversion/summary.json`。依授权沿用其`aarch64-consumers-native/gnu/llvm`各7项PASS和`aarch64-strip-gnu/llvm`结果，未重跑；文件摘要与PASS核对记录在E4/aarch64-reused-evidence.json。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/46_review_round3_package.md",
+        "line": 22,
+        "text": "| AArch64输入 | `W/temp/arm-archive-tls-thumb-20261010/aarch64-input` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/46_review_round3_package.md",
+        "line": 206,
+        "text": "历史沿用的证据目录均在`temp/arm-archive-tls-thumb-20261010/`：ARM32为`consumers-native-rerun/`、`consumers-gnu/`、`consumers-llvm/`、`strip-gnu/`、`strip-llvm/`；AArch64为`aarch64-consumers-native/`、`aarch64-consumers-gnu/`、`aarch64-consumers-llvm/`、`aarch64-strip-gnu/`、`aarch64-strip-llvm/`。本轮仅依据所有整档after SHA全同沿用这些记录，未重新运行消费者或strip，不增加历史运行次数。（出处：docs/40 §12、docs/44；本轮两个*-result.json comparisons全表。）"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/43_arm_conversion_review_package.md",
+        "line": 20,
+        "text": "- E12=`W/temp/arm-archive-tls-thumb-20261010`"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 76,
+        "text": "| R40 `T/arm-archive-tls-thumb-20261010` | 30.505 / 32,754,786,304 | H；2026-10-10 18:24:02 | cb679968 输入；ARM helper 多轮修订；ARM Thumb/TLS与全量转换。[main/docs/46_review_round3_package.md:22](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/46_review_round3_package.md#L22); [main/docs/44_arm_source_review_round1.md:27](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/44_arm_source_review_round1.md#L27) | review3/review4 依赖 aarch64-input；初始 lsof 见 VS Code 读取，末次快照未见句柄。保护：是，ARM输入 | U0；main patch / hybrid 线 | **保留**：有近期编辑器读取记录，且是认证输入。先留日志/manifest/SHA；未逐一认证独有二进制 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 85,
+        "text": "| `W/temp/arm-archive-tls-thumb-20261010`<br>30.505 | 2026-10-10T18:24:02+08:00 | ARM/archive fix；ARM Thumb/TLS与全量转换；源码 cb679968 输入；ARM helper 多轮修订；历史轮有记录；是否还要重跑/后续用途待确认。[main/docs/46_review_round3_package.md:22](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/46_review_round3_package.md#L22)；[main/docs/44_arm_source_review_round1.md:27](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/44_arm_source_review_round1.md#L27) | **保留（待用户判断）**：ARM转换/主线历史输入，部分仍是34号sysroot；不代替主线决定弃用 | 无可见进程/活动overlay；脚本引用47处；外部硬链接inode 0；root目录0；不可写目录0；遍历错误0。已核验资产3条（含输入/RPM/报告），见catalog；不等于都应新增保存。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 200,
+        "text": "- `W/temp/arm-archive-tls-thumb-20261010`（30.505GiB）：ARM转换/主线历史输入，部分仍是34号sysroot；不代替主线决定弃用；[main/docs/46_review_round3_package.md:22](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/46_review_round3_package.md#L22)；[main/docs/44_arm_source_review_round1.md:27](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/44_arm_source_review_round1.md#L27)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/51_second_review_fixes.md",
+        "line": 306,
+        "text": "| `arm-archive-tls-thumb-20261010` | 30.505 | 2026-10-10T18:23:59 |  ARM/archive fix；ARM Thumb/TLS与全量转换；；文档38（历史盘点）；38_temp_cleanup_inventory.md:85 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+      }
+    ]
+  },
+  {
+    "directory": "arm-source-root-probes-20261010",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "arm-source-root-probes-20261010",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/annotate.py",
+        "line": 23,
+        "text": "put('arm-source-root-probes-20261010','cb679968 输入；候选 helper','ARM源文件/根内探测','main/docs/46_review_round3_package.md:19','是，ARM证据')"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/sandbox-direct-20261103/classify.py",
+        "line": 23,
+        "text": "'arm-source-root-probes-20261010':('建议保留','31、34、38','ARM sysroot/验证资产；不替主线决定弃用。'),"
+      }
+    ]
+  },
+  {
+    "directory": "arm-source-root-probes-20261010",
+    "category": "main-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/45_gerrit_patches_review_package.md",
+        "line": 171,
+        "text": "12. **开放问题：ARM构建根内AS限制不生效。** 续三在临时/proc下重测：ARM32与AArch64均在prlimit --as=4GiB和1GiB后读回unlimited/unlimited，--nofile=256却正确读回256/256；两根QEMU9.2.3，/emul未发现原生x86_64 prlimit/util-linux候选。按预注册判据证实限制在目标QEMU路径未施加，不据此宣称cgroup等价于单进程AS限制。可选方向包括提供/认证原生prlimit、明确记录AS未生效并设计其他保护、研究QEMU路径；本轮不选方案，不修改生产Commands。宿主原生99/99 PASS，同一AS测试正确读回4GiB；ARM离线转换仍在宿主运行，不能替代未来根内生产%install限流认证。（出处：docs/44 §18–§21；E4/facts-result.json，E4=`temp/arm-source-root-probes-20261010`。）"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/44_arm_source_review_round1.md",
+        "line": 342,
+        "text": "证据E4=`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010`。本轮Source固定e2c2ebfa，无代码修改；取得项目锁，无竞争构建进程。PM将两个GNU time测试和x86 as夹具归为根内环境不适用；AS限制若实证不生效，记开放问题而不阻塞宿主离线复验；timeout须先证实启动时延再修测试。历史FAIL保留。（证据：本轮任务；E4/protected-start.json、preflight-processes.txt、lock-acquired.json。）"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/46_review_round3_package.md",
+        "line": 19,
+        "text": "| E4（前轮证据） | `W/temp/arm-source-root-probes-20261010` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/44_census_tables.md",
+        "line": 95,
+        "text": "Python3.14.2；临时/proc可见；只跑一次。原始unittest为95 PASS、1 FAIL、3 ERROR，按预注册PM例外分类通过。原始逐项记录及错误全文：`temp/arm-source-root-probes-20261010/armv7l-test-records.json`；分类断言：`root-tests-classified.json`。未跳过/改写那四项测试。"
+      }
+    ]
+  },
+  {
+    "directory": "arm-source-root-probes-20261010",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/45_gerrit_patches_review_package.md",
+        "line": 171,
+        "text": "12. **开放问题：ARM构建根内AS限制不生效。** 续三在临时/proc下重测：ARM32与AArch64均在prlimit --as=4GiB和1GiB后读回unlimited/unlimited，--nofile=256却正确读回256/256；两根QEMU9.2.3，/emul未发现原生x86_64 prlimit/util-linux候选。按预注册判据证实限制在目标QEMU路径未施加，不据此宣称cgroup等价于单进程AS限制。可选方向包括提供/认证原生prlimit、明确记录AS未生效并设计其他保护、研究QEMU路径；本轮不选方案，不修改生产Commands。宿主原生99/99 PASS，同一AS测试正确读回4GiB；ARM离线转换仍在宿主运行，不能替代未来根内生产%install限流认证。（出处：docs/44 §18–§21；E4/facts-result.json，E4=`temp/arm-source-root-probes-20261010`。）"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/44_census_tables.md",
+        "line": 95,
+        "text": "Python3.14.2；临时/proc可见；只跑一次。原始unittest为95 PASS、1 FAIL、3 ERROR，按预注册PM例外分类通过。原始逐项记录及错误全文：`temp/arm-source-root-probes-20261010/armv7l-test-records.json`；分类断言：`root-tests-classified.json`。未跳过/改写那四项测试。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/44_arm_source_review_round1.md",
+        "line": 342,
+        "text": "证据E4=`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010`。本轮Source固定e2c2ebfa，无代码修改；取得项目锁，无竞争构建进程。PM将两个GNU time测试和x86 as夹具归为根内环境不适用；AS限制若实证不生效，记开放问题而不阻塞宿主离线复验；timeout须先证实启动时延再修测试。历史FAIL保留。（证据：本轮任务；E4/protected-start.json、preflight-processes.txt、lock-acquired.json。）"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/46_review_round3_package.md",
+        "line": 19,
+        "text": "| E4（前轮证据） | `W/temp/arm-source-root-probes-20261010` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 77,
+        "text": "| R41 `T/arm-source-root-probes-20261010` | 18.378 / 19,733,180,416 | H；2026-10-11 01:22:40 | cb679968 输入；候选 helper；ARM源文件/根内探测。[main/docs/46_review_round3_package.md:19](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/46_review_round3_package.md#L19) | 未发现活动 overlay；不等于不存在脚本引用。保护：是，ARM证据 | U0；main patch / hybrid 线 | **保留**：保留复核证据，先由所属主线确认。先留日志/manifest/SHA；未逐一认证独有二进制 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 89,
+        "text": "| `W/temp/arm-source-root-probes-20261010`<br>18.378 | 2026-10-11T01:22:40+08:00 | ARM/archive fix；ARM源文件/根内探测；源码 cb679968 输入；候选 helper；历史轮有记录；是否还要重跑/后续用途待确认。[main/docs/46_review_round3_package.md:19](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/46_review_round3_package.md#L19) | **保留（待用户判断）**：ARM转换/主线历史输入，部分仍是34号sysroot；不代替主线决定弃用 | 无可见进程/活动overlay；脚本引用13处；外部硬链接inode 0；root目录0；不可写目录0；遍历错误0。已核验资产2条（含输入/RPM/报告），见catalog；不等于都应新增保存。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 203,
+        "text": "- `W/temp/arm-source-root-probes-20261010`（18.378GiB）：ARM转换/主线历史输入，部分仍是34号sysroot；不代替主线决定弃用；[main/docs/46_review_round3_package.md:19](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/46_review_round3_package.md#L19)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/51_second_review_fixes.md",
+        "line": 273,
+        "text": "| `arm-source-root-probes-20261010` | 18.378 | 2026-10-11T01:22:40 |  ARM/archive fix；ARM源文件/根内探测；；文档31、34、38；38_temp_cleanup_inventory.md:89 | ARM sysroot/验证资产；不替主线决定弃用。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+      }
+    ]
+  },
+  {
+    "directory": "arm-archive-stage1-20261010",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "arm-archive-stage1-20261010",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/annotate.py",
+        "line": 20,
+        "text": "put('arm-archive-stage1-20261010','cb679968；x86输入另承 docs35','ARM阶段1/x86转换输入','main/docs/40_arm_archive_conversion_stage1.md:55; main/docs/46_review_round3_package.md:20','是，ARM输入','后续 review3/review4 转换依赖 x86-input')"
+      }
+    ]
+  },
+  {
+    "directory": "arm-archive-stage1-20261010",
+    "category": "main-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 55,
+        "text": "本轮证据目录 **E=`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010`**。原始输出只保存在本机。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 61,
+        "text": "隔离工作树`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-source-stage1-20261010`，分支`arm-archive-stage1-20261010`，基于上述主仓库HEAD。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/50_archive_followup_review.md",
+        "line": 288,
+        "text": "| x86_64 | docs/35 构建原始 225 档中的 3,853 个 bitcode 成员 | E5/x86-input；`temp/arm-archive-stage1-20261010/anchor-metadata.json:2` 指向 docs/35 summary；后续 `temp/review-round3-continue-20261012/x86-production-conversion/members/**/ir-settings.json` 只重新读取这些记录，不是新编译 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/47_review_round4_package.md",
+        "line": 18,
+        "text": "- E5=`W/temp/arm-archive-stage1-20261010`，x86输入在`E5/x86-input`；ARM32输入为`W/temp/arm-archive-standard-build-20261010/armv7l-input`，AArch64输入为`W/temp/arm-archive-tls-thumb-20261010/aarch64-input`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/46_review_round3_package.md",
+        "line": 20,
+        "text": "| x86输入 E5/x86-input | `W/temp/arm-archive-stage1-20261010/x86-input` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/43_arm_conversion_review_package.md",
+        "line": 22,
+        "text": "- E5=`W/temp/arm-archive-stage1-20261010`"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/STATUS.md",
+        "line": 362,
+        "text": "| 隔离ARM草案Source选择x86时，225原始归档身份一致；转换后225整档、3864有序成员及完整索引与docs/35完全相同，3853条后端flags顺序一致，60相关测试PASS。仅认证x86路径，不认证真实ARM归档。 | docs/40 §5；temp/arm-archive-stage1-20261010/x86-regression-result.json | 硬证据 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/STATUS.md",
+        "line": 738,
+        "text": "前次执行备案（e44fb63，初始化政策随后已解除）：用户明确清理任务不再阻塞B/C，四个待sudo删除旧根不读写；B已PASS；C0在GBS启动前停止，证据`temp/arm-archive-stage1-20261010`。x86不变性为硬证据，ARM能力仍未认证。无磁盘清理/宿主配置修改/补丁更新/Gerrit推送。"
+      }
+    ]
+  },
+  {
+    "directory": "arm-archive-stage1-20261010",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 55,
+        "text": "本轮证据目录 **E=`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010`**。原始输出只保存在本机。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 61,
+        "text": "隔离工作树`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-source-stage1-20261010`，分支`arm-archive-stage1-20261010`，基于上述主仓库HEAD。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/46_review_round3_package.md",
+        "line": 20,
+        "text": "| x86输入 E5/x86-input | `W/temp/arm-archive-stage1-20261010/x86-input` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/STATUS.md",
+        "line": 179,
+        "text": "| 隔离ARM草案Source选择x86时，225原始归档身份一致；转换后225整档、3864有序成员及完整索引与docs/35完全相同，3853条后端flags顺序一致，60相关测试PASS。仅认证x86路径，不认证真实ARM归档。 | docs/40 §5；temp/arm-archive-stage1-20261010/x86-regression-result.json | 硬证据 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/STATUS.md",
+        "line": 497,
+        "text": "前次执行备案（e44fb63，初始化政策随后已解除）：用户明确清理任务不再阻塞B/C，四个待sudo删除旧根不读写；B已PASS；C0在GBS启动前停止，证据`temp/arm-archive-stage1-20261010`。x86不变性为硬证据，ARM能力仍未认证。无磁盘清理/宿主配置修改/补丁更新/Gerrit推送。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/43_arm_conversion_review_package.md",
+        "line": 22,
+        "text": "- E5=`W/temp/arm-archive-stage1-20261010`"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 74,
+        "text": "| R38 `T/arm-archive-stage1-20261010` | 11.923 / 12,802,723,840 | H；2026-10-10 11:01:54 | cb679968；x86输入另承 docs35；ARM阶段1/x86转换输入。[main/docs/40_arm_archive_conversion_stage1.md:55](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/40_arm_archive_conversion_stage1.md#L55); [main/docs/46_review_round3_package.md:20](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/46_review_round3_package.md#L20) | 后续 review3/review4 转换依赖 x86-input。保护：是，ARM输入 | U0；main patch / hybrid 线 | **保留**：保留复核证据，先由所属主线确认。先留日志/manifest/SHA；未逐一认证独有二进制 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 94,
+        "text": "| `W/temp/arm-archive-stage1-20261010`<br>11.923 | 2026-10-10T11:01:54+08:00 | ARM/archive fix；ARM阶段1/x86转换输入；源码 cb679968；x86输入另承 docs35；历史轮有记录；是否还要重跑/后续用途待确认。[main/docs/40_arm_archive_conversion_stage1.md:55](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/40_arm_archive_conversion_stage1.md#L55)；[main/docs/46_review_round3_package.md:20](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/46_review_round3_package.md#L20) | **保留（待用户判断）**：ARM转换/主线历史输入，部分仍是34号sysroot；不代替主线决定弃用 | 无可见进程/活动overlay；脚本引用33处；外部硬链接inode 0；root目录0；不可写目录0；遍历错误0。已核验资产2条（含输入/RPM/报告），见catalog；不等于都应新增保存。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 205,
+        "text": "- `W/temp/arm-archive-stage1-20261010`（11.923GiB）：ARM转换/主线历史输入，部分仍是34号sysroot；不代替主线决定弃用；[main/docs/40_arm_archive_conversion_stage1.md:55](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/40_arm_archive_conversion_stage1.md#L55)；[main/docs/46_review_round3_package.md:20](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/46_review_round3_package.md#L20)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/51_second_review_fixes.md",
+        "line": 310,
+        "text": "| `arm-archive-stage1-20261010` | 11.923 | 2026-10-10T11:01:54 |  ARM/archive fix；ARM阶段1/x86转换输入；；文档38（历史盘点）；38_temp_cleanup_inventory.md:94 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+      }
+    ]
+  },
+  {
+    "directory": "arm-archive-stage1-c-newrepo-20261010",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "arm-archive-stage1-c-newrepo-20261010",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/annotate.py",
+        "line": 21,
+        "text": "put('arm-archive-stage1-c-newrepo-20261010','cb679968','C1 导出/原仓库证据','main/docs/40_arm_archive_conversion_stage1.md:627; main/docs/40_arm_archive_conversion_stage1.md:772','是，ARM阶段证据')"
+      }
+    ]
+  },
+  {
+    "directory": "arm-archive-stage1-c-newrepo-20261010",
+    "category": "main-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 627,
+        "text": "E9 = W/temp/arm-archive-stage1-c-newrepo-20261010"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 784,
+        "text": "     /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c1-export"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 873,
+        "text": "E9  = W/temp/arm-archive-stage1-c-newrepo-20261010"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 984,
+        "text": " W=Path('/home/linhao/Toolchain/development/llvm-optimize'); E=Path(__file__).resolve().parent;old=W/'temp/arm-archive-stage1-c-newrepo-20261010';V=Path('/var/tmp/llvm-optimize-arm-c1-20261010');root=V/'gbs-libraries-armv7l'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 1097,
+        "text": "E9  = W/temp/arm-archive-stage1-c-newrepo-20261010"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 2194,
+        "text": "sudo -n /usr/bin/build --uid 1000:1000 --target aarch64-tizen-linux --jobs 6 --cachedir /var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/cache --dist /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/buildconfig-from-W.conf --arch aarch64:noarch /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c1-export/llvm.spec --repository https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261001.092726/repos/standard/packages/ --repository https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260814.092727/repos/standard/packages/ --debug --root /var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/BUILD-ROOTS/scratch.aarch64.0 --define '_smp_mflags -j4' --stage=-bc --noinit"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/47_review_round4_package.md",
+        "line": 60,
+        "text": "三根展开`%{defined _toolchain}|%{_toolchain}`均为`1|clang`。W/gbs_llvm.conf:6,9,12只列仓库，不直接定义宏；GBS取得的E9=`temp/arm-archive-stage1-c-newrepo-20261010/buildconfig-from-W.conf`:161原文为`%_toolchain %{?_toolchain_override}%{!?_toolchain_override:clang}`，SHA1e7610b6…；其来源链已由docs/13§3、docs/40§9核查为Unified配置。根内`home/abuild/.rpmmacros`对应行为x86:63、ARM32/A64:65。目标cb679968 spec:11–16因此进入`llvm_release_build=0`分支；178–186的移除调试选项sed不执行。（本轮facts-result.json/macro_files；三份*-toolchain-macro.stdout；target-spec.stdout。）"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/STATUS.md",
+        "line": 517,
+        "text": "本轮闭合（docs/40 §9）；E9=`temp/arm-archive-stage1-c-newrepo-20261010`："
+      }
+    ]
+  },
+  {
+    "directory": "arm-archive-stage1-c-newrepo-20261010",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 627,
+        "text": "E9 = W/temp/arm-archive-stage1-c-newrepo-20261010"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 784,
+        "text": "     /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c1-export"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 873,
+        "text": "E9  = W/temp/arm-archive-stage1-c-newrepo-20261010"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 984,
+        "text": " W=Path('/home/linhao/Toolchain/development/llvm-optimize'); E=Path(__file__).resolve().parent;old=W/'temp/arm-archive-stage1-c-newrepo-20261010';V=Path('/var/tmp/llvm-optimize-arm-c1-20261010');root=V/'gbs-libraries-armv7l'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 1097,
+        "text": "E9  = W/temp/arm-archive-stage1-c-newrepo-20261010"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 2194,
+        "text": "sudo -n /usr/bin/build --uid 1000:1000 --target aarch64-tizen-linux --jobs 6 --cachedir /var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/cache --dist /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/buildconfig-from-W.conf --arch aarch64:noarch /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c1-export/llvm.spec --repository https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261001.092726/repos/standard/packages/ --repository https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20260814.092727/repos/standard/packages/ --debug --root /var/tmp/llvm-optimize-arm-tls-aarch64-20261010/gbs-aarch64/local/BUILD-ROOTS/scratch.aarch64.0 --define '_smp_mflags -j4' --stage=-bc --noinit"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/STATUS.md",
+        "line": 334,
+        "text": "本轮闭合（docs/40 §9）；E9=`temp/arm-archive-stage1-c-newrepo-20261010`："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/47_review_round4_package.md",
+        "line": 48,
+        "text": "三根展开`%{defined _toolchain}|%{_toolchain}`均为`1|clang`。W/gbs_llvm.conf:6,9,12只列仓库，不直接定义宏；GBS取得的E9=`temp/arm-archive-stage1-c-newrepo-20261010/buildconfig-from-W.conf`:161原文为`%_toolchain %{?_toolchain_override}%{!?_toolchain_override:clang}`，SHA1e7610b6…；其来源链已由docs/13§3、docs/40§9核查为Unified配置。根内`home/abuild/.rpmmacros`对应行为x86:63、ARM32/A64:65。目标cb679968 spec:11–16因此进入`llvm_release_build=0`分支；178–186的移除调试选项sed不执行。（本轮facts-result.json/macro_files；三份*-toolchain-macro.stdout；target-spec.stdout。）"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 75,
+        "text": "| R39 `T/arm-archive-stage1-c-newrepo-20261010` | 9.236 / 9,917,100,032 | H；2026-10-10 12:23:45 | cb679968；C1 导出/原仓库证据。[main/docs/40_arm_archive_conversion_stage1.md:627](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/40_arm_archive_conversion_stage1.md#L627); [main/docs/40_arm_archive_conversion_stage1.md:772](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/40_arm_archive_conversion_stage1.md#L772) | 未发现活动 overlay；不等于不存在脚本引用。保护：是，ARM阶段证据 | U0；main patch / hybrid 线 | **保留**：保留复核证据，先由所属主线确认。先留日志/manifest/SHA；未逐一认证独有二进制 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 100,
+        "text": "| `W/temp/arm-archive-stage1-c-newrepo-20261010`<br>9.236 | 2026-10-10T12:23:45+08:00 | ARM/archive fix；C1 导出/原仓库证据；源码 cb679968；历史轮有记录；是否还要重跑/后续用途待确认。[main/docs/40_arm_archive_conversion_stage1.md:627](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/40_arm_archive_conversion_stage1.md#L627)；[main/docs/40_arm_archive_conversion_stage1.md:772](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/40_arm_archive_conversion_stage1.md#L772) | **保留**：包含源码仓库/工作树，明确排除；不能按整个父目录删除 | 无可见进程/活动overlay；脚本引用13处；外部硬链接inode 0；root目录0；不可写目录0；遍历错误0。已核验资产11条（含输入/RPM/报告），见catalog；不等于都应新增保存。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/51_second_review_fixes.md",
+        "line": 282,
+        "text": "| `arm-archive-stage1-c-newrepo-20261010` | 9.236 | 2026-10-10T12:23:45 |  ARM/archive fix；C1 导出/原仓库证据；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:100 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+      }
+    ]
+  },
+  {
+    "directory": "arm-archive-standard-build-20261010",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "arm-archive-standard-build-20261010",
+    "category": "bolt-scripts",
+    "hits": []
+  },
+  {
+    "directory": "arm-archive-standard-build-20261010",
+    "category": "main-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/49_release_contract_final.md",
+        "line": 86,
+        "text": "使用同一个`temp/arm-archive-standard-build-20261010/armv7l-tool-wrappers/llvm-dis`对两路原bitcode反汇编，命令、工具摘要、原bitcode SHA及输出分别归档；去掉调试元数据后提取定义先后。两路均853个定义（584个函数、269个全局），定义多重集合相同，18个定义的位置不同。**先后差异在转换之前已存在**；这只回答第10项诊断，不能证明任意代码差异无害（H/physical-armv7l/02-comparison/ir-order-diagnostic.json、debug.ll、release.ll、*-without-debug.ll）。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 1096,
+        "text": "E11 = W/temp/arm-archive-standard-build-20261010"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/50_archive_followup_review.md",
+        "line": 289,
+        "text": "| armv7l | docs/40 §11 标准完整 `%build` 的 210 档，3,683 个 bitcode 成员 | `temp/arm-archive-standard-build-20261010/armv7l-ir-census/**` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/47_review_round4_package.md",
+        "line": 18,
+        "text": "- E5=`W/temp/arm-archive-stage1-20261010`，x86输入在`E5/x86-input`；ARM32输入为`W/temp/arm-archive-standard-build-20261010/armv7l-input`，AArch64输入为`W/temp/arm-archive-tls-thumb-20261010/aarch64-input`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/44_arm_source_review_round1.md",
+        "line": 26,
+        "text": "| ARM32输入 | `W/temp/arm-archive-standard-build-20261010/armv7l-input/usr/lib`，210档；旧普查在同证据目录armv7l-ir-census |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/46_review_round3_package.md",
+        "line": 21,
+        "text": "| ARM32输入 | `W/temp/arm-archive-standard-build-20261010/armv7l-input` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/43_arm_conversion_review_package.md",
+        "line": 21,
+        "text": "- E11=`W/temp/arm-archive-standard-build-20261010`"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/STATUS.md",
+        "line": 535,
+        "text": "本轮新增证据（docs/40 §11）；E11=`temp/arm-archive-standard-build-20261010`："
+      }
+    ]
+  },
+  {
+    "directory": "arm-archive-standard-build-20261010",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 1096,
+        "text": "E11 = W/temp/arm-archive-standard-build-20261010"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/44_arm_source_review_round1.md",
+        "line": 26,
+        "text": "| ARM32输入 | `W/temp/arm-archive-standard-build-20261010/armv7l-input/usr/lib`，210档；旧普查在同证据目录armv7l-ir-census |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/46_review_round3_package.md",
+        "line": 21,
+        "text": "| ARM32输入 | `W/temp/arm-archive-standard-build-20261010/armv7l-input` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/STATUS.md",
+        "line": 352,
+        "text": "本轮新增证据（docs/40 §11）；E11=`temp/arm-archive-standard-build-20261010`："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/43_arm_conversion_review_package.md",
+        "line": 21,
+        "text": "- E11=`W/temp/arm-archive-standard-build-20261010`"
+      }
+    ]
+  },
+  {
+    "directory": "bolt-v4-20261022-cache-release",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "bolt-v4-20261022-cache-release",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/perf-c-o2-os-20261025/prepare.py",
+        "line": 17,
+        "text": "for group,prefix in [('static','bolt-v4-20261022-cache-release/baseline-products'),('hybrid','bolt-on-hybrid-20261024/products')]:"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/sandbox-direct-20261103/classify.py",
+        "line": 10,
+        "text": "'bolt-v4-20261022-cache-release':('建议保留','32、34、38','baseline/revised-products、preserved-before-delete 是已认证静态版本原件；根已清理不代表剩余 products 可删。'),"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/cache-release-20261022/baseline-cache-space-recovery.py",
+        "line": 5,
+        "text": "assert D==Path('/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release')"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/cache-release-20261022/launch.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');D=W/'temp/bolt-v4-20261022-cache-release';E=D/'baseline-segment1';E.mkdir(exist_ok=False)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/cache-release-20261022/launch-prepared.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');D=W/'temp/bolt-v4-20261022-cache-release';E=D/'baseline-segment2';E.mkdir(exist_ok=False)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/cache-release-fix-20261023/parse.py",
+        "line": 3,
+        "text": "D=Path(__file__).resolve().parent;R=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0');E=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/cache-release-fix-20261023/five-parse');E.mkdir(exist_ok=True)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/bolt-on-hybrid-20261024/parse.py",
+        "line": 3,
+        "text": "D=Path(__file__).resolve().parent;R=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0');E=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/bolt-on-hybrid-20261024/five-parse');E.mkdir(exist_ok=True)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/report.py",
+        "line": 17,
+        "text": " 'bolt-v4-20261022-cache-release':('BOLT/cache-release','9e5675f、d20e873；双轮完整构建与比较已完成','bolt/docs/bolt/32_cache_release.md:232; bolt/docs/bolt/32_cache_release.md:244'),"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/report.py",
+        "line": 40,
+        "text": " if name in ['bolt-v4-20261022-cache-release','hybrid-local-20261023','bolt-on-hybrid-20261024']:"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/report.py",
+        "line": 88,
+        "text": "lines+=['', '深入build/、lto.cache、RPMS、SRPMS和BUILDROOT的独立du全部在 subunits.json。它们是解释父目录组成的重叠数据，不能累加成“清理收益”。','', '## 5. 必须保留、需要先保全的小资产','', '- `T/runpath-fix-20261026/`：当前不存在；一旦创建整目录保留，不推断其任务已结束。', '- `T/bolt-on-hybrid-20261024/products/`（3.886GiB）、`T/bolt-v4-20261022-cache-release/{baseline-products,revised-products}/`（各11.248GiB）：整体保留，RUNPATH/RPM比较仍要用。', '- `T/bolt-v4-20261021-disk-footprint/` 的gbs_llvm_qb1202084.conf和build.conf整体保留。固定快照配置及build.conf实际SHA见catalog；build.conf预期e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945。', '- 90份TU：`T/hybrid-local-20261023/tu-inputs/`，以及旧validation/bench_results资产；34号C输入`T/perf-c-o2-os-20261025/inputs/`和C++ .ii原件全部保留。perf父目录本次整体保留，包括测量脚本所用槽位/对象；不因报告已发布自动删除原始数据。', '- profile/Source1200原件、`W/tools/collect_bolt_profile.py`、`extend_bolt_profile_aarch64.py`、final_bolt_calibration_plan.json及训练/留出清单保留；bench_results整体保留。所有*.fdata及clang-bolt-v2.fdata.xz的本轮SHA见catalog。源码仓库中的同名Source也不会删除。', '- **新增保全前提**：34号通过hybrid+BOLT根的Tizen loader/运行库和build/lib64/clang/22运行。删除该gbs-root前，先保全 runtime-preservation.json 的8个运行库路径/符号链接布局及整个resource-dir，并在将来重测时显式重定向路径；本轮未复制、未改脚本。旧R1、ARM32/64 sysroot仍保留。', '', '### 5.1 已有同SHA副本与需要补存的清单','', '完整逐文件表：[asset-catalog.tsv](../../tools/bolt/results/temp-cleanup-20261026/asset-catalog.tsv)（路径、大小、SHA、同SHA其它路径）；本次删除范围对应的动作与保全预算：[preserve-before-delete.json](../../tools/bolt/results/temp-cleanup-20261026/preserve-before-delete.json)。副本判断不只比文件名；同inode复用SHA时也核对size/mtime，来源记录在asset-hashes-inode-aliases.json。仅列少量关键二进制如下：','', '| 保留文件 | 字节数 | SHA256 | 副本/结论 |','|---|---:|---|---|']"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/hash-assets.py",
+        "line": 5,
+        "text": "new=['bolt-v4-20261022-cache-release','hybrid-local-20261023','bolt-on-hybrid-20261024']"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/hash-assets.py",
+        "line": 19,
+        "text": " for p in (W/'temp/bolt-v4-20261022-cache-release'/parent/'binaries').glob('*'):"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/plan.py",
+        "line": 9,
+        "text": "conservative=[str(T/'bolt-v4-20261022-cache-release/baseline-root'),str(T/'bolt-v4-20261022-cache-release/revised-root'),str(T/'hybrid-local-20261023/gbs-root'),str(T/'bolt-on-hybrid-20261024/gbs-root'),'/var/tmp/llvm-optimize-x86-archivefix-20261013/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache']"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/revised-root-followup/cleanup.py",
+        "line": 7,
+        "text": "ROOT=W/'temp/bolt-v4-20261022-cache-release/revised-root'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/revised-root-followup/attempt-2/cleanup.py",
+        "line": 7,
+        "text": "ROOT=W/'temp/bolt-v4-20261022-cache-release/revised-root'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/execution/preserve.py",
+        "line": 11,
+        "text": " T/'bolt-v4-20261022-cache-release/baseline-root',"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/execution/preserve.py",
+        "line": 12,
+        "text": " T/'bolt-v4-20261022-cache-release/revised-root',"
+      }
+    ]
+  },
+  {
+    "directory": "bolt-v4-20261022-cache-release",
+    "category": "main-docs",
+    "hits": []
+  },
+  {
+    "directory": "bolt-v4-20261022-cache-release",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 44,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release/baseline-root` | 85.418 | 先保全未有同SHA副本的RPM/关键文件，再删除此构建根；root系统目录需另行授权sudo |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 45,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release/revised-root` | 83.025 | 先保全未有同SHA副本的RPM/关键文件，再删除此构建根；root系统目录需另行授权sudo |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 73,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release`<br>192.628† | 2026-10-23T22:12:02+08:00 | BOLT/cache-release；9e5675f、d20e873；双轮完整构建与比较已完成；完成，结论已发布。[bolt-v4/docs/bolt/32_cache_release.md:232](https://github.com/lhmax2010/llvm-optimize/blob/4aad31b261906bc159811411181ffc9e91e02958/docs/bolt/32_cache_release.md#L232)；[bolt-v4/docs/bolt/32_cache_release.md:244](https://github.com/lhmax2010/llvm-optimize/blob/4aad31b261906bc159811411181ffc9e91e02958/docs/bolt/32_cache_release.md#L244) | **先保存小文件再删除（仅所列构建根）**：已完成；products、输入、source、脚本和报告留在父目录，见第3节精确范围 | 无可见进程/活动overlay；脚本引用17处；外部硬链接inode 0；root目录3693；不可写目录3689；遍历错误6。已核验资产157条（含输入/RPM/报告），见catalog；不等于都应新增保存。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 121,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-root` | 85.418† |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 122,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `revised-root` | 83.025† |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 123,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-products` | 11.248 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 124,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `revised-products` | 11.248 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 125,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `rpm-difference-analysis` | 1.043 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 126,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `revised-export-files` | 0.331 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 127,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `revised-evidence` | 0.139 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 128,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-resume2-evidence` | 0.139 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 129,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `revised-run` | 0.015 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 130,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-resume2` | 0.010 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 131,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-rpm-inventory` | 0.005 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 132,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `revised-rpm-inventory` | 0.005 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 133,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-resume1` | 0.001 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 134,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `rpm-validation` | 0.001 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 135,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-segment2` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 136,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `five-parse` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 137,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-segment1` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 138,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-evidence` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 139,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-space-recovery` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 140,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-preserve` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 141,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `config` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 142,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `revised-preserve` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 143,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `rpm-difference-job` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 144,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-export` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 145,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `revised-export` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 146,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `resume2-preflight` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 147,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release` | `baseline-tmp` | 0.000 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 164,
+        "text": "- `T/bolt-on-hybrid-20261024/products/`（3.886GiB）、`T/bolt-v4-20261022-cache-release/{baseline-products,revised-products}/`（各11.248GiB）：整体保留，RUNPATH/RPM比较仍要用。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 179,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release/baseline-products/binaries/clang.candidate` | 183224160 | `4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9` | 已实测同SHA其它路径15个；本文件明确保留 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 180,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release/baseline-products/binaries/llvm-bolt` | 566824200 | `0ecdff6172f7fffb08d30f3865976ca15dc8708c3a1ef9fe0d2a543059996f75` | 已实测同SHA其它路径5个；本文件明确保留 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 181,
+        "text": "| `W/temp/bolt-v4-20261022-cache-release/baseline-products/binaries/ordinary-clang-22` | 1793485312 | `06c940726269210ce3655e17366820a080bfe236a3adc24622958e6a6709e309` | 已实测同SHA其它路径5个；本文件明确保留 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 260,
+        "text": "| 1 | `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root` | 保全PASS | deleted  | 是 | 1182.3 | 85.414 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 261,
+        "text": "| 2 | `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root` | 保全PASS | skipped AssertionError('process use/error; see lsof/fuser') | 否 | 225.6 | 未执行 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 275,
+        "text": "/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root:"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 284,
+        "text": "rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 285,
+        "text": "sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 360,
+        "text": "用户再次明确批准仅删除 `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root`。本次没有重新复制保全数据；没有重做或扩大上一轮其余9项清理。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 381,
+        "text": "rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 382,
+        "text": "sudo -A -- /usr/bin/rm -rf --one-file-system -- /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/revised-root"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/51_second_review_fixes.md",
+        "line": 289,
+        "text": "| `bolt-v4-20261022-cache-release` | UNKNOWN | 2026-10-26T21:51:27 |  先保全未有同SHA副本的RPM/关键文件，再删除此构建根；root系统目录需另行授权sudo ；文档32、34、38；38_temp_cleanup_inventory.md:44 | baseline/revised-products、preserved-before-delete 是已认证静态版本原件；根已清理不代表剩余 products 可删。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/32_cache_release.md",
+        "line": 118,
+        "text": "第一轮尚未完成，不能删除其根来腾空间。新根位于 `W/temp/bolt-v4-20261022-cache-release/baseline-root`，下一次续跑需重新满足本地资源准入；本轮到等待上限后已停止，没有通过重启来重置等待期限。第二轮仍须相同固定快照/宏条件，先保全第一轮所有RPM、candidate、identity与四次报告，再执行修订轮并逐文件比较。源码修改不能视为已经完成两轮实物认证。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/32_cache_release.md",
+        "line": 343,
+        "text": "完整路径：`/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0/proc`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/32_cache_release.md",
+        "line": 371,
+        "text": "sudo -n /usr/sbin/chroot /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0 /bin/umount -l /proc"
+      }
+    ]
+  },
+  {
+    "directory": "crash-fix-probe-20261028",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "crash-fix-probe-20261028",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/sandbox-direct-20261103/classify.py",
+        "line": 16,
+        "text": "'crash-fix-probe-20261028':('建议保留','42','objcopy 缺陷、符号文件与 LLDB 实测临时产物；源码行方案/缺陷仍挂账，副本唯一性未认证。'),"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/crash-fix-probe-20261028/scripts/scheme_a.py",
+        "line": 19,
+        "text": "addresses=json.loads((B/'tools/bolt/results/crash-probe-20261028/offline-addresses-corrected.json').read_text());save('offline-addresses.json',addresses)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/crash-fix-probe-20261028/scripts/report.py",
+        "line": 3,
+        "text": "rel='../../tools/bolt/results/crash-fix-probe-20261028/'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/crash-fix-probe-20261028/scripts/report.py",
+        "line": 19,
+        "text": "- 所有实验副本在 `temp/crash-fix-probe-20261028/`；已有根和 products 未改写。源码工作树末次 `git status --porcelain` 为空。{link('input-recheck.json')} 证明三份输入 SHA 前后相同。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/crash-fix-probe-20261028/scripts/report.py",
+        "line": 145,
+        "text": "旧根中没有已安装的gdb/普通lldb CLI；`lldb-instr`实际上是仪器化工具，不是调试器。因此复制**本轮已构建、无需重建的Tizen lldb/lldb-server**及所需运行库到新建`temp/crash-fix-probe-20261028/scratch.debug-probe`。clang放`/usr/bin/clang-22`，debug放标准`/usr/lib/debug/usr/bin/clang-22.debug`，没有手工`target symbols add`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/crash-fix-probe-20261028/scripts/report.py",
+        "line": 221,
+        "text": "(E/'README.md').write_text('''# 42号证据\\n\\n- matrix.json / matrix/：3输入×5工具，完整argv、stdout/stderr、返回码。\\n- elf/、elf-structures.json、elf-containment.json：原始ELF检查；gnu-keep-warnings.txt为GNU生成debug时的完整warning。\\n- objcopy-gdb*：崩溃栈、反汇编、PT_PHDR与缓冲区现场。\\n- sources/：实际平台脚本、f308源码快照和带原始行号版本；上游RPM4.14文件另行标注。\\n- scheme-a-*、tu/：debuglink变化及15对象逐字节比较。\\n- chroot-*：临时根文件来源、LLDB自动加载/崩溃栈、proc挂卸载；失败探索原文保留。\\n- symbolizer-*、symbolization-summary.json：24地址显式/自动解析差异。\\n- timed-*、debug-sizes.json：分离时间/RSS及压缩估算。\\n- package-list-analysis.json、platform-log-anchors.txt：包归属静态证据和39日志原行号。\\n- relink-inventory.json、work-file-inventory.json：方案乙输入缺失依据。\\n- input-recheck.json、end-source-status.stdout：原输入不变、源码干净。\\n- scripts/：全部实验脚本（只在本次临时目录写入）。\\n\\n完整二进制/独立chroot留在 W/temp/crash-fix-probe-20261028，不放Git。未构建RPM、未改发布代码、未推Gerrit。\\n''')"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/crash-fix-probe-20261028/scripts/common.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';D=Path(__file__).resolve().parent;E=B/'tools/bolt/results/crash-fix-probe-20261028';E.mkdir(parents=True,exist_ok=True)"
+      }
+    ]
+  },
+  {
+    "directory": "crash-fix-probe-20261028",
+    "category": "main-docs",
+    "hits": []
+  },
+  {
+    "directory": "crash-fix-probe-20261028",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 10,
+        "text": "- 所有实验副本在 `temp/crash-fix-probe-20261028/`；已有根和 products 未改写。源码工作树末次 `git status --porcelain` 为空。[input-recheck.json](../../tools/bolt/results/crash-fix-probe-20261028/input-recheck.json) 证明三份输入 SHA 前后相同。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 25,
+        "text": "完整 argv、退出码、耗时和 stdout/stderr：[matrix.json](../../tools/bolt/results/crash-fix-probe-20261028/matrix.json)、[matrix 目录](../../tools/bolt/results/crash-fix-probe-20261028/matrix/)。输入没有就地操作：strip 用 `-o`，eu-strip 同时给 `-f debug` 和 `-o stripped`，debuglink 用独立输出参数。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 33,
+        "text": "工具版本：LLVM 22.1.8；宿主 GNU binutils 2.42；平台 eu-strip 0.189。另用平台 GNU objcopy 2.43复测 39 输入成功，输出与宿主 GNU 文件相同（[platform-gnu-result.json](../../tools/bolt/results/crash-fix-probe-20261028/platform-gnu-result.json)）。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 35,
+        "text": "GNU 两次 BOLT `only-keep-debug` **rc=0 但有 warning**，不可隐藏：[gnu-keep-warnings.txt](../../tools/bolt/results/crash-fix-probe-20261028/gnu-keep-warnings.txt) 收录全部原文。39 包括："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 47,
+        "text": "原文：[elf/bolt39-gnu.stdout](../../tools/bolt/results/crash-fix-probe-20261028/elf/bolt39-gnu.stdout)、[elf/bolt39-llvm.stdout](../../tools/bolt/results/crash-fix-probe-20261028/elf/bolt39-llvm.stdout)，其余两输入同目录。两种 readelf 对三份输入的 stderr 全为空，未见 warning。程序化文件/内存范围核对：[elf-structures.json](../../tools/bolt/results/crash-fix-probe-20261028/elf-structures.json)、[elf-containment.json](../../tools/bolt/results/crash-fix-probe-20261028/elf-containment.json)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 59,
+        "text": "本轮没有重新构建 LLVM。宿主 GDB 调试根内现有 llvm-objcopy+libLLVM，通过动态符号和反汇编定位；没有需要手动加载完整 DWARF。[objcopy-gdb.stdout](../../tools/bolt/results/crash-fix-probe-20261028/objcopy-gdb.stdout) 保存栈/寄存器/汇编，[objcopy-gdb-detail.stdout](../../tools/bolt/results/crash-fix-probe-20261028/objcopy-gdb-detail.stdout) 保存现场对象和缓冲区。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 69,
+        "text": "本地 f308 源码 [sources/ELFObject.cpp.numbered.txt](../../tools/bolt/results/crash-fix-probe-20261028/sources/ELFObject.cpp.numbered.txt)："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 80,
+        "text": "实际根内脚本完整快照及行号：[sources/find-debuginfo.sh.numbered.txt](../../tools/bolt/results/crash-fix-probe-20261028/sources/find-debuginfo.sh.numbered.txt)；rpm macros、brp-strip、brp-strip-comment-note 也在 sources，来源和SHA见 [sources/provenance.json](../../tools/bolt/results/crash-fix-probe-20261028/sources/provenance.json)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 108,
+        "text": "证据：[platform-debug-list.stdout](../../tools/bolt/results/crash-fix-probe-20261028/platform-debug-list.stdout)、[package-list-analysis.json](../../tools/bolt/results/crash-fix-probe-20261028/package-list-analysis.json)。根内 macros L202–212有 `%files debuginfo -f debugfiles.list`，L581 `_debuginfo_subpackages 1`；已有 clang RPM 的主文件清单包含 `/usr/bin/clang-22`（[clang-rpm-files.stdout](../../tools/bolt/results/crash-fix-probe-20261028/clang-rpm-files.stdout)）。自动子包规则以 `/usr/lib/debug` + 主文件路径 + `.debug` 对应，因此应归入 **clang-debuginfo**，而非只挂在总llvm-debuginfo。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 114,
+        "text": "[platform-log-anchors.txt](../../tools/bolt/results/crash-fix-probe-20261028/platform-log-anchors.txt) 保留原日志行号："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 130,
+        "text": "完整脚本 [scripts/scheme_a.py](../../tools/bolt/results/crash-fix-probe-20261028/scripts/scheme_a.py)。从39 pre-strip clang.bolt以GNU objcopy `--only-keep-debug`分出符号文件，将最终clang副本用LLVM objcopy `--add-gnu-debuglink=.../clang-22.debug`加链接。输出只在本轮temp。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 134,
+        "text": "- [scheme-a-layout.json](../../tools/bolt/results/crash-fix-probe-20261028/scheme-a-layout.json)：所有ALLOC非NOBITS节内容、地址、大小均相同，程序头逐项相同，RUNPATH仍为`$ORIGIN/../lib64`。新增节只有`.gnu_debuglink`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 136,
+        "text": "- debuglink的文件名和CRC一致：[debuglink-crc.json](../../tools/bolt/results/crash-fix-probe-20261028/debuglink-crc.json)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 137,
+        "text": "- 5个历史TU×3目标，完整.o逐字节 **15/15 PASS**；两边同一路径、同inode、同resource-dir与既有参数，保留.GCC.command.line。[scheme-a-correctness.json](../../tools/bolt/results/crash-fix-probe-20261028/scheme-a-correctness.json)及tu目录含argv/原始输出。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 141,
+        "text": "旧根中没有已安装的gdb/普通lldb CLI；`lldb-instr`实际上是仪器化工具，不是调试器。因此复制**本轮已构建、无需重建的Tizen lldb/lldb-server**及所需运行库到新建`temp/crash-fix-probe-20261028/scratch.debug-probe`。clang放`/usr/bin/clang-22`，debug放标准`/usr/lib/debug/usr/bin/clang-22.debug`，没有手工`target symbols add`。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 145,
+        "text": "[chroot-lldb-with-proc.stdout](../../tools/bolt/results/crash-fix-probe-20261028/chroot-lldb-with-proc.stdout) 原文："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 170,
+        "text": "[symbolization-summary.json](../../tools/bolt/results/crash-fix-probe-20261028/symbolization-summary.json)、`symbolizer-*.stdout`保留原文。源码 `Symbolize.cpp` L819–824从外部文件构建DWARFContext，但仍用原始主文件`Objects.first`建立符号表模块；纯symtab外置文件没有DWARF，所以自动路径没有完整使用外置symtab。这与LLDB自动加载成功不矛盾。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 178,
+        "text": "debug文件独立xz preset5估计：GNU 3,298,996 B，eu 3,519,088 B（[debug-sizes.json](../../tools/bolt/results/crash-fix-probe-20261028/debug-sizes.json)）。它应增加 **clang-debuginfo** 的载荷；主clang仅加104 B debuglink，实际RPM压缩变化须重打包才知，不能把33MB全算进clang主包。估算不含cpio、跨文件字典或RPM头。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 182,
+        "text": "[relink-inventory.json](../../tools/bolt/results/crash-fix-probe-20261028/relink-inventory.json) 和 [work-file-inventory.json](../../tools/bolt/results/crash-fix-probe-20261028/work-file-inventory.json)：39 clang-bolt目录内唯一重链ELF是`reference-relocs-clang-22`，226,739,000 B，SHA `e79409133e6c9b12eecd33ee9af3ab6bc76049db5de4f43c8622b8c8a09b0598`，有`.rela.text`、无任何`.debug*`/`.zdebug*`；ordinary有DWARF但没有所需重链输入的身份与重定位，不能替代。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/42_crash_localization_rootcause.md",
+        "line": 196,
+        "text": "原始输入末次SHA一致；source工作树干净；新临时proc已正常卸载；没有core、没有结束其他进程、没有动已有目录。脚本/结果清单见 [README.md](../../tools/bolt/results/crash-fix-probe-20261028/README.md)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/51_second_review_fixes.md",
+        "line": 277,
+        "text": "| `crash-fix-probe-20261028` | 11.055 | 2026-10-28T14:08:09 | crash-fix-probe-20261028；文档42；42_crash_localization_rootcause.md:10 | objcopy 缺陷、符号文件与 LLDB 实测临时产物；源码行方案/缺陷仍挂账，副本唯一性未认证。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+      }
+    ]
+  },
+  {
+    "directory": "crash-probe-20261028",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "crash-probe-20261028",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/crash-fix-probe-20261028/scripts/scheme_a.py",
+        "line": 19,
+        "text": "addresses=json.loads((B/'tools/bolt/results/crash-probe-20261028/offline-addresses-corrected.json').read_text());save('offline-addresses.json',addresses)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/crash-probe-20261028/probe.py",
+        "line": 4,
+        "text": "D=Path(__file__).resolve().parent; E=B/'tools/bolt/results/crash-probe-20261028';E.mkdir(parents=True,exist_ok=True)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/crash-probe-20261028/report.py",
+        "line": 5,
+        "text": "prefix='../../tools/bolt/results/crash-probe-20261028/'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/crash-probe-20261028/report.py",
+        "line": 14,
+        "text": "源码f308fe08、39号products和构建根只读。最终clang从本轮clang RPM流式解出，SHA为8c2429d870f421a29a9914458bc4d4ff2ce359a15e0bdd20f39bfb4580c40bdf；ordinary SHA d5090159915657b235b96f1202c058e1efd1647d6a2225ac8fdb2906aeaa501d；strip前BOLT输出SHA与identity.before_sha256核对一致。所有写入仅在W/temp/crash-probe-20261028及本报告证据目录。"
+      }
+    ]
+  },
+  {
+    "directory": "crash-probe-20261028",
+    "category": "main-docs",
+    "hits": []
+  },
+  {
+    "directory": "crash-probe-20261028",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/41_crash_localization_probe.md",
+        "line": 9,
+        "text": "源码f308fe08、39号products和构建根只读。最终clang从本轮clang RPM流式解出，SHA为8c2429d870f421a29a9914458bc4d4ff2ce359a15e0bdd20f39bfb4580c40bdf；ordinary SHA d5090159915657b235b96f1202c058e1efd1647d6a2225ac8fdb2906aeaa501d；strip前BOLT输出SHA与identity.before_sha256核对一致。所有写入仅在W/temp/crash-probe-20261028及本报告证据目录。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/41_crash_localization_probe.md",
+        "line": 17,
+        "text": "BOLT clang-debuginfo共有27项，无clang-22自身调试文件；纯hybrid保全包有28项，`/usr/lib/debug/usr/bin/clang-22.debug`为1,652,177,424字节。以下为RPM头文件清单，不需要解压整个大debuginfo包。包来源和SHA见[debuginfo.json](../../tools/bolt/results/crash-probe-20261028/debuginfo.json)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/41_crash_localization_probe.md",
+        "line": 90,
+        "text": "最终BOLT、ordinary、strip前BOLT输出三者均无`.note.gnu.build-id`，没有可比较的ID值；不是“三个相同的有效ID”。见[build-ids.json](../../tools/bolt/results/crash-probe-20261028/build-ids.json)及build-id-*.stdout原文。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/41_crash_localization_probe.md",
+        "line": 94,
+        "text": "| ordinary | absent | 20 | 7 | 27 | [stderr](../../tools/bolt/results/crash-probe-20261028/crash-ordinary-absent.stderr) |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/41_crash_localization_probe.md",
+        "line": 95,
+        "text": "| ordinary | present | 41 | 4 | 45 | [stderr](../../tools/bolt/results/crash-probe-20261028/crash-ordinary-present.stderr) |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/41_crash_localization_probe.md",
+        "line": 96,
+        "text": "| final | absent | 20 | 7 | 27 | [stderr](../../tools/bolt/results/crash-probe-20261028/crash-final-absent.stderr) |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/41_crash_localization_probe.md",
+        "line": 97,
+        "text": "| final | present | 20 | 7 | 27 | [stderr](../../tools/bolt/results/crash-probe-20261028/crash-final-present.stderr) |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/41_crash_localization_probe.md",
+        "line": 98,
+        "text": "| symbols | absent | 20 | 7 | 27 | [stderr](../../tools/bolt/results/crash-probe-20261028/crash-symbols-absent.stderr) |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/41_crash_localization_probe.md",
+        "line": 99,
+        "text": "| symbols | present | 24 | 3 | 27 | [stderr](../../tools/bolt/results/crash-probe-20261028/crash-symbols-present.stderr) |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/41_crash_localization_probe.md",
+        "line": 116,
+        "text": "0.\tProgram arguments: /home/linhao/Toolchain/development/llvm-optimize/temp/oldtext-final-20261027/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-objcopy --only-keep-debug /home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/clang.symbols /home/linhao/Toolchain/development/llvm-optimize/temp/crash-probe-20261028/clang.symbols-only"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/41_crash_localization_probe.md",
+        "line": 150,
+        "text": "选docs/22沿用资产中的前5个独立TU，每个3目标，共15对。两份编译器依次覆盖相同路径/同inode，输入SHA、完整参数、resource-dir相同，完整.o逐字节相同，15/15 PASS；不删除.GCC.command.line。见[correctness.json](../../tools/bolt/results/crash-probe-20261028/correctness.json)及tu-*.json/stdout/stderr。"
+      }
+    ]
+  },
+  {
+    "directory": "archive-fix-v2-final-20261009",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "archive-fix-v2-final-20261009",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/annotate.py",
+        "line": 14,
+        "text": "put('archive-fix-v2-final-20261009','f111162e + v2','docs35 原始22RPM与证据','main/docs/38_llvm_strip_x86_64.md:27; bolt/docs/bolt/24_rebase_recertification.md:69','是，rpms-docs35','D24 payload-merged 可由其中22原件重建；先留此目录','保留','旧包已从 R/RPMS 移到此处，是来源原件','rpms-docs35 全部22RPM，不以抽出单个clang替代')"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104/sandbox-direct-20261103/classify.py",
+        "line": 24,
+        "text": "'archive-fix-v2-final-20261009':('建议保留','24、38','含 rpms-docs35 原始22包及来源记录，明确保留。'),"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/temp-cleanup-20261026/report.py",
+        "line": 77,
+        "text": "restore={str(T/'toolchain-archivefix-v2-final'):'docs35原22RPM：T/archive-fix-v2-final-20261009/rpms-docs35；原件保留',str(T/'toolchain-llvm-strip'):'docs38的22RPM仍在gbs-root-x86_64-archivefix-v2/.../rpmbuild/RPMS/x86_64；不把它们说成67619ec8新构建',str(T/'toolchain-release-x86-20261013'):'docs49交接树/var/tmp/llvm-optimize-x86-archivefix-20261013/.../rpmbuild/RPMS/x86_64；该树仅删缓存，RPM保留',str(T/'bolt-v4-20261016-source-order/upper-parse'):'docs26解析实验已结束；upper-parse不是原始输入，报告/脚本/导出留在父目录；原下层保留','/var/tmp/llvm-optimize-archivefix-v2-final-20261009/independent-install':'docs35独立安装载荷；原RPM及外部验收报告保留；重跑需重建DESTDIR'}"
+      }
+    ]
+  },
+  {
+    "directory": "archive-fix-v2-final-20261009",
+    "category": "main-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 15,
+        "text": "- 对照记录：`temp/archive-fix-v2-final-20261009/continue-20261009/ba-install-conversion-evidence/summary.json`；docs/39 §7.2登记225档、3864成员，不将历史PASS记为本轮回归结果。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/40_arm_archive_conversion_stage1.md",
+        "line": 77,
+        "text": "对照为`W/temp/archive-fix-v2-final-20261009/continue-20261009/ba-install-conversion-evidence/summary.json`，SHA256"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/38_llvm_strip_x86_64.md",
+        "line": 24,
+        "text": "| C | `W/temp/archive-fix-v2-final-20261009/continue-20261009`，docs/35 证据 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/38_llvm_strip_x86_64.md",
+        "line": 33,
+        "text": "| 保全 RPM | `W/temp/archive-fix-v2-final-20261009/rpms-docs35` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/51_gnu_strip_merged_validation.md",
+        "line": 20,
+        "text": "| C35 | `temp/archive-fix-v2-final-20261009/continue-20261009`，历史 GNU strip 构建、验收 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/37_target_recipe_policy_check.md",
+        "line": 55,
+        "text": "`temp/archive-fix-v2-final-20261009/continue-20261009/abuild-resume.sh:5`："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/35_archive_fix_v2_final.md",
+        "line": 21,
+        "text": "| E35 | `W/temp/archive-fix-v2-final-20261009`，f49a561停止现场保留 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/39_arm_archive_conversion_feasibility.md",
+        "line": 22,
+        "text": "| E35 | `W/temp/archive-fix-v2-final-20261009/continue-20261009` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/STATUS.md",
+        "line": 81,
+        "text": "**2026-10-09 docs/35历史收尾（9f27fbc）：授权三项清理后109.523GiB，原60GiB门槛PASS；唯一一次标准提交配置-ba --noprep成功（5381.375s，scope峰值16.408GiB，无OOM）。22新RPM：225开发归档验收PASS；45 compiler-rt的1,964成员字节一致，17,689路径非归档差异0；标准brp链通过。独立buildroot真实-bi、同树Source SKIP与七项宿主消费者全部PASS。Tizen bfd在依赖解析阶段FAIL，固定Base repomd只读查询HTTP404；未创建测试chroot，未编译/链接。按规则停止，lld测试包与v2最终补丁未执行，没有重试。证据：temp/archive-fix-v2-final-20261009/continue-20261009；scope/采样器/临时挂载/项目锁均已回收。f49a561磁盘停止历史保留。**"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/STATUS.md",
+        "line": 441,
+        "text": "前次备案（docs/35，以下四行按`f49a561`原报告节号核对）；E35=`temp/archive-fix-v2-final-20261009`："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/STATUS.md",
+        "line": 450,
+        "text": "本轮新增证据（docs/35）；C=`temp/archive-fix-v2-final-20261009/continue-20261009`："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/41_disk_inventory.md",
+        "line": 78,
+        "text": "| `W/temp/archive-fix-v2-final-20261009` | 10.339 | 2026-10-09 19:05 | S01（关联；创建者未逐目录确证）；试验/报告证据（含载荷） | 产物/忽略目录；非独立Git根 | docs/STATUS.md:13；docs/STATUS.md:201 | **保留**：docs/35证据与rpms-docs35 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/41_disk_inventory.md",
+        "line": 297,
+        "text": "| rpms-docs35 | `W/temp/archive-fix-v2-final-20261009/rpms-docs35` | 8.567 | rename保全的22 RPM+SRPM |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/36_archive_fix_tizen_consumers.md",
+        "line": 16,
+        "text": "| C | `W/temp/archive-fix-v2-final-20261009/continue-20261009` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/36_archive_fix_tizen_consumers.md",
+        "line": 96,
+        "text": "C=\"$W/temp/archive-fix-v2-final-20261009/continue-20261009\""
+      }
+    ]
+  },
+  {
+    "directory": "archive-fix-v2-final-20261009",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/38_llvm_strip_x86_64.md",
+        "line": 24,
+        "text": "| C | `W/temp/archive-fix-v2-final-20261009/continue-20261009`，docs/35 证据 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/38_llvm_strip_x86_64.md",
+        "line": 33,
+        "text": "| 保全 RPM | `W/temp/archive-fix-v2-final-20261009/rpms-docs35` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/37_target_recipe_policy_check.md",
+        "line": 55,
+        "text": "`temp/archive-fix-v2-final-20261009/continue-20261009/abuild-resume.sh:5`："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/41_disk_inventory.md",
+        "line": 78,
+        "text": "| `W/temp/archive-fix-v2-final-20261009` | 10.339 | 2026-10-09 19:05 | S01（关联；创建者未逐目录确证）；试验/报告证据（含载荷） | 产物/忽略目录；非独立Git根 | docs/STATUS.md:13；docs/STATUS.md:201 | **保留**：docs/35证据与rpms-docs35 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/41_disk_inventory.md",
+        "line": 297,
+        "text": "| rpms-docs35 | `W/temp/archive-fix-v2-final-20261009/rpms-docs35` | 8.567 | rename保全的22 RPM+SRPM |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/39_arm_archive_conversion_feasibility.md",
+        "line": 22,
+        "text": "| E35 | `W/temp/archive-fix-v2-final-20261009/continue-20261009` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 15,
+        "text": "- 对照记录：`temp/archive-fix-v2-final-20261009/continue-20261009/ba-install-conversion-evidence/summary.json`；docs/39 §7.2登记225档、3864成员，不将历史PASS记为本轮回归结果。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/40_arm_archive_conversion_stage1.md",
+        "line": 77,
+        "text": "对照为`W/temp/archive-fix-v2-final-20261009/continue-20261009/ba-install-conversion-evidence/summary.json`，SHA256"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/36_archive_fix_tizen_consumers.md",
+        "line": 16,
+        "text": "| C | `W/temp/archive-fix-v2-final-20261009/continue-20261009` |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/36_archive_fix_tizen_consumers.md",
+        "line": 96,
+        "text": "C=\"$W/temp/archive-fix-v2-final-20261009/continue-20261009\""
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/35_archive_fix_v2_final.md",
+        "line": 21,
+        "text": "| E35 | `W/temp/archive-fix-v2-final-20261009`，f49a561停止现场保留 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/STATUS.md",
+        "line": 21,
+        "text": "**2026-10-09 docs/35历史收尾（9f27fbc）：授权三项清理后109.523GiB，原60GiB门槛PASS；唯一一次标准提交配置-ba --noprep成功（5381.375s，scope峰值16.408GiB，无OOM）。22新RPM：225开发归档验收PASS；45 compiler-rt的1,964成员字节一致，17,689路径非归档差异0；标准brp链通过。独立buildroot真实-bi、同树Source SKIP与七项宿主消费者全部PASS。Tizen bfd在依赖解析阶段FAIL，固定Base repomd只读查询HTTP404；未创建测试chroot，未编译/链接。按规则停止，lld测试包与v2最终补丁未执行，没有重试。证据：temp/archive-fix-v2-final-20261009/continue-20261009；scope/采样器/临时挂载/项目锁均已回收。f49a561磁盘停止历史保留。**"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/STATUS.md",
+        "line": 258,
+        "text": "前次备案（docs/35，以下四行按`f49a561`原报告节号核对）；E35=`temp/archive-fix-v2-final-20261009`："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/STATUS.md",
+        "line": 267,
+        "text": "本轮新增证据（docs/35）；C=`temp/archive-fix-v2-final-20261009/continue-20261009`："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 70,
+        "text": "| R34 `T/archive-fix-v2-final-20261009` | 10.339 / 11,101,380,608 | H；2026-10-09 19:05:06 | f111162e + v2；docs35 原始22RPM与证据。[main/docs/38_llvm_strip_x86_64.md:27](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/38_llvm_strip_x86_64.md#L27); [bolt/docs/bolt/24_rebase_recertification.md:69](https://github.com/lhmax2010/llvm-optimize/blob/4513444f57a6e5e99d15607aa0de2418d1bf1671/docs/bolt/24_rebase_recertification.md#L69) | D24 payload-merged 可由其中22原件重建；先留此目录。保护：是，rpms-docs35 | U0；main patch / hybrid 线 | **保留**：旧包已从 R/RPMS 移到此处，是来源原件。rpms-docs35 全部22RPM，不以抽出单个clang替代 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 55,
+        "text": "| `W/temp/toolchain-archivefix-v2-final` | 46.299 | docs35原22RPM：T/archive-fix-v2-final-20261009/rpms-docs35；原件保留 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 97,
+        "text": "| `W/temp/archive-fix-v2-final-20261009`<br>10.339 | 2026-10-09T16:55:23+08:00 | archive fix；docs35 原始22RPM与证据；源码 f111162e + v2；历史轮有记录；是否还要重跑/后续用途待确认。[main/docs/38_llvm_strip_x86_64.md:27](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/38_llvm_strip_x86_64.md#L27)；[bolt-v4/docs/bolt/24_rebase_recertification.md:69](https://github.com/lhmax2010/llvm-optimize/blob/4aad31b261906bc159811411181ffc9e91e02958/docs/bolt/24_rebase_recertification.md#L69) | **保留**：包含源码仓库/工作树，明确排除；不能按整个父目录删除 | 无可见进程/活动overlay；脚本引用34处；外部硬链接inode 0；root目录0；不可写目录0；遍历错误0。已核验资产47条（含输入/RPM/报告），见catalog；不等于都应新增保存。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/51_second_review_fixes.md",
+        "line": 279,
+        "text": "| `archive-fix-v2-final-20261009` | 10.339 | 2026-10-09T19:03:23 |  docs35原22RPM：T/archive-fix-v2-final-20261009/rpms-docs35；原件保留 ；文档24、38；38_temp_cleanup_inventory.md:55 | 含 rpms-docs35 原始22包及来源记录，明确保留。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/STATUS.md",
+        "line": 254,
+        "text": "PM裁决：docs35原22包在W/temp/archive-fix-v2-final-20261009/rpms-docs35，旧R/RPMS为docs38；十四A停止是来源路径问题，不是产品问题。逐包对照docs35附录A的字节/SHA后使用保全包，Source1005与67619ec8字节相同，spec差异不涉及.cmake安装/%files（%install起后文全相同），照常继续。两组历史包均不称作67619ec8新构建物。"
+      }
+    ]
+  },
+  {
+    "directory": "llvm-optimize-intranet-20261020",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "llvm-optimize-intranet-20261020",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/make_report.py",
+        "line": 144,
+        "text": "main 的 patch / hybrid 线最近使用 `T/hybrid-link-20261015`、`T/hybrid-sandbox-20261019`、`T/llvm-optimize-intranet-20261020`；源6e9d4f2b的源码归档刚完成，仍等待服务器构建验证。'''+citation('main/docs/STATUS.md:7; main/docs/STATUS.md:9; main/docs/52_hybrid_link_validation.md:5')+'''。这些目录和关联Rnew工具环境均保留。PID与Codex会话的精确归属没有从`ps`证明；不把“当前未见编译进程”写成“另一会话已弃用”。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/root-inventory-20261022/annotate.py",
+        "line": 29,
+        "text": "put('llvm-optimize-intranet-20261020','6e9d4f2b','可续传源码归档准备','main/docs/llvm_optimize_intranet_fetch.md:9; main/docs/STATUS.md:7','是，当前 main 工作线','最新归档/分块/恢复校验来源','保留','main 最近完成任务仍指向这里')"
+      }
+    ]
+  },
+  {
+    "directory": "llvm-optimize-intranet-20261020",
+    "category": "main-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/llvm_optimize_intranet_fetch.md",
+        "line": 9,
+        "text": "上轮 8 个 patch 共有 29 行 `index` 缩写长度差异。前 5 处如下，每处列参考 12 位与浅克隆 9 位两行；原文来自 `temp/llvm-optimize-intranet-20261020/tag-export-full.diff`："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/llvm_optimize_intranet_fetch.md",
+        "line": 24,
+        "text": "本轮只在浅克隆 `temp/llvm-optimize-intranet-20261020/llvm` 执行 `git config core.abbrev 12`，写入该仓库 `.git/config`；全局 Git 配置未改。本地 upstream 继续指向 `ca7933e47d3a3451d81e72ac174dcb5aa28b59d1`。固定长度后的原命令导出全部同字节，见 §4。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/llvm_optimize_intranet_fetch.md",
+        "line": 174,
+        "text": "W=`/home/linhao/Toolchain/development/llvm-optimize`；E=`W/temp/llvm-optimize-intranet-20261020`；S=`E/llvm`。原 W/gbs_llvm.conf SHA 为 `28f1caf93cd39738a7da1e0da8d5f945f7372963bb9823a507f9157294272169`，用户原有修改保留。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/STATUS.md",
+        "line": 140,
+        "text": "2026-10-20｜7bab0df（父9a458b6）｜docs/llvm_optimize_intranet_fetch.md、STATUS｜浅克隆身份 PASS，GBS 因浅历史祖先检查退回 native，spec/8 patch 导出一致性 FAIL；按规则停止，无包/切片/Release/回下验证，原始证据 temp/llvm-optimize-intranet-20261020/。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/STATUS.md",
+        "line": 301,
+        "text": "- **硬证据，2026-10-20 内网交付闭合**：固定局部core.abbrev=12与local upstream=ca7933e4后，标准export与回下仓库再export的spec/8patch全部同参考字节。Release/tag `src-llvm-optimize-6e9d4f2` 已发布，整包 425,114,069 B / 5片 / SHA `cebfeb3cbda216be11f4e760336a2afc3a8d40ad26906482a849225559777f46`，只有.git，HEAD/TREE/UPSTREAM/ABBREV及origin/clean均PASS。证据 temp/llvm-optimize-intranet-20261020/{abbrev-export-comparison.json,assets/manifest.json,abbrev-published-release.json,abbrev-roundtrip-verification.json,abbrev-roundtrip-export-comparison.json}；仅证明固定源码身份与导出，不替代服务器构建。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/STATUS.md",
+        "line": 302,
+        "text": "- **硬证据，2026-10-20 历史1759dd5导出差异**：local upstream 与 merge-base 均 ca7933e4；标准 export 不含 native，spec 1da77fe8… 全同，8 patch 仅 29 行 index 的两端 ID 各由 12 位缩为 9 位（共少174 B），其余字节相同。不能据此替代逐字节门禁，仍 FAIL；未改 core.abbrev 或重试。完整克隆两范围提交数/对象尺寸见历史报告1759dd5 §4；尺寸是当前对象表示，非下载预算。证据 temp/llvm-optimize-intranet-20261020/{resume-upstream-identity.json,tag-export-comparison.json,tag-export-full.diff,resume-export-gate.json,full-history-measurement.json}。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize/docs/STATUS.md",
+        "line": 303,
+        "text": "- **硬证据，2026-10-20 浅历史导出边界**：同一 HEAD 6e9d4f2b、origin/upstream aadaa00d、22.1.8 tag 解引用 ca7933e4，本次浅克隆 `merge-base HEAD origin/upstream` exit1/空输出，旧完整克隆 exit0/f2ccf80136a01ca69f766becafb329db6c54c0c8；两者 HEAD 与 tag 均可找到 ca7933e4。GBS cmd_export.py:165–172 因分支祖先检查失败切 native，导出退出0不代表标准补丁门禁通过。证据：temp/llvm-optimize-intranet-20261020/{ancestry-diagnosis.json,first-export.log,export-gate-final.json,export-spec.diff}；历史报告 7bab0df §2–§3。"
+      }
+    ]
+  },
+  {
+    "directory": "llvm-optimize-intranet-20261020",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 109,
+        "text": "| R73 `T/llvm-optimize-intranet-20261020` | 5.069 / 5,443,145,728 | H；2026-10-20 21:22:42 | 6e9d4f2b；可续传源码归档准备。[main/docs/llvm_optimize_intranet_fetch.md:9](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/llvm_optimize_intranet_fetch.md#L9); [main/docs/STATUS.md:7](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/STATUS.md#L7) | 最新归档/分块/恢复校验来源。保护：是，当前 main 工作线 | U0；main patch / hybrid 线 | **保留**：main 最近完成任务仍指向这里。先留日志/manifest/SHA；未逐一认证独有二进制 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/31_build_root_inventory.md",
+        "line": 164,
+        "text": "main 的 patch / hybrid 线最近使用 `T/hybrid-link-20261015`、`T/hybrid-sandbox-20261019`、`T/llvm-optimize-intranet-20261020`；源6e9d4f2b的源码归档刚完成，仍等待服务器构建验证。[main/docs/STATUS.md:7](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/STATUS.md#L7); [main/docs/STATUS.md:9](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/STATUS.md#L9); [main/docs/52_hybrid_link_validation.md:5](https://github.com/lhmax2010/llvm-optimize/blob/8a276db1cb7b0824ea82ea2cba0f0f49e6cc4a91/docs/52_hybrid_link_validation.md#L5)。这些目录和关联Rnew工具环境均保留。PID与Codex会话的精确归属没有从`ps`证明；不把“当前未见编译进程”写成“另一会话已弃用”。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/38_temp_cleanup_inventory.md",
+        "line": 113,
+        "text": "| `W/temp/llvm-optimize-intranet-20261020`<br>5.069 | 2026-10-20T21:22:42+08:00 | hybrid；可续传源码归档准备；源码 6e9d4f2b；历史轮有记录；是否还要重跑/后续用途待确认。[main/docs/llvm_optimize_intranet_fetch.md:9](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/llvm_optimize_intranet_fetch.md#L9)；[main/docs/STATUS.md:7](https://github.com/lhmax2010/llvm-optimize/blob/613fa5ee8703c14f56e0b682bf0910f639f48ec9/docs/STATUS.md#L7) | **保留**：包含源码仓库/工作树，明确排除；不能按整个父目录删除 | 无可见进程/活动overlay；脚本引用13处；外部硬链接inode 0；root目录0；不可写目录0；遍历错误0。已核验资产7条（含输入/RPM/报告），见catalog；不等于都应新增保存。 |"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/51_second_review_fixes.md",
+        "line": 288,
+        "text": "| `llvm-optimize-intranet-20261020` | 5.069 | 2026-10-20T21:22:42 |  hybrid；可续传；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:113 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+      }
+    ]
+  },
+  {
+    "directory": "qb-meta-switch-20261028",
+    "category": "main-scripts",
+    "hits": []
+  },
+  {
+    "directory": "qb-meta-switch-20261028",
+    "category": "bolt-scripts",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/scripts/qb_read.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');E=W.parent/'llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028';D=Path(__file__).resolve().parent"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/scripts/unified_checks.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';D=Path(__file__).resolve().parent;E=B/'tools/bolt/results/qb-meta-switch-20261028';M=E/'metadata'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/scripts/start.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';D=Path(__file__).resolve().parent;E=B/'tools/bolt/results/qb-meta-switch-20261028';R=W/'temp/qb-meta-20261028/repo'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/scripts/mlgo.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';D=Path(__file__).resolve().parent;E=B/'tools/bolt/results/qb-meta-switch-20261028';out=E/'mlgo';out.mkdir(exist_ok=True)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/scripts/base_checks.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';E=B/'tools/bolt/results/qb-meta-switch-20261028';P=B/'tools/bolt/results/qb-fail-20261028/meta/buildconf';D=Path(__file__).resolve().parent"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/scripts/qb_logs.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');E=W.parent/'llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028';D=Path(__file__).resolve().parent"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/scripts/report.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';D=Path(__file__).resolve().parent;E=B/'tools/bolt/results/qb-meta-switch-20261028';P=B/'tools/bolt/results/qb-fail-20261028/meta/buildconf';R=W/'temp/qb-meta-20261028/repo'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/scripts/report.py",
+        "line": 4,
+        "text": "base=json.loads((E/'base-missing-dependencies.json').read_text());unified=json.loads((E/'unified-missing-dependencies.json').read_text());source=json.loads((E/'unified-fixed-source-comparison.json').read_text());cfg=json.loads((E/'base-config-providers.json').read_text());tests=json.loads((E/'mlgo/tests.json').read_text());prefix='../../tools/bolt/results/qb-meta-switch-20261028/'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/scripts/final_data.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';E=B/'tools/bolt/results/qb-meta-switch-20261028';D=Path(__file__).resolve().parent;R=W/'temp/qb-meta-20261028/repo'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/scripts/repos.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';D=Path(__file__).resolve().parent;E=B/'tools/bolt/results/qb-meta-switch-20261028';F=B/'tools/bolt/results/qb-meta-fix-and-snapshot-20261028/snapshots'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/scripts/finish.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';D=Path(__file__).resolve().parent;E=B/'tools/bolt/results/qb-meta-switch-20261028';R=W/'temp/qb-meta-20261028/repo';(E/'scripts').mkdir(exist_ok=True)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/second-ruling/second_audit.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';E=B/'tools/bolt/results/qb-meta-switch-20261028';D=E/'second-ruling';R=W/'temp/qb-meta-20261028/repo'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/second-ruling/finalize_closure.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');E=W.parent/'llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028';D=E/'second-ruling'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/second-ruling/submit_unified.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';E=B/'tools/bolt/results/qb-meta-switch-20261028';D=E/'second-ruling';R=W/'temp/qb-meta-20261028/repo'"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/second-ruling/unified_specs.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';D=W/'temp/qb-meta-switch-20261028/second-specs';E=B/'tools/bolt/results/qb-meta-switch-20261028/second-ruling';D.mkdir(exist_ok=True)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/second-ruling/base_provider_current.py",
+        "line": 3,
+        "text": "E=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/second-ruling');D=E/'base-current';D.mkdir(exist_ok=True)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028/second-ruling/scan_unified_specs.py",
+        "line": 3,
+        "text": "W=Path('/home/linhao/Toolchain/development/llvm-optimize');E=W.parent/'llvm-optimize-bolt/tools/bolt/results/qb-meta-switch-20261028';D=E/'second-ruling'"
+      }
+    ]
+  },
+  {
+    "directory": "qb-meta-switch-20261028",
+    "category": "main-docs",
+    "hits": []
+  },
+  {
+    "directory": "qb-meta-switch-20261028",
+    "category": "bolt-docs",
+    "hits": [
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 41,
+        "text": "明确命中的原文（[完整上下文](../../tools/bolt/results/qb-meta-switch-20261028/base-dependency-stop.txt)）："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 51,
+        "text": "检查不是只grep11个包名：从缺包收集全部Provides和primary中的文件能力名，再检查BuildRequires/Requires原文、简单宏展开和条件上下文；同时检查旧二进制RPM的Requires，包括版本限定。[全部spec命中/未展开行及二进制依赖](../../tools/bolt/results/qb-meta-switch-20261028/base-missing-dependencies.json)。3条旧二进制依赖均属于也被移除的包自身：tensorflow2-aot-devel和tensorflow2-lite-flatbuf-schema都要求tensorflow2-lite-devel = 2.18.0-1.1；toybox-symlinks-full要求toybox-full = 0.6.0-1.4。它们不是证明251仓库里另有三个消费者。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 57,
+        "text": "使用本机libbuild的`Build::read_config_dist`分别解析三架构，展开`%{build_hostarch}=x86_64`及架构条件；只读取配置，不执行spec。[每个点名项、原行号、provider及旧仓库对照](../../tools/bolt/results/qb-meta-switch-20261028/base-config-providers.tsv)；[JSON](../../tools/bolt/results/qb-meta-switch-20261028/base-config-providers.json)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 81,
+        "text": "[测试记录](../../tools/bolt/results/qb-meta-switch-20261028/mlgo/tests.json)；[下载URL、大小、SHA](../../tools/bolt/results/qb-meta-switch-20261028/mlgo/downloads.json)；[clang实体身份](../../tools/bolt/results/qb-meta-switch-20261028/mlgo/clang-identities.json)。这说明两套二进制接受并能执行这两个advisor选项，不证明所有训练模型、全量性能或整个Toolchain构建都已认证。project_config L112–117本身还有i686/x86_64条件，L94–100定义ARM/AArch64的_with_mlgo；实测按用户要求显式传这两个选项，没有将复杂宏条件简化成所有架构必然自动使用。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 85,
+        "text": "原本地提交未改写，[两行完整diff](../../tools/bolt/results/qb-meta-switch-20261028/base-existing.diff)："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 100,
+        "text": "[项目全文件及SHA来源](../../tools/bolt/results/qb-meta-switch-20261028/metadata-provenance.json)；[结构化拓扑](../../tools/bolt/results/qb-meta-switch-20261028/unified-topology.json)。两个目录都只有project_meta、snapshot_info、project_config、project_env、manifest.xml、candidate_snapshot这6个文件，没有meta-dod或project_config_dod。两个project_meta都没有显式path；**0个静态DOD引用不等于运行时无需DOD**。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 107,
+        "text": "standard架构列表相同；完整仓库/架构集合不相同，不能把额外emulator源混成standard验收。公开`reference/build.xml`确认当前reference确为`tizen-unified_20261027.231956`，固定快照build.xml中base_id明确为`tizen-base_20261026.005418`。三架构packages子目录均HTTP200；debug采用平铺文件布局，debug根目录HTTP200且明确列出三架构RPM，不能用不存在的debug/<arch>/目录判断仓库缺失。primary中也有三个架构和noarch。[公开访问与SHA](../../tools/bolt/results/qb-meta-switch-20261028/repo-download-provenance.json)；[debug根目录检查](../../tools/bolt/results/qb-meta-switch-20261028/debug-discovery.json)；[debug平铺布局/架构计数](../../tools/bolt/results/qb-meta-switch-20261028/debug-layout.json)；[reference build.xml](../../tools/bolt/results/qb-meta-switch-20261028/unified-reference-build.xml)；[源码manifest来源](../../tools/bolt/results/qb-meta-switch-20261028/unified-source-provenance.json)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 113,
+        "text": "已由用户在headed Chromium中手动登录，只读取概览和Save日志下载链接。[概览](../../tools/bolt/results/qb-meta-switch-20261028/qb/1209720-overview.txt)；[截图](../../tools/bolt/results/qb-meta-switch-20261028/qb/1209720-overview.png)；[日志来源/SHA](../../tools/bolt/results/qb-meta-switch-20261028/qb/provenance.json)。1209720为Successful，开始2026-10-27 06:36:18，耗时5:53:55；ARMv7/AArch64/x86子构建1209725/1209726/1209727均成功。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 126,
+        "text": "这是GBS，不是1211018的NGBS；四份完整日志中`dod create project`出现次数为0。必须报告“没有DOD创建命令”，不能编造该轮创建了DOD:Unified或DOD:Base。[计数及行号](../../tools/bolt/results/qb-meta-switch-20261028/qb/mechanism-summary.json)。三子日志实际构建清单都是1046仓库，名字集合与当前Unified-Toolchain manifest相同；具体revision保存在每份packages.json，不能仅凭名称相同声称提交相同。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 134,
+        "text": "当前Toolchain manifest和最近QB均1046个仓库；新固定快照standard manifest为1030个。缺17、增加1（platform/upstream/fluoride），共同仓库267个revision变化。[完整新增/缺少/revision变更TSV](../../tools/bolt/results/qb-meta-switch-20261028/unified-repository-changes.tsv)；[与QB清单的比较](../../tools/bolt/results/qb-meta-switch-20261028/unified-fixed-source-comparison.json)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 136,
+        "text": "元仓库当前Unified manifest另有两个emulator仓库，所以它是1032而非standard固定快照的1030；[两个项目manifest直接比较](../../tools/bolt/results/qb-meta-switch-20261028/unified-manifest-diff.json)保留这个区别，不拿元目录列表替代实际快照。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 168,
+        "text": "[完整缺包/版本限定Requires/替代provider](../../tools/bolt/results/qb-meta-switch-20261028/unified-missing-dependencies.json)；[逐包三架构TSV](../../tools/bolt/results/qb-meta-switch-20261028/unified-missing-packages.tsv)。例如旧`app-rootstrap-native-data-internal`要求`lightweight-web-engine-profile_mobile`，新联合仓库无该能力provider；building-blocks相关包还引用autofill-config-mobile等。它们是旧RPM的实际requires证据，不是已证明新spec仍保留同样依赖；完整1046仓库spec检查因前置停止条件未执行，标为NOT RUN。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 295,
+        "text": "临时解析输入仅在本轮结果脚本工作区加`_repository=standard`前导，让条件分支按标准仓库展开，没有修改原project_config。该文件自身点名项主要是Substitute；[所有provider结果](../../tools/bolt/results/qb-meta-switch-20261028/unified-config-providers.tsv)显示`Substitute: pkgconfig(gles11) pkgconfig(egl) pkgconfig(glesv1) pkgconfig(gl)`（L52）的最后一项在三架构新联合仓库均无provider，其他RHS有。该替换只有触发gles11依赖时才生效，不等于每个包必然失败；但本轮不能满足“每个点名项都有provider”的严格上传检查。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 307,
+        "text": "[证据SHA256SUMS](../../tools/bolt/results/qb-meta-switch-20261028/SHA256SUMS)覆盖本目录材料；公开RPM体积较大，仅在本轮temp保留，GitHub保存其下载URL、原始大小/校验值、运行输出。父/子QB完整日志用gzip保存；浏览器只保存登录后的概览文本/截图和下载日志，没有保存cookie、认证头或登录表单。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 445,
+        "text": "- [可复跑离线审计脚本](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/audit.py)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 446,
+        "text": "- [1202084 cross目标及依赖原文](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1202084-cross-spec.txt)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 447,
+        "text": "- [1211018全部GCC/binutils源码包导入原文](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1211018-cross-spec.txt)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 448,
+        "text": "- [56项旧/新provider逐项豁免](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/provider-waivers.tsv)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 449,
+        "text": "- [旧包release与VCS](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/old-release-comparison.json)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 450,
+        "text": "- [Unified父日志机制原文](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1209720-mechanism.txt)、[GBS子日志](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1209727-mechanism.txt)、[NGBS对照](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/1211018-mechanism.txt)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 451,
+        "text": "- [manifest内容歧义检查](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/manifest-ambiguity.json)、[全文检索](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/mechanism-search.json)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 452,
+        "text": "- [输入SHA](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/input-sha256.json)、[输出SHA](../../tools/bolt/results/qb-meta-switch-20261028/user-ruling/SHA256SUMS)"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 536,
+        "text": "[完整推送输出](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/base-push.txt)保留原文；Gerrit返回SUCCESS及359363链接，并提示`warning: subject >50 characters; use shorter first paragraph`。按用户要求保留原提交说明，没有为了消除警告修改标题。只读Gerrit query复核状态NEW、分支master、patch set为上述SHA，见[查询原文](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/base-gerrit-query.jsonl)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 540,
+        "text": "`3c78318b`完整diff只涉及Base-Toolchain和Base-Dev各自的project_meta、snapshot_info，共4文件；没有修改Base-Toolchain的manifest.xml。[原文diff](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/3c78318b.diff)。该manifest前后均245仓库："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 547,
+        "text": "1211018 L136/L278/L417/L5737实际清单均251仓库；和meta相比，新增7、移除tensorflow2这1项、共同仓库revision变化18。逐项证据见[source-mechanism.json](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/source-mechanism.json)："
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 577,
+        "text": "不能把18个revision全写成快照版本：其中17个与Base快照相同，LLVM为用户指定的f308fe08，父1211014 L209/L363明确打印`platform/upstream/llvm@f308fe08eeaad4e219f8505449b88bd5f644ea8c`。最终251项目集合和Base快照完全一致，250个revision相同，唯一差异是这个显式覆盖；这是对用户给定结论的精确计数补充。[LLVM覆盖原文](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/1211014-llvm-override.txt)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 592,
+        "text": "固定新快照`Tizen-Unified/tizen-unified_20261027.231956`的standard manifest本轮重新HTTP GET成功，HTTP 200、URL、大小、SHA见[snapshot-url-provenance.json](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/snapshot-url-provenance.json)。未用会变化的reference别名替代固定输入。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 634,
+        "text": "逐仓库revision/spec来源与SHA见[spec-acquisition.json](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/spec-acquisition.json)，spec全文位于同目录specs/；[全部BR记录](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/buildrequires-lines.json)、[命中表](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/buildrequires-hits.json)、[移除仓库→产出→能力](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/removed-repository-providers.json)、[汇总](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/closure-summary.json)。Base当前仓库的原始repomd/primary与SHA验证在[base-current/provenance.json](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/base-current/provenance.json)。分析脚本存入本结果目录，便于复核。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 657,
+        "text": "提交说明包含代码来源证据、17个移除仓库、全量BR检查结果和合入时机，由原commit-msg hook生成Change-Id；作者、提交者和Signed-off-by都是Hao Lin。完整说明见[unified-final-commit.txt](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/unified-final-commit.txt)，结构验证见[unified-validation.json](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/unified-validation.json)。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/46_qb_meta_toolchain_switch.md",
+        "line": 663,
+        "text": "[推送原文](../../tools/bolt/results/qb-meta-switch-20261028/second-ruling/unified-push.txt)返回SUCCESS及上述change URL。**合入建议**：先让Base-Toolchain按Base代码产出新快照，再配合正常的依赖快照引用更新合入。本补丁的base仍是固定20261013.140248，单纯“等到新快照发布”不会让固定URL自动更新；总部合入时应确认正常配置更新已推进该引用。本轮没有越权改base，也没有宣称旧依赖能满足新代码的全部版本需求。"
+      },
+      {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/STATUS.md",
+        "line": 561,
+        "text": "挂账：两个评审待缺包/目标范围和Unified两层DOD机制解决后重新认证；合入后第一次QB必须确认最终实际使用哪份project_config/_config/.rpmmacros。debuglink完整构建仍暂停。详见[46号报告](46_qb_meta_toolchain_switch.md)，原始材料位于tools/bolt/results/qb-meta-switch-20261028/。"
+      }
+    ]
+  }
+]

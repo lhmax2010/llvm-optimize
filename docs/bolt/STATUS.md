@@ -890,3 +890,13 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 - 23个实际仓库已导出保全，未发布提交逐仓库计数合计51（非去重），5个有tracked改动；保全含format-patch、binary diff、standalone bundle及空仓库读回验证，位于temp/deleted-repo-backup-20261105，实际占用91.294GiB，全部保留。
 - PGO profiles 24文件、798,841,688 B移至temp/pgo-profiles-keep-20261102，移动前后及收尾SHA全部相同。第1–3项兄弟条目和12个指定保留目录复核通过，6个保留源码HEAD对象可读。
 - 全程一次sudo调用、一次zenity认证；未追加提权或重试。/home收尾可用335.444GiB，较清理前118.944GiB净增加216.500GiB（已包含保全和对象库恢复占用）。原始失败、逐项df、RPM SHA及恢复记录见tools/bolt/results/disk-cleanup-20261105b/。没有构建、发布源码修改、Gerrit/sandbox或QB操作。
+
+
+## 2026-11-05 历史目录第二组只读盘点（65号）
+
+- [65号](65_disk_review_group2.md)：64号结束后盘点13个目录，未删除、移动或修改其中任何文件；没有sudo、构建或Gerrit/QB操作。
+- 6个目录可按文件清单瘦身，保守预计释放27.697GiB；7个建议保留，没有整目录删除建议。原RPM、认证products、profile原件和未发布探针仓库均保留，后续删除仍由用户逐项决定。
+- 528个RPM路径，525个取得本次SHA、3个限时超时记UNKNOWN。A/B另有3处权限盲区，各自du只作可读下界；A旧lto.cache已不存在，B缓存仅17,752,064B，当前大头是build/bin/lib64。
+- C2/C3仅709个逐文件同SHA重复归档列为候选；各组限时后未完成核对的档继续保留。4个无远端的最小探针本地提交保留。ARM离线210/212档已通过，最后根内试验停于Exec format error，安装打包和64MiB限制仍未认证；从零重搭耗时UNKNOWN。
+- A根内没有合并前训练fdata；23原件在bolt-measurement-20260918/run/profiles，当前SHA全部吻合旧清单。旧merged与Source1200解压同SHA；重合并行顺序不固定，但746,704条完整行多重集及计数全同，未冒充新重合并SHA相同。
+- 原始du、全部RPM/SHA、逐条引用、Git检查、精确保留及候选清单见tools/bolt/results/disk-review-group2-20261105/。本轮实际释放0B，未启动今晚构建。
