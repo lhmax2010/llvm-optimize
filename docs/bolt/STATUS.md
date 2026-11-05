@@ -908,3 +908,13 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 - 源码备份26组检查中9组补丁链/公开基础可取得性通过，但root:root且不可写；依用户“root删除只在第一部分”裁决保留，没有再次sudo。其余17组因根提交、非线性/覆盖关系或不可证明公开基础保留；manifest在本轮证据目录，原备份和SHA256SUMS不变。
 - 65号精确候选逐文件SHA核对后删除727文件（C2 494、C3 215、crash-probe 18），未发现SHA不符。cache-release解包、intranet检出/导出和MLGO root因65号缺完整历史SHA而整组保留，未把现算SHA冒充旧清单。
 - 所有65号保留文件复查存在。启动前/home可用559,488,331,776 B，fresh root及无GBS/rpmbuild通过；只执行一次用户给定night-launch-20261105 full命令，controller初始active/running。当前是运行中，不宣称构建或验证通过；结束后另交63号。
+
+
+## 2026-11-06 同快照Toolchain重建结束（63号）
+
+- [63号](63_qb_snapshot_rebuild.md)：唯一一次用户指定入口已于2026-11-05T23:26:50.821583+08:00结束，status=failed；GBS构建exit0，失败来自自动验证，没有重试或修改入口。
+- 同9e39fa8a、同tizen-base-toolchain_20261030.061318：三级SHA全部与QB1216409相同；最终clang为e08724d8…，符号为9942e19c…，两份RPM载荷也同SHA。FLAGS逐字相同、WARNING0、profile计数和构建内门禁通过。
+- 23包为3 PASS / 20 FAIL：132对工具/符号涉及debuglink和DWARF，debug_str已逐节证实只是Release=1/2.1造成的debugsource路径变化；仍不放宽DWARF门禁。debugsource有12,142对路径前缀不同，去前缀后内容/权限相同；源码包17文件mode0664/0644不同，spec另有VCS/Release/patch导出语法差异。逐文件清单已保存。llvm-static-devel等3包通过。
+- 90TU读取第一个旧输入路径hybrid-local-20261023/tu-inputs/000.ii时失败，完成0/90；不是目标文件不一致。该父目录已在64号授权清理中删除，本轮未恢复资产、未改验证脚本或重跑。
+- 构建cgroup峰值17.261GiB（含文件缓存）、OOM0；根有效采样峰值63.079GiB，按GBS原始秒数生成资源表，缺采样UNKNOWN。入口最终审计无残留构建进程/挂载，现场全部保留。
+- 66号清理结论不变：qb_analysis及727个同SHA候选文件已删；备份权限/公开基础及缺历史SHA的候选仍保留。后续90TU资产路径和打包元数据差异需用户决定，不自动续跑。

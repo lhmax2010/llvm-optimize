@@ -253,3 +253,7 @@ SLIM65_ALL 已结束 2026-11-05T20:19:32.061080+08:00 status=partial reason=hist
 ```
 
 启动前可用559,488,331,776 B（521.064 GiB），新根不存在，无其他GBS/rpmbuild；指定命令仅执行一次。服务初始active/running，MemoryMax=24,482,992,128 B、swap0、CPUQuota=1200%。启动原文见launch.stdout，构建结束后的验证结果另记63号。
+
+## 5. 夜间任务后续
+
+指定入口已结束：GBS构建成功，自动验证有问题。完整结果、QB身份核对、23包差异、90TU缺输入和资源表见[63号](63_qb_snapshot_rebuild.md)。本轮没有因验证失败再做任何删除、修改入口或重试。

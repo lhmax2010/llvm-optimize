@@ -1,0 +1,27 @@
+QB-23-packages
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/validate.py", line 16, in check
+    try:fn();result['checks'][name]='PASS';print('CHECK_PASS',name,flush=True)
+        ^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/validate.py", line 47, in pkgs
+    r=json.loads((O/'item2-result.json').read_text());assert r['status']=='ok',r
+                                                             ^^^^^^^^^^^^^^^^^
+AssertionError: {'status': 'differences', 'packages': 23, 'passed': 3, 'failed': 20}
+QB-objects90
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/validate.py", line 16, in check
+    try:fn();result['checks'][name]='PASS';print('CHECK_PASS',name,flush=True)
+        ^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/validate.py", line 51, in <lambda>
+    check('QB-objects90',lambda:objects(D,O,dest/'usr/bin/clang-22'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/validation_common.py", line 70, in objects
+    free();i=u['index'];d=V/f'{i:03d}';d.mkdir(exist_ok=True);inp=d/'input.ii';assert sha(u['copy'])==u['sha256']
+                                                                                      ^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/checks.py", line 8, in sha
+    with Path(p).open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+         ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/linhao/Toolchain/development/llvm-optimize/temp/hybrid-local-20261023/tu-inputs/000.ii'
