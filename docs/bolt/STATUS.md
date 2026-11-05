@@ -862,3 +862,12 @@ ITEM1 已结束 2026-11-05T00:11:43.545431+08:00 status=stopped reason=missing-D
 ITEM2 已结束 2026-11-05T00:41:25.825515+08:00 status=differences reason=comparison-complete
 ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files-audited-module-byte-causality-unproven
 ```
+
+
+## 2026-11-05 PGO+BOLT补测完成与批准清理（本提交）
+
+- [59号](59_pgo_bolt_followup.md)补齐完成：复用16号LLVM22.1.8 merge-fdata/runtime；bolt/1,154文件与3ee2d847一致、额外文件0，无工具构建。23/23插桩训练、一份合并profile、正式OPTIONS优化通过，N/M/S/U/Q=19648/164430/0/1/599，R=0.005089318%，未放宽5%门槛。
+- llvm-bolt优化VmHWM=8,890,351,616B，比54号非PGO同口径低10.485%。保留use-old-text空间不足警告，未strip产物259,324,032B；不是完整发布验证。后处理/打包资源继续明确标为55号借用估算。
+- 23输入×3编译器×3轮，共207次-O2速度编译全部成功；中位数120.362/108.553/104.708s。轮间波动较大，3.542%差不能确认为稳定加速。完整原始数据保留。
+- [61号](61_disk_cleanup.md)：只删除批准的attribution/payload和PGO stage-A/gbs-root，跳过0；一次sudo调用、一次zenity认证。清理窗口df净增33,241,427,968B（30.958GiB），兄弟条目不变，D根及所有其他历史根只读。补测结束/home可用77,381,136,384B（72.067GiB）。
+- 未改LLVM源码/spec/helper/Source1200；未推Gerrit或sandbox；所有新补测产物保留。后续完整PGO+BOLT打包和未见输入上的性能验证未执行。
