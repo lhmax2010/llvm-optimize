@@ -900,3 +900,11 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 - C2/C3仅709个逐文件同SHA重复归档列为候选；各组限时后未完成核对的档继续保留。4个无远端的最小探针本地提交保留。ARM离线210/212档已通过，最后根内试验停于Exec format error，安装打包和64MiB限制仍未认证；从零重搭耗时UNKNOWN。
 - A根内没有合并前训练fdata；23原件在bolt-measurement-20260918/run/profiles，当前SHA全部吻合旧清单。旧merged与Source1200解压同SHA；重合并行顺序不固定，但746,704条完整行多重集及计数全同，未冒充新重合并SHA相同。
 - 原始du、全部RPM/SHA、逐条引用、Git检查、精确保留及候选清单见tools/bolt/results/disk-review-group2-20261105/。本轮实际释放0B，未启动今晚构建。
+
+
+## 2026-11-05 清理完成、QB同快照重建已启动（66号）
+
+- [66号](66_disk_cleanup.md)：一次zenity认证及一次sudo调用，root补查无挂载/进程/服务占用后，仅删除qb_analysis；253个仓库只登记，不做额外源码保全。该窗口/home可用净增178,935,119,872 B。
+- 源码备份26组检查中9组补丁链/公开基础可取得性通过，但root:root且不可写；依用户“root删除只在第一部分”裁决保留，没有再次sudo。其余17组因根提交、非线性/覆盖关系或不可证明公开基础保留；manifest在本轮证据目录，原备份和SHA256SUMS不变。
+- 65号精确候选逐文件SHA核对后删除727文件（C2 494、C3 215、crash-probe 18），未发现SHA不符。cache-release解包、intranet检出/导出和MLGO root因65号缺完整历史SHA而整组保留，未把现算SHA冒充旧清单。
+- 所有65号保留文件复查存在。启动前/home可用559,488,331,776 B，fresh root及无GBS/rpmbuild通过；只执行一次用户给定night-launch-20261105 full命令，controller初始active/running。当前是运行中，不宣称构建或验证通过；结束后另交63号。
