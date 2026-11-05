@@ -48,7 +48,9 @@ def elf_proof(old,new):
   name=x['name'];record=name in RECORDS
   assert all(u==v for i,(u,v) in enumerate(zip(x['raw'],y['raw'])) if i not in (4,5)),('section metadata changed',name)
   same=chunk_equal(x['content'],y['content'])
-  if x['flags']&2:assert x['offset']==y['offset'] and x['size']==y['size'] and same,('ALLOC section changed',name)
+  # ET_REL has no runtime file mapping: record growth may move later ALLOC sections.
+  # ET_EXEC/ET_DYN retain strict ALLOC file positions. All other fields/content stay strict.
+  if x['flags']&2:assert (ha[0]==1 or x['offset']==y['offset']) and x['size']==y['size'] and same,('ALLOC section changed',name)
   if not record:assert x['size']==y['size'] and same,('non-record section changed',name)
   if record:
    assert not x['flags']&2,('record section is ALLOC',name)
@@ -61,7 +63,7 @@ def elf_proof(old,new):
   if x['size']!=y['size']:assert record,('size changed outside records',name);changes.append(dict(section=name,field='sh_size',old=x['size'],new=y['size']))
  for x,y in zip(sa,sb):
   if x['offset']!=y['offset']:
-   assert not x['flags']&2 and any(x['offset']>=u['offset']+u['size'] and y['offset']>=v['offset']+v['size'] for u,v in changed_records),('unexplained section relocation',x['name'])
+   assert (not x['flags']&2 or ha[0]==1) and any(u['size']!=v['size'] and x['offset']>=u['offset']+u['size'] and y['offset']>=v['offset']+v['size'] for u,v in changed_records),('unexplained section relocation',x['name'])
    changes.append(dict(section=x['name'],field='sh_offset',old=x['offset'],new=y['offset']))
  if len(a)!=len(b):assert changed_records,'unexplained length';changes.append(dict(field='file_length',old=len(a),new=len(b)))
  if ha[5]!=hb[5]:assert any(ha[5]>=u['offset']+u['size'] and hb[5]>=v['offset']+v['size'] for u,v in changed_records),'unexplained section table relocation'
@@ -80,7 +82,7 @@ def elf_proof(old,new):
  na=[(lo,hi,v) for lo,hi,v in ga if any(v)];nb=[(lo,hi,v) for lo,hi,v in gb if any(v)]
  assert len(na)==len(nb) and all(chunk_equal(x[2],y[2]) for x,y in zip(na,nb)),'non-section bytes changed'
  if not changed_records:assert [(x,y) for x,y,_ in ga]==[(x,y) for x,y,_ in gb],'padding layout changed without record change'
- return dict(classification='identical' if chunk_equal(a,b) else 'command-record-sections-only',record_sections=proofs,structural_changes=changes,all_other_sections_equal=True,program_headers_equal=True,all_ALLOC_equal=True,padding=[{'old':[(lo,hi) for lo,hi,_ in ga],'new':[(lo,hi) for lo,hi,_ in gb],'nonzero_gaps_equal':True}])
+ return dict(classification='identical' if chunk_equal(a,b) else 'command-record-sections-only',record_sections=proofs,structural_changes=changes,all_other_sections_equal=True,program_headers_equal=True,all_ALLOC_equal=True,ALLOC_offsets_equal=all(x['offset']==y['offset'] for x,y in zip(sa,sb) if x['flags']&2),padding=[{'old':[(lo,hi) for lo,hi,_ in ga],'new':[(lo,hi) for lo,hi,_ in gb],'nonzero_gaps_equal':True}])
 
 def ar_members(data):
  a=memoryview(data);assert bytes(a[:8])==b'!<arch>\n';pos=8;names=b'';out=[]

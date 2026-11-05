@@ -1,0 +1,44 @@
+EE..E....
+======================================================================
+ERROR: test_actual_queue_memory_error (test_revalidation.Tests.test_actual_queue_memory_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/test_revalidation.py", line 36, in test_actual_queue_memory_error
+    def test_actual_queue_memory_error(self):self.queue_fixture('MemoryError')
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/test_revalidation.py", line 24, in queue_fixture
+    import night,subprocess
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/night.py", line 1, in <module>
+    raise SystemExit("Use launch.sh SOURCE_SHA full: Toolchain only; no Base-Dev queue")
+SystemExit: Use launch.sh SOURCE_SHA full: Toolchain only; no Base-Dev queue
+
+======================================================================
+ERROR: test_actual_queue_service_oom (test_revalidation.Tests.test_actual_queue_service_oom)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/test_revalidation.py", line 37, in test_actual_queue_service_oom
+    def test_actual_queue_service_oom(self):self.queue_fixture('OOM')
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/test_revalidation.py", line 24, in queue_fixture
+    import night,subprocess
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/night.py", line 1, in <module>
+    raise SystemExit("Use launch.sh SOURCE_SHA full: Toolchain only; no Base-Dev queue")
+SystemExit: Use launch.sh SOURCE_SHA full: Toolchain only; no Base-Dev queue
+
+======================================================================
+ERROR: test_memory_error_main_result (test_revalidation.Tests.test_memory_error_main_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/test_revalidation.py", line 21, in test_memory_error_main_result
+    with patch.object(validate,'verify_manifest',side_effect=MemoryError('fixture')):self.assertEqual(validate.main(args),1)
+  File "/usr/lib/python3.12/unittest/mock.py", line 1458, in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/mock.py", line 1431, in get_original
+    raise AttributeError(
+AttributeError: <module 'validate' from '/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/validate.py'> does not have the attribute 'verify_manifest'
+
+----------------------------------------------------------------------
+Ran 9 tests in 5.112s
+
+FAILED (errors=3)

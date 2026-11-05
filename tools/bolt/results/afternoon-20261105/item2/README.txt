@@ -1,0 +1,2 @@
+QB 1216409 child 1216412 full-log lines314-339 resolve mutable reference to fixed 20261030.061318 before retrieving build.conf and configuring packages/debug. URLs in gbs.conf match the logged HTTP addresses exactly. Build.conf download uses HTTPS for transport from that same fixed snapshot. Neither current reference nor older 20261013 is substituted.
+Three SHA references are available in the saved QB pipeline.json identity, not inferred from local artifacts.

@@ -871,3 +871,12 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 - 23输入×3编译器×3轮，共207次-O2速度编译全部成功；中位数120.362/108.553/104.708s。轮间波动较大，3.542%差不能确认为稳定加速。完整原始数据保留。
 - [61号](61_disk_cleanup.md)：只删除批准的attribution/payload和PGO stage-A/gbs-root，跳过0；一次sudo调用、一次zenity认证。清理窗口df净增33,241,427,968B（30.958GiB），兄弟条目不变，D根及所有其他历史根只读。补测结束/home可用77,381,136,384B（72.067GiB）。
 - 未改LLVM源码/spec/helper/Source1200；未推Gerrit或sandbox；所有新补测产物保留。后续完整PGO+BOLT打包和未见输入上的性能验证未执行。
+
+
+## 2026-11-05 下午四项（62号，本提交）
+
+- 后续逐字节比较基线固定为同一提交、同一快照的QB产物。比较器新增用户批准ET_REL例外：仅记录节变长造成的后续ALLOC文件offset移动可接受，其他加载属性/内容严格，EXEC/DYN不放宽；5项新正反例与8项旧规则通过。
+- [62号](62_afternoon_20261105.md)：ompdModule新参数重链与T原件逐字节相同；移除gc-sections后与旧认证原件仅记录命令节不同，加载内容相同。剥离后仅隔离debuglink CRC，两边分别与各自RPM字节相同；不是完整打包复现。
+- tools/bolt/night-launch-20261105：QB1216409固定快照20261030.061318，build.conf SHA8f201a0d…，单T入口准备。首次演练因prep旧日志被读取而restart=1失败，记录保留；修复epoch交接后第二轮PASS，restart=0、原件副本62193B完全相同、FLAGS/CMake与QB一致，无Ninja、无残留。今晚full未执行。
+- QB安装新根测试PASS：clang/debug SHA e08724d8…/9942e19c…，CRC3891159848，LLDB自动符号加载，21/21 clang帧与symbolizer一致，5个冷样本通过，无源码行能力；proc正常卸载，无残留。第三四项一次sudo、一次zenity认证。
+- 仅删除批准PGO stage-D/gbs-root，其他条目及followup保留；df净增60.378GiB。当前/home 119.019GiB，单T预算98.774GiB，余量20.245GiB。今晚可启动，命令见62号；没有发布源码修改或Gerrit/QB操作。

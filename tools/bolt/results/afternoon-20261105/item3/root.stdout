@@ -1,0 +1,389 @@
+2026-11-05T11:40:47+08:00 STEP precheck-audit
+{
+  "mounts": [],
+  "processes": []
+}
+DEVICE_NULL_PASS character 1:3 mode 0666
+2026-11-05T11:40:47+08:00 STEP rpm-version
+RPM version 4.14.1
+2026-11-05T11:40:47+08:00 STEP rpm-initdb
+2026-11-05T11:40:47+08:00 STEP rpm-install
+Preparing...                          ########################################
+Updating / installing...
+clang-debuginfo-22.1.8-2.1            ########################################
+clang-22.1.8-2.1                      ########################################
+2026-11-05T11:41:05+08:00 STEP rpm-installed
+clang-22.1.8-2.1.x86_64
+clang-debuginfo-22.1.8-2.1.x86_64
+2026-11-05T11:41:05+08:00 STEP installed-identity
+{
+  "usr/bin/clang-22": {
+    "sha256": "e08724d81231d8675c51d4908f4ff0e8d233ef3740c878da1c7eda42dd3532f5",
+    "bytes": 152532400,
+    "mode": "0o755"
+  },
+  "usr/lib/debug/usr/bin/clang-22.debug": {
+    "sha256": "9942e19c75ffef55f2846e6f1ea60651b4502de6e099c038a3d93bad4f5df690",
+    "bytes": 35321968,
+    "mode": "0o644"
+  },
+  "debuglink_crc32": 3891159848,
+  "build_id": "absent, same as 39"
+}
+2026-11-05T11:41:05+08:00 STEP proc-mount
+2026-11-05T11:41:05+08:00 STEP proc-findmnt
+TARGET                                                                              SOURCE FSTYPE OPTIONS
+/home/linhao/Toolchain/development/llvm-optimize/temp/qb-install-20261105/root/proc none   proc   rw,relatime
+2026-11-05T11:41:05+08:00 STEP lldb-auto
+(lldb) command source -s 0 '/probe/install-20261105/probe.lldb'
+Executing commands in '/probe/install-20261105/probe.lldb'.
+(lldb) settings set target.disable-aslr false
+(lldb) settings set target.disable-stdio true
+(lldb) target create /usr/bin/clang-22
+Current executable set to '/usr/bin/clang-22' (x86_64).
+(lldb) image list -f -s
+[  0] /usr/bin/clang-22 /usr/lib/debug/usr/bin/clang-22.debug
+(lldb) image lookup -n main
+1 match found in /usr/bin/clang-22:
+        Address: clang-22[0x000000000342b940] (clang-22.PT_LOAD[1]..text + 12761408)
+        Summary: clang-22`main
+(lldb) image lookup -a 0x342b940
+      Address: clang-22[0x000000000342b940] (clang-22.PT_LOAD[1]..text + 12761408)
+      Summary: clang-22`main
+(lldb) image lookup -a 0x42d2c5c
+      Address: clang-22[0x00000000042d2c5c] (clang-22.PT_LOAD[1]..text.cold + 13474908)
+      Summary: clang-22`tensorflow::XlaCompiledCpuFunction::XlaCompiledCpuFunction(tensorflow::XlaCompiledCpuFunction::StaticData const&, tensorflow::XlaCompiledCpuFunction::AllocMode) (.cold)
+(lldb) image lookup -a 0x42d3000
+      Address: clang-22[0x00000000042d3000] (clang-22.PT_LOAD[1]..text.cold + 13475840)
+      Summary: clang-22`tensorflow::XlaCompiledCpuFunction::MakeXlaRuntimeDescriptorTable() (.cold)
+(lldb) image lookup -a 0x42d3280
+      Address: clang-22[0x00000000042d3280] (clang-22.PT_LOAD[1]..text.cold + 13476480)
+      Summary: clang-22`void std::vector<tensorflow::(anonymous namespace)::MemrefHolder, std::allocator<tensorflow::(anonymous namespace)::MemrefHolder>>::_M_realloc_insert<tensorflow::XlaCompiledCpuFunction::ShapeInfo const&, void*&>(__gnu_cxx::__normal_iterator<tensorflow::(anonymous namespace)::MemrefHolder*, std::vector<tensorflow::(anonymous namespace)::MemrefHolder, std::allocator<tensorflow::(anonymous namespace)::MemrefHolder>>>, tensorflow::XlaCompiledCpuFunction::ShapeInfo const&, void*&) (.cold)
+(lldb) image lookup -a 0x42d3680
+      Address: clang-22[0x00000000042d3680] (clang-22.PT_LOAD[1]..text.cold + 13477504)
+      Summary: clang-22`tensorflow::XlaCompiledCpuFunction::RunXlaRuntime() (.cold)
+(lldb) image lookup -a 0x42d3f9a
+      Address: clang-22[0x00000000042d3f9a] (clang-22.PT_LOAD[1]..text.cold + 13479834)
+      Summary: clang-22`tensorflow::XlaCompiledCpuFunction::Run() (.cold)
+(lldb) settings set -- target.run-args --no-default-config -fno-crash-diagnostics -fsyntax-only /probe/install-20261105/crash.c
+(lldb) run
+Process 158091 launched: '/usr/bin/clang-22' (x86_64)
+Process 158091 stopped
+* thread #1, name = 'clang-22', stop reason = signal SIGILL: illegal operand
+    frame #0: 0x00005c2e56bbd4a8 clang-22`(anonymous namespace)::PragmaDebugHandler::HandlePragma(clang::Preprocessor&, clang::PragmaIntroducer, clang::Token&) + 3360
+clang-22`(anonymous namespace)::PragmaDebugHandler::HandlePragma:
+->  0x5c2e56bbd4a8 <+3360>: ud2    
+    0x5c2e56bbd4aa:         nopw   %cs:(%rax,%rax)
+    0x5c2e56bbd4b9:         nopl   (%rax)
+clang-22`LexModuleName:
+    0x5c2e56bbd4c0 <+0>:    pushq  %rbp
+(lldb) bt all
+* thread #1, name = 'clang-22', stop reason = signal SIGILL: illegal operand
+  * frame #0: 0x00005c2e56bbd4a8 clang-22`(anonymous namespace)::PragmaDebugHandler::HandlePragma(clang::Preprocessor&, clang::PragmaIntroducer, clang::Token&) + 3360
+    frame #1: 0x00005c2e51c9d2d9 clang-22`clang::Preprocessor::HandlePragmaDirective(clang::PragmaIntroducer) + 81
+    frame #2: 0x00005c2e51ca1d89 clang-22`clang::Preprocessor::HandleDirective(clang::Token&) + 457
+    frame #3: 0x00005c2e516f31d3 clang-22`clang::Lexer::LexTokenInternal(clang::Token&, bool) + 9235
+    frame #4: 0x00005c2e516f04bb clang-22`clang::Preprocessor::Lex(clang::Token&) + 37
+    frame #5: 0x00005c2e519419e8 clang-22`clang::ParseAST(clang::Sema&, bool, bool) + 552
+    frame #6: 0x00005c2e522388aa clang-22`clang::FrontendAction::Execute() + 30
+    frame #7: 0x00005c2e52230432 clang-22`clang::CompilerInstance::ExecuteAction(clang::FrontendAction&) + 302
+    frame #8: 0x00005c2e52230243 clang-22`clang::ExecuteCompilerInvocation(clang::CompilerInstance*) + 195
+    frame #9: 0x00005c2e5222eb8a clang-22`cc1_main(llvm::ArrayRef<char const*>, char const*, void*) + 2378
+    frame #10: 0x00005c2e51f5de57 clang-22`ExecuteCC1Tool(llvm::SmallVectorImpl<char const*>&, llvm::ToolContext const&, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>) + 341
+    frame #11: 0x00005c2e51f5dcf1 clang-22`int llvm::function_ref<int (llvm::SmallVectorImpl<char const*>&)>::callback_fn<clang_main(int, char**, llvm::ToolContext const&)::$_0>(long, llvm::SmallVectorImpl<char const*>&) + 49
+    frame #12: 0x00005c2e51f5dca3 clang-22`void llvm::function_ref<void ()>::callback_fn<clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const::$_0>(long) + 25
+    frame #13: 0x00005c2e51f5dc7b clang-22`llvm::CrashRecoveryContext::RunSafely(llvm::function_ref<void ()>) + 123
+    frame #14: 0x00005c2e51f5db6c clang-22`clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const + 300
+    frame #15: 0x00005c2e51f5d9ad clang-22`clang::driver::Compilation::ExecuteCommand(clang::driver::Command const&, clang::driver::Command const*&, bool) const + 157
+    frame #16: 0x00005c2e51f5d8de clang-22`clang::driver::Compilation::ExecuteJobs(clang::driver::JobList const&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&, bool) const + 94
+    frame #17: 0x00005c2e51f5d851 clang-22`clang::driver::Driver::ExecuteCompilation(clang::driver::Compilation&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&) + 189
+    frame #18: 0x00005c2e5222c70d clang-22`clang_main(int, char**, llvm::ToolContext const&) + 3341
+    frame #19: 0x00005c2e5222b99a clang-22`main + 90
+    frame #20: 0x000070301664db97 libc.so.6`___lldb_unnamed_symbol_29b30 + 103
+    frame #21: 0x000070301664dc55 libc.so.6`__libc_start_main + 133
+    frame #22: 0x00005c2e521ecfe1 clang-22`_start + 33
+(lldb) image list -o -f -s
+[  0] 0x00005c2e4ee00000 /usr/bin/clang-22 /usr/lib/debug/usr/bin/clang-22.debug
+[  1] 0x0000703016bd4000 /lib64/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
+[  2] 0x0000703016bd2000 [vdso] (0x0000703016bd2000)
+[  3] 0x0000703016ac5000 /lib64/libz.so.1 /lib64/libz.so.1
+[  4] 0x0000703016bbf000 /lib64/libdl.so.2 /lib64/libdl.so.2
+[  5] 0x0000703016bc5000 /usr/lib64/librt.so.1 /usr/lib64/librt.so.1
+[  6] 0x0000703016adc000 /lib64/libm.so.6 /lib64/libm.so.6
+[  7] 0x0000703016a97000 /lib64/libgcc_s.so.1 /lib64/libgcc_s.so.1
+[  8] 0x0000703016624000 /lib64/libc.so.6 /lib64/libc.so.6
+[  9] 0x0000703016800000 /usr/lib64/libstdc++.so.6 /usr/lib64/libstdc++.so.6
+(lldb) quit
+2026-11-05T11:41:06+08:00 STEP symbolize-check
+{
+  "PASS": true,
+  "automatic_debug_file": "/usr/lib/debug/usr/bin/clang-22.debug",
+  "crash": "SIGILL",
+  "clang_frames": 21,
+  "named_clang_frames": 21,
+  "slide": "0x5c2e4ee00000",
+  "frames": [
+    {
+      "frame": 0,
+      "absolute": "0x00005c2e56bbd4a8",
+      "lldb_name": "(anonymous namespace)::PragmaDebugHandler::HandlePragma(clang::Preprocessor&, clang::PragmaIntroducer, clang::Token&)",
+      "offset": "0x7dbd4a8",
+      "symbolizer_name": "(anonymous namespace)::PragmaDebugHandler::HandlePragma(clang::Preprocessor&, clang::PragmaIntroducer, clang::Token&)"
+    },
+    {
+      "frame": 1,
+      "absolute": "0x00005c2e51c9d2d9",
+      "lldb_name": "clang::Preprocessor::HandlePragmaDirective(clang::PragmaIntroducer)",
+      "offset": "0x2e9d2d9",
+      "symbolizer_name": "clang::Preprocessor::HandlePragmaDirective(clang::PragmaIntroducer)"
+    },
+    {
+      "frame": 2,
+      "absolute": "0x00005c2e51ca1d89",
+      "lldb_name": "clang::Preprocessor::HandleDirective(clang::Token&)",
+      "offset": "0x2ea1d89",
+      "symbolizer_name": "clang::Preprocessor::HandleDirective(clang::Token&)"
+    },
+    {
+      "frame": 3,
+      "absolute": "0x00005c2e516f31d3",
+      "lldb_name": "clang::Lexer::LexTokenInternal(clang::Token&, bool)",
+      "offset": "0x28f31d3",
+      "symbolizer_name": "clang::Lexer::LexTokenInternal(clang::Token&, bool)"
+    },
+    {
+      "frame": 4,
+      "absolute": "0x00005c2e516f04bb",
+      "lldb_name": "clang::Preprocessor::Lex(clang::Token&)",
+      "offset": "0x28f04bb",
+      "symbolizer_name": "clang::Preprocessor::Lex(clang::Token&)"
+    },
+    {
+      "frame": 5,
+      "absolute": "0x00005c2e519419e8",
+      "lldb_name": "clang::ParseAST(clang::Sema&, bool, bool)",
+      "offset": "0x2b419e8",
+      "symbolizer_name": "clang::ParseAST(clang::Sema&, bool, bool)"
+    },
+    {
+      "frame": 6,
+      "absolute": "0x00005c2e522388aa",
+      "lldb_name": "clang::FrontendAction::Execute()",
+      "offset": "0x34388aa",
+      "symbolizer_name": "clang::FrontendAction::Execute()"
+    },
+    {
+      "frame": 7,
+      "absolute": "0x00005c2e52230432",
+      "lldb_name": "clang::CompilerInstance::ExecuteAction(clang::FrontendAction&)",
+      "offset": "0x3430432",
+      "symbolizer_name": "clang::CompilerInstance::ExecuteAction(clang::FrontendAction&)"
+    },
+    {
+      "frame": 8,
+      "absolute": "0x00005c2e52230243",
+      "lldb_name": "clang::ExecuteCompilerInvocation(clang::CompilerInstance*)",
+      "offset": "0x3430243",
+      "symbolizer_name": "clang::ExecuteCompilerInvocation(clang::CompilerInstance*)"
+    },
+    {
+      "frame": 9,
+      "absolute": "0x00005c2e5222eb8a",
+      "lldb_name": "cc1_main(llvm::ArrayRef<char const*>, char const*, void*)",
+      "offset": "0x342eb8a",
+      "symbolizer_name": "cc1_main(llvm::ArrayRef<char const*>, char const*, void*)"
+    },
+    {
+      "frame": 10,
+      "absolute": "0x00005c2e51f5de57",
+      "lldb_name": "ExecuteCC1Tool(llvm::SmallVectorImpl<char const*>&, llvm::ToolContext const&, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>)",
+      "offset": "0x315de57",
+      "symbolizer_name": "ExecuteCC1Tool(llvm::SmallVectorImpl<char const*>&, llvm::ToolContext const&, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>)"
+    },
+    {
+      "frame": 11,
+      "absolute": "0x00005c2e51f5dcf1",
+      "lldb_name": "int llvm::function_ref<int (llvm::SmallVectorImpl<char const*>&)>::callback_fn<clang_main(int, char**, llvm::ToolContext const&)::$_0>(long, llvm::SmallVectorImpl<char const*>&)",
+      "offset": "0x315dcf1",
+      "symbolizer_name": "int llvm::function_ref<int (llvm::SmallVectorImpl<char const*>&)>::callback_fn<clang_main(int, char**, llvm::ToolContext const&)::$_0>(long, llvm::SmallVectorImpl<char const*>&)"
+    },
+    {
+      "frame": 12,
+      "absolute": "0x00005c2e51f5dca3",
+      "lldb_name": "void llvm::function_ref<void ()>::callback_fn<clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const::$_0>(long)",
+      "offset": "0x315dca3",
+      "symbolizer_name": "void llvm::function_ref<void ()>::callback_fn<clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const::$_0>(long)"
+    },
+    {
+      "frame": 13,
+      "absolute": "0x00005c2e51f5dc7b",
+      "lldb_name": "llvm::CrashRecoveryContext::RunSafely(llvm::function_ref<void ()>)",
+      "offset": "0x315dc7b",
+      "symbolizer_name": "llvm::CrashRecoveryContext::RunSafely(llvm::function_ref<void ()>)"
+    },
+    {
+      "frame": 14,
+      "absolute": "0x00005c2e51f5db6c",
+      "lldb_name": "clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const",
+      "offset": "0x315db6c",
+      "symbolizer_name": "clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const"
+    },
+    {
+      "frame": 15,
+      "absolute": "0x00005c2e51f5d9ad",
+      "lldb_name": "clang::driver::Compilation::ExecuteCommand(clang::driver::Command const&, clang::driver::Command const*&, bool) const",
+      "offset": "0x315d9ad",
+      "symbolizer_name": "clang::driver::Compilation::ExecuteCommand(clang::driver::Command const&, clang::driver::Command const*&, bool) const"
+    },
+    {
+      "frame": 16,
+      "absolute": "0x00005c2e51f5d8de",
+      "lldb_name": "clang::driver::Compilation::ExecuteJobs(clang::driver::JobList const&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&, bool) const",
+      "offset": "0x315d8de",
+      "symbolizer_name": "clang::driver::Compilation::ExecuteJobs(clang::driver::JobList const&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&, bool) const"
+    },
+    {
+      "frame": 17,
+      "absolute": "0x00005c2e51f5d851",
+      "lldb_name": "clang::driver::Driver::ExecuteCompilation(clang::driver::Compilation&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&)",
+      "offset": "0x315d851",
+      "symbolizer_name": "clang::driver::Driver::ExecuteCompilation(clang::driver::Compilation&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&)"
+    },
+    {
+      "frame": 18,
+      "absolute": "0x00005c2e5222c70d",
+      "lldb_name": "clang_main(int, char**, llvm::ToolContext const&)",
+      "offset": "0x342c70d",
+      "symbolizer_name": "clang_main(int, char**, llvm::ToolContext const&)"
+    },
+    {
+      "frame": 19,
+      "absolute": "0x00005c2e5222b99a",
+      "lldb_name": "main",
+      "offset": "0x342b99a",
+      "symbolizer_name": "main"
+    },
+    {
+      "frame": 22,
+      "absolute": "0x00005c2e521ecfe1",
+      "lldb_name": "_start",
+      "offset": "0x33ecfe1",
+      "symbolizer_name": "_start"
+    }
+  ],
+  "samples": [
+    {
+      "address": "0x342b940",
+      "selected_name": "main",
+      "resolved_name": "main",
+      "lldb_name": "main",
+      "symbolizer_name": "main"
+    },
+    {
+      "address": "0x42d2c5c",
+      "selected_name": "_ZN10tensorflow22XlaCompiledCpuFunctionC2ERKNS0_10StaticDataENS0_9AllocModeE.cold",
+      "resolved_name": "_ZN10tensorflow22XlaCompiledCpuFunctionC2ERKNS0_10StaticDataENS0_9AllocModeE.cold",
+      "lldb_name": "tensorflow::XlaCompiledCpuFunction::XlaCompiledCpuFunction(tensorflow::XlaCompiledCpuFunction::StaticData const&, tensorflow::XlaCompiledCpuFunction::AllocMode) (.cold)",
+      "symbolizer_name": "tensorflow::XlaCompiledCpuFunction::XlaCompiledCpuFunction(tensorflow::XlaCompiledCpuFunction::StaticData const&, tensorflow::XlaCompiledCpuFunction::AllocMode) (.cold)"
+    },
+    {
+      "address": "0x42d3000",
+      "selected_name": "_ZN10tensorflow22XlaCompiledCpuFunction29MakeXlaRuntimeDescriptorTableEv.cold",
+      "resolved_name": "_ZN10tensorflow22XlaCompiledCpuFunction29MakeXlaRuntimeDescriptorTableEv.cold",
+      "lldb_name": "tensorflow::XlaCompiledCpuFunction::MakeXlaRuntimeDescriptorTable() (.cold)",
+      "symbolizer_name": "tensorflow::XlaCompiledCpuFunction::MakeXlaRuntimeDescriptorTable() (.cold)"
+    },
+    {
+      "address": "0x42d3280",
+      "selected_name": "_ZNSt6vectorIN10tensorflow12_GLOBAL__N_112MemrefHolderESaIS2_EE17_M_realloc_insertIJRKNS0_22XlaCompiledCpuFunction9ShapeInfoERPvEEEvN9__gnu_cxx17__normal_iteratorIPS2_S4_EEDpOT_.cold",
+      "resolved_name": "_ZNSt6vectorIN10tensorflow12_GLOBAL__N_112MemrefHolderESaIS2_EE17_M_realloc_insertIJRKNS0_22XlaCompiledCpuFunction9ShapeInfoERPvEEEvN9__gnu_cxx17__normal_iteratorIPS2_S4_EEDpOT_.cold",
+      "lldb_name": "void std::vector<tensorflow::(anonymous namespace)::MemrefHolder, std::allocator<tensorflow::(anonymous namespace)::MemrefHolder>>::_M_realloc_insert<tensorflow::XlaCompiledCpuFunction::ShapeInfo const&, void*&>(__gnu_cxx::__normal_iterator<tensorflow::(anonymous namespace)::MemrefHolder*, std::vector<tensorflow::(anonymous namespace)::MemrefHolder, std::allocator<tensorflow::(anonymous namespace)::MemrefHolder>>>, tensorflow::XlaCompiledCpuFunction::ShapeInfo const&, void*&) (.cold)",
+      "symbolizer_name": "void std::vector<tensorflow::(anonymous namespace)::MemrefHolder, std::allocator<tensorflow::(anonymous namespace)::MemrefHolder>>::_M_realloc_insert<tensorflow::XlaCompiledCpuFunction::ShapeInfo const&, void*&>(__gnu_cxx::__normal_iterator<tensorflow::(anonymous namespace)::MemrefHolder*, std::vector<tensorflow::(anonymous namespace)::MemrefHolder, std::allocator<tensorflow::(anonymous namespace)::MemrefHolder>>>, tensorflow::XlaCompiledCpuFunction::ShapeInfo const&, void*&) (.cold)"
+    },
+    {
+      "address": "0x42d3680",
+      "selected_name": "_ZN10tensorflow22XlaCompiledCpuFunction13RunXlaRuntimeEv.cold",
+      "resolved_name": "_ZN10tensorflow22XlaCompiledCpuFunction13RunXlaRuntimeEv.cold",
+      "lldb_name": "tensorflow::XlaCompiledCpuFunction::RunXlaRuntime() (.cold)",
+      "symbolizer_name": "tensorflow::XlaCompiledCpuFunction::RunXlaRuntime() (.cold)"
+    },
+    {
+      "address": "0x42d3f9a",
+      "selected_name": "_ZN10tensorflow22XlaCompiledCpuFunction3RunEv.cold",
+      "resolved_name": "_ZN10tensorflow22XlaCompiledCpuFunction3RunEv.cold",
+      "lldb_name": "tensorflow::XlaCompiledCpuFunction::Run() (.cold)",
+      "symbolizer_name": "tensorflow::XlaCompiledCpuFunction::Run() (.cold)"
+    }
+  ],
+  "cold_samples": 5,
+  "source_line_information": false
+}
+2026-11-05T11:41:06+08:00 STEP proc-umount
+2026-11-05T11:41:06+08:00 STEP cleanup-findmnt
+/sys sysfs sysfs
+/proc proc proc
+/dev udev devtmpfs
+/dev/pts devpts devpts
+/run tmpfs tmpfs
+/ /dev/nvme0n1p1 ext4
+/sys/kernel/security securityfs securityfs
+/dev/shm tmpfs tmpfs
+/run/lock tmpfs tmpfs
+/sys/fs/cgroup cgroup2 cgroup2
+/sys/fs/pstore none pstore
+/sys/firmware/efi/efivars efivarfs efivarfs
+/sys/fs/bpf bpf bpf
+/proc/sys/fs/binfmt_misc systemd-1 autofs
+/sys/kernel/debug debugfs debugfs
+/dev/hugepages hugetlbfs hugetlbfs
+/dev/mqueue mqueue mqueue
+/sys/kernel/tracing tracefs tracefs
+/sys/fs/fuse/connections fusectl fusectl
+/sys/kernel/config configfs configfs
+/snap/bare/5 /dev/loop1 squashfs
+/snap/chromium/3569 /dev/loop0 squashfs
+/snap/chromium/3580 /dev/loop2 squashfs
+/snap/code/274 /dev/loop3 squashfs
+/snap/code/275 /dev/loop4 squashfs
+/snap/core20/2866 /dev/loop5 squashfs
+/snap/core20/2922 /dev/loop6 squashfs
+/snap/core22/2955 /dev/loop7 squashfs
+/snap/core24/2124 /dev/loop10 squashfs
+/snap/core26/462 /dev/loop11 squashfs
+/snap/core24/1643 /dev/loop9 squashfs
+/snap/core26/646 /dev/loop8 squashfs
+/snap/core22/2987 /dev/loop12 squashfs
+/snap/cups/1262 /dev/loop13 squashfs
+/snap/cups/1272 /dev/loop14 squashfs
+/snap/firefox/8969 /dev/loop15 squashfs
+/snap/firefox/9113 /dev/loop16 squashfs
+/snap/firmware-updater/258 /dev/loop17 squashfs
+/snap/firmware-updater/262 /dev/loop18 squashfs
+/snap/gnome-42-2204/263 /dev/loop19 squashfs
+/snap/gnome-46-2404/177 /dev/loop22 squashfs
+/snap/gnome-46-2404/168 /dev/loop20 squashfs
+/snap/gnome-42-2204/247 /dev/loop21 squashfs
+/snap/gtk-common-themes/1535 /dev/loop24 squashfs
+/snap/gnome-46-2404-brotli-fixed/x1 /dev/loop23 squashfs
+/snap/mesa-2404/1165 /dev/loop26 squashfs
+/snap/mesa-2404/1839 /dev/loop25 squashfs
+/snap/snap-store/1447 /dev/loop27 squashfs
+/snap/snap-store/1468 /dev/loop28 squashfs
+/snap/snapd/27738 /dev/loop29 squashfs
+/snap/snapd-desktop-integration/387 /dev/loop31 squashfs
+/snap/snapd/28254 /dev/loop30 squashfs
+/snap/snapd-desktop-integration/391 /dev/loop32 squashfs
+/boot/efi /dev/nvme0n1p2 vfat
+/home /dev/sda1 ext4
+/proc/sys/fs/binfmt_misc binfmt_misc binfmt_misc
+/run/snapd/ns tmpfs[/snapd/ns] tmpfs
+/run/snapd/ns/cups.mnt nsfs[mnt:[4026532795]] nsfs
+/run/snapd/ns/snapd-desktop-integration.mnt nsfs[mnt:[4026532854]] nsfs
+/run/user/1000 tmpfs tmpfs
+/run/user/1000/doc portal fuse.portal
+/run/user/1000/gvfs gvfsd-fuse fuse.gvfsd-fuse
+{
+  "mounts": [],
+  "processes": []
+}
+ITEM3 已结束 2026-11-05T11:41:06+08:00 status=ok phase=complete

@@ -1,0 +1,23 @@
+E
+======================================================================
+ERROR: test_revalidation (unittest.loader._FailedTest.test_revalidation)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_revalidation
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/unittest/loader.py", line 394, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/unittest/loader.py", line 337, in _get_module_from_name
+    __import__(name)
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/test_revalidation.py", line 12, in <module>
+    W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.parent/'llvm-optimize-bolt';X=Path(os.environ.get('NIGHT_TEST_ROOT',str(W/'temp/night-revalidation-20261104-tests-03')));X.mkdir(exist_ok=False)
+                                                                                                                                                                                            ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1313, in mkdir
+    os.mkdir(self, mode)
+FileExistsError: [Errno 17] File exists: '/home/linhao/Toolchain/development/llvm-optimize/temp/night-revalidation-20261104-tests-03'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

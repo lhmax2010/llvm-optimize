@@ -1,0 +1,6 @@
+rule C_MODULE_LIBRARY_LINKER__ompdModule_Release
+  depfile = $DEP_FILE
+  deps = gcc
+  command = $PRE_LINK && /bin/clang -fPIC $LANGUAGE_COMPILE_FLAGS $ARCH_FLAGS $LINK_FLAGS -shared $SONAME_FLAG$SONAME -o $TARGET_FILE $in $LINK_PATH $LINK_LIBRARIES && $POST_BUILD
+  description = Linking C shared module $TARGET_FILE
+  restat = $RESTAT
