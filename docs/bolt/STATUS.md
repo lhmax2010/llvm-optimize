@@ -880,3 +880,13 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 - tools/bolt/night-launch-20261105：QB1216409固定快照20261030.061318，build.conf SHA8f201a0d…，单T入口准备。首次演练因prep旧日志被读取而restart=1失败，记录保留；修复epoch交接后第二轮PASS，restart=0、原件副本62193B完全相同、FLAGS/CMake与QB一致，无Ninja、无残留。今晚full未执行。
 - QB安装新根测试PASS：clang/debug SHA e08724d8…/9942e19c…，CRC3891159848，LLDB自动符号加载，21/21 clang帧与symbolizer一致，5个冷样本通过，无源码行能力；proc正常卸载，无残留。第三四项一次sudo、一次zenity认证。
 - 仅删除批准PGO stage-D/gbs-root，其他条目及followup保留；df净增60.378GiB。当前/home 119.019GiB，单T预算98.774GiB，余量20.245GiB。今晚可启动，命令见62号；没有发布源码修改或Gerrit/QB操作。
+
+
+## 2026-11-05 批准目录清理（64号，部分完成）
+
+- [64号](64_disk_cleanup.md)：34个实际获批路径中29项完整删除，第10项工作内容删除后恢复并保留Git对象库，第20/26/28/36项保留；34/35无操作。未启动night-launch-20261105。
+- 第20项服务于4个清单外保留worktree，跳过。本轮检查遗漏第10项的alternates反向依赖，导致26/28查询失败；从已验证bundle读回副本恢复原对象库（4,556,627,020 B），SHA一致，5个受影响仓库查询恢复PASS；没有改依赖仓库配置，26/28不重试删除。
+- 第36项的253个仓库完成4个保全后，检查器对bare仓库误用git stash list而停止；这是检查器适用性缺陷，不是仓库损坏证据。qb_analysis整目录保留，其余仓库源码保护未完成。
+- 23个实际仓库已导出保全，未发布提交逐仓库计数合计51（非去重），5个有tracked改动；保全含format-patch、binary diff、standalone bundle及空仓库读回验证，位于temp/deleted-repo-backup-20261105，实际占用91.294GiB，全部保留。
+- PGO profiles 24文件、798,841,688 B移至temp/pgo-profiles-keep-20261102，移动前后及收尾SHA全部相同。第1–3项兄弟条目和12个指定保留目录复核通过，6个保留源码HEAD对象可读。
+- 全程一次sudo调用、一次zenity认证；未追加提权或重试。/home收尾可用335.444GiB，较清理前118.944GiB净增加216.500GiB（已包含保全和对象库恢复占用）。原始失败、逐项df、RPM SHA及恢复记录见tools/bolt/results/disk-cleanup-20261105b/。没有构建、发布源码修改、Gerrit/sandbox或QB操作。
