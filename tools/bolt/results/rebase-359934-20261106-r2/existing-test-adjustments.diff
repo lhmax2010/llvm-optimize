@@ -1,0 +1,52 @@
+diff --git a/tools/bolt/test_fifth_review.py b/tools/bolt/test_fifth_review.py
+index a0e4393875b31008e8092b2553869d02a414f568..e87249e7b580278967ba83777f48323bdfaf384e 100644
+--- a/tools/bolt/test_fifth_review.py
++++ b/tools/bolt/test_fifth_review.py
+@@ -123,7 +123,7 @@ sys.exit(h.cli())
+                 while not ready.exists() and p.poll() is None and time.monotonic()<end:time.sleep(.01)
+                 self.assertTrue(ready.exists());os.kill(p.pid,sig)
+             out,err=p.communicate(timeout=12)
+-            self.assertNotEqual(p.returncode,0);self.assertIn('CANCELLED: cancelled by signal '+str(sig),err)
++            self.assertEqual(p.returncode,128+sig);self.assertIn('CANCELLED: cancelled by signal '+str(sig),err)
+             sizes=[x.stat().st_size if x.exists() else 0 for x in [heartbeat,child_heartbeat]];time.sleep(.15)
+             self.assertEqual(sizes,[x.stat().st_size if x.exists() else 0 for x in [heartbeat,child_heartbeat]])
+             states={}
+diff --git a/tools/bolt/test_hybrid_review.py b/tools/bolt/test_hybrid_review.py
+index aa3e9826469e1d4df1dc9ac09a89c89cb1db077b..166308a649c5f01a16e764de9e43fd74118d183a 100644
+--- a/tools/bolt/test_hybrid_review.py
++++ b/tools/bolt/test_hybrid_review.py
+@@ -25,7 +25,11 @@ class HybridGateTests(Base):
+     def test_component_link_pass(self):
+         r=self.run_gate('libc.so.6');self.assertEqual(r.returncode,0);self.assertIn('TIZEN_HYBRID_LINK_OK',r.stdout)
+     def test_empty_component_fatal(self):
+-        s=(self.source/'llvm/cmake/modules/AddLLVM.cmake').read_text();a=s.index('function(tizen_hybrid_llvm_interface ');b=s.index('endfunction()',a)+len('endfunction()')
++        path=self.source/'llvm/cmake/modules/AddLLVM.cmake'
++        # Sparse packaging worktrees still carry the exact source in Git.
++        s=path.read_text() if path.exists() else subprocess.check_output(
++            ['git','-C',str(self.source),'show','HEAD:llvm/cmake/modules/AddLLVM.cmake'],text=True)
++        a=s.index('function(tizen_hybrid_llvm_interface ');b=s.index('endfunction()',a)+len('endfunction()')
+         cmake='''cmake_minimum_required(VERSION 3.20)
+ project(probe LANGUAGES NONE)
+ set(TIZEN_HYBRID_LINK ON)
+diff --git a/tools/bolt/test_sixth_review.py b/tools/bolt/test_sixth_review.py
+index 91f55e79f605b0a10ed3f97f6ef6f27dcb9421fc..46c3e4ff00b78635e22ec4bd710c434de0f517df 100644
+--- a/tools/bolt/test_sixth_review.py
++++ b/tools/bolt/test_sixth_review.py
+@@ -37,7 +37,7 @@ class CancelTests(Base):
+     def test_after_main(self):
+         def work():h.record_cancel(signal.SIGTERM,None)
+         with patch.object(h,'main',side_effect=work),patch.object(h,'disk_diagnose') as disk,contextlib.redirect_stderr(io.StringIO()) as out:
+-            self.assertEqual(h.cli(),1);self.assertIn('CANCELLED: cancelled by signal 15 after work completed',out.getvalue());disk.assert_not_called()
++            self.assertEqual(h.cli(),143);self.assertIn('CANCELLED: cancelled by signal 15 after work completed',out.getvalue());disk.assert_not_called()
+     def test_after_last_child_no_marker(self):
+         log=self.d/'step.log'
+         def call(*a,**kw):log.write_text('child completed\n');h.record_cancel(signal.SIGTERM,None);return 'child completed\n'
+@@ -66,7 +66,7 @@ class CancelTests(Base):
+                 if (self.d/'ready').exists():break
+                 time.sleep(.01)
+             time.sleep(.05);p.send_signal(signal.SIGTERM);o,e=p.communicate(timeout=5)
+-            self.assertEqual(p.returncode,1);self.assertIn('CANCELLED:',e)
++            self.assertEqual(p.returncode,143);self.assertIn('CANCELLED:',e)
+         finally:
+             if p.poll() is None:p.kill();p.wait()
+     def test_double_term(self):

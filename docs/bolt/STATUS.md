@@ -962,3 +962,12 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 ## 2026-11-06：设计 v2 与改接评审材料
 
 设计 v2 从 /home/linhao/Downloads 移至 W/docs/bolt/design/ 并同步发布，v1 不变；v2 40994 B，SHA256 32b86b912acef9c4c9ccc39b5733d8d1520cbde78c866463adedbf1b42291989。补齐 [改接评审包](../../patches/rebase-359934-20261106/README.md)：最终 9 份文本（spec/helper/转换器/6 份 CMake）、转换器对 PS10 完整 diff、排除 profile 的 BOLT 文本补丁和 SHA256SUMS。源码及原三个完整补丁未改，本次未推送 Gerrit/sandbox。
+
+## 2026-11-06：第二轮代码评审修复（70 号）
+
+- 本地三提交：混合链接 a73a7da32049569b1360e9c13d0633c168b8f173 不变；BOLT 7d11ad53629ac7b670664fcbe6aee8348848d5d6；固定参数/转换器 5a27edb4265366781f07049ad17a3796f2e05301。Change-Id 保留，标题 40/42/46 字符，未推 Gerrit/sandbox。
+- helper 393、参数/转换器 46（包含既有 42）、50 号 5 项、新增 12 项及真实 C-2 正反例通过；12 项展开和 5 项 RPM 解析通过。
+- 7706/7706 重放参数一致，assembler token 和 -g0 均为 0；一个真实 release 成员新旧转换输出一致。63 号实物副本 strip/RUNPATH/debuglink/post 通过，最终 SHA e08724d8… 不变。
+- T/D 串行演练通过，log-restarts=0，FLAGS 对 QB 一致，WARNING=0，无残留；未运行 Ninja 或完整构建。
+- 参数一致已全量核对；转换输出仅实测一个真实成员；整包一致尚未重建验证。其余挂账和风险保持。
+- [70 号文档](70_second_code_review_fixes.md)；[本轮评审包](../../patches/rebase-359934-20261106-r2/README.md)。

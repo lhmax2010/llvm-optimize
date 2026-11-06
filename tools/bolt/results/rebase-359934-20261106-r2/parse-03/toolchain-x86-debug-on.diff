@@ -1,0 +1,75 @@
+--- 5aff6c0c
++++ second-review
+@@ -201,7 +201,8 @@
+ # The x86_64 policy is the certified Toolchain command (QB 1215143).
+ # Only architecture and debug-mode options are inherited. Token matching is
+ # exact: stripping -fstack-protector must never leave a -strong suffix.
+-TIZEN_LLVM_EXPECTED_DROPPED=${TIZEN_LLVM_EXPECTED_DROPPED-'-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'}
++# Reviewed Base-Dev options (QB 1214821) that this policy knowingly discards.
++TIZEN_LLVM_EXPECTED_DROPPED='-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'
+ tizen_llvm_flags()
+ {
+     tizen_llvm_kind=$1
+@@ -276,8 +277,13 @@
+     case $tizen_llvm_kind:$tizen_llvm_release in
+         CFLAGS:0|CXXFLAGS:0)
+             if test "$tizen_llvm_debug_sequence" != '-g2 -gdwarf-4 -g'; then
+-                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]"
+-                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]" >&2
++                if test -n "$tizen_llvm_debug_sequence"; then
++                    tizen_llvm_debug_description="[$tizen_llvm_debug_sequence]"
++                else
++                    tizen_llvm_debug_description="no debug options"
++                fi
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description"
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description" >&2
+             fi ;;
+     esac
+     case $tizen_llvm_kind in
+@@ -446,12 +452,23 @@
+     exit 1
+   fi
+ }
++bolt_optional() {
++  if "$@"; then
++    return 0
++  else
++    bolt_optional_rc=$?
++    case $bolt_optional_rc in
++      129|130|143) exit "$bolt_optional_rc" ;;
++      *) return 0 ;;
++    esac
++  fi
++}
+ bolt_step() {
+   bolt_stage=$1
+   shift
+   bolt_checked "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py run-step "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" -- "$@"
+ }
+-python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py disk-report begin || true
++bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py disk-report begin
+ echo "BOLT_BUILDROOT_OK /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64"
+ python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py preflight || exit 1
+ python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py certified || exit 1
+@@ -483,10 +500,10 @@
+ python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+ cat "$BOLT_WORK/tool-build-verification.json"
+-python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py disk-report tool-built || true
++bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py disk-report tool-built
+ python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" --debug-symbols || exit 1
+ echo BOLT_PIPELINE_PASS
+-python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py disk-report pipeline || true
++bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py disk-report pipeline
+ # BOLT configuration/build/rewrite must not change the ordinary installation.
+ # Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
+ python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py compare-root "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64" "$BOLT_WORK/install-before.json" \
+@@ -494,7 +511,7 @@
+ echo BOLT_COMPARE_ROOT_PASS
+ # No subsequent step consumes this ThinLTO cache.
+ # Release it only inside the enabled x86_64 BOLT block.
+-python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py cache-release "$PWD" "$BOLT_WORK" || true
++bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/SOURCES/clang-bolt-helper.py cache-release "$PWD" "$BOLT_WORK"
+ # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
+ ln -sf /usr/bin/clang++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64/usr/bin/clang++-22
+ 

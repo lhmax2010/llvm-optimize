@@ -25,7 +25,11 @@ class HybridGateTests(Base):
     def test_component_link_pass(self):
         r=self.run_gate('libc.so.6');self.assertEqual(r.returncode,0);self.assertIn('TIZEN_HYBRID_LINK_OK',r.stdout)
     def test_empty_component_fatal(self):
-        s=(self.source/'llvm/cmake/modules/AddLLVM.cmake').read_text();a=s.index('function(tizen_hybrid_llvm_interface ');b=s.index('endfunction()',a)+len('endfunction()')
+        path=self.source/'llvm/cmake/modules/AddLLVM.cmake'
+        # Sparse packaging worktrees still carry the exact source in Git.
+        s=path.read_text() if path.exists() else subprocess.check_output(
+            ['git','-C',str(self.source),'show','HEAD:llvm/cmake/modules/AddLLVM.cmake'],text=True)
+        a=s.index('function(tizen_hybrid_llvm_interface ');b=s.index('endfunction()',a)+len('endfunction()')
         cmake='''cmake_minimum_required(VERSION 3.20)
 project(probe LANGUAGES NONE)
 set(TIZEN_HYBRID_LINK ON)

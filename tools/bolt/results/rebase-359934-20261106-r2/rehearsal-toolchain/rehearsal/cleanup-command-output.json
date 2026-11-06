@@ -1,0 +1,41 @@
+{
+  "services": {
+    "argv": [
+      "systemctl",
+      "--user",
+      "show",
+      "rebase359934r2-toolchain-rehearsal-prep-20261105.service",
+      "rebase359934r2-toolchain-rehearsal-20261105.service",
+      "rebase359934r2-toolchain-rehearsal-controller-20261105.service",
+      "-p",
+      "Id",
+      "-p",
+      "ActiveState",
+      "-p",
+      "SubState",
+      "-p",
+      "Result",
+      "-p",
+      "ControlGroup"
+    ],
+    "rc": 0,
+    "stdout": "Result=success\nControlGroup=\nId=rebase359934r2-toolchain-rehearsal-prep-20261105.service\nActiveState=inactive\nSubState=dead\n\nResult=success\nControlGroup=\nId=rebase359934r2-toolchain-rehearsal-20261105.service\nActiveState=inactive\nSubState=dead\n\nResult=success\nControlGroup=\nId=rebase359934r2-toolchain-rehearsal-controller-20261105.service\nActiveState=inactive\nSubState=dead\n",
+    "stderr": ""
+  },
+  "mounts": {
+    "argv": [
+      "findmnt",
+      "-rn",
+      "-o",
+      "TARGET,SOURCE,FSTYPE"
+    ],
+    "rc": 0,
+    "filtered_stdout": "",
+    "filter": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106-r2/rehearsal/toolchain"
+  },
+  "process_cgroups": {
+    "method": "read /proc/[0-9]*/cgroup; match exact service names",
+    "matches": [],
+    "unreadable_or_exited": []
+  }
+}

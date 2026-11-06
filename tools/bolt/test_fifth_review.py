@@ -123,7 +123,7 @@ sys.exit(h.cli())
                 while not ready.exists() and p.poll() is None and time.monotonic()<end:time.sleep(.01)
                 self.assertTrue(ready.exists());os.kill(p.pid,sig)
             out,err=p.communicate(timeout=12)
-            self.assertNotEqual(p.returncode,0);self.assertIn('CANCELLED: cancelled by signal '+str(sig),err)
+            self.assertEqual(p.returncode,128+sig);self.assertIn('CANCELLED: cancelled by signal '+str(sig),err)
             sizes=[x.stat().st_size if x.exists() else 0 for x in [heartbeat,child_heartbeat]];time.sleep(.15)
             self.assertEqual(sizes,[x.stat().st_size if x.exists() else 0 for x in [heartbeat,child_heartbeat]])
             states={}

@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py", line 253, in call
+    raise GateError(primary)
+h.GateError: COMMAND_ERROR: COMMAND_FAILED rc=1: /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/real_gates.py", line 97, in <module>
+    post=h.post_gate(root,state,str(work/'ordinary-clang-22'),str(X/'post'),str(oldbuild/'lib64/clang/22'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py", line 1093, in post_gate
+    real = real_gate(ordinary, str(entity), Path(ordinary).parent.parent,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py", line 866, in real_gate
+    call([str(compiler), *args, '-o', str(output)], work/('%s-%02d.log' % (role,index)), timeout=120)
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/real_gates.py", line 36, in call
+    return real_call(argv,*a,**kw)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py", line 293, in call
+    raise failure from error
+h.GateError: COMMAND_ERROR: COMMAND_FAILED rc=1: /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2 (see /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106-r2/real-gates/post/real/ordinary-00.log)

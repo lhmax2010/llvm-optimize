@@ -1,0 +1,27 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106/basedev/launcher.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/basedev/launcher.py
+@@ -289,7 +289,7 @@
+     mode = 'rehearsal' if selection.startswith('rehearsal') else 'full'
+     suffix = '-02' if selection == 'rehearsal-02' else ''
+     identity = check_source()
+-    D = W / 'temp/rebase-359934-20261106' / (PROJECT if mode == 'full' else 'rehearsal/' + PROJECT)
++    D = W / 'temp/rebase-359934-20261106-r2' / (PROJECT if mode == 'full' else 'rehearsal/' + PROJECT)
+     if suffix:
+         D = D / 'retry-02'
+     assert not D.exists(), 'fresh root required; preserve existing directory: ' + str(D)
+@@ -300,12 +300,12 @@
+     (D / 'evidence').mkdir()
+     plan = dict(identity, source=str(SOURCE), config=str(CONFIG), mode=mode,
+                 MemoryMax_bytes=mem - 8 * 1024**3, CPUQuota='1200%',
+-                prep_unit='rebase359934-' + PROJECT + '-' + mode + '-prep-20261106' + suffix + '.service',
+-                build_unit='rebase359934-' + PROJECT + '-' + mode + '-20261106' + suffix + '.service')
++                prep_unit='rebase359934r2-' + PROJECT + '-' + mode + '-prep-20261106' + suffix + '.service',
++                build_unit='rebase359934r2-' + PROJECT + '-' + mode + '-20261106' + suffix + '.service')
+     save(D / 'plan.json', plan)
+     shutil.copyfile(T / 'launcher.py', D / 'evidence/launcher-used.py')
+     materialize(D, plan)
+-    unit = 'rebase359934-' + PROJECT + '-' + mode + '-controller-20261106' + suffix + '.service'
++    unit = 'rebase359934r2-' + PROJECT + '-' + mode + '-controller-20261106' + suffix + '.service'
+     argv = ['systemd-run', '--user', '--unit=' + unit, *properties(plan),
+             '-p', 'WorkingDirectory=' + str(SOURCE),
+             '-p', 'StandardOutput=append:' + str(D / 'controller.stdout'),

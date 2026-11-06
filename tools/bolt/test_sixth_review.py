@@ -37,7 +37,7 @@ class CancelTests(Base):
     def test_after_main(self):
         def work():h.record_cancel(signal.SIGTERM,None)
         with patch.object(h,'main',side_effect=work),patch.object(h,'disk_diagnose') as disk,contextlib.redirect_stderr(io.StringIO()) as out:
-            self.assertEqual(h.cli(),1);self.assertIn('CANCELLED: cancelled by signal 15 after work completed',out.getvalue());disk.assert_not_called()
+            self.assertEqual(h.cli(),143);self.assertIn('CANCELLED: cancelled by signal 15 after work completed',out.getvalue());disk.assert_not_called()
     def test_after_last_child_no_marker(self):
         log=self.d/'step.log'
         def call(*a,**kw):log.write_text('child completed\n');h.record_cancel(signal.SIGTERM,None);return 'child completed\n'
@@ -66,7 +66,7 @@ class CancelTests(Base):
                 if (self.d/'ready').exists():break
                 time.sleep(.01)
             time.sleep(.05);p.send_signal(signal.SIGTERM);o,e=p.communicate(timeout=5)
-            self.assertEqual(p.returncode,1);self.assertIn('CANCELLED:',e)
+            self.assertEqual(p.returncode,143);self.assertIn('CANCELLED:',e)
         finally:
             if p.poll() is None:p.kill();p.wait()
     def test_double_term(self):

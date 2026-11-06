@@ -1,0 +1,365 @@
+From 5a27edb4265366781f07049ad17a3796f2e05301 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Fri, 6 Nov 2026 14:49:25 +0800
+Subject: [PATCH] packaging: fix x86 LLVM flags and archive mode
+
+QB 1214821 inherited GCC project options into a clang build. Source1005
+rejected -feliminate-unused-debug-types; release commands also lacked
+its previously mandatory DWARF setting.
+
+Fix x86_64 compilation flags to the effective Toolchain values recorded
+by QB 1215143. Inherit reviewed architecture flags, reject native CPU
+selection, and warn on debug sequences other than -g2 -gdwarf-4 -g. Release
+commands contain no debug flags. Match whole tokens and preserve the
+caller's IFS state and shell options.
+
+Fix LDFLAGS to the Toolchain value. Executable and shared-library linker
+flags remain explicitly set by the spec; MODULE targets (plugins) take
+LDFLAGS, so Base-Dev plugin links gain -z relro, --as-needed and
+--gc-sections, matching Toolchain. This retains the existing policy of
+removing project stack-protector and --param=ssp-buffer-size options;
+it does not introduce a new hardening policy.
+
+Print TIZEN_LLVM_NORMALIZED_FLAGS for prior normalization and
+TIZEN_LLVM_DROPPED_FLAGS for the four reviewed extra project options.
+Unreviewed project options are dropped with TIZEN_LLVM_FLAGS_WARNING
+on stdout and stderr for manual review; they do not interrupt the build.
+Uncertified debug sequences also warn. Reject only native CPU selection
+and invalid release mode values. Review warnings before adding options
+to the fixed set or expected-dropped list. Non-x86_64 behavior is kept.
+
+Local and QB command strings differ in the placement of section flags.
+The prior stripped QB clang equals the local post-RUNPATH clang, as
+recorded in docs/bolt/49 section A.4. Recheck the identity chain, RPM
+contents and 90 translation units in the next complete build; these
+lightweight checks alone do not prove new binary identity.
+
+Require Source1005 --debug-info yes|no and match each converted member's
+recorded command. Release means no debug option in that command; any
+debug option still requires the certified final -gdwarf-4. Reject debug
+sections in converted release outputs. Preserve native members as-is
+and count them, without applying that assertion to preexisting objects.
+All 3853 converted full-20261030 members recorded debug options.
+
+Following review, supplement HQ PS10 classification with assembler-option
+rejection and exact compiler/disassembler/nm version consistency checks.
+
+Based on Change 359934; keeps its token classification, per-switch replay and the checks it adopted, and adds the declared debug-info mode with per-member consistency check.
+
+Change-Id: Ic76505ddb122f1e06271ff7462e24eceee4d400a
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+---
+ packaging/llvm-static-archives-native.py |  40 +++++-
+ packaging/llvm.spec                      | 155 ++++++++++++++++++++---
+ 2 files changed, 167 insertions(+), 28 deletions(-)
+
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index 1b1f759ffe7030f1d8e3a311b828b05466943253..cce638977420920abf145db962f9882c6dc3ecc9 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -7,6 +7,8 @@ Text IR metadata/attribute parsing depends on LLVM 22 llvm-dis output syntax.
+ Four architecture-specific policy points are deliberately explicit: backend
+ options, recorded-command classification, relocation rules, and triple allowlist.
+ Failing closed when parameters change is intentional; recertify before use.
++The HQ allowlist accepts -g0 and has_debug_options also counts it as debug.
++Current recorded commands contain no -g0; recheck this on clang upgrades.
+ """
+ import argparse
+ from collections import Counter
+@@ -247,6 +249,8 @@ def classify_options(argv, arch='x86_64'):
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+         elif re.fullmatch(r'--param=ssp-buffer-size=\d+', token):
+             category, reason = 'ir', 'stack-protector-buffer-size function attribute already in the IR'
++        elif token == '-Xassembler' or token.startswith('-Wa,'):
++            raise ValueError('uncertified assembler option: '+token)
+         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
+                                '-fdiagnostics-color=')) or token in
+               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+@@ -279,7 +283,7 @@ def classify_options(argv, arch='x86_64'):
+                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
+ 
+ 
+-def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
++def ir_settings(lines, require_recorded_options=True, arch='x86_64', debug_info=None):
+     """Read LLVM 22 textual metadata/attributes without modifying input IR."""
+     retained, metadata = [], {}
+     triple, command_id = None, None
+@@ -330,6 +334,11 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+         raise ValueError('missing original command: backend policy cannot be certified')
+     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+         lambda match: chr(int(match[1], 16)), metadata[command_id]))
++    found_debug = 'yes' if any(token.startswith('-g') for token in recorded_command) else 'no'
++    if debug_info is not None and debug_info != found_debug:
++        raise ValueError('debug-info expected %s, found %s' %
++                         ('debug' if debug_info == 'yes' else 'release',
++                          'debug' if found_debug == 'yes' else 'release'))
+     policy = classify_options(recorded_command, arch)
+     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+              *(('-f'+key) if policy['switches'][key] else ('-fno-'+key)
+@@ -561,6 +570,18 @@ def validate_tools(build, compiler, disassembler, nm, command, output):
+     match = re.search(r'clang version (\d+)\.', text)
+     if not match or int(match[1]) != CERTIFIED_LLVM_MAJOR:
+         raise ValueError('uncertified compiler major (required 22): '+text.strip())
++    full_version = re.search(r'clang version (\d+\.\d+\.\d+)\b', text)
++    if not full_version:
++        raise ValueError('missing complete clang version: '+text.strip())
++    for label, tool in [('disassembler', disassembler), ('nm', nm)]:
++        tool_version = output/(label+'-version.txt')
++        with tool_version.open('wb') as stream:
++            command.run([tool, '--version'], output/(label+'-version-command'), stdout=stream)
++        tool_text = tool_version.read_text()
++        match = re.search(r'LLVM version (\d+\.\d+\.\d+)\b', tool_text)
++        if not match or match[1] != full_version[1]:
++            raise ValueError('%s version mismatch: expected %s, found %s' %
++                             (label, full_version[1], match[1] if match else tool_text.strip()))
+     return dict(compiler=str(compiler), version=text, compiler_sha256=sha(compiler),
+                 disassembler=str(disassembler), nm=str(nm))
+ 
+@@ -603,15 +624,17 @@ def cleanup_evidence(output):
+             path.unlink()
+ 
+ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3, command=None):
++            address_space_bytes=4*1024**3, command=None, debug_info=None):
+     root, output, build = Path(root).resolve(), Path(output).resolve(), Path(build).resolve()
+     if arch not in CERTIFIED_OPTIMIZATION or jobs < 1 or address_space_bytes < 1:
+         raise ValueError('invalid architecture or resource parameters')
++    if debug_info not in ('yes', 'no'):
++        raise ValueError('debug-info expected=yes|no found='+str(debug_info))
+     reset_evidence(root, output, build)
+     command = command or Commands(address_space_bytes)
+     summary = dict(started=time.time(), input_root=str(root), output_root=str(output),
+                    arch=arch, workers=jobs, as_bytes=address_space_bytes, archives=[],
+-                   status='CONVERTING', missing_symbols_by_type={})
++                   status='CONVERTING', debug_info=debug_info, missing_symbols_by_type={})
+     def save():
+         atomic_json(output/'summary.json', summary)
+     save()
+@@ -621,6 +644,8 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+         summary['scanned_archives'] = len(archives)
+         summary['native_archives_skipped'] = sum(not data['bitcode'] for archive, data in archives)
++        # Preserved native members retain their bytes, including any debug sections.
++        summary['native_members_preserved'] = sum(data['machine'] for archive, data in archives)
+         for archive, before in archives:
+             command.check()
+             if not before['bitcode']:
+@@ -660,7 +685,7 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                 with text_ir.open('wb') as out:
+                     command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
+                 with text_ir.open() as lines:
+-                    settings = ir_settings(lines, arch=arch)
++                    settings = ir_settings(lines, arch=arch, debug_info=debug_info)
+                 atomic_json(source.parent/'ir-settings.json', settings)
+                 text_ir.unlink()
+                 record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
+@@ -746,14 +771,14 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+ 
+ 
+ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3):
++            address_space_bytes=4*1024**3, debug_info=None):
+     root, output = Path(root).resolve(), Path(output).resolve()
+     command = Commands(address_space_bytes)
+     old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
+     result = None
+     try:
+         print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
+-        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command)
++        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command, debug_info)
+         command.check()
+         result['status'] = 'INSTALLING'
+         atomic_json(output/'summary.json', result)
+@@ -792,6 +817,7 @@ def install_main():
+     parser.add_argument('--build', type=Path, required=True)
+     parser.add_argument('--evidence', type=Path, required=True)
+     parser.add_argument('--arch', choices=['x86_64'], required=True)
++    parser.add_argument('--debug-info', choices=['yes', 'no'], required=True)
+     parser.add_argument('--compiler', type=Path, required=True)
+     parser.add_argument('--disassembler', type=Path, required=True)
+     parser.add_argument('--nm', type=Path, required=True)
+@@ -799,7 +825,7 @@ def install_main():
+     parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
+     args = parser.parse_args()
+     install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+-            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes)
++            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info)
+ 
+ 
+ if __name__ == '__main__':
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 7d99736a7540f2b51d82124b6e17f39fc4cfd0dc..53eee9d20d49ba0069eccd8918a2f1b81216182c 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -214,27 +214,135 @@ export QEMU_RESERVED_VA=0x100000000
+ %endif
+ 
+ %ifarch x86_64
+-# Strip pre-existing optimization flags and remove performance-harming flags, then force -O3 + ThinLTO
+-OPTFLAGS_CFLAGS=$(echo "$CFLAGS" | sed \
+-    -e 's/\-O[0-9sz]//g' \
+-    -e 's/\-Ofast//g' \
+-    -e 's/\-fstack-protector-strong//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector//g' \
+-    -e 's/\-fno-inline-functions//g' \
+-    -e 's/\-fno-omit-frame-pointer//g' \
+-    -e 's/\-momit-leaf-frame-pointer//g')
+-OPTFLAGS_CXXFLAGS=$(echo "$CXXFLAGS" | sed \
+-    -e 's/\-O[0-9sz]//g' \
+-    -e 's/\-Ofast//g' \
+-    -e 's/\-fstack-protector-strong//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector//g' \
+-    -e 's/\-fno-inline-functions//g' \
+-    -e 's/\-fno-omit-frame-pointer//g' \
+-    -e 's/\-momit-leaf-frame-pointer//g')
+-export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+-export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
++TIZEN_LLVM_RELEASE=%{llvm_release_build}
++# BEGIN TIZEN_LLVM_FIXED_FLAGS
++# The x86_64 policy is the certified Toolchain command (QB 1215143).
++# Only architecture and debug-mode options are inherited. Token matching is
++# exact: stripping -fstack-protector must never leave a -strong suffix.
++# Reviewed Base-Dev options (QB 1214821) that this policy knowingly discards.
++TIZEN_LLVM_EXPECTED_DROPPED='-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'
++tizen_llvm_flags()
++{
++    tizen_llvm_kind=$1
++    tizen_llvm_input=$2
++    tizen_llvm_release=$3
++    case $tizen_llvm_release in 0|1) ;; *)
++        echo "TIZEN_LLVM_FIXED_FLAGS_FAILED invalid TIZEN_LLVM_RELEASE=$tizen_llvm_release" >&2
++        return 1 ;;
++    esac
++    tizen_llvm_debug_sequence=
++    TIZEN_LLVM_UNREVIEWED=
++    tizen_llvm_arch=
++    tizen_llvm_debug_head=
++    tizen_llvm_debug_tail=
++    TIZEN_LLVM_NORMALIZED=
++    TIZEN_LLVM_DROPPED=
++    tizen_llvm_ifs_set=${IFS+x}
++    tizen_llvm_saved_ifs=${IFS-}
++    unset IFS
++    case $- in *f*) tizen_llvm_glob_off=1 ;; *) tizen_llvm_glob_off=0; set -f ;; esac
++    for tizen_llvm_token in $tizen_llvm_input; do
++        case $tizen_llvm_token in
++            -O0|-O1|-O2|-O3|-Os|-Oz|-Og|-Ofast|\
++            -fstack-protector|-fstack-protector-strong|-fstack-protector-all|\
++            -momit-leaf-frame-pointer|-fno-omit-frame-pointer)
++                TIZEN_LLVM_NORMALIZED="${TIZEN_LLVM_NORMALIZED}${TIZEN_LLVM_NORMALIZED:+ }$tizen_llvm_token"
++                continue ;;
++            -march=native|-mtune=native)
++                if test "$tizen_llvm_ifs_set" = x; then IFS=$tizen_llvm_saved_ifs; else unset IFS; fi
++                if test "$tizen_llvm_glob_off" = 0; then set +f; fi
++                echo "TIZEN_LLVM_FIXED_FLAGS_FAILED host-dependent option: $tizen_llvm_token" >&2
++                return 1 ;;
++            -m64|-march=*|-mtune=*|-msse*|-mfpmath=*)
++                tizen_llvm_arch="${tizen_llvm_arch}${tizen_llvm_arch:+ }$tizen_llvm_token"
++                continue ;;
++            -g|-g[0-9]|-ggdb*|-gdwarf-*|-gline*|-gno-*)
++                tizen_llvm_debug_sequence="${tizen_llvm_debug_sequence}${tizen_llvm_debug_sequence:+ }$tizen_llvm_token"
++                if test "$tizen_llvm_release" = 0; then
++                    tizen_llvm_debug_head="${tizen_llvm_debug_head}${tizen_llvm_debug_head:+ }$tizen_llvm_debug_tail"
++                    tizen_llvm_debug_tail=$tizen_llvm_token
++                fi
++                continue ;;
++        esac
++        case $tizen_llvm_kind:$tizen_llvm_token in
++            CFLAGS:-ffunction-sections|CXXFLAGS:-ffunction-sections|\
++            CFLAGS:-fdata-sections|CXXFLAGS:-fdata-sections|\
++            CFLAGS:-Wno-unused-command-line-argument|CXXFLAGS:-Wno-unused-command-line-argument|\
++            CFLAGS:-Wno-error=unused-but-set-variable|CXXFLAGS:-Wno-error=unused-but-set-variable|\
++            CFLAGS:-Wno-error=unused-command-line-argument|CXXFLAGS:-Wno-error=unused-command-line-argument|\
++            CFLAGS:-pipe|CXXFLAGS:-pipe|CFLAGS:-Wall|CXXFLAGS:-Wall|\
++            CFLAGS:-Wp,-D_FORTIFY_SOURCE=2|CXXFLAGS:-Wp,-D_FORTIFY_SOURCE=2|\
++            CFLAGS:-fexceptions|CXXFLAGS:-fexceptions|CFLAGS:-Wformat|CXXFLAGS:-Wformat|\
++            CFLAGS:-Wformat-security|CXXFLAGS:-Wformat-security|\
++            CFLAGS:-fmessage-length=0|CXXFLAGS:-fmessage-length=0|\
++            CFLAGS:-frecord-gcc-switches|CXXFLAGS:-frecord-gcc-switches|\
++            CFLAGS:-fdiagnostics-color=never|CXXFLAGS:-fdiagnostics-color=never|\
++            CFLAGS:-fasynchronous-unwind-tables|CXXFLAGS:-fasynchronous-unwind-tables|\
++            CFLAGS:-flto=thin|CXXFLAGS:-flto=thin|\
++            CFLAGS:-fomit-frame-pointer|CXXFLAGS:-fomit-frame-pointer|\
++            LDFLAGS:-Wl,-z,relro,--as-needed|LDFLAGS:-Wl,--gc-sections) ;;
++            *)
++                TIZEN_LLVM_DROPPED="${TIZEN_LLVM_DROPPED}${TIZEN_LLVM_DROPPED:+ }$tizen_llvm_token"
++                case " $TIZEN_LLVM_EXPECTED_DROPPED " in
++                    *" $tizen_llvm_token "*) ;;
++                    *) TIZEN_LLVM_UNREVIEWED="${TIZEN_LLVM_UNREVIEWED}${TIZEN_LLVM_UNREVIEWED:+ }$tizen_llvm_token" ;;
++                esac ;;
++
++        esac
++    done
++    if test "$tizen_llvm_ifs_set" = x; then IFS=$tizen_llvm_saved_ifs; else unset IFS; fi
++    if test "$tizen_llvm_glob_off" = 0; then set +f; fi
++    case $tizen_llvm_kind:$tizen_llvm_release in
++        CFLAGS:0|CXXFLAGS:0)
++            if test "$tizen_llvm_debug_sequence" != '-g2 -gdwarf-4 -g'; then
++                if test -n "$tizen_llvm_debug_sequence"; then
++                    tizen_llvm_debug_description="[$tizen_llvm_debug_sequence]"
++                else
++                    tizen_llvm_debug_description="no debug options"
++                fi
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description"
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description" >&2
++            fi ;;
++    esac
++    case $tizen_llvm_kind in
++        CFLAGS|CXXFLAGS)
++            # Preserve the exact certified CMake string, including whitespace,
++            # option order and the repeated warning option. Do not inherit
++            # other project flags, even when the project selects GCC.
++            TIZEN_LLVM_RESULT=" -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   $tizen_llvm_debug_head -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never $tizen_llvm_arch -fasynchronous-unwind-tables  $tizen_llvm_debug_tail -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument" ;;
++        LDFLAGS)
++            # Executable/shared linker flags are explicit in the spec, not read
++            # from LDFLAGS. CMAKE_MODULE_LINKER_FLAGS is initialized from this
++            # environment value, unchanged from the Toolchain project value.
++            TIZEN_LLVM_RESULT="-Wl,-z,relro,--as-needed -Wl,--gc-sections${tizen_llvm_arch:+ }$tizen_llvm_arch${tizen_llvm_debug_head:+ }$tizen_llvm_debug_head${tizen_llvm_debug_tail:+ }$tizen_llvm_debug_tail" ;;
++        *) return 1 ;;
++    esac
++}
++tizen_llvm_report_warnings()
++{
++    if test -n "$1$2$3"; then
++        tizen_llvm_warning="TIZEN_LLVM_FLAGS_WARNING unreviewed project options dropped: CFLAGS=[$1] CXXFLAGS=[$2] LDFLAGS=[$3] (manual review of the build log required)"
++        printf '%%s\n' "$tizen_llvm_warning"
++        printf '%%s\n' "$tizen_llvm_warning" >&2
++    fi
++}
++tizen_llvm_flags CFLAGS "$CFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++CFLAGS=$TIZEN_LLVM_RESULT
++tizen_llvm_normalized_c=$TIZEN_LLVM_NORMALIZED
++tizen_llvm_dropped_c=$TIZEN_LLVM_DROPPED
++tizen_llvm_unreviewed_c=$TIZEN_LLVM_UNREVIEWED
++tizen_llvm_flags CXXFLAGS "$CXXFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++CXXFLAGS=$TIZEN_LLVM_RESULT
++tizen_llvm_normalized_cxx=$TIZEN_LLVM_NORMALIZED
++tizen_llvm_dropped_cxx=$TIZEN_LLVM_DROPPED
++tizen_llvm_unreviewed_cxx=$TIZEN_LLVM_UNREVIEWED
++tizen_llvm_flags LDFLAGS "$LDFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++LDFLAGS=$TIZEN_LLVM_RESULT
++printf 'TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_normalized_c" "$tizen_llvm_normalized_cxx" "$TIZEN_LLVM_NORMALIZED"
++printf 'TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_dropped_c" "$tizen_llvm_dropped_cxx" "$TIZEN_LLVM_DROPPED"
++tizen_llvm_report_warnings "$tizen_llvm_unreviewed_c" "$tizen_llvm_unreviewed_cxx" "$TIZEN_LLVM_UNREVIEWED"
++export CFLAGS CXXFLAGS LDFLAGS
++# END TIZEN_LLVM_FIXED_FLAGS
+ %endif
+ 
+ # Set up MLGO AOT model paths from bundled verify assets
+@@ -585,6 +693,11 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+     --build "%{_builddir}/%{buildsubdir}/build" \
+     --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
+     --arch x86_64 \
++%if %{llvm_release_build}
++    --debug-info no \
++%else
++    --debug-info yes \
++%endif
+     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+-- 
+2.43.0
+

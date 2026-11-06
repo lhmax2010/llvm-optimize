@@ -1,0 +1,28 @@
+--- 5aff6c0c
++++ second-review
+@@ -196,7 +196,8 @@
+ # The x86_64 policy is the certified Toolchain command (QB 1215143).
+ # Only architecture and debug-mode options are inherited. Token matching is
+ # exact: stripping -fstack-protector must never leave a -strong suffix.
+-TIZEN_LLVM_EXPECTED_DROPPED=${TIZEN_LLVM_EXPECTED_DROPPED-'-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'}
++# Reviewed Base-Dev options (QB 1214821) that this policy knowingly discards.
++TIZEN_LLVM_EXPECTED_DROPPED='-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'
+ tizen_llvm_flags()
+ {
+     tizen_llvm_kind=$1
+@@ -271,8 +272,13 @@
+     case $tizen_llvm_kind:$tizen_llvm_release in
+         CFLAGS:0|CXXFLAGS:0)
+             if test "$tizen_llvm_debug_sequence" != '-g2 -gdwarf-4 -g'; then
+-                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]"
+-                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]" >&2
++                if test -n "$tizen_llvm_debug_sequence"; then
++                    tizen_llvm_debug_description="[$tizen_llvm_debug_sequence]"
++                else
++                    tizen_llvm_debug_description="no debug options"
++                fi
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description"
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description" >&2
+             fi ;;
+     esac
+     case $tizen_llvm_kind in

@@ -1,0 +1,34 @@
+[
+  [
+    "bolt_optional() {\n  if \"$@\"; then\n    return 0\n  else\n    bolt_optional_rc=$?\n    case $bolt_optional_rc in\n      129|130|143) exit \"$bolt_optional_rc\" ;;\n      *) return 0 ;;\n    esac\n  fi\n}\n",
+    ""
+  ],
+  [
+    "# Reviewed Base-Dev options (QB 1214821) that this policy knowingly discards.\nTIZEN_LLVM_EXPECTED_DROPPED='-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'\n",
+    "TIZEN_LLVM_EXPECTED_DROPPED=${TIZEN_LLVM_EXPECTED_DROPPED-'-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'}\n"
+  ],
+  [
+    "            if test \"$tizen_llvm_debug_sequence\" != '-g2 -gdwarf-4 -g'; then\n                if test -n \"$tizen_llvm_debug_sequence\"; then\n                    tizen_llvm_debug_description=\"[$tizen_llvm_debug_sequence]\"\n                else\n                    tizen_llvm_debug_description=\"no debug options\"\n                fi\n                echo \"TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description\"\n                echo \"TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description\" >&2\n",
+    "            if test \"$tizen_llvm_debug_sequence\" != '-g2 -gdwarf-4 -g'; then\n                echo \"TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]\"\n                echo \"TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]\" >&2\n"
+  ],
+  [
+    "bolt_optional python3 -B %{SOURCE1201} disk-report begin",
+    "python3 -B %{SOURCE1201} disk-report begin || true"
+  ],
+  [
+    "bolt_optional python3 -B %{SOURCE1201} disk-report tool-built",
+    "python3 -B %{SOURCE1201} disk-report tool-built || true"
+  ],
+  [
+    "bolt_optional python3 -B %{SOURCE1201} disk-report pipeline",
+    "python3 -B %{SOURCE1201} disk-report pipeline || true"
+  ],
+  [
+    "bolt_optional python3 -B %{SOURCE1201} cache-release \"$PWD\" \"$BOLT_WORK\"",
+    "python3 -B %{SOURCE1201} cache-release \"$PWD\" \"$BOLT_WORK\" || true"
+  ],
+  [
+    "    bolt_optional python3 -B %{SOURCE1201} disk-report post",
+    "    python3 -B %{SOURCE1201} disk-report post || true"
+  ]
+]

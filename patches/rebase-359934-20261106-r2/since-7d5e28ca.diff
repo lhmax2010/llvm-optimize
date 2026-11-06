@@ -1,0 +1,271 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index eeadcdaf85b1f7f126dd8e9bf0fa8883292cffb8..46b226af11f57d737f86c99a35f4c73ae7f534cc 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -104,7 +104,9 @@ TINY = ('unsigned bolt_probe(unsigned x, unsigned y) { return (x * 33u) ^ (y + (
+         'int bolt_branch(int x) { return x < 0 ? -x : x * 7 + 1; }\n')
+ 
+ class GateError(RuntimeError):
+-    pass
++    def __init__(self, message, *, cancel_originated=False):
++        super().__init__(message)
++        self.cancel_originated = cancel_originated
+ 
+ def require(ok, message):
+     if not ok:
+@@ -192,6 +194,7 @@ def record_cancel(signum, frame):
+         if _ACTIVE_GROUP is not None:
+             try: os.killpg(_ACTIVE_GROUP, signal.SIGKILL)
+             except ProcessLookupError: pass
++        # This second-signal path terminates by signal; original handlers are not restored.
+         signal.signal(signum, signal.SIG_DFL)
+         os.kill(os.getpid(), signum)
+         return
+@@ -199,7 +202,9 @@ def record_cancel(signum, frame):
+ 
+ 
+ def check_cancel():
+-    require(_CANCEL_SIGNAL is None, 'CANCELLED: cancelled by signal %s' % _CANCEL_SIGNAL)
++    if _CANCEL_SIGNAL is not None:
++        raise GateError('CANCELLED: cancelled by signal %s' % _CANCEL_SIGNAL,
++                        cancel_originated=True)
+ 
+ 
+ def peek_child_exit(process, timeout):
+@@ -236,6 +241,9 @@ def call(argv, log, cwd=None, timeout=300):
+               'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+         with log.open('wb') as output:
+             check_cancel()
++            # A microsecond-scale window exists between Popen and _ACTIVE_GROUP:
++            # a second signal here may leave the new process group uncleaned.
++            # Do not use preexec_fn: it risks deadlock in multithreaded programs.
+             process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
+                                        stderr=subprocess.STDOUT, start_new_session=True)
+             _ACTIVE_GROUP = process.pid
+@@ -252,8 +260,9 @@ def call(argv, log, cwd=None, timeout=300):
+         save(metadata, dict(invocation,completed=True,rc=0))
+         return text
+     except BaseException as error:
++        cancel_originated = isinstance(error, GateError) and error.cancel_originated
+         if primary is None:
+-            primary = (str(error) if str(error).startswith('CANCELLED:') else
++            primary = (str(error) if cancel_originated else
+                        ('TIMEOUT: ' if isinstance(error, subprocess.TimeoutExpired) else 'COMMAND_ERROR: ')+str(error))
+         cleanup = []
+         if process is not None and not reaped:
+@@ -274,12 +283,12 @@ def call(argv, log, cwd=None, timeout=300):
+                 cleanup.append(str(failure))
+         if isinstance(error, (KeyboardInterrupt, SystemExit)):
+             raise
+-        if _CANCEL_SIGNAL is not None:
+-            primary = 'CANCELLED: cancelled by signal %s' % _CANCEL_SIGNAL
++        if _CANCEL_SIGNAL is not None and not cancel_originated:
++            primary = 'CANCELLED: cancelled by signal %s; while handling: %s' % (_CANCEL_SIGNAL, primary)
+         message = primary+' (see '+str(log)+')'
+         if cleanup:
+             message += '; cleanup error: '+'; '.join(cleanup)
+-        failure = GateError(message)
++        failure = GateError(message, cancel_originated=cancel_originated)
+         failure.bolt_log = str(log)
+         raise failure from error
+     finally:
+@@ -563,8 +572,8 @@ def installed_security(baseline, candidate):
+ 
+ 
+ def rpath_layout(path, allowed_ranges=None):
+-    # adjust_rpath has already enforced at most one RPATH/RUNPATH tag.
+     """Freeze all bytes except the original path strings, including their NULs."""
++    # adjust_rpath has already enforced at most one RPATH/RUNPATH tag.
+     elf = ELF(path)
+     try:
+         dynamic = elf.by_name.get('.dynamic')
+@@ -769,7 +778,8 @@ def debuglink_layout(path):
+                  for name, sec in zip(elf.names, elf.sections)
+                  if name not in ('', '.shstrtab', '.gnu_debuglink') and sec[1] != 8}
+         return {'program_headers': elf.phdrs, 'loaded_sections': loaded, 'other_sections': other,
+-                'section_names': sorted(name for name in elf.names if name != '.gnu_debuglink')}
++                'section_names': sorted(name for name in elf.names if name != '.gnu_debuglink'),
++                'execution_layout': strip_layout(path)}
+     finally:
+         elf.close()
+ 
+@@ -1611,7 +1621,7 @@ def disk_diagnose(step, log, error=None, build=None, work=None, root=None):
+ 
+ 
+ def diagnose_safely(step, log, error=None):
+-    if error is not None and str(error).startswith('CANCELLED:'): return None
++    if isinstance(error, GateError) and error.cancel_originated: return None
+     try: return disk_diagnose(step,log,error)
+     except Exception: return None
+ 
+@@ -1633,7 +1643,7 @@ def run_step(step, log, argv, output=None, success_marker=None):
+         # Preserve the failed command's actual output even when its exit is nonzero.
+         try: print(Path(log).read_text(errors='replace'),end='',flush=True)
+         except Exception: pass
+-        if isinstance(error, GateError) and 'TIMEOUT:' in str(error):
++        if isinstance(error, GateError) and str(error).startswith('TIMEOUT:'):
+             failure = GateError('TIMEOUT: step=%s elapsed_seconds=%.3f; %s' %
+                                 (step, time.monotonic()-started, error))
+             failure.bolt_log = str(log)
+@@ -1896,15 +1906,16 @@ def cli():
+         signal.signal(sig, record_cancel)
+     try:
+         main()
+-        require(_CANCEL_SIGNAL is None,
+-                'CANCELLED: cancelled by signal %s after work completed' % _CANCEL_SIGNAL)
++        if _CANCEL_SIGNAL is not None:
++            raise GateError('CANCELLED: cancelled by signal %s after work completed' % _CANCEL_SIGNAL,
++                            cancel_originated=True)
+         return 0
+     except (GateError, OSError, ValueError, lzma.LZMAError) as error:
+         step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+         log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+         diagnose_safely(step,log,error)
+         print('BOLT_GATE_FAILED: '+str(error),file=sys.stderr)
+-        return 1
++        return 128 + _CANCEL_SIGNAL if _CANCEL_SIGNAL is not None else 1
+     except Exception as error:
+         step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+         log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index 9921f473b4f5c31bb0ff2dfcc295a75e807ce1e5..cce638977420920abf145db962f9882c6dc3ecc9 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -7,6 +7,8 @@ Text IR metadata/attribute parsing depends on LLVM 22 llvm-dis output syntax.
+ Four architecture-specific policy points are deliberately explicit: backend
+ options, recorded-command classification, relocation rules, and triple allowlist.
+ Failing closed when parameters change is intentional; recertify before use.
++The HQ allowlist accepts -g0 and has_debug_options also counts it as debug.
++Current recorded commands contain no -g0; recheck this on clang upgrades.
+ """
+ import argparse
+ from collections import Counter
+@@ -247,6 +249,8 @@ def classify_options(argv, arch='x86_64'):
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+         elif re.fullmatch(r'--param=ssp-buffer-size=\d+', token):
+             category, reason = 'ir', 'stack-protector-buffer-size function attribute already in the IR'
++        elif token == '-Xassembler' or token.startswith('-Wa,'):
++            raise ValueError('uncertified assembler option: '+token)
+         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
+                                '-fdiagnostics-color=')) or token in
+               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+@@ -332,9 +336,9 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64', debug_info=
+         lambda match: chr(int(match[1], 16)), metadata[command_id]))
+     found_debug = 'yes' if any(token.startswith('-g') for token in recorded_command) else 'no'
+     if debug_info is not None and debug_info != found_debug:
+-        raise ValueError('debug-info expected %s, found %s (expected=%s found=%s)' %
++        raise ValueError('debug-info expected %s, found %s' %
+                          ('debug' if debug_info == 'yes' else 'release',
+-                          'debug' if found_debug == 'yes' else 'release', debug_info, found_debug))
++                          'debug' if found_debug == 'yes' else 'release'))
+     policy = classify_options(recorded_command, arch)
+     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+              *(('-f'+key) if policy['switches'][key] else ('-fno-'+key)
+@@ -566,6 +570,18 @@ def validate_tools(build, compiler, disassembler, nm, command, output):
+     match = re.search(r'clang version (\d+)\.', text)
+     if not match or int(match[1]) != CERTIFIED_LLVM_MAJOR:
+         raise ValueError('uncertified compiler major (required 22): '+text.strip())
++    full_version = re.search(r'clang version (\d+\.\d+\.\d+)\b', text)
++    if not full_version:
++        raise ValueError('missing complete clang version: '+text.strip())
++    for label, tool in [('disassembler', disassembler), ('nm', nm)]:
++        tool_version = output/(label+'-version.txt')
++        with tool_version.open('wb') as stream:
++            command.run([tool, '--version'], output/(label+'-version-command'), stdout=stream)
++        tool_text = tool_version.read_text()
++        match = re.search(r'LLVM version (\d+\.\d+\.\d+)\b', tool_text)
++        if not match or match[1] != full_version[1]:
++            raise ValueError('%s version mismatch: expected %s, found %s' %
++                             (label, full_version[1], match[1] if match else tool_text.strip()))
+     return dict(compiler=str(compiler), version=text, compiler_sha256=sha(compiler),
+                 disassembler=str(disassembler), nm=str(nm))
+ 
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index b6cb759ec86885630f635bb381ed105ab3496f26..53eee9d20d49ba0069eccd8918a2f1b81216182c 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -219,7 +219,8 @@ TIZEN_LLVM_RELEASE=%{llvm_release_build}
+ # The x86_64 policy is the certified Toolchain command (QB 1215143).
+ # Only architecture and debug-mode options are inherited. Token matching is
+ # exact: stripping -fstack-protector must never leave a -strong suffix.
+-TIZEN_LLVM_EXPECTED_DROPPED=${TIZEN_LLVM_EXPECTED_DROPPED-'-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'}
++# Reviewed Base-Dev options (QB 1214821) that this policy knowingly discards.
++TIZEN_LLVM_EXPECTED_DROPPED='-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'
+ tizen_llvm_flags()
+ {
+     tizen_llvm_kind=$1
+@@ -294,8 +295,13 @@ tizen_llvm_flags()
+     case $tizen_llvm_kind:$tizen_llvm_release in
+         CFLAGS:0|CXXFLAGS:0)
+             if test "$tizen_llvm_debug_sequence" != '-g2 -gdwarf-4 -g'; then
+-                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]"
+-                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]" >&2
++                if test -n "$tizen_llvm_debug_sequence"; then
++                    tizen_llvm_debug_description="[$tizen_llvm_debug_sequence]"
++                else
++                    tizen_llvm_debug_description="no debug options"
++                fi
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description"
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description" >&2
+             fi ;;
+     esac
+     case $tizen_llvm_kind in
+@@ -581,12 +587,23 @@ bolt_checked() {
+     exit 1
+   fi
+ }
++bolt_optional() {
++  if "$@"; then
++    return 0
++  else
++    bolt_optional_rc=$?
++    case $bolt_optional_rc in
++      129|130|143) exit "$bolt_optional_rc" ;;
++      *) return 0 ;;
++    esac
++  fi
++}
+ bolt_step() {
+   bolt_stage=$1
+   shift
+   bolt_checked "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" python3 -B %{SOURCE1201} run-step "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" -- "$@"
+ }
+-python3 -B %{SOURCE1201} disk-report begin || true
++bolt_optional python3 -B %{SOURCE1201} disk-report begin
+ echo "BOLT_BUILDROOT_OK %{buildroot}"
+ python3 -B %{SOURCE1201} preflight || exit 1
+ python3 -B %{SOURCE1201} certified || exit 1
+@@ -618,14 +635,14 @@ bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run
+ python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+ cat "$BOLT_WORK/tool-build-verification.json"
+-python3 -B %{SOURCE1201} disk-report tool-built || true
++bolt_optional python3 -B %{SOURCE1201} disk-report tool-built
+ %if %{llvm_release_build}
+ python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
+ %else
+ python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" --debug-symbols || exit 1
+ %endif
+ echo BOLT_PIPELINE_PASS
+-python3 -B %{SOURCE1201} disk-report pipeline || true
++bolt_optional python3 -B %{SOURCE1201} disk-report pipeline
+ # BOLT configuration/build/rewrite must not change the ordinary installation.
+ # Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
+ python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
+@@ -633,7 +650,7 @@ python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.
+ echo BOLT_COMPARE_ROOT_PASS
+ # No subsequent step consumes this ThinLTO cache.
+ # Release it only inside the enabled x86_64 BOLT block.
+-python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK" || true
++bolt_optional python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK"
+ # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
+ %endif
+ %endif
+@@ -934,6 +951,6 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+     %{__bolt_original_spec_install_post} \
+     python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
+     echo BOLT_POST_GATE_PASS \
+-    python3 -B %{SOURCE1201} disk-report post || true
++    bolt_optional python3 -B %{SOURCE1201} disk-report post
+ %endif
+ %endif
