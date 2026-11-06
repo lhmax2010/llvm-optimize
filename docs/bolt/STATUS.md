@@ -947,3 +947,8 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 ## 2026-11-06：comp_dir 裁决闭合，67 §8 规则启用
 
 用户确认：前缀替换后完全相同的 comp_dir 不要求原始等长；仅剩连续斜杠差异的才要求原始字节等长及 POSIX 词法等价；其他差异 FAIL。三条原文已写入 [67 §8](67_tu_inputs_and_dwarf_check.md)。现用两个验证入口已启用与原复验同 SHA 的候选代码；新增 45/46 字节反例正确拒绝，9 项测试 PASS。原 132/132 对 .debug、132/132 个 debuglink 正式记为 PASS，21/23 包 PASS；源码包权限/spec 与 debugsource 路径两项 FAIL 不变。未重建、未重跑 90 TU 或包比较；上一条“待裁决”已闭合。69 号 Base-Dev 演练失败结论不变。
+
+
+## 2026-11-06：359934 基线上 sandbox 更新
+
+第三个提交仅整理说明为 7d5e28ca89ed68e3360765bc4e42234eaaabae27，tree 不变，前两个 a73a7da3/e08ed9ed 不变。指定 lease 推送成功，远端已核对；359934 和 357163 仍 NEW。证据与命令原文见 [69 §5](69_rebase_on_359934.md)。Base-Dev 演练问题待本轮第二项处理。
