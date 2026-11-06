@@ -1,0 +1,41 @@
+diff --cc packaging/llvm-static-archives-native.py
+index 1b1f759ffe70,d95dfc1f14cb..000000000000
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@@ -260,6 -252,8 +260,11 @@@ def classify_options(argv, arch='x86_64
+          index += 1
+      if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
+          raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
+++<<<<<<< HEAD
+++=======
++     # A release command has no -g options at all. Once any debug option is
++     # present, retain the certified DWARF-4 requirement (including bare -g).
+++>>>>>>> 9e39fa8a6139 (packaging: fix x86 LLVM flags and certify release archives)
+      has_debug_options = any(token.startswith('-g') for token in argv)
+      if has_debug_options and (not dwarfs or dwarfs[-1] != '-gdwarf-4'):
+          raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
+@@@ -330,13 -321,16 +335,24 @@@ def ir_settings(lines, require_recorded
+          raise ValueError('missing original command: backend policy cannot be certified')
+      recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+          lambda match: chr(int(match[1], 16)), metadata[command_id]))
++     found_debug = 'yes' if any(token.startswith('-g') for token in recorded_command) else 'no'
++     if debug_info is not None and debug_info != found_debug:
++         raise ValueError('debug-info expected %s, found %s (expected=%s found=%s)' %
++                          ('debug' if debug_info == 'yes' else 'release',
++                           'debug' if found_debug == 'yes' else 'release', debug_info, found_debug))
+      policy = classify_options(recorded_command, arch)
++     backend_flags = [flag for flag in BACKEND_FLAGS
++                      if policy['dwarf'] is not None or not flag.startswith('-g')]
+      flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+++<<<<<<< HEAD
+ +             *(('-f'+key) if policy['switches'][key] else ('-fno-'+key)
+ +               for key in SWITCH_KEYS)]
+ +    if policy['dwarf']:
+ +        flags += ['-g', policy['dwarf']]
+ +    flags += ['-ffp-contract='+policy['fp_contract'], '-c']
+++=======
++              *backend_flags, '-ffp-contract='+policy['fp_contract'], '-c']
+++>>>>>>> 9e39fa8a6139 (packaging: fix x86 LLVM flags and certify release archives)
+      flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
+                [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+      return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),

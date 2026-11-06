@@ -1,0 +1,36 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261103/launcher.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106/basedev/launcher.py
+@@ -20,7 +20,7 @@
+ W = B.parent / 'llvm-optimize'
+ T = Path(__file__).resolve().parent
+ OLD = B / 'tools/bolt/results/oldtext-final-20261027'
+-SOURCE = W / 'temp/review-20261102/source'
++SOURCE = W / 'temp/rebase-359934-20261106/source'
+ COMMIT = os.environ.get('NIGHT_SOURCE_SHA', '')
+ assert len(COMMIT) == 40 and all(c in '0123456789abcdef' for c in COMMIT), 'explicit full source SHA required'
+ PROJECT = os.environ.get('FINAL_PROJECT', 'toolchain')
+@@ -283,7 +283,7 @@
+     mode = 'rehearsal' if selection.startswith('rehearsal') else 'full'
+     suffix = '-02' if selection == 'rehearsal-02' else ''
+     identity = check_source()
+-    D = W / 'temp/night-20261103' / (PROJECT if mode == 'full' else 'rehearsal/' + PROJECT)
++    D = W / 'temp/rebase-359934-20261106' / (PROJECT if mode == 'full' else 'rehearsal/' + PROJECT)
+     if suffix:
+         D = D / 'retry-02'
+     assert not D.exists(), 'fresh root required; preserve existing directory: ' + str(D)
+@@ -294,12 +294,12 @@
+     (D / 'evidence').mkdir()
+     plan = dict(identity, source=str(SOURCE), config=str(CONFIG), mode=mode,
+                 MemoryMax_bytes=mem - 8 * 1024**3, CPUQuota='1200%',
+-                prep_unit='night-' + PROJECT + '-' + mode + '-prep-20261103' + suffix + '.service',
+-                build_unit='night-' + PROJECT + '-' + mode + '-20261103' + suffix + '.service')
++                prep_unit='rebase359934-' + PROJECT + '-' + mode + '-prep-20261106' + suffix + '.service',
++                build_unit='rebase359934-' + PROJECT + '-' + mode + '-20261106' + suffix + '.service')
+     save(D / 'plan.json', plan)
+     shutil.copyfile(T / 'launcher.py', D / 'evidence/launcher-used.py')
+     materialize(D, plan)
+-    unit = 'night-' + PROJECT + '-' + mode + '-controller-20261103' + suffix + '.service'
++    unit = 'rebase359934-' + PROJECT + '-' + mode + '-controller-20261106' + suffix + '.service'
+     argv = ['systemd-run', '--user', '--unit=' + unit, *properties(plan),
+             '-p', 'WorkingDirectory=' + str(SOURCE),
+             '-p', 'StandardOutput=append:' + str(D / 'controller.stdout'),

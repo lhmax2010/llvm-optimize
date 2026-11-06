@@ -67,3 +67,5 @@ cf4b6777d056131e2534ecb460c5575327d99646与67619ec8bbbac7238a6cfc33a481ccfbcd122
 ```text
 ITEM1 已结束 2026-11-06T10:35:58.085829+08:00 status=stopped reason=359934-NEW-and-not-in-tizen_base
 ```
+
+后续按用户新裁决，以仍为 NEW 的当前 PS10 改接，结果见 [69：以 359934 为基线](69_rebase_on_359934.md)。
