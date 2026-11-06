@@ -1,0 +1,22 @@
+--- tools/bolt/night-launch-20261105/validation_common.py before
++++ tools/bolt/night-launch-20261105/validation_common.py after
+@@ -62,7 +62,7 @@
+  return manifests
+ 
+ def objects(D,O,reference):
+- R,BUILD,WORK=rootpaths(D);units=json.loads((W/'docs/53_hybrid_local_validation_evidence/tu-inputs.json').read_text());assert len(units)==90
++ R,BUILD,WORK=rootpaths(D);units=json.loads((W/'temp/tu-inputs-restored-20261106/tu-inputs.json').read_text());assert len(units)==90
+  V=O/'objects';V.mkdir();slot=V/'clang-22';slot.touch();ino=slot.stat().st_ino;results={}
+  for role,src in [('reference',reference),('candidate',WORK/'clang.candidate')]:
+   shutil.copyfile(src,slot);slot.chmod(0o755);assert slot.stat().st_ino==ino and sha(slot)==sha(src)
+--- tools/bolt/night-launch-20261103/validate.py before
++++ tools/bolt/night-launch-20261103/validate.py after
+@@ -62,7 +62,7 @@
+  return manifests
+ 
+ def objects(D,O,reference):
+- R,BUILD,WORK=rootpaths(D);units=json.loads((W/'docs/53_hybrid_local_validation_evidence/tu-inputs.json').read_text());assert len(units)==90
++ R,BUILD,WORK=rootpaths(D);units=json.loads((W/'temp/tu-inputs-restored-20261106/tu-inputs.json').read_text());assert len(units)==90
+  V=O/'objects';V.mkdir();slot=V/'clang-22';slot.touch();ino=slot.stat().st_ino;results={}
+  for role,src in [('reference',reference),('candidate',WORK/'clang.candidate')]:
+   shutil.copyfile(src,slot);slot.chmod(0o755);assert slot.stat().st_ino==ino and sha(slot)==sha(src)

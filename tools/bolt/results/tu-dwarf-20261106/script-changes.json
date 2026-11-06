@@ -1,0 +1,14 @@
+[
+  {
+    "path": "tools/bolt/night-launch-20261105/validation_common.py",
+    "before_sha256": "c7c21050bbc3c14a96f21637b62d65003e3bc06303143e6b095b038aad152f4e",
+    "after_sha256": "2e6ffe604e87292c1f64ca91cb6df20bdebbabb19677033413b7ecc211a04be7",
+    "diff": "--- tools/bolt/night-launch-20261105/validation_common.py before\n+++ tools/bolt/night-launch-20261105/validation_common.py after\n@@ -62,7 +62,7 @@\n  return manifests\n \n def objects(D,O,reference):\n- R,BUILD,WORK=rootpaths(D);units=json.loads((W/'docs/53_hybrid_local_validation_evidence/tu-inputs.json').read_text());assert len(units)==90\n+ R,BUILD,WORK=rootpaths(D);units=json.loads((W/'temp/tu-inputs-restored-20261106/tu-inputs.json').read_text());assert len(units)==90\n  V=O/'objects';V.mkdir();slot=V/'clang-22';slot.touch();ino=slot.stat().st_ino;results={}\n  for role,src in [('reference',reference),('candidate',WORK/'clang.candidate')]:\n   shutil.copyfile(src,slot);slot.chmod(0o755);assert slot.stat().st_ino==ino and sha(slot)==sha(src)\n"
+  },
+  {
+    "path": "tools/bolt/night-launch-20261103/validate.py",
+    "before_sha256": "c7c21050bbc3c14a96f21637b62d65003e3bc06303143e6b095b038aad152f4e",
+    "after_sha256": "2e6ffe604e87292c1f64ca91cb6df20bdebbabb19677033413b7ecc211a04be7",
+    "diff": "--- tools/bolt/night-launch-20261103/validate.py before\n+++ tools/bolt/night-launch-20261103/validate.py after\n@@ -62,7 +62,7 @@\n  return manifests\n \n def objects(D,O,reference):\n- R,BUILD,WORK=rootpaths(D);units=json.loads((W/'docs/53_hybrid_local_validation_evidence/tu-inputs.json').read_text());assert len(units)==90\n+ R,BUILD,WORK=rootpaths(D);units=json.loads((W/'temp/tu-inputs-restored-20261106/tu-inputs.json').read_text());assert len(units)==90\n  V=O/'objects';V.mkdir();slot=V/'clang-22';slot.touch();ino=slot.stat().st_ino;results={}\n  for role,src in [('reference',reference),('candidate',WORK/'clang.candidate')]:\n   shutil.copyfile(src,slot);slot.chmod(0o755);assert slot.stat().st_ino==ino and sha(slot)==sha(src)\n"
+  }
+]
