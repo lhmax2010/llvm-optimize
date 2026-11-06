@@ -1,12 +1,15 @@
 """QB/local comparison. Only new scratch/output writes; reuse verified BUILDROOT files."""
 from pathlib import Path
-import sys,json,subprocess,stat,hashlib,datetime,traceback,tarfile,difflib
+import sys,json,subprocess,stat,hashlib,datetime,traceback,tarfile,difflib,os,signal
 from compare_rules import file_proof,debuglink_name,debuglink_proof
 B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');W=B.parent/'llvm-optimize'
 # imports are from this launcher directory
 from rpm_io import manifest
 from rpm_extract import extract_selected
 E=Path(sys.argv[1]);P=E/'payload';P.mkdir(exist_ok=False)
+REUSE=Path(os.environ['QB_COMPARE_READONLY_PAYLOAD']) if os.environ.get('QB_COMPARE_READONLY_PAYLOAD') else None
+if REUSE:assert REUSE.is_dir()
+def expire(signum,frame):raise TimeoutError('single-file comparison exceeded 30 minutes')
 def save(p,x):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(x,indent=2,ensure_ascii=False)+'\n')
 def sha(p):
  with Path(p).open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
@@ -39,12 +42,16 @@ try:
   for key,mm in m.items():
    for side,other in [('old','new'),('new','old')]:
     names={n for n,v in mm[side].items() if stat.S_ISREG(v['mode']) and (n not in mm[other] or v['sha256']!=mm[other][n]['sha256'])}
+    if REUSE:names={n for n in names if not (REUSE/label/key.replace('\t','-')/side/n).is_file()}
     if names:extract_selected(paths[key][side],names,P/label/key.replace('\t','-')/side)
   cache={}
   def getfile(side,key,name):
    ident=(side,key,name)
    if ident in cache:return cache[ident]
    row=m[key][side][name];expected=row['sha256'];target=P/label/key.replace('\t','-')/side/name
+   if REUSE:
+    reused=REUSE/label/key.replace('\t','-')/side/name
+    if reused.is_file() and not reused.is_symlink():assert sha(reused)==expected,('readonly payload SHA mismatch',str(reused));cache[ident]=reused;return reused
    if target.is_file() and not target.is_symlink():assert sha(target)==expected;cache[ident]=target;return target
    native=(roots[0]/name) if roots else P/'nonexistent-root-file'
    if native.is_file() and not native.is_symlink() and sha(native)==expected:
@@ -66,6 +73,7 @@ try:
     same=all(a.get(k)==b.get(k) for k in ('mode','uid','gid','target','bytes','sha256'))
     if same:continue
     proof={};x=y=None
+    previous=signal.signal(signal.SIGALRM,expire);signal.setitimer(signal.ITIMER_REAL,1800)
     try:
      assert all(a.get(k)==b.get(k) for k in ('mode','uid','gid','target')),'payload permission/owner/type/link changed'
      x=getfile('old',key,name);y=getfile('new',key,name);filemap.append({'project':label,'package':key,'path':name,'old':str(x),'new':str(y),'old_sha':a['sha256'],'new_sha':b['sha256']})
@@ -73,10 +81,13 @@ try:
      if dl:proof=debuglink_proof(x,y,symbol('old',name,dl),symbol('new',name,debuglink_name(y)))
      elif key.endswith('\tsrc') and tarfile.is_tarfile(x) and tarfile.is_tarfile(y):proof=source_archive(x,y)
      else:proof=file_proof(x,y)
+    except MemoryError:raise
+    except TimeoutError as ex:proof={'classification':'UNKNOWN','error':str(ex)}
     except Exception as ex:proof={'classification':'FAIL','error':str(ex)}
+    finally:signal.setitimer(signal.ITIMER_REAL,0);signal.signal(signal.SIGALRM,previous)
     diffs.append({'path':name,'old_sha':a['sha256'],'new_sha':b['sha256'],**proof})
     print('FILE',label,key,name,proof['classification'],flush=True)
-   r={'project':label,'package':key,'PASS':not added and not removed and all(v['classification']!='FAIL' for v in diffs),'metadata_old':oldmeta,'metadata_new':newmeta,'file_count':len(aa),'added':added,'removed':removed,'content_changes':diffs,'payload_mtime_changes':mt}
+   r={'project':label,'package':key,'PASS':not added and not removed and all(v['classification'] not in ('FAIL','UNKNOWN') for v in diffs),'metadata_old':oldmeta,'metadata_new':newmeta,'file_count':len(aa),'added':added,'removed':removed,'content_changes':diffs,'payload_mtime_changes':mt}
    summary.append(r);save(E/'qb-rpm-comparison.json',summary);save(E/'qb-changed-file-paths.json',filemap);print('PACKAGE',label,key,r['PASS'],flush=True)
  save(E/'item2-result.json',{'status':'ok' if all(r['PASS'] for r in summary) else 'differences','packages':len(summary),'passed':sum(r['PASS'] for r in summary),'failed':sum(not r['PASS'] for r in summary)})
 except BaseException as ex:

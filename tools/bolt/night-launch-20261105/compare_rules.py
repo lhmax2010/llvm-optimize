@@ -17,6 +17,12 @@ def debuglink_name(p):
    except AssertionError as e:error=str(e);e.__traceback__=None
   if error and error!='debuglink count != 1':raise AssertionError(error)
   return info['filename'] if info else None
+_strict_file_proof=file_proof
+def file_proof(a,b):
+ if str(a).endswith('.debug') and str(b).endswith('.debug'):
+  from validation_common import debug_pair_proof
+  return debug_pair_proof(a,b)
+ return _strict_file_proof(a,b)
 def debuglink_proof(a,b,da,db):
  symbol_proof=file_proof(da,db)
  with Path(a).open('rb') as fa,Path(b).open('rb') as fb:
@@ -28,6 +34,7 @@ def debuglink_proof(a,b,da,db):
     at=x['offset']+x['size']-4;bt=y['offset']+y['size']-4;ma[at:at+4]=b'\0'*4;mb[bt:bt+4]=b'\0'*4
     proof=elf_proof(ma,mb)
     answer={'classification':'verified-debuglink-crc-and-record-sections','old_crc':x['crc32'],'new_crc':y['crc32'],'filename':x['filename'],'old_crc_offset':at,'new_crc_offset':bt,'symbol_proof':symbol_proof,'binary_proof':proof}
+   except MemoryError:raise
    except Exception as e:error=str(e);e.__traceback__=None
   if error:raise AssertionError(error)
  return answer

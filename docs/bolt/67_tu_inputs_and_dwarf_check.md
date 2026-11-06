@@ -382,14 +382,14 @@ ITEM3 已结束 2026-11-06T13:14:16.107261+08:00 status=partial reason=streaming
 
 结论：90 TU 输入恢复完成，现用入口已改接并通过 4 项测试；132 对调试文件的差异已逐项定位，行号程序及要求保持一致的其他节全部相同，但按指定的严格文本规则仍保留 132 个 DIFFERENT。
 
-## 8. 规则更新与复验（2026-11-06；规则发布待裁决）
+## 8. 规则更新与复验（2026-11-06；用户裁决已确认）
 
-**第二项的实测已做完，但规则不能标为正式通过。** 指定正例与 comp_dir 等长条件存在字面冲突，已向用户提出一个具体问题，尚未得到回复。本节完整记录候选实现、测试和复验，不能把下面的候选 PASS 当作用户已批准该解释。现用入口的 tracked 文件已恢复到本轮修改前的内容；候选源码和 diff 全部保留，未丢弃。
+**用户已确认 comp_dir 等长条件的适用范围，规则现已启用。** 132/132 对 .debug 和 132/132 个 debuglink 按该口径正式记录为 PASS；23 包中 21 包 PASS，源码包和 debugsource 包的既有差异仍 FAIL。新增反例及回归共 9 项通过；本次启用的五个文件与先前复验所用候选文件 SHA 完全相同，因此按用户裁决沿用包级结果，没有重跑构建、90 TU 或 23 包比较。上一轮的暂停及原始证据保留为历史记录。
 
-### 8.1 用户规则原文与发现的冲突
+### 8.1 用户规则与已确认的 comp_dir 裁决
 
 - .debug_line：逐个单元检查。格式和版本前缀相同；目录表和文件表在源码前缀替换后逐字节相同；行号程序逐字节相同；total_length 和 prologue_length 的增量，都必须正好等于“本单元表头里的替换次数 ×（QB 前缀长度 − 本地前缀长度）”。前缀长度差由两边的实际 release 字符串计算，不写死 2。
-- .debug_info：只有 DW_AT_comp_dir 允许不同，并且三项同时满足：两边字符串字节长度相同；前缀替换后差别只在连续斜杠的个数；按 POSIX 路径词法归一化后完全相同。其他属性严格比较。
+- .debug_info：先按原有规则替换源码前缀；只有替换后仍有差异的 DW_AT_comp_dir 才适用额外的等长、连续斜杠、POSIX 词法等价检查。其他属性仍严格比较。
 - .debug_aranges、节数量/名称/顺序、其余各节逐字节相同；两类之外仍 FAIL。
 
 指定正例 libRemarks.so.22.1.debug 的原文为：
@@ -400,28 +400,37 @@ QB:    DW_AT_comp_dir ("/usr/src/debug/llvm-22.1.8-2.1.x86_64/build")
 UTF-8 bytes: local=41, QB=43
 ~~~
 
-这两串仅 release 前缀不同，替换后相同，却不满足“所有原始 comp_dir 都等长”的字面要求。libomp.so.debug 同时有这种常规值和原先 §6 中的连续斜杠值。当前候选实现先沿用 §4 的源码前缀归一化，再对**归一化后仍不同**的 comp_dir 应用原始长度相同、只差斜杠、POSIX 等价三条件。此解释下正例通过；若等长条件适用于所有原始值，指定正例必须 FAIL。不能擅自把这处歧义转为批准。
+上例仅 release 前缀不同，替换后相同，按本次裁决直接判相同，不要求 41/43 字节等长。libomp.so.debug 同时有这类常规值和 §6 的连续斜杠值，后者适用额外条件。
 
-待用户选择：等长仅限制前缀替换后的剩余斜杠差异，还是严格限制所有原始 comp_dir。后者与指定正例冲突时将保留 FAIL，不修改口径。
+用户裁决原文（三条）：
 
-### 8.2 候选实现与证据
+> 前缀替换后完全相同的 comp_dir（如 libRemarks 的 41/43 字节），按原有前缀替换规则判相同，不要求原始字节等长。这类长度不同是正常的：debugedit 改写 .debug_str 里的字符串时可以改变长度。
+>
+> 前缀替换后只差连续斜杠个数的 comp_dir（那 8 个文件的 19 处），才额外要求：原始字节等长，且按 POSIX 词法归一化后相同。这类是内联字符串，debugedit 原地改写时不能改变长度，只能用斜杠补齐，等长正是它的特征。
+>
+> 前缀替换后还有其他差异的，一律 FAIL。
 
-证据目录：[dwarf-rule-20261106](../../tools/bolt/results/dwarf-rule-20261106/)。候选完整文件在 proposed/；[tracked 代码 diff](../../tools/bolt/results/dwarf-rule-20261106/validator.diff)，新增解析模块全文 new-module.py。未改 LLVM 源码、spec、helper；未重新构建、未重跑 90 TU。
+
+### 8.2 已启用的实现与证据
+
+证据目录：[dwarf-rule-20261106](../../tools/bolt/results/dwarf-rule-20261106/)。先前候选完整文件仍保存在 proposed/；已恢复到现用入口，逐文件同 SHA 记录在 approved/activation.json；[tracked 代码 diff](../../tools/bolt/results/dwarf-rule-20261106/validator.diff)，新增解析模块全文 new-module.py。未改 LLVM 源码、spec、helper；未重新构建、未重跑 90 TU。
 
 实现细节：
 
 1. 复用 classify_dwarf.py 的 DWARF32/64 line-unit 解析，分别验证版本/格式前缀、完整表头、完整行号程序、两个长度字段与实际前缀增长值。每个单元保留旧/新偏移、长度、替换次数和期望增量。
 2. .debug_info 复用 §4 已完成的全量逐行比较。只在当前输入 SHA 与既有 manifest 完全对应，并重新核对原始/归一化 gzip 的 SHA 后使用旧输出；manifest 自身固定 SHA 为 95f3a2094b83a9c8d4a7e311f839d4b54397787ba32b3945855d37bfa3654c47。完整差异上下文也校验 SHA 和差异条数。未知输入通过平台 loader 调用原构建根 llvm-dwarfdump --debug-info，逐行处理；不调用宿主 LLVM。
 3. .debug_str 完整字符串池也比较，不能只忽略该节。只接受前缀替换以及被 comp_dir 检查明确证明的那一对字符串。其他节（包括 .debug_aranges）、程序头、节元数据、ALLOC 节、非节非零字节继续严格检查。
-4. validation_common.py 和 20261103/validate.py 的候选接入同一 .debug 函数；compare_rules.py 的任意 debuglink 检查先验证配对符号文件，再验证文件名、实际 CRC、剩余 ELF 内容。
+4. validation_common.py 和 20261103/validate.py 接入同一 .debug 函数；compare_rules.py 的任意 debuglink 检查先验证配对符号文件，再验证文件名、实际 CRC、剩余 ELF 内容。
 5. 包级比较支持只读复用旧提取文件，每个文件仍和 RPM manifest 的 SHA 核对；新结果全部放 W/temp/dwarf-rule-20261106/packages/。单文件 30 分钟，超时 UNKNOWN 并继续；MemoryError 不吞作普通 FAIL。此次无超时、MemoryError 或 OOM。
 
 每个命令串行处于 8 GiB、swap0、400%、nice19、idle I/O 的独立 systemd 用户服务。active-service-resource-limits.json 的运行中核对原文为 memory.max=8589934592，memory.swap.max=0，cpu.max="400000 100000"，nice=19；oom/oom_kill 均为 0。复验服务 llvm-nov06b-053 退出 0，耗时 14min 40.848s。历史 dwarf-check-20261106/ 未删除或修改。
 
-### 8.3 测试（候选解释下）
+### 8.3 测试（已确认规则）
+
+原有 8 项通过记录保留在 tests.stdout；本次补充反例后，在启用的实际模块上运行 9 项：
 
 ~~~text
-Ran 8 tests in 2.715s
+Ran 9 tests in 2.443s
 OK
 ~~~
 
@@ -429,22 +438,23 @@ test_dwarf_release.py、tests.stdout、tests-observed.json 保存全部正反例
 
 | 用例 | 结果 |
 |---|---|
-| 真实 libRemarks.so.22.1.debug | 候选规则 PASS；严格原始等长规则存在上述冲突 |
-| 真实 libomp.so.debug | 候选规则 PASS |
+| 真实 libRemarks.so.22.1.debug | PASS；仅前缀变化，41/43 字节不要求等长 |
+| 真实 libomp.so.debug | PASS；剩余斜杠差异满足等长及 POSIX 条件 |
 | 行号程序改一个字节 | FAIL: line program bytes |
 | prologue_length 增量多 1 / 少 1 | 两者 FAIL |
 | comp_dir 非斜杠字符改变 | FAIL: comp_dir non-slash difference |
-| comp_dir 长度不同 | 等长函数断言 FAIL；真实副本还触发 dwarfdump warning，被拒绝 |
+| comp_dir 长度不同（原测试） | 等长函数断言 FAIL；真实副本还触发 dwarfdump warning，被拒绝 |
+| 前缀替换后仅剩斜杠差异，但原始长度 45/46 字节（新增） | FAIL: comp_dir byte length；测试 PASS |
 | .debug_aranges 改一个字节 | FAIL: strict section bytes .debug_aranges |
 | 实际前缀长度差 3 的合成 line-unit | PASS，证明没有写死长度差 2 |
 
-原文件不改；真实反例副本全部保留在 W/temp/dwarf-rule-20261106/tests/。没有为测试删除文件。
+原文件不改；原反例副本保留在 W/temp/dwarf-rule-20261106/tests/，本次回归使用全新 tests-approved/。新增反例通过实际 info_difference 入口调用 comp_dir，不依赖解析器报错：旧值 /usr/src/debug/llvm-22.1.8-1.x86_64/////build（45 字节），新值 /usr/src/debug/llvm-22.1.8-2.1.x86_64////build（46 字节）；前缀替换后仅斜杠数不同、POSIX 路径相同，但等长断言必须失败。完整测试与原文在 approved/test_dwarf_release.py、approved/tests.stdout、approved/tests-observed.json。没有删除文件。
 
-### 8.4 包级复验结果（候选解释下，非最终批准）
+### 8.4 包级复验结果（按用户确认口径）
 
 完整 23 包重新读取 RPM 清单；132 对 .debug PASS，132 个仅 debuglink CRC 不同的二进制 PASS。对应 131 组唯一 SHA（同一 liblldb 载荷在两个包路径中复用），按文件计 88987 个行号单元；19 处剩余 comp_dir 斜杠差异，涉及 8 文件。输入、证明、旧/新值与规则路径记录在 dwarf-pair-proofs.json.gz、proof-summary.json、qb-rpm-comparison.json.gz。
 
-| 包 | 候选口径结果 | .debug | debuglink | 其他差异 |
+| 包 | 已确认口径结果 | .debug | debuglink | 其他差异 |
 |---|---|---:|---:|---|
 | clang / x86_64 | PASS | 0 | 23 | 无 |
 | clang-debuginfo / x86_64 | PASS | 23 | 0 | 无 |
@@ -483,10 +493,16 @@ ITEM2 已结束 2026-11-06T15:39:34.677607+08:00 status=differences reason=compa
 
 ### 8.5 发布状态
 
-候选实现和原始比较结果已保全。为防止未确认解释进入自动验收，四个现用 tracked 验证脚本恢复到本轮修改前版本；独立新模块保留但没有现用入口导入。待用户明确 §8.1 后，再启用候选规则或按严格条件报告正例 FAIL，不需要重新构建。
+上一轮曾暂停规则发布，四个 tracked 入口恢复原状，以下停止行保留为历史记录。本次用户裁决后，已启用原候选五个文件，并逐个确认 SHA 与完成包级复验的版本一致；两个入口共用同一规则。结果核对及裁决原文见 approved/decision-and-result.json。
 
 ~~~text
 ITEM2 已结束 2026-11-06T15:47:26.559813+08:00 status=stopped reason=comp_dir-raw-length-rule-conflict-awaiting-user
 ~~~
 
-结论：候选解释下 132 对调试文件和 132 个 debuglink 检查通过、21/23 包通过；正式规则发布因 comp_dir 等长条件与指定正例冲突而停止，等待用户裁决。
+本次结束行：
+
+~~~text
+ITEM2 已结束 2026-11-06T16:03:11.571544+08:00 status=ok reason=approved-comp-dir-rule-enabled;debug-132-of-132;debuglink-132-of-132;two-existing-package-failures-retained
+~~~
+
+结论：规则已按用户裁决启用；132/132 对调试文件、132/132 个 debuglink 检查 PASS，21/23 包 PASS。剩余源码包与 debugsource 包保持 FAIL，不放宽规则。

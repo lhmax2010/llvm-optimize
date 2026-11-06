@@ -10,6 +10,29 @@ B=W.parent/'llvm-optimize-bolt';T=Path(__file__).parent
 CERT=W/'temp/debuglink-20261028/full-20261030'
 SOURCE=W/'temp/review-20261102/source'
 
+
+# Local-only doc67 release-path rule shared by both validation entries.
+def debug_pair_proof(a,b):
+ import sys
+ shared=B/'tools/bolt/night-launch-20261105'
+ if str(shared) not in sys.path:sys.path.insert(0,str(shared))
+ from dwarf_release import debug_pair
+ return debug_pair(a,b)
+
+_original_file_proof=file_proof
+def file_proof(a,b):
+ if str(a).endswith('.debug') and str(b).endswith('.debug'):
+  return debug_pair_proof(a,b)
+ return _original_file_proof(a,b)
+
+
+def debuglink_proof(a,b,da,db):
+ import sys
+ shared=B/'tools/bolt/night-launch-20261105'
+ if str(shared) not in sys.path:sys.path.insert(0,str(shared))
+ from compare_rules import debuglink_proof as shared_proof
+ return shared_proof(a,b,da,db)
+
 def rootpaths(D):
  R=D/'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0';BUILD=R/'home/abuild/rpmbuild/BUILD/llvm-22.1.8/build';return R,BUILD,BUILD/'clang-bolt'
 

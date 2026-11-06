@@ -943,3 +943,7 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 ## 2026-11-06：67 §8 候选规则复验，待 comp_dir 裁决
 
 [67 §8](67_tu_inputs_and_dwarf_check.md#8-规则更新与复验2026-11-06规则发布待裁决)：8 项候选测试通过；按“先前缀归一化，再约束剩余斜杠差异”的候选解释，132 对 .debug 和 132 个 debuglink 通过，21/23 包通过；源码包权限/spec、debugsource release 路径仍 FAIL。指定正例 libRemarks 的原始 comp_dir 长度为 41/43 字节，与全部原始值等长的字面规则冲突，已询问用户。候选代码保存在结果目录 proposed/，现用 tracked 入口已恢复；正式规则待裁决，未重建、未重跑 TU。
+
+## 2026-11-06：comp_dir 裁决闭合，67 §8 规则启用
+
+用户确认：前缀替换后完全相同的 comp_dir 不要求原始等长；仅剩连续斜杠差异的才要求原始字节等长及 POSIX 词法等价；其他差异 FAIL。三条原文已写入 [67 §8](67_tu_inputs_and_dwarf_check.md)。现用两个验证入口已启用与原复验同 SHA 的候选代码；新增 45/46 字节反例正确拒绝，9 项测试 PASS。原 132/132 对 .debug、132/132 个 debuglink 正式记为 PASS，21/23 包 PASS；源码包权限/spec 与 debugsource 路径两项 FAIL 不变。未重建、未重跑 90 TU 或包比较；上一条“待裁决”已闭合。69 号 Base-Dev 演练失败结论不变。
