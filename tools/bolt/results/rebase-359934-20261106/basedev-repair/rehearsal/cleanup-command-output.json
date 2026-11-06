@@ -1,0 +1,41 @@
+{
+  "services": {
+    "argv": [
+      "systemctl",
+      "--user",
+      "show",
+      "rebase359934-basedev-rehearsal-prep-20261106-02.service",
+      "rebase359934-basedev-rehearsal-20261106-02.service",
+      "rebase359934-basedev-rehearsal-controller-20261106-02.service",
+      "-p",
+      "Id",
+      "-p",
+      "ActiveState",
+      "-p",
+      "SubState",
+      "-p",
+      "Result",
+      "-p",
+      "ControlGroup"
+    ],
+    "rc": 0,
+    "stdout": "Result=success\nControlGroup=\nId=rebase359934-basedev-rehearsal-prep-20261106-02.service\nActiveState=inactive\nSubState=dead\n\nResult=success\nControlGroup=/user.slice/user-1000.slice/user@1000.service/app.slice/rebase359934-basedev-rehearsal-20261106-02.service\nId=rebase359934-basedev-rehearsal-20261106-02.service\nActiveState=inactive\nSubState=dead\n\nResult=success\nControlGroup=\nId=rebase359934-basedev-rehearsal-controller-20261106-02.service\nActiveState=inactive\nSubState=dead\n",
+    "stderr": ""
+  },
+  "mounts": {
+    "argv": [
+      "findmnt",
+      "-rn",
+      "-o",
+      "TARGET,SOURCE,FSTYPE"
+    ],
+    "rc": 0,
+    "filtered_stdout": "",
+    "filter": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/rehearsal/basedev/retry-02"
+  },
+  "process_cgroups": {
+    "method": "read /proc/[0-9]*/cgroup; match exact service names",
+    "matches": [],
+    "unreadable_or_exited": []
+  }
+}

@@ -952,3 +952,8 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 ## 2026-11-06：359934 基线上 sandbox 更新
 
 第三个提交仅整理说明为 7d5e28ca89ed68e3360765bc4e42234eaaabae27，tree 不变，前两个 a73a7da3/e08ed9ed 不变。指定 lease 推送成功，远端已核对；359934 和 357163 仍 NEW。证据与命令原文见 [69 §5](69_rebase_on_359934.md)。Base-Dev 演练问题待本轮第二项处理。
+
+
+## 2026-11-06：Base-Dev 演练审计闭合
+
+仅 basedev 副本同步 Toolchain 的 prep→build epoch 交接和演练资源报告修复，2 项新增测试 PASS。以 sandbox 7d5e28ca 在新 retry-02 根重跑一次，正常停于 CMake、未运行 Ninja；log-restarts=0，原始/复制日志 58,264 B 且逐字节相同，FLAGS 对 QB 1216410 完全一致、WARNING 0，资源报告已生成，无残留挂载/服务进程。此前失败记录不改，问题现已闭合，详见 [69 §6](69_rebase_on_359934.md)。未完整构建，未再推送 Gerrit。

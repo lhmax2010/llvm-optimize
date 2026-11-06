@@ -121,6 +121,12 @@ def materialize(D, plan):
 """
             assert needle in text
             text = text.replace(needle,needle+addition)
+        if name == 'run.py':
+            # Never copy the completed prep log into the next build's evidence.
+            # Snapshot before service launch; start the cursor only at new GBS epoch.
+            text = text.replace("def logs():\n global reason\n position=0;anchor=b''", "def logs():\n global reason\n position=0;anchor=b'';handoff=prep_log_epoch is None")
+            text = text.replace("  if p.exists():\n   with p.open('rb') as src:", "  if p.exists():\n   if not handoff:\n    if log_epoch(p)==prep_log_epoch:continue\n    handoff=True;append('log-source-handoff.jsonl',{'time_ns':time.time_ns(),'reason':'new GBS log epoch; prep bytes never copied'})\n   with p.open('rb') as src:")
+            text = text.replace("argv=['systemd-run','--user','--wait'", "def log_epoch(p):\n try:\n  with p.open('rb') as f:return (p.stat().st_ino,f.read(4096))\n except FileNotFoundError:return None\nprep_log_epoch=log_epoch(R/'.build.log')\nargv=['systemd-run','--user','--wait'")
         (D / name).write_text(text)
         compile(text, str(D / name), 'exec')
     # Use exactly 39's export invocation, substituting only commit/source/output.
@@ -279,7 +285,7 @@ def worker(D):
 
 
 def launch(selection):
-    assert selection in ('rehearsal', 'full'), 'use rehearsal or internal full'
+    assert selection in ('rehearsal', 'rehearsal-02', 'full'), 'use rehearsal or internal full'
     mode = 'rehearsal' if selection.startswith('rehearsal') else 'full'
     suffix = '-02' if selection == 'rehearsal-02' else ''
     identity = check_source()

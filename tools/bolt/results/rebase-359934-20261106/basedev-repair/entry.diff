@@ -1,0 +1,49 @@
+--- before/launcher.py
++++ after/launcher.py
+@@ -121,6 +121,12 @@
+ """
+             assert needle in text
+             text = text.replace(needle,needle+addition)
++        if name == 'run.py':
++            # Never copy the completed prep log into the next build's evidence.
++            # Snapshot before service launch; start the cursor only at new GBS epoch.
++            text = text.replace("def logs():\n global reason\n position=0;anchor=b''", "def logs():\n global reason\n position=0;anchor=b'';handoff=prep_log_epoch is None")
++            text = text.replace("  if p.exists():\n   with p.open('rb') as src:", "  if p.exists():\n   if not handoff:\n    if log_epoch(p)==prep_log_epoch:continue\n    handoff=True;append('log-source-handoff.jsonl',{'time_ns':time.time_ns(),'reason':'new GBS log epoch; prep bytes never copied'})\n   with p.open('rb') as src:")
++            text = text.replace("argv=['systemd-run','--user','--wait'", "def log_epoch(p):\n try:\n  with p.open('rb') as f:return (p.stat().st_ino,f.read(4096))\n except FileNotFoundError:return None\nprep_log_epoch=log_epoch(R/'.build.log')\nargv=['systemd-run','--user','--wait'")
+         (D / name).write_text(text)
+         compile(text, str(D / name), 'exec')
+     # Use exactly 39's export invocation, substituting only commit/source/output.
+@@ -279,7 +285,7 @@
+ 
+ 
+ def launch(selection):
+-    assert selection in ('rehearsal', 'full'), 'use rehearsal or internal full'
++    assert selection in ('rehearsal', 'rehearsal-02', 'full'), 'use rehearsal or internal full'
+     mode = 'rehearsal' if selection.startswith('rehearsal') else 'full'
+     suffix = '-02' if selection == 'rehearsal-02' else ''
+     identity = check_source()
+--- before/resource_report.py
++++ after/resource_report.py
+@@ -40,7 +40,11 @@
+ def report(D,output=None):
+  from log_support import canonical_log,log_summary
+  E=D/'evidence';O=output or E;rs=rows(E/'resources.jsonl');du=rows(E/'du-root.jsonl');bolt=rows(E/'bolt-process.jsonl')
+- source=log_summary(canonical_log(D));assert source['epoch_zero'] is not None,'GBS wall-clock origin missing'
++ # A rehearsal intentionally has no successful package log. Only this mode
++ # reads GBS .build.log; full validation still requires canonical_log().
++ plan=read(D/'plan.json',{})
++ original=D/'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/.build.log' if plan.get('mode')=='rehearsal' else canonical_log(D)
++ source=log_summary(original);assert source['epoch_zero'] is not None,'GBS wall-clock origin missing'
+  epoch=source['epoch_zero'];last=int((epoch+source['last_seconds'])*1e9)
+  peak=number(read(E/'build-result.json',{}).get('stats',{}).get('memory.peak'))
+  starts={};ends={}
+--- before/launch.sh
++++ after/launch.sh
+@@ -5,6 +5,6 @@
+ shift
+ case "$1" in
+  night) [ "$#" -eq 1 ] || exit 2; exec python3 -B "$(dirname "$0")/night.py" ;;
+- rehearsal) [ "$#" -eq 2 ] || exit 2; case "$2" in toolchain|basedev) FINAL_PROJECT=$2; export FINAL_PROJECT ;; *) exit 2 ;; esac; exec python3 -B "$(dirname "$0")/launcher.py" rehearsal ;;
++ rehearsal|rehearsal-02) [ "$#" -eq 2 ] || exit 2; case "$2" in toolchain|basedev) FINAL_PROJECT=$2; export FINAL_PROJECT ;; *) exit 2 ;; esac; exec python3 -B "$(dirname "$0")/launcher.py" "$1" ;;
+  *) exit 2 ;;
+ esac

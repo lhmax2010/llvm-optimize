@@ -40,7 +40,11 @@ def critical_stop(D,audit=None):
 def report(D,output=None):
  from log_support import canonical_log,log_summary
  E=D/'evidence';O=output or E;rs=rows(E/'resources.jsonl');du=rows(E/'du-root.jsonl');bolt=rows(E/'bolt-process.jsonl')
- source=log_summary(canonical_log(D));assert source['epoch_zero'] is not None,'GBS wall-clock origin missing'
+ # A rehearsal intentionally has no successful package log. Only this mode
+ # reads GBS .build.log; full validation still requires canonical_log().
+ plan=read(D/'plan.json',{})
+ original=D/'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/.build.log' if plan.get('mode')=='rehearsal' else canonical_log(D)
+ source=log_summary(original);assert source['epoch_zero'] is not None,'GBS wall-clock origin missing'
  epoch=source['epoch_zero'];last=int((epoch+source['last_seconds'])*1e9)
  peak=number(read(E/'build-result.json',{}).get('stats',{}).get('memory.peak'))
  starts={};ends={}
