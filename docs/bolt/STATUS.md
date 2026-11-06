@@ -931,3 +931,7 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 - 132/132 调试文件检查完成：严格文本 0 PASS、132 DIFFERENT、0 UNKNOWN；全部其他节及节数量/名称/顺序相同。差异为 176,482 个行表编码长度字段，以及 8 个文件的 19 处 DW_AT_comp_dir 重复斜杠。88,987 个行表单元证明路径增长精确解释长度变化，行号程序字节相同；未擅自扩展归一化规则。
 - 无 OOM/超时；历史根只读。改接停止的原因及未执行的检查/演练仍见 68 号，未创建新的 LLVM 分支或提交，未推送 Gerrit。
 - 证据与逐文件清单：[67_tu_inputs_and_dwarf_check.md](67_tu_inputs_and_dwarf_check.md)。
+
+## 2026-11-06：设计文档放置
+
+- 下载文件已移动到 W/docs/bolt/design/tizen_llvm_speed_design_v1.md，并同步发布本分支同路径；SHA256 4374885a18743c8894323cac822f101bfccaf48bdf68eb02c8bf95aa03437ec0。
