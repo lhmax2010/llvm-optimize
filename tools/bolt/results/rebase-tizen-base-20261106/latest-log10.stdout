@@ -1,0 +1,241 @@
+commit f999bd406c0a70fe8107aa992164fe6945c5d46a
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Fri Oct 16 11:03:12 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Fri Oct 16 11:13:11 2026 +0900
+
+    Revert clang bootstrap + ThinLTO, fall back to GCC
+    
+    The clang bootstrap + ThinLTO optimization (7e4dc62) caused severe build
+    time regression on x86_64 because -fno-inline-functions from project.conf
+    disables all function inlining in clang, unlike GCC.
+    
+    Revert to the original GCC-based build by undoing:
+    - 7e4dc62d8ac0 (optimize llvm performance: clang, -O3, ThinLTO)
+    - cb67996861d0 (remove -fno-inline-functions)
+    - 67619ec8bbba (fix llvm-static-devel with ThinLTO: native archive conversion)
+    
+    Change-Id: Ib6ff9acd34c042b88ba6f74ee7d29950d1107c0d
+
+commit 67619ec8bbbac7238a6cfc33a481ccfbcd12206f
+Author:     FatTank <hao.lin@samsung.com>
+AuthorDate: Fri Oct 9 16:58:36 2026 +0800
+Commit:     FatTank <hao.lin@samsung.com>
+CommitDate: Fri Oct 9 17:49:19 2026 +0800
+
+    packaging: fix llvm-static-devel with ThinLTO
+    
+    ThinLTO leaves LLVM bitcode in the static archives. The GNU strip invoked
+    by brp-strip-static-archive does not understand these members but can
+    return success while dropping or truncating the archive symbol index.
+    Even with an intact index, GNU ld without LTO or an LLVM plugin cannot
+    link bitcode members.
+    
+    At the end of %install, convert bitcode members to native objects using
+    an explicitly certified backend policy, then rebuild deterministic GNU
+    archives and their indexes. Preserve existing native members, original
+    member order and duplicate member names. Leave the standard RPM
+    post-processing unchanged; the final archives contain no DWARF after
+    standard strip processing.
+    
+    Apply the conversion only on x86_64, to all installed archives containing
+    bitcode, including libarcher_static.a from libomp-devel (also owned by
+    llvm-static-devel). Leave armv7l and aarch64 for separate certification.
+    Tool compilation and linkage are unchanged.
+    
+    The x86_64 host tools also cross-compile ARM packages through accel,
+    which extracts tools rather than static archives. Consumers of the
+    x86_64 static-devel archives build x86_64 targets.
+    
+    Fail closed on unclassified original compiler options, an uncertified
+    LLVM major version or incompatible IR metadata. Such changes require
+    option-policy review and recertification; this is not generic option
+    replay.
+    
+    This fix targets LLVM recipes using -O3 and ThinLTO. A recipe without
+    ThinLTO is a no-op (NATIVE_ARCHIVES_SKIP) when its installed archives are
+    already native. When ThinLTO is enabled, the original compiler options
+    must match the certified policy or %install fails pending recertification.
+    
+    Validation used the certified LLVM 22 x86_64 recipe: one full build plus
+    incremental continuation, with build/compile/link concurrency 6/6/2 and
+    debuginfo -j4. All 225 development archives contain native objects and
+    complete symbol indexes. All 45 compiler-rt archives retain identical
+    member ELF bytes and index mappings; only ar header timestamps differ.
+    Non-archive files, including clang, lld and llvm-ar, are byte-identical
+    to the pre-fix baseline. A fresh independent %install reconverts and
+    passes; rerunning the converter on that same tree reports SKIP.
+    
+    Host and Tizen consumer tests pass with plugin-free GNU ld without LTO
+    and with lld. They exercise LLVM IR parsing and the O2 pass pipeline,
+    in-process lld ELF linking, and, on the host, shared-library loading and
+    section garbage collection. Tizen tests use the same 113 installed
+    package versions as the earlier validated environment; 107 Base RPMs
+    were recovered from its cache and checked against archived repository
+    checksums.
+    
+    Change-Id: Id4eb147e7ec4764d58a81110cf7bf57d21b64ac8
+    Signed-off-by: FatTank <hao.lin@samsung.com>
+
+commit cb67996861d070d68fec2b4c623eed7d20ba2e23
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Wed Sep 30 16:41:10 2026 +0800
+Commit:     fangyu fangyu.he <fangyu.he@samsung.com>
+CommitDate: Wed Sep 30 08:40:39 2026 +0000
+
+    remove '-fno-inline-functions' compile options
+    
+    `-fno-inline-functions` is a compilation option intended for GCC in the project conf of tizen-base-dev.
+    LLVM recognizes this option, but its handling is completely different from GCC's.
+    This causes projects built with LLVM to have no function inlining at all, severely degrading the performance of the resulting binaries.
+    This is the reason why the LLVM build time on the x86_64 architecture was excessively long.(https://quickbuild.tizen.org/build/1182759)
+    
+    verify:
+    https://quickbuild.tizen.org/build/1186390
+    
+    Change-Id: Idd7d3139708f3bc65b9ce7e9edf24156159ee54c
+
+commit 7e4dc62d8ac01f90488a0cc8e0f34f8373228c84
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Thu Sep 24 12:55:12 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Thu Sep 24 13:17:19 2026 +0800
+
+    optimize llvm performance
+    1. Use -O3
+    2. Using thin-lto
+    3. Static link libllvm
+    
+    Change-Id: Idcd75c5d5a57368aeae1081f0664be042c2ee707
+
+commit 2d23367d74afbf2bb1e9e4013fce072b3a154109
+Author:     He Fangyu <fangyu.he@samsung.com>
+AuthorDate: Wed Sep 2 18:07:18 2026 +0800
+Commit:     He Fangyu <fangyu.he@samsung.com>
+CommitDate: Wed Sep 2 18:12:46 2026 +0800
+
+    packaging: select Clang explicitly for libc++ runtimes
+    
+    Select the target-prefixed Clang drivers directly in the libc++ runtimes
+    CMake configuration.  The previous package-local _toolchain_override did
+    not affect the RPM compiler macros in the Tizen-Base build environment, so
+    GCC was still selected and rejected the Clang-only --rtlib=libgcc option.
+    
+    When an aarch64 GCC-default environment invokes this Clang-only package,
+    normalize only the GCC-specific composite -mtune value to cortex-a53.  This
+    matches the value already supplied by the LLVM project configuration; all
+    other environment flags remain unchanged.
+    
+    The resulting spec was built in the armv7l and aarch64 GCC-default and LLVM
+    environments.  All four builds used Clang 22.1.8, completed successfully,
+    linked libc++ and libc++abi against libgcc_s.so.1, and installed the five
+    checked forced-unwind header changes.
+    
+    Change-Id: Id2ae25c37e9319e2303bbd527fe695cb22ee95cd
+    Signed-off-by: He Fangyu <fangyu.he@samsung.com>
+
+commit 6771dbc48b7e3db2ec53919a8eebd3514374137b
+Author:     lhmax2025 <hao.lin@samsung.com>
+AuthorDate: Tue Sep 1 16:15:34 2026 +0900
+Commit:     Lin Hao <hao.lin@samsung.com>
+CommitDate: Tue Sep 1 13:24:35 2026 +0000
+
+    libcxx: backport EH ABI forced-unwind handling
+    
+    Squash the changes from sandbox/lhmax2025/libcxx-ehabi-backport:
+    
+    - packaging: add libc++ runtimes spec
+    - libc++abi: preserve foreign forced-unwind state
+    - libc++abi: expose GNU forced-unwind marker type
+    - libcxx: preserve forced unwind in consumer-instantiated handlers
+    - libcxx: preserve forced unwind in library-delivered handlers
+    
+    Change-Id: I0dfaf3ae6c88db033f1aff9167d64ffa211cdf2e
+    Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+
+commit 8dfebafe1a477b3dcc678ee4cb18a3a4306d5a7c
+Author:     Khem Raj <khem.raj@oss.qualcomm.com>
+AuthorDate: Mon Apr 27 00:35:24 2026 -0700
+Commit:     liushanshan <ss0217.liu@samsung.com>
+CommitDate: Fri Aug 7 12:42:05 2026 +0800
+
+    libcxxabi: declare __gnu_unwind_frame in cxa_personality (#189787)
+    
+    ARM EHABI builds of libcxxabi fail with clang-22+ because
+    cxa_personality.cpp calls __gnu_unwind_frame without a visible
+    declaration, triggering:
+    
+      error: use of undeclared identifier '__gnu_unwind_frame'
+    
+    Add an extern "C" forward declaration before the EHABI unwind helper so
+    the source compiles correctly.
+    Change-Id: Ib28e3abd3650821a8ad839c73358b47dedced448
+    Signed-off-by: Khem Raj <khem.raj@oss.qualcomm.com>
+    GitOrigin-RevId: 8119f1854948b50358bbfaea08f207f51970f06c
+    Source: https://llvm.googlesource.com/llvm-project/libcxxabi/+/9ec73b8fbfe9ce60ecfd08b6dd692cf9d7a10eec
+
+commit fd7a4929c0e424d564cdd1f0c55af9153dcea321
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Tue Jul 7 10:27:53 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Wed Jul 22 21:31:32 2026 +0900
+
+    Merge MLGO AOT compilation support and optimization improvements
+    
+    This squash merge integrates the sandbox/lhmax2025/mlgo branch with:
+    
+    - MLGO AOT (Ahead-of-Time) compilation support for LLVM regalloc models
+      * Support for ARM (armv7l) and AArch64 architectures
+      * Pre-compiled MLGO models included (mlgo_arm_model, mlgo_aarch_model, mlgo_x86_model)
+      * TensorFlow AOT compiler integration via TensorFlowCompile.cmake
+    
+    - Build system enhancements
+      * Refactored packaging with project_config-driven mlgo bcond
+      * XLA runtime support (pre-compiled .o files)
+      * BCC compilation issue fixes
+      * Architecture-specific optimizations
+    
+    - Configuration updates
+      * Updated llvm.spec with MLGO AOT targets and xla_runtime artifacts
+      * Enhanced CMakeLists.txt for MLGO AOT compilation workflow
+      * TENSORFLOW_AOT_COMPILER path configuration for Tizen package layout
+    
+    This enables machine learning-guided code generation in LLVM builds while reducing
+    external dependency requirements by using pre-compiled models.
+    
+    Note: Documentation from sandbox/lhmax2025/mlgo excluded from this merge.
+    
+    Change-Id: Ibe498ca241e7f5b30c29a4073c8edc8ee7165665
+    Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+    Signed-off-by: fangyu.he <fangyu.he@samsung.com>
+    Signed-off-by: lhmax2025 <hao.lin@samsung.com>
+
+commit 9ad40bd946a75b44d8e05de8ba3263a5ce2ed885
+Author:     Konstantin Baladurin <k.baladurin@samsung.com>
+AuthorDate: Mon Apr 15 20:36:54 2019 +0300
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Wed Jul 22 21:31:29 2026 +0900
+
+    clang: add support for LLVM gold plugin in case of accelerated
+    environment
+    
+    Change-Id: I5e29abefacef0f25e44cf4d3f030a8ba762586d2
+
+commit 9576175b59fa577c940eff1712a59b129ae03f03
+Author:     Pavel Kudrevatykh <p.kudrevatyh@partner.samsung.com>
+AuthorDate: Mon Aug 18 19:07:40 2025 +0300
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Wed Jul 22 21:31:22 2026 +0900
+
+    Fix armv7l build when compiler is clang
+    
+    By default, compiler_rt for armv7l is built with flag -mfloat-abi=soft.
+    In prjconfig we specify flag -mfloat-abi=softfp.
+    For gcc this doesn't cause problems, but for clang it causes error "no fp registers".
+    Also, libraries of compiler_rt are built for arm and armv4t, which is redundant.
+    
+    Change arch and flags for arm.
+    Define correctly CMAKE_ASM_FLAGS.
+    
+    Change-Id: Ic3dd8c37054a106262171d6a82fe00911ef45245
+    (cherry picked from commit 9b5cb26fefe3e6ec60be09d298f388ea5f75595e)

@@ -1,0 +1,45 @@
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index 218b95e098c5..1b1f759ffe70 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -213,6 +213,8 @@ def classify_options(argv, arch='x86_64'):
+         elif token in operand_options:
+             if index+1 == len(argv) or argv[index+1].startswith('-'):
+                 raise ValueError('missing operand for '+token)
++            if token == '--param' and not re.fullmatch(r'ssp-buffer-size=\d+', argv[index+1]):
++                raise ValueError('unclassified --param value: '+argv[index+1])
+             category, reason = 'irrelevant', 'preprocessing, driver resource, output or language operand'
+             rows.append(dict(index=index, token=token, category=category, reason=reason))
+             index += 1
+@@ -243,7 +245,9 @@ def classify_options(argv, arch='x86_64'):
+             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
+         elif token == '-flto=thin':
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+-        elif (token.startswith(('-W', '-D', '-I', '--target=', '--param=', '-fmessage-length=',
++        elif re.fullmatch(r'--param=ssp-buffer-size=\d+', token):
++            category, reason = 'ir', 'stack-protector-buffer-size function attribute already in the IR'
++        elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
+                                '-fdiagnostics-color=')) or token in
+               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+                '-pedantic', '-pipe', '-c', '-MD', '--driver-mode=g++')):
+@@ -256,8 +260,9 @@ def classify_options(argv, arch='x86_64'):
+         index += 1
+     if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
+         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
+-    if dwarfs and dwarfs[-1] != '-gdwarf-4':
+-        raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:]))
++    has_debug_options = any(token.startswith('-g') for token in argv)
++    if has_debug_options and (not dwarfs or dwarfs[-1] != '-gdwarf-4'):
++        raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
+     effective = {}
+     for key, values in switches.items():
+         effective[key] = values[-1] if values else DEFAULTS.get(key, False)
+@@ -660,6 +665,8 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                 text_ir.unlink()
+                 record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
+                 data = target.read_bytes()
++                if settings['policy']['dwarf'] is None and elf_details(data)[1]:
++                    raise ValueError('release conversion unexpectedly emitted debug sections')
+                 relocs = pic_relocations(data)
+                 atomic_json(source.parent/'relocations.json', relocs)
+                 if settings['pic_level'] and relocs['forbidden']:

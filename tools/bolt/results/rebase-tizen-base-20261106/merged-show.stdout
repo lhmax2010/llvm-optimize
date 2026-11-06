@@ -1,0 +1,38 @@
+commit 13c3e223d9e1b35e4affb55255c5042f8c940f35
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Mon Nov 2 22:22:34 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Wed Nov 4 20:59:48 2026 +0900
+
+    packaging: classify -feliminate-unused-debug-types and mirror recorded backend policy
+    
+    The x86_64 native-archive-conversion step rejects unknown tokens recorded in
+    the IR llvm.commandline metadata. Tizen's default CFLAGS inject
+    -feliminate-unused-debug-types and --param, which the classifier did not
+    know. Also, profiles without -gdwarf-4 or -ffunction-sections in CFLAGS
+    (release builds strip them) failed the certified sanity checks even after
+    classification.
+    
+    - classify -feliminate-unused-debug-types as frontend semantics (debug-type
+      emission is already materialized in the input IR)
+    - restrict --param / --param= to ssp-buffer-size=N: Clang drops every other
+      --param (LLVM 22 RenderSSPOptions), so the operand must match or the
+      conversion fails closed
+    - derive the replay backend policy from the recorded command instead of a
+      fixed flag set: -f/-fno- per section switch, and -g -gdwarf-4 only when
+      the original command recorded debug options
+    - keep unique-section-names/addrsig certification; fail closed when any -g
+      debug option is recorded without a trailing -gdwarf-4, and when a
+      conversion replaying no debug option still emits debug sections
+    
+    Toolchain-profile replay flags are byte-identical to the previous policy;
+    Dev-profile (no debug, no section flags) now replays faithfully.
+    
+    Fixes QuickBuild 1214821 (x86_64 %install failure:
+    ValueError: unclassified original command token: -feliminate-unused-debug-types).
+    
+    Co-Authored-By: Cline SR
+    Change-Id: I1c0d0bcccb1dc3c64efbb635e3e6f3de6748209e
+
+ packaging/llvm-static-archives-native.py | 32 +++++++++++++++++++++++++-------
+ 1 file changed, 25 insertions(+), 7 deletions(-)
