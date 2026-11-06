@@ -957,3 +957,8 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 ## 2026-11-06：Base-Dev 演练审计闭合
 
 仅 basedev 副本同步 Toolchain 的 prep→build epoch 交接和演练资源报告修复，2 项新增测试 PASS。以 sandbox 7d5e28ca 在新 retry-02 根重跑一次，正常停于 CMake、未运行 Ninja；log-restarts=0，原始/复制日志 58,264 B 且逐字节相同，FLAGS 对 QB 1216410 完全一致、WARNING 0，资源报告已生成，无残留挂载/服务进程。此前失败记录不改，问题现已闭合，详见 [69 §6](69_rebase_on_359934.md)。未完整构建，未再推送 Gerrit。
+
+
+## 2026-11-06：设计 v2 与改接评审材料
+
+设计 v2 从 /home/linhao/Downloads 移至 W/docs/bolt/design/ 并同步发布，v1 不变；v2 40994 B，SHA256 32b86b912acef9c4c9ccc39b5733d8d1520cbde78c866463adedbf1b42291989。补齐 [改接评审包](../../patches/rebase-359934-20261106/README.md)：最终 9 份文本（spec/helper/转换器/6 份 CMake）、转换器对 PS10 完整 diff、排除 profile 的 BOLT 文本补丁和 SHA256SUMS。源码及原三个完整补丁未改，本次未推送 Gerrit/sandbox。
