@@ -939,3 +939,7 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 ## 2026-11-06：359934 PS10 改接
 
 见 [69](69_rebase_on_359934.md)。基线 13c3e223（NEW）；新链 a73a7da3 → e08ed9ed → a3d18c2d。7706/7706 重放完全相同，46+5 回归及真实 C-2 正反例通过。T 演练通过；D 到达 CMake 且参数正确，但 log-restarts=1 和收尾日志要求使审计未通过，保留现场、不重试。未完整构建、未推送 Gerrit。
+
+## 2026-11-06：67 §8 候选规则复验，待 comp_dir 裁决
+
+[67 §8](67_tu_inputs_and_dwarf_check.md#8-规则更新与复验2026-11-06规则发布待裁决)：8 项候选测试通过；按“先前缀归一化，再约束剩余斜杠差异”的候选解释，132 对 .debug 和 132 个 debuglink 通过，21/23 包通过；源码包权限/spec、debugsource release 路径仍 FAIL。指定正例 libRemarks 的原始 comp_dir 长度为 41/43 字节，与全部原始值等长的字面规则冲突，已询问用户。候选代码保存在结果目录 proposed/，现用 tracked 入口已恢复；正式规则待裁决，未重建、未重跑 TU。

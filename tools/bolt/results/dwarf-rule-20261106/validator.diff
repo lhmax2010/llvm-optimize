@@ -1,0 +1,154 @@
+diff --git a/tools/bolt/night-launch-20261103/validate.py b/tools/bolt/night-launch-20261103/validate.py
+index 557e0046..ba308569 100644
+--- a/tools/bolt/night-launch-20261103/validate.py
++++ b/tools/bolt/night-launch-20261103/validate.py
+@@ -10,6 +10,29 @@ B=W.parent/'llvm-optimize-bolt';T=Path(__file__).parent
+ CERT=W/'temp/debuglink-20261028/full-20261030'
+ SOURCE=W/'temp/review-20261102/source'
+ 
++
++# Local-only doc67 release-path rule shared by both validation entries.
++def debug_pair_proof(a,b):
++ import sys
++ shared=B/'tools/bolt/night-launch-20261105'
++ if str(shared) not in sys.path:sys.path.insert(0,str(shared))
++ from dwarf_release import debug_pair
++ return debug_pair(a,b)
++
++_original_file_proof=file_proof
++def file_proof(a,b):
++ if str(a).endswith('.debug') and str(b).endswith('.debug'):
++  return debug_pair_proof(a,b)
++ return _original_file_proof(a,b)
++
++
++def debuglink_proof(a,b,da,db):
++ import sys
++ shared=B/'tools/bolt/night-launch-20261105'
++ if str(shared) not in sys.path:sys.path.insert(0,str(shared))
++ from compare_rules import debuglink_proof as shared_proof
++ return shared_proof(a,b,da,db)
++
+ def rootpaths(D):
+  R=D/'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0';BUILD=R/'home/abuild/rpmbuild/BUILD/llvm-22.1.8/build';return R,BUILD,BUILD/'clang-bolt'
+ 
+diff --git a/tools/bolt/night-launch-20261105/compare_packages.py b/tools/bolt/night-launch-20261105/compare_packages.py
+index 31e51605..55cd6943 100644
+--- a/tools/bolt/night-launch-20261105/compare_packages.py
++++ b/tools/bolt/night-launch-20261105/compare_packages.py
+@@ -1,12 +1,15 @@
+ """QB/local comparison. Only new scratch/output writes; reuse verified BUILDROOT files."""
+ from pathlib import Path
+-import sys,json,subprocess,stat,hashlib,datetime,traceback,tarfile,difflib
++import sys,json,subprocess,stat,hashlib,datetime,traceback,tarfile,difflib,os,signal
+ from compare_rules import file_proof,debuglink_name,debuglink_proof
+ B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');W=B.parent/'llvm-optimize'
+ # imports are from this launcher directory
+ from rpm_io import manifest
+ from rpm_extract import extract_selected
+ E=Path(sys.argv[1]);P=E/'payload';P.mkdir(exist_ok=False)
++REUSE=Path(os.environ['QB_COMPARE_READONLY_PAYLOAD']) if os.environ.get('QB_COMPARE_READONLY_PAYLOAD') else None
++if REUSE:assert REUSE.is_dir()
++def expire(signum,frame):raise TimeoutError('single-file comparison exceeded 30 minutes')
+ def save(p,x):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(x,indent=2,ensure_ascii=False)+'\n')
+ def sha(p):
+  with Path(p).open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+@@ -39,12 +42,16 @@ try:
+   for key,mm in m.items():
+    for side,other in [('old','new'),('new','old')]:
+     names={n for n,v in mm[side].items() if stat.S_ISREG(v['mode']) and (n not in mm[other] or v['sha256']!=mm[other][n]['sha256'])}
++    if REUSE:names={n for n in names if not (REUSE/label/key.replace('\t','-')/side/n).is_file()}
+     if names:extract_selected(paths[key][side],names,P/label/key.replace('\t','-')/side)
+   cache={}
+   def getfile(side,key,name):
+    ident=(side,key,name)
+    if ident in cache:return cache[ident]
+    row=m[key][side][name];expected=row['sha256'];target=P/label/key.replace('\t','-')/side/name
++   if REUSE:
++    reused=REUSE/label/key.replace('\t','-')/side/name
++    if reused.is_file() and not reused.is_symlink():assert sha(reused)==expected,('readonly payload SHA mismatch',str(reused));cache[ident]=reused;return reused
+    if target.is_file() and not target.is_symlink():assert sha(target)==expected;cache[ident]=target;return target
+    native=(roots[0]/name) if roots else P/'nonexistent-root-file'
+    if native.is_file() and not native.is_symlink() and sha(native)==expected:
+@@ -66,6 +73,7 @@ try:
+     same=all(a.get(k)==b.get(k) for k in ('mode','uid','gid','target','bytes','sha256'))
+     if same:continue
+     proof={};x=y=None
++    previous=signal.signal(signal.SIGALRM,expire);signal.setitimer(signal.ITIMER_REAL,1800)
+     try:
+      assert all(a.get(k)==b.get(k) for k in ('mode','uid','gid','target')),'payload permission/owner/type/link changed'
+      x=getfile('old',key,name);y=getfile('new',key,name);filemap.append({'project':label,'package':key,'path':name,'old':str(x),'new':str(y),'old_sha':a['sha256'],'new_sha':b['sha256']})
+@@ -73,10 +81,13 @@ try:
+      if dl:proof=debuglink_proof(x,y,symbol('old',name,dl),symbol('new',name,debuglink_name(y)))
+      elif key.endswith('\tsrc') and tarfile.is_tarfile(x) and tarfile.is_tarfile(y):proof=source_archive(x,y)
+      else:proof=file_proof(x,y)
++    except MemoryError:raise
++    except TimeoutError as ex:proof={'classification':'UNKNOWN','error':str(ex)}
+     except Exception as ex:proof={'classification':'FAIL','error':str(ex)}
++    finally:signal.setitimer(signal.ITIMER_REAL,0);signal.signal(signal.SIGALRM,previous)
+     diffs.append({'path':name,'old_sha':a['sha256'],'new_sha':b['sha256'],**proof})
+     print('FILE',label,key,name,proof['classification'],flush=True)
+-   r={'project':label,'package':key,'PASS':not added and not removed and all(v['classification']!='FAIL' for v in diffs),'metadata_old':oldmeta,'metadata_new':newmeta,'file_count':len(aa),'added':added,'removed':removed,'content_changes':diffs,'payload_mtime_changes':mt}
++   r={'project':label,'package':key,'PASS':not added and not removed and all(v['classification'] not in ('FAIL','UNKNOWN') for v in diffs),'metadata_old':oldmeta,'metadata_new':newmeta,'file_count':len(aa),'added':added,'removed':removed,'content_changes':diffs,'payload_mtime_changes':mt}
+    summary.append(r);save(E/'qb-rpm-comparison.json',summary);save(E/'qb-changed-file-paths.json',filemap);print('PACKAGE',label,key,r['PASS'],flush=True)
+  save(E/'item2-result.json',{'status':'ok' if all(r['PASS'] for r in summary) else 'differences','packages':len(summary),'passed':sum(r['PASS'] for r in summary),'failed':sum(not r['PASS'] for r in summary)})
+ except BaseException as ex:
+diff --git a/tools/bolt/night-launch-20261105/compare_rules.py b/tools/bolt/night-launch-20261105/compare_rules.py
+index 5aa50c82..d4f3b6ea 100644
+--- a/tools/bolt/night-launch-20261105/compare_rules.py
++++ b/tools/bolt/night-launch-20261105/compare_rules.py
+@@ -17,6 +17,12 @@ def debuglink_name(p):
+    except AssertionError as e:error=str(e);e.__traceback__=None
+   if error and error!='debuglink count != 1':raise AssertionError(error)
+   return info['filename'] if info else None
++_strict_file_proof=file_proof
++def file_proof(a,b):
++ if str(a).endswith('.debug') and str(b).endswith('.debug'):
++  from validation_common import debug_pair_proof
++  return debug_pair_proof(a,b)
++ return _strict_file_proof(a,b)
+ def debuglink_proof(a,b,da,db):
+  symbol_proof=file_proof(da,db)
+  with Path(a).open('rb') as fa,Path(b).open('rb') as fb:
+@@ -28,6 +34,7 @@ def debuglink_proof(a,b,da,db):
+     at=x['offset']+x['size']-4;bt=y['offset']+y['size']-4;ma[at:at+4]=b'\0'*4;mb[bt:bt+4]=b'\0'*4
+     proof=elf_proof(ma,mb)
+     answer={'classification':'verified-debuglink-crc-and-record-sections','old_crc':x['crc32'],'new_crc':y['crc32'],'filename':x['filename'],'old_crc_offset':at,'new_crc_offset':bt,'symbol_proof':symbol_proof,'binary_proof':proof}
++   except MemoryError:raise
+    except Exception as e:error=str(e);e.__traceback__=None
+   if error:raise AssertionError(error)
+  return answer
+diff --git a/tools/bolt/night-launch-20261105/validation_common.py b/tools/bolt/night-launch-20261105/validation_common.py
+index 557e0046..ba308569 100644
+--- a/tools/bolt/night-launch-20261105/validation_common.py
++++ b/tools/bolt/night-launch-20261105/validation_common.py
+@@ -10,6 +10,29 @@ B=W.parent/'llvm-optimize-bolt';T=Path(__file__).parent
+ CERT=W/'temp/debuglink-20261028/full-20261030'
+ SOURCE=W/'temp/review-20261102/source'
+ 
++
++# Local-only doc67 release-path rule shared by both validation entries.
++def debug_pair_proof(a,b):
++ import sys
++ shared=B/'tools/bolt/night-launch-20261105'
++ if str(shared) not in sys.path:sys.path.insert(0,str(shared))
++ from dwarf_release import debug_pair
++ return debug_pair(a,b)
++
++_original_file_proof=file_proof
++def file_proof(a,b):
++ if str(a).endswith('.debug') and str(b).endswith('.debug'):
++  return debug_pair_proof(a,b)
++ return _original_file_proof(a,b)
++
++
++def debuglink_proof(a,b,da,db):
++ import sys
++ shared=B/'tools/bolt/night-launch-20261105'
++ if str(shared) not in sys.path:sys.path.insert(0,str(shared))
++ from compare_rules import debuglink_proof as shared_proof
++ return shared_proof(a,b,da,db)
++
+ def rootpaths(D):
+  R=D/'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0';BUILD=R/'home/abuild/rpmbuild/BUILD/llvm-22.1.8/build';return R,BUILD,BUILD/'clang-bolt'
+ 
