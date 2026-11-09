@@ -1,8 +1,8 @@
-# 第三轮代码评审修复材料（测试通过；Base-Dev 演练未启动）
+# 第三轮代码评审修复材料（轻量检查与两次演练通过）
 
-**未推送 sandbox，尚不具备推送条件。** 修正平台 post 输入后，第二步已全部重跑通过：472 项单元测试、真实 C-2 两项、7706 条重放参数、450 个实物静态归档、12 项展开、5 项解析。Toolchain 演练通过；Base-Dev 调用漏传最后的 basedev 参数，入口返回 2，未启动服务或创建新根。按停止条件未重试。详见 [72 §7](../../docs/bolt/72_third_code_review_fixes.md)。
+全部轻量检查及 Toolchain/Base-Dev 演练通过。三个源码提交和 tree 不变；本轮不完整构建。先发布本材料，再按 c7fd5eed 的显式 lease 推送 sandbox。推送与状态查询结果将补入 [72 号](../../docs/bolt/72_third_code_review_fixes.md)。
 
-BOLT 评审请读 [0002-text-only.patch](0002-text-only.patch)。它只排除 profile 二进制；完整可应用补丁为 0002.patch。旧 r3 包保留不动。
+BOLT 评审请读 [0002-text-only.patch](0002-text-only.patch)，它仅排除 profile 二进制；完整可应用补丁见 0002.patch。
 
 ## 基线与三个本地提交
 
@@ -55,15 +55,13 @@ Source1200：packaging/clang-bolt-v2.fdata.xz，9735212 字节，SHA256 52fd8522
 
 ## 证据与验证边界
 
-本次重跑证据位于 [resume/](../../tools/bolt/results/third-code-review-20261109/resume/)，旧失败原文保留。准备脚本只改平台 post 宏的显式展开，夹具仍严格要求 5 个可选调用。
+- 472 项单元测试、真实 release C-2 #5/#6 两项通过。
+- 两配置完整展开 12 项、Tizen RPM 解析 5 项通过。
+- T/D 各 3853 条重放参数与 c7fd5eed 逐项相同，共 7706。
+- 两套 QB 各 225 个归档、3864 个成员、3763631 条受检重定位通过；总计 450 个归档、7728 个成员、7527262 条受检重定位。
+- Toolchain/Base-Dev 都停在真实 CMake 入口，未运行 Ninja；log-restarts=0，FLAGS 与 QB 1221204/1221207 逐字相同，WARNING=0，资源报告正常，无残留挂载及构建进程。
+- Base-Dev 本次补跑的日志和副本均为 58297 字节；上次漏传项目参数的失败记录保留，本次使用正确完整 argv，新建此前不存在的 retry-02 根。
 
-- helper 393、70 号 12、cli 2、转换器回归 46、50 号 5、新增 ar/PIC/取消/工具目录/bolt_step/trailer 14，共 472 项单元测试 PASS。
-- 真实 release C-2 #5/#6 两项 PASS。
-- 两配置完整展开 12 项、Tizen RPM 五项解析 PASS。ARM/off 相同，x86 on 只差 bolt_checked。
-- T/D 各 3853 条重放参数与 c7fd5eed 全同。两个 QB 各 225 个归档、3864 个成员、3763631 条受检重定位，全部通过。
-- Toolchain 停在 CMake，未跑 Ninja；log-restarts=0，FLAGS 与 QB 1221204 全同，WARNING=0，资源报告与清理检查通过。
-- Base-Dev 调用缺项目参数，返回 2；本次没有真实 D 演练结果，sandbox 步骤未执行。
+[72 §7–8](../../docs/bolt/72_third_code_review_fixes.md) 给出原文和审计，[resume/](../../tools/bolt/results/third-code-review-20261109/resume/) 保存全部测试，[basedev-finish/](../../tools/bolt/results/third-code-review-20261109/resume/basedev-finish/) 保存本次补跑。
 
-重放参数一致与既有归档检查通过不代表新版本整包一致。本轮没有全量重新转换 7706 个成员或完整构建。三个源码提交和 tree 与本包初次导出完全相同，完整补丁/files 未改；README、provenance 和 SHA256SUMS 已刷新。
-
-[72 号](../../docs/bolt/72_third_code_review_fixes.md) 给出全部结果与停止原因；背景为 48、51、69、70、71 号。359934/357163 的 NEW、359934 PS10 为上述历史查询，本次因第三步停止未复查。
+重放参数一致与既有实物门禁通过不代表新版本整包一致；本轮没有全量重新转换全部成员或完整构建。源码、完整补丁、files 和 Source1200 身份不变。先前失败不抹去，当前结论以本节及 72 号最终章节为准。

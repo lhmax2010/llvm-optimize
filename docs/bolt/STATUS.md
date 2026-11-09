@@ -997,3 +997,7 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 [72 §7](72_third_code_review_fixes.md) 与 r4 已更新。源码链 a65688b1 / 22f1c9fd / fa4f9978 及 tree 不变。显式展开平台 post 后五调用齐全；全量重跑 472 单元测试、真实 C-2 两项、7706 重放参数、450 归档/7728 成员/7527262 受检重定位、12 展开、5 RPM 解析全部 PASS。
 
 Toolchain rehearsal-02 PASS（QB 1221204 FLAGS 同，WARNING=0、log-restarts=0、资源报告正常、无残留）。Base-Dev 驱动误用两参数形式，漏传末尾 basedev，入口退出 2；未创建新根/启动服务。按停止条件不重试、不推 sandbox、不复查 Gerrit。正确的未执行命令记录在 72 §7.5。新结果与失败原文均保全，尚不具备推送条件。
+
+## 2026-11-09 Base-Dev 补跑：第三步通过，待指定 lease 推送
+
+[72 §8](72_third_code_review_fixes.md) 记录正确 argv 与旧第234行逐字一致；Base-Dev 新建 retry-02，停在 CMake，log-restarts=0，日志58297B，FLAGS 与 QB1221207 全同，WARNING=0，资源报告正常，无残留。至此第二步全量检查和 T/D 两演练通过。源码 a65688b1 / 22f1c9fd / fa4f9978 及 tree 不变；r4已更新。按顺序先发布GitHub材料，随后仅按c7fd5eed显式lease推sandbox，结果另记。

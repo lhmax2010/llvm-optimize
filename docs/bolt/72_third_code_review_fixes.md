@@ -1,8 +1,8 @@
 # 72. 第三轮代码评审修复与续跑
 
-第二步已全部重新通过，三个源码提交保持不变。
-Toolchain 演练通过；Base-Dev 因本次调用漏传项目参数，在入口参数检查处退出，尚未启动演练服务。
-按停止条件未重试、未推送 sandbox；本次续跑完整结果见 §7，§1–6 保留第一次尝试的记录。
+第二步全部轻量检查与 Toolchain、Base-Dev 两次演练均已通过，三个源码提交保持不变。
+本次已补上 Base-Dev 的项目参数；演练停在 CMake，无 Ninja、无残留进程或挂载。
+§8 记录补跑结果；先发布材料，再按指定 lease 推送 sandbox。§1–7 的失败记录保留用于追溯，不代表当前验证状态。
 
 ## 1. 身份与资源限制
 
@@ -249,3 +249,62 @@ STEP5 已结束 2026-11-09T19:51:55.602362+08:00 status=not-run reason=step3_fai
 72 号、STATUS、r4 README/provenance/SHA256SUMS 已按本次结果更新。r4 不再沿用“测试未完成”的旧结论，明确写为“第二步全部通过；Toolchain 演练通过；Base-Dev 启动参数检查失败，尚不具备推送条件”。源码与完整补丁保持原样。
 
 最终结论：**第二步全部通过；第三步在 Base-Dev 启动参数检查处停止；未推送 sandbox。**
+
+
+## 8. Base-Dev 补跑通过（2026-11-09）
+
+本次只补跑 Base-Dev，不重做已通过的第二步和 Toolchain 演练；不改三个源码提交或入口脚本。其余命令仍在 8G、swap0、CPU400%、nice19、ionice-c3 的独立服务内串行执行，演练沿用入口原资源设置。
+
+### 8.1 命令核对与新根
+
+运行前打印完整 argv，并与当时本文第 234 行逐字比较：
+
+~~~text
+FULL ARGV: /bin/sh /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/basedev/launch.sh fa4f9978c9162d3c6cd2113d0cfe1173f04881c8 rehearsal-02 basedev
+DOC LINE 234: /bin/sh /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/basedev/launch.sh fa4f9978c9162d3c6cd2113d0cfe1173f04881c8 rehearsal-02 basedev
+EXACT_EQUAL True
+~~~
+
+入口固定创建 W/temp/rebase-359934-20261106-r2/rehearsal/basedev/retry-02。执行前不存在；上次失败仅留下证据，没有创建构建根。本次为首次创建，不复用旧构建根。新的证据放到 [basedev-finish/](../../tools/bolt/results/third-code-review-20261109/resume/basedev-finish/)，原失败证据保持原样。
+
+### 8.2 审计全部通过
+
+|审计项|结果|
+|---|---|
+|停止点|真实 + cmake -G Ninja；没有 + ninja|
+|log-restarts|0|
+|GBS 原始日志 / evidence 副本|58297 / 58297 字节|
+|FLAGS|与 QB 1221207 逐字相同|
+|FLAGS_WARNING|本地及 QB 均 0|
+|资源报告|resource-table.md 正常生成|
+|挂载|stdout 为空|
+|构建进程|remaining_build_processes=[]|
+|prep/build 服务|均 inactive/dead，Result=success|
+|源码 HEAD / tree|fa4f9978 / c9f61c77，与本次开始时相同；工作区干净|
+
+本地日志原文与行号：
+
+~~~text
+574: TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[-O2 -fstack-protector-strong -fno-omit-frame-pointer] CXXFLAGS=[-O2 -fstack-protector-strong -fno-omit-frame-pointer] LDFLAGS=[]
+576: TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4] CXXFLAGS=[-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4] LDFLAGS=[]
+~~~
+
+对应 QB 行号分别为 670、672。完整对照与清理输出见 [comparison-audit.json](../../tools/bolt/results/third-code-review-20261109/resume/basedev-finish/rehearsal-basedev/comparison-audit.json)，其中记录 source、service、mount、process 原文；同目录保留 launcher-used.py、final-audit.json、原始日志、资源表及清理检查。
+
+控制器结束原文：
+
+~~~text
+NIGHT_PROJECT 已结束 2026-11-09T20:43:35.970234+08:00 status=ok reason=rehearsal-complete-at-CMake
+REHEARSAL 已结束 2026-11-09T20:43:53.745928+08:00 project=basedev status=ok reason=CMake_stop_flags_log_resources_cleanup_pass
+~~~
+
+### 8.3 验证结论与交付
+
+第三步现已通过：Toolchain 和 Base-Dev 均合格。结合 §7 的 472 单元测试、真实 C-2 两项、7706 重放、450 归档全量解析/PIC、12 展开和 5 RPM 解析，已满足本轮推送前的轻量检查及演练要求。
+
+没有完整构建；“重放参数一致”“既有归档检查通过”不扩写为“新版本整包一致”。r4 README/provenance/SHA256SUMS 已更新，源码与补丁/files 内容不变。按任务顺序先推 GitHub 材料，再执行 sandbox 核对与推送，结果记在下一节。
+
+~~~text
+STEP1 已结束 2026-11-09T20:45:23.577146+08:00 status=ok reason=exact_argv_rehearsal_CMake_stop
+STEP2 已结束 2026-11-09T20:45:23.577146+08:00 status=ok reason=log_flags_resources_cleanup_pass
+~~~
