@@ -1,8 +1,8 @@
-# 72. 第三轮代码评审修复（在测试输入检查处停止）
+# 72. 第三轮代码评审修复与续跑
 
-本轮已完成三个本地提交的修改与归并，尚未完成验证。
-helper 393 项、两配置展开 12 项和 Tizen RPM 解析 5 项通过；70 号 12 项夹具初始化时，发现本轮输入少了平台 post 展开，已按用户要求停止。
-没有继续测试或演练，没有推送 sandbox；本包只供检查当前修改，不能作为通过认证的发布版本。
+第二步已全部重新通过，三个源码提交保持不变。
+Toolchain 演练通过；Base-Dev 因本次调用漏传项目参数，在入口参数检查处退出，尚未启动演练服务。
+按停止条件未重试、未推送 sandbox；本次续跑完整结果见 §7，§1–6 保留第一次尝试的记录。
 
 ## 1. 身份与资源限制
 
@@ -40,7 +40,7 @@ helper 393 项、两配置展开 12 项和 Tizen RPM 解析 5 项通过；70 号
 
 编辑准备中，脚本因 spec 缩进匹配、第三提交原有 75 列行的保护断言中止，修正编辑脚本/折行后才归并提交；一次只读搜索因服务 PATH 无 rg 返回 127，随后改用 Python/grep。这些不是测试通过记录。正式测试停止点如下。
 
-## 3. 已执行检查
+## 3. 第一次尝试已执行检查（本次全量重跑见 §7）
 
 |检查|结果|原文|
 |---|---|---|
@@ -63,7 +63,7 @@ ALL_BYTE_IDENTICAL False 是预期的 x86 BOLT on 改动。比较器只剥去本
 
 预期调整：[expectation-adjustments.json](../../tools/bolt/results/third-code-review-20261109/expectation-adjustments.json)。此前 cli-only 任务要求 12 展开全同，本轮 x86 on 仅允许上述差异；Commands accounting 文字改为 waitid(WNOWAIT), wait4，但新行为未测。70 号可选调用数量仍要求 5，没有放宽。
 
-## 4. 停止原因
+## 4. 第一次停止原因
 
 ~~~text
 File ".../third-code-review-20261109/test_r2.py", line 16, in <module>
@@ -86,15 +86,15 @@ AssertionError: [disk-report begin, disk-report tool-built,
 
 “参数一致”“转换输出一致”“整包一致”都没有本轮新证明；不能沿用旧版结果认证本轮转换器。
 
-## 5. 评审包与远端状态
+## 5. 第一次交付与远端状态
 
-[r4 README](../../patches/rebase-359934-20261109-r4/README.md) 包含三个 format-patch、去 profile 的 0002、九份完整文本、相对 PS10 转换器 diff、相对 7d5e28ca/c7fd5eed 两份 diff、provenance、SHA256SUMS。README 标明**未完成验证，不具备推送条件**。
+[r4 README](../../patches/rebase-359934-20261109-r4/README.md) 包含三个 format-patch、去 profile 的 0002、九份完整文本、相对 PS10 转换器 diff、相对 7d5e28ca/c7fd5eed 两份 diff、provenance、SHA256SUMS。第一次发布时 README 标明未完成验证；续跑后状态已更新为第二步全部通过、Base-Dev 演练未执行，仍不具备推送条件。
 
 本轮未操作 Gerrit，也未重新读取远端。sandbox 最后核对的 HEAD 为 c7fd5eed5e35ca335940239cae349a6936f74a7a（70 §10）；359934/357163 的 NEW、359934 PS10/13c3e223 来自 2026-11-09 15:54 +08:00 历史查询，不冒充本轮当前状态。新本地 HEAD 是 fa4f9978c9162d3c6cd2113d0cfe1173f04881c8。
 
 源码工作区干净，旧包与全部现场保留；只向 GitHub bolt-v4 发布文档、证据和明确未认证的材料。
 
-## 6. 结束记录
+## 6. 第一次尝试结束记录
 
 ~~~text
 STEP1 已结束 2026-11-09T18:58:21.967853+08:00 status=ok
@@ -106,3 +106,146 @@ STEP5 已结束 2026-11-09T19:05:08.538170+08:00 status=not-run reason=step2_fai
 ~~~
 
 结论：**仍有问题；源码修改已保留，测试输入检查失败，未演练、未推送 sandbox。**
+
+
+## 7. 修正测试输入后的全量续跑（2026-11-09）
+
+### 7.1 输入生成修复
+
+仅修改本轮准备脚本，不改源码、不改夹具的五调用期望。保留此前失败原文，新证据位于 [resume/](../../tools/bolt/results/third-code-review-20261109/resume/)。新建 post-expanded.spec，在当前 spec 副本末尾显式添加 %check 和 %{__spec_install_post}，再用相同 Tizen RPM 配置展开。与 70 号相同，平台 post 现在进入输入文本。
+
+准备脚本差异原文：
+
+~~~diff
+--- previous/parse_checks.py
++++ resume/parse_checks.py
+@@ -46,7 +46,14 @@
+     restored=restored.replace(added,'',1)
+     assert restored==outputs['parent'],key+suffix+' unexpected spec expansion changed'
+    if name=='toolchain' and case=='x86-debug' and not off:
+-    (E/'post-expanded.stdout').write_text(outputs['new'])
++    post_spec=E/'post-expanded.spec'
++    post_spec.write_text((P/'new.spec').read_text()+'\n%check\n%{__spec_install_post}\n')
++    post=run('post-expanded',loader+[str(R/'usr/bin/rpmspec'),'-P',*common,str(post_spec)])
++    (E/'post-expanded.stdout').write_text(post)
++    optional=[{'line':i,'text':line} for i,line in enumerate(post.splitlines(),1) if line.strip().startswith('bolt_optional python3 -B ')]
++    (E/'optional-calls.json').write_text(json.dumps(optional,indent=2)+'\n')
++    assert len(optional)==5,optional
++    for row in optional:print(str(row['line'])+': '+row['text'])
+    rows.append({'config':name,'case':case,'bolt':'off' if off else 'on','PASS':True,'byte_identical':not diff,'difference':'optional cancellation shell wrapper, literal reviewed-list assignment, empty-debug warning' if diff else 'none'})
+ (P/'expansion-summary.json').write_text(json.dumps(rows,indent=2)+'\n')
+ print('EXPANSIONS_PASS',len(rows),'ALL_BYTE_IDENTICAL',all(r['byte_identical'] for r in rows))
+~~~
+
+新输入中的五个可选调用原文：
+
+~~~text
+475: bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/parse/rpmbuild/SOURCES/clang-bolt-helper.py disk-report begin
+507: bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/parse/rpmbuild/SOURCES/clang-bolt-helper.py disk-report tool-built
+510: bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/parse/rpmbuild/SOURCES/clang-bolt-helper.py disk-report pipeline
+518: bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/parse/rpmbuild/SOURCES/clang-bolt-helper.py cache-release "$PWD" "$BOLT_WORK"
+820:     bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/parse/rpmbuild/SOURCES/clang-bolt-helper.py disk-report post
+~~~
+
+第 5 个调用由旧输入第 816 行变为本轮第 820 行，增加的四行正是 bolt_checked 取消退出码分支。五调用夹具原断言 len(calls)==5 保持不变。
+
+### 7.2 全部重新执行的检查
+
+|检查|本次结果|证据|
+|---|---|---|
+|显式 helper 全量|393 PASS|resume/helper-tests.log|
+|70 号新增用例（含 15 组可选调用信号探针）|12 PASS|resume/test_r2.log、new-tests-02-observed.json|
+|cli 非 GateError 取消/普通异常|2 PASS|resume/test_cli_cancel.log|
+|参数/转换器回归|46 PASS|resume/test_regressions.log、policy-result.json|
+|50 号转换器回归|5 PASS|resume/test50.log|
+|本轮新增夹具|14 组 PASS|resume/test_r3.log、r3-result.json、r3-observed.json|
+|真实 release C-2 #5/#6|2 PASS；正例无调试节，注入调试元数据的反例拒绝|resume/real-c2-result.json、real_c2.log|
+|完整展开|12 PASS；ARM/BOLT off 逐字相同，x86 on 仅 bolt_checked 差异|resume/parse/expansion-summary.json 及各全文/diff|
+|Tizen RPM 五项解析|5 PASS|resume/parse/five-summary.json|
+|重放参数|T 3853/3853、D 3853/3853，合计 7706 全同|resume/replay-summary.json、replay-members.jsonl.gz|
+|QB 全部静态归档解析及 PIC|450 个归档全部通过|resume/qb-archive-summary.json、qb-archive-members.jsonl.gz|
+
+共 **472 项单元测试，另加真实 C-2 两项**。本节所有数字来自本次重跑，没有沿用上次中断前的 PASS。
+
+新增夹具覆盖：
+- ar：size=-60/-1，负 BSD 长度、BSD 超长、GNU 负/越界偏移、缺对齐、超出剩余长度、thin 负 stored_size；均在一秒内拒绝。同名成员、GNU/BSD 长名字、32/64 位正常索引通过。
+- PIC：r_sym 等于符号数（文件内越界位置特意放 SHN_ABS）、更大索引、错误符号表类型/零或错误 stride/残缺或越界表、REL/RELA 残缺；均拒绝。ABS、PC-relative、普通 PIC 正例通过。
+- 取消：SIGHUP；组长先退出、忽略 SIGTERM 的孙进程；一个 worker 失败取消另一 worker。记录 killpg/wait4 次序，最后 SIGKILL 先于在锁内的组长回收，回收后不再向该 PID 发组信号；子孙无存活进程。正常返回码与旧实现相同，资源仍来自 wait4 的 user/sys/max_rss 字段，不要求不同实际运行的耗时数值相同。
+- 三工具同 build/bin 通过，nm 在另一目录拒绝。
+- 从真实展开的 /bin/sh -e 函数调用 bolt_step，分别仅向 helper 发 SIGTERM/SIGHUP/SIGINT，退出 143/129/130，没有后续标记和 BOLT_DISK_DIAGNOSIS；普通失败仍诊断并退出 1。
+- 三个提交最后一段只有两个 trailer，git interpret-trailers 可解析，所有行≤72 列。
+
+这些是新增测试，不是修改源码或放宽期望。所有临时副本保留；既有测试清理通过保全包装器转为本次 scratch 内保留/改名，不删除文件。
+
+### 7.3 重放与实物归档详情
+
+7706 条原命令中 -Wa,/-Xassembler 为 0，-g0 为 0；新旧 flags 列表逐项等于保全的 recorded_flags。对照转换器来自 c7fd5eed 的保全副本。
+
+|QB|项目|归档数|成员数|受检重定位|禁止项|归档总字节|
+|---|---|---:|---:|---:|---:|---:|
+|1221204|Toolchain|225|3864|3763631|0|6615246904|
+|1221207|Base-Dev|225|3864|3763631|0|476672032|
+
+每个项目 3853 个转换成员加 11 个原样保留的原生成员。检查前按既有 RPM 载荷清单核对每个归档 SHA/大小，归档清单无遗漏；验证索引、native 格式及每个成员 SHA，再调用新 PIC 检查器。仅检查，没有对这些 QB 归档进行转换或修改。PIC 按转换器原规则不计调试节重定位。
+
+**证明边界：** 重放参数全量一致；新的解析/PIC 门禁可接受两套既有 QB 实物；真实 C-2 只实际转换一个 release 成员及其负例。未重新转换全部 7706 个成员，未重建完整包，不能把上述结果写成“新版本整包逐字节相同”。
+
+### 7.4 Toolchain 演练通过
+
+使用原 tools/bolt/rebase-launch-20261106-r2/toolchain/launch.sh，参数为当前完整 HEAD 和 rehearsal-02；没有修改入口。新根 W/temp/rebase-359934-20261106-r2/rehearsal/toolchain/retry-02，保留此前根。沿用入口 MemoryMax=MemTotal-8GiB、swap=0、CPUQuota=1200%、nice10、ionice2/7；只有演练采用此例外，其余服务为 8G/400%/nice19/idle。
+
+停在真实 + cmake -G Ninja，没有运行 Ninja。log-restarts 为 0，复制日志与 GBS 原始日志大小相同，FLAGS 与 QB 1221204 逐字一致，WARNING 两边均为 0，资源报告生成，挂载为空、remaining_build_processes=[]，prep/build 服务均 inactive/dead。
+
+原文 FLAGS：
+
+~~~text
+TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[-Os -fstack-protector -momit-leaf-frame-pointer -fno-omit-frame-pointer] CXXFLAGS=[-Os -fstack-protector -momit-leaf-frame-pointer -fno-omit-frame-pointer] LDFLAGS=[]
+TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[] CXXFLAGS=[] LDFLAGS=[]
+~~~
+
+完整审计：[comparison-audit.json](../../tools/bolt/results/third-code-review-20261109/resume/rehearsal-toolchain/comparison-audit.json)。命令、控制器原文、log-copy-audit、final-audit 和 resource-table.md 均保存在同目录。
+
+### 7.5 Base-Dev 启动参数错误：停止、未重试
+
+本轮驱动把 Toolchain 的两参数调用形式用于 Base-Dev，漏了最后的项目参数 basedev。这是本轮调用错误，不是发布源码或真实 Base-Dev 构建失败。
+
+实际执行：
+
+~~~sh
+/bin/sh /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/basedev/launch.sh fa4f9978c9162d3c6cd2113d0cfe1173f04881c8 rehearsal-02
+~~~
+
+入口在 shift 后要求 rehearsal 模式有两个参数（模式、项目）。少了项目，因此在 [ "$#" -eq 2 ] || exit 2 退出；stdout/stderr 均为空，驱动记录 AssertionError: 2。
+
+只读核对原文：
+
+~~~text
+BASEDEV_NEW_ROOT_EXISTS False
+LoadState=not-found
+ActiveState=inactive
+SubState=dead
+~~~
+
+没有创建 retry-02 根、没有启动 Base-Dev 演练服务，因此没有本轮 D 的 FLAGS、WARNING、资源报告或挂载清理可供认证。已有历史根不动。
+
+正确形式是下面这条，**本轮未执行，也未自动重试**：
+
+~~~sh
+/bin/sh /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/basedev/launch.sh fa4f9978c9162d3c6cd2113d0cfe1173f04881c8 rehearsal-02 basedev
+~~~
+
+依据、入口全文/SHA、实际 argv、未执行的正确 argv、服务状态见 [failure-analysis.json](../../tools/bolt/results/third-code-review-20261109/resume/rehearsal-basedev/failure-analysis.json)。按“第二、三步任一失败就停止，不推送”，第五步未执行，也未复查 Gerrit 状态。三个源码提交和 tree 与 §1 完全相同，工作区干净。
+
+### 7.6 本次结束行与交付
+
+~~~text
+STEP2 已结束 2026-11-09T19:43:20.122584+08:00 status=ok reason=all_tests_replay_archives_expansions_pass
+REHEARSAL 已结束 2026-11-09T19:50:23.584415+08:00 project=toolchain status=ok reason=CMake_stop_flags_log_resources_cleanup_pass
+REHEARSAL 已结束 2026-11-09T19:50:38.311286+08:00 project=basedev status=failed reason=launch-or-audit-failed
+STEP3 已结束 2026-11-09T19:51:55.602362+08:00 status=failed reason=basedev_launch_missing_project_argument
+STEP5 已结束 2026-11-09T19:51:55.602362+08:00 status=not-run reason=step3_failed
+~~~
+
+72 号、STATUS、r4 README/provenance/SHA256SUMS 已按本次结果更新。r4 不再沿用“测试未完成”的旧结论，明确写为“第二步全部通过；Toolchain 演练通过；Base-Dev 启动参数检查失败，尚不具备推送条件”。源码与完整补丁保持原样。
+
+最终结论：**第二步全部通过；第三步在 Base-Dev 启动参数检查处停止；未推送 sandbox。**

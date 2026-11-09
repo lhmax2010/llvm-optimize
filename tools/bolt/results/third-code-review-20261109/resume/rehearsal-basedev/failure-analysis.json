@@ -1,0 +1,23 @@
+{
+  "returncode": 2,
+  "reason": "invocation omitted required final project argument basedev",
+  "launch_script": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/basedev/launch.sh",
+  "launch_script_sha256": "4b2c547e56bb02f7cbfbfe285294347f5e348caafbcebedc74010f2e14a01f26",
+  "launch_script_text": "#!/bin/sh\nset -eu\n[ \"$#\" -ge 2 ] || { echo 'usage: launch.sh SOURCE_SHA night | launch.sh SOURCE_SHA rehearsal toolchain|basedev' >&2; exit 2; }\nNIGHT_SOURCE_SHA=$1; export NIGHT_SOURCE_SHA\nshift\ncase \"$1\" in\n night) [ \"$#\" -eq 1 ] || exit 2; exec python3 -B \"$(dirname \"$0\")/night.py\" ;;\n rehearsal|rehearsal-02) [ \"$#\" -eq 2 ] || exit 2; case \"$2\" in toolchain|basedev) FINAL_PROJECT=$2; export FINAL_PROJECT ;; *) exit 2 ;; esac; exec python3 -B \"$(dirname \"$0\")/launcher.py\" \"$1\" ;;\n *) exit 2 ;;\nesac\n",
+  "actual_argv": [
+    "/bin/sh",
+    "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/basedev/launch.sh",
+    "fa4f9978c9162d3c6cd2113d0cfe1173f04881c8",
+    "rehearsal-02"
+  ],
+  "required_argv": [
+    "/bin/sh",
+    "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/basedev/launch.sh",
+    "fa4f9978c9162d3c6cd2113d0cfe1173f04881c8",
+    "rehearsal-02",
+    "basedev"
+  ],
+  "required_argv_executed": false,
+  "new_root_exists": false,
+  "service_state": "LoadState=not-found\nActiveState=inactive\nSubState=dead\n"
+}

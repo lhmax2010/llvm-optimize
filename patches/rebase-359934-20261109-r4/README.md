@@ -1,6 +1,6 @@
-# 第三轮代码评审修复材料（未完成验证）
+# 第三轮代码评审修复材料（测试通过；Base-Dev 演练未启动）
 
-**本包未达到推送条件，未推送 sandbox。** 第二步在 70 号夹具初始化时失败：本轮普通 rpmspec -P 输出未显式展开 __spec_install_post，只找到 4 个可选调用，夹具要求 5 个。尚未执行这 12 项，也未继续其余测试或演练。详见 [72 号](../../docs/bolt/72_third_code_review_fixes.md)。
+**未推送 sandbox，尚不具备推送条件。** 修正平台 post 输入后，第二步已全部重跑通过：472 项单元测试、真实 C-2 两项、7706 条重放参数、450 个实物静态归档、12 项展开、5 项解析。Toolchain 演练通过；Base-Dev 调用漏传最后的 basedev 参数，入口返回 2，未启动服务或创建新根。按停止条件未重试。详见 [72 §7](../../docs/bolt/72_third_code_review_fixes.md)。
 
 BOLT 评审请读 [0002-text-only.patch](0002-text-only.patch)。它只排除 profile 二进制；完整可应用补丁为 0002.patch。旧 r3 包保留不动。
 
@@ -55,6 +55,15 @@ Source1200：packaging/clang-bolt-v2.fdata.xz，9735212 字节，SHA256 52fd8522
 
 ## 证据与验证边界
 
-本轮通过 helper 393 项、两配置完整展开 12 项、Tizen RPM 解析 5 项。ARM 与 BOLT 关闭展开相同；x86 BOLT 开启只差 bolt_checked。这些结果不代表新转换器取消、畸形输入、重放参数及全部实物归档检查已通过。
+本次重跑证据位于 [resume/](../../tools/bolt/results/third-code-review-20261109/resume/)，旧失败原文保留。准备脚本只改平台 post 宏的显式展开，夹具仍严格要求 5 个可选调用。
 
-[72 号](../../docs/bolt/72_third_code_review_fixes.md) 与 [本轮原始证据](../../tools/bolt/results/third-code-review-20261109/) 给出停止原因。历史评审背景为 48、51、69、70、71 号；历史完整构建/7706 成员结论不转用为本轮转换器的认证。
+- helper 393、70 号 12、cli 2、转换器回归 46、50 号 5、新增 ar/PIC/取消/工具目录/bolt_step/trailer 14，共 472 项单元测试 PASS。
+- 真实 release C-2 #5/#6 两项 PASS。
+- 两配置完整展开 12 项、Tizen RPM 五项解析 PASS。ARM/off 相同，x86 on 只差 bolt_checked。
+- T/D 各 3853 条重放参数与 c7fd5eed 全同。两个 QB 各 225 个归档、3864 个成员、3763631 条受检重定位，全部通过。
+- Toolchain 停在 CMake，未跑 Ninja；log-restarts=0，FLAGS 与 QB 1221204 全同，WARNING=0，资源报告与清理检查通过。
+- Base-Dev 调用缺项目参数，返回 2；本次没有真实 D 演练结果，sandbox 步骤未执行。
+
+重放参数一致与既有归档检查通过不代表新版本整包一致。本轮没有全量重新转换 7706 个成员或完整构建。三个源码提交和 tree 与本包初次导出完全相同，完整补丁/files 未改；README、provenance 和 SHA256SUMS 已刷新。
+
+[72 号](../../docs/bolt/72_third_code_review_fixes.md) 给出全部结果与停止原因；背景为 48、51、69、70、71 号。359934/357163 的 NEW、359934 PS10 为上述历史查询，本次因第三步停止未复查。

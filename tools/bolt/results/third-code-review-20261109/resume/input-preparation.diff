@@ -1,0 +1,18 @@
+--- previous/parse_checks.py
++++ resume/parse_checks.py
+@@ -46,7 +46,14 @@
+     restored=restored.replace(added,'',1)
+     assert restored==outputs['parent'],key+suffix+' unexpected spec expansion changed'
+    if name=='toolchain' and case=='x86-debug' and not off:
+-    (E/'post-expanded.stdout').write_text(outputs['new'])
++    post_spec=E/'post-expanded.spec'
++    post_spec.write_text((P/'new.spec').read_text()+'\n%check\n%{__spec_install_post}\n')
++    post=run('post-expanded',loader+[str(R/'usr/bin/rpmspec'),'-P',*common,str(post_spec)])
++    (E/'post-expanded.stdout').write_text(post)
++    optional=[{'line':i,'text':line} for i,line in enumerate(post.splitlines(),1) if line.strip().startswith('bolt_optional python3 -B ')]
++    (E/'optional-calls.json').write_text(json.dumps(optional,indent=2)+'\n')
++    assert len(optional)==5,optional
++    for row in optional:print(str(row['line'])+': '+row['text'])
+    rows.append({'config':name,'case':case,'bolt':'off' if off else 'on','PASS':True,'byte_identical':not diff,'difference':'optional cancellation shell wrapper, literal reviewed-list assignment, empty-debug warning' if diff else 'none'})
+ (P/'expansion-summary.json').write_text(json.dumps(rows,indent=2)+'\n')
+ print('EXPANSIONS_PASS',len(rows),'ALL_BYTE_IDENTICAL',all(r['byte_identical'] for r in rows))

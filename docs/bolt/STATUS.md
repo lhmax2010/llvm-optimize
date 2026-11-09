@@ -991,3 +991,9 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 详见 [72_third_code_review_fixes.md](72_third_code_review_fixes.md)。本地新链 a65688b1377e91819fcd46a18da36d52b3312089 → 22f1c9fd79de6086ee21f235868c70167868b7ff → fa4f9978c9162d3c6cd2113d0cfe1173f04881c8，基线 PS10/13c3e223，三个 Change-Id 保留。转换器 ar/PIC 边界、WNOWAIT/SIGHUP、同目录工具；helper Rollback 注释；spec bolt_checked 取消传播与提交说明已归并。
 
 通过 helper 393、完整展开 12、Tizen RPM 解析 5。70 号 12 项初始化发现本轮普通 rpmspec -P 输出缺显式平台 post 展开，只含 4 个可选调用而非 5，0 项实际执行，这是本轮夹具输入准备错误。按任务停止：其他新旧测试、7706 重放、实物归档、T/D 演练未执行，未推 sandbox。r4 是未认证材料。此前 c7fd5eed sandbox 和两 change NEW/PS10 仅为历史记录；本轮未重新查询。后续须先修复测试输入准备，不能视为可发版。
+
+## 2026-11-09 第三轮修复续跑：第二步通过，Base-Dev 调用参数错误停止
+
+[72 §7](72_third_code_review_fixes.md) 与 r4 已更新。源码链 a65688b1 / 22f1c9fd / fa4f9978 及 tree 不变。显式展开平台 post 后五调用齐全；全量重跑 472 单元测试、真实 C-2 两项、7706 重放参数、450 归档/7728 成员/7527262 受检重定位、12 展开、5 RPM 解析全部 PASS。
+
+Toolchain rehearsal-02 PASS（QB 1221204 FLAGS 同，WARNING=0、log-restarts=0、资源报告正常、无残留）。Base-Dev 驱动误用两参数形式，漏传末尾 basedev，入口退出 2；未创建新根/启动服务。按停止条件不重试、不推 sandbox、不复查 Gerrit。正确的未执行命令记录在 72 §7.5。新结果与失败原文均保全，尚不具备推送条件。

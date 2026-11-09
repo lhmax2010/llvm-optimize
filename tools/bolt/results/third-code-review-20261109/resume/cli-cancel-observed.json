@@ -1,0 +1,122 @@
+[
+  {
+    "version": "old",
+    "signal": 0,
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "-c",
+      "import importlib.util,os,signal,sys\nsp=importlib.util.spec_from_file_location('h',sys.argv[1]);h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)\ndef work():\n s=int(sys.argv[2])\n if s:os.kill(os.getpid(),s)\n raise KeyError('unexpected-after-work')\nh.main=work\nh.diagnose_safely=lambda *a,**kw: print('DIAGNOSE_CALLED',file=sys.stderr)\nsys.exit(h.cli())\n",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/old-helper.py",
+      "0"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "DIAGNOSE_CALLED\nBOLT_GATE_FAILED: unexpected KeyError: 'unexpected-after-work'\nTraceback (most recent call last):\n  File \"<string>\", line 9, in <module>\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/old-helper.py\", line 1908, in cli\n    main()\n  File \"<string>\", line 6, in work\nKeyError: 'unexpected-after-work'\n"
+  },
+  {
+    "version": "new",
+    "signal": 0,
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "-c",
+      "import importlib.util,os,signal,sys\nsp=importlib.util.spec_from_file_location('h',sys.argv[1]);h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)\ndef work():\n s=int(sys.argv[2])\n if s:os.kill(os.getpid(),s)\n raise KeyError('unexpected-after-work')\nh.main=work\nh.diagnose_safely=lambda *a,**kw: print('DIAGNOSE_CALLED',file=sys.stderr)\nsys.exit(h.cli())\n",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py",
+      "0"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "DIAGNOSE_CALLED\nBOLT_GATE_FAILED: unexpected KeyError: 'unexpected-after-work'\nTraceback (most recent call last):\n  File \"<string>\", line 9, in <module>\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py\", line 1910, in cli\n    main()\n  File \"<string>\", line 6, in work\nKeyError: 'unexpected-after-work'\n"
+  },
+  {
+    "version": "old",
+    "signal": 1,
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "-c",
+      "import importlib.util,os,signal,sys\nsp=importlib.util.spec_from_file_location('h',sys.argv[1]);h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)\ndef work():\n s=int(sys.argv[2])\n if s:os.kill(os.getpid(),s)\n raise KeyError('unexpected-after-work')\nh.main=work\nh.diagnose_safely=lambda *a,**kw: print('DIAGNOSE_CALLED',file=sys.stderr)\nsys.exit(h.cli())\n",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/old-helper.py",
+      "1"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "DIAGNOSE_CALLED\nBOLT_GATE_FAILED: unexpected KeyError: 'unexpected-after-work'\nTraceback (most recent call last):\n  File \"<string>\", line 9, in <module>\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/old-helper.py\", line 1908, in cli\n    main()\n  File \"<string>\", line 6, in work\nKeyError: 'unexpected-after-work'\n"
+  },
+  {
+    "version": "new",
+    "signal": 1,
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "-c",
+      "import importlib.util,os,signal,sys\nsp=importlib.util.spec_from_file_location('h',sys.argv[1]);h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)\ndef work():\n s=int(sys.argv[2])\n if s:os.kill(os.getpid(),s)\n raise KeyError('unexpected-after-work')\nh.main=work\nh.diagnose_safely=lambda *a,**kw: print('DIAGNOSE_CALLED',file=sys.stderr)\nsys.exit(h.cli())\n",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py",
+      "1"
+    ],
+    "returncode": 129,
+    "stdout": "",
+    "stderr": "DIAGNOSE_CALLED\nBOLT_GATE_FAILED: unexpected KeyError: 'unexpected-after-work'\nTraceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py\", line 1910, in cli\n    main()\n  File \"<string>\", line 6, in work\nKeyError: 'unexpected-after-work'\n"
+  },
+  {
+    "version": "old",
+    "signal": 2,
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "-c",
+      "import importlib.util,os,signal,sys\nsp=importlib.util.spec_from_file_location('h',sys.argv[1]);h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)\ndef work():\n s=int(sys.argv[2])\n if s:os.kill(os.getpid(),s)\n raise KeyError('unexpected-after-work')\nh.main=work\nh.diagnose_safely=lambda *a,**kw: print('DIAGNOSE_CALLED',file=sys.stderr)\nsys.exit(h.cli())\n",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/old-helper.py",
+      "2"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "DIAGNOSE_CALLED\nBOLT_GATE_FAILED: unexpected KeyError: 'unexpected-after-work'\nTraceback (most recent call last):\n  File \"<string>\", line 9, in <module>\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/old-helper.py\", line 1908, in cli\n    main()\n  File \"<string>\", line 6, in work\nKeyError: 'unexpected-after-work'\n"
+  },
+  {
+    "version": "new",
+    "signal": 2,
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "-c",
+      "import importlib.util,os,signal,sys\nsp=importlib.util.spec_from_file_location('h',sys.argv[1]);h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)\ndef work():\n s=int(sys.argv[2])\n if s:os.kill(os.getpid(),s)\n raise KeyError('unexpected-after-work')\nh.main=work\nh.diagnose_safely=lambda *a,**kw: print('DIAGNOSE_CALLED',file=sys.stderr)\nsys.exit(h.cli())\n",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py",
+      "2"
+    ],
+    "returncode": 130,
+    "stdout": "",
+    "stderr": "DIAGNOSE_CALLED\nBOLT_GATE_FAILED: unexpected KeyError: 'unexpected-after-work'\nTraceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py\", line 1910, in cli\n    main()\n  File \"<string>\", line 6, in work\nKeyError: 'unexpected-after-work'\n"
+  },
+  {
+    "version": "old",
+    "signal": 15,
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "-c",
+      "import importlib.util,os,signal,sys\nsp=importlib.util.spec_from_file_location('h',sys.argv[1]);h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)\ndef work():\n s=int(sys.argv[2])\n if s:os.kill(os.getpid(),s)\n raise KeyError('unexpected-after-work')\nh.main=work\nh.diagnose_safely=lambda *a,**kw: print('DIAGNOSE_CALLED',file=sys.stderr)\nsys.exit(h.cli())\n",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/old-helper.py",
+      "15"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "DIAGNOSE_CALLED\nBOLT_GATE_FAILED: unexpected KeyError: 'unexpected-after-work'\nTraceback (most recent call last):\n  File \"<string>\", line 9, in <module>\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/old-helper.py\", line 1908, in cli\n    main()\n  File \"<string>\", line 6, in work\nKeyError: 'unexpected-after-work'\n"
+  },
+  {
+    "version": "new",
+    "signal": 15,
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "-c",
+      "import importlib.util,os,signal,sys\nsp=importlib.util.spec_from_file_location('h',sys.argv[1]);h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)\ndef work():\n s=int(sys.argv[2])\n if s:os.kill(os.getpid(),s)\n raise KeyError('unexpected-after-work')\nh.main=work\nh.diagnose_safely=lambda *a,**kw: print('DIAGNOSE_CALLED',file=sys.stderr)\nsys.exit(h.cli())\n",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py",
+      "15"
+    ],
+    "returncode": 143,
+    "stdout": "",
+    "stderr": "DIAGNOSE_CALLED\nBOLT_GATE_FAILED: unexpected KeyError: 'unexpected-after-work'\nTraceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/clang-bolt-helper.py\", line 1910, in cli\n    main()\n  File \"<string>\", line 6, in work\nKeyError: 'unexpected-after-work'\n"
+  }
+]
