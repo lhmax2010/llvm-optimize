@@ -1001,3 +1001,7 @@ Toolchain rehearsal-02 PASS（QB 1221204 FLAGS 同，WARNING=0、log-restarts=0�
 ## 2026-11-09 Base-Dev 补跑：第三步通过，待指定 lease 推送
 
 [72 §8](72_third_code_review_fixes.md) 记录正确 argv 与旧第234行逐字一致；Base-Dev 新建 retry-02，停在 CMake，log-restarts=0，日志58297B，FLAGS 与 QB1221207 全同，WARNING=0，资源报告正常，无残留。至此第二步全量检查和 T/D 两演练通过。源码 a65688b1 / 22f1c9fd / fa4f9978 及 tree 不变；r4已更新。按顺序先发布GitHub材料，随后仅按c7fd5eed显式lease推sandbox，结果另记。
+
+## 2026-11-09 sandbox 推送完成（第三轮代码评审修复）
+
+[72 §9](72_third_code_review_fixes.md) 与 r4：在第二步全量检查、T/D 演练通过且 GitHub 材料先发布后，以 c7fd5eed 显式 lease 一次推送成功。远端 sandbox/lhmax2025/bolt_pgo 已核对为 fa4f9978c9162d3c6cd2113d0cfe1173f04881c8，父链为 22f1c9fd → a65688b1 → 13c3e223 → cf4b6777。359934 NEW/PS10/13c3e223、357163 NEW/PS2/cf4b6777，推后均未关闭。三个本地提交和 tree 不变。只推该 sandbox，无 refs/for、无 QB 操作、无完整构建；现场保留。

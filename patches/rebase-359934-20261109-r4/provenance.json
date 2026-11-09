@@ -1,5 +1,5 @@
 {
-  "status": "PASS: all step2 checks and Toolchain/Base-Dev rehearsals; sandbox push pending",
+  "status": "PASS: all lightweight checks and both rehearsals; authorized sandbox push and post-push verification complete",
   "source": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source",
   "baseline": "13c3e223d9e1b35e4affb55255c5042f8c940f35",
   "head": "fa4f9978c9162d3c6cd2113d0cfe1173f04881c8",
@@ -110,12 +110,41 @@
     },
     "source_head": "fa4f9978c9162d3c6cd2113d0cfe1173f04881c8"
   },
-  "sandbox_push": "PENDING: expected remote c7fd5eed; only authorized lease will be used",
+  "sandbox_push": {
+    "push": "OK",
+    "remote": "fa4f9978c9162d3c6cd2113d0cfe1173f04881c8",
+    "chain": [
+      "fa4f9978c9162d3c6cd2113d0cfe1173f04881c8",
+      "22f1c9fd79de6086ee21f235868c70167868b7ff",
+      "a65688b1377e91819fcd46a18da36d52b3312089",
+      "13c3e223d9e1b35e4affb55255c5042f8c940f35",
+      "cf4b6777d056131e2534ecb460c5575327d99646"
+    ],
+    "changes": {
+      "359934": {
+        "number": 359934,
+        "status": "NEW",
+        "url": "https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/359934",
+        "current_patch_set": 10,
+        "revision": "13c3e223d9e1b35e4affb55255c5042f8c940f35"
+      },
+      "357163": {
+        "number": 357163,
+        "status": "NEW",
+        "url": "https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/357163",
+        "current_patch_set": 2,
+        "revision": "cf4b6777d056131e2534ecb460c5575327d99646"
+      }
+    },
+    "ps10_changed": false,
+    "verification": "PASS"
+  },
   "new_regressions": "14 test groups PASS",
   "rehearsals": {
     "toolchain": "PASS (resume/rehearsal-toolchain)",
     "basedev": "PASS (resume/basedev-finish/rehearsal-basedev)"
   },
   "resume_evidence": "tools/bolt/results/third-code-review-20261109/resume",
-  "basedev_completion_evidence": "tools/bolt/results/third-code-review-20261109/resume/basedev-finish"
+  "basedev_completion_evidence": "tools/bolt/results/third-code-review-20261109/resume/basedev-finish",
+  "post_push_evidence": "tools/bolt/results/third-code-review-20261109/resume/basedev-finish/gerrit"
 }

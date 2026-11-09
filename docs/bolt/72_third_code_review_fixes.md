@@ -1,8 +1,8 @@
 # 72. 第三轮代码评审修复与续跑
 
-第二步全部轻量检查与 Toolchain、Base-Dev 两次演练均已通过，三个源码提交保持不变。
-本次已补上 Base-Dev 的项目参数；演练停在 CMake，无 Ninja、无残留进程或挂载。
-§8 记录补跑结果；先发布材料，再按指定 lease 推送 sandbox。§1–7 的失败记录保留用于追溯，不代表当前验证状态。
+第二步全部轻量检查与 Toolchain、Base-Dev 两次演练均通过，三个源码提交保持不变。
+sandbox 已按显式 lease 更新为 fa4f9978c9162d3c6cd2113d0cfe1173f04881c8，推后 SHA 与五提交链核对通过。
+359934、357163 仍为 NEW，359934 仍是 PS10/13c3e223；本次补跑与推送见 §8–9。此前失败原文保留，不代表当前状态。
 
 ## 1. 身份与资源限制
 
@@ -308,3 +308,75 @@ REHEARSAL 已结束 2026-11-09T20:43:53.745928+08:00 project=basedev status=ok r
 STEP1 已结束 2026-11-09T20:45:23.577146+08:00 status=ok reason=exact_argv_rehearsal_CMake_stop
 STEP2 已结束 2026-11-09T20:45:23.577146+08:00 status=ok reason=log_flags_resources_cleanup_pass
 ~~~
+
+
+## 9. sandbox 推送与推后核对（2026-11-09）
+
+完成 §8 后，先将合格材料推到 GitHub bolt-v4，提交 a21e5d9322acd75780cdc5f4b6c032146440cd0a，再进入本节。所有 Gerrit 命令均使用 SSH BatchMode 和完整 URL，不请求密码，不推 refs/for，不新建分支、不改 remote 配置。
+
+### 9.1 推送前核对及唯一推送命令
+
+源码仍在 bolt-on-359934，HEAD/tree 与 §1 相同，工作区干净。远端原文：
+
+~~~text
+c7fd5eed5e35ca335940239cae349a6936f74a7a	refs/heads/sandbox/lhmax2025/bolt_pgo
+~~~
+
+与期望 c7fd5eed5e35ca335940239cae349a6936f74a7a 精确相同，因此执行：
+
+~~~sh
+git push --force-with-lease=refs/heads/sandbox/lhmax2025/bolt_pgo:c7fd5eed5e35ca335940239cae349a6936f74a7a ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm bolt-on-359934:refs/heads/sandbox/lhmax2025/bolt_pgo
+~~~
+
+原样输出：
+
+~~~text
+remote: 
+remote: Processing changes: refs: 1        
+remote: Processing changes: refs: 1, done            
+To ssh://review.tizen.org:29418/platform/upstream/llvm
+ + c7fd5eed5e35...fa4f9978c916 bolt-on-359934 -> sandbox/lhmax2025/bolt_pgo (forced update)
+~~~
+
+只执行这一次指定的 force-with-lease；没有其他强推方式或重试。
+
+### 9.2 推后 SHA、父链及 change 状态
+
+ls-remote 原文：
+
+~~~text
+fa4f9978c9162d3c6cd2113d0cfe1173f04881c8	refs/heads/sandbox/lhmax2025/bolt_pgo
+~~~
+
+五提交链（SHA、tree、标题）：
+
+~~~text
+fa4f9978c9162d3c6cd2113d0cfe1173f04881c8 c9f61c77a1a08f5faffd45f8a37f6b46359922f7 packaging: fix x86 LLVM flags and archive mode
+22f1c9fd79de6086ee21f235868c70167868b7ff 4d78fb7cc802b4815bd04d8e3334ca3a73576dab packaging: optimize x86_64 clang with BOLT
+a65688b1377e91819fcd46a18da36d52b3312089 3d961cbb04f5446f84d2089b4f65f3178f2bd7fa cmake: use hybrid LLVM linkage on x86_64
+13c3e223d9e1b35e4affb55255c5042f8c940f35 087e06cf9c79c571c711af8a07057496940ae73d packaging: classify -feliminate-unused-debug-types and mirror recorded backend policy
+cf4b6777d056131e2534ecb460c5575327d99646 7b49745738b5512fbbed890e67e6a3861e1e39a5 Revert "Revert clang bootstrap + ThinLTO, fall back to GCC"
+~~~
+
+|change|状态|当前 patch set|revision|
+|---|---|---:|---|
+|359934|NEW|10|13c3e223d9e1b35e4affb55255c5042f8c940f35|
+|357163|NEW|2|cf4b6777d056131e2534ecb460c5575327d99646|
+
+359934 当前 patch set 没有变化，仍为本次基线 PS10。357163 按 Change-Id I5779f1689f330ee006bcbda377feeccf15040e85 查询并核对 change number。两者均未因本次 sandbox 推送关闭。
+
+[Gerrit 查询与推送原文](../../tools/bolt/results/third-code-review-20261109/resume/basedev-finish/gerrit/) 保存每条命令 argv、退出码和输出；[summary.json](../../tools/bolt/results/third-code-review-20261109/resume/basedev-finish/gerrit/summary.json) 给出结构化结果。
+
+[sandbox gitweb](https://review.tizen.org/gerrit/gitweb?p=platform/upstream/llvm.git;a=shortlog;h=refs/heads/sandbox/lhmax2025/bolt_pgo)。后续 QB 软件包行是 platform/upstream/llvm@fa4f9978c9162d3c6cd2113d0cfe1173f04881c8；本轮没有操作 QB。
+
+### 9.3 结束行
+
+~~~text
+STEP1 已结束 2026-11-09T20:45:23.577146+08:00 status=ok reason=exact_argv_rehearsal_CMake_stop
+STEP2 已结束 2026-11-09T20:45:23.577146+08:00 status=ok reason=log_flags_resources_cleanup_pass
+STEP3 已结束 2026-11-09T20:45:29+08:00 status=ok reason=qualified_materials_published
+STEP4 已结束 2026-11-09T20:46:35.339006+08:00 status=ok reason=authorized_sandbox_push_succeeded
+STEP5 已结束 2026-11-09T20:46:45.510049+08:00 status=ok reason=remote_chain_and_change_states_recorded
+~~~
+
+最终结论：**本轮要求的轻量检查、两次演练与 sandbox 推送核对全部完成；未运行完整构建。** 三个本地提交、源码和入口脚本未因本次补跑改动。全部现场保留，GitHub bolt-v4 再次更新本文、STATUS 与 r4 材料。

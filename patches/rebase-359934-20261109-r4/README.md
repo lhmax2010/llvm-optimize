@@ -1,12 +1,14 @@
-# 第三轮代码评审修复材料（轻量检查与两次演练通过）
+# 第三轮代码评审修复材料（检查、演练与 sandbox 推送完成）
 
-全部轻量检查及 Toolchain/Base-Dev 演练通过。三个源码提交和 tree 不变；本轮不完整构建。先发布本材料，再按 c7fd5eed 的显式 lease 推送 sandbox。推送与状态查询结果将补入 [72 号](../../docs/bolt/72_third_code_review_fixes.md)。
+**BOLT 评审请先读 [0002-text-only.patch](0002-text-only.patch)**，它只排除 Source1200 二进制；完整可应用补丁见 0002.patch。
 
-BOLT 评审请读 [0002-text-only.patch](0002-text-only.patch)，它仅排除 profile 二进制；完整可应用补丁见 0002.patch。
+本包 HEAD 为 **fa4f9978c9162d3c6cd2113d0cfe1173f04881c8**，tree **c9f61c77a1a08f5faffd45f8a37f6b46359922f7**。2026-11-09 已通过指定 force-with-lease 更新 sandbox/lhmax2025/bolt_pgo，推后 ls-remote 相同。三个源码提交和 tree 从第一步完成后未再修改。本轮不完整构建。
 
-## 基线与三个本地提交
+## 基线与三个提交
 
-基线 13c3e223d9e1b35e4affb55255c5042f8c940f35（359934 PS10），父 cf4b6777d056131e2534ecb460c5575327d99646（357163）。两 change 的 **NEW** 状态引用 2026-11-09 15:54 +08:00 的历史查询，见 [359934](../../tools/bolt/results/cli-cancel-20261109/change-359934.txt)、[357163](../../tools/bolt/results/cli-cancel-20261109/change-357163.txt)。本轮因测试停止，没有重新查询状态或当前 patch set；不将历史状态冒充当前查询。
+基线 **13c3e223d9e1b35e4affb55255c5042f8c940f35**（359934 PS10），父 **cf4b6777d056131e2534ecb460c5575327d99646**（357163 PS2）。推后查询：两 change 都是 **NEW**，359934 当前仍为 PS10，未变化。原文见 [gerrit/](../../tools/bolt/results/third-code-review-20261109/resume/basedev-finish/gerrit/)。
+
+按下面顺序应用三个完整补丁到基线，不应用到旧 sandbox HEAD：
 
 |补丁|SHA|tree|标题|
 |---|---|---|---|
@@ -14,32 +16,30 @@ BOLT 评审请读 [0002-text-only.patch](0002-text-only.patch)，它仅排除 pr
 |0002.patch|22f1c9fd79de6086ee21f235868c70167868b7ff|4d78fb7cc802b4815bd04d8e3334ca3a73576dab|packaging: optimize x86_64 clang with BOLT|
 |0003.patch|fa4f9978c9162d3c6cd2113d0cfe1173f04881c8|c9f61c77a1a08f5faffd45f8a37f6b46359922f7|packaging: fix x86 LLVM flags and archive mode|
 
-三个 Change-Id 保留；第一提交只折行说明，tree 不变。按序应用到上述基线；不应用到旧 sandbox HEAD 上。
+## 本轮修改
 
-## 本轮改动
+- 转换器：ar 长度、名字、对齐边界；PIC 符号表/重定位表步长与索引边界；SIGHUP；WNOWAIT 保留退出组长，最后组信号之后在锁内 wait4 回收；三工具真实目录一致性。
+- helper：仅 Rollback 说明，明确 Source1200/1201 仍声明供 GBS 插入补丁。
+- spec：bolt_checked 打印已捕获输出后，取消状态 129/130/143 直接退出，不运行磁盘诊断；普通失败行为不变。
+- 提交说明按指定文本更新、所有行≤72列、Change-Id/Signed-off-by 为最后独立段。
+- 未采纳将混合失败退出码改为 1；仍保持 128+signal，防止 bolt_optional 吞掉取消。
 
-- 转换器：ar 长度/名字/对齐边界；符号表、重定位步长及符号索引边界；SIGHUP；waitid(WNOWAIT) 保留组长，最后一次组信号后在锁内 wait4 回收；三工具真实目录一致性。
-- helper：只修改 Rollback 说明，明确 Source1200/1201 保持声明。
-- spec：bolt_checked 保存失败退出码，取消状态 129/130/143 打印捕获输出后直接退出，其他失败仍诊断后退出 1。
-- 提交说明：用户指定文本、72 列折行、两个 trailer 单独为最后一段。
-- 未采纳把混合失败退出码改成 1：会让 bolt_optional 吞掉取消；保持 128+signal。
-
-## 文件
+## 文件导览
 
 |文件|用途|
 |---|---|
-|0001.patch / 0002.patch / 0003.patch|三个完整 format-patch，按上述顺序应用|
-|0002-text-only.patch|BOLT 文本改动，只排除 profile 二进制|
+|0001.patch / 0002.patch / 0003.patch|三个完整 format-patch|
+|0002-text-only.patch|BOLT 全部文本改动，仅排除 profile 二进制|
 |converter-vs-ps10.diff|转换器相对总部 PS10 的完整 diff|
-|changes-since-7d5e28ca.diff|第二、三轮修复的累计 diff|
-|changes-since-c7fd5eed.diff|本轮相对入口 HEAD 的完整 diff|
-|files/|spec、helper、转换器、六个 CMake 文件最终全文|
-|provenance.json|源码身份、提交说明元数据及停止边界|
-|SHA256SUMS|所有材料的 SHA256，清单自身除外|
+|changes-since-7d5e28ca.diff|第二、三轮修复累计 diff|
+|changes-since-c7fd5eed.diff|本轮改动的完整 diff|
+|files/|spec、helper、转换器和六个 CMake 文件全文|
+|provenance.json|提交身份、检查、演练、sandbox 与 change 状态|
+|SHA256SUMS|全部材料 SHA256，清单自身除外|
 
-所有 raw 路径为：https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/patches/rebase-359934-20261109-r4/<文件名>。
+所有 raw 文件路径为 https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/patches/rebase-359934-20261109-r4/ 加对应文件名。
 
-|全文文件|字节数|SHA256|
+|完整文本|字节数|SHA256|
 |---|---:|---|
 |packaging/llvm.spec|36552|b0fe97b9dc5d6d69d8a790a92be05414580deb68eadbe0d1bda9a9837bb03a5b|
 |packaging/clang-bolt-helper.py|119789|147ea231341e75eef204d2d9118aab3cc597b95e665c4511a3adf2e49593866f|
@@ -51,17 +51,23 @@ BOLT 评审请读 [0002-text-only.patch](0002-text-only.patch)，它仅排除 pr
 |llvm/cmake/modules/AddLLVM.cmake|105993|02222783e87051da8b468a48e411e79a917ac194f4e50939d119f80a8bcfc7b1|
 |llvm/tools/llvm-ar/CMakeLists.txt|1025|e7db3ac8c02493dba0df01cd8ba5e3992285af11f2351c1a47fca3f3d3adc49c|
 
-Source1200：packaging/clang-bolt-v2.fdata.xz，9735212 字节，SHA256 52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f。不单独复制二进制；完整内容保留在 0002.patch。
+Source1200：packaging/clang-bolt-v2.fdata.xz，9735212 字节，SHA256 52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f。不另附 profile 文件；完整内容在 0002.patch。
 
-## 证据与验证边界
+## 验证结论与边界
 
-- 472 项单元测试、真实 release C-2 #5/#6 两项通过。
-- 两配置完整展开 12 项、Tizen RPM 解析 5 项通过。
+- 472 项单元测试和真实 release C-2 #5/#6 两项全部通过。
+- 两配置展开 12 项、Tizen RPM 解析 5 项通过；ARM/off 相同，x86 on 仅 bolt_checked 改动。
 - T/D 各 3853 条重放参数与 c7fd5eed 逐项相同，共 7706。
-- 两套 QB 各 225 个归档、3864 个成员、3763631 条受检重定位通过；总计 450 个归档、7728 个成员、7527262 条受检重定位。
-- Toolchain/Base-Dev 都停在真实 CMake 入口，未运行 Ninja；log-restarts=0，FLAGS 与 QB 1221204/1221207 逐字相同，WARNING=0，资源报告正常，无残留挂载及构建进程。
-- Base-Dev 本次补跑的日志和副本均为 58297 字节；上次漏传项目参数的失败记录保留，本次使用正确完整 argv，新建此前不存在的 retry-02 根。
+- 两套 QB 各 225 个静态归档、3864 个成员、3763631 条受检重定位通过，总计 450 归档、7728 成员、7527262 条受检重定位。
+- T/D 演练均停在 CMake，未跑 Ninja；log-restarts=0，FLAGS 分别与 QB1221204/1221207 逐字一致，WARNING=0，资源报告正常，无残留进程和挂载。
+- 本次 D 日志/副本均 58297 字节。此前测试输入和启动参数错误的原文保留；完成情况以 72 §8–9 为准。
 
-[72 §7–8](../../docs/bolt/72_third_code_review_fixes.md) 给出原文和审计，[resume/](../../tools/bolt/results/third-code-review-20261109/resume/) 保存全部测试，[basedev-finish/](../../tools/bolt/results/third-code-review-20261109/resume/basedev-finish/) 保存本次补跑。
+[72 号](../../docs/bolt/72_third_code_review_fixes.md)、[测试证据](../../tools/bolt/results/third-code-review-20261109/resume/)、[Base-Dev 补跑证据](../../tools/bolt/results/third-code-review-20261109/resume/basedev-finish/)。
 
-重放参数一致与既有实物门禁通过不代表新版本整包一致；本轮没有全量重新转换全部成员或完整构建。源码、完整补丁、files 和 Source1200 身份不变。先前失败不抹去，当前结论以本节及 72 号最终章节为准。
+重放参数全量一致、既有归档门禁通过，不等于本轮新版本整包逐字节认证。本轮未完整构建，也未重新转换全部 7706 个成员；真实 C-2 只重转一个 release 成员及负例。背景文档为 48、51、69、70、71 号。旧评审包保留不动。
+
+## sandbox
+
+推后 HEAD：fa4f9978c9162d3c6cd2113d0cfe1173f04881c8。只推该 sandbox，未推 refs/for，未操作 QB。
+
+后续软件包行：platform/upstream/llvm@fa4f9978c9162d3c6cd2113d0cfe1173f04881c8。
