@@ -979,3 +979,9 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 - 当前 sandbox/lhmax2025/bolt_pgo = c7fd5eed5e35ca335940239cae349a6936f74a7a；三提交为 a73a7da32049569b1360e9c13d0633c168b8f173, 3dc97ef3a8fae0bbc61b208fa2bc6c369f1146b0, c7fd5eed5e35ca335940239cae349a6936f74a7a。首提交未变，第三提交自身 diff/说明未变，最终只多 helper 的 4 行。
 - 359934 仍 NEW / PS10 13c3e223；357163 仍 NEW / PS2 cf4b6777。新 HEAD 尚未完整构建或跑 QB；本轮没有操作 QB、推 refs/for 或删除文件。
 - 证据仓库提交为本节所在提交（最终回复提供完整 SHA）。
+
+## 2026-11-09：设计 v4 与第三轮评审材料
+
+- 设计 v4 从 Downloads 移至 W/docs/bolt/design/，并同步发布到 bolt-v4，53,097 B，SHA256 2be0c79a48d34d20cb003f87b9c954154b9c92a2c2d103ab0f6f82643f7615f7；原文不改，v1/v2 保持原样，目标目录未见 v3。
+- [第三轮评审包](../../patches/rebase-359934-20261109-r3/README.md) 以 c7fd5eed5e35ca335940239cae349a6936f74a7a 为准：三个完整补丁、BOLT 文本补丁、9 份全文、converter 对 PS10 diff、相对 7d5e28ca 的完整 diff、出处与 SHA256SUMS。导出内容与 Git 对象核对通过。
+- 基线仍是总部 359934 PS10（13c3e223，NEW）及其父 cf4b6777（357163，NEW），状态引用今日 §70.10 查询；本轮不改源码、不构建、不推 Gerrit/sandbox。设计正文仍引用旧基线，README 已区分最终代码与历史验证范围。

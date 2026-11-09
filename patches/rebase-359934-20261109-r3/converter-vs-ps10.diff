@@ -1,0 +1,134 @@
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index 1b1f759ffe7030f1d8e3a311b828b05466943253..cce638977420920abf145db962f9882c6dc3ecc9 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -7,6 +7,8 @@ Text IR metadata/attribute parsing depends on LLVM 22 llvm-dis output syntax.
+ Four architecture-specific policy points are deliberately explicit: backend
+ options, recorded-command classification, relocation rules, and triple allowlist.
+ Failing closed when parameters change is intentional; recertify before use.
++The HQ allowlist accepts -g0 and has_debug_options also counts it as debug.
++Current recorded commands contain no -g0; recheck this on clang upgrades.
+ """
+ import argparse
+ from collections import Counter
+@@ -247,6 +249,8 @@ def classify_options(argv, arch='x86_64'):
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+         elif re.fullmatch(r'--param=ssp-buffer-size=\d+', token):
+             category, reason = 'ir', 'stack-protector-buffer-size function attribute already in the IR'
++        elif token == '-Xassembler' or token.startswith('-Wa,'):
++            raise ValueError('uncertified assembler option: '+token)
+         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
+                                '-fdiagnostics-color=')) or token in
+               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+@@ -279,7 +283,7 @@ def classify_options(argv, arch='x86_64'):
+                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
+ 
+ 
+-def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
++def ir_settings(lines, require_recorded_options=True, arch='x86_64', debug_info=None):
+     """Read LLVM 22 textual metadata/attributes without modifying input IR."""
+     retained, metadata = [], {}
+     triple, command_id = None, None
+@@ -330,6 +334,11 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+         raise ValueError('missing original command: backend policy cannot be certified')
+     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+         lambda match: chr(int(match[1], 16)), metadata[command_id]))
++    found_debug = 'yes' if any(token.startswith('-g') for token in recorded_command) else 'no'
++    if debug_info is not None and debug_info != found_debug:
++        raise ValueError('debug-info expected %s, found %s' %
++                         ('debug' if debug_info == 'yes' else 'release',
++                          'debug' if found_debug == 'yes' else 'release'))
+     policy = classify_options(recorded_command, arch)
+     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+              *(('-f'+key) if policy['switches'][key] else ('-fno-'+key)
+@@ -561,6 +570,18 @@ def validate_tools(build, compiler, disassembler, nm, command, output):
+     match = re.search(r'clang version (\d+)\.', text)
+     if not match or int(match[1]) != CERTIFIED_LLVM_MAJOR:
+         raise ValueError('uncertified compiler major (required 22): '+text.strip())
++    full_version = re.search(r'clang version (\d+\.\d+\.\d+)\b', text)
++    if not full_version:
++        raise ValueError('missing complete clang version: '+text.strip())
++    for label, tool in [('disassembler', disassembler), ('nm', nm)]:
++        tool_version = output/(label+'-version.txt')
++        with tool_version.open('wb') as stream:
++            command.run([tool, '--version'], output/(label+'-version-command'), stdout=stream)
++        tool_text = tool_version.read_text()
++        match = re.search(r'LLVM version (\d+\.\d+\.\d+)\b', tool_text)
++        if not match or match[1] != full_version[1]:
++            raise ValueError('%s version mismatch: expected %s, found %s' %
++                             (label, full_version[1], match[1] if match else tool_text.strip()))
+     return dict(compiler=str(compiler), version=text, compiler_sha256=sha(compiler),
+                 disassembler=str(disassembler), nm=str(nm))
+ 
+@@ -603,15 +624,17 @@ def cleanup_evidence(output):
+             path.unlink()
+ 
+ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3, command=None):
++            address_space_bytes=4*1024**3, command=None, debug_info=None):
+     root, output, build = Path(root).resolve(), Path(output).resolve(), Path(build).resolve()
+     if arch not in CERTIFIED_OPTIMIZATION or jobs < 1 or address_space_bytes < 1:
+         raise ValueError('invalid architecture or resource parameters')
++    if debug_info not in ('yes', 'no'):
++        raise ValueError('debug-info expected=yes|no found='+str(debug_info))
+     reset_evidence(root, output, build)
+     command = command or Commands(address_space_bytes)
+     summary = dict(started=time.time(), input_root=str(root), output_root=str(output),
+                    arch=arch, workers=jobs, as_bytes=address_space_bytes, archives=[],
+-                   status='CONVERTING', missing_symbols_by_type={})
++                   status='CONVERTING', debug_info=debug_info, missing_symbols_by_type={})
+     def save():
+         atomic_json(output/'summary.json', summary)
+     save()
+@@ -621,6 +644,8 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+         summary['scanned_archives'] = len(archives)
+         summary['native_archives_skipped'] = sum(not data['bitcode'] for archive, data in archives)
++        # Preserved native members retain their bytes, including any debug sections.
++        summary['native_members_preserved'] = sum(data['machine'] for archive, data in archives)
+         for archive, before in archives:
+             command.check()
+             if not before['bitcode']:
+@@ -660,7 +685,7 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                 with text_ir.open('wb') as out:
+                     command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
+                 with text_ir.open() as lines:
+-                    settings = ir_settings(lines, arch=arch)
++                    settings = ir_settings(lines, arch=arch, debug_info=debug_info)
+                 atomic_json(source.parent/'ir-settings.json', settings)
+                 text_ir.unlink()
+                 record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
+@@ -746,14 +771,14 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+ 
+ 
+ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3):
++            address_space_bytes=4*1024**3, debug_info=None):
+     root, output = Path(root).resolve(), Path(output).resolve()
+     command = Commands(address_space_bytes)
+     old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
+     result = None
+     try:
+         print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
+-        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command)
++        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command, debug_info)
+         command.check()
+         result['status'] = 'INSTALLING'
+         atomic_json(output/'summary.json', result)
+@@ -792,6 +817,7 @@ def install_main():
+     parser.add_argument('--build', type=Path, required=True)
+     parser.add_argument('--evidence', type=Path, required=True)
+     parser.add_argument('--arch', choices=['x86_64'], required=True)
++    parser.add_argument('--debug-info', choices=['yes', 'no'], required=True)
+     parser.add_argument('--compiler', type=Path, required=True)
+     parser.add_argument('--disassembler', type=Path, required=True)
+     parser.add_argument('--nm', type=Path, required=True)
+@@ -799,7 +825,7 @@ def install_main():
+     parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
+     args = parser.parse_args()
+     install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+-            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes)
++            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info)
+ 
+ 
+ if __name__ == '__main__':
