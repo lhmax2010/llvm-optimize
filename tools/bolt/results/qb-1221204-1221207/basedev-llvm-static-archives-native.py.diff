@@ -1,0 +1,87 @@
+--- /home/linhao/Toolchain/development/llvm-optimize/temp/qb-1221204-1221207/payload/basedev/llvm-src/old/llvm-static-archives-native.py
++++ /home/linhao/Toolchain/development/llvm-optimize/temp/qb-1221204-1221207/payload/basedev/llvm-src/new/llvm-static-archives-native.py
+@@ -172,8 +172,12 @@
+ CERTIFIED_LLVM_MAJOR = 22
+ CERTIFIED_OPTIMIZATION = {'x86_64': '-O3'}
+ CERTIFIED_TRIPLES = {'x86_64': {'x86_64-tizen-linux-gnu'}}
++SWITCH_KEYS = ('function-sections', 'data-sections', 'unique-section-names', 'addrsig')
+ BACKEND_FLAGS = ['-ffunction-sections', '-fdata-sections',
+-                 '-funique-section-names', '-faddrsig', '-g', '-gdwarf-4']
++                 '-funique-section-names', '-faddrsig']
++# Replay mirrors the recorded command: section/symbol emission and debug emission
++# follow the original backend policy (-f/-fno- per switch; -g -gdwarf-4 only when
++# the original command recorded debug options).
+ # LLVM 22 clang/Driver/ToolChains/Clang.cpp:2797, 6228, 7992-7999.
+ DEFAULTS = {'unique-section-names': True, 'addrsig': True, 'fp-contract': 'on'}
+ 
+@@ -191,15 +195,15 @@
+     if arch not in CERTIFIED_OPTIMIZATION:
+         raise ValueError('uncertified architecture: '+arch)
+     rows, optimizations, dwarfs, contractions = [], [], [], []
+-    switches = {key: [] for key in ('function-sections', 'data-sections',
+-                                  'unique-section-names', 'addrsig')}
+-    operand_options = {'-D', '-I', '-isystem', '-resource-dir', '-o', '-MT', '-MF', '-x'}
++    switches = {key: [] for key in SWITCH_KEYS}
++    operand_options = {'-D', '-I', '-isystem', '-resource-dir', '-o', '-MT', '-MF', '-x', '--param'}
+     exact_ir = {'-fomit-frame-pointer', '-fno-omit-frame-pointer', '-fexceptions',
+                 '-fno-exceptions', '-fasynchronous-unwind-tables', '-funwind-tables',
+                 '-fno-asynchronous-unwind-tables', '-fno-unwind-tables', '-fno-common',
+                 '-ftrapping-math', '-m64', '-fPIC', '-fPIE', '-fpic', '-fpie',
+                 '-fno-pic', '-fno-pie', '-fno-semantic-interposition'}
+     exact_ir.update({'-fvisibility-inlines-hidden', '-fno-visibility-inlines-hidden'})
++    exact_ir.update({'-feliminate-unused-debug-types'})
+     index = 0
+     while index < len(argv):
+         token = argv[index]
+@@ -209,6 +213,8 @@
+         elif token in operand_options:
+             if index+1 == len(argv) or argv[index+1].startswith('-'):
+                 raise ValueError('missing operand for '+token)
++            if token == '--param' and not re.fullmatch(r'ssp-buffer-size=\d+', argv[index+1]):
++                raise ValueError('unclassified --param value: '+argv[index+1])
+             category, reason = 'irrelevant', 'preprocessing, driver resource, output or language operand'
+             rows.append(dict(index=index, token=token, category=category, reason=reason))
+             index += 1
+@@ -239,6 +245,8 @@
+             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
+         elif token == '-flto=thin':
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
++        elif re.fullmatch(r'--param=ssp-buffer-size=\d+', token):
++            category, reason = 'ir', 'stack-protector-buffer-size function attribute already in the IR'
+         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
+                                '-fdiagnostics-color=')) or token in
+               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+@@ -252,14 +260,15 @@
+         index += 1
+     if not optimizations or optimizations[-1] != CERTIFIED_OPTIMIZATION[arch]:
+         raise ValueError('uncertified last optimization: '+str(optimizations[-1:] or 'missing'))
+-    # A release command has no -g options at all. Once any debug option is
+-    # present, retain the certified DWARF-4 requirement (including bare -g).
+     has_debug_options = any(token.startswith('-g') for token in argv)
+     if has_debug_options and (not dwarfs or dwarfs[-1] != '-gdwarf-4'):
+         raise ValueError('uncertified last DWARF option: '+str(dwarfs[-1:] or 'missing'))
+     effective = {}
+     for key, values in switches.items():
+         effective[key] = values[-1] if values else DEFAULTS.get(key, False)
++    # Replay emits the original value explicitly; only the section-naming defaults
++    # that the certified backend relies on must remain enabled.
++    for key in ('unique-section-names', 'addrsig'):
+         if not effective[key]:
+             raise ValueError('original command does not enable '+key)
+     contraction = contractions[-1] if contractions else DEFAULTS['fp-contract']
+@@ -327,10 +336,12 @@
+                          ('debug' if debug_info == 'yes' else 'release',
+                           'debug' if found_debug == 'yes' else 'release', debug_info, found_debug))
+     policy = classify_options(recorded_command, arch)
+-    backend_flags = [flag for flag in BACKEND_FLAGS
+-                     if policy['dwarf'] is not None or not flag.startswith('-g')]
+     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+-             *backend_flags, '-ffp-contract='+policy['fp_contract'], '-c']
++             *(('-f'+key) if policy['switches'][key] else ('-fno-'+key)
++               for key in SWITCH_KEYS)]
++    if policy['dwarf']:
++        flags += ['-g', policy['dwarf']]
++    flags += ['-ffp-contract='+policy['fp_contract'], '-c']
+     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
+               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),

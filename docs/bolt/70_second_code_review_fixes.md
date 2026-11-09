@@ -466,3 +466,121 @@ index b6cb759ec86885630f635bb381ed105ab3496f26..53eee9d20d49ba0069eccd8918a2f1b8
 ```
 
 结论：轻量检查、实物门禁复核和两个演练通过；三个提交仅本地，未做完整构建，未推 Gerrit/sandbox。
+
+## 10. cli 取消漏洞修复与 sandbox 推送（2026-11-09）
+
+前置 QB 核对见 [71 号](71_qb_1221204_1221207.md)：1221204 / 1221207 都使用 7d5e28ca，三个架构全部成功；34 个二进制包与各自旧 QB 的载荷完全一致、7706 个转换成员 SHA 全同。两份源码包仅 converter 与 spec VCS 变化，严格 FAIL 保留但已完整归因。第一项通过后才执行本节。
+
+本节仅修 cli 的非 GateError 异常路径：已记录取消时打印 traceback，并返回 128+signal；没有取消仍保留原 raise。成功路径没有改动。
+
+### 10.1 修复和提交归属
+
+~~~diff
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 46b226af11f57d737f86c99a35f4c73ae7f534cc..68e20f230c659da78b32bfdc36cdf2b276e6efa5 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -50,6 +50,7 @@ Separate function symbols with eu-strip (LLVM only-keep-debug crashes on BOLT
+ segment layout), then add/verify debuglink. clang-debuginfo carries the matching
+ symtab at /usr/lib/debug/usr/bin/clang-22.debug; it contains no source-line DWARF.
+ """
++import traceback
+ import argparse
+ import collections
+ import shlex
+@@ -1921,6 +1922,9 @@ def cli():
+         log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+         diagnose_safely(step,log,error)
+         print('BOLT_GATE_FAILED: unexpected %s: %s' % (type(error).__name__, error), file=sys.stderr)
++        if _CANCEL_SIGNAL is not None:
++            traceback.print_exc()
++            return 128 + _CANCEL_SIGNAL
+         raise
+     finally:
+         for sig, handler in previous.items():
+~~~
+
+基于 5a27edb4 制作 fixup 1c4be1fe6a92；用指定身份执行 GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash 13c3e223d9e1b35e4affb55255c5042f8c940f35，归入第二提交。仍为三个提交，无新分支，三份提交说明和 Change-Id 均未修改。
+
+|顺序|SHA|tree|标题|长度|
+|---|---|---|---|---|
+|1|a73a7da32049569b1360e9c13d0633c168b8f173|3d961cbb04f5446f84d2089b4f65f3178f2bd7fa|cmake: use hybrid LLVM linkage on x86_64|40|
+|2|3dc97ef3a8fae0bbc61b208fa2bc6c369f1146b0|24b6aace2a36bb5840f33ea8fa4da710056ff078|packaging: optimize x86_64 clang with BOLT|42|
+|3|c7fd5eed5e35ca335940239cae349a6936f74a7a|24addd0a47a8e7028fe5561cb4f1153bc293d36a|packaging: fix x86 LLVM flags and archive mode|46|
+
+按用户确认的可执行口径核对（[pre-push-proof.json](../../tools/bolt/results/cli-cancel-20261109/pre-push-proof.json)）：
+
+- 首提交 a73a7da3 的 SHA/tree 完全不变。
+- 新旧第二提交 diff 只有 helper 上述 4 行；与新旧最终 HEAD 的 diff 逐字相同。
+- 第三个提交自身的完整 full-index diff，与 7d11ad53..5a27edb4 逐字节相同；其说明和 Change-Id 不变。
+- 三个最后段落都只有 Change-Id、Signed-off-by 两行，git interpret-trailers --parse 可解析。首提交原有顺序是 Signed-off-by 后 Change-Id；首次检查器误要求相反顺序，已按用户“不限定顺序”的条件修正检查器，提交说明未变，记录见 pre-push-check-note.txt。
+- 作者、提交者和 Signed-off-by 都是 Hao Lin <hao.lin@samsung.com>；标题均不超过 50 字符，工作区干净。
+
+### 10.2 回归和展开
+
+所有命令串行运行于独立 systemd 用户服务，MemoryMax=8G、swap0、CPUQuota400%、nice19、ionice-c3。没有 OOM、完整构建、演练、sudo 或删除。测试临时文件沿用保全包装器留在新的 temp/cli-cancel-20261109/；历史根只读。
+
+|项目|结果|原文证据|
+|---|---|---|
+|显式 helper 既有测试|393/393，21.691s|helper.stderr / helper.stdout|
+|70 号新增测试|12/12，1.347s|review70.stderr / new-tests-02-result.json|
+|本次新增异常取消测试|2/2，0.609s，含 3 种信号子用例|cli-cancel.stderr / cli-cancel-observed.json|
+|T/D 完整 spec 展开|12/12，与 5a27edb4 全部逐字节相同|parse/expansion-summary.json 及全部 stdout / 空 diff|
+
+总计 407 项通过。既有测试预期没有改变；70 号测试副本只替换新临时目录。新增用例对同一 KeyError 分别运行旧/新 helper：取消后的旧版 rc=1，新版 SIGHUP=129、SIGINT=130、SIGTERM=143，stderr 都含 traceback 和 KeyError；未取消的新旧均 rc=1、仍重新抛出，诊断保持调用。traceback 的文件名/源码行号不同不作为行为差异。
+
+展开用 70 号相同的 Tizen rpm/loader、Toolchain build.conf e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945 和 Base-Dev 8ace286a5f98f2e02a79be275a64c22a86ea2b0034174c1e293381e181ce3f6a；每配置覆盖 x86 debug/release × BOLT on/off、armv7l、aarch64。源码 spec 本身也逐字节未变。只做展开，不做 export 或构建。
+
+~~~text
+Ran 393 tests in 21.691s
+OK
+Ran 12 tests in 1.347s
+OK
+Ran 2 tests in 0.609s
+OK
+EXPANSIONS_PASS 12 ALL_BYTE_IDENTICAL True
+~~~
+
+### 10.3 sandbox 推送与复核
+
+SSH BatchMode、完整 URL，无密码提示。推前 ls-remote 精确为 7d5e28ca89ed68e3360765bc4e42234eaaabae27。只推送以下分支一次，没有 refs/for 或其他 Gerrit 分支推送：
+
+~~~sh
+git push --force-with-lease=refs/heads/sandbox/lhmax2025/bolt_pgo:7d5e28ca89ed68e3360765bc4e42234eaaabae27 ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm bolt-on-359934:refs/heads/sandbox/lhmax2025/bolt_pgo
+~~~
+
+输出原文：
+
+~~~text
+remote: 
+remote: Processing changes: refs: 1        
+remote: Processing changes: refs: 1, done            
+To ssh://review.tizen.org:29418/platform/upstream/llvm
+ + 7d5e28ca89ed...c7fd5eed5e35 bolt-on-359934 -> sandbox/lhmax2025/bolt_pgo (forced update)
+~~~
+
+推后 ls-remote：
+
+~~~text
+c7fd5eed5e35ca335940239cae349a6936f74a7a	refs/heads/sandbox/lhmax2025/bolt_pgo
+~~~
+
+五个提交的完整父链：
+
+~~~text
+c7fd5eed5e35ca335940239cae349a6936f74a7a 24addd0a47a8e7028fe5561cb4f1153bc293d36a packaging: fix x86 LLVM flags and archive mode
+3dc97ef3a8fae0bbc61b208fa2bc6c369f1146b0 24b6aace2a36bb5840f33ea8fa4da710056ff078 packaging: optimize x86_64 clang with BOLT
+a73a7da32049569b1360e9c13d0633c168b8f173 3d961cbb04f5446f84d2089b4f65f3178f2bd7fa cmake: use hybrid LLVM linkage on x86_64
+13c3e223d9e1b35e4affb55255c5042f8c940f35 087e06cf9c79c571c711af8a07057496940ae73d packaging: classify -feliminate-unused-debug-types and mirror recorded backend policy
+cf4b6777d056131e2534ecb460c5575327d99646 7b49745738b5512fbbed890e67e6a3861e1e39a5 Revert "Revert clang bootstrap + ThinLTO, fall back to GCC"
+~~~
+
+359934 仍为 NEW，当前 PS10=13c3e223d9e1b35e4affb55255c5042f8c940f35；357163 仍为 NEW，当前 PS2=cf4b6777d056131e2534ecb460c5575327d99646。原始 Gerrit JSON、命令、返回码和时间见 change-359934.txt / change-357163.txt 及对应 .json。没有关闭评审、添加 reviewer 或操作 QB。
+
+[sandbox gitweb](https://review.tizen.org/gerrit/gitweb?p=platform/upstream/llvm.git;a=shortlog;h=refs/heads/sandbox/lhmax2025/bolt_pgo)。供 QB 使用的软件包行为 platform/upstream/llvm@c7fd5eed5e35ca335940239cae349a6936f74a7a。
+
+证明边界：71 号完整 QB 和全量产物比较针对 7d5e28ca；本节新 HEAD 只通过上述轻量检查和 spec 不变性核对，未宣称已完成新 HEAD 的完整构建或 QB 验证。
+
+~~~text
+ITEM2 已结束 2026-11-09T15:57:10.410433+08:00 status=ok reason=407-tests-12-expansions-pass-sandbox-updated
+~~~

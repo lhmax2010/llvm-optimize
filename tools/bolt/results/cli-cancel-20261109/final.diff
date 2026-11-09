@@ -1,0 +1,22 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 46b226af11f57d737f86c99a35f4c73ae7f534cc..68e20f230c659da78b32bfdc36cdf2b276e6efa5 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -50,6 +50,7 @@ Separate function symbols with eu-strip (LLVM only-keep-debug crashes on BOLT
+ segment layout), then add/verify debuglink. clang-debuginfo carries the matching
+ symtab at /usr/lib/debug/usr/bin/clang-22.debug; it contains no source-line DWARF.
+ """
++import traceback
+ import argparse
+ import collections
+ import shlex
+@@ -1921,6 +1922,9 @@ def cli():
+         log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+         diagnose_safely(step,log,error)
+         print('BOLT_GATE_FAILED: unexpected %s: %s' % (type(error).__name__, error), file=sys.stderr)
++        if _CANCEL_SIGNAL is not None:
++            traceback.print_exc()
++            return 128 + _CANCEL_SIGNAL
+         raise
+     finally:
+         for sig, handler in previous.items():

@@ -971,3 +971,11 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 - T/D 串行演练通过，log-restarts=0，FLAGS 对 QB 一致，WARNING=0，无残留；未运行 Ninja 或完整构建。
 - 参数一致已全量核对；转换输出仅实测一个真实成员；整包一致尚未重建验证。其余挂账和风险保持。
 - [70 号文档](70_second_code_review_fixes.md)；[本轮评审包](../../patches/rebase-359934-20261106-r2/README.md)。
+
+## 2026-11-09：QB 1221204/1221207 与 cli 取消修复
+
+- [71 号](71_qb_1221204_1221207.md)：两次源码均为 7d5e28ca，三个架构 LLVM 全部成功；T 22/22、D 12/12 二进制包载荷逐字节相同，7706 个转换成员 SHA 全同。2 个源码包严格 FAIL，差异全部归因于 converter 源码与 spec VCS；无未解释差异。
+- [70 号 §10](70_second_code_review_fixes.md#10-cli-取消漏洞修复与-sandbox-推送2026-11-09)：393+12+2=407 测试通过；12 项 T/D 展开与 5a27edb4 逐字相同。取消后非 GateError 异常返回 128+signal 并打印 traceback，普通异常仍 raise。
+- 当前 sandbox/lhmax2025/bolt_pgo = c7fd5eed5e35ca335940239cae349a6936f74a7a；三提交为 a73a7da32049569b1360e9c13d0633c168b8f173, 3dc97ef3a8fae0bbc61b208fa2bc6c369f1146b0, c7fd5eed5e35ca335940239cae349a6936f74a7a。首提交未变，第三提交自身 diff/说明未变，最终只多 helper 的 4 行。
+- 359934 仍 NEW / PS10 13c3e223；357163 仍 NEW / PS2 cf4b6777。新 HEAD 尚未完整构建或跑 QB；本轮没有操作 QB、推 refs/for 或删除文件。
+- 证据仓库提交为本节所在提交（最终回复提供完整 SHA）。

@@ -1,0 +1,39 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/night-launch-20261105/compare_packages.py
++++ compare_packages.py
+@@ -6,7 +6,13 @@
+ # imports are from this launcher directory
+ from rpm_io import manifest
+ from rpm_extract import extract_selected
+-E=Path(sys.argv[1]);P=E/'payload';P.mkdir(exist_ok=False)
++E=Path(sys.argv[1]);
++class Tee:
++ def __init__(self):self.file=(E/'compare.stdout').open('x');self.original=sys.stdout
++ def write(self,s):self.file.write(s);self.file.flush();return self.original.write(s)
++ def flush(self):self.file.flush();self.original.flush()
++sys.stdout=Tee();sys.stderr=sys.stdout
++P=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/qb-1221204-1221207/payload');P.mkdir(exist_ok=False)
+ REUSE=Path(os.environ['QB_COMPARE_READONLY_PAYLOAD']) if os.environ.get('QB_COMPARE_READONLY_PAYLOAD') else None
+ if REUSE:assert REUSE.is_dir()
+ def expire(signum,frame):raise TimeoutError('single-file comparison exceeded 30 minutes')
+@@ -27,10 +33,10 @@
+   if at!=bt:meta.append({'path':x['name'],'old':at,'new':bt})
+   assert x==y,('source tar content changed',x['name'])
+  return {'classification':'source-tar-metadata-only','mtime_changes':meta}
+-rows=json.loads((E/'rpm-downloads.json').read_text());assert len(rows)==23
++rows=json.loads((E/'rpm-downloads.json').read_text());assert len(rows)==36
+ summary=[];manifest_sets={};filemap=[]
+ try:
+- for label in ['toolchain']:
++ for label in ['toolchain','basedev']:
+   subset=[r for r in rows if r['project']==label];m={};paths={};root=Path(sys.argv[2])/'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0';roots=list((root/'home/abuild/rpmbuild/BUILDROOT').glob('llvm-*'))
+   for r in subset:
+    key=r['metadata'].split('\t')[0]+'\t'+('src' if r['path'].endswith('.src.rpm') else r['metadata'].split('\t')[3]);paths[key]={'old':Path(r['local_rpm']),'new':Path(r['path'])};m[key]={}
+@@ -41,7 +47,7 @@
+   # Both packaged payloads are needed: rpmbuild has removed BUILDROOT.
+   for key,mm in m.items():
+    for side,other in [('old','new'),('new','old')]:
+-    names={n for n,v in mm[side].items() if stat.S_ISREG(v['mode']) and (n not in mm[other] or v['sha256']!=mm[other][n]['sha256'])}
++    names={n for n,v in mm[side].items() if stat.S_ISREG(v['mode']) and (n.endswith('.a') or n not in mm[other] or v['sha256']!=mm[other][n]['sha256'])}
+     if REUSE:names={n for n in names if not (REUSE/label/key.replace('\t','-')/side/n).is_file()}
+     if names:extract_selected(paths[key][side],names,P/label/key.replace('\t','-')/side)
+   cache={}
