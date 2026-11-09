@@ -1,0 +1,36 @@
+{
+  "new_input": "post-expanded.stdout was assigned ordinary rpmspec -P output by this run parse_checks.py",
+  "new_count": 4,
+  "old_input": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/post-expanded.spec",
+  "old_tail": [
+    "",
+    "%global __bolt_original_spec_install_post %{__spec_install_post}",
+    "%define __spec_install_post \\",
+    "    %{__bolt_original_spec_install_post} \\",
+    "    python3 -B %{SOURCE1201} post \"%{buildroot}\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate\" --resource-dir \"%{buildroot}%{_libdir}/clang/%{llvm_version}\" || exit 1 \\",
+    "    echo BOLT_POST_GATE_PASS \\",
+    "    bolt_optional python3 -B %{SOURCE1201} disk-report post",
+    "%endif",
+    "%endif",
+    "",
+    "%check",
+    "%{__spec_install_post}"
+  ],
+  "old_command": [
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2",
+    "--library-path",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/rpmspec",
+    "-P",
+    "--rcfile",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/rpmrc:/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/toolchain-x86-debug.rpmrc",
+    "--macros",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/macros:/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/macros.d/macros.*:/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/platform/%{_target}/macros:/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/fileattrs/*.attr:/home/linhao/Toolchain/development/llvm-optimize/temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/tizen/macros:/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/parse-03/toolchain-x86-debug.macros",
+    "--target",
+    "x86_64-tizen-linux",
+    "--define",
+    "_toolchain clang",
+    "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/rebase-359934-20261106-r2/post-expanded.spec"
+  ],
+  "result": "fixture preparation error; no product test result for the 12 cases; no retry per stop instruction"
+}

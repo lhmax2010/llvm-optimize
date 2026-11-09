@@ -1,0 +1,33 @@
+--- before
++++ after
+@@ -95,16 +95,20 @@
+ the debuglink, with identical generated object files.
+ 
+ Handle SIGTERM, SIGHUP and SIGINT cooperatively and clean up the command
+-process group before exiting. A second signal terminates immediately.
+-Check Python work and late cancellation before reporting success; label
+-cancellation separately from command errors and timeouts. Freeze all ELF bytes outside the original
+-RUNPATH/RPATH string ranges during path repair. Compare all ELF/program
+-header fields and LOAD bytes across strip-all, normalizing only e_shoff,
+-e_shnum and e_shstrndx because strip relocates the nonloaded section
+-table. Require the platform debugfiles.list to contain clang-22.debug in
+-debug-mode post checks. Bound each run-step command to 14400 seconds,
+-reporting its step name and elapsed time on timeout. Preserve unexpected
+-helper exceptions with a diagnostic and traceback.
++process group before exiting; a second signal terminates immediately.
++Check Python work and late cancellation before reporting success, and
++exit with 128+signal (129/130/143) after cancellation. Optional disk
++reports and cache release, and required BOLT steps, propagate those
++statuses instead of reporting a gate failure. Label cancellation
++separately from command errors and timeouts.
++
++Freeze all ELF bytes outside the original RUNPATH/RPATH string ranges
++during path repair. Across strip-all and debuglink, compare all ELF and
++program header fields and LOAD bytes, normalizing only e_shoff, e_shnum
++and e_shstrndx. Require the platform debugfiles.list to contain
++clang-22.debug in debug-mode post checks. Bound each run-step command to
++14400 seconds. Without cancellation, unexpected helper exceptions keep
++a diagnostic and traceback and are re-raised.
+ 
+ Change-Id: Ic98eab90cc017f127a66e1729b44fab8b8e8fb41
+ Signed-off-by: Hao Lin <hao.lin@samsung.com>

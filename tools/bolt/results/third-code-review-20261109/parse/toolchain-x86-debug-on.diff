@@ -1,0 +1,14 @@
+--- 5a27edb4
++++ cli-cancel-fixed
+@@ -447,7 +447,11 @@
+   if bolt_output=$("$@" 2>&1); then
+     printf '%s\n' "$bolt_output" || bolt_fail "$bolt_stage-output" -
+   else
++    bolt_status=$?
+     printf '%s\n' "$bolt_output" || true
++    case "$bolt_status" in
++      129|130|143) exit "$bolt_status" ;;
++    esac
+     printf '%s\n' "$bolt_output" | python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/parse/rpmbuild/SOURCES/clang-bolt-helper.py disk-diagnose "$bolt_stage" /dev/stdin || true
+     exit 1
+   fi

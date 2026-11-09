@@ -985,3 +985,9 @@ ITEM3 已结束 2026-11-05T01:04:01.863726+08:00 status=partial reason=449-files
 - 设计 v4 从 Downloads 移至 W/docs/bolt/design/，并同步发布到 bolt-v4，53,097 B，SHA256 2be0c79a48d34d20cb003f87b9c954154b9c92a2c2d103ab0f6f82643f7615f7；原文不改，v1/v2 保持原样，目标目录未见 v3。
 - [第三轮评审包](../../patches/rebase-359934-20261109-r3/README.md) 以 c7fd5eed5e35ca335940239cae349a6936f74a7a 为准：三个完整补丁、BOLT 文本补丁、9 份全文、converter 对 PS10 diff、相对 7d5e28ca 的完整 diff、出处与 SHA256SUMS。导出内容与 Git 对象核对通过。
 - 基线仍是总部 359934 PS10（13c3e223，NEW）及其父 cf4b6777（357163，NEW），状态引用今日 §70.10 查询；本轮不改源码、不构建、不推 Gerrit/sandbox。设计正文仍引用旧基线，README 已区分最终代码与历史验证范围。
+
+## 2026-11-09 第三轮代码评审修复：测试停止，未推送 sandbox
+
+详见 [72_third_code_review_fixes.md](72_third_code_review_fixes.md)。本地新链 a65688b1377e91819fcd46a18da36d52b3312089 → 22f1c9fd79de6086ee21f235868c70167868b7ff → fa4f9978c9162d3c6cd2113d0cfe1173f04881c8，基线 PS10/13c3e223，三个 Change-Id 保留。转换器 ar/PIC 边界、WNOWAIT/SIGHUP、同目录工具；helper Rollback 注释；spec bolt_checked 取消传播与提交说明已归并。
+
+通过 helper 393、完整展开 12、Tizen RPM 解析 5。70 号 12 项初始化发现本轮普通 rpmspec -P 输出缺显式平台 post 展开，只含 4 个可选调用而非 5，0 项实际执行，这是本轮夹具输入准备错误。按任务停止：其他新旧测试、7706 重放、实物归档、T/D 演练未执行，未推 sandbox。r4 是未认证材料。此前 c7fd5eed sandbox 和两 change NEW/PS10 仅为历史记录；本轮未重新查询。后续须先修复测试输入准备，不能视为可发版。

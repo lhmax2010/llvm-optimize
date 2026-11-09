@@ -1,0 +1,191 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 68e20f230c659da78b32bfdc36cdf2b276e6efa5..bbf9c8770b3691acfb64065f950a32c67dff2dae 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -30,7 +30,8 @@ Static graphs do not load .ninja_deps/depfiles or establish full dirty state.
+ 
+ Rollback: --without clang_bolt locally; where build arguments cannot change,
+ change the x86_64 %bcond_without clang_bolt to %bcond_with clang_bolt in a new
+-spec commit. BOLT Sources/BuildRequires then disable together. Also restore
++spec commit. BOLT actions and BOLT-specific BuildRequires then disable;
++Source1200/1201 remain declared for GBS patch insertion. Also restore
+ matching accel/worker binaries and repository snapshots; verify their hashes.
+ 
+ Profile retraining is offline, never part of an RPM build: preserve a relinked
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index cce638977420920abf145db962f9882c6dc3ecc9..68de1925cabd9684832b7f588b9e7d1b6d159200 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -109,9 +109,11 @@ def inspect(path):
+             if len(header) != 60 or header[58:60] != b'`\n':
+                 raise ValueError(f'invalid ar header at {pos}')
+             name = header[:16].decode('ascii').rstrip(); size = int(header[48:58]); pos += 60
++            if size < 0:
++                raise ValueError('negative ar member size')
+             special = name in ('/', '//', '/SYM64/')
+             stored_size = size if not thin or special else (int(name[3:]) if name.startswith('#1/') else 0)
+-            if pos+stored_size > len(data):
++            if stored_size < 0 or stored_size > len(data)-pos:
+                 raise ValueError('ar member outside file')
+             if name == '//':
+                 longnames = data[pos:pos+size]
+@@ -121,13 +123,21 @@ def inspect(path):
+                 raw_members.append(dict(header_offset=start, raw_name=name, offset=pos,
+                                         size=size, mtime=header[16:28].decode().strip()))
+             pos += stored_size + stored_size % 2
++            if pos > len(data):
++                raise ValueError('missing ar member alignment byte')
+         members, offsets, native_map, occurrences = [], {}, [], Counter()
+         for m in raw_members:
+             name, off, size = m.pop('raw_name'), m['offset'], m['size']
+             if name.startswith('#1/'):
+-                n = int(name[3:]); name = data[off:off+n].rstrip(b'\0').decode('utf-8', 'surrogateescape'); off += n; size -= n
++                n = int(name[3:])
++                if not 0 <= n <= size:
++                    raise ValueError('invalid BSD long name length')
++                name = data[off:off+n].rstrip(b'\0').decode('utf-8', 'surrogateescape'); off += n; size -= n
+             elif name.startswith('/'):
+-                n = int(name[1:]); end = longnames.find(b'/\n', n)
++                n = int(name[1:])
++                if not 0 <= n < len(longnames):
++                    raise ValueError('GNU long name offset outside table')
++                end = longnames.find(b'/\n', n)
+                 if end < 0:
+                     raise ValueError('invalid GNU long name')
+                 name = longnames[n:end].decode('utf-8', 'surrogateescape')
+@@ -376,9 +386,19 @@ def pic_relocations(data):
+         if not target[2] & 2:  # SHF_ALLOC; excludes all debug sections
+             continue
+         symbols = sections[section[6]]
++        if (symbols[1] != 2 or symbols[9] != 24 or symbols[5] % 24 or
++                symbols[4] + symbols[5] > len(data)):
++            raise ValueError('invalid relocation symbol table')
++        relocation_stride = 24 if section[1] == 4 else 16
++        if (section[9] != relocation_stride or section[5] % relocation_stride or
++                section[4] + section[5] > len(data)):
++            raise ValueError('invalid relocation table')
++        symbol_count = symbols[5] // 24
+         for pos in range(section[4], section[4]+section[5], section[9]):
+             _, info = struct.unpack_from('<QQ', data, pos)
+             kind, symbol_index = info & 0xffffffff, info >> 32
++            if symbol_index >= symbol_count:
++                raise ValueError('relocation symbol index outside table')
+             symbol = struct.unpack_from('<IBBHQQ', data, symbols[4]+symbol_index*symbols[9])
+             checked += 1
+             # SHN_ABS references do not need runtime relocation.
+@@ -443,7 +463,7 @@ class Commands:
+         command = ['/usr/bin/prlimit', '--as='+str(self.address_space_bytes), '--core=0',
+                    '--', *map(str, argv)]
+         start = time.monotonic()
+-        reason, status, usage, reaped = None, None, None, False
++        reason, status, usage, observed = None, None, None, False
+         with log.open('wb') as err:
+             with self.lock:
+                 if self.stop.is_set() or self.signal_received is not None:
+@@ -457,7 +477,7 @@ class Commands:
+                     if self.signal_received is not None:
+                         reason = 'signal '+str(self.signal_received)
+                         self.cancel(reason)
+-                    if now-start >= self.timeout and not reaped:
++                    if now-start >= self.timeout and not observed:
+                         reason = 'command timeout after '+str(self.timeout)+' s'
+                         self.cancel(reason)
+                     if self.stop.is_set():
+@@ -467,36 +487,39 @@ class Commands:
+                                 os.killpg(child.pid, signal.SIGKILL)
+                             except ProcessLookupError:
+                                 pass
+-                    if not reaped:
+-                        pid, child_status, child_usage = os.wait4(child.pid, os.WNOHANG)
+-                        if pid:
+-                            status, usage, reaped = child_status, child_usage, True
+-                            child.returncode = os.waitstatus_to_exitcode(status)
+-                            if child.returncode:
++                    if not observed:
++                        info = os.waitid(os.P_PID, child.pid,
++                                         os.WEXITED | os.WNOHANG | os.WNOWAIT)
++                        if info is not None:
++                            observed = True
++                            if info.si_code != os.CLD_EXITED or info.si_status:
+                                 reason = reason or 'command failed'
+                                 self.cancel(reason)  # Includes descendants after the leader exits.
+-                    if reaped and (not self.stop.is_set() or now-self.cancelled_at >= 3):
++                    if observed and (not self.stop.is_set() or now-self.cancelled_at >= 3):
+                         break
+                     time.sleep(0.05)
+             finally:
+-                if not reaped:
++                if not observed:
+                     self.cancel()
+                     remaining = 3-(time.monotonic()-self.cancelled_at)
+                     if remaining > 0:
+                         time.sleep(remaining)
+-                    try:
+-                        os.killpg(child.pid, signal.SIGKILL)
+-                    except ProcessLookupError:
+-                        pass
++                # Keep the leader unreaped until the last group signal, including
++                # after normal leader exit. No reused PID can receive that signal.
++                try:
++                    os.killpg(child.pid, signal.SIGKILL)
++                except ProcessLookupError:
++                    pass
++                os.waitid(os.P_PID, child.pid, os.WEXITED | os.WNOWAIT)
++                with self.lock:
+                     _, status, usage = os.wait4(child.pid, 0)
+                     child.returncode = os.waitstatus_to_exitcode(status)
+-                with self.lock:
+                     self.children.discard(child)
+         elapsed, rc = time.monotonic()-start, child.returncode
+         record = dict(argv=list(map(str, argv)), bounded_argv=command, pid=child.pid,
+                       elapsed_seconds=elapsed, exit=rc, wall=elapsed,
+                       user=usage.ru_utime, sys=usage.ru_stime, max_rss_kib=usage.ru_maxrss,
+-                      accounting='os.wait4(WNOHANG); Linux ru_maxrss is KiB',
++                      accounting='os.waitid(WNOWAIT), os.wait4; Linux ru_maxrss is KiB',
+                       timeout_seconds=self.timeout, failure_reason=reason,
+                       stderr=log.read_text(errors='replace'))
+         record['time_raw'] = f"{elapsed:.9f} {usage.ru_utime:.9f} {usage.ru_stime:.9f} {usage.ru_maxrss} {rc}\n"
+@@ -563,6 +586,9 @@ def validate_tools(build, compiler, disassembler, nm, command, output):
+     for label, tool in [('compiler', compiler), ('disassembler', disassembler), ('nm', nm)]:
+         if not tool.is_file() or not os.access(tool, os.X_OK):
+             raise ValueError('missing or non-executable --'+label+': '+str(tool))
++    for label, tool in [('disassembler', disassembler), ('nm', nm)]:
++        if tool.resolve().parent != compiler.resolve().parent:
++            raise ValueError(label+' directory differs from compiler directory')
+     version = output/'compiler-version.txt'
+     with version.open('wb') as stream:
+         command.run([compiler, '--version'], output/'compiler-version-command', stdout=stream)
+@@ -638,7 +664,7 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+     def save():
+         atomic_json(output/'summary.json', summary)
+     save()
+-    old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
++    old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
+     try:
+         summary['tools'] = validate_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output)
+         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+@@ -774,7 +800,7 @@ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+             address_space_bytes=4*1024**3, debug_info=None):
+     root, output = Path(root).resolve(), Path(output).resolve()
+     command = Commands(address_space_bytes)
+-    old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
++    old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
+     result = None
+     try:
+         print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 53eee9d20d49ba0069eccd8918a2f1b81216182c..d2a1bc1da41bb15d64532715851a2aa564c83420 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -582,7 +582,11 @@ bolt_checked() {
+   if bolt_output=$("$@" 2>&1); then
+     printf '%%s\n' "$bolt_output" || bolt_fail "$bolt_stage-output" -
+   else
++    bolt_status=$?
+     printf '%%s\n' "$bolt_output" || true
++    case "$bolt_status" in
++      129|130|143) exit "$bolt_status" ;;
++    esac
+     printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || true
+     exit 1
+   fi

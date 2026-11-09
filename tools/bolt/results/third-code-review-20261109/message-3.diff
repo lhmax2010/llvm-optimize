@@ -1,0 +1,32 @@
+--- before
++++ after
+@@ -6,7 +6,8 @@
+ 
+ Fix x86_64 compilation flags to the effective Toolchain values recorded
+ by QB 1215143. Inherit reviewed architecture flags, reject native CPU
+-selection, and warn on debug sequences other than -g2 -gdwarf-4 -g. Release
++selection, and warn on debug sequences other than -g2 -gdwarf-4 -g.
++Release
+ commands contain no debug flags. Match whole tokens and preserve the
+ caller's IFS state and shell options.
+ 
+@@ -38,10 +39,16 @@
+ and count them, without applying that assertion to preexisting objects.
+ All 3853 converted full-20261030 members recorded debug options.
+ 
+-Following review, supplement HQ PS10 classification with assembler-option
+-rejection and exact compiler/disassembler/nm version consistency checks.
++Following review, reject -Wa, options, which PS10 accepted through its
++broad -W branch, and report -Xassembler (already rejected) as an
++assembler option; require compiler, disassembler and nm to report the
++same X.Y.Z version from the same directory. Harden archive and
++relocation parsing against malformed sizes and indexes, and handle
++SIGHUP and process-group reaping during conversion.
+ 
+-Based on Change 359934; keeps its token classification, per-switch replay and the checks it adopted, and adds the declared debug-info mode with per-member consistency check.
++Based on Change 359934: keeps its token classification, per-switch
++replay and adopted checks; adds the declared debug-info mode with a
++per-member consistency check.
+ 
+ Change-Id: Ic76505ddb122f1e06271ff7462e24eceee4d400a
+ Signed-off-by: Hao Lin <hao.lin@samsung.com>
