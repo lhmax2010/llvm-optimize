@@ -1,0 +1,47 @@
+--- 13c3e223/llvm/cmake/modules/AddLLVM.cmake
++++ 1223602/usr/lib/cmake/llvm/AddLLVM.cmake
+@@ -1030,6 +1030,44 @@
+   endif()
+ endmacro()
+ 
++# Proposed Tizen hybrid linkage: keep the default shared interface, but
++# provide component dependencies to an explicitly opted-in final consumer.
++function(tizen_hybrid_llvm_interface name)
++  if(NOT TIZEN_HYBRID_LINK OR NOT LLVM_LINK_LLVM_DYLIB OR NOT TARGET ${name})
++    return()
++  endif()
++  get_target_property(kind ${name} TYPE)
++  if(NOT kind STREQUAL "STATIC_LIBRARY")
++    return()
++  endif()
++  get_target_property(iface ${name} INTERFACE_LINK_LIBRARIES)
++  if(NOT "LLVM" IN_LIST iface)
++    # Some components explicitly disable the dylib already (e.g. clangSupport).
++    return()
++  endif()
++  cmake_parse_arguments(H "" ""
++    "LINK_COMPONENTS;LINK_LIBS;DEPENDS;OBJLIBS;ADDITIONAL_HEADERS" ${ARGN})
++  llvm_map_components_to_libnames(components ${H_LINK_COMPONENTS} ${LLVM_LINK_COMPONENTS})
++  if(NOT components)
++    message(FATAL_ERROR
++      "${name}: empty LLVM component interface; declare LINK_COMPONENTS or disable TIZEN_HYBRID_LINK")
++  endif()
++  set(static_consumer "$<BOOL:$<TARGET_PROPERTY:TIZEN_STATIC_LLVM>>")
++  set(replacement "$<$<NOT:${static_consumer}>:LLVM>")
++  foreach(component IN LISTS components)
++    list(APPEND replacement "$<${static_consumer}:${component}>")
++  endforeach()
++  set(result)
++  foreach(dep IN LISTS iface)
++    if(dep STREQUAL "LLVM")
++      list(APPEND result ${replacement})
++    else()
++      list(APPEND result "${dep}")
++    endif()
++  endforeach()
++  set_property(TARGET ${name} PROPERTY INTERFACE_LINK_LIBRARIES "${result}")
++endfunction()
++
+ macro(add_llvm_executable name)
+   cmake_parse_arguments(ARG
+     "DISABLE_LLVM_LINK_LLVM_DYLIB;IGNORE_EXTERNALIZE_DEBUGINFO;NO_INSTALL_RPATH;SUPPORT_PLUGINS;EXPORT_SYMBOLS"

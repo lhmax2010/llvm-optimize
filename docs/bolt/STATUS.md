@@ -1027,3 +1027,13 @@ Toolchain rehearsal-02 PASS（QB 1221204 FLAGS 同，WARNING=0、log-restarts=0�
 先补齐本轮验证。之后仍按用户指定顺序：夜间完整构建（fa4f9978，74 号）→等用户授权 sandbox→QB 重跑→三家完整评审（设计 v6.1 + 完成认证后的 r5）。75 号当前为停止记录，不是完成认证。
 
 FOURTH_REVIEW 已结束 2026-11-10T22:03:24+08:00 status=stopped reason=module_asm_fixture_parse_error
+
+## 2026-11-10：75 号续跑完成，r5 仅本地待后续认证
+
+[75 号 §6](75_fourth_review_fixes.md#6-续跑2026-11-10)：修正 IR 夹具追加位置、R_X86_64_NONE 偏移例外和两段提交说明；源码链 8a50d712 / 35861544 / 60fabc72，Change-Id 保留，首提交 tree 不变。487/487 测试从头通过，12 展开/5 RPM 解析通过，450 归档/7728 成员/7527262 重定位新旧结果一致（7706 转换成员零拒绝）；真实 release 成员及完整小归档字节相同。第一次停止记录原文保留。
+
+四组 ARM 包的 AddLLVM/AddClang 与 fa4f9978 相同、对 PS10 仅混合链接变化，AddLLD 未安装。发现同快照且无混合链接的 Base-Dev 历史 ARM 候选 QB1214821，但公开 RPM 目录现为404；Toolchain 未找到。两份 x86 初始化清单没有独立 lld 包，ld.lld 包归属在日志中未打印。相关证据边界已明确记录。
+
+[评审包 r5](../../patches/rebase-359934-20261110-r5/README.md) 已导出并校验；72/73 和 r4 指定说明已同步。未完整构建、未推 Gerrit/sandbox、未操作 QB；不能把轻量检查当作新版本整包认证。**接下来依次是夜间完整构建（fa4f9978，74 号）、等用户授权推送 sandbox、QB 重跑、三家完整评审（设计 v6.1 + r5 代码）。**
+
+FOURTH_REVIEW_RESUME 已结束 2026-11-10T22:32:46+08:00 status=ok reason=487_tests_expansion_archives_and_review_bundle_pass

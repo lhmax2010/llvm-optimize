@@ -1,0 +1,24 @@
+--- first-attempt/test_r3.py
++++ resume/test_r3.py
+@@ -236,6 +236,12 @@
+     with self.subTest(kind=kind,offset=offset),self.assertRaises(ValueError):a.pic_relocations(b)
+    b=rel_fixture(kind,True);struct.pack_into('<Q',b,400,8-width)
+    self.assertEqual(a.pic_relocations(b)['forbidden'],[])
++ def test_pic_none_end_offset(self):
++  b=rel_fixture(0);struct.pack_into('<Q',b,400,8)
++  self.assertEqual(a.pic_relocations(b),{'checked':1,'forbidden':[]})
++  for kind in (1,10,12,14):
++   b=rel_fixture(kind,True);struct.pack_into('<Q',b,400,8)
++   with self.subTest(kind=kind),self.assertRaises(ValueError):a.pic_relocations(b)
+  def test_pic_section_table_invalid(self):
+   for off in (0,2**64-1):
+    b=rel_fixture();struct.pack_into('<Q',b,40,off)
+@@ -292,7 +298,7 @@
+   ll=subprocess.check_output([str(tools['llvm-dis']),str(d/'real-release.bc'),'-o','-'],text=True)
+   for directive in ('short','byte'):
+    source=d/(directive+'.ll');output=d/(directive+'.bc')
+-   source.write_text('module asm ".text\\0A.'+directive+' external_symbol"\n'+ll)
++   source.write_text(ll+'\nmodule asm ".text\\0A.'+directive+' external_symbol"\n')
+    p=subprocess.run([str(tools['llvm-as']),str(source),'-o',str(output)],capture_output=True,text=True)
+    self.assertEqual(p.returncode,0,p.stderr)
+    with self.assertRaisesRegex(ValueError,'non-PIC relocation'):self.run_real_convert('asm-'+directive,output.read_bytes())

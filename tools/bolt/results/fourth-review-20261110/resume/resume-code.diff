@@ -1,0 +1,13 @@
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index 1ed8091331d0..6c2869e9fe0f 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -412,7 +412,7 @@ def pic_relocations(data):
+         for pos in range(section[4], section[4]+section[5], section[9]):
+             r_offset, info = struct.unpack_from('<QQ', data, pos)
+             kind, symbol_index = info & 0xffffffff, info >> 32
+-            if r_offset + widths.get(kind, 1) > target[5]:
++            if kind != 0 and r_offset + widths.get(kind, 1) > target[5]:
+                 raise ValueError('relocation offset outside target section')
+             if symbol_index >= symbol_count:
+                 raise ValueError('relocation symbol index outside table')

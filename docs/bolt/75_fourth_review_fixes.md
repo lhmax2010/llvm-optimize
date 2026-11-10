@@ -97,3 +97,158 @@ SERVICE 已结束 2026-11-10T21:58:04+08:00 status=1 unit=llvm-fourth-review-111
 下一次 QB 源码包的预定白名单：llvm.spec、llvm-static-archives-native.py、VCS 行，以及 0001 提交说明调整引入的 0008 补丁变化；此处是后续判定计划，不代表本轮已运行 QB。
 
 FOURTH_REVIEW 已结束 2026-11-10T22:03:24+08:00 status=stopped reason=module_asm_fixture_parse_error
+
+## 6. 续跑（2026-11-10）
+
+本节是用户授权修正夹具后的新一轮，从头执行全部套件；第 1–5 节及第一次停止原文完整保留。**本次 487/487 测试通过，12 组展开、5 项解析、450 归档复扫与真实小归档转换比较通过；r5 已导出。** 这里的完成指本轮指定的轻量检查与证据交付，不是新提交已完整构建或发货认证。
+
+### 6.1 起点、三处修正与最终提交
+
+开始时源码 HEAD 为 80217ff8f1eacb78bb92d6ef7251bdb8c46da2ae，工作树干净。转换器修复通过 fixup/autosquash 归入第三提交；两个说明按用户指定句子重新折行并归入原提交，Change-Id 保持不变，没有新建分支。
+
+1. test_real_module_asm_short_byte_rejected 的 module asm 追加在全部原有 IR 后面。只修夹具顺序，不改 .short/.byte 的拒绝预期或转换器规则。[夹具 diff](../../tools/bolt/results/fourth-review-20261110/resume/test_r3.py.resume.diff)。
+2. pic_relocations 的偏移检查改为 kind != 0 才检查范围；R_X86_64_NONE 仍参与既有检查计数。新用例在节大小 8、r_offset=8 时，type 0 通过；type 1、10、12、14 均拒绝。[唯一代码修正](../../tools/bolt/results/fourth-review-20261110/resume/resume-code.diff)。
+3. BOLT 说明删去“the native archive conversion”；第三提交在 late-cancel 句子后加入开启 BOLT 传递 129/130/143、关闭 BOLT 保持 exit 1/展开不变的说明。其余文字未改。[BOLT 说明 diff](../../tools/bolt/results/fourth-review-20261110/resume/539e2a86532526b88912816c9af4ac9b20767e11.message.diff)、[第三提交说明 diff](../../tools/bolt/results/fourth-review-20261110/resume/80217ff8f1eacb78bb92d6ef7251bdb8c46da2ae.message.diff)。
+
+|提交标题|最终 SHA|tree|
+|---|---|---|
+|cmake: use hybrid LLVM linkage on x86_64|8a50d7122346258fd1171d270861a4ae28a8717c|3d961cbb04f5446f84d2089b4f65f3178f2bd7fa|
+|packaging: optimize x86_64 clang with BOLT|358615447c2596c30aa6d064fc8c388292e443e4|9e4948eba61ca48156f5b4534f49adaf0f47cab1|
+|packaging: fix x86 LLVM flags and archive mode|60fabc723f30c5cc04146a9dd83487ebed63f259|90fc87dde4d11c8c57f5d3de45a9995dcc35d5f9|
+
+[完整说明及 trailer 解析](../../tools/bolt/results/fourth-review-20261110/resume/final-commits.json)：三份最大行宽均为 72，标题均小于 50，Change-Id/Signed-off-by 可解析，作者/提交者身份保持 Hao Lin。首提交代码 tree 仍为 3d961cbb04f5446f84d2089b4f65f3178f2bd7fa。ARM 未安装 AddLLD.cmake，故没有触发额外的首提交说明修改。
+
+### 6.2 从头重跑的全部测试
+
+所有命令串行位于独立 systemd 用户服务：MemoryMax=8G、MemorySwapMax=0、CPUQuota=400%、Nice=19、IOSchedulingClass=idle；未 OOM、未提高限制。测试使用显式源码文件，调用环境见 [test-invocation.json](../../tools/bolt/results/fourth-review-20261110/resume/test-invocation.json)。测试框架原本清理的临时文件保留到本轮 scratch；历史构建根只读。上一轮 PASS 不计入下表。
+
+|套件|本次运行|PASS|原文|
+|---|---:|---:|---|
+|helper|393|393|[日志](../../tools/bolt/results/fourth-review-20261110/resume/helper-tests.log)|
+|参数/转换器回归|46|46|[日志](../../tools/bolt/results/fourth-review-20261110/resume/policy-tests.log)|
+|50 号 release 专项|5|5|[日志](../../tools/bolt/results/fourth-review-20261110/resume/tests50.log)|
+|第二轮新增|12|12|[日志](../../tools/bolt/results/fourth-review-20261110/resume/r2-tests.log)|
+|cli 异常取消|2|2|[日志](../../tools/bolt/results/fourth-review-20261110/resume/cli-tests.log)|
+|R3 既有 + R4 新增|14 + 15|29|[日志](../../tools/bolt/results/fourth-review-20261110/resume/r3-r4-tests.log)|
+|合计|487|487|[计数](../../tools/bolt/results/fourth-review-20261110/resume/test-summary.json)|
+
+原始结束输出：
+
+~~~text
+helper-tests.log
+Ran 393 tests in 26.096s
+
+OK
+CANCELLATION_PROBE {"signal": 2, "phase": "after", "rc": 130, "stderr": "BOLT_GATE_FAILED: CANCELLED: cancelled by signal 2 (see /home/linhao/Toolchain/development/llvm-optimize/temp/fourth-review-20261110/resume/helper-tests/tmpa_cs0lke/step.log)\n", "descendants": {"1826637": "gone", "1826638": "gone"}, "both_heartbeats_stopped": true}
+CANCELLATION_PROBE {"signal": 2, "phase": "cleanup", "rc": 130, "stderr": "BOLT_GATE_FAILED: CANCELLED: cancelled by signal 2; while handling: COMMAND_ERROR: fixture cleanup trigger (see /home/linhao/Toolchain/development/llvm-optimize/temp/fourth-review-20261110/resume/helper-tests/tmpe1n6i_nw/step.log)\n", "descendants": {"1826640": "gone", "1826641": "gone"}, "both_heartbeats_stopped": true}
+policy-tests.log
+
+----------------------------------------------------------------------
+Ran 46 tests in 17.763s
+
+OK
+tests50.log
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.005s
+
+OK
+r2-tests.log
+
+----------------------------------------------------------------------
+Ran 12 tests in 1.401s
+
+OK
+cli-tests.log
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.634s
+
+OK
+r3-r4-tests.log
+
+----------------------------------------------------------------------
+Ran 29 tests in 30.246s
+
+OK
+~~~
+
+此前未运行的 shell_status_matrix、sigchld_ignore_exec_real_archive、version_mismatch_before_archive 本次均运行并通过。shell 矩阵包含三种 shell、三个函数、7 种模拟状态及 3 种真实信号，共 90 行；SIGCHLD 忽略后 exec 的真实归档运行成功并打印 NATIVE_ARCHIVES_SIGCHLD_RESET；工具版本不一致在 validate_archive 之前拒绝。新类型 0 用例、真实 module asm .short/.byte 拒绝、取消中途与最后检查后的六种状态、子进程回收全部通过。全部原文：[r3-observed.json](../../tools/bolt/results/fourth-review-20261110/resume/r3-observed.json)、[test_r3.py](../../tools/bolt/results/fourth-review-20261110/resume/test_r3.py)。
+
+### 6.3 展开、解析与 450 归档复扫
+
+[12 组完整展开](../../tools/bolt/results/fourth-review-20261110/resume/parse/expansion-summary.json) 与 [5 项 Tizen RPM 解析](../../tools/bolt/results/fourth-review-20261110/resume/parse/five-summary.json) 全部 PASS。T/D 各自 x86 debug/release 的 BOLT 关闭输出、armv7l/aarch64 输出与 fa4f9978 逐字节相同。x86 BOLT 开启只增加 bolt_status_exit 定义和规定调用的退出码传播；printf 的 %%s 在 RPM 展开后仍为 %s，没有额外差异。每一组完整 stdout、stderr、diff 都保存在 parse/。平台 post 显式展开后五个可选调用位于 481、513、516、524、826 行，见 [optional-calls.json](../../tools/bolt/results/fourth-review-20261110/resume/optional-calls.json)。
+
+使用 QB 1223601/1223602 已下载的 llvm-static-devel 全部 ELF 成员，分别调用 fa4f9978 和本次转换器的 pic_relocations、elf_details。每个归档先对已有 QB 载荷清单核对 SHA；按保全 conversion summary 的成员序号/名字识别 converted/preserved。原生成员的禁止项只统计，不拦截。
+
+|项目|归档|ELF 成员|转换成员|原生成员|旧/新各自受检重定位|新拒绝/异常|旧/新原生禁止项|
+|---|---:|---:|---:|---:|---:|---:|---:|
+|Toolchain / 1223601|225|3864|3853|11|3763631|0|0 / 0|
+|Base-Dev / 1223602|225|3864|3853|11|3763631|0|0 / 0|
+|合计|450|7728|7706|22|7527262|0|0 / 0|
+
+转换成员零拒绝，所有成员的旧/新 PIC 结果（含禁止项）及 elf_details 结果逐项一致。不是重新转换 7706 成员，也不是重新计算新编译产物。证据：[脚本](../../tools/bolt/results/fourth-review-20261110/resume/check_qb_archives.py)、[完整运行原文](../../tools/bolt/results/fourth-review-20261110/resume/qb-archive-check.log)、[摘要](../../tools/bolt/results/fourth-review-20261110/resume/qb-archive-summary.json)、[逐成员原始结果](../../tools/bolt/results/fourth-review-20261110/resume/qb-archive-members.jsonl.gz)。
+
+~~~text
+ARCHIVE_CHECK 已结束 2026-11-10T22:20:09.182886+08:00 status=ok
+SERVICE 已结束 2026-11-10T22:20:09+08:00 status=0 unit=llvm-fourth-review-resume-1110-012
+~~~
+
+### 6.4 本次重新执行的转换输出比较
+
+test_old_new_real_conversion_bytes 从真实 release C-2 bitcode 成员生成一个完整小归档，旧 fa4f9978 与本次转换器各执行一次；两份成员和归档逐字节一致，没有沿用第一次结果。[完整记录](../../tools/bolt/results/fourth-review-20261110/resume/real-output-equality.json)：
+
+- ELF 成员：1689400 B，SHA256 ec3c09329a17d0809ac8371d258bf8b9ae364b59b57c0e4f94d123f352696106，无调试节。
+- 完整归档：1694822 B，SHA256 d4eaca298a50710aa8097dbcbbf7c28aab229f44899a2190fe67eae81fb940e9，converted=1、preserved=0。
+- 同一成员注入 module asm .short/.byte 的两个负例生成了合法 bitcode，并被转换器 PIC 门禁拒绝；夹具修正没有改动门禁。
+
+参数/门禁新旧一致、一个真实转换输出一致、整包一致是不同层次：本轮没有运行新版本整包构建或整包比较，不能由上述两项推出整包已认证。
+
+### 6.5 ARM 安装文件与候选基线
+
+从公开 RBS 地址下载了两个 QB × 两个架构的 llvm-devel、clang 共 8 个 RPM，所有包的 VCS 为 fa4f9978。来源 URL、大小、SHA、完整载荷清单见 [arm-downloads.json](../../tools/bolt/results/fourth-review-20261110/resume/arm-downloads.json) 与 [arm/](../../tools/bolt/results/fourth-review-20261110/resume/arm/)；原始 RPM 和解包副本保留在 W/temp/fourth-review-20261110/resume/arm/。
+
+四组结果全部相同：
+
+|检查|结果|
+|---|---|
+|AddLLVM.cmake 对 fa4f9978|逐字节相同，SHA256 02222783e87051da8b468a48e411e79a917ac194f4e50939d119f80a8bcfc7b1|
+|AddClang.cmake 对 fa4f9978|逐字节相同，SHA256 cc505b09c2856008843c430269fb989648090bdcfd1048ab1c2ca16d2c499480|
+|上述两文件对 PS10|完整 diff 正好等于混合链接提交改动|
+|AddLLD.cmake|均未安装|
+|LLD 开发配置|llvm-devel 提供 LLDConfig.cmake、LLDConfigVersion.cmake、LLDTargets.cmake 及架构对应的 targets 配置|
+
+armv7l 使用 usr/lib/cmake，aarch64 使用 usr/lib64/cmake。无须另下载独立的 lld-devel 包；包目录及 llvm-devel 清单包含了 LLD 开发配置。原始结论：[arm-result.json](../../tools/bolt/results/fourth-review-20261110/resume/arm-result.json)、[运行输出](../../tools/bolt/results/fourth-review-20261110/resume/arm-check.log)。
+
+找到一个**历史候选**：[QB 1214821](https://quickbuild.tizen.org/build/1214821)，Base-Dev 输入快照同为 tizen-base-dev_20261030.061217，Build Package List 明确请求 9b8d74af825d3caab67f8ff7cbc19fcda8a7ad64；49 号 B.1 已证明该 tree 等于 67619ec8，不含混合链接/BOLT。历史 ARM 日志记录 armv7l 成功 5105 秒、aarch64 成功 5940 秒。其公开产物链接为 [armv7l](https://download.tizen.org/RBS/TIZEN/Tizen/Tizen-Base-Dev/tizen-base-dev_20261102.005802/repos/standard/packages/armv7l/) 和 [aarch64](https://download.tizen.org/RBS/TIZEN/Tizen/Tizen-Base-Dev/tizen-base-dev_20261102.005802/repos/standard/packages/aarch64/)，本次访问均返回 **404**，不能称为已取得的 RPM 基线。
+
+Toolchain 在已知 49/57/71/73 号记录中未找到不含混合链接、同快照的 ARM 基线；没有穷举私有 QB，也未启动 QB。[候选记录](../../tools/bolt/results/fourth-review-20261110/resume/arm-baseline-candidates.json)。首次只读候选查询误假定 manifest 只有一个 llvm 项目而退出 1；实际有两个条目，现均记录，以明确的 Build Package List 判定候选。这不是测试或复扫失败，没有更改规则或重复运行失败测试。
+
+### 6.6 x86_64 的 lld 包与提交说明
+
+两份初始化安装清单均**没有名称为 lld 的独立包**。日志有 llvm 包及构建输出 ld.lld 的记录：
+
+~~~text
+QB 1223601 L177: [    3s] [114/122] cumulate llvm-22.1.8-1.6
+QB 1223601 L220: [    8s] llvm-22.1.8-1.6                       ########################################
+QB 1223601 L11673: [ 4340s] -- Creating ld.lld
+QB 1223602 L155: [    3s] [94/121] cumulate llvm-22.1.8-4.8
+QB 1223602 L239: [   32s] llvm-22.1.8-4.8                       ########################################
+QB 1223602 L11618: [ 3432s] -- Creating ld.lld
+~~~
+
+日志未打印 /usr/bin/ld.lld 的 rpm -qf/owned-by 归属查询原文，故该归属为 **NOT PRINTED**；不能把“Creating ld.lld”或 BUILDROOT 的符号链接当作依赖包归属记录。完整初始化摘录：[1223601](../../tools/bolt/results/fourth-review-20261110/resume/1223601-initial-packages.txt)、[1223602](../../tools/bolt/results/fourth-review-20261110/resume/1223602-initial-packages.txt)；[查询结果](../../tools/bolt/results/fourth-review-20261110/resume/lld-summary.json)。查找已完成，现有日志的证据缺口明确保留。
+
+三个提交说明脚本检查通过：最大行宽均为 72，最后段只含 Signed-off-by/Change-Id，git interpret-trailers --parse 正确解析；[原文](../../tools/bolt/results/fourth-review-20261110/resume/final-commits.json)。
+
+### 6.7 文档、评审包与未运行项
+
+72 号旧表头已标明“第一次尝试时的边界（已被 §7.2 的全量重跑取代）”。73 号 §8 补充版本证据的间接满足与实际 ITEM2 结束时间，原 FAIL 不删。r4 README 仅修正指定两处表述，18 项 SHA256 校验通过。新 [r5 评审包](../../patches/rebase-359934-20261110-r5/README.md) 含三个带序号的补丁、BOLT 纯文本补丁、相对 fa4f9978/PS10 的完整 diff、九份文件全文、provenance 和校验清单；17 项 sha256sum -c 通过。[r4 校验原文](../../tools/bolt/results/fourth-review-20261110/resume/rebase-359934-20261109-r4-checksums.log)、[r5 校验原文](../../tools/bolt/results/fourth-review-20261110/resume/rebase-359934-20261110-r5-checksums.log)。
+
+下一次 QB 源码包白名单：**llvm.spec、llvm-static-archives-native.py、VCS 行、第一个提交说明改动带来的 0008 补丁变化**。不能把 helper 或其他差异自动加进白名单。
+
+本次没有运行：完整构建、启动演练、90 TU、7706 个成员重新转换、发货整包一致性比较、不可取得的旧 ARM RPM 比较；没有推送 sandbox/Gerrit、重新查询 change 状态或操作 QB。全部测试/本任务第三步指定的可执行检查已经完成；ARM 旧公开产物 404 和 ld.lld 归属日志缺失如上记录，不编造结论。
+
+75 号本次轻量检查与交付完成。接下来依次为：夜间完整构建（fa4f9978，74 号）→等待用户授权推送 sandbox→QB 重跑→三家完整评审（设计 v6.1 + r5 代码）。
+
+FOURTH_REVIEW_RESUME 已结束 2026-11-10T22:32:46+08:00 status=ok reason=487_tests_expansion_archives_and_review_bundle_pass
