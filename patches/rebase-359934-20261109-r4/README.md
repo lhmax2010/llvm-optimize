@@ -71,3 +71,15 @@ Source1200：packaging/clang-bolt-v2.fdata.xz，9735212 字节，SHA256 52fd8522
 推后 HEAD：fa4f9978c9162d3c6cd2113d0cfe1173f04881c8。只推该 sandbox，未推 refs/for，未操作 QB。
 
 后续软件包行：platform/upstream/llvm@fa4f9978c9162d3c6cd2113d0cfe1173f04881c8。
+
+
+## QB 验证
+
+- QB 1223601（Tizen-Base-Toolchain）和 1223602（Tizen-Base-Dev）都编译了 fa4f9978c9162d3c6cd2113d0cfe1173f04881c8。
+- 两个项目的 x86_64、armv7l、aarch64 三个架构都构建成功。
+- 与 QB 1221204 / 1221207 对应项目比较，34/34 个二进制包载荷逐字节相同。
+- 每组 225 个完整静态归档的 SHA 均与基线相同。7706 个转换成员由整体归档相同覆盖，未单独运行逐成员 SHA 检查。
+- 源码包差异 = spec/helper/转换器 + VCS + 0008 提交说明折行（已归因）。提交说明折行是设计方要求、此前白名单漏写；两份源码包按已归因例外判 PASS。
+- 裁定及证据见 [73 号第 8 节](../../docs/bolt/73_qb_1223601_1223602.md#8-裁定2026-11-10)。上面的演练与历史验证边界保留；本节补充该最终提交的 QB 实物核对结果。
+
+下一步：三家完整评审（[设计 v5](../../docs/bolt/design/tizen_llvm_speed_design_v5.md) + 本 r4 代码）。
