@@ -1037,3 +1037,13 @@ FOURTH_REVIEW 已结束 2026-11-10T22:03:24+08:00 status=stopped reason=module_a
 [评审包 r5](../../patches/rebase-359934-20261110-r5/README.md) 已导出并校验；72/73 和 r4 指定说明已同步。未完整构建、未推 Gerrit/sandbox、未操作 QB；不能把轻量检查当作新版本整包认证。**接下来依次是夜间完整构建（fa4f9978，74 号）、等用户授权推送 sandbox、QB 重跑、三家完整评审（设计 v6.1 + r5 代码）。**
 
 FOURTH_REVIEW_RESUME 已结束 2026-11-10T22:32:46+08:00 status=ok reason=487_tests_expansion_archives_and_review_bundle_pass
+
+## 2026-11-10：r5 sandbox 已推送，ARM 基线已找到（76 号）
+
+[76 号](76_sandbox_push_r5.md)：全部前置核对通过后，以 fa4f9978 显式 lease 一次推送成功；sandbox/lhmax2025/bolt_pgo 已核对为 **60fabc723f30c5cc04146a9dd83487ebed63f259**。父链为 35861544 → 8a50d712 → 13c3e223 → cf4b6777。三个源码 tree 与 75 §6.1/r5 一致；未改源码、未建分支、未推 refs/for、未构建或操作 QB。推后查询 359934 NEW / PS10，357163 NEW / PS2。
+
+ARM 可用基线已找到：**QB 1216401（Toolchain）和 1216400（Base-Dev）**。两者均为总部 PS7/463c9a13，源码相对无混合链接基线只改转换器；Profile URL 分别为 tizen-base-toolchain_20261030.061318、tizen-base-dev_20261030.061217，与 1223601/1223602 匹配。概览/公开 manifest 确认源码，两个 ARM 架构目录及 clang、llvm-devel 的 HEAD 均为200；未下载 RPM、未做内容比较。
+
+下一步依次：**用户启动两个项目的 QB → 夜间完整构建（fa4f9978，74 号）→ QB 核对 → 三家完整评审（设计 v6.1 + r5 代码）**。
+
+R5_SANDBOX 已结束 2026-11-10T23:26:22+08:00 status=ok

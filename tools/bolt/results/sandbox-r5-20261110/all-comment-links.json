@@ -1,0 +1,22 @@
+[
+  {
+    "change": "359934",
+    "path": "url",
+    "text": "https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/359934"
+  },
+  {
+    "change": "359934",
+    "path": "patchSets.6.comments.0.message",
+    "text": "Builds are verified on QB\n- https://quickbuild.tizen.org/build/1216400\n- https://quickbuild.tizen.org/build/1216401"
+  },
+  {
+    "change": "359934",
+    "path": "patchSets.6.comments.1.message",
+    "text": "We would like to share our approach for your review. The two approaches can work together.\n\n**Our changes** (`sandbox/lhmax2025/bolt_pgo`, three commits on top of 67619ec8):\n1. d4d6ca16: hybrid linking\n2. f2553114: BOLT optimization of clang, with a matching debug symbol file in clang-debuginfo\n3. 9e39fa8a: fixed x86_64 build flags for LLVM, and release-mode support in the archive converter\n\n**How commit 3 handles 1214821**\n- LLVM no longer inherits the project-wide CFLAGS. CFLAGS/CXXFLAGS are fixed to the flag string that passed in QuickBuild 1215143 (Tizen-Base-Toolchain). Only the -march family of flags is taken from the project.\n- Any other project flag is removed, and the build log lists the removed flags. A flag outside the expected list produces a warning for manual review. -march=native / -mtune=native still fail the build.\n- This also covers -fno-inline-functions, which was the reason for f999bd40.\n- The spec passes the build mode to the converter (`--debug-info yes|no`). Every recorded command must match that mode. In release mode, a converted member that still has debug sections is rejected.\n\nAs a result, LLVM is built with the same flags in both projects, and the converter never sees project-specific tokens such as -feliminate-unused-debug-types or --param.\n\n**Verification**\n- QuickBuild passes in both projects with 9e39fa8a:\n  - Tizen-Base-Toolchain (debug): <QB link>\n  - Tizen-Base-Dev (release): <QB link>\n- Local full builds with the same build.conf and repositories also pass, and all in-build checks pass. From the local Base-Dev build log:\n\n```\nTIZEN_LLVM_DROPPED_FLAGS CFLAGS=[-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4] CXXFLAGS=[-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4] LDFLAGS=[]\nNATIVE_ARCHIVES_END ... PASS 225\n```\n\nIn Base-Dev, all 3853 converted members have no debug sections. A package-by-package comparison against the previous build is still in progress.\n\n**Plan:** We will rebase our three commits onto this change. We will keep your token classification and per-switch replay, and add the checks described in the inline comments. Two of the inline comments are changes we would like to see in this patch; the third is optional.\n\nCould you also take a look at the fixed-flags approach in 9e39fa8a？\n\nBranch: https://review.tizen.org/gerrit/gitweb?p=platform/upstream/llvm.git;a=shortlog;h=refs/heads/sandbox/lhmax2025/bolt_pgo"
+  },
+  {
+    "change": "357163",
+    "path": "url",
+    "text": "https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/357163"
+  }
+]

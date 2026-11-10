@@ -1,0 +1,154 @@
+commit 463c9a133a6dfea9adf1e6c8e07ab705cbf2a587
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Mon Nov 2 22:22:34 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Tue Nov 3 15:59:19 2026 +0900
+
+    packaging: classify -feliminate-unused-debug-types and mirror recorded backend policy
+    
+    The x86_64 native-archive-conversion step rejects unknown tokens recorded in
+    the IR llvm.commandline metadata. Tizen's default CFLAGS inject
+    -feliminate-unused-debug-types and --param, which the classifier did not
+    know. Also, profiles without -gdwarf-4 or -ffunction-sections in CFLAGS
+    (release builds strip them) failed the certified sanity checks even after
+    classification.
+    
+    - classify -feliminate-unused-debug-types as frontend semantics (debug-type
+      emission is already materialized in the input IR)
+    - consume --param / --param= as driver tuning operands
+    - derive the replay backend policy from the recorded command instead of a
+      fixed flag set: -f/-fno- per section switch, and -g -gdwarf-4 only when
+      the original command recorded debug options
+    - keep unique-section-names/addrsig certification and the -gdwarf-4
+      requirement when debug options are present (fail-closed)
+    
+    Toolchain-profile replay flags are byte-identical to the previous policy;
+    Dev-profile (no debug, no section flags) now replays faithfully.
+    
+    Fixes QuickBuild 1214821 (x86_64 %install failure:
+    ValueError: unclassified original command token: -feliminate-unused-debug-types).
+    
+    Co-Authored-By: Cline SR
+    Change-Id: I1c0d0bcccb1dc3c64efbb635e3e6f3de6748209e
+
+commit cf4b6777d056131e2534ecb460c5575327d99646
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Fri Oct 16 11:24:26 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Tue Nov 3 15:50:55 2026 +0900
+
+    Revert "Revert clang bootstrap + ThinLTO, fall back to GCC"
+    
+    This reverts commit f999bd406c0a70fe8107aa992164fe6945c5d46a.
+    
+    Change-Id: I5779f1689f330ee006bcbda377feeccf15040e85
+
+commit f999bd406c0a70fe8107aa992164fe6945c5d46a
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Fri Oct 16 11:03:12 2026 +0900
+Commit:     Dongkyun Son <dongkyun.s@samsung.com>
+CommitDate: Fri Oct 16 11:13:11 2026 +0900
+
+    Revert clang bootstrap + ThinLTO, fall back to GCC
+    
+    The clang bootstrap + ThinLTO optimization (7e4dc62) caused severe build
+    time regression on x86_64 because -fno-inline-functions from project.conf
+    disables all function inlining in clang, unlike GCC.
+    
+    Revert to the original GCC-based build by undoing:
+    - 7e4dc62d8ac0 (optimize llvm performance: clang, -O3, ThinLTO)
+    - cb67996861d0 (remove -fno-inline-functions)
+    - 67619ec8bbba (fix llvm-static-devel with ThinLTO: native archive conversion)
+    
+    Change-Id: Ib6ff9acd34c042b88ba6f74ee7d29950d1107c0d
+
+commit 67619ec8bbbac7238a6cfc33a481ccfbcd12206f
+Author:     FatTank <hao.lin@samsung.com>
+AuthorDate: Fri Oct 9 16:58:36 2026 +0800
+Commit:     FatTank <hao.lin@samsung.com>
+CommitDate: Fri Oct 9 17:49:19 2026 +0800
+
+    packaging: fix llvm-static-devel with ThinLTO
+    
+    ThinLTO leaves LLVM bitcode in the static archives. The GNU strip invoked
+    by brp-strip-static-archive does not understand these members but can
+    return success while dropping or truncating the archive symbol index.
+    Even with an intact index, GNU ld without LTO or an LLVM plugin cannot
+    link bitcode members.
+    
+    At the end of %install, convert bitcode members to native objects using
+    an explicitly certified backend policy, then rebuild deterministic GNU
+    archives and their indexes. Preserve existing native members, original
+    member order and duplicate member names. Leave the standard RPM
+    post-processing unchanged; the final archives contain no DWARF after
+    standard strip processing.
+    
+    Apply the conversion only on x86_64, to all installed archives containing
+    bitcode, including libarcher_static.a from libomp-devel (also owned by
+    llvm-static-devel). Leave armv7l and aarch64 for separate certification.
+    Tool compilation and linkage are unchanged.
+    
+    The x86_64 host tools also cross-compile ARM packages through accel,
+    which extracts tools rather than static archives. Consumers of the
+    x86_64 static-devel archives build x86_64 targets.
+    
+    Fail closed on unclassified original compiler options, an uncertified
+    LLVM major version or incompatible IR metadata. Such changes require
+    option-policy review and recertification; this is not generic option
+    replay.
+    
+    This fix targets LLVM recipes using -O3 and ThinLTO. A recipe without
+    ThinLTO is a no-op (NATIVE_ARCHIVES_SKIP) when its installed archives are
+    already native. When ThinLTO is enabled, the original compiler options
+    must match the certified policy or %install fails pending recertification.
+    
+    Validation used the certified LLVM 22 x86_64 recipe: one full build plus
+    incremental continuation, with build/compile/link concurrency 6/6/2 and
+    debuginfo -j4. All 225 development archives contain native objects and
+    complete symbol indexes. All 45 compiler-rt archives retain identical
+    member ELF bytes and index mappings; only ar header timestamps differ.
+    Non-archive files, including clang, lld and llvm-ar, are byte-identical
+    to the pre-fix baseline. A fresh independent %install reconverts and
+    passes; rerunning the converter on that same tree reports SKIP.
+    
+    Host and Tizen consumer tests pass with plugin-free GNU ld without LTO
+    and with lld. They exercise LLVM IR parsing and the O2 pass pipeline,
+    in-process lld ELF linking, and, on the host, shared-library loading and
+    section garbage collection. Tizen tests use the same 113 installed
+    package versions as the earlier validated environment; 107 Base RPMs
+    were recovered from its cache and checked against archived repository
+    checksums.
+    
+    Change-Id: Id4eb147e7ec4764d58a81110cf7bf57d21b64ac8
+    Signed-off-by: FatTank <hao.lin@samsung.com>
+
+commit cb67996861d070d68fec2b4c623eed7d20ba2e23
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Wed Sep 30 16:41:10 2026 +0800
+Commit:     fangyu fangyu.he <fangyu.he@samsung.com>
+CommitDate: Wed Sep 30 08:40:39 2026 +0000
+
+    remove '-fno-inline-functions' compile options
+    
+    `-fno-inline-functions` is a compilation option intended for GCC in the project conf of tizen-base-dev.
+    LLVM recognizes this option, but its handling is completely different from GCC's.
+    This causes projects built with LLVM to have no function inlining at all, severely degrading the performance of the resulting binaries.
+    This is the reason why the LLVM build time on the x86_64 architecture was excessively long.(https://quickbuild.tizen.org/build/1182759)
+    
+    verify:
+    https://quickbuild.tizen.org/build/1186390
+    
+    Change-Id: Idd7d3139708f3bc65b9ce7e9edf24156159ee54c
+
+commit 7e4dc62d8ac01f90488a0cc8e0f34f8373228c84
+Author:     fangyu.he <fangyu.he@samsung.com>
+AuthorDate: Thu Sep 24 12:55:12 2026 +0800
+Commit:     fangyu.he <fangyu.he@samsung.com>
+CommitDate: Thu Sep 24 13:17:19 2026 +0800
+
+    optimize llvm performance
+    1. Use -O3
+    2. Using thin-lto
+    3. Static link libllvm
+    
+    Change-Id: Idcd75c5d5a57368aeae1081f0664be042c2ee707
