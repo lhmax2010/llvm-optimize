@@ -1,0 +1,107 @@
+--- 7d5e28ca89ed68e3360765bc4e42234eaaabae27/llvm.spec
++++ fa4f9978c9162d3c6cd2113d0cfe1173f04881c8/llvm.spec
+@@ -37,7 +37,7 @@
+ %endif
+ 
+ Name:      llvm
+-VCS:       platform/upstream/llvm#7d5e28ca89ed68e3360765bc4e42234eaaabae27
++VCS:       platform/upstream/llvm#fa4f9978c9162d3c6cd2113d0cfe1173f04881c8
+ Summary:   The LLVM Project is a collection of modular and reusable compiler and toolchain technologies
+ Version:   22.1.8
+ Release:   2.1
+@@ -245,7 +245,8 @@
+ # The x86_64 policy is the certified Toolchain command (QB 1215143).
+ # Only architecture and debug-mode options are inherited. Token matching is
+ # exact: stripping -fstack-protector must never leave a -strong suffix.
+-TIZEN_LLVM_EXPECTED_DROPPED=${TIZEN_LLVM_EXPECTED_DROPPED-'-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'}
++# Reviewed Base-Dev options (QB 1214821) that this policy knowingly discards.
++TIZEN_LLVM_EXPECTED_DROPPED='-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'
+ tizen_llvm_flags()
+ {
+     tizen_llvm_kind=$1
+@@ -320,8 +321,13 @@
+     case $tizen_llvm_kind:$tizen_llvm_release in
+         CFLAGS:0|CXXFLAGS:0)
+             if test "$tizen_llvm_debug_sequence" != '-g2 -gdwarf-4 -g'; then
+-                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]"
+-                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: [$tizen_llvm_debug_sequence]" >&2
++                if test -n "$tizen_llvm_debug_sequence"; then
++                    tizen_llvm_debug_description="[$tizen_llvm_debug_sequence]"
++                else
++                    tizen_llvm_debug_description="no debug options"
++                fi
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description"
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description" >&2
+             fi ;;
+     esac
+     case $tizen_llvm_kind in
+@@ -602,9 +608,24 @@
+   if bolt_output=$("$@" 2>&1); then
+     printf '%%s\n' "$bolt_output" || bolt_fail "$bolt_stage-output" -
+   else
++    bolt_status=$?
+     printf '%%s\n' "$bolt_output" || true
++    case "$bolt_status" in
++      129|130|143) exit "$bolt_status" ;;
++    esac
+     printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || true
+     exit 1
++  fi
++}
++bolt_optional() {
++  if "$@"; then
++    return 0
++  else
++    bolt_optional_rc=$?
++    case $bolt_optional_rc in
++      129|130|143) exit "$bolt_optional_rc" ;;
++      *) return 0 ;;
++    esac
+   fi
+ }
+ bolt_step() {
+@@ -612,7 +633,7 @@
+   shift
+   bolt_checked "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" python3 -B %{SOURCE1201} run-step "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" -- "$@"
+ }
+-python3 -B %{SOURCE1201} disk-report begin || true
++bolt_optional python3 -B %{SOURCE1201} disk-report begin
+ echo "BOLT_BUILDROOT_OK %{buildroot}"
+ python3 -B %{SOURCE1201} preflight || exit 1
+ python3 -B %{SOURCE1201} certified || exit 1
+@@ -644,14 +665,14 @@
+ python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
+ cat "$BOLT_WORK/tool-build-verification.json"
+-python3 -B %{SOURCE1201} disk-report tool-built || true
++bolt_optional python3 -B %{SOURCE1201} disk-report tool-built
+ %if %{llvm_release_build}
+ python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
+ %else
+ python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" --debug-symbols || exit 1
+ %endif
+ echo BOLT_PIPELINE_PASS
+-python3 -B %{SOURCE1201} disk-report pipeline || true
++bolt_optional python3 -B %{SOURCE1201} disk-report pipeline
+ # BOLT configuration/build/rewrite must not change the ordinary installation.
+ # Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
+ python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
+@@ -659,7 +680,7 @@
+ echo BOLT_COMPARE_ROOT_PASS
+ # No subsequent step consumes this ThinLTO cache.
+ # Release it only inside the enabled x86_64 BOLT block.
+-python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK" || true
++bolt_optional python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK"
+ # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
+ %endif
+ %endif
+@@ -960,6 +981,6 @@
+     %{__bolt_original_spec_install_post} \
+     python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
+     echo BOLT_POST_GATE_PASS \
+-    python3 -B %{SOURCE1201} disk-report post || true
+-%endif
+-%endif
++    bolt_optional python3 -B %{SOURCE1201} disk-report post
++%endif
++%endif

@@ -1005,3 +1005,8 @@ Toolchain rehearsal-02 PASS（QB 1221204 FLAGS 同，WARNING=0、log-restarts=0�
 ## 2026-11-09 sandbox 推送完成（第三轮代码评审修复）
 
 [72 §9](72_third_code_review_fixes.md) 与 r4：在第二步全量检查、T/D 演练通过且 GitHub 材料先发布后，以 c7fd5eed 显式 lease 一次推送成功。远端 sandbox/lhmax2025/bolt_pgo 已核对为 fa4f9978c9162d3c6cd2113d0cfe1173f04881c8，父链为 22f1c9fd → a65688b1 → 13c3e223 → cf4b6777。359934 NEW/PS10/13c3e223、357163 NEW/PS2/cf4b6777，推后均未关闭。三个本地提交和 tree 不变。只推该 sandbox，无 refs/for、无 QB 操作、无完整构建；现场保留。
+
+
+## 2026-11-10：QB 1223601/1223602 核对，源码包白名单停止
+
+[73 号](73_qb_1223601_1223602.md)：源码均 fa4f9978，T/D 三架构成功；34 个二进制包载荷逐字节相同，FLAGS/profile 同基线、WARNING 和 shell not found 均 0。两源码包多出 0008 混合链接补丁提交说明的两处换行（代码补丁正文全同），超出本任务仅允许 spec/helper/转换器/VCS 的范围，判 FAIL 并停止。每组225个完整静态归档SHA全同；7706成员独立SHA枚举因停止而 NOT RUN。两个工具版本文件 QB 不可见。第二项跳过，未移动v5或改r4README。无源码修改、构建、Gerrit推送或QB操作。

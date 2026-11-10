@@ -1,0 +1,19 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-1221204-1221207/compare_packages.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-1223601-1223602/compare_packages.py
+@@ -12,7 +12,7 @@
+  def write(self,s):self.file.write(s);self.file.flush();return self.original.write(s)
+  def flush(self):self.file.flush();self.original.flush()
+ sys.stdout=Tee();sys.stderr=sys.stdout
+-P=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/qb-1221204-1221207/payload');P.mkdir(exist_ok=False)
++P=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/qb-1223601-1223602/payload');P.mkdir(exist_ok=False)
+ REUSE=Path(os.environ['QB_COMPARE_READONLY_PAYLOAD']) if os.environ.get('QB_COMPARE_READONLY_PAYLOAD') else None
+ if REUSE:assert REUSE.is_dir()
+ def expire(signum,frame):raise TimeoutError('single-file comparison exceeded 30 minutes')
+@@ -95,6 +95,7 @@
+     print('FILE',label,key,name,proof['classification'],flush=True)
+    r={'project':label,'package':key,'PASS':not added and not removed and all(v['classification'] not in ('FAIL','UNKNOWN') for v in diffs),'metadata_old':oldmeta,'metadata_new':newmeta,'file_count':len(aa),'added':added,'removed':removed,'content_changes':diffs,'payload_mtime_changes':mt}
+    summary.append(r);save(E/'qb-rpm-comparison.json',summary);save(E/'qb-changed-file-paths.json',filemap);print('PACKAGE',label,key,r['PASS'],flush=True)
++   if not key.endswith('\tsrc') and not r['PASS']:raise AssertionError(('binary package failed',label,key))
+  save(E/'item2-result.json',{'status':'ok' if all(r['PASS'] for r in summary) else 'differences','packages':len(summary),'passed':sum(r['PASS'] for r in summary),'failed':sum(not r['PASS'] for r in summary)})
+ except BaseException as ex:
+  save(E/'item2-result.json',{'status':'stopped','reason':str(ex),'completed_packages':len(summary)});traceback.print_exc();raise

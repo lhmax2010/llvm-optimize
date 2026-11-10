@@ -1,0 +1,153 @@
+--- 7d5e28ca89ed68e3360765bc4e42234eaaabae27/clang-bolt-helper.py
++++ fa4f9978c9162d3c6cd2113d0cfe1173f04881c8/clang-bolt-helper.py
+@@ -30,7 +30,8 @@
+ 
+ Rollback: --without clang_bolt locally; where build arguments cannot change,
+ change the x86_64 %bcond_without clang_bolt to %bcond_with clang_bolt in a new
+-spec commit. BOLT Sources/BuildRequires then disable together. Also restore
++spec commit. BOLT actions and BOLT-specific BuildRequires then disable;
++Source1200/1201 remain declared for GBS patch insertion. Also restore
+ matching accel/worker binaries and repository snapshots; verify their hashes.
+ 
+ Profile retraining is offline, never part of an RPM build: preserve a relinked
+@@ -50,6 +51,7 @@
+ segment layout), then add/verify debuglink. clang-debuginfo carries the matching
+ symtab at /usr/lib/debug/usr/bin/clang-22.debug; it contains no source-line DWARF.
+ """
++import traceback
+ import argparse
+ import collections
+ import shlex
+@@ -104,7 +106,9 @@
+         'int bolt_branch(int x) { return x < 0 ? -x : x * 7 + 1; }\n')
+ 
+ class GateError(RuntimeError):
+-    pass
++    def __init__(self, message, *, cancel_originated=False):
++        super().__init__(message)
++        self.cancel_originated = cancel_originated
+ 
+ def require(ok, message):
+     if not ok:
+@@ -192,6 +196,7 @@
+         if _ACTIVE_GROUP is not None:
+             try: os.killpg(_ACTIVE_GROUP, signal.SIGKILL)
+             except ProcessLookupError: pass
++        # This second-signal path terminates by signal; original handlers are not restored.
+         signal.signal(signum, signal.SIG_DFL)
+         os.kill(os.getpid(), signum)
+         return
+@@ -199,7 +204,9 @@
+ 
+ 
+ def check_cancel():
+-    require(_CANCEL_SIGNAL is None, 'CANCELLED: cancelled by signal %s' % _CANCEL_SIGNAL)
++    if _CANCEL_SIGNAL is not None:
++        raise GateError('CANCELLED: cancelled by signal %s' % _CANCEL_SIGNAL,
++                        cancel_originated=True)
+ 
+ 
+ def peek_child_exit(process, timeout):
+@@ -236,6 +243,9 @@
+               'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+         with log.open('wb') as output:
+             check_cancel()
++            # A microsecond-scale window exists between Popen and _ACTIVE_GROUP:
++            # a second signal here may leave the new process group uncleaned.
++            # Do not use preexec_fn: it risks deadlock in multithreaded programs.
+             process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
+                                        stderr=subprocess.STDOUT, start_new_session=True)
+             _ACTIVE_GROUP = process.pid
+@@ -252,8 +262,9 @@
+         save(metadata, dict(invocation,completed=True,rc=0))
+         return text
+     except BaseException as error:
++        cancel_originated = isinstance(error, GateError) and error.cancel_originated
+         if primary is None:
+-            primary = (str(error) if str(error).startswith('CANCELLED:') else
++            primary = (str(error) if cancel_originated else
+                        ('TIMEOUT: ' if isinstance(error, subprocess.TimeoutExpired) else 'COMMAND_ERROR: ')+str(error))
+         cleanup = []
+         if process is not None and not reaped:
+@@ -274,12 +285,12 @@
+                 cleanup.append(str(failure))
+         if isinstance(error, (KeyboardInterrupt, SystemExit)):
+             raise
+-        if _CANCEL_SIGNAL is not None:
+-            primary = 'CANCELLED: cancelled by signal %s' % _CANCEL_SIGNAL
++        if _CANCEL_SIGNAL is not None and not cancel_originated:
++            primary = 'CANCELLED: cancelled by signal %s; while handling: %s' % (_CANCEL_SIGNAL, primary)
+         message = primary+' (see '+str(log)+')'
+         if cleanup:
+             message += '; cleanup error: '+'; '.join(cleanup)
+-        failure = GateError(message)
++        failure = GateError(message, cancel_originated=cancel_originated)
+         failure.bolt_log = str(log)
+         raise failure from error
+     finally:
+@@ -563,8 +574,8 @@
+ 
+ 
+ def rpath_layout(path, allowed_ranges=None):
++    """Freeze all bytes except the original path strings, including their NULs."""
+     # adjust_rpath has already enforced at most one RPATH/RUNPATH tag.
+-    """Freeze all bytes except the original path strings, including their NULs."""
+     elf = ELF(path)
+     try:
+         dynamic = elf.by_name.get('.dynamic')
+@@ -769,7 +780,8 @@
+                  for name, sec in zip(elf.names, elf.sections)
+                  if name not in ('', '.shstrtab', '.gnu_debuglink') and sec[1] != 8}
+         return {'program_headers': elf.phdrs, 'loaded_sections': loaded, 'other_sections': other,
+-                'section_names': sorted(name for name in elf.names if name != '.gnu_debuglink')}
++                'section_names': sorted(name for name in elf.names if name != '.gnu_debuglink'),
++                'execution_layout': strip_layout(path)}
+     finally:
+         elf.close()
+ 
+@@ -1611,7 +1623,7 @@
+ 
+ 
+ def diagnose_safely(step, log, error=None):
+-    if error is not None and str(error).startswith('CANCELLED:'): return None
++    if isinstance(error, GateError) and error.cancel_originated: return None
+     try: return disk_diagnose(step,log,error)
+     except Exception: return None
+ 
+@@ -1633,7 +1645,7 @@
+         # Preserve the failed command's actual output even when its exit is nonzero.
+         try: print(Path(log).read_text(errors='replace'),end='',flush=True)
+         except Exception: pass
+-        if isinstance(error, GateError) and 'TIMEOUT:' in str(error):
++        if isinstance(error, GateError) and str(error).startswith('TIMEOUT:'):
+             failure = GateError('TIMEOUT: step=%s elapsed_seconds=%.3f; %s' %
+                                 (step, time.monotonic()-started, error))
+             failure.bolt_log = str(log)
+@@ -1896,20 +1908,24 @@
+         signal.signal(sig, record_cancel)
+     try:
+         main()
+-        require(_CANCEL_SIGNAL is None,
+-                'CANCELLED: cancelled by signal %s after work completed' % _CANCEL_SIGNAL)
++        if _CANCEL_SIGNAL is not None:
++            raise GateError('CANCELLED: cancelled by signal %s after work completed' % _CANCEL_SIGNAL,
++                            cancel_originated=True)
+         return 0
+     except (GateError, OSError, ValueError, lzma.LZMAError) as error:
+         step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+         log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+         diagnose_safely(step,log,error)
+         print('BOLT_GATE_FAILED: '+str(error),file=sys.stderr)
+-        return 1
++        return 128 + _CANCEL_SIGNAL if _CANCEL_SIGNAL is not None else 1
+     except Exception as error:
+         step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+         log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+         diagnose_safely(step,log,error)
+         print('BOLT_GATE_FAILED: unexpected %s: %s' % (type(error).__name__, error), file=sys.stderr)
++        if _CANCEL_SIGNAL is not None:
++            traceback.print_exc()
++            return 128 + _CANCEL_SIGNAL
+         raise
+     finally:
+         for sig, handler in previous.items():
