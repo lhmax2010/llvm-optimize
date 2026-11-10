@@ -1,0 +1,20 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/test_r2.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fourth-review-20261110/test_r2.py
+@@ -3,7 +3,7 @@
+ E=Path(__file__).parent
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+ B=W.parent/'llvm-optimize-bolt';S=W/'temp/rebase-359934-20261106/source'
+-X=W/'temp/third-code-review-20261109/resume/new-tests-02';X.mkdir(exist_ok=False)
++X=W/'temp/fourth-review-20261110/new-tests-02';X.mkdir(exist_ok=False)
+ def load(name,path):
+  sp=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(sp);sp.loader.exec_module(m);return m
+ h=load('h',S/'packaging/clang-bolt-helper.py')
+@@ -38,7 +38,7 @@
+     stdout.write((version+'\n').encode())
+   return a.validate_tools(d,*tools,Command(),d)
+  def test_tool_versions_equal(self):
+-  r=self.versions();self.assertEqual(set(r),{'compiler','version','compiler_sha256','disassembler','nm'})
++  r=self.versions();self.assertEqual(set(r),{'compiler','version','compiler_sha256','disassembler','nm','tool_versions','version_texts','tool_directory'})
+  def test_dis_version_mismatch(self):
+   with self.assertRaisesRegex(ValueError,'disassembler version mismatch: expected 22.1.8, found 22.1.7'):self.versions(dis='22.1.7',tag='dis-bad')
+  def test_nm_version_mismatch(self):

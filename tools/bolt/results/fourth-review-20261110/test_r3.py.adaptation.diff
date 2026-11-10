@@ -1,0 +1,11 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/test_r3.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fourth-review-20261110/test_r3.py
+@@ -5,7 +5,7 @@
+ E=Path(__file__).parent
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+ B=W.with_name('llvm-optimize-bolt');S=W/'temp/rebase-359934-20261106/source'
+-X=W/'temp/third-code-review-20261109/resume/r3-tests';X.mkdir()
++X=Path(os.environ['TEST_SCRATCH'])/'cases';X.mkdir()
+ def load(name,path):
+  spec=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+ a=load('converter',S/'packaging/llvm-static-archives-native.py')

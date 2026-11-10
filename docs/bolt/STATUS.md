@@ -1017,3 +1017,13 @@ Toolchain rehearsal-02 PASS（QB 1221204 FLAGS 同，WARNING=0、log-restarts=0�
 [73 号第 8 节](73_qb_1223601_1223602.md#8-裁定2026-11-10)：0008 提交说明折行是设计方要求，本次白名单漏写属于设计方白名单错误。两份源码包按已归因例外 PASS；两次 QB 三架构成功，34/34 二进制包载荷逐字节相同，每组225个完整归档SHA相同。7706个成员由整体归档相同覆盖，未单独运行。旧FAIL及停止记录保留。
 
 设计 v5 已从 Downloads 移至 W/docs/bolt/design/ 并同步发布到 bolt-v4，60890字节，移动前后 SHA256 均为 6c9776bb34e858c048a800320175ac5eb6a303ea83a9bf75e4425c5904a01ddb。r4 README 已追加 QB 验证，SHA256SUMS 全部校验通过。下一步：**三家完整评审（设计 v5 + r4 代码）**。本轮仅更新文档与评审材料，不推送 Gerrit/sandbox，不操作 QB。
+
+## 2026-11-10：第四轮修复停止在新增 IR 夹具（75 号未完成）
+
+当前有效设计为 [v6.1](design/tizen_llvm_speed_design_v6.1.md)，v6 已作为历史版入库，两份移动前后大小/SHA 均相同。用户三项裁决：ARM 已安装 CMake 模块文本变化接受为行为不变例外；本地完整构建用 fa4f9978（74 号），最终 tree 以 QB 比较衔接且任何发货内容差异使衔接作废；qemu-accel 性能主结论使用 Toolchain 产物。
+
+[75 号](75_fourth_review_fixes.md)：本地链 8a50d712 / 539e2a86 / 80217ff8，基线与 Change-Id 保留。既有 472 项 PASS；新增已执行 11 项（10 PASS、1 FAIL），3 项未运行。失败是本轮夹具把 module asm 放在 source_filename 前面，llvm-as 报 expected top-level entity，尚未进入转换；按指令停止，不修复重试。12 组展开、5 项 RPM 解析及一个真实 release 成员/完整小归档新旧转换逐字节比较通过。450 归档复扫、ARM 模块、lld 包核查和 r5 交付未执行，不能宣称整轮通过。现场与失败原文保全，未推 Gerrit/sandbox、未操作 QB、未启动完整构建。
+
+先补齐本轮验证。之后仍按用户指定顺序：夜间完整构建（fa4f9978，74 号）→等用户授权 sandbox→QB 重跑→三家完整评审（设计 v6.1 + 完成认证后的 r5）。75 号当前为停止记录，不是完成认证。
+
+FOURTH_REVIEW 已结束 2026-11-10T22:03:24+08:00 status=stopped reason=module_asm_fixture_parse_error

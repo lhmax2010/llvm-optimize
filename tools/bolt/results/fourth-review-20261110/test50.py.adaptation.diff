@@ -1,0 +1,11 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/test50.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fourth-review-20261110/test50.py
+@@ -84,7 +84,7 @@
+                 else:raise AssertionError('unexpected mocked command '+repr(argv))
+                 return {'exit':0}
+             cmd.run.side_effect=run
+-            with mock.patch.object(a,'validate_tools',return_value={}):
++            with mock.patch.object(a,'validate_tools',return_value={'tool_versions': {'compiler':'22.1.8','disassembler':'22.1.8','nm':'22.1.8'}, 'tool_directory':'fixture'}):
+                 with self.assertRaisesRegex(ValueError,'release conversion unexpectedly emitted debug sections'):
+                     a.convert(root,build/'evidence','cc','dis','nm',build,jobs=1,command=cmd,debug_info='no')
+ 

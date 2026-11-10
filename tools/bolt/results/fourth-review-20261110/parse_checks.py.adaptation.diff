@@ -1,0 +1,31 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/third-code-review-20261109/resume/parse_checks.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fourth-review-20261110/parse_checks.py
+@@ -15,7 +15,7 @@
+ # Exclude host/user macro overrides. Preserve the Tizen runtime's complete configured macro list.
+ macrobase=':'.join(x for x in macrobase.split(':') if x.startswith(str(R)))
+ run('rpm-version',loader+[str(R/'usr/bin/rpm'),'--dbpath',str(R/'var/lib/rpm'),'-q','--qf','%{NAME} %{VERSION}-%{RELEASE}\n','rpm','rpm-build'])
+-for label,rev in [('new','HEAD'),('parent','c7fd5eed5e35ca335940239cae349a6936f74a7a')]:
++for label,rev in [('new','HEAD'),('parent','fa4f9978c9162d3c6cd2113d0cfe1173f04881c8')]:
+  (P/(label+'.spec')).write_bytes(subprocess.check_output(['git','show',rev+':packaging/llvm.spec'],cwd=S))
+ rows=[]
+ for name,c in conf.items():
+@@ -35,15 +35,14 @@
+    for label in ('new','parent'):
+     args=loader+[str(R/'usr/bin/rpmspec'),'-P',*common,*(['--define','_without_clang_bolt 1'] if off else []),str(P/(label+'.spec'))]
+     outputs[label]=run(key+suffix+'-'+label,args)
+-   diff=''.join(difflib.unified_diff(outputs['parent'].splitlines(True),outputs['new'].splitlines(True),fromfile='5a27edb4',tofile='cli-cancel-fixed'))
++   diff=''.join(difflib.unified_diff(outputs['parent'].splitlines(True),outputs['new'].splitlines(True),fromfile='fa4f9978',tofile='fourth-review-fixed'))
+    (P/(key+suffix+'.diff')).write_text(diff)
+    if arch!='x86_64' or off:
+     assert outputs['new']==outputs['parent'],key+suffix+' spec expansion changed'
+    else:
+-    added="    bolt_status=$?\n"
+-    restored=outputs['new'].replace(added,'',1)
+-    added='    case "$bolt_status" in\n      129|130|143) exit "$bolt_status" ;;\n    esac\n'
+-    restored=restored.replace(added,'',1)
++    function='bolt_status_exit() {\n  case "$1" in\n    129|130|143) exit "$1" ;;\n    *) exit 1 ;;\n  esac\n}\n'
++    assert outputs['new'].count(function)==1
++    restored=outputs['new'].replace(function,'',1).replace('|| bolt_status_exit $?','|| exit 1')
+     assert restored==outputs['parent'],key+suffix+' unexpected spec expansion changed'
+    if name=='toolchain' and case=='x86-debug' and not off:
+     post_spec=E/'post-expanded.spec'
