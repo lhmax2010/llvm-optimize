@@ -1047,3 +1047,11 @@ ARM 可用基线已找到：**QB 1216401（Toolchain）和 1216400（Base-Dev）
 下一步依次：**用户启动两个项目的 QB → 夜间完整构建（fa4f9978，74 号）→ QB 核对 → 三家完整评审（设计 v6.1 + r5 代码）**。
 
 R5_SANDBOX 已结束 2026-11-10T23:26:22+08:00 status=ok
+
+## 2026-11-10：74 号启动前停止，T/D 未运行
+
+[74 号](74_local_full_build_fa4f9978.md)：无其他任务服务，fa4f9978 对象及 tree c9f61c77 正确，/home 可用约 313.11 GiB，超过151.3 GiB。只读检查发现 rebase-launch-20261106-r2/basedev/launch.sh 不接受 full basedev（仅 night / rehearsal / rehearsal-02）；两个入口还要求固定源码目录 HEAD 等于传入 SHA，而该目录当前为60fabc72。按 argv 不符停止，未启动 T/D、未改入口、未切换源码、未直接绕过 shell 入口。
+
+构建审计、归因材料、两组包比较、T/D 函数比较和 install/LLDB 均 NOT RUN；资源峰值 UNKNOWN。本轮不推 Gerrit/sandbox、不操作 QB、不执行 sudo。后续需先处理完整构建入口与固定源码视图，再执行74号；76号的sandbox和ARM候选结论不变。
+
+LOCAL74 已结束 2026-11-10T23:30:01+08:00 status=stopped reason=entry_preflight_blocked
