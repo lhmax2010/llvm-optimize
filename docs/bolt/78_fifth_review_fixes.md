@@ -423,3 +423,107 @@ DEBUG_CONVERSION 已结束 2026-11-11T15:33:39.766883+08:00 archive=libclangSema
 - 当前停点是复核驱动的路径字段断言；尚未满足进入评审包和sandbox推送的条件。
 
 FIFTH_REVIEW_RERUN3 已结束 2026-11-11T15:39:20+08:00 status=stopped reason=verification_driver_compared_output_path
+
+
+## 9. 第四次续跑（2026-11-11）：剩余验证通过，Gerrit状态变化停止推送
+
+**10/10个debug ThinLTO归档新旧输出逐字节相同，12组展开、5项RPM解析及提交说明检查通过。** 推送前实时查询发现359934和357163已为MERGED，不满足用户指定的“仍为NEW”。因此未推送sandbox，未进入依赖推送后身份核对的完整构建入口准备与演练。原有四次停止记录全部保留，不以本节覆盖历史结果。
+
+### 9.1 起点与核对脚本修正（1次）
+
+源码HEAD仍为fea0fe464d56e17f2c7588c557bfffd9f6ac352b、tree b2e8af2477cf623a945aa80bf8288a262dd4a5a9，工作树干净。三个提交、提交说明及产品测试均未修改。[身份记录](../../tools/bolt/results/fifth-review-20261111/rerun4/source-identity.json)。
+
+用户本次明确批准修正执行方核对脚本中按设计本来不同的字段；据此在新副本里仅从inspect()字典比较中排除来源path。**没有排除SHA、大小、成员、节、重定位结果或计数，也没有加入时间戳等其他例外。** [原始错误](../../tools/bolt/results/fifth-review-20261111/rerun4/previous-error.txt)、[单行修正diff](../../tools/bolt/results/fifth-review-20261111/rerun4/inspect-path-fix.diff)、[完整驱动](../../tools/bolt/results/fifth-review-20261111/rerun4/convert_debug_archive.py)。
+
+~~~diff
+- a=new.inspect(outputs['old']);b=new.inspect(outputs['new']);assert a==b
++ a=new.inspect(outputs['old']);b=new.inspect(outputs['new']);assert {k:v for k,v in a.items() if k!='path'}=={k:v for k,v in b.items() if k!='path'}
+~~~
+
+本轮允许修正额度使用 **1/2**，仅此一项；无产品FAIL、无测试数据或产品断言调整。libclangSema.a复用上次两份输出，通过[复核驱动](../../tools/bolt/results/fifth-review-20261111/rerun4/recheck_sema.py)重新计算SHA/大小，再执行相同的修正后比较和全成员检查。其余9个归档在新scratch中重新执行两版转换；历史根只读。
+
+### 9.2 第二组实物验证和census
+
+[输入来源/SHA](../../tools/bolt/results/fifth-review-20261111/rerun4/debug-inputs.json)、[完整汇总](../../tools/bolt/results/fifth-review-20261111/rerun4/debug-conversion-summary.json)。两版均debug_info=yes、jobs=1、进程地址空间4GiB，外层systemd用户服务MemoryMax=8G、MemorySwapMax=0、CPUQuota=400%、Nice=19、IOSchedulingClass=idle，所有服务串行。沿用75号loader调用方式，三个平台工具版本均22.1.8，来源SHA、argv和每次日志在debug-conversion-00至09的JSON及stdout中。无OOM、没有提高限制或重试；全部现场保留，没有删除文件。
+
+|归档|成员|.rela.debug_*条目|两版相同的完整归档SHA256|
+|---|---:|---:|---|
+|libclangSema.a|86|5856488|8de79182e21d90c6351536f717b15ba0174cad1dc1a7798d630a16e1a082f3de|
+|libclangTidyBugproneModule.a|105|3929302|4366135f08a01ec4d2133b5855deb994fa48c07b117615ef1e37321551719502|
+|libLLVMCodeGen.a|238|4487133|e4894007eb23bba03b3d740606686ead1e3f48bde70fb796d22b39ccf240728c|
+|libclangAST.a|114|4558219|4a05dc4113744f073479aa66e7c456f7c62faa5968167f091917b951ca3ee7dc|
+|libclangCodeGen.a|101|3758699|d5183b82586383972b51157f129b276990667665abb788e47be21c4f3cbf35cd|
+|libclangStaticAnalyzerCheckers.a|134|2845518|d2f9b766793549d6a6cde3cbad5a1ca6eaa00645ec73586605364243acf96d57|
+|libclangDaemon.a|82|2953475|776525de05d2e5f7a74e18f3d6adc9ea1145d2fa21ed980d659e88a2aa162db3|
+|libclangTidyModernizeModule.a|50|2490869|5df6d3df4a746e56591c96213b22c4f10bc50bdae60b1cfd8bd86a5302695f5a|
+|libclangTidyReadabilityModule.a|59|2304671|c0849682a8884ce19ea2cc3a66ed21ce349bee1c8cc6da2d968d380811bd3401|
+|libLLVMAnalysis.a|131|2376173|5f1993917095d04b80c2c51c794bae5a52ede9127ca5d572648dca99cdd404b6|
+
+共 **1100个成员（1093转换、7原生）**，10/10完整归档大小/SHA一致，其余inspect字段一致，所有成员的elf_details和pic_relocations新旧一致；转换成员零拒绝。原生成员仍按原规则保留、比较旧新结果，不扩张其拦截规则。源输入是63号构建树按体积排序最大的10个ThinLTO库，包含libclangSema、libLLVMCodeGen、libclangCodeGen。
+
+全部重定位共 **37005060** 条，7种类型；调试节共 **35560547** 条，2种类型（1、10）。表外类型为0。
+
+|类型编号|全部重定位|.rela.debug_*|
+|---|---:|---:|
+|1|10640217|10486437|
+|2|479877|0|
+|4|780135|0|
+|10|25074110|25074110|
+|19|956|0|
+|41|11|0|
+|42|29754|0|
+
+本项末尾原文：
+
+~~~text
+DEBUG_CONVERSION 已结束 2026-11-11T16:51:49.280209+08:00 archive=libLLVMAnalysis.a status=ok
+ITEM1 已结束 2026-11-11T16:52:29.482766+08:00 status=ok
+~~~
+
+§8同一源码HEAD的499/499产品测试、450个QB归档复扫继续有效，本任务没有再次重复它们。第一组发货归档census为11种类型、94400431条调试节重定位，第二组是本节重新转换数据，不混用两组数字。pyflakes仍是上次“未安装、NOT RUN”，未联网安装。
+
+### 9.3 展开、RPM解析和提交说明
+
+[展开驱动](../../tools/bolt/results/fifth-review-20261111/rerun4/parse_checks.py)、[12组结果](../../tools/bolt/results/fifth-review-20261111/rerun4/parse/expansion-summary.json)、[5项解析结果](../../tools/bolt/results/fifth-review-20261111/rerun4/parse/five-summary.json)，逐次argv、stdout、stderr和完整diff均保存在parse/。
+
+- 两配置分别覆盖x86 debug/release的BOLT开/关与ARM两架构，合计12组。
+- ARM及BOLT关闭的8组与60fabc72逐字节相同。
+- x86 BOLT开启的4组只允许两处disk-diagnose从“|| true”变为“|| bolt_status_exit $?”；逐处反向替换后与60fabc72全同，无其他差异。
+- TizenRPM五项：x86开启、关闭、一行回退、armv7l、aarch64全部PASS；仅解析，没有构建。
+- [独立说明检查](../../tools/bolt/results/fifth-review-20261111/rerun4/message-check.json)：三个说明最大行宽均72，最后一段只含可解析的Change-Id与Signed-off-by；混合链接SHA/tree仍8a50d7122346258fd1171d270861a4ae28a8717c / 3d961cbb04f5446f84d2089b4f65f3178f2bd7fa。
+
+~~~text
+EXPANSIONS_PASS 12 FIVE_PARSE_PASS 5
+ITEM2 已结束 2026-11-11T16:52:56.152298+08:00 status=ok
+~~~
+
+### 9.4 r6材料及推送前停止
+
+[r6评审包](../../patches/rebase-359934-20261111-r6/README.md)已生成：三个带PATCH 1/3–3/3编号的完整补丁、BOLT文本补丁、九份最终全文、对60fabc72完整diff、转换器对PS10 diff、provenance、README及SHA256SUMS；[最终17行校验全部OK](../../tools/bolt/results/fifth-review-20261111/rerun4/r6-sha256-final-check.txt)。README明确记录上轮测试抓到并修正的import sys，以及本轮核对脚本的路径修正。本包是已完成指定轻量/实物门禁的代码材料，不宣称完整构建或新QB已认证。
+
+SSH一律BatchMode、使用完整URL。推送前ls-remote原文（[stdout](../../tools/bolt/results/fifth-review-20261111/rerun4/sandbox-before.stdout)、[命令](../../tools/bolt/results/fifth-review-20261111/rerun4/sandbox-before.command.json)）：
+
+~~~text
+60fabc723f30c5cc04146a9dd83487ebed63f259 refs/heads/sandbox/lhmax2025/bolt_pgo
+~~~
+
+实际输出在SHA与ref之间为TAB，以上为排版显示。随后查询359934即发现状态不符，未执行任何push；再仅补齐357163的已授权只读查询，未重试或更改推送方式。
+
+|Change|实际状态|当前PS|revision|lastUpdated（+08:00）|
+|---|---|---:|---|---|
+|359934|MERGED|10|13c3e223d9e1b35e4affb55255c5042f8c940f35|2026-11-11T12:28:07+08:00|
+|357163|MERGED|2|cf4b6777d056131e2534ecb460c5575327d99646|2026-11-11T12:28:07+08:00|
+
+[359934完整原文](../../tools/bolt/results/fifth-review-20261111/rerun4/change-359934.stdout)、[357163完整原文](../../tools/bolt/results/fifth-review-20261111/rerun4/change-357163.stdout)、[前置判定](../../tools/bolt/results/fifth-review-20261111/rerun4/push-preflight.json)。revision虽未变，状态已经不满足本任务要求，不能自行豁免。**推送未执行，推后ls-remote NOT RUN；无推后SHA新观测。** 本地HEAD保持fea0fe46，最后一次实际读到的sandbox为60fabc72。
+
+~~~text
+ITEM3 已结束 2026-11-11T16:55:38.190457+08:00 status=stopped reason=change_status_not_NEW
+~~~
+
+### 9.5 未运行检查及后续边界
+
+第四步要求源码副本核对时远端sandbox也为fea0fe46；该前置条件当前不成立，故没有创建新clone、新入口或夜间根。入口diff、自测、T/D演练、FLAGS/log-restarts/资源/残留审计和晚间磁盘预算均NOT RUN。[入口未运行记录](../../tools/bolt/results/fifth-review-20261111/rerun4/entry-not-run.json)，另见[74号追加节](74_local_full_build_fa4f9978.md)。不提供已可启动的晚间命令。
+
+没有运行完整构建、操作QB、执行sudo、推refs/for、删除文件或修改VS Code配置。下一次QB源码包白名单仍为：llvm.spec、clang-bolt-helper.py、llvm-static-archives-native.py、VCS行；**0008必须不变**。待用户裁决MERGED状态是否满足推送前置条件后，才能继续sandbox和第四步入口准备。
+
+FIFTH_REVIEW_RERUN4 已结束 2026-11-11T16:58:21+08:00 status=stopped reason=Gerrit_changes_MERGED_required_NEW

@@ -1,0 +1,11 @@
+--- rerun3/convert_debug_archive.py
++++ rerun4/convert_debug_archive.py
+@@ -44,7 +44,7 @@
+  stage='compare'
+  assert result['runs']['old']['sha256']==result['runs']['new']['sha256'],result['runs']
+  assert result['runs']['old']['bytes']==result['runs']['new']['bytes']
+- a=new.inspect(outputs['old']);b=new.inspect(outputs['new']);assert a==b
++ a=new.inspect(outputs['old']);b=new.inspect(outputs['new']);assert {k:v for k,v in a.items() if k!='path'}=={k:v for k,v in b.items() if k!='path'}
+  counts=collections.Counter();debug=collections.Counter();checked=0
+  with outputs['new'].open('rb') as stream:
+   for member in b['members']:

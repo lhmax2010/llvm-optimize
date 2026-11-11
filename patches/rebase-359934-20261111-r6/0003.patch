@@ -1,0 +1,807 @@
+From fea0fe464d56e17f2c7588c557bfffd9f6ac352b Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Fri, 6 Nov 2026 14:49:25 +0800
+Subject: [PATCH 3/3] packaging: fix x86 LLVM flags and archive mode
+
+QB 1214821 inherited GCC project options into a clang build. Source1005
+rejected -feliminate-unused-debug-types; release commands also lacked
+its previously mandatory DWARF setting.
+
+Fix x86_64 compilation flags to the effective Toolchain values recorded
+by QB 1215143. Inherit reviewed architecture flags, reject native CPU
+selection, and warn on debug sequences other than -g2 -gdwarf-4 -g.
+Release commands contain no debug flags. Match whole tokens and
+preserve the caller's IFS state and shell options.
+
+Fix LDFLAGS to the Toolchain value. Executable and shared-library linker
+flags remain explicitly set by the spec; MODULE targets (plugins) take
+LDFLAGS, so Base-Dev plugin links gain -z relro, --as-needed and
+--gc-sections, matching Toolchain. This retains the existing policy of
+removing project stack-protector and --param=ssp-buffer-size options;
+it does not introduce a new hardening policy.
+
+Print TIZEN_LLVM_NORMALIZED_FLAGS for prior normalization and
+TIZEN_LLVM_DROPPED_FLAGS for the four reviewed extra project options.
+Unreviewed project options are dropped with TIZEN_LLVM_FLAGS_WARNING
+on stdout and stderr for manual review; they do not interrupt the build.
+Uncertified debug sequences also warn. Reject only native CPU selection
+and invalid release mode values. Review warnings before adding options
+to the fixed set or expected-dropped list. Non-x86_64 behavior is kept.
+
+Local and QB command strings differ in the placement of section flags.
+The prior stripped QB clang equals the local post-RUNPATH clang, as
+recorded in docs/bolt/49 section A.4. Recheck the identity chain, RPM
+contents and 90 translation units in the next complete build; these
+lightweight checks alone do not prove new binary identity.
+
+Require Source1005 --debug-info yes|no and match each converted member's
+recorded command. Release means no debug option in that command; any
+debug option still requires the certified final -gdwarf-4. Reject debug
+sections in converted release outputs. Preserve native members as-is
+and count them, without applying that assertion to preexisting objects.
+All 3853 converted full-20261030 members recorded debug options.
+
+Following review, reject -Wa, options, which PS10 accepted through its
+broad -W branch, and report -Xassembler (already rejected) as an
+assembler option; require compiler, disassembler and nm to report the
+same X.Y.Z version from the same directory, and record the three
+versions in the summary and in a NATIVE_ARCHIVES_TOOLS log line. Harden
+archive and relocation parsing against malformed sizes, size fields,
+long-name numbers and offsets, section tables, section payloads and
+indexes. Check each relocation against an explicit x86_64 field width
+table taken from LLVM 22.1.8; reject relocation types outside that
+table, CREL relocation sections, 8- and 16-bit absolute relocations and
+fields outside their target section, bounding compressed sections by
+their uncompressed size. Handle SIGHUP and process-group reaping during
+conversion, reset an inherited ignored SIGCHLD, keep inherited ignored
+TERM, INT and HUP ignored, and exit with 128+signal after cancellation,
+deciding the final status after the original handlers are restored. With
+BOLT enabled, the spec passes the converter's 129/130/143 through; with
+BOLT disabled, the call keeps exit 1 so that expansion is unchanged.
+
+Based on Change 359934: keeps its token classification, per-switch
+replay and adopted checks; adds the declared debug-info mode with a
+per-member consistency check.
+
+Change-Id: Ic76505ddb122f1e06271ff7462e24eceee4d400a
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+---
+ packaging/llvm-static-archives-native.py | 315 ++++++++++++++++++++---
+ packaging/llvm.spec                      | 159 ++++++++++--
+ 2 files changed, 411 insertions(+), 63 deletions(-)
+
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index 1b1f759ffe7030f1d8e3a311b828b05466943253..fce59f78c9556484691db5385c372771fcf8334f 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -7,6 +7,8 @@ Text IR metadata/attribute parsing depends on LLVM 22 llvm-dis output syntax.
+ Four architecture-specific policy points are deliberately explicit: backend
+ options, recorded-command classification, relocation rules, and triple allowlist.
+ Failing closed when parameters change is intentional; recertify before use.
++The HQ allowlist accepts -g0 and has_debug_options also counts it as debug.
++Current recorded commands contain no -g0; recheck this on clang upgrades.
+ """
+ import argparse
+ from collections import Counter
+@@ -23,9 +25,13 @@ import signal
+ import stat
+ import struct
+ import subprocess
++import sys
+ import tempfile
+ import threading
+ import time
++import traceback
++
++_CANCEL_SIGNAL = None
+ 
+ 
+ def cstring(data, offset):
+@@ -69,6 +75,8 @@ def elf_details(data):
+         count = zero[5]
+     if names_idx == 0xffff:
+         names_idx = zero[6]
++    if names_idx >= count:
++        raise ValueError('ELF section name index outside table')
+     sections = [struct.unpack_from(fmt, data, shoff+i*entsize) for i in range(count)]
+     def contents(section):
+         start, size = section[4:6]
+@@ -82,6 +90,8 @@ def elf_details(data):
+     for s in sections:
+         if s[1] != 2:  # SHT_SYMTAB, not dynamic symbols
+             continue
++        if s[6] >= count:
++            raise ValueError("ELF symbol table link outside section table")
+         strings = contents(sections[s[6]])
+         table = contents(s); stride = s[9]
+         if stride < struct.calcsize(symfmt) or len(table) % stride:
+@@ -94,6 +104,12 @@ def elf_details(data):
+     return symbols, debug
+ 
+ 
++def ar_decimal(value):
++    if re.fullmatch(r'[0-9]+', value) is None:
++        raise ValueError('invalid ar long-name number: '+value)
++    return int(value)
++
++
+ def inspect(path):
+     path = Path(path)
+     with path.open('rb') as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as data:
+@@ -106,10 +122,12 @@ def inspect(path):
+             start = pos; header = data[pos:pos+60]
+             if len(header) != 60 or header[58:60] != b'`\n':
+                 raise ValueError(f'invalid ar header at {pos}')
++            if not re.fullmatch(rb'[0-9]+ *', header[48:58]):
++                raise ValueError('invalid ar member size field')
+             name = header[:16].decode('ascii').rstrip(); size = int(header[48:58]); pos += 60
+             special = name in ('/', '//', '/SYM64/')
+-            stored_size = size if not thin or special else (int(name[3:]) if name.startswith('#1/') else 0)
+-            if pos+stored_size > len(data):
++            stored_size = size if not thin or special else (ar_decimal(name[3:]) if name.startswith('#1/') else 0)
++            if stored_size < 0 or stored_size > len(data)-pos:
+                 raise ValueError('ar member outside file')
+             if name == '//':
+                 longnames = data[pos:pos+size]
+@@ -119,13 +137,23 @@ def inspect(path):
+                 raw_members.append(dict(header_offset=start, raw_name=name, offset=pos,
+                                         size=size, mtime=header[16:28].decode().strip()))
+             pos += stored_size + stored_size % 2
++            if pos > len(data):
++                raise ValueError('missing ar member alignment byte')
+         members, offsets, native_map, occurrences = [], {}, [], Counter()
+         for m in raw_members:
+             name, off, size = m.pop('raw_name'), m['offset'], m['size']
+             if name.startswith('#1/'):
+-                n = int(name[3:]); name = data[off:off+n].rstrip(b'\0').decode('utf-8', 'surrogateescape'); off += n; size -= n
++                n = ar_decimal(name[3:])
++                if not 0 <= n <= size:
++                    raise ValueError('invalid BSD long name length')
++                name = data[off:off+n].rstrip(b'\0').decode('utf-8', 'surrogateescape'); off += n; size -= n
+             elif name.startswith('/'):
+-                n = int(name[1:]); end = longnames.find(b'/\n', n)
++                n = ar_decimal(name[1:])
++                if not 0 <= n < len(longnames):
++                    raise ValueError('GNU long name offset outside table')
++                if n and longnames[n-1:n] != b'\n':
++                    raise ValueError('GNU long name offset inside entry')
++                end = longnames.find(b'/\n', n)
+                 if end < 0:
+                     raise ValueError('invalid GNU long name')
+                 name = longnames[n:end].decode('utf-8', 'surrogateescape')
+@@ -247,6 +275,8 @@ def classify_options(argv, arch='x86_64'):
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+         elif re.fullmatch(r'--param=ssp-buffer-size=\d+', token):
+             category, reason = 'ir', 'stack-protector-buffer-size function attribute already in the IR'
++        elif token == '-Xassembler' or token.startswith('-Wa,'):
++            raise ValueError('uncertified assembler option: '+token)
+         elif (token.startswith(('-W', '-D', '-I', '--target=', '-fmessage-length=',
+                                '-fdiagnostics-color=')) or token in
+               ('-fdiagnostics-color', '-fcolor-diagnostics', '-fno-color-diagnostics',
+@@ -279,7 +309,7 @@ def classify_options(argv, arch='x86_64'):
+                 fp_contract_source='last explicit option' if contractions else 'LLVM 22 non-CUDA/HIP default on')
+ 
+ 
+-def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
++def ir_settings(lines, require_recorded_options=True, arch='x86_64', debug_info=None):
+     """Read LLVM 22 textual metadata/attributes without modifying input IR."""
+     retained, metadata = [], {}
+     triple, command_id = None, None
+@@ -330,6 +360,11 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+         raise ValueError('missing original command: backend policy cannot be certified')
+     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+         lambda match: chr(int(match[1], 16)), metadata[command_id]))
++    found_debug = 'yes' if any(token.startswith('-g') for token in recorded_command) else 'no'
++    if debug_info is not None and debug_info != found_debug:
++        raise ValueError('debug-info expected %s, found %s' %
++                         ('debug' if debug_info == 'yes' else 'release',
++                          'debug' if found_debug == 'yes' else 'release'))
+     policy = classify_options(recorded_command, arch)
+     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+              *(('-f'+key) if policy['switches'][key] else ('-fno-'+key)
+@@ -344,36 +379,158 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64'):
+                 recorded_command=recorded_command, policy=policy)
+ 
+ 
++# LLVM 22.1.8 ELFRelocs/x86_64.def numbers; x86-64 psABI section 4.4,
++# Relocation Types and Large Model Relocation Types (LP64 field bytes).
++# Dynamic-loader-only relocations are deliberately absent from the accepted
++# table. COPY has no fixed-size field; TLSDESC_CALL is a zero-width marker.
++# 0 R_X86_64_NONE: 0 bytes; psABI Relocation Types: none (linker marker); accept.
++# 1 R_X86_64_64: 8 bytes; psABI Relocation Types: word64; accept.
++# 2 R_X86_64_PC32: 4 bytes; psABI Relocation Types: word32; accept.
++# 3 R_X86_64_GOT32: 4 bytes; psABI Relocation Types: word32; accept.
++# 4 R_X86_64_PLT32: 4 bytes; psABI Relocation Types: word32; accept.
++# 5 R_X86_64_COPY: 0 bytes; psABI Relocation Types: none (COPY has no fixed field); reject dynamic-only.
++# 6 R_X86_64_GLOB_DAT: 8 bytes; psABI Relocation Types: word64; reject dynamic-only.
++# 7 R_X86_64_JUMP_SLOT: 8 bytes; psABI Relocation Types: word64; reject dynamic-only.
++# 8 R_X86_64_RELATIVE: 8 bytes; psABI Relocation Types: word64; reject dynamic-only.
++# 9 R_X86_64_GOTPCREL: 4 bytes; psABI Relocation Types: word32; accept.
++# 10 R_X86_64_32: 4 bytes; psABI Relocation Types: word32; accept.
++# 11 R_X86_64_32S: 4 bytes; psABI Relocation Types: word32; accept.
++# 12 R_X86_64_16: 2 bytes; psABI Relocation Types: word16; accept.
++# 13 R_X86_64_PC16: 2 bytes; psABI Relocation Types: word16; accept.
++# 14 R_X86_64_8: 1 bytes; psABI Relocation Types: word8; accept.
++# 15 R_X86_64_PC8: 1 bytes; psABI Relocation Types: word8; accept.
++# 16 R_X86_64_DTPMOD64: 8 bytes; psABI Relocation Types: word64; reject dynamic-only.
++# 17 R_X86_64_DTPOFF64: 8 bytes; psABI Relocation Types: word64; accept.
++# 18 R_X86_64_TPOFF64: 8 bytes; psABI Relocation Types: word64; accept.
++# 19 R_X86_64_TLSGD: 4 bytes; psABI Relocation Types: word32; accept.
++# 20 R_X86_64_TLSLD: 4 bytes; psABI Relocation Types: word32; accept.
++# 21 R_X86_64_DTPOFF32: 4 bytes; psABI Relocation Types: word32; accept.
++# 22 R_X86_64_GOTTPOFF: 4 bytes; psABI Relocation Types: word32; accept.
++# 23 R_X86_64_TPOFF32: 4 bytes; psABI Relocation Types: word32; accept.
++# 24 R_X86_64_PC64: 8 bytes; psABI Relocation Types: word64; accept.
++# 25 R_X86_64_GOTOFF64: 8 bytes; psABI Relocation Types: word64; accept.
++# 26 R_X86_64_GOTPC32: 4 bytes; psABI Relocation Types: word32; accept.
++# 27 R_X86_64_GOT64: 8 bytes; psABI Large Model Relocation Types: word64; accept.
++# 28 R_X86_64_GOTPCREL64: 8 bytes; psABI Large Model Relocation Types: word64; accept.
++# 29 R_X86_64_GOTPC64: 8 bytes; psABI Large Model Relocation Types: word64; accept.
++# 30 R_X86_64_GOTPLT64: 8 bytes; psABI Large Model Relocation Types: word64; accept.
++# 31 R_X86_64_PLTOFF64: 8 bytes; psABI Large Model Relocation Types: word64; accept.
++# 32 R_X86_64_SIZE32: 4 bytes; psABI Relocation Types: word32; accept.
++# 33 R_X86_64_SIZE64: 8 bytes; psABI Relocation Types: word64; accept.
++# 34 R_X86_64_GOTPC32_TLSDESC: 4 bytes; psABI Relocation Types: word32; accept.
++# 35 R_X86_64_TLSDESC_CALL: 0 bytes; psABI Relocation Types: none (linker marker); accept.
++# 36 R_X86_64_TLSDESC: 16 bytes; psABI Relocation Types: word64 x 2; reject dynamic-only.
++# 37 R_X86_64_IRELATIVE: 8 bytes; psABI Relocation Types: word64; reject dynamic-only.
++# 41 R_X86_64_GOTPCRELX: 4 bytes; psABI Relocation Types: word32; accept.
++# 42 R_X86_64_REX_GOTPCRELX: 4 bytes; psABI Relocation Types: word32; accept.
++# 43 R_X86_64_CODE_4_GOTPCRELX: 4 bytes; psABI Relocation Types: word32; accept.
++# 44 R_X86_64_CODE_4_GOTTPOFF: 4 bytes; psABI Relocation Types: word32; accept.
++# 45 R_X86_64_CODE_4_GOTPC32_TLSDESC: 4 bytes; psABI Relocation Types: word32; accept.
++# 50 R_X86_64_CODE_6_GOTTPOFF: 4 bytes; psABI Relocation Types: word32; accept.
++X86_64_RELOCATION_WIDTHS = {
++    0: 0,  # R_X86_64_NONE
++    1: 8,  # R_X86_64_64
++    2: 4,  # R_X86_64_PC32
++    3: 4,  # R_X86_64_GOT32
++    4: 4,  # R_X86_64_PLT32
++    9: 4,  # R_X86_64_GOTPCREL
++    10: 4,  # R_X86_64_32
++    11: 4,  # R_X86_64_32S
++    12: 2,  # R_X86_64_16
++    13: 2,  # R_X86_64_PC16
++    14: 1,  # R_X86_64_8
++    15: 1,  # R_X86_64_PC8
++    17: 8,  # R_X86_64_DTPOFF64
++    18: 8,  # R_X86_64_TPOFF64
++    19: 4,  # R_X86_64_TLSGD
++    20: 4,  # R_X86_64_TLSLD
++    21: 4,  # R_X86_64_DTPOFF32
++    22: 4,  # R_X86_64_GOTTPOFF
++    23: 4,  # R_X86_64_TPOFF32
++    24: 8,  # R_X86_64_PC64
++    25: 8,  # R_X86_64_GOTOFF64
++    26: 4,  # R_X86_64_GOTPC32
++    27: 8,  # R_X86_64_GOT64
++    28: 8,  # R_X86_64_GOTPCREL64
++    29: 8,  # R_X86_64_GOTPC64
++    30: 8,  # R_X86_64_GOTPLT64
++    31: 8,  # R_X86_64_PLTOFF64
++    32: 4,  # R_X86_64_SIZE32
++    33: 8,  # R_X86_64_SIZE64
++    34: 4,  # R_X86_64_GOTPC32_TLSDESC
++    35: 0,  # R_X86_64_TLSDESC_CALL
++    41: 4,  # R_X86_64_GOTPCRELX
++    42: 4,  # R_X86_64_REX_GOTPCRELX
++    43: 4,  # R_X86_64_CODE_4_GOTPCRELX
++    44: 4,  # R_X86_64_CODE_4_GOTTPOFF
++    45: 4,  # R_X86_64_CODE_4_GOTPC32_TLSDESC
++    50: 4,  # R_X86_64_CODE_6_GOTTPOFF
++}
++
++
+ def pic_relocations(data):
+-    """Reject absolute relocations in read-only allocated x86_64 sections.
++    """Validate x86_64 ET_REL tables and reject non-PIC ALLOC relocations.
+ 
+-    Debug relocations are excluded. Absolute 32-bit relocations against
+-    non-absolute symbols are also rejected in writable allocated sections.
+-    PC-relative relocations are not all forbidden: e.g. hidden symbols and
+-    .eh_frame legitimately use them. A consumer GNU ld -shared check follows.
++    Absolute 8-, 16- and 32-bit relocations against non-absolute symbols
++    are forbidden in both writable and read-only ALLOC sections; 64-bit
++    absolute relocations are forbidden in read-only ALLOC sections.
++    SHN_ABS references remain allowed. Debug sections are excluded from
++    the PIC policy, but all relocation indexes and target byte ranges are
++    validated. PC-relative relocations may be legitimate (e.g. .eh_frame).
+     """
+-    if member_kind(data) != 'machine' or data[4:6] != b'\x02\x01' or struct.unpack_from('<H', data, 18)[0] != 62:
++    if (len(data) < 64 or member_kind(data) != 'machine' or
++            data[4:6] != b'\x02\x01' or struct.unpack_from('<H', data, 18)[0] != 62):
+         raise ValueError('not x86_64 ELF64 little-endian ET_REL')
+     off = struct.unpack_from('<Q', data, 40)[0]
+     stride, count = struct.unpack_from('<HH', data, 58)
++    if not off or stride != 64 or off + 64 > len(data):
++        raise ValueError('invalid ELF section table')
+     if not count:
+         count = struct.unpack_from('<IIQQQQIIQQ', data, off)[5]
++    if not count or count > (len(data)-off) // stride:
++        raise ValueError('ELF section table outside member')
+     sections = [struct.unpack_from('<IIQQQQIIQQ', data, off+i*stride) for i in range(count)]
+     checked, forbidden = 0, []
++    for section in sections:
++        if section[1] == 0x40000014:
++            raise ValueError('unsupported CREL relocation section')
++        if section[1] not in (0, 8) and section[4] + section[5] > len(data):
++            raise ValueError('ELF section outside member')
+     for section in sections:
+         if section[1] not in (4, 9):
+             continue
++        if section[6] >= count or section[7] >= count:
++            raise ValueError('relocation link/info outside section table')
+         target = sections[section[7]]
+-        if not target[2] & 2:  # SHF_ALLOC; excludes all debug sections
+-            continue
++        limit = target[5]
++        if target[2] & 0x800:  # SHF_COMPRESSED: offsets use uncompressed size.
++            if target[5] < 24 or target[4] + 24 > len(data):
++                raise ValueError('short compressed ELF section header')
++            limit = struct.unpack_from('<IIQQ', data, target[4])[2]
+         symbols = sections[section[6]]
++        if (symbols[1] != 2 or symbols[9] != 24 or symbols[5] % 24 or
++                symbols[4] + symbols[5] > len(data)):
++            raise ValueError('invalid relocation symbol table')
++        relocation_stride = 24 if section[1] == 4 else 16
++        if (section[9] != relocation_stride or section[5] % relocation_stride or
++                section[4] + section[5] > len(data)):
++            raise ValueError('invalid relocation table')
++        symbol_count = symbols[5] // 24
+         for pos in range(section[4], section[4]+section[5], section[9]):
+-            _, info = struct.unpack_from('<QQ', data, pos)
++            r_offset, info = struct.unpack_from('<QQ', data, pos)
+             kind, symbol_index = info & 0xffffffff, info >> 32
++            if kind not in X86_64_RELOCATION_WIDTHS:
++                raise ValueError('uncertified x86_64 relocation type: '+str(kind))
++            if kind != 0 and r_offset + X86_64_RELOCATION_WIDTHS[kind] > limit:
++                raise ValueError('relocation offset outside target section')
++            if symbol_index >= symbol_count:
++                raise ValueError('relocation symbol index outside table')
+             symbol = struct.unpack_from('<IBBHQQ', data, symbols[4]+symbol_index*symbols[9])
++            if not target[2] & 2:
++                continue
+             checked += 1
+             # SHN_ABS references do not need runtime relocation.
+-            if symbol[3] != 0xfff1 and (kind in (10, 11) or (kind == 1 and not target[2] & 1)):
++            if symbol[3] != 0xfff1 and (kind in (10, 11, 12, 14) or (kind == 1 and not target[2] & 1)):
+                 forbidden.append(dict(type=kind, target_section=section[7], symbol_index=symbol_index))
+     return dict(checked=checked, forbidden=forbidden)
+ 
+@@ -405,6 +562,8 @@ class Commands:
+ 
+     def interrupted(self, sig, frame):
+         # Python handlers run in the main thread: never acquire a worker lock here.
++        global _CANCEL_SIGNAL
++        _CANCEL_SIGNAL = sig
+         self.signal_received = sig
+ 
+     def cancel(self, reason=None):
+@@ -428,13 +587,18 @@ class Commands:
+             raise RuntimeError('cancelled after: '+self.failure_reason if self.failure_reason else 'cancelled after command failure')
+ 
+     def run(self, argv, prefix, stdout=None):
++        # Reap the direct child and stop running members of its process group. Orphaned
++        # grandchildren go to the nearest subreaper or PID 1; members that left the
++        # process group are not signalled. SIGKILL is not awaited. Uninterruptible
++        # kernel sleep can hold finally indefinitely; the outer timeout must handle that
++        # case. This is not a subreaper.
+         self.check()
+         prefix = Path(prefix)
+         timing, log = prefix.with_suffix('.time'), prefix.with_suffix('.log')
+         command = ['/usr/bin/prlimit', '--as='+str(self.address_space_bytes), '--core=0',
+                    '--', *map(str, argv)]
+         start = time.monotonic()
+-        reason, status, usage, reaped = None, None, None, False
++        reason, status, usage, observed = None, None, None, False
+         with log.open('wb') as err:
+             with self.lock:
+                 if self.stop.is_set() or self.signal_received is not None:
+@@ -448,7 +612,7 @@ class Commands:
+                     if self.signal_received is not None:
+                         reason = 'signal '+str(self.signal_received)
+                         self.cancel(reason)
+-                    if now-start >= self.timeout and not reaped:
++                    if now-start >= self.timeout and not observed:
+                         reason = 'command timeout after '+str(self.timeout)+' s'
+                         self.cancel(reason)
+                     if self.stop.is_set():
+@@ -458,36 +622,39 @@ class Commands:
+                                 os.killpg(child.pid, signal.SIGKILL)
+                             except ProcessLookupError:
+                                 pass
+-                    if not reaped:
+-                        pid, child_status, child_usage = os.wait4(child.pid, os.WNOHANG)
+-                        if pid:
+-                            status, usage, reaped = child_status, child_usage, True
+-                            child.returncode = os.waitstatus_to_exitcode(status)
+-                            if child.returncode:
++                    if not observed:
++                        info = os.waitid(os.P_PID, child.pid,
++                                         os.WEXITED | os.WNOHANG | os.WNOWAIT)
++                        if info is not None:
++                            observed = True
++                            if info.si_code != os.CLD_EXITED or info.si_status:
+                                 reason = reason or 'command failed'
+                                 self.cancel(reason)  # Includes descendants after the leader exits.
+-                    if reaped and (not self.stop.is_set() or now-self.cancelled_at >= 3):
++                    if observed and (not self.stop.is_set() or now-self.cancelled_at >= 3):
+                         break
+                     time.sleep(0.05)
+             finally:
+-                if not reaped:
++                if not observed:
+                     self.cancel()
+                     remaining = 3-(time.monotonic()-self.cancelled_at)
+                     if remaining > 0:
+                         time.sleep(remaining)
+-                    try:
+-                        os.killpg(child.pid, signal.SIGKILL)
+-                    except ProcessLookupError:
+-                        pass
++                # Keep the leader unreaped until the last group signal, including
++                # after normal leader exit. No reused PID can receive that signal.
++                try:
++                    os.killpg(child.pid, signal.SIGKILL)
++                except ProcessLookupError:
++                    pass
++                os.waitid(os.P_PID, child.pid, os.WEXITED | os.WNOWAIT)
++                with self.lock:
+                     _, status, usage = os.wait4(child.pid, 0)
+                     child.returncode = os.waitstatus_to_exitcode(status)
+-                with self.lock:
+                     self.children.discard(child)
+         elapsed, rc = time.monotonic()-start, child.returncode
+         record = dict(argv=list(map(str, argv)), bounded_argv=command, pid=child.pid,
+                       elapsed_seconds=elapsed, exit=rc, wall=elapsed,
+                       user=usage.ru_utime, sys=usage.ru_stime, max_rss_kib=usage.ru_maxrss,
+-                      accounting='os.wait4(WNOHANG); Linux ru_maxrss is KiB',
++                      accounting='os.waitid(WNOWAIT), os.wait4; Linux ru_maxrss is KiB',
+                       timeout_seconds=self.timeout, failure_reason=reason,
+                       stderr=log.read_text(errors='replace'))
+         record['time_raw'] = f"{elapsed:.9f} {usage.ru_utime:.9f} {usage.ru_stime:.9f} {usage.ru_maxrss} {rc}\n"
+@@ -554,6 +721,9 @@ def validate_tools(build, compiler, disassembler, nm, command, output):
+     for label, tool in [('compiler', compiler), ('disassembler', disassembler), ('nm', nm)]:
+         if not tool.is_file() or not os.access(tool, os.X_OK):
+             raise ValueError('missing or non-executable --'+label+': '+str(tool))
++    for label, tool in [('disassembler', disassembler), ('nm', nm)]:
++        if tool.resolve().parent != compiler.resolve().parent:
++            raise ValueError(label+' directory differs from compiler directory')
+     version = output/'compiler-version.txt'
+     with version.open('wb') as stream:
+         command.run([compiler, '--version'], output/'compiler-version-command', stdout=stream)
+@@ -561,8 +731,26 @@ def validate_tools(build, compiler, disassembler, nm, command, output):
+     match = re.search(r'clang version (\d+)\.', text)
+     if not match or int(match[1]) != CERTIFIED_LLVM_MAJOR:
+         raise ValueError('uncertified compiler major (required 22): '+text.strip())
++    full_version = re.search(r'clang version (\d+\.\d+\.\d+)\b', text)
++    if not full_version:
++        raise ValueError('missing complete clang version: '+text.strip())
++    tool_versions = {'compiler': full_version[1]}
++    version_texts = {'compiler': text}
++    for label, tool in [('disassembler', disassembler), ('nm', nm)]:
++        tool_version = output/(label+'-version.txt')
++        with tool_version.open('wb') as stream:
++            command.run([tool, '--version'], output/(label+'-version-command'), stdout=stream)
++        tool_text = tool_version.read_text()
++        match = re.search(r'LLVM version (\d+\.\d+\.\d+)\b', tool_text)
++        if not match or match[1] != full_version[1]:
++            raise ValueError('%s version mismatch: expected %s, found %s' %
++                             (label, full_version[1], match[1] if match else tool_text.strip()))
++        tool_versions[label] = match[1]
++        version_texts[label] = tool_text
+     return dict(compiler=str(compiler), version=text, compiler_sha256=sha(compiler),
+-                disassembler=str(disassembler), nm=str(nm))
++                disassembler=str(disassembler), nm=str(nm),
++                tool_versions=tool_versions, version_texts=version_texts,
++                tool_directory=str(compiler.resolve().parent))
+ 
+ 
+ def reset_evidence(root, output, build):
+@@ -603,24 +791,34 @@ def cleanup_evidence(output):
+             path.unlink()
+ 
+ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3, command=None):
++            address_space_bytes=4*1024**3, command=None, debug_info=None):
+     root, output, build = Path(root).resolve(), Path(output).resolve(), Path(build).resolve()
+     if arch not in CERTIFIED_OPTIMIZATION or jobs < 1 or address_space_bytes < 1:
+         raise ValueError('invalid architecture or resource parameters')
++    if debug_info not in ('yes', 'no'):
++        raise ValueError('debug-info expected=yes|no found='+str(debug_info))
+     reset_evidence(root, output, build)
+     command = command or Commands(address_space_bytes)
+     summary = dict(started=time.time(), input_root=str(root), output_root=str(output),
+                    arch=arch, workers=jobs, as_bytes=address_space_bytes, archives=[],
+-                   status='CONVERTING', missing_symbols_by_type={})
++                   status='CONVERTING', debug_info=debug_info, missing_symbols_by_type={})
+     def save():
+         atomic_json(output/'summary.json', summary)
+     save()
+-    old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
++    old_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
++    for sig, handler in old_handlers.items():
++        if handler != signal.SIG_IGN:
++            signal.signal(sig, command.interrupted)
+     try:
+         summary['tools'] = validate_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output)
++        print('NATIVE_ARCHIVES_TOOLS', json.dumps({
++            'tool_versions': summary['tools']['tool_versions'],
++            'tool_directory': summary['tools']['tool_directory']}), flush=True)
+         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+         summary['scanned_archives'] = len(archives)
+         summary['native_archives_skipped'] = sum(not data['bitcode'] for archive, data in archives)
++        # Preserved native members retain their bytes, including any debug sections.
++        summary['native_members_preserved'] = sum(data['machine'] for archive, data in archives)
+         for archive, before in archives:
+             command.check()
+             if not before['bitcode']:
+@@ -660,7 +858,7 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                 with text_ir.open('wb') as out:
+                     command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
+                 with text_ir.open() as lines:
+-                    settings = ir_settings(lines, arch=arch)
++                    settings = ir_settings(lines, arch=arch, debug_info=debug_info)
+                 atomic_json(source.parent/'ir-settings.json', settings)
+                 text_ir.unlink()
+                 record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
+@@ -746,14 +944,17 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+ 
+ 
+ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3):
++            address_space_bytes=4*1024**3, debug_info=None):
+     root, output = Path(root).resolve(), Path(output).resolve()
+     command = Commands(address_space_bytes)
+-    old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT)}
++    old_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
++    for sig, handler in old_handlers.items():
++        if handler != signal.SIG_IGN:
++            signal.signal(sig, command.interrupted)
+     result = None
+     try:
+         print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
+-        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command)
++        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command, debug_info)
+         command.check()
+         result['status'] = 'INSTALLING'
+         atomic_json(output/'summary.json', result)
+@@ -787,20 +988,50 @@ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+ 
+ 
+ def install_main():
++    global _CANCEL_SIGNAL
++    _CANCEL_SIGNAL = None
++    if signal.getsignal(signal.SIGCHLD) != signal.SIG_DFL:
++        signal.signal(signal.SIGCHLD, signal.SIG_DFL)
++        print('NATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL', flush=True)
+     parser = argparse.ArgumentParser(description='Convert certified x86_64 ThinLTO archives before standard RPM stripping')
+     parser.add_argument('--root', type=Path, required=True)
+     parser.add_argument('--build', type=Path, required=True)
+     parser.add_argument('--evidence', type=Path, required=True)
+     parser.add_argument('--arch', choices=['x86_64'], required=True)
++    parser.add_argument('--debug-info', choices=['yes', 'no'], required=True)
+     parser.add_argument('--compiler', type=Path, required=True)
+     parser.add_argument('--disassembler', type=Path, required=True)
+     parser.add_argument('--nm', type=Path, required=True)
+     parser.add_argument('--jobs', type=int, default=4)
+     parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
+     args = parser.parse_args()
+-    install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+-            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes)
++    def record_cancel(sig, frame):
++        global _CANCEL_SIGNAL
++        _CANCEL_SIGNAL = sig
++    signals = (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)
++    old_handlers = {sig: signal.getsignal(sig) for sig in signals}
++    for sig, handler in old_handlers.items():
++        if handler != signal.SIG_IGN:
++            signal.signal(sig, record_cancel)
++    failure = None
++    try:
++        install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
++                args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info)
++    except BaseException:
++        failure = sys.exc_info()
++    finally:
++        for sig, handler in old_handlers.items():
++            signal.signal(sig, handler)
++    if _CANCEL_SIGNAL is not None:
++        if failure is not None:
++            traceback.print_exception(*failure)
++        else:
++            print('NATIVE_ARCHIVES_CANCELLED after completion', flush=True)
++        return 128 + _CANCEL_SIGNAL
++    if failure is not None:
++        raise failure[1].with_traceback(failure[2])
++    return 0
+ 
+ 
+ if __name__ == '__main__':
+-    install_main()
++    raise SystemExit(install_main())
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index b475977267cbfba20cf4a955ff78af7c2e6186f2..5a10febabbb36b35bf177070bf5e71055f3c8f9d 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -214,27 +214,135 @@ export QEMU_RESERVED_VA=0x100000000
+ %endif
+ 
+ %ifarch x86_64
+-# Strip pre-existing optimization flags and remove performance-harming flags, then force -O3 + ThinLTO
+-OPTFLAGS_CFLAGS=$(echo "$CFLAGS" | sed \
+-    -e 's/\-O[0-9sz]//g' \
+-    -e 's/\-Ofast//g' \
+-    -e 's/\-fstack-protector-strong//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector//g' \
+-    -e 's/\-fno-inline-functions//g' \
+-    -e 's/\-fno-omit-frame-pointer//g' \
+-    -e 's/\-momit-leaf-frame-pointer//g')
+-OPTFLAGS_CXXFLAGS=$(echo "$CXXFLAGS" | sed \
+-    -e 's/\-O[0-9sz]//g' \
+-    -e 's/\-Ofast//g' \
+-    -e 's/\-fstack-protector-strong//g' \
+-    -e 's/\-fstack-protector-all//g' \
+-    -e 's/\-fstack-protector//g' \
+-    -e 's/\-fno-inline-functions//g' \
+-    -e 's/\-fno-omit-frame-pointer//g' \
+-    -e 's/\-momit-leaf-frame-pointer//g')
+-export CFLAGS="$OPTFLAGS_CFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
+-export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument"
++TIZEN_LLVM_RELEASE=%{llvm_release_build}
++# BEGIN TIZEN_LLVM_FIXED_FLAGS
++# The x86_64 policy is the certified Toolchain command (QB 1215143).
++# Only architecture and debug-mode options are inherited. Token matching is
++# exact: stripping -fstack-protector must never leave a -strong suffix.
++# Reviewed Base-Dev options (QB 1214821) that this policy knowingly discards.
++TIZEN_LLVM_EXPECTED_DROPPED='-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4'
++tizen_llvm_flags()
++{
++    tizen_llvm_kind=$1
++    tizen_llvm_input=$2
++    tizen_llvm_release=$3
++    case $tizen_llvm_release in 0|1) ;; *)
++        echo "TIZEN_LLVM_FIXED_FLAGS_FAILED invalid TIZEN_LLVM_RELEASE=$tizen_llvm_release" >&2
++        return 1 ;;
++    esac
++    tizen_llvm_debug_sequence=
++    TIZEN_LLVM_UNREVIEWED=
++    tizen_llvm_arch=
++    tizen_llvm_debug_head=
++    tizen_llvm_debug_tail=
++    TIZEN_LLVM_NORMALIZED=
++    TIZEN_LLVM_DROPPED=
++    tizen_llvm_ifs_set=${IFS+x}
++    tizen_llvm_saved_ifs=${IFS-}
++    unset IFS
++    case $- in *f*) tizen_llvm_glob_off=1 ;; *) tizen_llvm_glob_off=0; set -f ;; esac
++    for tizen_llvm_token in $tizen_llvm_input; do
++        case $tizen_llvm_token in
++            -O0|-O1|-O2|-O3|-Os|-Oz|-Og|-Ofast|\
++            -fstack-protector|-fstack-protector-strong|-fstack-protector-all|\
++            -momit-leaf-frame-pointer|-fno-omit-frame-pointer)
++                TIZEN_LLVM_NORMALIZED="${TIZEN_LLVM_NORMALIZED}${TIZEN_LLVM_NORMALIZED:+ }$tizen_llvm_token"
++                continue ;;
++            -march=native|-mtune=native)
++                if test "$tizen_llvm_ifs_set" = x; then IFS=$tizen_llvm_saved_ifs; else unset IFS; fi
++                if test "$tizen_llvm_glob_off" = 0; then set +f; fi
++                echo "TIZEN_LLVM_FIXED_FLAGS_FAILED host-dependent option: $tizen_llvm_token" >&2
++                return 1 ;;
++            -m64|-march=*|-mtune=*|-msse*|-mfpmath=*)
++                tizen_llvm_arch="${tizen_llvm_arch}${tizen_llvm_arch:+ }$tizen_llvm_token"
++                continue ;;
++            -g|-g[0-9]|-ggdb*|-gdwarf-*|-gline*|-gno-*)
++                tizen_llvm_debug_sequence="${tizen_llvm_debug_sequence}${tizen_llvm_debug_sequence:+ }$tizen_llvm_token"
++                if test "$tizen_llvm_release" = 0; then
++                    tizen_llvm_debug_head="${tizen_llvm_debug_head}${tizen_llvm_debug_head:+ }$tizen_llvm_debug_tail"
++                    tizen_llvm_debug_tail=$tizen_llvm_token
++                fi
++                continue ;;
++        esac
++        case $tizen_llvm_kind:$tizen_llvm_token in
++            CFLAGS:-ffunction-sections|CXXFLAGS:-ffunction-sections|\
++            CFLAGS:-fdata-sections|CXXFLAGS:-fdata-sections|\
++            CFLAGS:-Wno-unused-command-line-argument|CXXFLAGS:-Wno-unused-command-line-argument|\
++            CFLAGS:-Wno-error=unused-but-set-variable|CXXFLAGS:-Wno-error=unused-but-set-variable|\
++            CFLAGS:-Wno-error=unused-command-line-argument|CXXFLAGS:-Wno-error=unused-command-line-argument|\
++            CFLAGS:-pipe|CXXFLAGS:-pipe|CFLAGS:-Wall|CXXFLAGS:-Wall|\
++            CFLAGS:-Wp,-D_FORTIFY_SOURCE=2|CXXFLAGS:-Wp,-D_FORTIFY_SOURCE=2|\
++            CFLAGS:-fexceptions|CXXFLAGS:-fexceptions|CFLAGS:-Wformat|CXXFLAGS:-Wformat|\
++            CFLAGS:-Wformat-security|CXXFLAGS:-Wformat-security|\
++            CFLAGS:-fmessage-length=0|CXXFLAGS:-fmessage-length=0|\
++            CFLAGS:-frecord-gcc-switches|CXXFLAGS:-frecord-gcc-switches|\
++            CFLAGS:-fdiagnostics-color=never|CXXFLAGS:-fdiagnostics-color=never|\
++            CFLAGS:-fasynchronous-unwind-tables|CXXFLAGS:-fasynchronous-unwind-tables|\
++            CFLAGS:-flto=thin|CXXFLAGS:-flto=thin|\
++            CFLAGS:-fomit-frame-pointer|CXXFLAGS:-fomit-frame-pointer|\
++            LDFLAGS:-Wl,-z,relro,--as-needed|LDFLAGS:-Wl,--gc-sections) ;;
++            *)
++                TIZEN_LLVM_DROPPED="${TIZEN_LLVM_DROPPED}${TIZEN_LLVM_DROPPED:+ }$tizen_llvm_token"
++                case " $TIZEN_LLVM_EXPECTED_DROPPED " in
++                    *" $tizen_llvm_token "*) ;;
++                    *) TIZEN_LLVM_UNREVIEWED="${TIZEN_LLVM_UNREVIEWED}${TIZEN_LLVM_UNREVIEWED:+ }$tizen_llvm_token" ;;
++                esac ;;
++
++        esac
++    done
++    if test "$tizen_llvm_ifs_set" = x; then IFS=$tizen_llvm_saved_ifs; else unset IFS; fi
++    if test "$tizen_llvm_glob_off" = 0; then set +f; fi
++    case $tizen_llvm_kind:$tizen_llvm_release in
++        CFLAGS:0|CXXFLAGS:0)
++            if test "$tizen_llvm_debug_sequence" != '-g2 -gdwarf-4 -g'; then
++                if test -n "$tizen_llvm_debug_sequence"; then
++                    tizen_llvm_debug_description="[$tizen_llvm_debug_sequence]"
++                else
++                    tizen_llvm_debug_description="no debug options"
++                fi
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description"
++                echo "TIZEN_LLVM_FLAGS_WARNING uncertified debug option sequence: $tizen_llvm_debug_description" >&2
++            fi ;;
++    esac
++    case $tizen_llvm_kind in
++        CFLAGS|CXXFLAGS)
++            # Preserve the exact certified CMake string, including whitespace,
++            # option order and the repeated warning option. Do not inherit
++            # other project flags, even when the project selects GCC.
++            TIZEN_LLVM_RESULT=" -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   $tizen_llvm_debug_head -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never $tizen_llvm_arch -fasynchronous-unwind-tables  $tizen_llvm_debug_tail -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument" ;;
++        LDFLAGS)
++            # Executable/shared linker flags are explicit in the spec, not read
++            # from LDFLAGS. CMAKE_MODULE_LINKER_FLAGS is initialized from this
++            # environment value, unchanged from the Toolchain project value.
++            TIZEN_LLVM_RESULT="-Wl,-z,relro,--as-needed -Wl,--gc-sections${tizen_llvm_arch:+ }$tizen_llvm_arch${tizen_llvm_debug_head:+ }$tizen_llvm_debug_head${tizen_llvm_debug_tail:+ }$tizen_llvm_debug_tail" ;;
++        *) return 1 ;;
++    esac
++}
++tizen_llvm_report_warnings()
++{
++    if test -n "$1$2$3"; then
++        tizen_llvm_warning="TIZEN_LLVM_FLAGS_WARNING unreviewed project options dropped: CFLAGS=[$1] CXXFLAGS=[$2] LDFLAGS=[$3] (manual review of the build log required)"
++        printf '%%s\n' "$tizen_llvm_warning"
++        printf '%%s\n' "$tizen_llvm_warning" >&2
++    fi
++}
++tizen_llvm_flags CFLAGS "$CFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++CFLAGS=$TIZEN_LLVM_RESULT
++tizen_llvm_normalized_c=$TIZEN_LLVM_NORMALIZED
++tizen_llvm_dropped_c=$TIZEN_LLVM_DROPPED
++tizen_llvm_unreviewed_c=$TIZEN_LLVM_UNREVIEWED
++tizen_llvm_flags CXXFLAGS "$CXXFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++CXXFLAGS=$TIZEN_LLVM_RESULT
++tizen_llvm_normalized_cxx=$TIZEN_LLVM_NORMALIZED
++tizen_llvm_dropped_cxx=$TIZEN_LLVM_DROPPED
++tizen_llvm_unreviewed_cxx=$TIZEN_LLVM_UNREVIEWED
++tizen_llvm_flags LDFLAGS "$LDFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
++LDFLAGS=$TIZEN_LLVM_RESULT
++printf 'TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_normalized_c" "$tizen_llvm_normalized_cxx" "$TIZEN_LLVM_NORMALIZED"
++printf 'TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_dropped_c" "$tizen_llvm_dropped_cxx" "$TIZEN_LLVM_DROPPED"
++tizen_llvm_report_warnings "$tizen_llvm_unreviewed_c" "$tizen_llvm_unreviewed_cxx" "$TIZEN_LLVM_UNREVIEWED"
++export CFLAGS CXXFLAGS LDFLAGS
++# END TIZEN_LLVM_FIXED_FLAGS
+ %endif
+ 
+ # Set up MLGO AOT model paths from bundled verify assets
+@@ -595,11 +703,20 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+     --build "%{_builddir}/%{buildsubdir}/build" \
+     --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
+     --arch x86_64 \
++%if %{llvm_release_build}
++    --debug-info no \
++%else
++    --debug-info yes \
++%endif
+     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
++%if %{with clang_bolt}
++    --jobs 4 --address-space-bytes 4294967296 || bolt_status_exit $?
++%else
+     --jobs 4 --address-space-bytes 4294967296 || exit 1
+ %endif
++%endif
+ 
+ %ifarch x86_64
+ %if %{with clang_bolt}
+-- 
+2.43.0
+

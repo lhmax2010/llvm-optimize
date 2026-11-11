@@ -1102,3 +1102,14 @@ FIFTH_REVIEW_RERUN2 已结束 2026-11-11T15:03:47+08:00 status=stopped reason=co
 已复制63号最大的10个ThinLTO库。首个libclangSema.a新旧转换均成功，86成员、完整归档SHA同为8de79182…f3de；随后复核驱动把inspect结果中的old/new输出path也作相等断言，触发AssertionError。只读定位唯一差异是path字段，是执行方的复核驱动错误。按停止规则未改断言重跑；其余9库、第二组census、12展开/5解析、r6和sandbox查询/推送均NOT RUN。无OOM，未构建或操作QB，现场保留。详见[78号第三次续跑](78_fifth_review_fixes.md#8-第三次续跑2026-11-11import-sys-已修正实物复核驱动断言停止)。
 
 FIFTH_REVIEW_RERUN3 已结束 2026-11-11T15:39:20+08:00 status=stopped reason=verification_driver_compared_output_path
+
+
+## 2026-11-11 第五轮第四次续跑（78号§9）：验证通过，MERGED状态阻止指定推送
+
+源码fea0fe46 / tree b2e8af24及三个提交未改；仅按用户裁决从实物核对驱动排除inspect.path，修正次数1/2。10/10最大debug ThinLTO归档输出新旧逐字节相同，1100成员（1093转换、7原生）；第二组census调试节35560547条（类型1/10），全部7种类型，无表外类型、无新增拒绝。12展开/5RPM解析及独立说明检查PASS。同一HEAD此前499项与450归档结果保持有效。r6生成，17文件SHA校验PASS。
+
+推送前sandbox确认为60fabc72；但359934已MERGED/PS10/13c3e223、357163已MERGED/PS2/cf4b6777（两者lastUpdated=2026-11-11T12:28:07+08:00），不满足用户要求仍NEW，因此未推送，没有推后SHA新观测。需要用户裁决该新状态后再继续，不能自行豁免。
+
+[74号](74_local_full_build_fa4f9978.md)追加入口准备停止记录：新clone/新入口未创建，自测0项，T/D演练及夜间预算未运行；今晚命令未准备，不启动完整构建。详见[78号](78_fifth_review_fixes.md)、[r6](../../patches/rebase-359934-20261111-r6/README.md)。没有删除文件、操作QB或修改历史根。
+
+FIFTH_REVIEW_RERUN4 已结束 2026-11-11T16:58:21+08:00 status=stopped reason=Gerrit_changes_MERGED_required_NEW

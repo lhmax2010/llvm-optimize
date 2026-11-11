@@ -95,3 +95,25 @@ LOCAL74 已结束 2026-11-10T23:30:01+08:00 status=stopped reason=entry_prefligh
 ~~~sh
 tail -f /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-fa4f9978-20261110/progress.log
 ~~~
+
+
+## 5. 入口准备与演练（2026-11-11）：前置条件变化，未运行
+
+本次计划改为固定新HEAD fea0fe464d56e17f2c7588c557bfffd9f6ac352b / tree b2e8af2477cf623a945aa80bf8288a262dd4a5a9。前面fa4f9978完整构建的第一次停止记录保持原文，不以此替换。
+
+[78号第四次续跑](78_fifth_review_fixes.md#9-第四次续跑2026-11-11剩余验证通过gerrit状态变化停止推送)已完成10个debug ThinLTO归档输出对照、census、12组展开、5项RPM解析和提交说明检查。但sandbox推送前要求359934/357163仍为NEW，实际两者均已MERGED（PS10/PS2及revision未变）。因此没有推送，最后实际读到的远端仍为60fabc723f30c5cc04146a9dd83487ebed63f259；无法满足本步骤“远端sandbox也是fea0fe46”的核对条件。
+
+|入口准备项|实际结果|
+|---|---|
+|git clone --local --no-hardlinks新源码副本|NOT RUN，目标目录未创建|
+|新入口相对r2的路径/名字/授权说明diff|NOT RUN，没有复制或修改入口|
+|入口自带test_*.py|NOT RUN，执行数0|
+|Toolchain/Base-Dev演练argv与72号核对|NOT RUN，没有启动|
+|log-restarts、FLAGS、WARNING、资源报告、残留审计|NOT RUN，没有本轮演练结果|
+|night各根不存在、151.3GiB预算核对|NOT RUN，没有进入晚间启动预检|
+|今晚命令、服务名和进度日志位置|尚未准备，不提供可执行命令|
+|完整构建|未启动|
+
+[只读前置查询及入口未运行记录](../../tools/bolt/results/fifth-review-20261111/rerun4/entry-not-run.json)，[change状态原文](../../tools/bolt/results/fifth-review-20261111/rerun4/push-preflight.json)。W/temp/rebase-359934-20261111-r6、B/tools/bolt/rebase-launch-20261111-r6和W/tools/bolt/rebase-launch-20261111-r6均未创建。旧入口、源码工作树及历史根未修改。需要先由用户裁决两change已经MERGED这一新状态，再继续后续准备，不能把本节视为“今晚可以启动”。
+
+ITEM4 已结束 2026-11-11T16:58:21+08:00 status=not_run reason=sandbox_precondition_not_met
