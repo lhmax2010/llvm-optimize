@@ -117,3 +117,62 @@ tail -f /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results
 [只读前置查询及入口未运行记录](../../tools/bolt/results/fifth-review-20261111/rerun4/entry-not-run.json)，[change状态原文](../../tools/bolt/results/fifth-review-20261111/rerun4/push-preflight.json)。W/temp/rebase-359934-20261111-r6、B/tools/bolt/rebase-launch-20261111-r6和W/tools/bolt/rebase-launch-20261111-r6均未创建。旧入口、源码工作树及历史根未修改。需要先由用户裁决两change已经MERGED这一新状态，再继续后续准备，不能把本节视为“今晚可以启动”。
 
 ITEM4 已结束 2026-11-11T16:58:21+08:00 status=not_run reason=sandbox_precondition_not_met
+
+
+## 6. 入口准备与演练（2026-11-11）：sandbox 已更新，模板 night 调度审计停止
+
+前面两次停止记录保留不变。本轮先完成 [78 号第五次续跑](78_fifth_review_fixes.md#10-第五次续跑2026-11-11总部合入判定bsandbox推送完成)：tizen_base 判定 B，sandbox 已从 60fabc723f30c5cc04146a9dd83487ebed63f259 更新为 fea0fe464d56e17f2c7588c557bfffd9f6ac352b；该小节先行提交并推送 bolt-v4（37d3e9d1），随后才开始本节。
+
+### 6.1 独立源码副本：通过
+
+执行原文：
+
+~~~sh
+git clone --local --no-hardlinks /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/source
+git -C /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/source checkout --detach fea0fe464d56e17f2c7588c557bfffd9f6ac352b
+~~~
+
+HEAD fea0fe464d56e17f2c7588c557bfffd9f6ac352b、tree b2e8af2477cf623a945aa80bf8288a262dd4a5a9、detached HEAD、工作树干净均通过。父链为 1e415935a83a187aab7c41f9713115a0974a0365 → 8a50d7122346258fd1171d270861a4ae28a8717c → 13c3e223d9e1b35e4affb55255c5042f8c940f35。复制后再次 ls-remote 确认 sandbox 仍为 fea0fe46。原工作树、源码和提交说明未改。
+
+原文证据：[clone 身份](../../tools/bolt/results/local-entry-r6-20261111/clone-identity.json)、[clone 输出](../../tools/bolt/results/local-entry-r6-20261111/clone.stderr)、[checkout](../../tools/bolt/results/local-entry-r6-20261111/checkout.stderr)、[远端](../../tools/bolt/results/local-entry-r6-20261111/sandbox-identity.stdout)。
+
+### 6.2 模板审计：需要超出路径/名字清单的修改，停止
+
+没有修改模板，没有复制出新入口。逐行审计发现：
+
+|位置|原文/行为|影响与边界|
+|---|---|---|
+|basedev/night.py:19|str(L.T/'launcher.py')|T 和 D 始终调用 basedev/launcher.py；L.T 是该文件目录，不随 project 改变。|
+|basedev/launcher.py:28–31|temp/final-20261103/configs/ + PROJECT，Toolchain build.conf SHA e5187fd7…|T 将使用 tizen-base-toolchain_20261013.024319；而指定 toolchain/launcher.py 的配置是 tizen-base-toolchain_20261030.061318、SHA 8f201a0d…。改 SOURCE、输出根、服务名或汇总 N 不会改变这个选择。需要改调度器调用的项目入口；这不在本轮逐项列明的允许修改范围内。|
+|basedev/night.py:16、21、54–55 与 launcher.py:292、308|N/project 与 rebase 输出根不同，night-…controller-20261103 与 rebase359934r2-…controller-20261106 不同|鲜根检查、结果读取和服务监控不指向实际子任务。这部分可由输出路径/服务名修改解决，但不能解决上一项和下一项。|
+|basedev/night.py:58；basedev/launcher.py:35–36|L.save(N/'night-command.json',argv)；save 直接 p.write_text|新 N 不存在时写入会抛 FileNotFoundError；night.py 没有 mkdir。需要补充目录准备或创建逻辑，不能声称只替换常量就已就绪。|
+
+以上为只读静态审计结论，没有实际启动一个错误的 night 来验证。没有把这些模板问题算成本轮获准修正的“测试输入准备错误”或“核对脚本比较了本来不同的字段”；这两类修正本轮使用 0 次。
+
+原文和行号：[night.py](../../tools/bolt/results/local-entry-r6-20261111/template-basedev-night.py.txt)、[Base-Dev launcher](../../tools/bolt/results/local-entry-r6-20261111/template-basedev-launcher.py.txt)、[Toolchain launcher](../../tools/bolt/results/local-entry-r6-20261111/template-toolchain-launcher.py.txt)。配置实证：[旧配置](../../tools/bolt/results/local-entry-r6-20261111/config-old.txt)、[QB 同快照配置](../../tools/bolt/results/local-entry-r6-20261111/config-qb.txt)；[审计 JSON](../../tools/bolt/results/local-entry-r6-20261111/entry-template-audit.json)记录模板 SHA。
+
+### 6.3 未运行项、预算和待用命令
+
+|项|结果|
+|---|---|
+|新入口 diff、provenance、SHA256SUMS|NOT RUN；没有复制/修改新入口，无实际 diff。预定修改类别为 SOURCE、输出根、N、服务名、README 授权说明及 provenance/checksums；审计发现还需调度入口和目录准备改动，按限制停止。|
+|入口自测|执行 0 项，NOT RUN；原因是复制前审计停止，不是目录没有测试。|
+|T/D rehearsal-02|两者 NOT RUN；argv 未执行，无 FLAGS/log-restarts/WARNING/资源报告/残留审计结果。|
+|完整构建/night|未启动。|
+|新根|toolchain、basedev、rehearsal 和 night-20261111-r6 均不存在；只有独立 source 副本已创建并保留。|
+|空间|277355724800 B / 258.308 GiB，大于 151.3 GiB；不是本轮停止原因。|
+|服务名和进度日志|新入口尚未生成，服务名未定稿；计划汇总日志为 W/temp/night-20261111-r6/night.log，目前不存在。|
+
+[空间原文](../../tools/bolt/results/local-entry-r6-20261111/df-before-stop.txt)、[活动服务](../../tools/bolt/results/local-entry-r6-20261111/running-services.txt)。所有本轮执行命令使用串行受限 systemd 用户服务（8G、swap 0、400%、Nice 19、idle）；没有执行 sudo 或构建命令，没有删除文件。
+
+用户指定的**待准备命令，仅记录，当前不可启动**：
+
+~~~sh
+/bin/sh /home/linhao/Toolchain/development/llvm-optimize/tools/bolt/rebase-launch-20261111-r6/basedev/launch.sh fea0fe464d56e17f2c7588c557bfffd9f6ac352b night
+~~~
+
+不能把这条命令视为“今晚可以启动”：新入口不存在，且模板问题尚未获准修正。需要后续明确允许按项目选择已有 T/D launcher、对齐实际输出根/服务名，以及创建新汇总目录；本轮未实施这些变更。
+
+~~~text
+ITEM3 已结束 2026-11-11T17:24:03.087548+08:00 status=stopped reason=template-night-dispatch-and-summary-directory-outside-allowed-edits
+~~~

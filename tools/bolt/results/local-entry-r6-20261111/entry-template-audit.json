@@ -1,0 +1,38 @@
+{
+  "status": "stopped",
+  "time": "2026-11-11T17:24:03.087548+08:00",
+  "template_sources": [
+    {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/basedev/night.py",
+      "sha256": "0b3c8c1d53b5b06e64435fb62f9e6fa99c2a40464d95d8d137ae0899e68c7a16",
+      "evidence": "tools/bolt/results/local-entry-r6-20261111/template-basedev-night.py.txt"
+    },
+    {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/basedev/launcher.py",
+      "sha256": "f33eae64340d444d59a35c4d0c7ff67e05370dfe38ad1d98e332e5ec11470376",
+      "evidence": "tools/bolt/results/local-entry-r6-20261111/template-basedev-launcher.py.txt"
+    },
+    {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/toolchain/launcher.py",
+      "sha256": "6ec872e15d51d0e528525a0d82dce66a7ffec6805461f14ff776ef1a88e68df5",
+      "evidence": "tools/bolt/results/local-entry-r6-20261111/template-toolchain-launcher.py.txt"
+    }
+  ],
+  "entry_created": false,
+  "roots": {
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain": false,
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev": false,
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/rehearsal": false,
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/night-20261111-r6": false
+  },
+  "free_bytes": 277355724800,
+  "tests_run": 0,
+  "tests_status": "NOT RUN: stopped before entry copy and tests",
+  "rehearsals": "NOT RUN",
+  "full_build": "NOT RUN",
+  "blockers": [
+    "night.py:19 dispatches both projects through basedev/launcher.py, whose Toolchain config is the old snapshot; selecting sibling project launcher requires an invocation/routing change outside the listed allowed substitutions.",
+    "night.py:16,21,54-55 checks/reads N/project but launcher.py:292 writes to the rebase output root; controller unit name also disagrees. Root/name substitutions can address these, but do not solve the other blockers.",
+    "night.py:58 calls L.save(N/night-command.json) with a new nonexistent summary directory; save only calls Path.write_text and no code creates N. Creating N requires an additional setup/logic change."
+  ]
+}

@@ -1,0 +1,328 @@
+1: """39's export/prep/build argv and controller, with the established 37 driver layout.
+2: 
+3: Only the rehearsal monitor stops at CMake. No source, spec or toolchain edits.
+4: Full mode starts a new root and completes GBS packaging; qualification is a
+5: separate, mandatory next phase, never inferred from a successful GBS exit.
+6: """
+7: from pathlib import Path
+8: import datetime
+9: import fcntl
+10: import hashlib
+11: import json
+12: import os
+13: import shutil
+14: import subprocess
+15: import sys
+16: import time
+17: import traceback
+18: 
+19: B = Path('/home/linhao/Toolchain/development/llvm-optimize-bolt')
+20: W = B.parent / 'llvm-optimize'
+21: T = Path(__file__).resolve().parent
+22: OLD = B / 'tools/bolt/results/oldtext-final-20261027'
+23: SOURCE = W / 'temp/rebase-359934-20261106/source'
+24: COMMIT = os.environ.get('NIGHT_SOURCE_SHA', '')
+25: assert len(COMMIT) == 40 and all(c in '0123456789abcdef' for c in COMMIT), 'explicit full source SHA required'
+26: PROJECT = os.environ.get('FINAL_PROJECT', 'toolchain')
+27: assert PROJECT == 'toolchain', 'this entry only builds Toolchain'
+28: CONFIG = W / ('temp/night-20261105/configs/' + PROJECT + '/gbs.conf')
+29: BUILDCONF = CONFIG.parent / 'build.conf'
+30: BUILD_SHA = {'toolchain':'8f201a0d58eb634e60a1f213f47fc09dfa953d9869cdc5724f326a76203587bf',
+31:              'basedev':'8ace286a5f98f2e02a79be275a64c22a86ea2b0034174c1e293381e181ce3f6a'}[PROJECT]
+32: LOCK = W.parent / 'heavy-stage.lock'
+33: 
+34: 
+35: def save(p, value):
+36:     p.write_text(json.dumps(value, indent=2) + '\n')
+37: 
+38: 
+39: def digest(p):
+40:     with p.open('rb') as f:
+41:         return hashlib.file_digest(f, 'sha256').hexdigest()
+42: 
+43: 
+44: def check_source():
+45:     rev = subprocess.check_output(['git', '-C', str(SOURCE), 'rev-parse', 'HEAD', 'HEAD^{tree}'], text=True).splitlines()
+46:     status = subprocess.check_output(['git', '-C', str(SOURCE), 'status', '--porcelain', '--untracked-files=no'], text=True)
+47:     assert rev[0] == COMMIT and not status, (rev, status)
+48:     assert digest(BUILDCONF) == BUILD_SHA, 'build.conf changed'
+49:     for name, row in json.loads((T / 'provenance.json').read_text())['templates'].items():
+50:         assert digest(Path(row['path'])) == row['sha256'], name + ' historical template changed'
+51:     return {'commit': rev[0], 'tree': rev[1], 'status': status, 'buildconf_sha256': BUILD_SHA}
+52: 
+53: 
+54: def properties(plan):
+55:     return ['-p', 'MemoryMax=' + str(plan['MemoryMax_bytes']), '-p', 'MemorySwapMax=0',
+56:             '-p', 'CPUQuota=1200%', '-p', 'Nice=10', '-p', 'IOSchedulingClass=best-effort',
+57:             '-p', 'IOSchedulingPriority=7', '-p', 'OOMPolicy=stop', '-p', 'KillMode=control-group',
+58:             '-p', 'TimeoutStopSec=120']
+59: 
+60: 
+61: def stage(D, name, argv):
+62:     E = D / 'evidence'
+63:     save(E / (name + '-command.json'), argv)
+64:     start = time.time_ns()
+65:     with (E / (name + '.stdout')).open('wb') as o, (E / (name + '.stderr')).open('wb') as e:
+66:         r = subprocess.run(argv, stdout=o, stderr=e)
+67:     save(E / (name + '-stage.json'), {'rc': r.returncode, 'start_ns': start, 'end_ns': time.time_ns()})
+68:     if r.returncode:
+69:         raise RuntimeError(name + ' failed, rc=' + str(r.returncode))
+70:     return r.returncode
+71: 
+72: 
+73: def materialize(D, plan):
+74:     E = D / 'evidence'
+75:     old_e = str(OLD)
+76:     for name in ('prep.py', 'run.py', 'build-runner.py'):
+77:         text = (OLD / name).read_text()
+78:         text = text.replace(old_e, str(E))
+79:         text = text.replace("W=D.parent.parent;E=W.parent/'llvm-optimize-bolt/tools/bolt/results/oldtext-final-20261027'",
+80:                             "W=Path(" + repr(str(W)) + ");E=D/'evidence'")
+81:         text = text.replace("unit='oldtext-final-prep-20261027'", "unit=" + repr(plan['prep_unit']))
+82:         text = text.replace("unit='oldtext-final-20261027.service'", "unit=" + repr(plan['build_unit']))
+83:         text = text.replace("'-p','MemorySwapMax=0',", "'-p','MemorySwapMax=0','-p','CPUQuota=1200%',")
+84:         if name == 'run.py':
+85:             text = text.replace("G=D/'gbs-root'", "G=D/'gbs-driver'")
+86:             # 348 tests / five RPM parses already certified against this exact source.
+87:             text = text.replace("assert all(r['PASS'] for r in json.loads((E/'five-parse/matrix.json').read_text()))",
+88:                                 "assert plan['commit']=='" + COMMIT + "'")
+89:             text = text.replace("import fcntl,json,os,shutil,subprocess,threading,time", "import fcntl,json,os,shutil,subprocess,threading,time,re")
+90:             # Poll the build log before CMake can finish and reach the package's ninja.
+91:             text = text.replace("while not stop.wait(2):\n  p=R/'.build.log'",
+92:                                 "while not stop.wait(.02 if plan['mode']=='rehearsal' else 2):\n  p=R/'.build.log'")
+93:             text = text.replace(" position=0\n", " position=0;anchor=b''\n")
+94:             text = text.replace("    src.seek(position);b=src.read();position+=len(b)",
+95:                                 "    src.seek(max(0,position-len(anchor)))\n"
+96:                                 "    if src.read(len(anchor))!=anchor or p.stat().st_size<position:\n"
+97:                                 "     append('log-restarts.jsonl',{'time_ns':time.time_ns(),'old_position':position});position=0\n"
+98:                                 "    src.seek(position);b=src.read();position+=len(b)\n"
+99:                                 "    src.seek(max(0,position-128));anchor=src.read(min(position,128))")
+100:             marker = "    if b'BOLT_GATE_FAILED:' in b and reason is None:"
+101:             guard = """    if plan['mode']=='rehearsal' and re.search(rb'\\+ cmake -G Ninja(?: |\\n)',b) and reason is None:
+102:      reason='rehearsal-CMake-start'
+103:      append('cmake-stop.jsonl',{'time_ns':time.time_ns(),'log':str(p),'chunk':b.decode(errors='replace')})
+104:      result=subprocess.run(['systemctl','--user','stop',unit],capture_output=True,text=True)
+105:      append('cmake-stop.jsonl',{'stop_rc':result.returncode,'stdout':result.stdout,'stderr':result.stderr,'time_ns':time.time_ns()})
+106:      shutil.copyfile(p,E/'rpm-build-final.log')
+107:      shutil.copyfile(p,E/'rpm-build.log')
+108:      return
+109: """
+110:             assert marker in text
+111:             text = text.replace(marker, guard + marker)
+112:         if name == 'run.py':
+113:             text = text.replace("if file.exists() and reason is None:", "if False and file.exists() and reason is None:")
+114:             needle = "    with (E/'rpm-build.log').open('ab') as out:out.write(b)"
+115:             addition = """
+116:     for ln in b.decode(errors='replace').splitlines():
+117:      if '+ echo ' in ln or '+ printf ' in ln:continue
+118:      for phase,phase_anchor in [('ordinary-build','Executing(%build)'),('ordinary-install','Executing(%install)'),('BOLT','BOLT_DISK_REPORT'),('cache-release',' cache-release '),('cache-release','BOLT_CACHE_RELEASE removed'),('archive-conversion','NATIVE_ARCHIVES_BEGIN'),('platform-post','find-debuginfo'),('packaging','Processing files:')]:
+119:       if phase_anchor in ln:append('phase-events.jsonl',{'time_ns':time.time_ns(),'phase':phase,'text':ln})
+120:      if 'BOLT_COMPARE_ROOT_PASS' in ln:append('phase-events.jsonl',{'time_ns':time.time_ns(),'phase':'BOLT','kind':'end','text':ln})
+121: """
+122:             assert needle in text
+123:             text = text.replace(needle,needle+addition)
+124:         if name == 'run.py':
+125:             # Never copy the completed prep log into the next build's evidence.
+126:             # Snapshot before service launch; start the cursor only at new GBS epoch.
+127:             text = text.replace("def logs():\n global reason\n position=0;anchor=b''", "def logs():\n global reason\n position=0;anchor=b'';handoff=prep_log_epoch is None")
+128:             text = text.replace("  if p.exists():\n   with p.open('rb') as src:", "  if p.exists():\n   if not handoff:\n    if log_epoch(p)==prep_log_epoch:continue\n    handoff=True;append('log-source-handoff.jsonl',{'time_ns':time.time_ns(),'reason':'new GBS log epoch; prep bytes never copied'})\n   with p.open('rb') as src:")
+129:             text = text.replace("argv=['systemd-run','--user','--wait'", "def log_epoch(p):\n try:\n  with p.open('rb') as f:return (p.stat().st_ino,f.read(4096))\n except FileNotFoundError:return None\nprep_log_epoch=log_epoch(R/'.build.log')\nargv=['systemd-run','--user','--wait'")
+130:         (D / name).write_text(text)
+131:         compile(text, str(D / name), 'exec')
+132:     # Use exactly 39's export invocation, substituting only commit/source/output.
+133:     export = json.loads((OLD / 'export-result.json').read_text())['argv']
+134:     export = [COMMIT if x == 'f308fe08eeaad4e219f8505449b88bd5f644ea8c' else
+135:               str(D / 'export') if x.endswith('/oldtext-final-20261027/export') else
+136:               str(SOURCE) if x.endswith('/oldtext-final-20261027/source') else x for x in export]
+137:     export[export.index('-c') + 1] = str(CONFIG)
+138:     save(D / 'export-command.json', export)
+139: 
+140: 
+141: def final_audit(D, plan):
+142:     E = D / 'evidence'
+143:     result = {'source': check_source()}
+144:     for name, argv in [('services', ['systemctl', '--user', 'show', plan['prep_unit'], plan['build_unit'],
+145:                                      '-p', 'Id', '-p', 'ActiveState', '-p', 'SubState', '-p', 'Result', '-p', 'ControlGroup']),
+146:                        ('mounts', ['findmnt', '-rn', '-o', 'TARGET,SOURCE,FSTYPE'])]:
+147:         r = subprocess.run(argv, capture_output=True, text=True)
+148:         text = r.stdout
+149:         if name == 'mounts':
+150:             text = '\n'.join(l for l in text.splitlines() if str(D) + '/' in l)
+151:         result[name] = {'rc': r.returncode, 'stdout': text, 'stderr': r.stderr}
+152:     procs = []
+153:     for p in Path('/proc').iterdir():
+154:         if not p.name.isdigit() or int(p.name) == os.getpid():
+155:             continue
+156:         try:
+157:             cg = (p / 'cgroup').read_text()
+158:             if any('/' + unit in cg for unit in (plan['prep_unit'], plan['build_unit'])):
+159:                 procs.append({'pid': int(p.name), 'cgroup': cg, 'argv': (p / 'cmdline').read_bytes().replace(b'\0', b' ').decode(errors='replace')})
+160:         except (PermissionError, FileNotFoundError, ProcessLookupError):
+161:             pass
+162:     result['remaining_build_processes'] = procs
+163:     save(E / 'final-audit.json', result)
+164:     return result
+165: 
+166: 
+167: def cleanup_mounts(D, label):
+168:     """After our service has ended, ordinary umount of only our scratch root.
+169: 
+170:     Stopping the whole service left mounts in attempt 01. Use the physical
+171:     root; never use --kill, --clean, force or lazy unmount. Do not assume the
+172:     build program's exit cleanup completed when its process group terminated.
+173:     """
+174:     R = D / 'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0'
+175:     E = D / 'evidence'
+176:     rows = []
+177:     mounts = subprocess.check_output(['findmnt', '-rn', '-o', 'TARGET'], text=True).splitlines()
+178:     if str(R / 'proc') in mounts:
+179:         code = """import os,json
+180: root=os.stat('/')
+181: rows=[]
+182: for pid in os.listdir('/proc'):
+183:  if not pid.isdigit() or int(pid)==os.getpid(): continue
+184:  try:
+185:   s=os.stat('/proc/'+pid+'/root')
+186:   if (s.st_dev,s.st_ino)==(root.st_dev,root.st_ino):
+187:    rows.append({'pid':int(pid),'argv':open('/proc/'+pid+'/cmdline','rb').read().replace(b'\\0',b' ').decode(errors='replace')})
+188:  except (FileNotFoundError,ProcessLookupError,PermissionError): pass
+189: print(json.dumps(rows))
+190: """
+191:         argv = ['sudo', '-n', '/usr/sbin/chroot', str(R), '/usr/bin/python3', '-B', '-c', code]
+192:         r = subprocess.run(argv, capture_output=True, text=True)
+193:         save(E / (label + '-root-processes.json'), dict(argv=argv, rc=r.returncode, stdout=r.stdout, stderr=r.stderr))
+194:         assert r.returncode == 0 and json.loads(r.stdout) == [], 'scratch root still has processes'
+195:     for _ in range(20):
+196:         mounts = subprocess.check_output(['findmnt', '-rn', '-o', 'TARGET'], text=True).splitlines()
+197:         ours = [m for m in mounts if m.startswith(str(R) + '/')]
+198:         if not ours:
+199:             break
+200:         target = sorted(ours, key=lambda s: (s.count('/'), len(s)), reverse=True)[0]
+201:         relative = target[len(str(R)):]
+202:         assert relative in ('/proc', '/dev/pts', '/dev/shm', '/sys', '/proc/sys/fs/binfmt_misc'), target
+203:         argv = ['sudo', '-n', '/usr/sbin/chroot', str(R), '/bin/umount', '-n', relative]
+204:         r = subprocess.run(argv, capture_output=True, text=True)
+205:         rows.append(dict(argv=argv, rc=r.returncode, stdout=r.stdout, stderr=r.stderr, time_ns=time.time_ns()))
+206:         save(E / (label + '-mounts.json'), rows)
+207:         assert r.returncode == 0, 'ordinary umount failed: ' + relative
+208:     else:
+209:         raise RuntimeError('too many stacked mounts')
+210:     save(E / (label + '-mounts.json'), rows)
+211: 
+212: 
+213: def worker(D):
+214:     plan = json.loads((D / 'plan.json').read_text())
+215:     E = D / 'evidence'
+216:     status, reason = 'failed', 'unexpected-controller-error'
+217:     start = time.time_ns()
+218:     try:
+219:         check_source()
+220:         # Same shared exclusion as 39; cover preparation as well as full GBS.
+221:         with LOCK.open('a+') as lock:
+222:             fcntl.flock(lock, fcntl.LOCK_EX)
+223:             export = json.loads((D / 'export-command.json').read_text())
+224:             rc = stage(D, 'export', export)
+225:             save(E / 'export-result.json', {'argv': export, 'rc': rc})
+226:             G = D / 'gbs-root'
+227:             for sub in ('BUILD-ROOTS', 'sources', 'repos'):
+228:                 (G / 'local' / sub).mkdir(parents=True, exist_ok=True)
+229:             driver = D / 'gbs-driver/local'
+230:             driver.mkdir(parents=True)
+231:             for sub in ('sources', 'repos'):
+232:                 (driver / sub).mkdir()
+233:             (driver / 'BUILD-ROOTS').symlink_to(G / 'local/BUILD-ROOTS', target_is_directory=True)
+234:             stage(D, 'prep-controller', ['python3', '-B', str(D / 'prep.py')])
+235:             assert json.loads((E / 'prep-result.json').read_text())['rc'] == 0
+236:             cleanup_mounts(D, 'post-prep-cleanup')
+237:         # run.py acquires the same lock and copies the certified export to the exact GBS path.
+238:         stage(D, 'run', ['python3', '-B', str(D / 'run.py')])
+239:         result = json.loads((E / 'controller-result.json').read_text())
+240:         if plan['mode'] == 'rehearsal':
+241:             assert result['reason'] == 'rehearsal-CMake-start', result
+242:             log = (E / 'rpm-build-final.log').read_text(errors='replace')
+243:             assert 'Executing(%prep)' in log and 'Executing(%build)' in log
+244:             assert '+ cmake -G Ninja' in log
+245:             assert not any(x in log for x in ('+ ninja ', 'BOLT_PIPELINE_PASS', 'Build files have been written to:'))
+246:             from log_support import audit_log_copy
+247:             save(E/'log-copy-audit.json',audit_log_copy(D))
+248:             status, reason = 'ok', 'rehearsal-complete-at-CMake'
+249:         else:
+250:             assert result['rc'] == 0 and result['reason'] is None, result
+251:             assert json.loads((E / 'build-result.json').read_text())['exit_code'] == 0
+252:             stage(D, 'validation', ['python3', '-B', str(T / 'validate.py'), '--project', PROJECT, '--root', str(D), '--peer', str(D.parent / 'toolchain')])
+253:             status, reason = 'ok', 'build-and-validation-pass-install-test-deferred'
+254:     except BaseException:
+255:         (E / 'failure.txt').write_text(traceback.format_exc())
+256:         traceback.print_exc()
+257:         reason = 'build-or-validation-failed-see-failure'
+258:     finally:
+259:         try:
+260:             # Refuse cleanup while either of this attempt's build services is live.
+261:             for unit in (plan['prep_unit'], plan['build_unit']):
+262:                 state = subprocess.check_output(['systemctl', '--user', 'show', unit, '-p', 'ActiveState', '--value'], text=True).strip()
+263:                 assert state in ('inactive', 'failed'), (unit, state)
+264:             cleanup_mounts(D, 'final-cleanup')
+265:         except BaseException:
+266:             status, reason = 'failed', 'cleanup-failed'
+267:             (E / 'cleanup-failure.txt').write_text(traceback.format_exc())
+268:         try:
+269:             audit = final_audit(D, plan)
+270:             if audit['mounts']['stdout'] or audit['remaining_build_processes']:
+271:                 status, reason = 'failed', 'residual-process-or-mount-see-final-audit'
+272:             from resource_report import report, critical_stop
+273:             report(D)
+274:             critical = critical_stop(D, audit)
+275:             if critical:
+276:                 status, reason = 'stopped', critical
+277:         except BaseException:
+278:             status, reason = 'stopped', 'final-audit-or-resource-report-failed'
+279:             traceback.print_exc()
+280:         try:
+281:             save(E / 'result.json', {'status': status, 'reason': reason, 'start_ns': start, 'end_ns': time.time_ns()})
+282:         finally:
+283:             print('NIGHT_PROJECT 已结束', datetime.datetime.now().astimezone().isoformat(), 'status=' + status, 'reason=' + reason, flush=True)
+284:     return 0 if status == 'ok' else 1
+285: 
+286: 
+287: def launch(selection):
+288:     assert selection in ('rehearsal', 'rehearsal-02', 'full'), 'use rehearsal or internal full'
+289:     mode = 'rehearsal' if selection.startswith('rehearsal') else 'full'
+290:     suffix = '-02' if selection == 'rehearsal-02' else ''
+291:     identity = check_source()
+292:     D = W / 'temp/rebase-359934-20261106-r2' / (PROJECT if mode == 'full' else 'rehearsal/' + PROJECT)
+293:     if suffix:
+294:         D = D / 'retry-02'
+295:     assert not D.exists(), 'fresh root required; preserve existing directory: ' + str(D)
+296:     assert shutil.disk_usage('/home').free >= 20 * 1024**3
+297:     mem = int(next(l.split()[1] for l in Path('/proc/meminfo').read_text().splitlines() if l.startswith('MemTotal:'))) * 1024
+298:     D.mkdir(parents=True)
+299:     (D / 'tmp').mkdir()
+300:     (D / 'evidence').mkdir()
+301:     plan = dict(identity, source=str(SOURCE), config=str(CONFIG), mode=mode,
+302:                 MemoryMax_bytes=mem - 8 * 1024**3, CPUQuota='1200%',
+303:                 prep_unit='rebase359934r2-' + PROJECT + '-' + mode + '-prep-20261105' + suffix + '.service',
+304:                 build_unit='rebase359934r2-' + PROJECT + '-' + mode + '-20261105' + suffix + '.service')
+305:     save(D / 'plan.json', plan)
+306:     shutil.copyfile(T / 'launcher.py', D / 'evidence/launcher-used.py')
+307:     materialize(D, plan)
+308:     unit = 'rebase359934r2-' + PROJECT + '-' + mode + '-controller-20261105' + suffix + '.service'
+309:     argv = ['systemd-run', '--user', '--unit=' + unit, *properties(plan),
+310:             '-p', 'WorkingDirectory=' + str(SOURCE),
+311:             '-p', 'StandardOutput=append:' + str(D / 'controller.stdout'),
+312:             '-p', 'StandardError=append:' + str(D / 'controller.stderr'),
+313:             '--setenv=FINAL_PROJECT=' + PROJECT, '--setenv=NIGHT_SOURCE_SHA=' + COMMIT, '--setenv=TMPDIR=' + str(D / 'tmp'), '--setenv=PYTHONDONTWRITEBYTECODE=1',
+314:             '/usr/bin/python3', '-B', str(T / 'launcher.py'), '--worker', str(D)]
+315:     save(D / 'controller-command.json', argv)
+316:     subprocess.run(argv, check=True)
+317:     print('Started:', unit)
+318:     print('Logs:', D)
+319:     print('tail -f ' + str(D / 'controller.stdout'))
+320:     return 0
+321: 
+322: 
+323: if __name__ == '__main__':
+324:     if len(sys.argv) == 3 and sys.argv[1] == '--worker':
+325:         sys.exit(worker(Path(sys.argv[2])))
+326:     if len(sys.argv) != 2:
+327:         sys.exit('usage: launcher.py rehearsal|full')
+328:     sys.exit(launch(sys.argv[1]))

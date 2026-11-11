@@ -1,0 +1,47 @@
+  at-spi-dbus-bus.service                                          loaded active running Accessibility services bus
+  dbus.service                                                     loaded active running D-Bus User Message Bus
+  dconf.service                                                    loaded active running User preferences database
+  evolution-addressbook-factory.service                            loaded active running Evolution address book service
+  evolution-calendar-factory.service                               loaded active running Evolution calendar service
+  evolution-source-registry.service                                loaded active running Evolution source registry
+  filter-chain.service                                             loaded active running PipeWire filter chain daemon
+  gcr-ssh-agent.service                                            loaded active running GCR ssh-agent wrapper
+  gnome-keyring-daemon.service                                     loaded active running GNOME Keyring daemon
+  gnome-session-manager@ubuntu.service                             loaded active running GNOME Session Manager (session: ubuntu)
+  gnome-session-monitor.service                                    loaded active running Monitor Session leader for GNOME Session
+  gnome-terminal-server.service                                    loaded active running GNOME Terminal Server
+  gvfs-afc-volume-monitor.service                                  loaded active running Virtual filesystem service - Apple File Conduit monitor
+  gvfs-daemon.service                                              loaded active running Virtual filesystem service
+  gvfs-goa-volume-monitor.service                                  loaded active running Virtual filesystem service - GNOME Online Accounts monitor
+  gvfs-gphoto2-volume-monitor.service                              loaded active running Virtual filesystem service - digital camera monitor
+  gvfs-metadata.service                                            loaded active running Virtual filesystem metadata service
+  gvfs-mtp-volume-monitor.service                                  loaded active running Virtual filesystem service - Media Transfer Protocol monitor
+  gvfs-udisks2-volume-monitor.service                              loaded active running Virtual filesystem service - disk device monitor
+  llvm-r6-ready-1111-007.service                                   loaded active running /bin/sh -c "trap 'rc=\$?; printf \"已结束 %s status=%s unit=llvm-r6-ready-1111-007\\n\" \"\$(TZ=Asia/Shanghai date -Iseconds)\" \"\$rc\"' 0\nset -eu\npython3 - <<'PY'\nfrom pathlib import Path\nimport json,hashlib,subprocess,datetime,shutil\nB=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt')\nW=B.parent/'llvm-optimize'\nE=B/'tools/bolt/results/local-entry-r6-20261111'\nT=B/'tools/bolt/rebase-launch-20261106-r2'\nrows=[]\nfor rel in ('basedev/night.py','basedev/launcher.py','toolchain/launcher.py'):\n p=T/rel\n out=E/('template-'+rel.replace('/','-')+'.txt')\n out.write_text(''.join(f'{n}: {l}\\n' for n,l in enumerate(p.read_text().splitlines(),1)))\n rows.append(dict(path=str(p),sha256=hashlib.sha256(p.read_bytes()).hexdigest(),evidence=str(out.relative_to(B))))\nfor name in ('temp/final-20261103/configs/toolchain/gbs.conf','temp/night-20261105/configs/toolchain/gbs.conf'):\n p=W/name\n print('CONFIG',p)\n print(p.read_text())\n (E/('config-'+('old' if 'final-' in name else 'qb')+'.txt')).write_text(p.read_text())\nnight=(T/'basedev/night.py').read_text()\nlauncher=(T/'basedev/launcher.py').read_text()\nassert \"str(L.T/'launcher.py')\" in night\nassert \"T = Path(__file__).resolve().parent\" in launcher\nassert \"def save(p, value):\\n    p.write_text\" in launcher\nassert 'mkdir' not in night\nassert \"D=N/project;unit='night-'\" in night\ndef out(args):return subprocess.check_output(args,text=True)\nstamp=datetime.datetime.now().astimezone().isoformat()\ndisk=out(['df','-B1','/home'])\n(E/'df-before-stop.txt').write_text(disk)\nservices=out(['systemctl','--user','list-units','--type=service','--state=running','--no-pager','--no-legend'])\n(E/'running-services.txt').write_text(services)\nnewentry=B/'tools/bolt/rebase-launch-20261111-r6'\nnewroot=W/'temp/rebase-359934-20261111-r6'\nstate=dict(status='stopped',time=stamp,\n template_sources=rows,entry_created=newentry.exists(),\n roots={str(p):p.exists() for p in (newroot/'toolchain',newroot/'basedev',newroot/'rehearsal',W/'temp/night-20261111-r6')},\n free_bytes=shutil.disk_usage('/home').free,\n tests_run=0,tests_status='NOT RUN: stopped before entry copy and tests',\n rehearsals='NOT RUN',full_build='NOT RUN',\n blockers=[\n 'night.py:19 dispatches both projects through basedev/launcher.py, whose Toolchain config is the old snapshot; selecting sibling project launcher requires an invocation/routing change outside the listed allowed substitutions.',\n 'night.py:16,21,54-55 checks/reads N/project but launcher.py:292 writes to the rebase output root; controller unit name also disagrees. Root/name substitutions can address these, but do not solve the other blockers.',\n 'night.py:58 calls L.save(N/night-command.json) with a new nonexistent summary directory; save only calls Path.write_text and no code creates N. Creating N requires an additional setup/logic change.'\n ])\n(E/'entry-template-audit.json').write_text(json.dumps(state,ensure_ascii=False,indent=2)+'\\n')\n(E/'step3-ended.txt').write_text('ITEM3 已结束 '+stamp+' status=stopped reason=template-night-dispatch-and-summary-directory-outside-allowed-edits\\n')\nprint(json.dumps(state,ensure_ascii=False,indent=2))\nprint(disk)\nprint('ITEM3 已结束',stamp,'status=stopped reason=template-night-dispatch-and-summary-directory-outside-allowed-edits')\nPY"
+  org.gnome.SettingsDaemon.A11ySettings.service                    loaded active running GNOME accessibility service
+  org.gnome.SettingsDaemon.Color.service                           loaded active running GNOME color management service
+  org.gnome.SettingsDaemon.Datetime.service                        loaded active running GNOME date & time service
+  org.gnome.SettingsDaemon.Housekeeping.service                    loaded active running GNOME maintenance of expirable data service
+  org.gnome.SettingsDaemon.Keyboard.service                        loaded active running GNOME keyboard configuration service
+  org.gnome.SettingsDaemon.MediaKeys.service                       loaded active running GNOME keyboard shortcuts service
+  org.gnome.SettingsDaemon.Power.service                           loaded active running GNOME power management service
+  org.gnome.SettingsDaemon.PrintNotifications.service              loaded active running GNOME printer notifications service
+  org.gnome.SettingsDaemon.Rfkill.service                          loaded active running GNOME RFKill support service
+  org.gnome.SettingsDaemon.ScreensaverProxy.service                loaded active running GNOME FreeDesktop screensaver service
+  org.gnome.SettingsDaemon.Sharing.service                         loaded active running GNOME file sharing service
+  org.gnome.SettingsDaemon.Smartcard.service                       loaded active running GNOME smartcard service
+  org.gnome.SettingsDaemon.Sound.service                           loaded active running GNOME sound sample caching service
+  org.gnome.SettingsDaemon.Wacom.service                           loaded active running GNOME Wacom tablet support service
+  org.gnome.SettingsDaemon.XSettings.service                       loaded active running GNOME XSettings service
+  org.gnome.Shell@x11.service                                      loaded active running GNOME Shell on X11
+  pipewire-pulse.service                                           loaded active running PipeWire PulseAudio
+  pipewire.service                                                 loaded active running PipeWire Multimedia Service
+  snap.firmware-updater.firmware-notifier.service                  loaded active running Service for snap application firmware-updater.firmware-notifier
+  snap.snapd-desktop-integration.snapd-desktop-integration.service loaded active running Service for snap application snapd-desktop-integration.snapd-desktop-integration
+  tracker-miner-fs-3.service                                       loaded active running Tracker file system data miner
+  wireplumber.service                                              loaded active running Multimedia Service Session Manager
+  xdg-desktop-portal-gnome.service                                 loaded active running Portal service (GNOME implementation)
+  xdg-desktop-portal-gtk.service                                   loaded active running Portal service (GTK/GNOME implementation)
+  xdg-desktop-portal.service                                       loaded active running Portal service
+  xdg-document-portal.service                                      loaded active running flatpak document portal service
+  xdg-permission-store.service                                     loaded active running sandboxed app permission store

@@ -1124,3 +1124,12 @@ FIFTH_REVIEW_RERUN4 已结束 2026-11-11T16:58:21+08:00 status=stopped reason=Ge
 公开目录最新快照：Toolchain tizen-base-toolchain_20261109.032334，Base-Dev tizen-base-dev_20261103.083743；仅记录，固定比较/构建快照不变。先发布本节，下一步准备fea0fe46独立源码副本和r6本地入口、串行T/D演练，记74号；不启动完整构建、不操作QB。
 
 R6_SANDBOX 已结束 2026-11-11T17:17:44+08:00 status=ok
+
+
+## 2026-11-11：sandbox fea0fe46 已发布；r6 夜间入口模板审计停止（74号§6）
+
+78号推送阶段已完成（37d3e9d1）：总部两change已合入，tizen_base判定B，sandbox为fea0fe464d56e17f2c7588c557bfffd9f6ac352b。独立源码副本已克隆并核对HEAD/tree/父链/干净detached及远端一致，保留不动。
+
+复制入口前发现r2的basedev/night.py始终调用basedev launcher，T会用旧20261013快照；协调器结果根/服务名与launcher不一致；新汇总目录没有创建即写文件。不能仅按获准的SOURCE/输出根/N/服务名替换完成，按“不改逻辑”停止，未新建入口、自测执行0项、T/D演练NOT RUN、完整构建未启动。/home可用258.308 GiB，预算通过。详见[74号§6](74_local_full_build_fa4f9978.md#6-入口准备与演练2026-11-11sandbox-已更新模板-night-调度审计停止)。今晚命令仅记录，尚不可执行。
+
+ITEM3 已结束 2026-11-11T17:24:03.087548+08:00 status=stopped reason=template-night-dispatch-and-summary-directory-outside-allowed-edits

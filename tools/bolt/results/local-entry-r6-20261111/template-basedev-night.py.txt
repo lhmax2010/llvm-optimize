@@ -1,0 +1,60 @@
+1: """Serial night coordinator. No full/night invocation is part of daytime prep."""
+2: from pathlib import Path
+3: import os,sys,json,time,subprocess,datetime,traceback
+4: import launcher as L
+5: from resource_report import critical_stop
+6: N=L.W/'temp/night-20261103'
+7: 
+8: def ended(status,reason):
+9:  print('NIGHT 已结束',datetime.datetime.now().astimezone().isoformat(),'status='+status,'reason='+reason,flush=True)
+10: 
+11: def run():
+12:  status='failed';reason='unexpected-coordinator-error';results=[]
+13:  try:
+14:   L.check_source()
+15:   for project in ('toolchain','basedev'):
+16:    assert not (N/project).exists(),'fresh root required: '+str(N/project)
+17:   for project in ('toolchain','basedev'):
+18:    env=dict(os.environ,FINAL_PROJECT=project)
+19:    p=subprocess.run([sys.executable,'-B',str(L.T/'launcher.py'),'full'],env=env,capture_output=True,text=True)
+20:    print(p.stdout,p.stderr,flush=True)
+21:    D=N/project;unit='night-'+project+'-full-controller-20261103.service'
+22:    if p.returncode:raise RuntimeError('launch-failed '+project)
+23:    heartbeat=0
+24:    while True:
+25:     state=subprocess.check_output(['systemctl','--user','show',unit,'-p','ActiveState','--value'],text=True).strip()
+26:     if state in ('inactive','failed'):break
+27:     if time.monotonic()-heartbeat>=60:
+28:      heartbeat=time.monotonic();log=D/'evidence/rpm-build.log';tail=''
+29:      if log.exists():
+30:       with log.open('rb') as f:f.seek(max(0,log.stat().st_size-4096));tail=f.read().decode(errors='replace').splitlines()[-1:]
+31:      print('NIGHT_PROGRESS',datetime.datetime.now().astimezone().isoformat(),project,'service='+state,'tail='+repr(tail),flush=True)
+32:     time.sleep(5)
+33:    result=L.json.loads((D/'evidence/result.json').read_text()) if (D/'evidence/result.json').exists() else {'status':'failed','reason':'controller-ended-without-result'}
+34:    service=subprocess.check_output(['systemctl','--user','show',unit,'-p','Result'],text=True)
+35:    if 'oom-kill' in service:result={'status':'stopped','reason':'memory-oom-stop'}
+36:    print('NIGHT_PROJECT 已结束',datetime.datetime.now().astimezone().isoformat(),project,result,flush=True)
+37:    results.append(dict(project=project,**result));L.save(N/'night-progress.json',results)
+38:    critical=critical_stop(D,L.json.loads((D/'evidence/final-audit.json').read_text()) if (D/'evidence/final-audit.json').exists() else None)
+39:    if critical or result['status']=='stopped' or not (D/'evidence/final-audit.json').exists():
+40:     reason=critical or result['reason'];status='stopped';break
+41:   else:
+42:    status='ok' if all(r['status']=='ok' for r in results) else 'failed';reason='serial-builds-and-validation-finished'
+43:  except BaseException:
+44:   reason='coordinator-error-see-log';traceback.print_exc()
+45:  finally:
+46:   try:L.save(N/'night-result.json',dict(status=status,reason=reason,projects=results,time=datetime.datetime.now().astimezone().isoformat()))
+47:   finally:ended(status,reason)
+48:  return 0 if status=='ok' else 1
+49: 
+50: if __name__=='__main__':
+51:  if sys.argv[1:]==['--worker']:sys.exit(run())
+52:  assert not sys.argv[1:]
+53:  L.check_source()
+54:  for name in ['toolchain','basedev','night-result.json','night-progress.json','night.log']:
+55:   assert not (N/name).exists(),'existing night output refused: '+name
+56:  mem=int(next(l.split()[1] for l in Path('/proc/meminfo').read_text().splitlines() if l.startswith('MemTotal:')))*1024
+57:  argv=['systemd-run','--user','--unit=llvm-night-20261103.service',*L.properties({'MemoryMax_bytes':mem-8*1024**3}),'-p','StandardOutput=append:'+str(N/'night.log'),'-p','StandardError=append:'+str(N/'night.log'),'--setenv=NIGHT_SOURCE_SHA='+L.COMMIT,sys.executable,'-B',str(Path(__file__).resolve()),'--worker']
+58:  L.save(N/'night-command.json',argv);subprocess.run(argv,check=True)
+59:  print('Night controller started; T then D, never parallel')
+60:  print('tail -f '+str(N/'night.log'))
