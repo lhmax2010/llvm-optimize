@@ -1,0 +1,45 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fourth-review-20261110/resume/parse_checks.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/parse_checks.py
+@@ -15,7 +15,7 @@
+ # Exclude host/user macro overrides. Preserve the Tizen runtime's complete configured macro list.
+ macrobase=':'.join(x for x in macrobase.split(':') if x.startswith(str(R)))
+ run('rpm-version',loader+[str(R/'usr/bin/rpm'),'--dbpath',str(R/'var/lib/rpm'),'-q','--qf','%{NAME} %{VERSION}-%{RELEASE}\n','rpm','rpm-build'])
+-for label,rev in [('new','HEAD'),('parent','fa4f9978c9162d3c6cd2113d0cfe1173f04881c8')]:
++for label,rev in [('new','HEAD'),('parent','60fabc723f30c5cc04146a9dd83487ebed63f259')]:
+  (P/(label+'.spec')).write_bytes(subprocess.check_output(['git','show',rev+':packaging/llvm.spec'],cwd=S))
+ rows=[]
+ for name,c in conf.items():
+@@ -35,14 +35,19 @@
+    for label in ('new','parent'):
+     args=loader+[str(R/'usr/bin/rpmspec'),'-P',*common,*(['--define','_without_clang_bolt 1'] if off else []),str(P/(label+'.spec'))]
+     outputs[label]=run(key+suffix+'-'+label,args)
+-   diff=''.join(difflib.unified_diff(outputs['parent'].splitlines(True),outputs['new'].splitlines(True),fromfile='fa4f9978',tofile='fourth-review-fixed'))
++   diff=''.join(difflib.unified_diff(outputs['parent'].splitlines(True),outputs['new'].splitlines(True),fromfile='60fabc72',tofile='fifth-review-fixed'))
+    (P/(key+suffix+'.diff')).write_text(diff)
+    if arch!='x86_64' or off:
+     assert outputs['new']==outputs['parent'],key+suffix+' spec expansion changed'
+    else:
+-    function='bolt_status_exit() {\n  case "$1" in\n    129|130|143) exit "$1" ;;\n    *) exit 1 ;;\n  esac\n}\n'
+-    assert outputs['new'].count(function)==1
+-    restored=outputs['new'].replace(function,'',1).replace('|| bolt_status_exit $?','|| exit 1')
++    restored=outputs['new']
++    lines=restored.splitlines(True)
++    count=0
++    for i,line in enumerate(lines):
++     if 'disk-diagnose' in line and '|| bolt_status_exit $?' in line:
++      lines[i]=line.replace('|| bolt_status_exit $?','|| true');count+=1
++    assert count==2,(key,count)
++    restored=''.join(lines)
+     assert restored==outputs['parent'],key+suffix+' unexpected spec expansion changed'
+    if name=='toolchain' and case=='x86-debug' and not off:
+     post_spec=E/'post-expanded.spec'
+@@ -53,7 +58,8 @@
+     (E/'optional-calls.json').write_text(json.dumps(optional,indent=2)+'\n')
+     assert len(optional)==5,optional
+     for row in optional:print(str(row['line'])+': '+row['text'])
+-   rows.append({'config':name,'case':case,'bolt':'off' if off else 'on','PASS':True,'byte_identical':not diff,'difference':'bolt_status_exit definition and required-call cancellation propagation; printf macro escape has identical expansion' if diff else 'none'})
++    if os.environ.get('PREPARE_ONLY')=='1':raise SystemExit(0)
++   rows.append({'config':name,'case':case,'bolt':'off' if off else 'on','PASS':True,'byte_identical':not diff,'difference':'two diagnostic calls propagate cancellation status' if diff else 'none'})
+ (P/'expansion-summary.json').write_text(json.dumps(rows,indent=2)+'\n')
+ print('EXPANSIONS_PASS',len(rows),'ALL_BYTE_IDENTICAL',all(r['byte_identical'] for r in rows))
+ 

@@ -1,0 +1,591 @@
+commit ae4487251aaa00c2ec4edf033cf8c9046d0d4b98
+Author:     Hao Lin <hao.lin@samsung.com>
+AuthorDate: Fri Nov 6 14:49:25 2026 +0800
+Commit:     Hao Lin <hao.lin@samsung.com>
+CommitDate: Wed Nov 11 14:34:18 2026 +0800
+
+    packaging: fix x86 LLVM flags and archive mode
+    
+    QB 1214821 inherited GCC project options into a clang build. Source1005
+    rejected -feliminate-unused-debug-types; release commands also lacked
+    its previously mandatory DWARF setting.
+    
+    Fix x86_64 compilation flags to the effective Toolchain values recorded
+    by QB 1215143. Inherit reviewed architecture flags, reject native CPU
+    selection, and warn on debug sequences other than -g2 -gdwarf-4 -g.
+    Release commands contain no debug flags. Match whole tokens and
+    preserve the caller's IFS state and shell options.
+    
+    Fix LDFLAGS to the Toolchain value. Executable and shared-library linker
+    flags remain explicitly set by the spec; MODULE targets (plugins) take
+    LDFLAGS, so Base-Dev plugin links gain -z relro, --as-needed and
+    --gc-sections, matching Toolchain. This retains the existing policy of
+    removing project stack-protector and --param=ssp-buffer-size options;
+    it does not introduce a new hardening policy.
+    
+    Print TIZEN_LLVM_NORMALIZED_FLAGS for prior normalization and
+    TIZEN_LLVM_DROPPED_FLAGS for the four reviewed extra project options.
+    Unreviewed project options are dropped with TIZEN_LLVM_FLAGS_WARNING
+    on stdout and stderr for manual review; they do not interrupt the build.
+    Uncertified debug sequences also warn. Reject only native CPU selection
+    and invalid release mode values. Review warnings before adding options
+    to the fixed set or expected-dropped list. Non-x86_64 behavior is kept.
+    
+    Local and QB command strings differ in the placement of section flags.
+    The prior stripped QB clang equals the local post-RUNPATH clang, as
+    recorded in docs/bolt/49 section A.4. Recheck the identity chain, RPM
+    contents and 90 translation units in the next complete build; these
+    lightweight checks alone do not prove new binary identity.
+    
+    Require Source1005 --debug-info yes|no and match each converted member's
+    recorded command. Release means no debug option in that command; any
+    debug option still requires the certified final -gdwarf-4. Reject debug
+    sections in converted release outputs. Preserve native members as-is
+    and count them, without applying that assertion to preexisting objects.
+    All 3853 converted full-20261030 members recorded debug options.
+    
+    Following review, reject -Wa, options, which PS10 accepted through its
+    broad -W branch, and report -Xassembler (already rejected) as an
+    assembler option; require compiler, disassembler and nm to report the
+    same X.Y.Z version from the same directory, and record the three
+    versions in the summary and in a NATIVE_ARCHIVES_TOOLS log line. Harden
+    archive and relocation parsing against malformed sizes, size fields,
+    long-name numbers and offsets, section tables, section payloads and
+    indexes. Check each relocation against an explicit x86_64 field width
+    table taken from LLVM 22.1.8; reject relocation types outside that
+    table, CREL relocation sections, 8- and 16-bit absolute relocations and
+    fields outside their target section, bounding compressed sections by
+    their uncompressed size. Handle SIGHUP and process-group reaping during
+    conversion, reset an inherited ignored SIGCHLD, keep inherited ignored
+    TERM, INT and HUP ignored, and exit with 128+signal after cancellation,
+    deciding the final status after the original handlers are restored. With
+    BOLT enabled, the spec passes the converter's 129/130/143 through; with
+    BOLT disabled, the call keeps exit 1 so that expansion is unchanged.
+    
+    Based on Change 359934: keeps its token classification, per-switch
+    replay and adopted checks; adds the declared debug-info mode with a
+    per-member consistency check.
+    
+    Change-Id: Ic76505ddb122f1e06271ff7462e24eceee4d400a
+    Signed-off-by: Hao Lin <hao.lin@samsung.com>
+
+commit 1e415935a83a187aab7c41f9713115a0974a0365
+Author:     Hao Lin <hao.lin@samsung.com>
+AuthorDate: Thu Oct 29 13:22:21 2026 +0800
+Commit:     Hao Lin <hao.lin@samsung.com>
+CommitDate: Wed Nov 11 14:34:17 2026 +0800
+
+    packaging: optimize x86_64 clang with BOLT
+    
+    Enable BOLT by default on x86_64: ordinary install, snapshot, append
+    bolt configuration, certify the dry-run and parallel llvm-bolt build,
+    relink with emit-relocs, strip debug, rewrite, tiny/real checks, strip
+    all, RUNPATH repair, debug-mode debuglink, security and tiny/real
+    checks, compare-root, native archive conversion, candidate replacement,
+    one unchanged platform post chain, and the post gate. Only after
+    compare-root may BOLT change the buildroot. Other architectures retain
+    the baseline behavior. Roll back in Quickbuild with the one-line
+    bcond_without -> bcond_with change; Source1200/1201 are declared
+    unconditionally because gbs inserts generated Patch declarations after
+    the last Source line, and conditional Sources would hide those
+    declarations on other architectures and when BOLT is disabled.
+    BOLT-specific BuildRequires remain guarded by the same x86_64 BOLT
+    condition, leaving binary packages on other architectures unchanged
+    while adding these two files to the source package. --without clang_bolt
+    is available for local builds. Only enabled %build adds -d keeprsp. No
+    project configuration change is required.
+    
+    No disk-space thresholds are imposed; each stage records free space. A
+    candidate preparation failure prevents its installation. Installation or
+    post-processing failures abort the RPM build; the failed BUILDROOT is
+    not rolled back as a whole. Diagnostics report available evidence and
+    requirements/shortfall estimated from actual file sizes measured in this
+    build. A readable log without disk-failure evidence is unconfirmed; an
+    unavailable log is unknown. Release the in-tree ThinLTO cache after the
+    compare-root gate passes.
+    
+    The binary Source is the existing profile v2, trained on 13 ARM plus 10
+    AArch64 source files. Compressed size 9,735,212 bytes; SHA256
+    52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f.
+    Uncompressed SHA256:
+    d9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326.
+    Certify 111 BOLT task descriptions plus two TF refresh tasks: CMake
+    rewrites the TF anchor, while its archive is restored from the prebuilt
+    artifact and must retain its SHA. Unknown work fails closed.
+    R=(S+U)/(N+U) and S/N must each be <=5%, without infer-stale; profile
+    coverage N/M is about 16%.
+    
+    Preserve ELF type/interpreter, RELRO coverage and flags, GNU_STACK
+    flags, GNU_PROPERTY/note contents, dynamic flags/BIND_NOW,
+    RPATH/RUNPATH, NEEDED, W+X status, dynsym interfaces and symbol
+    versions. Both qualification ELFs lack .note.gnu.property: this build
+    did not enable CET independently of BOLT. The local qualification
+    candidate uses the historical same-source llvm-bolt; delivery builds its
+    own llvm-bolt in the tree.
+    
+    Historical LLVM C++ -O3 single-file qualification used 30 rows from 20
+    distinct sources, five samples per side, alternating roles at the same
+    compiler path/inode. Candidate/ordinary geometric mean: x86_64
+    0.855890085, ARM 0.856351167, AArch64 0.847699213. x86_64
+    independent-20/holdout-10: 0.854398975/0.858880117. ARM
+    independent-20/holdout-10: 0.858165628/0.868458776; AArch64
+    independent-20/holdout-10: 0.847858623/0.847902567. These are historical
+    measurements, not a remeasurement of the final debuglink artifact; they
+    cover this LLVM workload, not general application or runtime
+    performance. With -use-old-text the packaged clang is 152,532,400 bytes,
+    12,602,968 bytes (+9.0%) larger than the stripped ordinary clang; the
+    .gnu_debuglink section adds 104 bytes.
+    
+    The final clang has no .symtab, DWARF sections or BOLT identity note. In
+    debug builds, clang-debuginfo supplies matching function symbols in
+    clang-22.debug, linked from the executable by a verified .gnu_debuglink
+    and CRC. Use eu-strip because LLVM only-keep-debug crashes with SIGSEGV
+    (-11) on the BOLT ELF segment layout. The symbol file provides
+    function-level localization, not source lines. Verify the full symtab
+    and cold-fragment addresses, unchanged program headers and loaded
+    sections, and both installed SHAs. Release builds retain fully stripped
+    clang without a symbol file or debuglink. Debugsource still omits these
+    five clang-exclusive sources (ordinary DWARF proof retained):
+    build/tools/clang/tools/driver/clang-driver.cpp,
+    clang/tools/driver/cc1_main.cpp, clang/tools/driver/cc1as_main.cpp,
+    clang/tools/driver/cc1gen_reproducer_main.cpp,
+    clang/tools/driver/driver.cpp. In release builds, where no symbol file
+    is shipped, crash localization requires the build-side identity/rewrite
+    records, the pre-strip BOLT ELF, the matching ordinary ELF, and the tool
+    and profile identities.
+    
+    Still open: accel/worker identity; cleanup cannot be guaranteed
+    without matching /proc; performance outside LLVM workloads. The Ninja
+    job limit does not cap linker memory. Maintenance notes: header of
+    packaging/clang-bolt-helper.py
+    
+    Match the BOLT candidate RUNPATH to the ordinary CMake-installed clang
+    using an in-place CMake RPATH_CHANGE and preserve all other ELF bytes.
+    Build llvm-bolt in parallel with the existing build job limit and verify
+    the exact task set independently of completion order. Check real LLVM C
+    and C++ objects before strip, before install and after RPM processing.
+    
+    Adopt -use-old-text: compared with the previous appended-text layout
+    (183,224,160 bytes), clang is 16.75% smaller at 152,532,296 bytes before
+    the debuglink, with identical generated object files.
+    
+    Handle SIGTERM, SIGHUP and SIGINT cooperatively and clean up the command
+    process group before exiting; a second signal terminates immediately.
+    Check Python work and late cancellation before reporting success, and
+    decide the exit status only after the original signal handlers are
+    restored: exit with 128+signal (129/130/143) after cancellation.
+    Required BOLT steps, disk diagnosis after a failure, optional disk
+    reports and cache release all pass those statuses through to the RPM
+    build instead of reporting a gate failure. Signals ignored by the caller
+    stay ignored. Label cancellation separately from command errors and
+    timeouts.
+    
+    Freeze all ELF bytes outside the original RUNPATH/RPATH string ranges
+    during path repair. Across strip-all and debuglink, compare all ELF and
+    program header fields and LOAD bytes, normalizing only e_shoff, e_shnum
+    and e_shstrndx. Require the platform debugfiles.list to contain
+    clang-22.debug in debug-mode post checks. Bound each run-step command to
+    14400 seconds. Without cancellation, unexpected helper exceptions keep
+    a diagnostic and traceback and are re-raised.
+    
+    Change-Id: Ic98eab90cc017f127a66e1729b44fab8b8e8fb41
+    Signed-off-by: Hao Lin <hao.lin@samsung.com>
+
+commit 8a50d7122346258fd1171d270861a4ae28a8717c
+Author:     Hao Lin <hao.lin@samsung.com>
+AuthorDate: Thu Oct 15 19:59:18 2026 +0800
+Commit:     Hao Lin <hao.lin@samsung.com>
+CommitDate: Tue Nov 10 21:47:52 2026 +0800
+
+    cmake: use hybrid LLVM linkage on x86_64
+    
+    Enable shared LLVM and Clang linkage in the x86_64 recipe while keeping
+    clang, lld and llvm-ar statically linked to LLVM components. Their
+    driver aliases continue to share the same executable. Other tools use
+    libLLVM and, where applicable, libclang-cpp through the normal upstream
+    interfaces.
+    
+    Use TIZEN_HYBRID_LINK and a per-consumer TIZEN_STATIC_LLVM property to
+    select component dependencies only for the three opted-in drivers. When
+    disabled, the shared-link interfaces retain upstream behavior. Keep
+    BUILD_SHARED_LIBS and the unified LLVM driver disabled on x86_64.
+    
+    Preserve upstream forced-static llvm-tblgen, clang-tblgen, lldb-tblgen,
+    llvm-config and llvm-exegesis. Tool-private archives and build utilities
+    retain upstream behavior. Do not change armv7l or aarch64 recipes,
+    optimization flags, the static-devel %files rules or native archive
+    conversion.
+    
+    Validation of the original hybrid implementation: local full GBS build
+    produced 22 binary RPMs and one source RPM. The 188-entry NEEDED table
+    had 183 passes, four non-default targets not produced, and one accepted
+    --as-needed exception (AnnotateFunctions.so). Native archives passed
+    225/225 checks and 90 complete objects were byte-identical. See docs/53
+    in the validation evidence.
+    
+    Add a post-build NEEDED assertion for the three component-linked
+    drivers.
+    A complete-recipe configuration probe found no empty component lists
+    among 96 rewritten static interfaces; fail configuration if one appears.
+    
+    AddLLVM.cmake and AddClang.cmake are installed on every architecture,
+    so the llvm-devel and clang payloads on armv7l and aarch64 carry the
+    new text. TIZEN_HYBRID_LINK is set only by the x86_64 recipe; elsewhere
+    the new function returns at once and the generated build is unchanged.
+    
+    Signed-off-by: Hao Lin <hao.lin@samsung.com>
+    Change-Id: I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index bbf9c8770b36..0c101ec17d97 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -1904,33 +1904,41 @@ def cli():
+     global _CANCEL_SIGNAL
+     previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)}
+     _CANCEL_SIGNAL = None
+-    for sig in previous:
+-        signal.signal(sig, record_cancel)
++    result, failure = 0, None
++    for sig, handler in previous.items():
++        if handler != signal.SIG_IGN:
++            signal.signal(sig, record_cancel)
+     try:
+-        main()
+-        if _CANCEL_SIGNAL is not None:
+-            raise GateError('CANCELLED: cancelled by signal %s after work completed' % _CANCEL_SIGNAL,
+-                            cancel_originated=True)
+-        return 0
+-    except (GateError, OSError, ValueError, lzma.LZMAError) as error:
+-        step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+-        log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+-        diagnose_safely(step,log,error)
+-        print('BOLT_GATE_FAILED: '+str(error),file=sys.stderr)
+-        return 128 + _CANCEL_SIGNAL if _CANCEL_SIGNAL is not None else 1
+-    except Exception as error:
+-        step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+-        log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+-        diagnose_safely(step,log,error)
+-        print('BOLT_GATE_FAILED: unexpected %s: %s' % (type(error).__name__, error), file=sys.stderr)
+-        if _CANCEL_SIGNAL is not None:
+-            traceback.print_exc()
+-            return 128 + _CANCEL_SIGNAL
+-        raise
++        try:
++            main()
++        except (GateError, OSError, ValueError, lzma.LZMAError) as error:
++            step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
++            log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
++            diagnose_safely(step,log,error)
++            print('BOLT_GATE_FAILED: '+str(error),file=sys.stderr)
++            result = 1
++        except Exception as error:
++            step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
++            log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
++            diagnose_safely(step,log,error)
++            print('BOLT_GATE_FAILED: unexpected %s: %s' % (type(error).__name__, error), file=sys.stderr)
++            raise
++    except BaseException:
++        failure = sys.exc_info()
+     finally:
+         for sig, handler in previous.items():
+             signal.signal(sig, handler)
+-        _CANCEL_SIGNAL = None
++    # A cancellation during the final restoration window still controls status.
++    cancelled = _CANCEL_SIGNAL
++    _CANCEL_SIGNAL = None
++    if cancelled is not None:
++        if failure is not None:
++            traceback.print_exception(*failure)
++        print('BOLT_CANCELLED: signal %s' % cancelled, file=sys.stderr)
++        return 128 + cancelled
++    if failure is not None:
++        raise failure[1].with_traceback(failure[2])
++    return result
+ 
+ 
+ if __name__=='__main__':
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index 6c2869e9fe0f..1f0eb12acc28 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -89,6 +89,8 @@ def elf_details(data):
+     for s in sections:
+         if s[1] != 2:  # SHT_SYMTAB, not dynamic symbols
+             continue
++        if s[6] >= count:
++            raise ValueError("ELF symbol table link outside section table")
+         strings = contents(sections[s[6]])
+         table = contents(s); stride = s[9]
+         if stride < struct.calcsize(symfmt) or len(table) % stride:
+@@ -101,6 +103,12 @@ def elf_details(data):
+     return symbols, debug
+ 
+ 
++def ar_decimal(value):
++    if re.fullmatch(r'[0-9]+', value) is None:
++        raise ValueError('invalid ar long-name number: '+value)
++    return int(value)
++
++
+ def inspect(path):
+     path = Path(path)
+     with path.open('rb') as f, mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as data:
+@@ -117,7 +125,7 @@ def inspect(path):
+                 raise ValueError('invalid ar member size field')
+             name = header[:16].decode('ascii').rstrip(); size = int(header[48:58]); pos += 60
+             special = name in ('/', '//', '/SYM64/')
+-            stored_size = size if not thin or special else (int(name[3:]) if name.startswith('#1/') else 0)
++            stored_size = size if not thin or special else (ar_decimal(name[3:]) if name.startswith('#1/') else 0)
+             if stored_size < 0 or stored_size > len(data)-pos:
+                 raise ValueError('ar member outside file')
+             if name == '//':
+@@ -134,12 +142,12 @@ def inspect(path):
+         for m in raw_members:
+             name, off, size = m.pop('raw_name'), m['offset'], m['size']
+             if name.startswith('#1/'):
+-                n = int(name[3:])
++                n = ar_decimal(name[3:])
+                 if not 0 <= n <= size:
+                     raise ValueError('invalid BSD long name length')
+                 name = data[off:off+n].rstrip(b'\0').decode('utf-8', 'surrogateescape'); off += n; size -= n
+             elif name.startswith('/'):
+-                n = int(name[1:])
++                n = ar_decimal(name[1:])
+                 if not 0 <= n < len(longnames):
+                     raise ValueError('GNU long name offset outside table')
+                 if n and longnames[n-1:n] != b'\n':
+@@ -370,6 +378,95 @@ def ir_settings(lines, require_recorded_options=True, arch='x86_64', debug_info=
+                 recorded_command=recorded_command, policy=policy)
+ 
+ 
++# LLVM 22.1.8 ELFRelocs/x86_64.def numbers; x86-64 psABI section 4.4,
++# Relocation Types and Large Model Relocation Types (LP64 field bytes).
++# Dynamic-loader-only relocations are deliberately absent from the accepted
++# table. COPY has no fixed-size field; TLSDESC_CALL is a zero-width marker.
++# 0 R_X86_64_NONE: 0 bytes; psABI Relocation Types: none (linker marker); accept.
++# 1 R_X86_64_64: 8 bytes; psABI Relocation Types: word64; accept.
++# 2 R_X86_64_PC32: 4 bytes; psABI Relocation Types: word32; accept.
++# 3 R_X86_64_GOT32: 4 bytes; psABI Relocation Types: word32; accept.
++# 4 R_X86_64_PLT32: 4 bytes; psABI Relocation Types: word32; accept.
++# 5 R_X86_64_COPY: 0 bytes; psABI Relocation Types: none (COPY has no fixed field); reject dynamic-only.
++# 6 R_X86_64_GLOB_DAT: 8 bytes; psABI Relocation Types: word64; reject dynamic-only.
++# 7 R_X86_64_JUMP_SLOT: 8 bytes; psABI Relocation Types: word64; reject dynamic-only.
++# 8 R_X86_64_RELATIVE: 8 bytes; psABI Relocation Types: word64; reject dynamic-only.
++# 9 R_X86_64_GOTPCREL: 4 bytes; psABI Relocation Types: word32; accept.
++# 10 R_X86_64_32: 4 bytes; psABI Relocation Types: word32; accept.
++# 11 R_X86_64_32S: 4 bytes; psABI Relocation Types: word32; accept.
++# 12 R_X86_64_16: 2 bytes; psABI Relocation Types: word16; accept.
++# 13 R_X86_64_PC16: 2 bytes; psABI Relocation Types: word16; accept.
++# 14 R_X86_64_8: 1 bytes; psABI Relocation Types: word8; accept.
++# 15 R_X86_64_PC8: 1 bytes; psABI Relocation Types: word8; accept.
++# 16 R_X86_64_DTPMOD64: 8 bytes; psABI Relocation Types: word64; reject dynamic-only.
++# 17 R_X86_64_DTPOFF64: 8 bytes; psABI Relocation Types: word64; accept.
++# 18 R_X86_64_TPOFF64: 8 bytes; psABI Relocation Types: word64; accept.
++# 19 R_X86_64_TLSGD: 4 bytes; psABI Relocation Types: word32; accept.
++# 20 R_X86_64_TLSLD: 4 bytes; psABI Relocation Types: word32; accept.
++# 21 R_X86_64_DTPOFF32: 4 bytes; psABI Relocation Types: word32; accept.
++# 22 R_X86_64_GOTTPOFF: 4 bytes; psABI Relocation Types: word32; accept.
++# 23 R_X86_64_TPOFF32: 4 bytes; psABI Relocation Types: word32; accept.
++# 24 R_X86_64_PC64: 8 bytes; psABI Relocation Types: word64; accept.
++# 25 R_X86_64_GOTOFF64: 8 bytes; psABI Relocation Types: word64; accept.
++# 26 R_X86_64_GOTPC32: 4 bytes; psABI Relocation Types: word32; accept.
++# 27 R_X86_64_GOT64: 8 bytes; psABI Large Model Relocation Types: word64; accept.
++# 28 R_X86_64_GOTPCREL64: 8 bytes; psABI Large Model Relocation Types: word64; accept.
++# 29 R_X86_64_GOTPC64: 8 bytes; psABI Large Model Relocation Types: word64; accept.
++# 30 R_X86_64_GOTPLT64: 8 bytes; psABI Large Model Relocation Types: word64; accept.
++# 31 R_X86_64_PLTOFF64: 8 bytes; psABI Large Model Relocation Types: word64; accept.
++# 32 R_X86_64_SIZE32: 4 bytes; psABI Relocation Types: word32; accept.
++# 33 R_X86_64_SIZE64: 8 bytes; psABI Relocation Types: word64; accept.
++# 34 R_X86_64_GOTPC32_TLSDESC: 4 bytes; psABI Relocation Types: word32; accept.
++# 35 R_X86_64_TLSDESC_CALL: 0 bytes; psABI Relocation Types: none (linker marker); accept.
++# 36 R_X86_64_TLSDESC: 16 bytes; psABI Relocation Types: word64 x 2; reject dynamic-only.
++# 37 R_X86_64_IRELATIVE: 8 bytes; psABI Relocation Types: word64; reject dynamic-only.
++# 41 R_X86_64_GOTPCRELX: 4 bytes; psABI Relocation Types: word32; accept.
++# 42 R_X86_64_REX_GOTPCRELX: 4 bytes; psABI Relocation Types: word32; accept.
++# 43 R_X86_64_CODE_4_GOTPCRELX: 4 bytes; psABI Relocation Types: word32; accept.
++# 44 R_X86_64_CODE_4_GOTTPOFF: 4 bytes; psABI Relocation Types: word32; accept.
++# 45 R_X86_64_CODE_4_GOTPC32_TLSDESC: 4 bytes; psABI Relocation Types: word32; accept.
++# 50 R_X86_64_CODE_6_GOTTPOFF: 4 bytes; psABI Relocation Types: word32; accept.
++X86_64_RELOCATION_WIDTHS = {
++    0: 0,  # R_X86_64_NONE
++    1: 8,  # R_X86_64_64
++    2: 4,  # R_X86_64_PC32
++    3: 4,  # R_X86_64_GOT32
++    4: 4,  # R_X86_64_PLT32
++    9: 4,  # R_X86_64_GOTPCREL
++    10: 4,  # R_X86_64_32
++    11: 4,  # R_X86_64_32S
++    12: 2,  # R_X86_64_16
++    13: 2,  # R_X86_64_PC16
++    14: 1,  # R_X86_64_8
++    15: 1,  # R_X86_64_PC8
++    17: 8,  # R_X86_64_DTPOFF64
++    18: 8,  # R_X86_64_TPOFF64
++    19: 4,  # R_X86_64_TLSGD
++    20: 4,  # R_X86_64_TLSLD
++    21: 4,  # R_X86_64_DTPOFF32
++    22: 4,  # R_X86_64_GOTTPOFF
++    23: 4,  # R_X86_64_TPOFF32
++    24: 8,  # R_X86_64_PC64
++    25: 8,  # R_X86_64_GOTOFF64
++    26: 4,  # R_X86_64_GOTPC32
++    27: 8,  # R_X86_64_GOT64
++    28: 8,  # R_X86_64_GOTPCREL64
++    29: 8,  # R_X86_64_GOTPC64
++    30: 8,  # R_X86_64_GOTPLT64
++    31: 8,  # R_X86_64_PLTOFF64
++    32: 4,  # R_X86_64_SIZE32
++    33: 8,  # R_X86_64_SIZE64
++    34: 4,  # R_X86_64_GOTPC32_TLSDESC
++    35: 0,  # R_X86_64_TLSDESC_CALL
++    41: 4,  # R_X86_64_GOTPCRELX
++    42: 4,  # R_X86_64_REX_GOTPCRELX
++    43: 4,  # R_X86_64_CODE_4_GOTPCRELX
++    44: 4,  # R_X86_64_CODE_4_GOTTPOFF
++    45: 4,  # R_X86_64_CODE_4_GOTPC32_TLSDESC
++    50: 4,  # R_X86_64_CODE_6_GOTTPOFF
++}
++
++
+ def pic_relocations(data):
+     """Validate x86_64 ET_REL tables and reject non-PIC ALLOC relocations.
+ 
+@@ -393,13 +490,22 @@ def pic_relocations(data):
+         raise ValueError('ELF section table outside member')
+     sections = [struct.unpack_from('<IIQQQQIIQQ', data, off+i*stride) for i in range(count)]
+     checked, forbidden = 0, []
+-    widths = {1: 8, 10: 4, 11: 4, 12: 2, 14: 1}
++    for section in sections:
++        if section[1] == 0x40000014:
++            raise ValueError('unsupported CREL relocation section')
++        if section[1] not in (0, 8) and section[4] + section[5] > len(data):
++            raise ValueError('ELF section outside member')
+     for section in sections:
+         if section[1] not in (4, 9):
+             continue
+         if section[6] >= count or section[7] >= count:
+             raise ValueError('relocation link/info outside section table')
+         target = sections[section[7]]
++        limit = target[5]
++        if target[2] & 0x800:  # SHF_COMPRESSED: offsets use uncompressed size.
++            if target[5] < 24 or target[4] + 24 > len(data):
++                raise ValueError('short compressed ELF section header')
++            limit = struct.unpack_from('<IIQQ', data, target[4])[2]
+         symbols = sections[section[6]]
+         if (symbols[1] != 2 or symbols[9] != 24 or symbols[5] % 24 or
+                 symbols[4] + symbols[5] > len(data)):
+@@ -412,7 +518,9 @@ def pic_relocations(data):
+         for pos in range(section[4], section[4]+section[5], section[9]):
+             r_offset, info = struct.unpack_from('<QQ', data, pos)
+             kind, symbol_index = info & 0xffffffff, info >> 32
+-            if kind != 0 and r_offset + widths.get(kind, 1) > target[5]:
++            if kind not in X86_64_RELOCATION_WIDTHS:
++                raise ValueError('uncertified x86_64 relocation type: '+str(kind))
++            if kind != 0 and r_offset + X86_64_RELOCATION_WIDTHS[kind] > limit:
+                 raise ValueError('relocation offset outside target section')
+             if symbol_index >= symbol_count:
+                 raise ValueError('relocation symbol index outside table')
+@@ -478,10 +586,11 @@ class Commands:
+             raise RuntimeError('cancelled after: '+self.failure_reason if self.failure_reason else 'cancelled after command failure')
+ 
+     def run(self, argv, prefix, stdout=None):
+-        # Reap the direct child and stop running members of its process group.
+-        # Grandchildren are reaped by PID 1; this code makes no such guarantee.
+-        # Uninterruptible kernel sleep can hold finally indefinitely; the outer
+-        # timeout must handle that case. This is not a subreaper.
++        # Reap the direct child and stop running members of its process group. Orphaned
++        # grandchildren go to the nearest subreaper or PID 1; members that left the
++        # process group are not signalled. SIGKILL is not awaited. Uninterruptible
++        # kernel sleep can hold finally indefinitely; the outer timeout must handle that
++        # case. This is not a subreaper.
+         self.check()
+         prefix = Path(prefix)
+         timing, log = prefix.with_suffix('.time'), prefix.with_suffix('.log')
+@@ -695,7 +804,10 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+     def save():
+         atomic_json(output/'summary.json', summary)
+     save()
+-    old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
++    old_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
++    for sig, handler in old_handlers.items():
++        if handler != signal.SIG_IGN:
++            signal.signal(sig, command.interrupted)
+     try:
+         summary['tools'] = validate_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output)
+         print('NATIVE_ARCHIVES_TOOLS', json.dumps({
+@@ -834,7 +946,10 @@ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+             address_space_bytes=4*1024**3, debug_info=None):
+     root, output = Path(root).resolve(), Path(output).resolve()
+     command = Commands(address_space_bytes)
+-    old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
++    old_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
++    for sig, handler in old_handlers.items():
++        if handler != signal.SIG_IGN:
++            signal.signal(sig, command.interrupted)
+     result = None
+     try:
+         print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
+@@ -893,23 +1008,28 @@ def install_main():
+         global _CANCEL_SIGNAL
+         _CANCEL_SIGNAL = sig
+     signals = (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)
+-    old_handlers = {sig: signal.signal(sig, record_cancel) for sig in signals}
++    old_handlers = {sig: signal.getsignal(sig) for sig in signals}
++    for sig, handler in old_handlers.items():
++        if handler != signal.SIG_IGN:
++            signal.signal(sig, record_cancel)
++    failure = None
+     try:
+-        try:
+-            install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+-                    args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info)
+-        except BaseException:
+-            if _CANCEL_SIGNAL is not None:
+-                traceback.print_exc()
+-                return 128 + _CANCEL_SIGNAL
+-            raise
+-        if _CANCEL_SIGNAL is not None:
+-            print('NATIVE_ARCHIVES_CANCELLED after completion', flush=True)
+-            return 128 + _CANCEL_SIGNAL
+-        return 0
++        install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
++                args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info)
++    except BaseException:
++        failure = sys.exc_info()
+     finally:
+         for sig, handler in old_handlers.items():
+             signal.signal(sig, handler)
++    if _CANCEL_SIGNAL is not None:
++        if failure is not None:
++            traceback.print_exception(*failure)
++        else:
++            print('NATIVE_ARCHIVES_CANCELLED after completion', flush=True)
++        return 128 + _CANCEL_SIGNAL
++    if failure is not None:
++        raise failure[1].with_traceback(failure[2])
++    return 0
+ 
+ 
+ if __name__ == '__main__':
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index d5b1a350dd2a..5a10febabbb3 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -572,7 +572,7 @@ BOLT_INSTALL_ROOT="%{buildroot}"
+ BOLT_PROFILE_SOURCE="%{SOURCE1200}"
+ export BOLT_BUILD BOLT_WORK BOLT_INSTALL_ROOT BOLT_PROFILE_SOURCE
+ bolt_fail() {
+-  python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || true
++  python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || bolt_status_exit $?
+   exit 1
+ }
+ bolt_status_exit() {
+@@ -593,7 +593,7 @@ bolt_checked() {
+     case "$bolt_status" in
+       129|130|143) exit "$bolt_status" ;;
+     esac
+-    printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || true
++    printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || bolt_status_exit $?
+     exit 1
+   fi
+ }

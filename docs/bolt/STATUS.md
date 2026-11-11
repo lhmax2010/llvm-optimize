@@ -1062,3 +1062,14 @@ LOCAL74 已结束 2026-11-10T23:30:01+08:00 status=stopped reason=entry_prefligh
 [77 号](77_qb_1225393_1225395.md)：1225393=Toolchain、1225395=Base-Dev，源码均为60fabc723f30c5cc04146a9dd83487ebed63f259，固定输入快照与1223601/1223602一致，三架构均成功。对fa4f9978：x86_64 34/34、ARM 68/68二进制包载荷全同；两组各225完整归档SHA全同；源码包仅spec/转换器/VCS和授权0008说明变化，PASS。FLAGS/profile同旧QB，WARNING及shell not found、取消/SIGCHLD_RESET均0，NATIVE_ARCHIVES_TOOLS明确三个工具22.1.8且同目录。
 
 ARM对PS7基线1216401/1216400：68/68包PASS，60包全同，8包只含AddLLVM/AddClang精确混合链接文本变化；PS7→PS10仅x86转换器变动，不影响ARM。记录过一次辅助邮件标题断言问题及重复Git读取超时；原文保留，最终均以精确字节证据闭合，未OOM。7706成员由整体归档相同覆盖，未另行逐成员算SHA。未构建、未操作QB、未推Gerrit/sandbox；74号启动前停止仍未解决。后续仍需74号本地完整构建及三家完整评审（设计v6.1+r5）。
+
+
+## 2026-11-11 第五轮评审修复（78 号，测试准备错误停止）
+
+设计 v7 已移动并核对 81285 B / 11dc134f…8d004。源码起点 60fabc72，fixup/autosquash 后本地 HEAD ae4487251aaa00c2ec4edf033cf8c9046d0d4b98；混合链接 8a50d712 不变，尚未完整认证。
+
+helper 已运行 199 项，198 PASS、1 ERROR：本轮测试副本将夹具路径误写为 /review-closure-v3.py，导入失败。计划 499 项，其余 300 项未运行。按门禁停止，无修正重跑、无 OOM；450 归档复扫、10 个 debug 归档转换、两组 census、完整 12/5 检查、r6、sandbox 查询/推送均 NOT RUN。
+
+详见 [78 号](78_fifth_review_fixes.md)。下一步先修正测试输入，再从头重跑全套，不能沿用部分 PASS。上一轮 sandbox 为 60fabc72，本轮没有访问 Gerrit 或更新远端。
+
+FIFTH_REVIEW 已结束 2026-11-11T14:42:18+08:00 status=stopped reason=test_fixture_import_error

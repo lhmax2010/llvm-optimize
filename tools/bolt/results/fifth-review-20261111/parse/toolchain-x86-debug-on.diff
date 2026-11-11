@@ -1,0 +1,20 @@
+--- 60fabc72
++++ fifth-review-fixed
+@@ -437,7 +437,7 @@
+ BOLT_PROFILE_SOURCE="/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/parse/rpmbuild/SOURCES/clang-bolt-v2.fdata.xz"
+ export BOLT_BUILD BOLT_WORK BOLT_INSTALL_ROOT BOLT_PROFILE_SOURCE
+ bolt_fail() {
+-  python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/parse/rpmbuild/SOURCES/clang-bolt-helper.py disk-diagnose "$1" "$2" || true
++  python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/parse/rpmbuild/SOURCES/clang-bolt-helper.py disk-diagnose "$1" "$2" || bolt_status_exit $?
+   exit 1
+ }
+ bolt_status_exit() {
+@@ -458,7 +458,7 @@
+     case "$bolt_status" in
+       129|130|143) exit "$bolt_status" ;;
+     esac
+-    printf '%s\n' "$bolt_output" | python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/parse/rpmbuild/SOURCES/clang-bolt-helper.py disk-diagnose "$bolt_stage" /dev/stdin || true
++    printf '%s\n' "$bolt_output" | python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/parse/rpmbuild/SOURCES/clang-bolt-helper.py disk-diagnose "$bolt_stage" /dev/stdin || bolt_status_exit $?
+     exit 1
+   fi
+ }

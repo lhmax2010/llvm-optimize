@@ -1,0 +1,11 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fourth-review-20261110/resume/test_r3.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/test_r3.py
+@@ -230,7 +230,7 @@
+     b=rel_fixture(kind,True);section_set(b,1,2,flags)
+     self.assertEqual(a.pic_relocations(b)['forbidden'],[])
+  def test_pic_offsets_and_widths(self):
+-  for kind,width in ((1,8),(10,4),(11,4),(12,2),(14,1),(2,1)):
++  for kind,width in ((1,8),(10,4),(11,4),(12,2),(14,1),(2,4)):
+    for offset in (8,2**64-1,9-width):
+     b=rel_fixture(kind,True);struct.pack_into('<Q',b,400,offset)
+     with self.subTest(kind=kind,offset=offset),self.assertRaises(ValueError):a.pic_relocations(b)

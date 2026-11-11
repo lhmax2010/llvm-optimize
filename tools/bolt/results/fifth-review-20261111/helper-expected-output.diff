@@ -1,0 +1,11 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/test_sixth_review.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/helper-suite/test_sixth_review.py
+@@ -37,7 +37,7 @@
+     def test_after_main(self):
+         def work():h.record_cancel(signal.SIGTERM,None)
+         with patch.object(h,'main',side_effect=work),patch.object(h,'disk_diagnose') as disk,contextlib.redirect_stderr(io.StringIO()) as out:
+-            self.assertEqual(h.cli(),143);self.assertIn('CANCELLED: cancelled by signal 15 after work completed',out.getvalue());disk.assert_not_called()
++            self.assertEqual(h.cli(),143);self.assertIn('BOLT_CANCELLED: signal 15',out.getvalue());disk.assert_not_called()
+     def test_after_last_child_no_marker(self):
+         log=self.d/'step.log'
+         def call(*a,**kw):log.write_text('child completed\n');h.record_cancel(signal.SIGTERM,None);return 'child completed\n'
