@@ -301,3 +301,125 @@ FAILED (failures=1)
 下一次 QB 源码包白名单仍为 llvm.spec、clang-bolt-helper.py、llvm-static-archives-native.py、VCS 行；0008 必须不变。当前产品门禁未通过，不能进入推送。
 
 FIFTH_REVIEW_RERUN2 已结束 2026-11-11T15:03:47+08:00 status=stopped reason=converter_missing_sys_import
+
+
+## 8. 第三次续跑（2026-11-11）：import sys 已修正，实物复核驱动断言停止
+
+本节保留前三次停止记录原文。**499/499 项单元与回归测试全部通过；450 个 QB 归档的新旧复扫通过。** 随后的10个debug ThinLTO归档对照在第一个归档上停止：两版输出SHA相同，但我新增的复核驱动误把输出路径字段也纳入相等断言。这是复核驱动的错误，不是转换器新增拒绝。按“任何FAIL停止”的要求，没有修改断言后重跑，没有继续其余归档或推送sandbox。
+
+### 8.1 唯一产品修正与源码身份
+
+在转换器import列表增加import sys，用fixup/autosquash归入第三提交；Change-Id和提交说明不变。[唯一diff](../../tools/bolt/results/fifth-review-20261111/rerun3/import-sys.diff)、[三个提交全文](../../tools/bolt/results/fifth-review-20261111/rerun3/commits.json)。新HEAD相对ae448725仅这一行，工作树干净；前两个提交SHA/tree完全不变。
+
+| 标题 | SHA | tree |
+|---|---|---|
+| cmake: use hybrid LLVM linkage on x86_64 | 8a50d7122346258fd1171d270861a4ae28a8717c | 3d961cbb04f5446f84d2089b4f65f3178f2bd7fa |
+| packaging: optimize x86_64 clang with BOLT | 1e415935a83a187aab7c41f9713115a0974a0365 | c23914776684bf94fdd5961f447f7c24e7bb79bc |
+| packaging: fix x86 LLVM flags and archive mode | fea0fe464d56e17f2c7588c557bfffd9f6ac352b | b2e8af2477cf623a945aa80bf8288a262dd4a5a9 |
+
+[pyflakes记录](../../tools/bolt/results/fifth-review-20261111/rerun3/pyflakes.json)：系统没有pyflakes可执行文件或Python模块，按要求记 **NOT RUN**，没有联网安装；不能据此宣称未定义名字为0。上一轮漏import导致的取消错误由本轮实际测试覆盖。
+
+### 8.2 测试环境与499项全量结果
+
+沿用上次已通过输入预检、源自75号§6.2的环境，复制到W/temp/fifth-review-20261111/rerun3/environment。测试脚本、数据及断言不改；被测三个文件显式指向当前源码，转换器是修正后的版本。[环境来源](../../tools/bolt/results/fifth-review-20261111/rerun3/environment-provenance.json)、[361个依赖的预检](../../tools/bolt/results/fifth-review-20261111/rerun3/input-preflight.json)、[调用环境](../../tools/bolt/results/fifth-review-20261111/rerun3/test-invocation.json)。本轮测试准备问题修正次数 **0/2**；没有沿用之前的部分PASS。
+
+| 套件 | 本次从头运行 | PASS |
+|---|---:|---:|
+| helper | 393 | 393 |
+| 参数/转换器policy | 46 | 46 |
+| release | 5 | 5 |
+| R2 | 12 | 12 |
+| cli | 2 | 2 |
+| R3/R4/R5 | 41 | 41 |
+| 合计 | 499 | 499 |
+
+[汇总](../../tools/bolt/results/fifth-review-20261111/rerun3/test-summary.json)；完整日志：
+[helper](../../tools/bolt/results/fifth-review-20261111/rerun3/helper-tests.log)、[policy](../../tools/bolt/results/fifth-review-20261111/rerun3/policy-tests.log)、
+[release](../../tools/bolt/results/fifth-review-20261111/rerun3/release-tests.log)、[R2](../../tools/bolt/results/fifth-review-20261111/rerun3/r2-tests.log)、
+[cli](../../tools/bolt/results/fifth-review-20261111/rerun3/cli-tests.log)、[R3/R4/R5](../../tools/bolt/results/fifth-review-20261111/rerun3/r3-r4-r5-tests.log)。
+
+上次FAIL的test_cli_mid_conversion_signals本次 **PASS**；41项末套全文以Ran 41 tests / OK结束，包含这次此前未运行的全部新增测试。subTest不单独累计。
+
+所有执行串行在独立systemd用户服务内，MemoryMax=8G、MemorySwapMax=0、CPUQuota=400%、Nice=19、IOSchedulingClass=idle；无OOM、无提高上限。测试和转换清理操作由既有留存运行器转存到本轮scratch，未删除文件。完整构建、QB、sudo均未执行。
+
+499项结束后的一个只读代码查看探针，直接导入本地validate.py时因缺少其同目录import路径报ModuleNotFoundError: No module named 'checks'；随后仅用AST读取loader函数原文。该探针没有运行测试或转换，不计为测试准备修正，没有改任何测试输入或断言。[原文记录](../../tools/bolt/results/fifth-review-20261111/rerun3/inspection-import-error.txt)。
+
+### 8.3 QB 450个归档复扫及第一组census
+
+使用73/77号已经下载的QB1225393/1225395 llvm-static-devel RPM，解包到本轮新目录，不改历史根。每个完整归档SHA、大小核对77号manifest；每个ELF成员重新对照旧版60fabc72与当前版本的elf_details、pic_relocations，不能只以完整归档相同替代本轮检查。
+
+[驱动](../../tools/bolt/results/fifth-review-20261111/rerun3/check_qb_archives.py)、[汇总](../../tools/bolt/results/fifth-review-20261111/rerun3/qb-archive-summary.json)、
+[7728行成员原文](../../tools/bolt/results/fifth-review-20261111/rerun3/qb-archive-members.jsonl.gz)、[进度原文](../../tools/bolt/results/fifth-review-20261111/rerun3/qb-archive-check.stdout)、
+[Toolchain RPM来源](../../tools/bolt/results/fifth-review-20261111/rerun3/toolchain-rpm-source.json)、[Base-Dev RPM来源](../../tools/bolt/results/fifth-review-20261111/rerun3/basedev-rpm-source.json)。
+
+| 项目 | 归档 | ELF成员 | 转换 / 原生 | ALLOC目标受检重定位（新旧各） | census类型数 | .rela.debug_*条目 | 新拒绝 / 表外类型 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Toolchain 1225393 | 225 | 3864 | 3853 / 11 | 3763631 | 11 | 94400431 | 0 / 0 |
+| Base-Dev 1225395 | 225 | 3864 | 3853 / 11 | 3763631 | 9 | 0 | 0 / 0 |
+| 合计 | 450 | 7728 | 7706 / 22 | 7527262 | 11（并集） | 94400431 | 0 / 0 |
+
+两个项目的新旧elf_details和pic_relocations全部一致，转换成员零拒绝；本次原生成员的禁止项也均为0。所有REL/RELA section的独立census共 **101927693** 条，区别于旧API只累计ALLOC目标的checked字段。调试节出现类型1、10、17，没有表外类型。
+
+| 类型编号 | Toolchain全部 | Base-Dev全部 | Toolchain .rela.debug_* |
+|---|---:|---:|---:|
+| 1 | 27841359 | 413317 | 27428042 |
+| 2 | 1331499 | 1331499 | 0 |
+| 4 | 1915123 | 1915123 | 0 |
+| 9 | 59 | 59 | 0 |
+| 10 | 66972360 | 0 | 66972360 |
+| 17 | 29 | 0 | 29 |
+| 19 | 2145 | 2145 | 0 |
+| 20 | 51 | 51 | 0 |
+| 21 | 94 | 94 | 0 |
+| 41 | 33 | 33 | 0 |
+| 42 | 101310 | 101310 | 0 |
+
+结束原文：
+
+~~~text
+已结束 2026-11-11T15:24:13+08:00 status=0 unit=llvm-review78-rerun3-1111-011
+~~~
+
+### 8.4 第二组debug ThinLTO实物验证：驱动断言失败，停止
+
+从63号Toolchain构建树只读复制按大小排序的前10个归档，包含最大的libclangSema.a、libLLVMCodeGen.a、libclangCodeGen.a；原始/副本SHA逐个一致。[完整输入清单](../../tools/bolt/results/fifth-review-20261111/rerun3/debug-inputs.json)。没有在历史根内运行cmake/ninja/gbs。
+
+采用75号§6.4同样的loader包装方式调用平台clang-22、llvm-dis、llvm-nm；三个版本均22.1.8，包装器同目录，完整argv和工具SHA在[单归档结果](../../tools/bolt/results/fifth-review-20261111/rerun3/debug-conversion-00.json)。新旧转换器同一工具、同一输入、debug_info=yes、jobs=1、进程地址空间上限4GiB，外层服务8GiB。
+
+第一个libclangSema.a的两个实际转换都成功：输入348403542 B，86个bitcode成员；两边均converted=86、preserved=0、debug_members=86，输出401030038 B。**两边完整归档SHA都为8de79182e21d90c6351536f717b15ba0174cad1dc1a7798d630a16e1a082f3de。** 这一个归档的字节相同事实已成立，但不能代替10归档完整门禁通过。
+
+随后我编写的[复核脚本](../../tools/bolt/results/fifth-review-20261111/rerun3/convert_debug_archive.py)第47行误用：
+
+~~~python
+a=new.inspect(outputs['old']);b=new.inspect(outputs['new']);assert a==b
+~~~
+
+inspect()含来源path，两次转换的输出目录本来不同。停止后的[只读定位](../../tools/bolt/results/fifth-review-20261111/rerun3/debug-conversion-failure-diagnosis.json)确认唯一不同字段是：
+
+~~~text
+old: .../rerun3/debug-conversion-00/old/archives/libclangSema.a
+new: .../rerun3/debug-conversion-00/new/archives/libclangSema.a
+~~~
+
+该断言错误属于我的复核驱动，不是产品失败；它已进入实际结果判定，不能使用仅允许输入/路径/import准备ERROR修正的例外。没有修改测试预期或比较逻辑后重跑。[完整原文](../../tools/bolt/results/fifth-review-20261111/rerun3/debug-conversion-00.stdout)：
+
+~~~text
+a=new.inspect(outputs['old']);b=new.inspect(outputs['new']);assert a==b
+AssertionError
+DEBUG_CONVERSION 已结束 2026-11-11T15:33:39.766883+08:00 archive=libclangSema.a status=failed
+已结束 2026-11-11T15:33:39+08:00 status=1 unit=llvm-review78-rerun3-1111-016
+~~~
+
+其余9个归档未转换；第二组独立.rela.debug_* census未执行，类型数、条数、表外类型有无均 **UNKNOWN**，不能借用§8.3的发货归档数据。两份输出及全部中间文件保留。
+
+### 8.5 未运行项、推送及下一轮白名单
+
+- 第三步完整12组spec展开、5项Tizen RPM解析：**NOT RUN**。499项测试所需的既有展开输入不能替代此整项重跑。
+- 第三步独立提交说明72列/trailer检查：**NOT RUN**。回归套件里的提交说明测试已PASS，但不冒充独立检查。
+- r6评审包、SHA256SUMS及其校验：**NOT RUN**，未生成未认证的评审包。
+- sandbox推送前/后ls-remote、359934/357163查询、sandbox推送：**NOT RUN**。本轮没有远端SHA新观测；历史记录为60fabc723f30c5cc04146a9dd83487ebed63f259，不能声称本轮已复查。
+- 没有运行完整构建，不操作QB，不执行sudo；历史输入只读，不删除文件，不改VS Code配置。
+- 后续下一次QB源码包白名单仍为：llvm.spec、clang-bolt-helper.py、llvm-static-archives-native.py、VCS行；**0008必须不变**。
+- 当前停点是复核驱动的路径字段断言；尚未满足进入评审包和sandbox推送的条件。
+
+FIFTH_REVIEW_RERUN3 已结束 2026-11-11T15:39:20+08:00 status=stopped reason=verification_driver_compared_output_path

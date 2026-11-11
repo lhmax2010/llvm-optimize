@@ -1091,3 +1091,14 @@ FIFTH_REVIEW_RESUME 已结束 2026-11-11T14:50:27+08:00 status=stopped reason=mi
 test_cli_mid_conversion_signals：SIGTERM应返回143，实际1。转换器 install_main 使用 sys.exc_info() 但没有 import sys，原取消异常被 NameError 覆盖。这是产品实现错误，已停止，不改代码、不调整预期、不重试。源码仍ae448725/tree bea0348f且干净。450归档、10个debug库、两组census、完整12/5检查、r6、sandbox查询/推送均NOT RUN，无OOM。详见 [78号第二次续跑](78_fifth_review_fixes.md)。
 
 FIFTH_REVIEW_RERUN2 已结束 2026-11-11T15:03:47+08:00 status=stopped reason=converter_missing_sys_import
+
+
+## 2026-11-11 第五轮第三次续跑（78号§8）：499项通过，实物复核驱动断言停止
+
+仅补转换器import sys，fixup/autosquash后本地HEAD **fea0fe464d56e17f2c7588c557bfffd9f6ac352b** / tree **b2e8af2477cf623a945aa80bf8288a262dd4a5a9**；前两提交8a50d712、1e415935及tree不变，说明/Change-Id不变，工作树干净。pyflakes未安装，按指令NOT RUN。
+
+499/499从头PASS（393+46+5+12+2+41），准备修正0次，上次test_cli_mid_conversion_signals已PASS。450个QB归档/7728成员（7706转换+22原生）新旧检查全同，零新增拒绝；第一组census共11种类型、94400431条调试节重定位，无表外类型。
+
+已复制63号最大的10个ThinLTO库。首个libclangSema.a新旧转换均成功，86成员、完整归档SHA同为8de79182…f3de；随后复核驱动把inspect结果中的old/new输出path也作相等断言，触发AssertionError。只读定位唯一差异是path字段，是执行方的复核驱动错误。按停止规则未改断言重跑；其余9库、第二组census、12展开/5解析、r6和sandbox查询/推送均NOT RUN。无OOM，未构建或操作QB，现场保留。详见[78号第三次续跑](78_fifth_review_fixes.md#8-第三次续跑2026-11-11import-sys-已修正实物复核驱动断言停止)。
+
+FIFTH_REVIEW_RERUN3 已结束 2026-11-11T15:39:20+08:00 status=stopped reason=verification_driver_compared_output_path
