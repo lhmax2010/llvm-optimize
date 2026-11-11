@@ -1,0 +1,161 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fourth-review-20261110/resume/test_r3.py
++++ /home/linhao/Toolchain/development/llvm-optimize/temp/fifth-review-20261111/rerun2/environment/test_r3.py
+@@ -230,7 +230,7 @@
+     b=rel_fixture(kind,True);section_set(b,1,2,flags)
+     self.assertEqual(a.pic_relocations(b)['forbidden'],[])
+  def test_pic_offsets_and_widths(self):
+-  for kind,width in ((1,8),(10,4),(11,4),(12,2),(14,1),(2,1)):
++  for kind,width in ((1,8),(10,4),(11,4),(12,2),(14,1),(2,4)):
+    for offset in (8,2**64-1,9-width):
+     b=rel_fixture(kind,True);struct.pack_into('<Q',b,400,offset)
+     with self.subTest(kind=kind,offset=offset),self.assertRaises(ValueError):a.pic_relocations(b)
+@@ -440,8 +440,148 @@
+   self.assertFalse(any(row['state']=='running' for row in group))
+   observed.append(dict(case='process-states-immediate',rows=rows,group=group))
+ 
++
++class R5(unittest.TestCase):
++ def test_diagnostic_cancellation_status_matrix(self):
++  text=(E/'post-expanded.stdout').read_text()
++  functions=text[text.index('bolt_fail() {'):text.index('bolt_step() {')]
++  results=[]
++  for shell in ('/bin/sh','/bin/dash','/bin/bash'):
++   for fn in ('bolt_fail fixture -','bolt_checked fixture - /bin/false'):
++    for mode in ('status','signal'):
++     for code in ((0,1,2,129,130,143) if mode=='status' else (1,2,15)):
++      py=('import sys;sys.exit('+str(code)+')' if mode=='status' else
++          'import importlib.util,os,signal,sys;s=importlib.util.spec_from_file_location("h",sys.argv[1]);h=importlib.util.module_from_spec(s);s.loader.exec_module(h);h.main=lambda:os.kill(os.getpid(),'+str(code)+');sys.exit(h.cli())')
++      cmd=shlex.join([sys.executable,'-B','-c',py,str(S/'packaging/clang-bolt-helper.py')])
++      body=re.sub(r'python3 -B \S+ disk-diagnose (?:.*?)(?= \|\| bolt_status_exit)',lambda _:cmd,functions)
++      self.assertNotIn('disk-diagnose',body)
++      result=subprocess.run([shell,'-e','-c',body+'\n'+fn+'\necho AFTER_DIAG\n'],capture_output=True,text=True,timeout=10)
++      expected=128+code if mode=='signal' else code if code in (129,130,143) else 1
++      self.assertEqual(result.returncode,expected,(shell,fn,mode,code,result.stderr))
++      self.assertNotIn('AFTER_DIAG',result.stdout)
++      results.append(dict(shell=shell,function=fn,mode=mode,input=code,expected=expected,rc=result.returncode,stdout=result.stdout,stderr=result.stderr))
++  observed.append(dict(case='diagnostic-status-matrix',rows=results))
++ def entry_probe(self,tool,mode,sig,ignored=False,late=True):
++  source=S/'packaging'/('clang-bolt-helper.py' if tool=='helper' else 'llvm-static-archives-native.py')
++  program=r'''import importlib.util,os,signal,sys
++tool,mode,sig,ignored,late=sys.argv[2:];sig=int(sig);ignored=ignored=='True';late=late=='True'
++if ignored:signal.signal(signal.SIGHUP,signal.SIG_IGN)
++elif sig:signal.signal(sig,signal.SIG_DFL)
++sp=importlib.util.spec_from_file_location('m',sys.argv[1]);m=importlib.util.module_from_spec(sp);sp.loader.exec_module(m)
++original=signal.signal
++handlers={s:signal.getsignal(s) for s in (signal.SIGTERM,signal.SIGHUP,signal.SIGINT)}
++state={'armed':False,'sent':False}
++def intercept(s,h):
++ if h==handlers.get(s) and state['armed'] and not state['sent'] and late and sig:
++  state['sent']=True;os.kill(os.getpid(),sig);print('REAL_SIGNAL_BEFORE_RESTORE',sig,flush=True)
++ result=original(s,h)
++ if h!=handlers.get(s):state['armed']=True
++ return result
++signal.signal=intercept
++def work(*args,**kwargs):
++ if not late and sig:os.kill(os.getpid(),sig);print('AFTER_SIGNAL',flush=True)
++ if mode=='known':raise (m.GateError('known failure') if tool=='helper' else RuntimeError('known failure'))
++ if mode=='unexpected':raise KeyError('unexpected failure')
++if tool=='helper':
++ m.main=work;m.diagnose_safely=lambda *a,**k:None;rc=m.cli()
++else:
++ m.install=work
++ sys.argv=['converter','--root','/unused','--build','/unused','--evidence','/unused','--arch','x86_64','--debug-info','no','--compiler','/unused/clang','--disassembler','/unused/llvm-dis','--nm','/unused/llvm-nm']
++ rc=m.install_main()
++print('RETURNED',rc,flush=True);sys.exit(rc)
++'''
++  result=subprocess.run([sys.executable,'-B','-c',program,str(source),tool,mode,str(sig),str(ignored),str(late)],capture_output=True,text=True,timeout=15)
++  observed.append(dict(case='entry-window',tool=tool,mode=mode,signal=sig,ignored=ignored,late=late,rc=result.returncode,stdout=result.stdout,stderr=result.stderr))
++  return result
++ def test_late_window_real_signals(self):
++  for tool in ('helper','converter'):
++   for mode in ('normal','known','unexpected'):
++    for sig in (15,1,2):
++     with self.subTest(tool=tool,mode=mode,sig=sig):
++      r=self.entry_probe(tool,mode,sig)
++      self.assertEqual(r.returncode,128+sig,r.stderr);self.assertIn('REAL_SIGNAL_BEFORE_RESTORE',r.stdout)
++      if tool=='helper':self.assertIn('BOLT_CANCELLED: signal '+str(sig),r.stderr)
++      elif mode=='normal':self.assertIn('NATIVE_ARCHIVES_CANCELLED after completion',r.stdout)
++      if mode=='unexpected' or (tool=='converter' and mode=='known'):self.assertIn('Traceback',r.stderr)
++ def test_no_signal_entry_behaviour(self):
++  for tool in ('helper','converter'):
++   for mode in ('normal','known','unexpected'):
++    r=self.entry_probe(tool,mode,0)
++    self.assertEqual(r.returncode,0 if mode=='normal' else 1,r.stderr)
++    self.assertNotIn('CANCELLED',r.stdout+r.stderr)
++    if mode=='unexpected':self.assertIn("KeyError: 'unexpected failure'",r.stderr)
++    if tool=='helper' and mode=='known':self.assertNotIn('Traceback',r.stderr)
++ def test_inherited_hup_ignored_default_cancelled(self):
++  for tool in ('helper','converter'):
++   for ignored in (True,False):
++    r=self.entry_probe(tool,'normal',1,ignored,False)
++    self.assertEqual(r.returncode,0 if ignored else 129,r.stderr)
++    self.assertIn('AFTER_SIGNAL',r.stdout)
++ def test_exact_relocation_width_boundaries(self):
++  for kind,width in ((2,4),(4,4),(9,4),(13,2),(24,8)):
++   for offset in range(8-width,9):
++    b=rel_fixture(kind,True);struct.pack_into('<Q',b,400,offset)
++    with self.subTest(kind=kind,offset=offset):
++     if offset==8-width:self.assertEqual(a.pic_relocations(b)['forbidden'],[])
++     else:
++      with self.assertRaisesRegex(ValueError,'offset outside'):a.pic_relocations(b)
++  b=rel_fixture(0);struct.pack_into('<Q',b,400,2**64-1)
++  self.assertEqual(a.pic_relocations(b)['forbidden'],[])
++ def test_uncertified_dynamic_and_unknown(self):
++  for kind in (5,6,7,8,16,36,37,38,39,40,46,49,999):
++   with self.subTest(kind=kind),self.assertRaisesRegex(ValueError,'uncertified x86_64 relocation type'):
++    a.pic_relocations(rel_fixture(kind))
++ def test_section_payload_and_nobits(self):
++  b=rel_fixture();section_set(b,1,4,len(b)+100)
++  with self.assertRaisesRegex(ValueError,'section outside'):a.pic_relocations(b)
++  section_set(b,1,1,8)
++  self.assertEqual(a.pic_relocations(b)['forbidden'],[])
++ def test_compressed_header_and_uncompressed_limit(self):
++  b=rel_fixture();section_set(b,1,2,0x800);section_set(b,1,5,23)
++  with self.assertRaisesRegex(ValueError,'short compressed'):a.pic_relocations(b)
++  section_set(b,1,5,24);struct.pack_into('<IIQQ',b,320,1,0,100,1)
++  struct.pack_into('<Q',b,400,96)
++  self.assertEqual(a.pic_relocations(b)['forbidden'],[])
++  struct.pack_into('<Q',b,400,97)
++  with self.assertRaisesRegex(ValueError,'offset outside'):a.pic_relocations(b)
++ def test_real_compressed_and_uncompressed_debug(self):
++  d,tools,bc=R4.real();root=d/'compressed-fixtures';root.mkdir()
++  source=root/'fixture.c';source.write_text(''.join('int fixture_long_name_%03d(int x){return x+%d;}\n'%(i,i) for i in range(250)))
++  rows=[]
++  for mode in ('none','zlib'):
++   output=root/(mode+'.o')
++   cmd=[str(tools['clang-22']),'-g','-gdwarf-4','-gz='+mode,'-c',str(source),'-o',str(output)]
++   p=subprocess.run(cmd,capture_output=True,text=True,timeout=60);self.assertEqual(p.returncode,0,p.stderr)
++   data=output.read_bytes();self.assertEqual(a.pic_relocations(data)['forbidden'],[])
++   off=struct.unpack_from('<Q',data,40)[0];stride,count=struct.unpack_from('<HH',data,58)
++   sections=[struct.unpack_from('<IIQQQQIIQQ',data,off+i*stride) for i in range(count)]
++   compressed=sum(bool(s[2]&0x800) for s in sections)
++   self.assertGreater(compressed,0) if mode=='zlib' else self.assertEqual(compressed,0)
++   rows.append(dict(argv=cmd,bytes=len(data),compressed_sections=compressed,sha256=a.sha(output)))
++  observed.append(dict(case='real-compressed-debug',rows=rows))
++ def test_crel_rejected(self):
++  b=rel_fixture();section_set(b,3,1,0x40000014)
++  with self.assertRaisesRegex(ValueError,'unsupported CREL relocation section'):a.pic_relocations(b)
++ def test_elf_details_symbol_link(self):
++  b=bytearray(native());off=struct.unpack_from('<Q',b,40)[0];stride,count=struct.unpack_from('<HH',b,58)
++  for i in range(count):
++   row=list(struct.unpack_from('<IIQQQQIIQQ',b,off+i*stride))
++   if row[1]==2:
++    row[6]=count;struct.pack_into('<IIQQQQIIQQ',b,off+i*stride,*row);break
++  else:self.fail('fixture lacks SYMTAB')
++  with self.assertRaisesRegex(ValueError,'symbol table link outside'):a.elf_details(b)
++ def test_ar_decimal_names(self):
++  for name in ('/2_1','/+21','#1/+4','#1/0_4'):
++   p=X/('r5-'+name.replace('/','_')+'.a')
++   p.write_bytes(b'!<arch>\n'+member('//',b'longname.o/\n'*4)+member(name,b'abcdBC\xc0\xde'))
++   with self.subTest(name=name),self.assertRaisesRegex(ValueError,'ar long-name number'):a.inspect(p)
++  for name in ('#1/+4','#1/0_4'):
++   p=X/('thin-r5-'+name.replace('/','_')+'.a');p.write_bytes(b'!<thin>\n'+ar_header(name,8)+b'abcd')
++   with self.assertRaisesRegex(ValueError,'ar long-name number'):a.inspect(p)
++
++
+ if __name__=='__main__':
+- result=unittest.TextTestRunner(verbosity=2).run(unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(R3),unittest.defaultTestLoader.loadTestsFromTestCase(R4)]))
++ result=unittest.TextTestRunner(verbosity=2).run(unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(R3),unittest.defaultTestLoader.loadTestsFromTestCase(R4),unittest.defaultTestLoader.loadTestsFromTestCase(R5)]))
+  (E/'r3-observed.json').write_text(json.dumps(observed,indent=2)+'\n')
+  (E/'r3-result.json').write_text(json.dumps(dict(tests=result.testsRun,failures=len(result.failures),errors=len(result.errors),PASS=result.wasSuccessful()),indent=2)+'\n')
+  sys.exit(not result.wasSuccessful())

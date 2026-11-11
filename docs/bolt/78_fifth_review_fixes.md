@@ -210,3 +210,94 @@ FAILED (errors=1)
 下一次 QB 源码包白名单保持：llvm.spec、clang-bolt-helper.py、llvm-static-archives-native.py、VCS 行；0008 必须不变。本轮测试门禁未通过，不能进入推送阶段。后续需要完整盘点测试套件的所有只读依赖，再从头运行，不沿用本轮部分 PASS。
 
 FIFTH_REVIEW_RESUME 已结束 2026-11-11T14:50:27+08:00 status=stopped reason=missing_test_input_debug_census
+
+
+## 7. 第二次续跑（2026-11-11）：产品取消路径 FAIL，停止
+
+本节保留前两次停止的全部原文。**本次准备问题修正次数为 0；计划 499 项，实际运行 475 项，474 PASS、1 FAIL，余下 24 项未运行。** 失败属于产品实现错误，不能按用户允许的“准备问题最多修正两次”处理。没有修改源码或提交说明，没有修改预期或重试，没有推送 sandbox。
+
+### 7.1 起点与测试环境
+
+源码起点及结束时均为 ae4487251aaa00c2ec4edf033cf8c9046d0d4b98，tree bea0348f632ba68d995af66c53fe13b978852009，工作树干净；三个提交仍与 §2 完全一致。[身份记录](../../tools/bolt/results/fifth-review-20261111/rerun2/source-identity.json)。
+
+按用户的新做法，完整复制 75 号 §6.2 的环境目录 tools/bolt/results/fourth-review-20261110/resume（282 个文件，8,102,162 B），到 W/temp/fifth-review-20261111/rerun2/environment。逐文件核对复制前后 SHA；旧环境及历史根只读。保留原输入目录所指向的历史证据；本轮输出、scratch 单独落到 rerun2。复制的历史结果只是环境留存，不计入本次 PASS。
+
+[环境复制清单](../../tools/bolt/results/fifth-review-20261111/rerun2/environment-copy.json)、[完整调用环境](../../tools/bolt/results/fifth-review-20261111/rerun2/test-invocation.json)、[套件驱动](../../tools/bolt/results/fifth-review-20261111/rerun2/run_suite.py)。PATH、host-tools/cmake 版本和 SHA 与 75 号相同。被测文件显式指向当前源码目录的 llvm.spec、clang-bolt-helper.py 和 llvm-static-archives-native.py，未以旧副本代替产品。
+
+加入的是第五轮已准备的新增用例；继承原先已经授权的 BOLT_CANCELLED 输出预期、PC32 宽度 (2,4) 及 R5 用例，未再调整测试数据或断言。补入完整环境本来具有的 debug-census.json，而不是生成新的输入。原输入指向的真实 recorded command 存在且 SHA 与记录相同。
+
+### 7.2 输入预检
+
+[预检 JSON](../../tools/bolt/results/fifth-review-20261111/rerun2/input-preflight.json)记录 361 个现有依赖，[读取表达式清单](../../tools/bolt/results/fifth-review-20261111/rerun2/read-expression-inventory.json)记录 187 处读取调用。检查范围包括：
+
+- 所复制的完整环境、测试模块、三份当前产品、历史 helper 和转换器；
+- helper 的 Path/results 组合、动态生成名字的 review4-macro 压缩展开、JSON 图与历史日志；所有压缩夹具已实际解压读取；
+- debug-census.json 及其选中成员的 ir-settings.json，核对 SHA；
+- Base-Dev 真实 release 成员来源 summary.json、选中的 ThinLTO 库、平台 clang/llvm-dis/llvm-nm/llvm-as、loader 和库目录；
+- 环境变量 PATH 所用目录、TEST_SCRATCH 新根、Python、sh/dash/bash、prlimit 和 CMake；
+- glob / proc / 临时文件读取分别记录：临时输入由未改动的 setUp/fixture 写入后读取，不能要求它们在 fixture 尚未生成前已经存在；/proc 进程状态在执行期间检查。
+
+显式平台 post 宏重新展开，5 个可选调用齐全，[输入 SHA 与调用行](../../tools/bolt/results/fifth-review-20261111/rerun2/post-input.json)。本轮没有输入缺失、路径错误或 import 失败，故“准备问题修正后从头重跑”的次数为 **0/2**。之前两轮错误记录仍保留在 §4、§6，不算本轮的两次额度。
+
+### 7.3 全部从头运行的实际结果
+
+所有命令串行位于独立 systemd 用户服务，MemoryMax=8G、MemorySwapMax=0、CPUQuota=400%、Nice=19、IOSchedulingClass=idle。无 OOM、无提高上限。测试临时文件保留，原清理操作由既有留存运行器转存，没有删除文件。
+
+| 套件 | 计划 | 已运行 | PASS | FAIL | 未运行 |
+|---|---:|---:|---:|---:|---:|
+| helper | 393 | 393 | 393 | 0 | 0 |
+| policy | 46 | 46 | 46 | 0 | 0 |
+| release | 5 | 5 | 5 | 0 | 0 |
+| r2 | 12 | 12 | 12 | 0 | 0 |
+| cli | 2 | 2 | 2 | 0 | 0 |
+| r3-r4-r5 | 41 | 17 | 16 | 1 | 24 |
+| 合计 | 499 | 475 | 474 | 1 | 24 |
+
+[汇总 JSON](../../tools/bolt/results/fifth-review-20261111/rerun2/test-summary.json)。六份完整日志：
+[helper](../../tools/bolt/results/fifth-review-20261111/rerun2/helper-tests.log)、
+[参数/转换器](../../tools/bolt/results/fifth-review-20261111/rerun2/policy-tests.log)、
+[release](../../tools/bolt/results/fifth-review-20261111/rerun2/release-tests.log)、
+[R2](../../tools/bolt/results/fifth-review-20261111/rerun2/r2-tests.log)、
+[cli](../../tools/bolt/results/fifth-review-20261111/rerun2/cli-tests.log)、
+[R3/R4/R5](../../tools/bolt/results/fifth-review-20261111/rerun2/r3-r4-r5-tests.log)。
+
+前五套全部通过。最后一套完成 14 个 R3、R4 的前 2 个方法，在第 17 个方法 test_cli_mid_conversion_signals 触发 FAIL；后续 R4 和全部 R5 未运行。subTest 不单独累计到 499。
+
+### 7.4 产品 FAIL 的原文与原因
+
+[完整 failure.txt](../../tools/bolt/results/fifth-review-20261111/rerun2/failure.txt)：
+
+~~~text
+FAIL: test_cli_mid_conversion_signals (__main__.R4.test_cli_mid_conversion_signals)
+AssertionError: 1 != 143
+RuntimeError: cancelled before process launch
+
+During handling of the above exception, another exception occurred:
+
+File ".../packaging/llvm-static-archives-native.py", line 1020, in install_main
+    failure = sys.exc_info()
+              ^^^
+NameError: name 'sys' is not defined. Did you forget to import 'sys'?
+
+Ran 17 tests in 18.700s
+FAILED (failures=1)
+已结束 2026-11-11T15:01:23+08:00 status=1 unit=llvm-review78-rerun2-1111-010
+~~~
+
+该用例使用真实 release bitcode 成员，在 disassemble 命令阶段发送真实 SIGTERM。产品先捕获了取消引起的 RuntimeError，但 install_main 新增的异常保存语句使用 sys.exc_info()，文件头却没有 import sys。因此它再次抛出 NameError，未走到最终的 128+SIGTERM=143，进程实际返回 1。
+
+这是本轮第五轮代码实现的遗漏，不是 fixture 准备问题，也不是需要放宽断言的情况。按用户规则立即停止；没有补 import、没有 amend、没有重试。正常完成后取消的先前用例通过，不代表异常取消路径通过。
+
+### 7.5 未运行检查与推送边界
+
+- QB 1225393/1225395 的 450 归档实物新旧复扫、ELF 成员重定位 census：NOT RUN，类型种类数及表外类型有无为 UNKNOWN。
+- 至少 10 个真实 debug ThinLTO 库的新旧转换、字节对照、.rela.debug_* 条数和类型 census：NOT RUN。单成员取消夹具不能替代该项。
+- 完整 12 组 spec 展开、5 项 RPM 解析：NOT RUN；仅测试准备所需的首个 T debug-on 与 post 展开执行。
+- 第三步独立提交说明检查：NOT RUN；既有 R3 的 test_messages 在本次测试中通过，但不冒充后续整项已执行。
+- r6 包、SHA256SUMS、sandbox 推送前后 ls-remote、359934/357163 查询及推送：NOT RUN。
+- 本次没有远端 SHA 新观测；上次记录的 sandbox 为 60fabc723f30c5cc04146a9dd83487ebed63f259，未声称本次已复查。
+- 源码及说明保持原样，未运行完整构建、未操作 QB、未执行 sudo、未修改 VS Code 配置。
+
+下一次 QB 源码包白名单仍为 llvm.spec、clang-bolt-helper.py、llvm-static-archives-native.py、VCS 行；0008 必须不变。当前产品门禁未通过，不能进入推送。
+
+FIFTH_REVIEW_RERUN2 已结束 2026-11-11T15:03:47+08:00 status=stopped reason=converter_missing_sys_import

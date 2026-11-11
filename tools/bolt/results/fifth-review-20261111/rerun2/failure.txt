@@ -1,0 +1,48 @@
+FAIL: test_cli_mid_conversion_signals (__main__.R4.test_cli_mid_conversion_signals)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/fifth-review-20261111/rerun2/environment/test_r3.py", line 358, in test_cli_mid_conversion_signals
+    self.assertEqual(result.returncode,128+sig,result.stderr);self.assertIn('Traceback',result.stderr)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 143 : Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/llvm-static-archives-native.py", line 1017, in install_main
+    install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/llvm-static-archives-native.py", line 956, in install
+    result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command, debug_info)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/llvm-static-archives-native.py", line 883, in convert
+    results.append(future.result())
+                   ^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/llvm-static-archives-native.py", line 858, in process
+    command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/fifth-review-20261111/rerun2/r3-r4-r5-tests/cases/real/during-15/probe.py", line 23, in run
+    return original_run(self,argv,prefix,stdout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/llvm-static-archives-native.py", line 604, in run
+    raise RuntimeError('cancelled before process launch')
+RuntimeError: cancelled before process launch
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/fifth-review-20261111/rerun2/r3-r4-r5-tests/cases/real/during-15/probe.py", line 25, in <module>
+    try:sys.exit(a.install_main())
+                 ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/llvm-static-archives-native.py", line 1020, in install_main
+    failure = sys.exc_info()
+              ^^^
+NameError: name 'sys' is not defined. Did you forget to import 'sys'?
+
+
+----------------------------------------------------------------------
+Ran 17 tests in 18.700s
+
+FAILED (failures=1)

@@ -1,0 +1,205 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fourth-review-20261110/resume/baseline-llvm-static-archives-native.py
++++ /home/linhao/Toolchain/development/llvm-optimize/temp/fifth-review-20261111/rerun2/environment/baseline-llvm-static-archives-native.py
+@@ -28,6 +28,9 @@
+ import tempfile
+ import threading
+ import time
++import traceback
++
++_CANCEL_SIGNAL = None
+ 
+ 
+ def cstring(data, offset):
+@@ -71,6 +74,8 @@
+         count = zero[5]
+     if names_idx == 0xffff:
+         names_idx = zero[6]
++    if names_idx >= count:
++        raise ValueError('ELF section name index outside table')
+     sections = [struct.unpack_from(fmt, data, shoff+i*entsize) for i in range(count)]
+     def contents(section):
+         start, size = section[4:6]
+@@ -108,9 +113,9 @@
+             start = pos; header = data[pos:pos+60]
+             if len(header) != 60 or header[58:60] != b'`\n':
+                 raise ValueError(f'invalid ar header at {pos}')
++            if not re.fullmatch(rb'[0-9]+ *', header[48:58]):
++                raise ValueError('invalid ar member size field')
+             name = header[:16].decode('ascii').rstrip(); size = int(header[48:58]); pos += 60
+-            if size < 0:
+-                raise ValueError('negative ar member size')
+             special = name in ('/', '//', '/SYM64/')
+             stored_size = size if not thin or special else (int(name[3:]) if name.startswith('#1/') else 0)
+             if stored_size < 0 or stored_size > len(data)-pos:
+@@ -137,6 +142,8 @@
+                 n = int(name[1:])
+                 if not 0 <= n < len(longnames):
+                     raise ValueError('GNU long name offset outside table')
++                if n and longnames[n-1:n] != b'\n':
++                    raise ValueError('GNU long name offset inside entry')
+                 end = longnames.find(b'/\n', n)
+                 if end < 0:
+                     raise ValueError('invalid GNU long name')
+@@ -364,27 +371,35 @@
+ 
+ 
+ def pic_relocations(data):
+-    """Reject absolute relocations in read-only allocated x86_64 sections.
+-
+-    Debug relocations are excluded. Absolute 32-bit relocations against
+-    non-absolute symbols are also rejected in writable allocated sections.
+-    PC-relative relocations are not all forbidden: e.g. hidden symbols and
+-    .eh_frame legitimately use them. A consumer GNU ld -shared check follows.
++    """Validate x86_64 ET_REL tables and reject non-PIC ALLOC relocations.
++
++    Absolute 8-, 16- and 32-bit relocations against non-absolute symbols
++    are forbidden in both writable and read-only ALLOC sections; 64-bit
++    absolute relocations are forbidden in read-only ALLOC sections.
++    SHN_ABS references remain allowed. Debug sections are excluded from
++    the PIC policy, but all relocation indexes and target byte ranges are
++    validated. PC-relative relocations may be legitimate (e.g. .eh_frame).
+     """
+-    if member_kind(data) != 'machine' or data[4:6] != b'\x02\x01' or struct.unpack_from('<H', data, 18)[0] != 62:
++    if (len(data) < 64 or member_kind(data) != 'machine' or
++            data[4:6] != b'\x02\x01' or struct.unpack_from('<H', data, 18)[0] != 62):
+         raise ValueError('not x86_64 ELF64 little-endian ET_REL')
+     off = struct.unpack_from('<Q', data, 40)[0]
+     stride, count = struct.unpack_from('<HH', data, 58)
++    if not off or stride != 64 or off + 64 > len(data):
++        raise ValueError('invalid ELF section table')
+     if not count:
+         count = struct.unpack_from('<IIQQQQIIQQ', data, off)[5]
++    if not count or count > (len(data)-off) // stride:
++        raise ValueError('ELF section table outside member')
+     sections = [struct.unpack_from('<IIQQQQIIQQ', data, off+i*stride) for i in range(count)]
+     checked, forbidden = 0, []
++    widths = {1: 8, 10: 4, 11: 4, 12: 2, 14: 1}
+     for section in sections:
+         if section[1] not in (4, 9):
+             continue
++        if section[6] >= count or section[7] >= count:
++            raise ValueError('relocation link/info outside section table')
+         target = sections[section[7]]
+-        if not target[2] & 2:  # SHF_ALLOC; excludes all debug sections
+-            continue
+         symbols = sections[section[6]]
+         if (symbols[1] != 2 or symbols[9] != 24 or symbols[5] % 24 or
+                 symbols[4] + symbols[5] > len(data)):
+@@ -395,14 +410,18 @@
+             raise ValueError('invalid relocation table')
+         symbol_count = symbols[5] // 24
+         for pos in range(section[4], section[4]+section[5], section[9]):
+-            _, info = struct.unpack_from('<QQ', data, pos)
++            r_offset, info = struct.unpack_from('<QQ', data, pos)
+             kind, symbol_index = info & 0xffffffff, info >> 32
++            if kind != 0 and r_offset + widths.get(kind, 1) > target[5]:
++                raise ValueError('relocation offset outside target section')
+             if symbol_index >= symbol_count:
+                 raise ValueError('relocation symbol index outside table')
+             symbol = struct.unpack_from('<IBBHQQ', data, symbols[4]+symbol_index*symbols[9])
++            if not target[2] & 2:
++                continue
+             checked += 1
+             # SHN_ABS references do not need runtime relocation.
+-            if symbol[3] != 0xfff1 and (kind in (10, 11) or (kind == 1 and not target[2] & 1)):
++            if symbol[3] != 0xfff1 and (kind in (10, 11, 12, 14) or (kind == 1 and not target[2] & 1)):
+                 forbidden.append(dict(type=kind, target_section=section[7], symbol_index=symbol_index))
+     return dict(checked=checked, forbidden=forbidden)
+ 
+@@ -434,6 +453,8 @@
+ 
+     def interrupted(self, sig, frame):
+         # Python handlers run in the main thread: never acquire a worker lock here.
++        global _CANCEL_SIGNAL
++        _CANCEL_SIGNAL = sig
+         self.signal_received = sig
+ 
+     def cancel(self, reason=None):
+@@ -457,6 +478,10 @@
+             raise RuntimeError('cancelled after: '+self.failure_reason if self.failure_reason else 'cancelled after command failure')
+ 
+     def run(self, argv, prefix, stdout=None):
++        # Reap the direct child and stop running members of its process group.
++        # Grandchildren are reaped by PID 1; this code makes no such guarantee.
++        # Uninterruptible kernel sleep can hold finally indefinitely; the outer
++        # timeout must handle that case. This is not a subreaper.
+         self.check()
+         prefix = Path(prefix)
+         timing, log = prefix.with_suffix('.time'), prefix.with_suffix('.log')
+@@ -599,6 +624,8 @@
+     full_version = re.search(r'clang version (\d+\.\d+\.\d+)\b', text)
+     if not full_version:
+         raise ValueError('missing complete clang version: '+text.strip())
++    tool_versions = {'compiler': full_version[1]}
++    version_texts = {'compiler': text}
+     for label, tool in [('disassembler', disassembler), ('nm', nm)]:
+         tool_version = output/(label+'-version.txt')
+         with tool_version.open('wb') as stream:
+@@ -608,8 +635,12 @@
+         if not match or match[1] != full_version[1]:
+             raise ValueError('%s version mismatch: expected %s, found %s' %
+                              (label, full_version[1], match[1] if match else tool_text.strip()))
++        tool_versions[label] = match[1]
++        version_texts[label] = tool_text
+     return dict(compiler=str(compiler), version=text, compiler_sha256=sha(compiler),
+-                disassembler=str(disassembler), nm=str(nm))
++                disassembler=str(disassembler), nm=str(nm),
++                tool_versions=tool_versions, version_texts=version_texts,
++                tool_directory=str(compiler.resolve().parent))
+ 
+ 
+ def reset_evidence(root, output, build):
+@@ -667,6 +698,9 @@
+     old_handlers = {sig: signal.signal(sig, command.interrupted) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
+     try:
+         summary['tools'] = validate_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output)
++        print('NATIVE_ARCHIVES_TOOLS', json.dumps({
++            'tool_versions': summary['tools']['tool_versions'],
++            'tool_directory': summary['tools']['tool_directory']}), flush=True)
+         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+         summary['scanned_archives'] = len(archives)
+         summary['native_archives_skipped'] = sum(not data['bitcode'] for archive, data in archives)
+@@ -838,6 +872,11 @@
+ 
+ 
+ def install_main():
++    global _CANCEL_SIGNAL
++    _CANCEL_SIGNAL = None
++    if signal.getsignal(signal.SIGCHLD) != signal.SIG_DFL:
++        signal.signal(signal.SIGCHLD, signal.SIG_DFL)
++        print('NATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL', flush=True)
+     parser = argparse.ArgumentParser(description='Convert certified x86_64 ThinLTO archives before standard RPM stripping')
+     parser.add_argument('--root', type=Path, required=True)
+     parser.add_argument('--build', type=Path, required=True)
+@@ -850,9 +889,28 @@
+     parser.add_argument('--jobs', type=int, default=4)
+     parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
+     args = parser.parse_args()
+-    install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+-            args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info)
++    def record_cancel(sig, frame):
++        global _CANCEL_SIGNAL
++        _CANCEL_SIGNAL = sig
++    signals = (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)
++    old_handlers = {sig: signal.signal(sig, record_cancel) for sig in signals}
++    try:
++        try:
++            install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
++                    args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info)
++        except BaseException:
++            if _CANCEL_SIGNAL is not None:
++                traceback.print_exc()
++                return 128 + _CANCEL_SIGNAL
++            raise
++        if _CANCEL_SIGNAL is not None:
++            print('NATIVE_ARCHIVES_CANCELLED after completion', flush=True)
++            return 128 + _CANCEL_SIGNAL
++        return 0
++    finally:
++        for sig, handler in old_handlers.items():
++            signal.signal(sig, handler)
+ 
+ 
+ if __name__ == '__main__':
+-    install_main()
++    raise SystemExit(install_main())

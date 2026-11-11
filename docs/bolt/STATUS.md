@@ -1082,3 +1082,12 @@ FIFTH_REVIEW 已结束 2026-11-11T14:42:18+08:00 status=stopped reason=test_fixt
 本轮 helper 393/393 PASS；参数/转换器运行 27，26 PASS、1 ERROR（test_debug_yes 读取本轮缺失的 debug-census.json）。累计 420 项，419 PASS、1 ERROR；计划 499，其余 79 NOT RUN。没有补文件重跑。历史输入存在，属于本轮准备遗漏，不是产品门禁拒绝。450 归档/10 个 debug 库/census/完整 12+5 检查/r6/sandbox 查询推送全部 NOT RUN，无 OOM。详见 [78 号续跑](78_fifth_review_fixes.md#6-续跑2026-11-11路径已修正另一项输入遗漏后停止)。
 
 FIFTH_REVIEW_RESUME 已结束 2026-11-11T14:50:27+08:00 status=stopped reason=missing_test_input_debug_census
+
+
+## 2026-11-11 第五轮第二次续跑（78 号 §7，产品取消路径 FAIL）
+
+完整复制75号已通过环境（282文件），预检361依赖、187读取表达式，本轮准备修正0次。六套从头运行：helper393、policy46、release5、R2 12、cli2全通过；R3/R4/R5运行17，16 PASS、1 FAIL。累计475项，474 PASS、1 FAIL，其余24 NOT RUN。
+
+test_cli_mid_conversion_signals：SIGTERM应返回143，实际1。转换器 install_main 使用 sys.exc_info() 但没有 import sys，原取消异常被 NameError 覆盖。这是产品实现错误，已停止，不改代码、不调整预期、不重试。源码仍ae448725/tree bea0348f且干净。450归档、10个debug库、两组census、完整12/5检查、r6、sandbox查询/推送均NOT RUN，无OOM。详见 [78号第二次续跑](78_fifth_review_fixes.md)。
+
+FIFTH_REVIEW_RERUN2 已结束 2026-11-11T15:03:47+08:00 status=stopped reason=converter_missing_sys_import

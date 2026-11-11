@@ -1,0 +1,11 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fourth-review-20261110/resume/test_r2.py
++++ /home/linhao/Toolchain/development/llvm-optimize/temp/fifth-review-20261111/rerun2/environment/test_r2.py
+@@ -3,7 +3,7 @@
+ E=Path(__file__).parent
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+ B=W.parent/'llvm-optimize-bolt';S=W/'temp/rebase-359934-20261106/source'
+-X=W/'temp/fourth-review-20261110/resume/new-tests-02';X.mkdir(exist_ok=False)
++X=Path(os.environ['TEST_SCRATCH'])/'new-tests-02';X.mkdir(exist_ok=False)
+ def load(name,path):
+  sp=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(sp);sp.loader.exec_module(m);return m
+ h=load('h',S/'packaging/clang-bolt-helper.py')
