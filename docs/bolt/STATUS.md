@@ -1113,3 +1113,14 @@ FIFTH_REVIEW_RERUN3 已结束 2026-11-11T15:39:20+08:00 status=stopped reason=ve
 [74号](74_local_full_build_fa4f9978.md)追加入口准备停止记录：新clone/新入口未创建，自测0项，T/D演练及夜间预算未运行；今晚命令未准备，不启动完整构建。详见[78号](78_fifth_review_fixes.md)、[r6](../../patches/rebase-359934-20261111-r6/README.md)。没有删除文件、操作QB或修改历史根。
 
 FIFTH_REVIEW_RERUN4 已结束 2026-11-11T16:58:21+08:00 status=stopped reason=Gerrit_changes_MERGED_required_NEW
+
+
+## 2026-11-11：总部合入已确认，r6 sandbox推送完成（78号§10）
+
+359934/PS10/13c3e223与357163/PS2/cf4b6777已于2026-11-11T12:28:07+08:00由Dongkyun Son提交合入。tizen_base HEAD为61ef5d31ca91025c414c748477bef0c64ddfa67c，判定B：是13c3e223后代，后续仅1个合并提交，tree和完整diff均无内容变化；本地分支未改，不需要改接。
+
+按用户新前提，以60fabc72明确lease一次推送sandbox成功，推后ls-remote已核对 **fea0fe464d56e17f2c7588c557bfffd9f6ac352b**。r6校验17项PASS，源码三提交与tree不变。详见[78号第五次续跑](78_fifth_review_fixes.md#10-第五次续跑2026-11-11总部合入判定bsandbox推送完成)。
+
+公开目录最新快照：Toolchain tizen-base-toolchain_20261109.032334，Base-Dev tizen-base-dev_20261103.083743；仅记录，固定比较/构建快照不变。先发布本节，下一步准备fea0fe46独立源码副本和r6本地入口、串行T/D演练，记74号；不启动完整构建、不操作QB。
+
+R6_SANDBOX 已结束 2026-11-11T17:17:44+08:00 status=ok

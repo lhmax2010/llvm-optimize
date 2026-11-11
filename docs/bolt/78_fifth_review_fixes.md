@@ -527,3 +527,95 @@ ITEM3 已结束 2026-11-11T16:55:38.190457+08:00 status=stopped reason=change_st
 没有运行完整构建、操作QB、执行sudo、推refs/for、删除文件或修改VS Code配置。下一次QB源码包白名单仍为：llvm.spec、clang-bolt-helper.py、llvm-static-archives-native.py、VCS行；**0008必须不变**。待用户裁决MERGED状态是否满足推送前置条件后，才能继续sandbox和第四步入口准备。
 
 FIFTH_REVIEW_RERUN4 已结束 2026-11-11T16:58:21+08:00 status=stopped reason=Gerrit_changes_MERGED_required_NEW
+
+
+## 10. 第五次续跑（2026-11-11）：总部合入判定B，sandbox推送完成
+
+按用户新的前提重新核对；前三个源码提交、说明、产品测试及r6材料均未修改。源码HEAD fea0fe464d56e17f2c7588c557bfffd9f6ac352b、tree b2e8af2477cf623a945aa80bf8288a262dd4a5a9，工作树干净。[身份](../../tools/bolt/results/fifth-review-20261111/rerun5/source-identity.json)、[r6的17项SHA校验全OK](../../tools/bolt/results/fifth-review-20261111/rerun5/r6-sha256-check.txt)。本轮准备/核对脚本修正次数0。
+
+### 10.1 两个change的合入记录
+
+[359934完整query](../../tools/bolt/results/fifth-review-20261111/rerun5/change-359934.stdout)、[357163完整query](../../tools/bolt/results/fifth-review-20261111/rerun5/change-357163.stdout)、[提取记录](../../tools/bolt/results/fifth-review-20261111/rerun5/merged-changes.json)。均使用SSH BatchMode，完整URL及实际argv另存于同目录command.json。
+
+|Change|状态|PS|revision|SUBM记录、时间与提交者|
+|---|---|---:|---|---|
+|359934|MERGED|10|13c3e223d9e1b35e4affb55255c5042f8c940f35|SUBM +1；2026-11-11T12:28:07+08:00；Dongkyun Son / dkson95 / dongkyun.s@samsung.com|
+|357163|MERGED|2|cf4b6777d056131e2534ecb460c5575327d99646|SUBM +1；2026-11-11T12:28:07+08:00；Dongkyun Son / dkson95 / dongkyun.s@samsung.com|
+
+两份comments在该时刻均有原文“Change has been successfully merged”，与SUBM时间一致；不再把MERGED当成失败条件。
+
+### 10.2 tizen_base判定及最新快照
+
+**判定B**：远端tizen_base HEAD为 **61ef5d31ca91025c414c748477bef0c64ddfa67c**，13c3e223是其祖先；13c3e223之后仅1个合并提交，tree与13c3e223相同；完整diff及diff --stat均为空。因此不需要改接源码，本任务继续使用既有三提交链。
+
+[ls-remote原文](../../tools/bolt/results/fifth-review-20261111/rerun5/tizen-base-remote.stdout)、[fetch原文](../../tools/bolt/results/fifth-review-20261111/rerun5/fetch-tizen-base.stderr)、[祖先检查](../../tools/bolt/results/fifth-review-20261111/rerun5/tizen-base-ancestor.command.json)、[父链](../../tools/bolt/results/fifth-review-20261111/rerun5/tizen-base-parent-list.stdout)、[完整diff](../../tools/bolt/results/fifth-review-20261111/rerun5/tizen-base-diff.stdout)、[stat](../../tools/bolt/results/fifth-review-20261111/rerun5/tizen-base-diff-stat.stdout)、[判定JSON](../../tools/bolt/results/fifth-review-20261111/rerun5/tizen-base-verdict.json)。
+
+fetch仅写FETCH_HEAD和对象，不改本地分支；[分支前](../../tools/bolt/results/fifth-review-20261111/rerun5/local-branches-before.stdout)与[分支后](../../tools/bolt/results/fifth-review-20261111/rerun5/local-branches-after.stdout)逐字一致。HEAD的完整提交信息：
+
+~~~text
+commit 61ef5d31ca91025c414c748477bef0c64ddfa67c
+Merge: cf4b6777d056 13c3e223d9e1
+Author:     Dongkyun Son <dongkyun.s@samsung.com>
+AuthorDate: Wed Nov 11 04:28:07 2026 +0000
+Commit:     Gerrit Code Review <gerrit@localhost>
+CommitDate: Wed Nov 11 04:28:07 2026 +0000
+
+    Merge "packaging: classify -feliminate-unused-debug-types and mirror recorded backend policy" into tizen_base
+~~~
+
+[公开快照目录记录](../../tools/bolt/results/fifth-review-20261111/rerun5/latest-snapshots.json)：只列目录并按实际快照名时间戳排序，最新有名目录分别是：
+
+|项目|最新快照名|
+|---|---|
+|Tizen-Base-Toolchain|tizen-base-toolchain_20261109.032334|
+|Tizen-Base-Dev|tizen-base-dev_20261103.083743|
+
+这只是只读盘点，**没有改变本轮比较基线或入口固定快照**：Toolchain仍tizen-base-toolchain_20261030.061318，Base-Dev仍tizen-base-dev_20261030.061217。
+
+### 10.3 sandbox推送原文与核验
+
+推送前：
+
+~~~text
+60fabc723f30c5cc04146a9dd83487ebed63f259	refs/heads/sandbox/lhmax2025/bolt_pgo
+~~~
+
+唯一推送命令：
+
+~~~sh
+git push --force-with-lease=refs/heads/sandbox/lhmax2025/bolt_pgo:60fabc723f30c5cc04146a9dd83487ebed63f259 ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm fea0fe464d56e17f2c7588c557bfffd9f6ac352b:refs/heads/sandbox/lhmax2025/bolt_pgo
+~~~
+
+原始输出：
+
+~~~text
+remote: 
+remote: Processing changes: refs: 1        
+remote: Processing changes: refs: 1, done            
+To ssh://review.tizen.org:29418/platform/upstream/llvm
+ + 60fabc723f30...fea0fe464d56 fea0fe464d56e17f2c7588c557bfffd9f6ac352b -> sandbox/lhmax2025/bolt_pgo (forced update)
+~~~
+
+推后ls-remote：
+
+~~~text
+fea0fe464d56e17f2c7588c557bfffd9f6ac352b	refs/heads/sandbox/lhmax2025/bolt_pgo
+~~~
+
+[push命令/返回码](../../tools/bolt/results/fifth-review-20261111/rerun5/sandbox-push.command.json)、[结果JSON](../../tools/bolt/results/fifth-review-20261111/rerun5/sandbox-result.json)。远端等于本地HEAD，父链如下；未推refs/for、未新建分支或操作QB：
+
+~~~text
+fea0fe464d56e17f2c7588c557bfffd9f6ac352b b2e8af2477cf623a945aa80bf8288a262dd4a5a9 packaging: fix x86 LLVM flags and archive mode
+1e415935a83a187aab7c41f9713115a0974a0365 c23914776684bf94fdd5961f447f7c24e7bb79bc packaging: optimize x86_64 clang with BOLT
+8a50d7122346258fd1171d270861a4ae28a8717c 3d961cbb04f5446f84d2089b4f65f3178f2bd7fa cmake: use hybrid LLVM linkage on x86_64
+13c3e223d9e1b35e4affb55255c5042f8c940f35 087e06cf9c79c571c711af8a07057496940ae73d packaging: classify -feliminate-unused-debug-types and mirror recorded backend policy
+cf4b6777d056131e2534ecb460c5575327d99646 7b49745738b5512fbbed890e67e6a3861e1e39a5 Revert "Revert clang bootstrap + ThinLTO, fall back to GCC"
+~~~
+
+此前499项产品测试、450个QB归档复扫、10个debug ThinLTO归档逐字节对照、12展开/5解析及r6校验结果不变。本步骤没有重跑测试、启动完整构建或演练。先将本节和STATUS推送GitHub，随后才开始用户第三步的源码副本/入口准备与演练，结果另记74号。下一次QB源码包白名单仍为llvm.spec、clang-bolt-helper.py、llvm-static-archives-native.py、VCS行；0008必须不变。
+
+ITEM1 已结束 2026-11-11T17:15:51.383169+08:00 status=ok verdict=B
+
+ITEM2 已结束 2026-11-11T17:16:44.572932+08:00 status=ok reason=sandbox_push_verified
+
+R6_SANDBOX 已结束 2026-11-11T17:17:44+08:00 status=ok
