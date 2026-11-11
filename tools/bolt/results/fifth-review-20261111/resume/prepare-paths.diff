@@ -1,0 +1,9 @@
+--- prepare-paths-before.py
++++ prepare-paths-after.py
+@@ -1,3 +1,5 @@
+ from pathlib import Path
++import re
+ def rewrite(text, root):
+-    return text.replace("Path(__file__).parent/'results", "Path("+repr(str(root))+")/'")
++    return re.sub(r"Path\(__file__\)\.parent/'results([^']*)'",
++                  lambda m: "Path("+repr(str(root))+")/"+repr(m.group(1).lstrip('/')), text)

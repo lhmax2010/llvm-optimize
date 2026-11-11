@@ -1,0 +1,52 @@
+CONVERTER_IMPORT /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source/packaging/llvm-static-archives-native.py SHA256 18abd8a1d1241a6b9df0038599dc14a091bf340c74f293c75fa808047f9b1e26
+test_first_failure_cancels_and_reaps (test_static_archives_source.SourceCommandsTests.test_first_failure_cancels_and_reaps) ... ok
+test_limits_accounting_and_no_external_time (test_static_archives_source.SourceCommandsTests.test_limits_accounting_and_no_external_time) ... ok
+test_wait4_is_per_child_under_four_workers (test_static_archives_source.SourceCommandsTests.test_wait4_is_per_child_under_four_workers) ... ok
+test_g_failed_leader_descendants_are_killed (test_static_archives_source_v2.CancellationTests.test_g_failed_leader_descendants_are_killed) ... ok
+test_g_handler_only_records_signal (test_static_archives_source_v2.CancellationTests.test_g_handler_only_records_signal) ... ok
+test_g_signal_on_success_cannot_return_pass (test_static_archives_source_v2.CancellationTests.test_g_signal_on_success_cannot_return_pass) ... ok
+test_g_success_and_timeout_reaped (test_static_archives_source_v2.CancellationTests.test_g_success_and_timeout_reaped) ... ok
+test_d_native_pass_thin_and_other_rejected (test_static_archives_source_v2.FilesystemTests.test_d_native_pass_thin_and_other_rejected) ... ok
+test_e_evidence_reset_and_unsafe_rejected (test_static_archives_source_v2.FilesystemTests.test_e_evidence_reset_and_unsafe_rejected) ... ok
+test_e_native_install_skip_and_cleanup (test_static_archives_source_v2.FilesystemTests.test_e_native_install_skip_and_cleanup) ... ok
+test_f_atomic_copy_preserves_mode (test_static_archives_source_v2.FilesystemTests.test_f_atomic_copy_preserves_mode) ... ok
+test_f_failed_copy_preserves_original_and_records_failure (test_static_archives_source_v2.FilesystemTests.test_f_failed_copy_preserves_original_and_records_failure) ... NATIVE_ARCHIVES_BEGIN 1794379735.9252493
+ok
+test_h_tools_version_and_cache (test_static_archives_source_v2.FilesystemTests.test_h_tools_version_and_cache) ... ok
+test_l_cleanup_keeps_json_only (test_static_archives_source_v2.FilesystemTests.test_l_cleanup_keeps_json_only) ... ok
+test_a_classifies_operands_without_replaying_lto (test_static_archives_source_v2.PolicyTests.test_a_classifies_operands_without_replaying_lto) ... ok
+test_a_unknown_and_missing_operands_fail (test_static_archives_source_v2.PolicyTests.test_a_unknown_and_missing_operands_fail) ... ok
+test_b_last_values_and_defaults (test_static_archives_source_v2.PolicyTests.test_b_last_values_and_defaults) ... ok
+test_b_uncertified_last_values_fail (test_static_archives_source_v2.PolicyTests.test_b_uncertified_last_values_fail) ... ok
+test_c_four_type_features_fail (test_static_archives_source_v2.PolicyTests.test_c_four_type_features_fail) ... ok
+test_c_normal_ir_and_zero_split_lto_pass (test_static_archives_source_v2.PolicyTests.test_c_normal_ir_and_zero_split_lto_pass) ... ok
+test_i_missing_strong_fails_check (test_static_archives_source_v2.PolicyTests.test_i_missing_strong_fails_check) ... ok
+test_i_strong_preserved_weak_missing_recorded (test_static_archives_source_v2.PolicyTests.test_i_strong_preserved_weak_missing_recorded) ... ok
+test_j_triple_mismatch (test_static_archives_source_v2.PolicyTests.test_j_triple_mismatch) ... ok
+test_k_python39_and_chunk_digest (test_static_archives_source_v2.PolicyTests.test_k_python39_and_chunk_digest) ... ok
+test_bad_debug_rule (__main__.Converter.test_bad_debug_rule) ... ok
+test_cli_mode_required (__main__.Converter.test_cli_mode_required) ... ok
+test_debug_yes (__main__.Converter.test_debug_yes) ... ERROR
+
+======================================================================
+ERROR: test_debug_yes (__main__.Converter.test_debug_yes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/resume/test_regressions.py", line 121, in test_debug_yes
+    row=self.row('yes',self.real_command());self.assertEqual(row['policy']['dwarf'],'-gdwarf-4');self.assertIn('-g',row['flags']);self.assertIn('-gdwarf-4',row['flags'])
+                       ^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/resume/test_regressions.py", line 116, in real_command
+    census=json.loads((E/'debug-census.json').read_text());p=Path(census['source'])/census['rows'][0]['path']
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/resume/debug-census.json'
+
+----------------------------------------------------------------------
+Ran 27 tests in 17.632s
+
+FAILED (errors=1)

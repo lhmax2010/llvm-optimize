@@ -132,3 +132,81 @@ FAILED (errors=1)
 下一次 QB 的预定源码包白名单：llvm.spec、clang-bolt-helper.py、llvm-static-archives-native.py、VCS 行；0008 必须不变。这只是后续计划，本轮尚不能进入该验证阶段。
 
 FIFTH_REVIEW 已结束 2026-11-11T14:42:18+08:00 status=stopped reason=test_fixture_import_error
+
+
+## 6. 续跑（2026-11-11）：路径已修正，另一项输入遗漏后停止
+
+本节是用户授权后的新一轮，第 1–5 节与第一次停止原文不改。源码 HEAD 为 ae4487251aaa00c2ec4edf033cf8c9046d0d4b98，tree 为 bea0348f632ba68d995af66c53fe13b978852009，工作树干净；三个提交与 §2 一致。**本轮未修改源码或提交说明，没有推送 sandbox。**
+
+### 6.1 测试路径准备
+
+将旧的字符串前缀替换改为捕获 results 后的相对子路径，再对它调用 lstrip('/') 后拼接。上一轮的测试副本和失败日志完整保留；新副本放在 tools/bolt/results/fifth-review-20261111/resume/，scratch 放在 W/temp/fifth-review-20261111/resume/。
+
+修正前后原文（[prepare-paths.diff](../../tools/bolt/results/fifth-review-20261111/resume/prepare-paths.diff)）：
+
+~~~diff
+--- prepare-paths-before.py
++++ prepare-paths-after.py
+@@ -1,3 +1,5 @@
+ from pathlib import Path
++import re
+ def rewrite(text, root):
+-    return text.replace("Path(__file__).parent/'results", "Path("+repr(str(root))+")/'")
++    return re.sub(r"Path\(__file__\)\.parent/'results([^']*)'",
++                  lambda m: "Path("+repr(str(root))+")/"+repr(m.group(1).lstrip('/')), text)
+~~~
+
+[路径审计](../../tools/bolt/results/fifth-review-20261111/resume/path-audit.json)：相对上一轮已准备副本，只有 3 份 helper 文件的路径发生改变，非路径改动为 0；其 20 个历史/固定路径存在。其他测试脚本和旧版脚本原样复制，不改输入内容、断言或期望值。平台 post 宏展开输入重新生成，5 个可选调用仍齐全。
+
+**该预检覆盖不完整。** 它检查了 helper 中已改写的显式路径，但没有检查参数/转换器套件通过 E/'debug-census.json' 动态取用的输入。复制脚本时遗漏该文件，导致下面的失败。这违反了本轮“全部输入先检查再运行”的要求，是我的准备遗漏，不能据 20 个路径存在宣称全量输入完整。
+
+### 6.2 从头重跑结果
+
+上一轮的 198 PASS 未沿用。所有命令串行置于独立 systemd 用户服务，MemoryMax=8G、MemorySwapMax=0、CPUQuota=400%、Nice=19、IOSchedulingClass=idle；没有 OOM，没有提高资源限制。测试内清理仍转存留存目录，没有删除文件。
+
+| 套件 | 计划 | 已运行 | PASS | ERROR | 状态 |
+|---|---:|---:|---:|---:|---|
+| helper 全套 | 393 | 393 | 393 | 0 | PASS |
+| 参数/转换器 | 46 | 27 | 26 | 1 | 输入缺失，failfast 停止 |
+| 50 号 release | 5 | 0 | 0 | 0 | NOT RUN |
+| 第二轮新增 | 12 | 0 | 0 | 0 | NOT RUN |
+| cli 异常取消 | 2 | 0 | 0 | 0 | NOT RUN |
+| R3/R4/R5 | 41 | 0 | 0 | 0 | NOT RUN |
+| 合计 | 499 | 420 | 419 | 1 | 其余 79 项 NOT RUN |
+
+[helper 全文](../../tools/bolt/results/fifth-review-20261111/resume/helper-tests.log)：
+
+~~~text
+Ran 393 tests in 26.630s
+OK
+已结束 2026-11-11T14:48:30+08:00 status=0 unit=llvm-review78-resume-1111-003
+~~~
+
+[参数/转换器全文](../../tools/bolt/results/fifth-review-20261111/resume/policy-tests.log)、[错误原文](../../tools/bolt/results/fifth-review-20261111/resume/failure.txt)：
+
+~~~text
+ERROR: test_debug_yes (__main__.Converter.test_debug_yes)
+  File ".../resume/test_regressions.py", line 116, in real_command
+    census=json.loads((E/'debug-census.json').read_text())
+FileNotFoundError: [Errno 2] No such file or directory:
+'/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/resume/debug-census.json'
+
+Ran 27 tests in 17.632s
+FAILED (errors=1)
+已结束 2026-11-11T14:48:56+08:00 status=1 unit=llvm-review78-resume-1111-004
+~~~
+
+该错误发生在读取真实 recorded command 之前，未进入这个用例的转换器判定；不能归因为转换器拒绝。历史的 75 号 debug-census.json 和它指向的实际证据文件存在，记录见 [missing-input-diagnosis.json](../../tools/bolt/results/fifth-review-20261111/resume/missing-input-diagnosis.json)。停止后只读定位，没有补文件重跑，没有修改判定。
+
+### 6.3 未运行项、推送与后续
+
+- 450 归档新旧复扫及类型 census：NOT RUN；类型种类数、未知类型有无均 UNKNOWN。
+- 至少 10 个 debug ThinLTO 库新旧转换、输出字节对照和 .rela.debug_* 条目/类型 census：NOT RUN。
+- 第三步完整 12 组展开、5 项解析、全部提交说明检查：NOT RUN。测试准备只生成了 T debug-on 的展开输入，不能替代全量结果。
+- r6 评审包、SHA256SUMS、Gerrit change 查询、sandbox 推送前后 ls-remote 与推送：NOT RUN。
+- 本轮没有 sandbox 前后 SHA 的新观测；上一轮记录的远端仍为 60fabc72，本轮未访问 Gerrit，未执行推送。
+- 不运行完整构建、不操作 QB、不执行 sudo、不修改 VS Code；历史构建根只读。
+
+下一次 QB 源码包白名单保持：llvm.spec、clang-bolt-helper.py、llvm-static-archives-native.py、VCS 行；0008 必须不变。本轮测试门禁未通过，不能进入推送阶段。后续需要完整盘点测试套件的所有只读依赖，再从头运行，不沿用本轮部分 PASS。
+
+FIFTH_REVIEW_RESUME 已结束 2026-11-11T14:50:27+08:00 status=stopped reason=missing_test_input_debug_census

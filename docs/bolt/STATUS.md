@@ -1073,3 +1073,12 @@ helper 已运行 199 项，198 PASS、1 ERROR：本轮测试副本将夹具路�
 详见 [78 号](78_fifth_review_fixes.md)。下一步先修正测试输入，再从头重跑全套，不能沿用部分 PASS。上一轮 sandbox 为 60fabc72，本轮没有访问 Gerrit 或更新远端。
 
 FIFTH_REVIEW 已结束 2026-11-11T14:42:18+08:00 status=stopped reason=test_fixture_import_error
+
+
+## 2026-11-11 第五轮续跑再次停止（78 号 §6）
+
+源码 ae448725 / bea0348f 未改，工作树干净。测试副本的 results 路径已修正，3 份差异仅路径，20 个显式路径存在；但预检遗漏了参数套件的 debug-census.json 依赖。
+
+本轮 helper 393/393 PASS；参数/转换器运行 27，26 PASS、1 ERROR（test_debug_yes 读取本轮缺失的 debug-census.json）。累计 420 项，419 PASS、1 ERROR；计划 499，其余 79 NOT RUN。没有补文件重跑。历史输入存在，属于本轮准备遗漏，不是产品门禁拒绝。450 归档/10 个 debug 库/census/完整 12+5 检查/r6/sandbox 查询推送全部 NOT RUN，无 OOM。详见 [78 号续跑](78_fifth_review_fixes.md#6-续跑2026-11-11路径已修正另一项输入遗漏后停止)。
+
+FIFTH_REVIEW_RESUME 已结束 2026-11-11T14:50:27+08:00 status=stopped reason=missing_test_input_debug_census

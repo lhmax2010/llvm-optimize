@@ -1,0 +1,22 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/helper-suite/test_fourth_review_b.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/resume/helper-suite/test_fourth_review_b.py
+@@ -15,16 +15,16 @@
+                       'merge-fdata', 'exclude holdouts', 'RPM/DWARF', 'Build-ID'):
+             with self.subTest(token=token):self.assertIn(token,doc)
+     def test_only_helper_docstring_changed_from_previous_squash(self):
+-        previous=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results')/'/review4-rebased-helper.py'
++        previous=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results')/'review4-rebased-helper.py'
+         def program(text):
+             module=ast.parse(text)
+             self.assertIsInstance(module.body[0],ast.Expr)
+             self.assertIsInstance(module.body[0].value,ast.Constant)
+             module.body=module.body[1:]
+             return ast.dump(module,include_attributes=False)
+-        self.assertEqual(program(previous.read_text()),program((Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results')/'/review4b-final-helper.py').read_text()))
++        self.assertEqual(program(previous.read_text()),program((Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results')/'review4b-final-helper.py').read_text()))
+     def test_non_disk_gates_unchanged(self):
+-        previous=ast.parse((Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results')/'/review4b-final-helper.py').read_text())
++        previous=ast.parse((Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results')/'review4b-final-helper.py').read_text())
+         current=ast.parse(Path(h.__file__).read_text())
+         for name in ('ELF','security_properties','match_counts','replay_script','tiny_gate','no_bolt_products','tool_prepare'):
+             with self.subTest(name=name):
