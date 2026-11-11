@@ -1055,3 +1055,10 @@ R5_SANDBOX 已结束 2026-11-10T23:26:22+08:00 status=ok
 构建审计、归因材料、两组包比较、T/D 函数比较和 install/LLDB 均 NOT RUN；资源峰值 UNKNOWN。本轮不推 Gerrit/sandbox、不操作 QB、不执行 sudo。后续需先处理完整构建入口与固定源码视图，再执行74号；76号的sandbox和ARM候选结论不变。
 
 LOCAL74 已结束 2026-11-10T23:30:01+08:00 status=stopped reason=entry_preflight_blocked
+
+
+## 2026-11-11：r5 的 QB 验证及 ARM PS7 基线比较完成（77 号）
+
+[77 号](77_qb_1225393_1225395.md)：1225393=Toolchain、1225395=Base-Dev，源码均为60fabc723f30c5cc04146a9dd83487ebed63f259，固定输入快照与1223601/1223602一致，三架构均成功。对fa4f9978：x86_64 34/34、ARM 68/68二进制包载荷全同；两组各225完整归档SHA全同；源码包仅spec/转换器/VCS和授权0008说明变化，PASS。FLAGS/profile同旧QB，WARNING及shell not found、取消/SIGCHLD_RESET均0，NATIVE_ARCHIVES_TOOLS明确三个工具22.1.8且同目录。
+
+ARM对PS7基线1216401/1216400：68/68包PASS，60包全同，8包只含AddLLVM/AddClang精确混合链接文本变化；PS7→PS10仅x86转换器变动，不影响ARM。记录过一次辅助邮件标题断言问题及重复Git读取超时；原文保留，最终均以精确字节证据闭合，未OOM。7706成员由整体归档相同覆盖，未另行逐成员算SHA。未构建、未操作QB、未推Gerrit/sandbox；74号启动前停止仍未解决。后续仍需74号本地完整构建及三家完整评审（设计v6.1+r5）。

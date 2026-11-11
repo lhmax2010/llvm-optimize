@@ -1,0 +1,110 @@
+22: %define sdk_lib_dir %{sdk_install_prefix}/%{_lib}
+23: 
+24: %if 0%{llvm_release_build}
+25: # Disable debug packages building
+26: %define debug_package %{nil}
+27: %define __debug_install_post %{_rpmconfigdir}/find-debuginfo.sh %{?_find_debuginfo_opts} %{?_find_debuginfo_strip_opts} %{?_find_debuginfo_ko_strip_opts} "%{_builddir}/%{?buildsubdir}"\
+28: 	rm -rf "%{buildroot}/usr/lib/debug"\
+29: 	rm -rf "%{buildroot}/usr/src/debug"
+30: %endif
+31: 
+32: Name:      llvm
+33: Summary:   The LLVM Project is a collection of modular and reusable compiler and toolchain technologies
+34: Version:   22.1.8
+35: Release:   1
+36: Group:     Development/Toolchain
+37: License:   NCSA
+38: Source0:   %{name}-%{version}.tar.gz
+39: Source1001: llvm.manifest
+40: 
+41: # Bundled MLGO AOT assets for the inliner and regalloc models.
+42: # These override build-time AOT compilation, avoiding the need for TensorFlow
+43: # Python in GBS.
+44: Source1002: mlgo_arm_model.tar.gz
+45: Source1003: mlgo_aarch_model.tar.gz
+46: Source1004: mlgo_x86_model.tar.gz
+47: Source1005: llvm-static-archives-native.py
+48: 
+49: %ifarch x86_64
+50: BuildRequires: util-linux
+51: %endif
+52: 
+53: %{!?mlgo_build_jobs: %define mlgo_build_jobs 6}
+54: %{!?mlgo_verify_configure_only: %define mlgo_verify_configure_only 0}
+55: 
+56: BuildRequires: cmake
+57: BuildRequires: python3
+58: BuildRequires: python3-devel
+59: BuildRequires: patchelf
+60: BuildRequires: binutils-devel
+61: BuildRequires: libxml2-devel
+62: %if 0%{llvm_release_build}
+63: BuildRequires: sed
+64: %endif
+65: BuildRequires: ninja
+66: 
+67: %if %{undefined _toolchain}
+68: %ifarch x86_64
+69: BuildRequires: clang, llvm, libllvm
+70: %{!?_toolchain: %define _toolchain clang}
+71: %endif
+72: %endif
+73: 
+74: 
+75: Requires: libllvm = %{version}-%{release}
+76: 
+408: 
+409: # copy lldb for sdk
+410: mkdir -p %{buildroot}%{sdk_bin_dir}
+411: mkdir -p %{buildroot}%{sdk_lib_dir}
+412: 
+413: mv %{buildroot}%{_prefix}/bin/lldb %{buildroot}%{sdk_bin_dir}
+414: mv %{buildroot}%{_prefix}/bin/lldb-argdumper %{buildroot}%{sdk_bin_dir}
+415: mv %{buildroot}%{_prefix}/bin/lldb-server %{buildroot}%{sdk_bin_dir}
+416: 
+417: ln -sf %{sdk_bin_dir}/lldb %{buildroot}%{_prefix}/bin/
+418: 
+419: cp -P %{buildroot}%{_libdir}/liblldb.so* %{buildroot}%{sdk_lib_dir}/
+420: 
+421: # Install the clang python bits
+422: mkdir -p %{buildroot}%{python3_sitelib}
+423: cp -a ../clang/bindings/python/clang %{buildroot}%{python3_sitelib}/
+424: 
+425: rm -rf %{buildroot}%{_libdir}/debug/*
+426: rm -rf %{buildroot}/usr/lib/libear/*
+427: rm -rf %{buildroot}/usr/lib/libscanbuild/*
+428: 
+429: %ifarch x86_64
+430: # Run after compilation has finished; these workers do not overlap build jobs.
+431: # Preserve the standard RPM post-processing, including archive strip -g.
+432: rm -rf "%{_builddir}/%{buildsubdir}/build/native-archive-conversion"
+433: python3 %{SOURCE1005} --root "%{buildroot}" \
+434:     --build "%{_builddir}/%{buildsubdir}/build" \
+435:     --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
+436:     --arch x86_64 \
+437:     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+438:     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+439:     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+440:     --jobs 4 --address-space-bytes 4294967296 || exit 1
+441: %endif
+442: 
+443: %post -n clang -p /sbin/ldconfig
+444: %postun -n clang -p /sbin/ldconfig
+445: 
+446: %post -n lldb
+447: echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /root/.lldbinit
+448: 
+449: %files
+450: %manifest %{name}.manifest
+451: %defattr(-,root,root,-)
+452: %{_prefix}/bin/analyze-build
+453: %{_prefix}/bin/bugpoint
+454: %{_prefix}/bin/clang-linker-wrapper
+455: %{_prefix}/bin/clang-offload-packager
+456: %{_prefix}/bin/clang-repl
+457: %{_prefix}/bin/intercept-build
+458: %{_prefix}/bin/llc
+459: %{_prefix}/bin/lld
+460: %{_prefix}/bin/ld.lld
+461: %{_prefix}/bin/ld64.lld
+462: %{_prefix}/bin/lld-link

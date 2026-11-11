@@ -1,0 +1,21 @@
+--- old/0008-cmake-use-hybrid-LLVM-linkage-on-x86_64.patch
++++ new/0008-cmake-use-hybrid-LLVM-linkage-on-x86_64.patch
+@@ -24,12 +24,17 @@
+ had 183 passes, four non-default targets not produced, and one accepted
+ --as-needed exception (AnnotateFunctions.so). Native archives passed
+ 225/225 checks and 90 complete objects were byte-identical. See docs/53
+-in the validation evidence. Quickbuild verification remains pending.
++in the validation evidence.
+ 
+ Add a post-build NEEDED assertion for the three component-linked
+ drivers.
+ A complete-recipe configuration probe found no empty component lists
+ among 96 rewritten static interfaces; fail configuration if one appears.
++
++AddLLVM.cmake and AddClang.cmake are installed on every architecture,
++so the llvm-devel and clang payloads on armv7l and aarch64 carry the
++new text. TIZEN_HYBRID_LINK is set only by the x86_64 recipe; elsewhere
++the new function returns at once and the generated build is unchanged.
+ 
+ Signed-off-by: Hao Lin <hao.lin@samsung.com>
+ Change-Id: I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06

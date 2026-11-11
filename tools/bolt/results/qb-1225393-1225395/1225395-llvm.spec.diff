@@ -1,0 +1,121 @@
+--- old/llvm.spec
++++ new/llvm.spec
+@@ -37,7 +37,7 @@
+ %endif
+ 
+ Name:      llvm
+-VCS:       platform/upstream/llvm#fa4f9978c9162d3c6cd2113d0cfe1173f04881c8
++VCS:       platform/upstream/llvm#60fabc723f30c5cc04146a9dd83487ebed63f259
+ Summary:   The LLVM Project is a collection of modular and reusable compiler and toolchain technologies
+ Version:   22.1.8
+ Release:   5.1
+@@ -589,7 +589,7 @@
+ 
+ # Reject debug-named buildroots before any BOLT action.
+ # Keep the ordinary install and BOLT payload under the same platform debug-path policy.
+-case $(printf '%s' '%{buildroot}' | LC_ALL=C tr '[:upper:]' '[:lower:]') in
++case $(printf '%%s' '%{buildroot}' | LC_ALL=C tr '[:upper:]' '[:lower:]') in
+   *debug*) echo 'BOLT buildroot absolute path contains debug' >&2; exit 1 ;;
+ esac
+ BOLT_BUILD="$PWD"
+@@ -600,6 +600,12 @@
+ bolt_fail() {
+   python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || true
+   exit 1
++}
++bolt_status_exit() {
++  case "$1" in
++    129|130|143) exit "$1" ;;
++    *) exit 1 ;;
++  esac
+ }
+ bolt_checked() {
+   bolt_stage=$1
+@@ -635,19 +641,19 @@
+ }
+ bolt_optional python3 -B %{SOURCE1201} disk-report begin
+ echo "BOLT_BUILDROOT_OK %{buildroot}"
+-python3 -B %{SOURCE1201} preflight || exit 1
+-python3 -B %{SOURCE1201} certified || exit 1
++python3 -B %{SOURCE1201} preflight || bolt_status_exit $?
++python3 -B %{SOURCE1201} certified || bolt_status_exit $?
+ if [ -r /proc/self/stat ]; then echo BOLT_PROC_OK; else echo BOLT_PROC_MISSING; fi
+ # One relink: emit-relocs, then LLVM strip-debug, BOLT and full strip.
+ # The handed-off build owns its original ThinLTO cache; do not duplicate it.
+ mkdir -p "$BOLT_WORK" || exit 1
+ # File-list baseline is the actual ordinary CMake install, not a name whitelist.
+-python3 -B %{SOURCE1201} installed-baseline "%{buildroot}" "$BOLT_WORK/installed-baseline.json" || exit 1
+-python3 -B %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || exit 1
++python3 -B %{SOURCE1201} installed-baseline "%{buildroot}" "$BOLT_WORK/installed-baseline.json" || bolt_status_exit $?
++python3 -B %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || bolt_status_exit $?
+ bolt_step manifest-copy cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt"
+ bolt_step ordinary-copy cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22"
+ bolt_checked link-command "$BOLT_WORK/link-command.log" python3 -B %{SOURCE1201} run-step link-command "$BOLT_WORK/link-command.log" --output "$BOLT_WORK/link.original" -- ninja -t commands -s bin/clang-22
+-python3 -B %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || exit 1
++python3 -B %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || bolt_status_exit $?
+ bolt_step configure cmake -S ../llvm -B . \
+   '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' \
+   -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \
+@@ -657,26 +663,26 @@
+ # LC_ALL=C applies only to this ninja invocation.
+ bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- env LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -n llvm-bolt
+ bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
+-python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || exit 1
++python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || bolt_status_exit $?
+ cat "$BOLT_WORK/tool-plan.json"
+-python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || exit 1
++python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || bolt_status_exit $?
+ # LC_ALL=C applies only to this ninja invocation.
+ bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -j %{mlgo_build_jobs} llvm-bolt
+ python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+-  "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || exit 1
++  "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || bolt_status_exit $?
+ cat "$BOLT_WORK/tool-build-verification.json"
+ bolt_optional python3 -B %{SOURCE1201} disk-report tool-built
+ %if %{llvm_release_build}
+-python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || exit 1
+-%else
+-python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" --debug-symbols || exit 1
++python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || bolt_status_exit $?
++%else
++python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" --debug-symbols || bolt_status_exit $?
+ %endif
+ echo BOLT_PIPELINE_PASS
+ bolt_optional python3 -B %{SOURCE1201} disk-report pipeline
+ # BOLT configuration/build/rewrite must not change the ordinary installation.
+ # Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
+ python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
+-  "$BOLT_WORK/install-after-pipeline.json" || exit 1
++  "$BOLT_WORK/install-after-pipeline.json" || bolt_status_exit $?
+ echo BOLT_COMPARE_ROOT_PASS
+ # No subsequent step consumes this ThinLTO cache.
+ # Release it only inside the enabled x86_64 BOLT block.
+@@ -731,14 +737,18 @@
+     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
++%if %{with clang_bolt}
++    --jobs 4 --address-space-bytes 4294967296 || bolt_status_exit $?
++%else
+     --jobs 4 --address-space-bytes 4294967296 || exit 1
++%endif
+ %endif
+ 
+ %ifarch x86_64
+ %if %{with clang_bolt}
+ # Candidate is fully stripped before the one unchanged platform post-processing chain.
+ python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
+-  "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || exit 1
++  "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || bolt_status_exit $?
+ 
+ %endif
+ %endif
+@@ -979,7 +989,7 @@
+ %global __bolt_original_spec_install_post %{__spec_install_post}
+ %define __spec_install_post \
+     %{__bolt_original_spec_install_post} \
+-    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || exit 1 \
++    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || bolt_status_exit $? \
+     echo BOLT_POST_GATE_PASS \
+     bolt_optional python3 -B %{SOURCE1201} disk-report post
+ %endif

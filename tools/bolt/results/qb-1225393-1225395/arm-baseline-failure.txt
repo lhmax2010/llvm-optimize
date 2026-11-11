@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-1225393-1225395/compare_arm_ps7.py", line 67, in <module>
+    assert aa==git('show','463c9a13:'+source)==git('show','13c3e223:'+source)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-1225393-1225395/compare_arm_ps7.py", line 5, in git
+    def git(*args):return subprocess.check_output(['git','-C',str(S),*args],timeout=30)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 550, in run
+    stdout, stderr = process.communicate(input, timeout=timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 1209, in communicate
+    stdout, stderr = self._communicate(input, endtime, timeout)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 2116, in _communicate
+    self._check_timeout(endtime, orig_timeout, stdout, stderr)
+  File "/usr/lib/python3.12/subprocess.py", line 1253, in _check_timeout
+    raise TimeoutExpired(
+subprocess.TimeoutExpired: Command '['git', '-C', '/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source', 'show', '463c9a13:clang/cmake/modules/AddClang.cmake']' timed out after 30 seconds
