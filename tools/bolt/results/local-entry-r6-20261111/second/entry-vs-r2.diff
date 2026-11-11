@@ -1,0 +1,446 @@
+--- r2/README.md
++++ r6/README.md
+@@ -0,0 +1,14 @@
++# r6 local entry: 2026-11-11
++
++Authorized for one complete night run of fea0fe464d56e17f2c7588c557bfffd9f6ac352b on 2026-11-11, Toolchain first and Base-Dev second, and daytime rehearsal-02 checks. Daytime preparation does not run a full build.
++
++Use ../run-night.sh from a project directory (or run-night.sh at the entry root). It calls each project's own launch.sh. Toolchain uses tizen-base-toolchain_20261030.061318; Base-Dev uses tizen-base-dev_20261030.061217. Build logic, limits, gates and comparisons are unchanged.
++
++The copied night.py is preserved byte-for-byte and must not be used: its legacy coordinator calls the Base-Dev launcher for both projects and monitors different roots/unit names. The old launch.sh night branch remains unchanged for provenance, not as the authorized night command.
++
++run-night.sh SOURCE_SHA --dry-run prints commands/units/roots without creating output directories or starting services. Without --dry-run it creates the summary directory, appends stdout/stderr to night.log, checks both full roots are absent, then waits for each project's controller to finish. A failed T result still proceeds to D. If controller state cannot be read, the queue stops because serial completion cannot be established. No terminal input is read.
++
++Full roots: W/temp/rebase-359934-20261111-r6/{toolchain,basedev}.
++Rehearsal roots: W/temp/rebase-359934-20261111-r6/rehearsal/{toolchain,basedev}/retry-02.
++Summary: W/temp/night-20261111-r6/night.log.
++Source: W/temp/rebase-359934-20261111-r6/source.
+--- r2/SHA256SUMS
++++ r6/SHA256SUMS
+@@ -0,0 +1,54 @@
++82c47e937113dc45c7bb6f10b141aadf684293e980d26d8e7e0d01b47c975aee  README.md
++82c47e937113dc45c7bb6f10b141aadf684293e980d26d8e7e0d01b47c975aee  basedev/README.md
++d643259314052b27eb20817d89fdcbecbc173108fe8d9f5036fd2d157bea9dd9  basedev/SHA256SUMS
++0d3deb41ededb21856524510df9eed8fd6d227fe0e0f79d34ab0a318a49e78fa  basedev/audit_rehearsal.py
++140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe  basedev/checks.py
++c0b513f3f9f9051aa5190efb0cb9b5f3ef95b0149a82001d80c3333244a4d978  basedev/correct_duplicate_sections.py
++59529ee6d949501e318c4e84b3cb57d39107dc1a891828286e0dd7175eda5d2f  basedev/launch.sh
++a23abce2bb30712c83c9f4b7b953fbaa21595ccff79ce1a4bb8db43257fa5f28  basedev/launcher.py
++45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a  basedev/log_support.py
++0b3c8c1d53b5b06e64435fb62f9e6fa99c2a40464d95d8d137ae0899e68c7a16  basedev/night.py
++81a793f1ea49cf6c2918a07b633ee31753df5ed4014c4cd186cad993ac9673e9  basedev/provenance.json
++1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456  basedev/release_checks.py
++a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e  basedev/resource_report.py
++8cc8d3e0d32b351e7f5798de297184a249a90952f56ef081f1a98205ce21ca67  basedev/resume_release_checks.py
++676bc224928996c49499ab97a3fb6b420e7f21c2714baa595c9159f7bef24873  basedev/revalidate.py
++af5917886444b3cc4ba8b52be4afc77e233b40289624a16480140e4dc6662676  basedev/rpm_extract.py
++52c1822c16a8935bccb2555415041bf0407ca617c5b8feffda2682e3c9a34718  basedev/rpm_io.py
++e681e29ad3cf6f084983df46fbaa4727859bdc6b53f795188229d99d2a7ea7f9  basedev/section_compare.py
++673bcc6f16581d6073eb6913925bece5cb8ebd9bfb926226859bc5ca242e0ec2  basedev/test_checks.py
++5ba4be7dd256cdf62bffc63248f9ccc28304ec77e24cb208ea1b3ffa2c809ed4  basedev/test_handoff_report.py
++6cf23b80bce2d9c55984bfaac17e180373b30c1c64ed7d68d7ba9316edde5b12  basedev/test_integration.py
++91c4796411a40a4cf1b1f281ed1247dbc079fb355d723017fc0a52ac1b1d2398  basedev/test_payload_overlap.py
++e0c1574755ce597a56bed3f45257af8572ef3cc5a08a80863285fb8c2c823176  basedev/test_revalidation.py
++46d124368f21bc84d9a323730ce80a22cfedafd721cfa08a90ed61e57057b2e0  basedev/test_startup.py
++2e6ffe604e87292c1f64ca91cb6df20bdebbabb19677033413b7ecc211a04be7  basedev/validate.py
++2b47b968f0d5a7b5d98f75c4971030040e14bc00d1e0553b31e9a2d04030852f  run-night.sh
++82c47e937113dc45c7bb6f10b141aadf684293e980d26d8e7e0d01b47c975aee  toolchain/README.md
++56afab38a2b67164de70374627cb0fc63e5786934e73322688d0af492f9183d1  toolchain/SHA256SUMS
++ad0fe47fb5dd176a86234bc6efdf1de2d050739aa29b87405a58edb976cc6370  toolchain/audit_rehearsal.py
++140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe  toolchain/checks.py
++ceba06c4d29ead739a2778ffd81a914d592af8ba81e55fb37b984aa0bde41acc  toolchain/compare_packages.py
++6d94435e7b404f6581df672b1a62731bf09b9d5d6a9b3a3da7d91f27b1d58766  toolchain/compare_rules.py
++c0b513f3f9f9051aa5190efb0cb9b5f3ef95b0149a82001d80c3333244a4d978  toolchain/correct_duplicate_sections.py
++0dd379aeffb1205971889a292ce5a86e31180e06759708eeb0d808bf4b496cfa  toolchain/dwarf_release.py
++ed5fc6f503cff739daf171b5b8f831652231ddc926474b6284c63fc8f5e9f8f1  toolchain/launch.sh
++b7bac601c5d88c2e311776655b4082cf109ae89b96024c77cd3f257064da5c0e  toolchain/launcher.py
++45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a  toolchain/log_support.py
++00df5f204c88add8c43bb8fd36acd57b0110c8c02cc219cef46d3a175d506ab7  toolchain/night.py
++e1f0809923b2c1088e73d7d7b75e207a76b6cef2075a73d2ae2a5b6990564633  toolchain/provenance.json
++fecbced8451924e528555b6ac3a94d94cd1042634409e58ccd7c1b441e1cc69c  toolchain/qb-reference.json
++1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456  toolchain/release_checks.py
++a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e  toolchain/resource_report.py
++8cc8d3e0d32b351e7f5798de297184a249a90952f56ef081f1a98205ce21ca67  toolchain/resume_release_checks.py
++676bc224928996c49499ab97a3fb6b420e7f21c2714baa595c9159f7bef24873  toolchain/revalidate.py
++af5917886444b3cc4ba8b52be4afc77e233b40289624a16480140e4dc6662676  toolchain/rpm_extract.py
++52c1822c16a8935bccb2555415041bf0407ca617c5b8feffda2682e3c9a34718  toolchain/rpm_io.py
++7723343b88e2ddc19e6b405e7b5113a9743514aa319781553a453bdb0b41ed5b  toolchain/section_compare.py
++673bcc6f16581d6073eb6913925bece5cb8ebd9bfb926226859bc5ca242e0ec2  toolchain/test_checks.py
++6cf23b80bce2d9c55984bfaac17e180373b30c1c64ed7d68d7ba9316edde5b12  toolchain/test_integration.py
++91c4796411a40a4cf1b1f281ed1247dbc079fb355d723017fc0a52ac1b1d2398  toolchain/test_payload_overlap.py
++fa96e24ef54834ad9fd99b08c4d02a3a1776d4787bd7ce0c35c6da9c73d993a8  toolchain/test_revalidation.py
++46d124368f21bc84d9a323730ce80a22cfedafd721cfa08a90ed61e57057b2e0  toolchain/test_startup.py
++2221073854e2c24f94b5f7d4922b5f7721b664f3fe00c4f290937390b2856792  toolchain/validate.py
++3545c7bb87547b878a747a222e9cdb8381dfa247dfff837fb572c9309b118015  toolchain/validation_common.py
+--- r2/basedev/README.md
++++ r6/basedev/README.md
+@@ -1,3 +1,14 @@
+-# Review R2 rehearsal copy
++# r6 local entry: 2026-11-11
+ 
+-Only source path (T), output root and systemd unit prefix differ from the specified template. Run rehearsal only; full/night is not authorized for this task.
++Authorized for one complete night run of fea0fe464d56e17f2c7588c557bfffd9f6ac352b on 2026-11-11, Toolchain first and Base-Dev second, and daytime rehearsal-02 checks. Daytime preparation does not run a full build.
++
++Use ../run-night.sh from a project directory (or run-night.sh at the entry root). It calls each project's own launch.sh. Toolchain uses tizen-base-toolchain_20261030.061318; Base-Dev uses tizen-base-dev_20261030.061217. Build logic, limits, gates and comparisons are unchanged.
++
++The copied night.py is preserved byte-for-byte and must not be used: its legacy coordinator calls the Base-Dev launcher for both projects and monitors different roots/unit names. The old launch.sh night branch remains unchanged for provenance, not as the authorized night command.
++
++run-night.sh SOURCE_SHA --dry-run prints commands/units/roots without creating output directories or starting services. Without --dry-run it creates the summary directory, appends stdout/stderr to night.log, checks both full roots are absent, then waits for each project's controller to finish. A failed T result still proceeds to D. If controller state cannot be read, the queue stops because serial completion cannot be established. No terminal input is read.
++
++Full roots: W/temp/rebase-359934-20261111-r6/{toolchain,basedev}.
++Rehearsal roots: W/temp/rebase-359934-20261111-r6/rehearsal/{toolchain,basedev}/retry-02.
++Summary: W/temp/night-20261111-r6/night.log.
++Source: W/temp/rebase-359934-20261111-r6/source.
+--- r2/basedev/SHA256SUMS
++++ r6/basedev/SHA256SUMS
+@@ -1,12 +1,12 @@
+-6db3f419218f5aa374942c2bb3383f210753e9313d8f55a204cedcfc1d52bae9  README.md
++82c47e937113dc45c7bb6f10b141aadf684293e980d26d8e7e0d01b47c975aee  README.md
+ 0d3deb41ededb21856524510df9eed8fd6d227fe0e0f79d34ab0a318a49e78fa  audit_rehearsal.py
+ 140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe  checks.py
+ c0b513f3f9f9051aa5190efb0cb9b5f3ef95b0149a82001d80c3333244a4d978  correct_duplicate_sections.py
+-4b2c547e56bb02f7cbfbfe285294347f5e348caafbcebedc74010f2e14a01f26  launch.sh
+-f33eae64340d444d59a35c4d0c7ff67e05370dfe38ad1d98e332e5ec11470376  launcher.py
++59529ee6d949501e318c4e84b3cb57d39107dc1a891828286e0dd7175eda5d2f  launch.sh
++a23abce2bb30712c83c9f4b7b953fbaa21595ccff79ce1a4bb8db43257fa5f28  launcher.py
+ 45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a  log_support.py
+ 0b3c8c1d53b5b06e64435fb62f9e6fa99c2a40464d95d8d137ae0899e68c7a16  night.py
+-1b7bd6888c8f1599a5534b994dbfabea21bc210b80b5a69b09835e48ec9ff614  provenance.json
++81a793f1ea49cf6c2918a07b633ee31753df5ed4014c4cd186cad993ac9673e9  provenance.json
+ 1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456  release_checks.py
+ a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e  resource_report.py
+ 8cc8d3e0d32b351e7f5798de297184a249a90952f56ef081f1a98205ce21ca67  resume_release_checks.py
+--- r2/basedev/launch.sh
++++ r6/basedev/launch.sh
+@@ -1,9 +1,10 @@
+ #!/bin/sh
+ set -eu
+-[ "$#" -ge 2 ] || { echo 'usage: launch.sh SOURCE_SHA night | launch.sh SOURCE_SHA rehearsal toolchain|basedev' >&2; exit 2; }
++[ "$#" -ge 2 ] || { echo 'usage: launch.sh SOURCE_SHA full basedev | launch.sh SOURCE_SHA rehearsal|rehearsal-02 toolchain|basedev | launch.sh SOURCE_SHA night (legacy, do not use)' >&2; exit 2; }
+ NIGHT_SOURCE_SHA=$1; export NIGHT_SOURCE_SHA
+ shift
+ case "$1" in
++ full) [ "$#" -eq 2 ] || exit 2; [ "$2" = basedev ] || exit 2; FINAL_PROJECT=basedev; export FINAL_PROJECT; exec python3 -B "$(dirname "$0")/launcher.py" full ;;
+  night) [ "$#" -eq 1 ] || exit 2; exec python3 -B "$(dirname "$0")/night.py" ;;
+  rehearsal|rehearsal-02) [ "$#" -eq 2 ] || exit 2; case "$2" in toolchain|basedev) FINAL_PROJECT=$2; export FINAL_PROJECT ;; *) exit 2 ;; esac; exec python3 -B "$(dirname "$0")/launcher.py" "$1" ;;
+  *) exit 2 ;;
+--- r2/basedev/launcher.py
++++ r6/basedev/launcher.py
+@@ -20,7 +20,7 @@
+ W = B.parent / 'llvm-optimize'
+ T = Path(__file__).resolve().parent
+ OLD = B / 'tools/bolt/results/oldtext-final-20261027'
+-SOURCE = W / 'temp/rebase-359934-20261106/source'
++SOURCE = W / 'temp/rebase-359934-20261111-r6/source'
+ COMMIT = os.environ.get('NIGHT_SOURCE_SHA', '')
+ assert len(COMMIT) == 40 and all(c in '0123456789abcdef' for c in COMMIT), 'explicit full source SHA required'
+ PROJECT = os.environ.get('FINAL_PROJECT', 'toolchain')
+@@ -289,7 +289,7 @@
+     mode = 'rehearsal' if selection.startswith('rehearsal') else 'full'
+     suffix = '-02' if selection == 'rehearsal-02' else ''
+     identity = check_source()
+-    D = W / 'temp/rebase-359934-20261106-r2' / (PROJECT if mode == 'full' else 'rehearsal/' + PROJECT)
++    D = W / 'temp/rebase-359934-20261111-r6' / (PROJECT if mode == 'full' else 'rehearsal/' + PROJECT)
+     if suffix:
+         D = D / 'retry-02'
+     assert not D.exists(), 'fresh root required; preserve existing directory: ' + str(D)
+@@ -300,12 +300,12 @@
+     (D / 'evidence').mkdir()
+     plan = dict(identity, source=str(SOURCE), config=str(CONFIG), mode=mode,
+                 MemoryMax_bytes=mem - 8 * 1024**3, CPUQuota='1200%',
+-                prep_unit='rebase359934r2-' + PROJECT + '-' + mode + '-prep-20261106' + suffix + '.service',
+-                build_unit='rebase359934r2-' + PROJECT + '-' + mode + '-20261106' + suffix + '.service')
++                prep_unit='rebase359934r6-' + PROJECT + '-' + mode + '-prep-20261111' + suffix + '.service',
++                build_unit='rebase359934r6-' + PROJECT + '-' + mode + '-20261111' + suffix + '.service')
+     save(D / 'plan.json', plan)
+     shutil.copyfile(T / 'launcher.py', D / 'evidence/launcher-used.py')
+     materialize(D, plan)
+-    unit = 'rebase359934r2-' + PROJECT + '-' + mode + '-controller-20261106' + suffix + '.service'
++    unit = 'rebase359934r6-' + PROJECT + '-' + mode + '-controller-20261111' + suffix + '.service'
+     argv = ['systemd-run', '--user', '--unit=' + unit, *properties(plan),
+             '-p', 'WorkingDirectory=' + str(SOURCE),
+             '-p', 'StandardOutput=append:' + str(D / 'controller.stdout'),
+--- r2/basedev/provenance.json
++++ r6/basedev/provenance.json
+@@ -203,5 +203,45 @@
+   ],
+   "r2_changes": [
+     "source path (T only), fresh rehearsal roots and unique unit names; no production edits"
+-  ]
++  ],
++  "r6_entry_copy": {
++    "template": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/basedev",
++    "source_commit": "fea0fe464d56e17f2c7588c557bfffd9f6ac352b",
++    "source": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/source",
++    "output_root": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6",
++    "template_files_sha256": {
++      "README.md": "6db3f419218f5aa374942c2bb3383f210753e9313d8f55a204cedcfc1d52bae9",
++      "SHA256SUMS": "bbc22993dec3e2ac2507dbb165f61096750958f9e7a15c106a74374aeb16f67f",
++      "audit_rehearsal.py": "0d3deb41ededb21856524510df9eed8fd6d227fe0e0f79d34ab0a318a49e78fa",
++      "checks.py": "140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe",
++      "correct_duplicate_sections.py": "c0b513f3f9f9051aa5190efb0cb9b5f3ef95b0149a82001d80c3333244a4d978",
++      "launch.sh": "4b2c547e56bb02f7cbfbfe285294347f5e348caafbcebedc74010f2e14a01f26",
++      "launcher.py": "f33eae64340d444d59a35c4d0c7ff67e05370dfe38ad1d98e332e5ec11470376",
++      "log_support.py": "45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a",
++      "night.py": "0b3c8c1d53b5b06e64435fb62f9e6fa99c2a40464d95d8d137ae0899e68c7a16",
++      "provenance.json": "1b7bd6888c8f1599a5534b994dbfabea21bc210b80b5a69b09835e48ec9ff614",
++      "release_checks.py": "1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456",
++      "resource_report.py": "a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e",
++      "resume_release_checks.py": "8cc8d3e0d32b351e7f5798de297184a249a90952f56ef081f1a98205ce21ca67",
++      "revalidate.py": "676bc224928996c49499ab97a3fb6b420e7f21c2714baa595c9159f7bef24873",
++      "rpm_extract.py": "af5917886444b3cc4ba8b52be4afc77e233b40289624a16480140e4dc6662676",
++      "rpm_io.py": "52c1822c16a8935bccb2555415041bf0407ca617c5b8feffda2682e3c9a34718",
++      "section_compare.py": "e681e29ad3cf6f084983df46fbaa4727859bdc6b53f795188229d99d2a7ea7f9",
++      "test_checks.py": "673bcc6f16581d6073eb6913925bece5cb8ebd9bfb926226859bc5ca242e0ec2",
++      "test_handoff_report.py": "5ba4be7dd256cdf62bffc63248f9ccc28304ec77e24cb208ea1b3ffa2c809ed4",
++      "test_integration.py": "6cf23b80bce2d9c55984bfaac17e180373b30c1c64ed7d68d7ba9316edde5b12",
++      "test_payload_overlap.py": "91c4796411a40a4cf1b1f281ed1247dbc079fb355d723017fc0a52ac1b1d2398",
++      "test_revalidation.py": "e0c1574755ce597a56bed3f45257af8572ef3cc5a08a80863285fb8c2c823176",
++      "test_startup.py": "46d124368f21bc84d9a323730ce80a22cfedafd721cfa08a90ed61e57057b2e0",
++      "validate.py": "2e6ffe604e87292c1f64ca91cb6df20bdebbabb19677033413b7ecc211a04be7"
++    },
++    "changes": [
++      "SOURCE",
++      "output root",
++      "systemd names",
++      "basedev full branch/usage",
++      "README/provenance/checksums",
++      "new run-night.sh; legacy night.py unused and unchanged"
++    ]
++  }
+ }
+--- r2/run-night.sh
++++ r6/run-night.sh
+@@ -0,0 +1,103 @@
++#!/bin/sh
++# The legacy night.py is retained but deliberately not called.
++set -u
++[ "$#" -ge 1 ] && [ "$#" -le 2 ] || { echo 'usage: run-night.sh SOURCE_SHA [--dry-run]' >&2; exit 2; }
++source_sha=$1
++case "$source_sha" in *[!0123456789abcdef]*|'') echo 'full source SHA required' >&2; exit 2 ;; esac
++sha_length=$(printf '%s' "$source_sha" | wc -c)
++[ -n "$sha_length" ] && [ "$sha_length" -eq 40 ] || { echo 'full source SHA required' >&2; exit 2; }
++dry_run=no
++if [ "$#" -eq 2 ]; then
++    [ "$2" = --dry-run ] || { echo 'expected --dry-run' >&2; exit 2; }
++    dry_run=yes
++fi
++entry_dir=$(CDPATH= cd -P -- "$(dirname -- "$0")" && pwd)
++[ -n "$entry_dir" ] || { echo 'empty entry directory' >&2; exit 1; }
++work=/home/linhao/Toolchain/development/llvm-optimize
++build_base=$work/temp/rebase-359934-20261111-r6
++summary=$work/temp/night-20261111-r6
++if [ "$dry_run" = yes ]; then
++    for project in toolchain basedev; do
++        if [ "$project" = toolchain ]; then
++            printf 'ARGV /bin/sh %s/toolchain/launch.sh %s full\n' "$entry_dir" "$source_sha"
++        else
++            printf 'ARGV /bin/sh %s/basedev/launch.sh %s full basedev\n' "$entry_dir" "$source_sha"
++        fi
++        printf 'SERVICE rebase359934r6-%s-full-controller-20261111.service\n' "$project"
++        printf 'ROOT %s/%s\n' "$build_base" "$project"
++        printf 'RESULT %s/%s/evidence/result.json\n' "$build_base" "$project"
++    done
++    printf 'LOG %s/night.log\n' "$summary"
++    printf 'DRY_RUN 已结束 %s status=ok\n' "$(date -Iseconds)"
++    exit 0
++fi
++mkdir -p -- "$summary" || exit 1
++exec >> "$summary/night.log" 2>&1
++exec < /dev/null
++t_status=not_run
++d_status=not_run
++trap 'rc=$?; printf "NIGHT 已结束 %s T=%s D=%s\n" "$(date -Iseconds)" "$t_status" "$d_status"; exit "$rc"' 0
++trap 'exit 129' HUP
++trap 'exit 130' INT
++trap 'exit 143' TERM
++for project in toolchain basedev; do
++    if [ -e "$build_base/$project" ] || [ -L "$build_base/$project" ]; then
++        printf 'fresh root required: %s/%s\n' "$build_base" "$project"
++        exit 1
++    fi
++done
++run_project() {
++    project=$1
++    root=$build_base/$project
++    unit=rebase359934r6-$project-full-controller-20261111.service
++    project_status=failed
++    launch_rc=0
++    if [ "$project" = toolchain ]; then
++        /bin/sh "$entry_dir/toolchain/launch.sh" "$source_sha" full || launch_rc=$?
++    else
++        /bin/sh "$entry_dir/basedev/launch.sh" "$source_sha" full basedev || launch_rc=$?
++    fi
++    if [ "$launch_rc" -eq 0 ]; then
++        while :; do
++            state=$(systemctl --user show "$unit" -p ActiveState --value) || state=
++            if [ -z "$state" ]; then
++                printf 'empty service state: %s; serial queue cannot safely continue\n' "$unit"
++                printf 'NIGHT_PROJECT 已结束 %s %s {"status":"failed","reason":"controller-state-unavailable"}\n' "$(date -Iseconds)" "$project"
++                return 2
++            fi
++            last=
++            if [ -f "$root/evidence/rpm-build.log" ]; then
++                last=$(tail -n 1 -- "$root/evidence/rpm-build.log") || last=
++            elif [ -f "$root/controller.stdout" ]; then
++                last=$(tail -n 1 -- "$root/controller.stdout") || last=
++            fi
++            [ -n "$last" ] || last='(no build log line yet)'
++            printf 'NIGHT_PROGRESS %s %s state=%s last=%s\n' "$(date -Iseconds)" "$project" "$state" "$last"
++            case "$state" in
++                active|activating|deactivating|reloading) sleep 60 ;;
++                inactive|failed) break ;;
++                *) printf 'unknown service state: %s\n' "$state"; printf 'NIGHT_PROJECT 已结束 %s %s {"status":"failed","reason":"unknown-controller-state"}\n' "$(date -Iseconds)" "$project"; return 2 ;;
++            esac
++        done
++        result=$(python3 -B -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["status"] in ("ok","failed","stopped"),d; print(json.dumps(d,ensure_ascii=False,separators=(",",":")))' "$root/evidence/result.json") || result=
++        if [ -n "$result" ]; then
++            project_status=$(printf '%s\n' "$result" | python3 -B -c 'import json,sys; print(json.load(sys.stdin)["status"])') || project_status=
++            [ -n "$project_status" ] || project_status=failed
++        else
++            result='{"status":"failed","reason":"missing-or-invalid-result.json"}'
++        fi
++    else
++        result="{\"status\":\"failed\",\"reason\":\"launcher-failed\",\"exit_code\":$launch_rc}"
++    fi
++    printf 'NIGHT_PROJECT 已结束 %s %s %s\n' "$(date -Iseconds)" "$project" "$result"
++    return 0
++}
++run_project toolchain
++queue_rc=$?
++t_status=$project_status
++[ "$queue_rc" -eq 0 ] || exit "$queue_rc"
++run_project basedev
++queue_rc=$?
++d_status=$project_status
++[ "$queue_rc" -eq 0 ] || exit "$queue_rc"
++[ "$t_status" = ok ] && [ "$d_status" = ok ]
+--- r2/toolchain/README.md
++++ r6/toolchain/README.md
+@@ -1,3 +1,14 @@
+-# Review R2 rehearsal copy
++# r6 local entry: 2026-11-11
+ 
+-Only source path (T), output root and systemd unit prefix differ from the specified template. Run rehearsal only; full/night is not authorized for this task.
++Authorized for one complete night run of fea0fe464d56e17f2c7588c557bfffd9f6ac352b on 2026-11-11, Toolchain first and Base-Dev second, and daytime rehearsal-02 checks. Daytime preparation does not run a full build.
++
++Use ../run-night.sh from a project directory (or run-night.sh at the entry root). It calls each project's own launch.sh. Toolchain uses tizen-base-toolchain_20261030.061318; Base-Dev uses tizen-base-dev_20261030.061217. Build logic, limits, gates and comparisons are unchanged.
++
++The copied night.py is preserved byte-for-byte and must not be used: its legacy coordinator calls the Base-Dev launcher for both projects and monitors different roots/unit names. The old launch.sh night branch remains unchanged for provenance, not as the authorized night command.
++
++run-night.sh SOURCE_SHA --dry-run prints commands/units/roots without creating output directories or starting services. Without --dry-run it creates the summary directory, appends stdout/stderr to night.log, checks both full roots are absent, then waits for each project's controller to finish. A failed T result still proceeds to D. If controller state cannot be read, the queue stops because serial completion cannot be established. No terminal input is read.
++
++Full roots: W/temp/rebase-359934-20261111-r6/{toolchain,basedev}.
++Rehearsal roots: W/temp/rebase-359934-20261111-r6/rehearsal/{toolchain,basedev}/retry-02.
++Summary: W/temp/night-20261111-r6/night.log.
++Source: W/temp/rebase-359934-20261111-r6/source.
+--- r2/toolchain/SHA256SUMS
++++ r6/toolchain/SHA256SUMS
+@@ -1,4 +1,4 @@
+-6db3f419218f5aa374942c2bb3383f210753e9313d8f55a204cedcfc1d52bae9  README.md
++82c47e937113dc45c7bb6f10b141aadf684293e980d26d8e7e0d01b47c975aee  README.md
+ ad0fe47fb5dd176a86234bc6efdf1de2d050739aa29b87405a58edb976cc6370  audit_rehearsal.py
+ 140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe  checks.py
+ ceba06c4d29ead739a2778ffd81a914d592af8ba81e55fb37b984aa0bde41acc  compare_packages.py
+@@ -6,10 +6,10 @@
+ c0b513f3f9f9051aa5190efb0cb9b5f3ef95b0149a82001d80c3333244a4d978  correct_duplicate_sections.py
+ 0dd379aeffb1205971889a292ce5a86e31180e06759708eeb0d808bf4b496cfa  dwarf_release.py
+ ed5fc6f503cff739daf171b5b8f831652231ddc926474b6284c63fc8f5e9f8f1  launch.sh
+-6ec872e15d51d0e528525a0d82dce66a7ffec6805461f14ff776ef1a88e68df5  launcher.py
++b7bac601c5d88c2e311776655b4082cf109ae89b96024c77cd3f257064da5c0e  launcher.py
+ 45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a  log_support.py
+ 00df5f204c88add8c43bb8fd36acd57b0110c8c02cc219cef46d3a175d506ab7  night.py
+-31369ba5ccbe30ae888c05c5104c09141fbfe586503c7fe4986a40ae5453d79f  provenance.json
++e1f0809923b2c1088e73d7d7b75e207a76b6cef2075a73d2ae2a5b6990564633  provenance.json
+ fecbced8451924e528555b6ac3a94d94cd1042634409e58ccd7c1b441e1cc69c  qb-reference.json
+ 1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456  release_checks.py
+ a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e  resource_report.py
+--- r2/toolchain/launcher.py
++++ r6/toolchain/launcher.py
+@@ -20,7 +20,7 @@
+ W = B.parent / 'llvm-optimize'
+ T = Path(__file__).resolve().parent
+ OLD = B / 'tools/bolt/results/oldtext-final-20261027'
+-SOURCE = W / 'temp/rebase-359934-20261106/source'
++SOURCE = W / 'temp/rebase-359934-20261111-r6/source'
+ COMMIT = os.environ.get('NIGHT_SOURCE_SHA', '')
+ assert len(COMMIT) == 40 and all(c in '0123456789abcdef' for c in COMMIT), 'explicit full source SHA required'
+ PROJECT = os.environ.get('FINAL_PROJECT', 'toolchain')
+@@ -289,7 +289,7 @@
+     mode = 'rehearsal' if selection.startswith('rehearsal') else 'full'
+     suffix = '-02' if selection == 'rehearsal-02' else ''
+     identity = check_source()
+-    D = W / 'temp/rebase-359934-20261106-r2' / (PROJECT if mode == 'full' else 'rehearsal/' + PROJECT)
++    D = W / 'temp/rebase-359934-20261111-r6' / (PROJECT if mode == 'full' else 'rehearsal/' + PROJECT)
+     if suffix:
+         D = D / 'retry-02'
+     assert not D.exists(), 'fresh root required; preserve existing directory: ' + str(D)
+@@ -300,12 +300,12 @@
+     (D / 'evidence').mkdir()
+     plan = dict(identity, source=str(SOURCE), config=str(CONFIG), mode=mode,
+                 MemoryMax_bytes=mem - 8 * 1024**3, CPUQuota='1200%',
+-                prep_unit='rebase359934r2-' + PROJECT + '-' + mode + '-prep-20261105' + suffix + '.service',
+-                build_unit='rebase359934r2-' + PROJECT + '-' + mode + '-20261105' + suffix + '.service')
++                prep_unit='rebase359934r6-' + PROJECT + '-' + mode + '-prep-20261111' + suffix + '.service',
++                build_unit='rebase359934r6-' + PROJECT + '-' + mode + '-20261111' + suffix + '.service')
+     save(D / 'plan.json', plan)
+     shutil.copyfile(T / 'launcher.py', D / 'evidence/launcher-used.py')
+     materialize(D, plan)
+-    unit = 'rebase359934r2-' + PROJECT + '-' + mode + '-controller-20261105' + suffix + '.service'
++    unit = 'rebase359934r6-' + PROJECT + '-' + mode + '-controller-20261111' + suffix + '.service'
+     argv = ['systemd-run', '--user', '--unit=' + unit, *properties(plan),
+             '-p', 'WorkingDirectory=' + str(SOURCE),
+             '-p', 'StandardOutput=append:' + str(D / 'controller.stdout'),
+--- r2/toolchain/provenance.json
++++ r6/toolchain/provenance.json
+@@ -266,5 +266,49 @@
+   ],
+   "r2_changes": [
+     "source path (T only), fresh rehearsal roots and unique unit names; no production edits"
+-  ]
++  ],
++  "r6_entry_copy": {
++    "template": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261106-r2/toolchain",
++    "source_commit": "fea0fe464d56e17f2c7588c557bfffd9f6ac352b",
++    "source": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/source",
++    "output_root": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6",
++    "template_files_sha256": {
++      "README.md": "6db3f419218f5aa374942c2bb3383f210753e9313d8f55a204cedcfc1d52bae9",
++      "SHA256SUMS": "3b1dcb93c3e19d10e6c81a4b0655f827d0d37a5cd1edcb392d95a02e415d7c13",
++      "audit_rehearsal.py": "ad0fe47fb5dd176a86234bc6efdf1de2d050739aa29b87405a58edb976cc6370",
++      "checks.py": "140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe",
++      "compare_packages.py": "ceba06c4d29ead739a2778ffd81a914d592af8ba81e55fb37b984aa0bde41acc",
++      "compare_rules.py": "6d94435e7b404f6581df672b1a62731bf09b9d5d6a9b3a3da7d91f27b1d58766",
++      "correct_duplicate_sections.py": "c0b513f3f9f9051aa5190efb0cb9b5f3ef95b0149a82001d80c3333244a4d978",
++      "dwarf_release.py": "0dd379aeffb1205971889a292ce5a86e31180e06759708eeb0d808bf4b496cfa",
++      "launch.sh": "ed5fc6f503cff739daf171b5b8f831652231ddc926474b6284c63fc8f5e9f8f1",
++      "launcher.py": "6ec872e15d51d0e528525a0d82dce66a7ffec6805461f14ff776ef1a88e68df5",
++      "log_support.py": "45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a",
++      "night.py": "00df5f204c88add8c43bb8fd36acd57b0110c8c02cc219cef46d3a175d506ab7",
++      "provenance.json": "31369ba5ccbe30ae888c05c5104c09141fbfe586503c7fe4986a40ae5453d79f",
++      "qb-reference.json": "fecbced8451924e528555b6ac3a94d94cd1042634409e58ccd7c1b441e1cc69c",
++      "release_checks.py": "1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456",
++      "resource_report.py": "a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e",
++      "resume_release_checks.py": "8cc8d3e0d32b351e7f5798de297184a249a90952f56ef081f1a98205ce21ca67",
++      "revalidate.py": "676bc224928996c49499ab97a3fb6b420e7f21c2714baa595c9159f7bef24873",
++      "rpm_extract.py": "af5917886444b3cc4ba8b52be4afc77e233b40289624a16480140e4dc6662676",
++      "rpm_io.py": "52c1822c16a8935bccb2555415041bf0407ca617c5b8feffda2682e3c9a34718",
++      "section_compare.py": "7723343b88e2ddc19e6b405e7b5113a9743514aa319781553a453bdb0b41ed5b",
++      "test_checks.py": "673bcc6f16581d6073eb6913925bece5cb8ebd9bfb926226859bc5ca242e0ec2",
++      "test_integration.py": "6cf23b80bce2d9c55984bfaac17e180373b30c1c64ed7d68d7ba9316edde5b12",
++      "test_payload_overlap.py": "91c4796411a40a4cf1b1f281ed1247dbc079fb355d723017fc0a52ac1b1d2398",
++      "test_revalidation.py": "fa96e24ef54834ad9fd99b08c4d02a3a1776d4787bd7ce0c35c6da9c73d993a8",
++      "test_startup.py": "46d124368f21bc84d9a323730ce80a22cfedafd721cfa08a90ed61e57057b2e0",
++      "validate.py": "2221073854e2c24f94b5f7d4922b5f7721b664f3fe00c4f290937390b2856792",
++      "validation_common.py": "3545c7bb87547b878a747a222e9cdb8381dfa247dfff837fb572c9309b118015"
++    },
++    "changes": [
++      "SOURCE",
++      "output root",
++      "systemd names",
++      "basedev full branch/usage",
++      "README/provenance/checksums",
++      "new run-night.sh; legacy night.py unused and unchanged"
++    ]
++  }
+ }

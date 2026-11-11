@@ -1,0 +1,8 @@
+--- before input selection
++++ after input selection
+@@ -1,3 +1,5 @@
+ commands = [line.strip() for line in document.splitlines()
+             if '/bin/sh ' in line and 'rebase-launch-20261106-r2' in line
+             and 'rehearsal-02' in line]
++# Section 7.4 links the Toolchain command evidence instead of inlining it.
++commands.append(shlex.join(json.loads(toolchain_launch_command.read_text())))

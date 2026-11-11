@@ -1,0 +1,11 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261111-r6/basedev/test_payload_overlap.py
++++ /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/entry-tests/basedev/test_payload_overlap.py
+@@ -2,7 +2,7 @@
+ from unittest.mock import patch
+ import unittest,hashlib
+ import release_checks as R
+-W=Path('/home/linhao/Toolchain/development/llvm-optimize');X=W/'temp/night-revalidation-20261104-overlap-tests';X.mkdir(exist_ok=False)
++W=Path('/home/linhao/Toolchain/development/llvm-optimize');X=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/entry-tests/basedev/overlap-scratch');X.mkdir(exist_ok=False)
+ class Tests(unittest.TestCase):
+  def test_identical_no_overwrite(self):
+   root=X/'same';root.mkdir();p=root/'header.h';p.write_bytes(b'good');before=p.stat();files={'header.h':{'sha256':hashlib.sha256(b'good').hexdigest()}}

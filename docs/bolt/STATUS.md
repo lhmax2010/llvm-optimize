@@ -1133,3 +1133,14 @@ R6_SANDBOX 已结束 2026-11-11T17:17:44+08:00 status=ok
 复制入口前发现r2的basedev/night.py始终调用basedev launcher，T会用旧20261013快照；协调器结果根/服务名与launcher不一致；新汇总目录没有创建即写文件。不能仅按获准的SOURCE/输出根/N/服务名替换完成，按“不改逻辑”停止，未新建入口、自测执行0项、T/D演练NOT RUN、完整构建未启动。/home可用258.308 GiB，预算通过。详见[74号§6](74_local_full_build_fa4f9978.md#6-入口准备与演练2026-11-11sandbox-已更新模板-night-调度审计停止)。今晚命令仅记录，尚不可执行。
 
 ITEM3 已结束 2026-11-11T17:24:03.087548+08:00 status=stopped reason=template-night-dispatch-and-summary-directory-outside-allowed-edits
+
+
+## 2026-11-11：fea0fe46 本地入口与 T/D 演练完成（74号§7）
+
+新 tools/bolt/rebase-launch-20261111-r6 已准备，B 发布副本与 W 执行副本完全相同，原 r2 入口不变。按本轮授权新增 run-night.sh 分别调用 T/D 入口，Base-Dev shell 增加 full basedev；旧 night.py 保持原样不用。源码副本 fea0fe46 / tree b2e8af24 干净，sandbox只读确认同一SHA，未推Gerrit或sandbox、未操作QB。
+
+T快照20261030.061318 / build.conf 8f201a0d…；D快照20261030.061217 / build.conf 8ace286a…，与QB1225393/1225395保全记录一致。入口自带82项：80PASS、2项原有不适用SKIP；新增串行协调6/6模拟用例PASS。路径输入定位修正1/2次，仅修正72号T命令证据的读取，期望/产品/源码未变。dry-run的argv、服务名和输出根一致。
+
+T/D各一次演练均在 + cmake -G Ninja 停止，未运行Ninja；log-restarts=0、FLAGS与各自QB一致、WARNING=0，复制日志与原日志SHA/大小相同，资源报告生成，清理审计通过。全部完整根及汇总目录不存在，/home剩余244.021 GiB≥151.3GiB。本轮没有启动完整构建；今晚命令与进度查看见[74号§7](74_local_full_build_fa4f9978.md#7-入口准备与演练2026-11-11第二次)。
+
+ENTRY_PREP2 已结束 2026-11-11T18:03:29.724748+08:00 status=ok reason=T_D_rehearsals_pass_full_build_not_started

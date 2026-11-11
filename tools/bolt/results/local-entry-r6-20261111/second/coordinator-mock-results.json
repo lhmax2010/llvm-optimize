@@ -1,0 +1,67 @@
+[
+  {
+    "case": "both-ok",
+    "returncode": 0,
+    "calls": [
+      "toolchain",
+      "basedev"
+    ],
+    "PASS": true,
+    "stdout": "",
+    "stderr": "",
+    "log": "NIGHT_PROGRESS 2026-11-11T18:00:05+08:00 toolchain state=inactive last=[ 1s] mock build completed\nNIGHT_PROJECT 已结束 2026-11-11T18:00:05+08:00 toolchain {\"status\":\"ok\",\"reason\":\"mock-only\"}\nNIGHT_PROGRESS 2026-11-11T18:00:05+08:00 basedev state=inactive last=[ 1s] mock build completed\nNIGHT_PROJECT 已结束 2026-11-11T18:00:05+08:00 basedev {\"status\":\"ok\",\"reason\":\"mock-only\"}\nNIGHT 已结束 2026-11-11T18:00:05+08:00 T=ok D=ok\n"
+  },
+  {
+    "case": "T-failed-D-runs",
+    "returncode": 1,
+    "calls": [
+      "toolchain",
+      "basedev"
+    ],
+    "PASS": true,
+    "stdout": "",
+    "stderr": "",
+    "log": "NIGHT_PROGRESS 2026-11-11T18:00:05+08:00 toolchain state=inactive last=[ 1s] mock build completed\nNIGHT_PROJECT 已结束 2026-11-11T18:00:05+08:00 toolchain {\"status\":\"failed\",\"reason\":\"mock-only\"}\nNIGHT_PROGRESS 2026-11-11T18:00:05+08:00 basedev state=inactive last=[ 1s] mock build completed\nNIGHT_PROJECT 已结束 2026-11-11T18:00:05+08:00 basedev {\"status\":\"ok\",\"reason\":\"mock-only\"}\nNIGHT 已结束 2026-11-11T18:00:05+08:00 T=failed D=ok\n"
+  },
+  {
+    "case": "T-launch-failed-D-runs",
+    "returncode": 1,
+    "calls": [
+      "toolchain",
+      "basedev"
+    ],
+    "PASS": true,
+    "stdout": "",
+    "stderr": "",
+    "log": "NIGHT_PROJECT 已结束 2026-11-11T18:00:05+08:00 toolchain {\"status\":\"failed\",\"reason\":\"launcher-failed\",\"exit_code\":7}\nNIGHT_PROGRESS 2026-11-11T18:00:05+08:00 basedev state=inactive last=[ 1s] mock build completed\nNIGHT_PROJECT 已结束 2026-11-11T18:00:05+08:00 basedev {\"status\":\"ok\",\"reason\":\"mock-only\"}\nNIGHT 已结束 2026-11-11T18:00:05+08:00 T=failed D=ok\n"
+  },
+  {
+    "case": "empty-state-stops",
+    "returncode": 2,
+    "calls": [
+      "toolchain"
+    ],
+    "PASS": true,
+    "stdout": "",
+    "stderr": "",
+    "log": "empty service state: rebase359934r6-toolchain-full-controller-20261111.service; serial queue cannot safely continue\nNIGHT_PROJECT 已结束 2026-11-11T18:00:05+08:00 toolchain {\"status\":\"failed\",\"reason\":\"controller-state-unavailable\"}\nNIGHT 已结束 2026-11-11T18:00:05+08:00 T=failed D=not_run\n"
+  },
+  {
+    "case": "existing-root-refused",
+    "returncode": 1,
+    "calls": [],
+    "PASS": true,
+    "stdout": "",
+    "stderr": "",
+    "log": "fresh root required: /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/entry-tests/coordinator/existing-root-refused/work/temp/rebase-359934-20261111-r6/toolchain\nNIGHT 已结束 2026-11-11T18:00:05+08:00 T=not_run D=not_run\n"
+  },
+  {
+    "case": "dry-run-no-side-effects",
+    "returncode": 0,
+    "calls": [],
+    "PASS": true,
+    "stdout": "ARGV /bin/sh /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/entry-tests/coordinator/dry-run-no-side-effects/entry/toolchain/launch.sh fea0fe464d56e17f2c7588c557bfffd9f6ac352b full\nSERVICE rebase359934r6-toolchain-full-controller-20261111.service\nROOT /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/entry-tests/coordinator/dry-run-no-side-effects/work/temp/rebase-359934-20261111-r6/toolchain\nRESULT /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/entry-tests/coordinator/dry-run-no-side-effects/work/temp/rebase-359934-20261111-r6/toolchain/evidence/result.json\nARGV /bin/sh /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/entry-tests/coordinator/dry-run-no-side-effects/entry/basedev/launch.sh fea0fe464d56e17f2c7588c557bfffd9f6ac352b full basedev\nSERVICE rebase359934r6-basedev-full-controller-20261111.service\nROOT /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/entry-tests/coordinator/dry-run-no-side-effects/work/temp/rebase-359934-20261111-r6/basedev\nRESULT /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/entry-tests/coordinator/dry-run-no-side-effects/work/temp/rebase-359934-20261111-r6/basedev/evidence/result.json\nLOG /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/entry-tests/coordinator/dry-run-no-side-effects/work/temp/night-20261111-r6/night.log\nDRY_RUN 已结束 2026-11-11T18:00:05+08:00 status=ok\n",
+    "stderr": "",
+    "log": null
+  }
+]
