@@ -1,0 +1,29 @@
+--- old/llvm.spec
++++ new/llvm.spec
+@@ -37,7 +37,7 @@
+ %endif
+ 
+ Name:      llvm
+-VCS:       platform/upstream/llvm#60fabc723f30c5cc04146a9dd83487ebed63f259
++VCS:       platform/upstream/llvm#fea0fe464d56e17f2c7588c557bfffd9f6ac352b
+ Summary:   The LLVM Project is a collection of modular and reusable compiler and toolchain technologies
+ Version:   22.1.8
+ Release:   2.1
+@@ -598,7 +598,7 @@
+ BOLT_PROFILE_SOURCE="%{SOURCE1200}"
+ export BOLT_BUILD BOLT_WORK BOLT_INSTALL_ROOT BOLT_PROFILE_SOURCE
+ bolt_fail() {
+-  python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || true
++  python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || bolt_status_exit $?
+   exit 1
+ }
+ bolt_status_exit() {
+@@ -619,7 +619,7 @@
+     case "$bolt_status" in
+       129|130|143) exit "$bolt_status" ;;
+     esac
+-    printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || true
++    printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || bolt_status_exit $?
+     exit 1
+   fi
+ }

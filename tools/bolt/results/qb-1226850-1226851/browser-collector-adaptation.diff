@@ -1,0 +1,38 @@
+--- 77/browser_collect.py
++++ 79/browser_collect.py
+@@ -2,7 +2,7 @@
+ import sys,json,hashlib,gzip,datetime,time,traceback,re
+ sys.path.insert(0,'/home/linhao/qb_fetch/.deps')
+ from playwright.sync_api import sync_playwright
+-E=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-1225393-1225395')
++E=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/qb-1226850-1226851')
+ def save(rel,data,url):
+  if isinstance(data,str):data=data.encode()
+  p=E/rel;p.parent.mkdir(parents=True,exist_ok=True)
+@@ -17,7 +17,7 @@
+  with sync_playwright() as pw:
+   browser=pw.chromium.launch(headless=False,executable_path='/home/linhao/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome',args=['--disable-dev-shm-usage'])
+   ctx=browser.new_context(service_workers='block');page=ctx.new_page()
+-  page.goto('https://quickbuild.tizen.org/build/1225393/overview',wait_until='domcontentloaded',timeout=90000)
++  page.goto('https://quickbuild.tizen.org/build/1226850/overview',wait_until='domcontentloaded',timeout=90000)
+   def logged():return not page.locator('input[type=password]').count() and not any(x in page.url.lower() for x in ['/signin','/login'])
+   if not logged():print('BROWSER_LOGIN_REQUIRED: visible Chromium; enter credentials only in browser',flush=True)
+   deadline=time.monotonic()+1800
+@@ -25,7 +25,7 @@
+    if time.monotonic()>deadline:raise RuntimeError('manual login timeout')
+    page.wait_for_timeout(2000)
+   print('BROWSER_LOGIN_COMPLETE',flush=True)
+-  for bid in [1225393,1225395]:
++  for bid in [1226850,1226851]:
+    for tab in ['overview','log']:
+     url=f'https://quickbuild.tizen.org/build/{bid}/{tab}'
+     page.goto(url,wait_until='domcontentloaded',timeout=90000)
+@@ -34,7 +34,7 @@
+     text=page.locator('body').inner_text()
+     if tab=='overview':
+      fields=dict(line.split('\t',1) for line in text.splitlines() if '\t' in line)
+-     assert fields.get('Build Package List')=='platform/upstream/llvm@60fabc723f30c5cc04146a9dd83487ebed63f259',fields.get('Build Package List')
++     assert fields.get('Build Package List')=='platform/upstream/llvm@fea0fe464d56e17f2c7588c557bfffd9f6ac352b',fields.get('Build Package List')
+      profile=fields.get('Profile URL','')
+      assert profile.rstrip('/').endswith(('/tizen-base-toolchain_20261030.061318','/tizen-base-dev_20261030.061217')),profile
+ 

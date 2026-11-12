@@ -734,3 +734,28 @@ LOCAL_FULL_R6 已结束 2026-11-12T12:13:57.322734+08:00 status=completed_with_d
 
 
 文档生成阶段另有一次读取 JSON 层级的 KeyError（在写文档之前），只修正报告生成器的 data/ counts 层级，未修改测试、比较判据或产物；[原文](../../tools/bolt/results/local-full-r6-20261111/report-generator-error.txt)、[修正 diff](../../tools/bolt/results/local-full-r6-20261111/report-generator-correction.diff)。
+
+
+### 8.10 PM 裁决
+
+2026-11-12，以下为用户裁决；不改原始证据或 §8.6 的原始 FAIL。
+
+R1 T 的 controller status=failed，唯一来源是入口内置检查 QB-23-packages 用了过时的 r2 模板基线；其余 6 项 PASS。这不是产品失败，以 §8.6 的规则 B 比较为准。原 result.json 不动。
+
+R2 第 8 条定案。本地 GBS 对 QB 源码包的“已知差异固定清单”只有以下五项，清单外任何差异仍判 FAIL：
+
+- (a) 内容 SHA 相同、只有权限 0664/0644 不同的文件：Source1200、模型 tar、llvm.manifest；
+- (b) QB 把补丁 0001–0008 作为独立 source 文件，本地 tar 里补丁已经应用；应用 QB 补丁后，受影响的文件必须逐个一致；
+- (c) 本地多出 packaging/ 目录及其文件，每个文件的内容必须与当次提交的 git 对象 SHA 一致；
+- (d) clang/bindings/python/.git_archival.txt 的 node、node-date、describe-name 三行；
+- (e) spec 中的 VCS、Release，以及 Patch/%patch 写法差异。
+
+比较报告把“原始结果”和“按第 8 条清单归类后的结果”分开展示，原始 FAIL 照常保留。
+
+R3 74 号放行：fea0fe46 本地 T/D 完整构建通过上传门槛。
+
+R4 决策 18：通用级和建议级的加固项推迟到上传后的跟进补丁；第 7 轮评审只做定向检查，不阻塞上传；评审只看问题是否严重。
+
+R5 T 的 memory.peak 等于 MemoryMax，触顶事件 3877 次，无 OOM。作为资源数据记入，现在不处理。
+
+R6 T/D 函数差异只记录事实，因果留给以后的归因实验。

@@ -1,0 +1,47 @@
+--- 77/compare_current.py
++++ 79/compare_current.py
+@@ -3,13 +3,18 @@
+ from rpm_io import manifest
+ E=Path(__file__).resolve().parent
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+-X=W/'temp/qb-1225393-1225395'
+-O=E.parent/'qb-1223601-1223602'
++X=W/'temp/qb-1226850-1226851'
++O=E.parent/'qb-1225393-1225395'
+ plan=json.loads((E/'rpm-plan.json').read_text())
+-oldrecords=json.loads((O/'rpm-downloads.json').read_text())
+-oldmap={(r['build'],r['name']):r for r in oldrecords}
+-mapping={'1225393':'1223601','1225395':'1223602'}
+-bases={bid:next(r['url'].split('/repos/')[0] for r in oldrecords if r['build']==bid) for bid in mapping.values()}
++oldrecords=[json.loads(p.read_text()) for p in (O/'downloads').glob('*/*/*.json')]
++oldmap={(r['build'],r['arch'],r['name']):r for r in oldrecords}
++mapping={'1226850':'1225393','1226851':'1225395'}
++oldplan=json.loads((O/'rpm-plan.json').read_text())
++for bid,oldid in mapping.items():
++ for arch in ('x86_64','armv7l','aarch64'):
++  names={r['name'] for r in plan if r['build']==bid and r['arch']==arch}
++  previous={r['name'] for r in oldplan if r['build']==oldid and r['arch']==arch}
++  assert names==previous,('RPM list differs',bid,arch,sorted(names-previous),sorted(previous-names))
+ def save(p,v):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(v,indent=2,ensure_ascii=False)+'\n')
+ def sha(p):
+  with p.open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+@@ -42,15 +47,12 @@
+  # Compare all binary packages first. Source RPMs are downloaded for the separate whitelist audit.
+  for row in sorted(plan,key=lambda r:(r['name'].endswith('.src.rpm'),r['arch']!='x86_64',r['build'],r['arch'],r['name'])):
+   oldid=mapping[row['build']]
+-  old=oldmap.get((oldid,row['name'])) if row['arch']=='x86_64' else None
+-  if old:old={**old,'arch':row['arch']}
+-  else:
+-   old={**row,'build':oldid,'url':bases[oldid]+'/repos/'+row['url'].split('/repos/',1)[1],
+-        'path':str(X/oldid/row['arch']/'rpms'/row['name'])}
++  old=oldmap[(oldid,row['arch'],row['name'])]
+   print('START',row['build'],row['arch'],row['name'],flush=True)
+   a=fetch(old);b=fetch(row)
+-  assert 'fa4f9978c9162d3c6cd2113d0cfe1173f04881c8' in a['rpm_query'],a
+-  assert '60fabc723f30c5cc04146a9dd83487ebed63f259' in b['rpm_query'],b
++  assert '60fabc723f30c5cc04146a9dd83487ebed63f259' in a['rpm_query'],a
++  assert 'fea0fe464d56e17f2c7588c557bfffd9f6ac352b' in b['rpm_query'],b
++  assert a['rpm_query'].split('\t')[1]==b['rpm_query'].split('\t')[1]=='22.1.8'
+   ma=getman(Path(a['path']),oldid,row['arch'],row['name']);mb=getman(Path(b['path']),row['build'],row['arch'],row['name'])
+   added=sorted(mb.keys()-ma.keys());removed=sorted(ma.keys()-mb.keys())
+   changes=[];times=[]

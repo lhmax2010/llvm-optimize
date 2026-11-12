@@ -1,0 +1,69 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index bbf9c8770b3691acfb64065f950a32c67dff2dae..0c101ec17d97fcdded7d1fe25b690be58e594cd0 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -1904,33 +1904,41 @@ def cli():
+     global _CANCEL_SIGNAL
+     previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)}
+     _CANCEL_SIGNAL = None
+-    for sig in previous:
+-        signal.signal(sig, record_cancel)
++    result, failure = 0, None
++    for sig, handler in previous.items():
++        if handler != signal.SIG_IGN:
++            signal.signal(sig, record_cancel)
+     try:
+-        main()
+-        if _CANCEL_SIGNAL is not None:
+-            raise GateError('CANCELLED: cancelled by signal %s after work completed' % _CANCEL_SIGNAL,
+-                            cancel_originated=True)
+-        return 0
+-    except (GateError, OSError, ValueError, lzma.LZMAError) as error:
+-        step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+-        log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+-        diagnose_safely(step,log,error)
+-        print('BOLT_GATE_FAILED: '+str(error),file=sys.stderr)
+-        return 128 + _CANCEL_SIGNAL if _CANCEL_SIGNAL is not None else 1
+-    except Exception as error:
+-        step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+-        log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+-        diagnose_safely(step,log,error)
+-        print('BOLT_GATE_FAILED: unexpected %s: %s' % (type(error).__name__, error), file=sys.stderr)
+-        if _CANCEL_SIGNAL is not None:
+-            traceback.print_exc()
+-            return 128 + _CANCEL_SIGNAL
+-        raise
++        try:
++            main()
++        except (GateError, OSError, ValueError, lzma.LZMAError) as error:
++            step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
++            log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
++            diagnose_safely(step,log,error)
++            print('BOLT_GATE_FAILED: '+str(error),file=sys.stderr)
++            result = 1
++        except Exception as error:
++            step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
++            log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
++            diagnose_safely(step,log,error)
++            print('BOLT_GATE_FAILED: unexpected %s: %s' % (type(error).__name__, error), file=sys.stderr)
++            raise
++    except BaseException:
++        failure = sys.exc_info()
+     finally:
+         for sig, handler in previous.items():
+             signal.signal(sig, handler)
+-        _CANCEL_SIGNAL = None
++    # A cancellation during the final restoration window still controls status.
++    cancelled = _CANCEL_SIGNAL
++    _CANCEL_SIGNAL = None
++    if cancelled is not None:
++        if failure is not None:
++            traceback.print_exception(*failure)
++        print('BOLT_CANCELLED: signal %s' % cancelled, file=sys.stderr)
++        return 128 + cancelled
++    if failure is not None:
++        raise failure[1].with_traceback(failure[2])
++    return result
+ 
+ 
+ if __name__=='__main__':

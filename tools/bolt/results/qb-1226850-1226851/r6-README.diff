@@ -1,0 +1,27 @@
+--- r6/README.before
++++ r6/README.md
+@@ -4,7 +4,7 @@
+ 
+ ## 基线与提交
+ 
+-基线 13c3e223d9e1b35e4affb55255c5042f8c940f35（359934 PS10），父提交 cf4b6777d056131e2534ecb460c5575327d99646（357163 PS2）。本轮查询：359934 为 MERGED/PS10，357163 为 MERGED/PS2，revision 均未变；因任务要求两者仍为 NEW，已停止且未推送 sandbox。查询原文与停止记录见 [78号第四次续跑](../../docs/bolt/78_fifth_review_fixes.md)。本包不包含完整构建或新 QB 的认证结论。
++基线 13c3e223d9e1b35e4affb55255c5042f8c940f35（359934 PS10），父提交 cf4b6777d056131e2534ecb460c5575327d99646（357163 PS2）。359934 为 MERGED/PS10，357163 为 MERGED/PS2，revision 均未变。后续已按新授权推送 sandbox，HEAD=fea0fe464d56e17f2c7588c557bfffd9f6ac352b；tizen_base 判定为 verdict B。历史停止及第五次续跑见 [78号](../../docs/bolt/78_fifth_review_fixes.md)。本地 T/D 完整构建已由 [74号 §8.10 PM 裁决](../../docs/bolt/74_local_full_build_fa4f9978.md#810-pm-裁决)放行；新 QB 1226850/1226851 的结果以79号为准。
+ 
+ |SHA|tree|标题|
+ |---|---|---|
+@@ -31,7 +31,7 @@
+ - 450个QB归档、7728个成员新旧检查一致，转换成员7706，原生22；调试节重定位94400431条，表外类型0。
+ - 10/10 debug ThinLTO归档新旧输出逐字节相同：1100成员（1093转换、7原生），调试节重定位35560547条，类型1与10；全部重定位7种类型，表外类型0。libclangSema.a复用已有两份输出并重算SHA，其余9个本轮重新转换。
+ - 12组spec展开、5项RPM解析PASS；ARM/BOLT关闭相对60fabc72字节全同，x86开启仅两处disk-diagnose差异。
+-- pyflakes未安装，NOT RUN；未联网安装。未运行完整构建、新QB、90 TU或整包重新认证。本轮通过的是轻量与指定实物转换门禁，不能替代新版本整包一致性证明。
++- pyflakes未安装，NOT RUN；未联网安装。评审包制作时未运行完整构建、新QB、90 TU或整包重新认证；其后已完成74号本地完整构建与审计，并按 §8.10 放行。原始失败记录保留，见74号。
+ 
+ ## 文件导览
+ 
+@@ -47,5 +47,5 @@
+ 
+ Source1200仅列身份：packaging/clang-bolt-v2.fdata.xz，9735212字节，SHA256 52fd8522b8cceadebfb6bfc0a19f721f1072cff95c682b12b2c4dd5b0cc1e27f。不另放二进制文件，完整内容在0002.patch。
+ 
+-当前设计为[v7](../../docs/bolt/design/tizen_llvm_speed_design_v7.md)；历史背景48、51、69–73、75、77；本轮结果以[78号](../../docs/bolt/78_fifth_review_fixes.md)为准。
++当前设计为[v8](../../docs/bolt/design/tizen_llvm_speed_design_v8.md)；历史背景48、51、69–73、75、77；本轮结果以[78号](../../docs/bolt/78_fifth_review_fixes.md)为准。
+ 下一次QB源码包白名单：llvm.spec、clang-bolt-helper.py、llvm-static-archives-native.py、VCS行；0008必须不变。

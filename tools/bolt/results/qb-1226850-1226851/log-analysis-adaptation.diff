@@ -1,0 +1,13 @@
+--- 77/analyze_logs.py
++++ 79/analyze_logs.py
+@@ -28,8 +28,8 @@
+     anchors.append(dict(line=i,raw=raw,text=s))
+  return dict(flags=flags,warnings=warnings,anchors=anchors,counts=counts,native=native,skipped=skipped,post=post,converted=sum(r['record']['converted'] for r in native),preserved=sum(r['record']['preserved'] for r in native),archives=len(native))
+ allres={}
+-for bid,old,proj,snap in [('1225393','1223601','Tizen-Base-Toolchain','tizen-base-toolchain_20261030.061318'),('1225395','1223602','Tizen-Base-Dev','tizen-base-dev_20261030.061217')]:
+- a=analyze(E.parent/'qb-1223601-1223602'/old/'x86_64/llvm.buildlog.txt.gz');b=analyze(E/bid/'x86_64/llvm.buildlog.txt.gz')
++for bid,old,proj,snap in [('1226850','1225393','Tizen-Base-Toolchain','tizen-base-toolchain_20261030.061318'),('1226851','1225395','Tizen-Base-Dev','tizen-base-dev_20261030.061217')]:
++ a=analyze(E.parent/'qb-1225393-1225395'/old/'x86_64/llvm.buildlog.txt.gz');b=analyze(E/bid/'x86_64/llvm.buildlog.txt.gz')
+  save(f'{bid}/anchors.txt','\n'.join(f"L{r['line']}: {r['raw']}" for r in sorted(b['flags']+b['warnings']+b['anchors']+b['post']+b['skipped'],key=lambda r:r['line']))+'\n')
+  save(f'{bid}/native-records.json',b['native'])
+  save(f'{bid}/profile-counts.json',b['counts'])

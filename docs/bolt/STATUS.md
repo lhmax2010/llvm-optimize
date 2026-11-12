@@ -1155,3 +1155,39 @@ ENTRY_PREP2 已结束 2026-11-11T18:03:29.724748+08:00 status=ok reason=T_D_rehe
 T RPM在新的rootless namespace中实际安装，LLDB自动加载符号，21/21 clang帧与llvm-symbolizer一致，冷函数抽查通过；无额外sudo。T/D BOLT输入与改写日志已保全，函数差异清单已生成，只记录事实。资源数据及UNKNOWN、du超时见[74号§8](74_local_full_build_fa4f9978.md#8-入口修正与完整构建fea0fe46)。全部根/副本保留，无Gerrit/sandbox推送或QB操作。
 
 LOCAL_FULL_R6 已结束 2026-11-12T12:13:57.322734+08:00 status=completed_with_differences reason=builds_ok_binary_policyB_pass_source_raw_FAIL_attributed
+
+
+## 2026-11-12：74号放行后的 PM 裁决（79号 A2）
+
+R1 T 的 controller status=failed，唯一来源是入口内置检查 QB-23-packages 用了过时的 r2 模板基线；其余 6 项 PASS。这不是产品失败，以 §8.6 的规则 B 比较为准。原 result.json 不动。
+
+R2 第 8 条定案。本地 GBS 对 QB 源码包的“已知差异固定清单”只有以下五项，清单外任何差异仍判 FAIL：
+
+- (a) 内容 SHA 相同、只有权限 0664/0644 不同的文件：Source1200、模型 tar、llvm.manifest；
+- (b) QB 把补丁 0001–0008 作为独立 source 文件，本地 tar 里补丁已经应用；应用 QB 补丁后，受影响的文件必须逐个一致；
+- (c) 本地多出 packaging/ 目录及其文件，每个文件的内容必须与当次提交的 git 对象 SHA 一致；
+- (d) clang/bindings/python/.git_archival.txt 的 node、node-date、describe-name 三行；
+- (e) spec 中的 VCS、Release，以及 Patch/%patch 写法差异。
+
+比较报告把“原始结果”和“按第 8 条清单归类后的结果”分开展示，原始 FAIL 照常保留。
+
+R3 74 号放行：fea0fe46 本地 T/D 完整构建通过上传门槛。
+
+R4 决策 18：通用级和建议级的加固项推迟到上传后的跟进补丁；第 7 轮评审只做定向检查，不阻塞上传；评审只看问题是否严重。
+
+R5 T 的 memory.peak 等于 MemoryMax，触顶事件 3877 次，无 OOM。作为资源数据记入，现在不处理。
+
+R6 T/D 函数差异只记录事实，因果留给以后的归因实验。
+
+设计 v8 已按大小及SHA核对后移动到 docs/bolt/design/；79号QB核对随后执行，不提前宣称新QB通过。
+
+
+## 2026-11-12：79号 A整理完成，QB核对停在B5补充脚本
+
+设计v8已移动并核对86911字节/SHA05f8aa29…；74§8.10的R1–R6裁决已追加，r6 README已更新实际放行状态；三个最终提交说明仅生成草稿，LLVM仓库未改写。
+
+1226850=Tizen-Base-Toolchain、1226851=Tizen-Base-Dev，均为fea0fe46/tree b2e8af24，三个架构成功。B1–B4 PASS：102二进制包载荷一致；1294静态归档22520成员逐SHA相同；源码包仅3文件Git差异+VCS，0001–0008全部不变。x86两组转换7706、保留22均覆盖。
+
+B5主体日志检查完成；补充脚本把Warnings.cpp、Cancellation.cpp等编译输入文件名误当告警，因Ninja编号不同触发断言。按停止规则未修判定重跑，B5未完成、B6未运行，总结论待PM裁决；不是已证实的产品失败。准备路径错误修正1次，原文和diff保留。详见[79号](79_qb_1226850_1226851.md)。只发布证据到bolt-v4，无LLVM/Gerrit/sandbox写操作。
+
+79_ANALYSIS 已结束 2026-11-12T16:37:16+08:00 status=待PM裁决 reason=audit-script-filename-false-positive

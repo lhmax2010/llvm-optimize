@@ -1,0 +1,26 @@
+--- 77
++++ 79
+@@ -1,11 +1,11 @@
+ from pathlib import Path
+ import urllib.request,json,gzip,re,hashlib,datetime,xml.etree.ElementTree as ET
+-E=Path(__file__).resolve().parent;X=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/qb-1225393-1225395')
++E=Path(__file__).resolve().parent;X=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/qb-1226850-1226851')
+ plans=[];results=[]
+-for bid,project,profile in [('1225393','Tizen-Base-Toolchain','tizen-base-toolchain_20261030.061318'),('1225395','Tizen-Base-Dev','tizen-base-dev_20261030.061217')]:
++for bid,project,profile in [('1226850','Tizen-Base-Toolchain','tizen-base-toolchain_20261030.061318'),('1226851','Tizen-Base-Dev','tizen-base-dev_20261030.061217')]:
+  text=(E/bid/'overview.txt').read_text()
+  fields=dict(x.split('\t',1) for x in text.splitlines() if '\t' in x)
+- assert fields['Build Package List']=='platform/upstream/llvm@60fabc723f30c5cc04146a9dd83487ebed63f259'
++ assert fields['Build Package List']=='platform/upstream/llvm@fea0fe464d56e17f2c7588c557bfffd9f6ac352b'
+  assert fields['Profile URL'].rstrip('/').endswith('/'+profile)
+  base=fields['Download_URL'].replace('http://','https://').rstrip('/')+'/'
+  snap=base.rstrip('/').rsplit('/',1)[-1]
+@@ -13,7 +13,7 @@
+  with urllib.request.urlopen(u,timeout=90) as resp:data=resp.read(2*1024*1024)
+  (E/bid/'manifest.xml').write_bytes(data)
+  rev=[p.attrib for p in ET.fromstring(data).findall('.//project') if p.get('name')=='platform/upstream/llvm']
+- assert len(rev)==1 and rev[0]['revision']=='60fabc723f30c5cc04146a9dd83487ebed63f259'
++ assert len(rev)==1 and rev[0]['revision']=='fea0fe464d56e17f2c7588c557bfffd9f6ac352b'
+  for arch in ['x86_64','armv7l','aarch64']:
+   u=base+'builddata/buildlogs/standard/'+arch+'/succeeded/llvm.buildlog.txt'
+   p=E/bid/arch/'llvm.buildlog.txt.gz';p.parent.mkdir(exist_ok=True)

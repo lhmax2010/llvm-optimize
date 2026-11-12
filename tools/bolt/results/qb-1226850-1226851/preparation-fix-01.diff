@@ -1,0 +1,11 @@
+--- before/source_audit.py
++++ after/source_audit.py
+@@ -13,7 +13,7 @@
+  names={x['file'] for x in row['changes']}
+  assert names=={'llvm.spec','clang-bolt-helper.py','llvm-static-archives-native.py'},names
+  assert not row['added'] and not row['removed']
+- with gzip.open(E/'manifests'/row['build']/'src'/(row['name']+'.json.gz'),'rt') as f:manifest=json.load(f)
++ with gzip.open(E/'manifests'/row['build']/row['arch']/(row['name']+'.json.gz'),'rt') as f:manifest=json.load(f)
+  patches=sorted(n for n in manifest if re.match(r'000[1-8]-.*\.patch$',n))
+  assert len(patches)==8,patches
+  for side in ['old','new']:extract_selected(row[side]['path'],names|set(patches),X/row['build']/side)

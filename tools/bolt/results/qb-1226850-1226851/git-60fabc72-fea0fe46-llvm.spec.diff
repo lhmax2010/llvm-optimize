@@ -1,0 +1,22 @@
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index d5b1a350dd2a716391e9c9ef3f6af20a21ded1f4..5a10febabbb36b35bf177070bf5e71055f3c8f9d 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -572,7 +572,7 @@ BOLT_INSTALL_ROOT="%{buildroot}"
+ BOLT_PROFILE_SOURCE="%{SOURCE1200}"
+ export BOLT_BUILD BOLT_WORK BOLT_INSTALL_ROOT BOLT_PROFILE_SOURCE
+ bolt_fail() {
+-  python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || true
++  python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || bolt_status_exit $?
+   exit 1
+ }
+ bolt_status_exit() {
+@@ -593,7 +593,7 @@ bolt_checked() {
+     case "$bolt_status" in
+       129|130|143) exit "$bolt_status" ;;
+     esac
+-    printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || true
++    printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || bolt_status_exit $?
+     exit 1
+   fi
+ }
