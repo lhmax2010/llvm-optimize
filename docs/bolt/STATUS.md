@@ -1164,6 +1164,11 @@ R1 T 的 controller status=failed，唯一来源是入口内置检查 QB-23-pack
 R2 第 8 条定案。本地 GBS 对 QB 源码包的“已知差异固定清单”只有以下五项，清单外任何差异仍判 FAIL：
 
 - (a) 内容 SHA 相同、只有权限 0664/0644 不同的文件：Source1200、模型 tar、llvm.manifest；
+
+  **PM 修正（2026-11-12T21:00:58.812766+08:00，原文保留）：** R2(a) 由“指定文件名清单”改为按规律判定：源码包中内容 SHA 相同、仅权限为本地 0664 对 QB 0644（只差组写位）的文件，属于已知差异。其他任何权限变化（含可执行位、属主、其他位）仍判 FAIL。
+
+  原因：原清单是 PM 起草时漏列。74 号比较的是 60fabc72 的 QB，helper 和转换器当时内容不同，权限差异被内容差异覆盖；同提交比较时才暴露。来源相同，都是本地 GBS 导出的权限。
+
 - (b) QB 把补丁 0001–0008 作为独立 source 文件，本地 tar 里补丁已经应用；应用 QB 补丁后，受影响的文件必须逐个一致；
 - (c) 本地多出 packaging/ 目录及其文件，每个文件的内容必须与当次提交的 git 对象 SHA 一致；
 - (d) clang/bindings/python/.git_archival.txt 的 node、node-date、describe-name 三行；
@@ -1207,3 +1212,11 @@ B5已按PM规则补跑T/D并通过：去时间戳和Ninja进度后新增/缺少�
 B6 T对1226850：22个二进制包规则B全部PASS，271静态归档5829成员相同。源码包原始FAIL；按R2精确清单归类仍FAIL：clang-bolt-helper.py及llvm-static-archives-native.py各自内容SHA相同，但本地0664、QB0644，不在R2(a)限定的Source1200/模型tar/llvm.manifest清单内。未扩大例外；T源码tar后续归因、D的B6、0003-v2和claims-to-code按停止规则NOT RUN。见[79号续跑](79_qb_1226850_1226851.md#79号续跑2026-11-12b5通过b6在固定清单外权限差异停止)。
 
 B6 已结束 2026-11-12T20:51:18.957479+08:00 status=FAIL reason=source_permissions_outside_R2a
+
+## 2026-11-12：79号续二，R2(a)已按PM修正，B6最终审计停止
+
+新R2(a)已同步74号§8.10并保留原文。T的7个原始内容相同、只差组写位的文件通过重新分类；T二进制22/22、D二进制12/12规则B PASS。两组各271归档5829成员相同。源码包原始FAIL保留；补丁/packaging/git_archival/spec内容已完成核对。
+
+新源码归类脚本错误组合内容与权限例外，临时PASS已被最终审计否决：T/D的tar和spec原始SHA不同、权限0664/0644，不满足R2(a)明确的等SHA前提。没有自行放宽或重跑；B6最终FAIL，0003-v2及claims-to-code未运行。需PM裁决是否允许这两类已归因内容差异与组写位差异组合。见[79号续二](79_qb_1226850_1226851.md#79号续二r2a修正后的b6复核与停止)。
+
+B6 已结束 2026-11-12T21:07:46.411610+08:00 status=FAIL reason=source_tar_spec_mode_exception_requires_equal_SHA
