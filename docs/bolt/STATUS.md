@@ -1247,3 +1247,16 @@ tizen_base仍为61ef5d31ca91025c414c748477bef0c64ddfa67c，verdict B。sandbox�
 PM裁决：只改提交说明、树不变，不需要新QB。源码包中0008补丁文件只有提交说明部分和首行提交号会变，代码正文不变；QB1226850/1226851对新HEAD有效。79号B1–B6 PASS，原始源码FAIL保留。
 
 [80号](80_final_message_push.md)；[r7评审包](../../patches/rebase-359934-20261112-r7/README.md)。不构建、不访问QB；下一步按PM安排进行评审。
+
+## 2026-11-13：81号续完成，第一批已上传 Gerrit，评审中
+
+新链 c5244e13258bb541458dcd4a08254217d7c556a9 → bde009d1197a09f7b7b76382a0166e03c841bdb9 → 2cdd37ff747765e99c2befa3e6e8a88663ab77fe。
+三个tree仍为3d961cbb04f5446f84d2089b4f65f3178f2bd7fa / c23914776684bf94fdd5961f447f7c24e7bb79bc / b2e8af2477cf623a945aa80bf8288a262dd4a5a9；作者/作者日期不变。0003仅明确“For converted PIC members”；本次续跑只更新时间重建，说明与上次链完全相同。
+
+[361395](https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/361395)（混合链接）、[361396](https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/361396)（BOLT）、[361397](https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/361397)（固定参数/转换器）均NEW/tizen_base/PS1，revision及依赖核对通过。上传成功后sandbox已同步为2cdd37ff747765e99c2befa3e6e8a88663ab77fe；tizen_base仍verdict B。未加评审人、未打分、未提交合入。
+
+第七轮评审结论（PM提供）：两家都判可以上传，没有严重问题。上传后跟进清单：入口子服务状态改为白名单及其他入口小项（下次使用入口之前完成）、产品加固补丁、claims文档补充PS10对照。设计以[v9](design/tizen_llvm_speed_design_v9.md)为准，95367字节，SHA256 534ac688da10ee10f3905a0780ec71da2c57b5a3b24e5cdad50f1963e070b989，已从Downloads移动并核对。
+
+新规则：以后推送新patch set时，必须先推refs/for，成功后再同步sandbox，不能先推sandbox。第一次no new changes为PM推送顺序安排错误，不是代码失败，拒绝原文保留。
+
+[81号](81_gerrit_upload.md)；[r8评审包](../../patches/rebase-359934-20261113-r8/README.md)。本轮未构建、未访问QB，旧证据保留。

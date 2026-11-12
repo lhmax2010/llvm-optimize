@@ -1,0 +1,32 @@
+--- 0003-final-draft-v2.txt
++++ 0003-final-draft-v3.txt
+@@ -49,17 +49,18 @@
+ indexes. Check each relocation against an explicit x86_64 field width
+ table taken from LLVM 22.1.8, excluding seven dynamic-linking-only
+ types: COPY, GLOB_DAT, JUMP_SLOT, RELATIVE, DTPMOD64, TLSDESC and
+-IRELATIVE. Reject types outside the table and CREL sections. For PIC,
+-reject 8- and 16-bit absolute relocations in allocated sections when
+-they reference non-absolute symbols; retain the existing 32- and 64-bit
+-PIC checks. Validate relocation field bounds against the target section;
+-for compressed targets, use the declared uncompressed size as the bound.
+-Handle SIGHUP and process-group reaping during conversion, reset an
+-inherited ignored SIGCHLD, keep inherited ignored TERM, INT and HUP
+-ignored, and exit with 128+signal after cancellation, deciding the final
+-status after the original handlers are restored. With BOLT enabled, the
+-spec passes the converter's 129/130/143 through; with BOLT disabled, the
+-call keeps exit 1 so that expansion is unchanged.
++IRELATIVE. Reject types outside the table and CREL sections. For
++converted PIC members, reject 8- and 16-bit absolute relocations in
++allocated sections when they reference non-absolute symbols; retain the
++existing 32- and 64-bit PIC checks. Validate relocation field bounds
++against the target section; for compressed targets, use the declared
++uncompressed size as the bound. Handle SIGHUP and process-group reaping
++during conversion, reset an inherited ignored SIGCHLD, keep inherited
++ignored TERM, INT and HUP ignored, and exit with 128+signal after
++cancellation, deciding the final status after the original handlers are
++restored. With BOLT enabled, the spec passes the converter's 129/130/143
++through; with BOLT disabled, the call keeps exit 1 so that expansion is
++unchanged.
+ 
+ Based on Change 359934: keeps its token classification, per-switch
+ replay and adopted checks; adds the declared debug-info mode with a
