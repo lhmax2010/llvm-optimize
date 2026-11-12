@@ -1,0 +1,92 @@
+--- 0003-old.txt
++++ 0003-final-draft-v2.txt
+@@ -1,42 +1,43 @@
+ packaging: fix x86 LLVM flags and archive mode
+ 
+-QB 1214821 inherited GCC project options into a clang build. Source1005
++A GCC-based project passed its options into a clang build. Source1005
+ rejected -feliminate-unused-debug-types; release commands also lacked
+ its previously mandatory DWARF setting.
+ 
+-Fix x86_64 compilation flags to the effective Toolchain values recorded
+-by QB 1215143. Inherit reviewed architecture flags, reject native CPU
++Fix x86_64 compilation flags to the effective values of the Toolchain
++project. Inherit reviewed architecture flags, reject native CPU
+ selection, and warn on debug sequences other than -g2 -gdwarf-4 -g.
+-Release commands contain no debug flags. Match whole tokens and
+-preserve the caller's IFS state and shell options.
++Release commands contain no debug flags. Match whole tokens and preserve
++the caller's IFS state and shell options.
+ 
+ Fix LDFLAGS to the Toolchain value. Executable and shared-library linker
+ flags remain explicitly set by the spec; MODULE targets (plugins) take
+ LDFLAGS, so Base-Dev plugin links gain -z relro, --as-needed and
+ --gc-sections, matching Toolchain. This retains the existing policy of
+-removing project stack-protector and --param=ssp-buffer-size options;
+-it does not introduce a new hardening policy.
++removing project stack-protector and --param=ssp-buffer-size options; it
++does not introduce a new hardening policy.
+ 
+ Print TIZEN_LLVM_NORMALIZED_FLAGS for prior normalization and
+ TIZEN_LLVM_DROPPED_FLAGS for the four reviewed extra project options.
+-Unreviewed project options are dropped with TIZEN_LLVM_FLAGS_WARNING
+-on stdout and stderr for manual review; they do not interrupt the build.
++Unreviewed project options are dropped with TIZEN_LLVM_FLAGS_WARNING on
++stdout and stderr for manual review; they do not interrupt the build.
+ Uncertified debug sequences also warn. Reject only native CPU selection
+ and invalid release mode values. Review warnings before adding options
+ to the fixed set or expected-dropped list. Non-x86_64 behavior is kept.
+ 
+-Local and QB command strings differ in the placement of section flags.
+-The prior stripped QB clang equals the local post-RUNPATH clang, as
+-recorded in docs/bolt/49 section A.4. Recheck the identity chain, RPM
+-contents and 90 translation units in the next complete build; these
+-lightweight checks alone do not prove new binary identity.
++Local and project-build command strings differ in the placement of
++section flags. Prior qualification found the stripped project-build
++clang equal to the local post-RUNPATH clang. Identity-chain,
++package-content and complete-object comparisons provide the separate
++binary qualification evidence; lightweight checks alone do not prove
++binary identity.
+ 
+ Require Source1005 --debug-info yes|no and match each converted member's
+ recorded command. Release means no debug option in that command; any
+ debug option still requires the certified final -gdwarf-4. Reject debug
+-sections in converted release outputs. Preserve native members as-is
+-and count them, without applying that assertion to preexisting objects.
+-All 3853 converted full-20261030 members recorded debug options.
++sections in converted release outputs. Preserve native members as-is and
++count them, without applying that assertion to preexisting objects. All
++3853 members in the debug qualification recorded debug options.
+ 
+ Following review, reject -Wa, options, which PS10 accepted through its
+ broad -W branch, and report -Xassembler (already rejected) as an
+@@ -46,15 +47,19 @@
+ archive and relocation parsing against malformed sizes, size fields,
+ long-name numbers and offsets, section tables, section payloads and
+ indexes. Check each relocation against an explicit x86_64 field width
+-table taken from LLVM 22.1.8; reject relocation types outside that
+-table, CREL relocation sections, 8- and 16-bit absolute relocations and
+-fields outside their target section, bounding compressed sections by
+-their uncompressed size. Handle SIGHUP and process-group reaping during
+-conversion, reset an inherited ignored SIGCHLD, keep inherited ignored
+-TERM, INT and HUP ignored, and exit with 128+signal after cancellation,
+-deciding the final status after the original handlers are restored. With
+-BOLT enabled, the spec passes the converter's 129/130/143 through; with
+-BOLT disabled, the call keeps exit 1 so that expansion is unchanged.
++table taken from LLVM 22.1.8, excluding seven dynamic-linking-only
++types: COPY, GLOB_DAT, JUMP_SLOT, RELATIVE, DTPMOD64, TLSDESC and
++IRELATIVE. Reject types outside the table and CREL sections. For PIC,
++reject 8- and 16-bit absolute relocations in allocated sections when
++they reference non-absolute symbols; retain the existing 32- and 64-bit
++PIC checks. Validate relocation field bounds against the target section;
++for compressed targets, use the declared uncompressed size as the bound.
++Handle SIGHUP and process-group reaping during conversion, reset an
++inherited ignored SIGCHLD, keep inherited ignored TERM, INT and HUP
++ignored, and exit with 128+signal after cancellation, deciding the final
++status after the original handlers are restored. With BOLT enabled, the
++spec passes the converter's 129/130/143 through; with BOLT disabled, the
++call keeps exit 1 so that expansion is unchanged.
+ 
+ Based on Change 359934: keeps its token classification, per-switch
+ replay and adopted checks; adds the declared debug-info mode with a
