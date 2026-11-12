@@ -1,0 +1,28 @@
+--- 74/compare_rpms.py
++++ 79-resume/compare_local_rpms.py
+@@ -32,21 +32,21 @@
+    index+=1;at=end+(size%2)
+   assert at==len(mm)
+  return out
+-project=sys.argv[1];bid={'toolchain':'1225393','basedev':'1225395'}[project]
++project=sys.argv[1];bid={'toolchain':'1226850','basedev':'1226851'}[project]
+ D=W/'temp/rebase-359934-20261111-r6'/project
+-V=W/'temp/local-full-r6-20261111-compare'/project;V.mkdir(parents=True,exist_ok=False)
++V=W/'temp/qb79-local-resume-20261112'/project;V.mkdir(parents=True,exist_ok=False)
+ O=E/project/'comparison';O.mkdir(parents=True,exist_ok=False)
+ os.environ['DWARF_PROOF_DIR']=str(V/'dwarf-proofs')
+ summary=[];archiveresults=[]
+ try:
+  local=list((D/'gbs-driver/local/repos').glob('**/*.rpm'))
+- qb=[Path(r['path']) for r in json.loads((B/'tools/bolt/results/qb-1225393-1225395/rpm-plan.json').read_text()) if r['build']==bid and r['arch']=='x86_64']
++ qb=[Path(r['path']) for r in json.loads((B/'tools/bolt/results/qb-1226850-1226851/rpm-plan.json').read_text()) if r['build']==bid and r['arch']=='x86_64']
+  if not local:raise RuntimeError('NOT RUN: no local RPM products')
+  maps={};meta={};paths={}
+  for side,rr in [('local',local),('qb',qb)]:
+   for p in sorted(rr):
+    if side=='qb':
+-    receipt=json.loads((B/f'tools/bolt/results/qb-1225393-1225395/downloads/{bid}/x86_64'/(p.name+'.json')).read_text())
++    receipt=json.loads((B/f'tools/bolt/results/qb-1226850-1226851/downloads/{bid}/x86_64'/(p.name+'.json')).read_text())
+     assert sha(p)==receipt['sha256'],('QB receipt SHA mismatch',str(p))
+    z=query(p);key=z['name']+('-src' if p.name.endswith('.src.rpm') else '')
+    if z['arch'] not in ('x86_64','noarch','src') and not p.name.endswith('.src.rpm'):continue
