@@ -1236,3 +1236,14 @@ PM将R2权限/内容改为独立判定，已同步74号§8.10、79号并保留�
 B1–B5复用已完成证据；B6二进制T22/D12规则B PASS，源码按最新R2 PASS，79号总判定PASS。0003-final-draft-v2.txt及两份diff已生成，最长72列、连字符词不拆分；claims-to-code为5句对应、0句不符，并明确NONE偏移例外、原生成员不拦截forbidden及压缩声明大小边界。仅证据文件，LLVM提交/分支未变。
 
 详见[79号最新结果](79_qb_1226850_1226851.md#r2-判定方式修正79号续三)和[草稿核对](../../tools/bolt/results/qb-1226850-1226851/commit-message-drafts/0003-claims-to-code.md)。本轮无构建、无QB访问、无Gerrit/sandbox操作。
+
+## 2026-11-12：80号最终提交说明完成，sandbox更新为4e80f54e
+
+新链8e35d0c90d5d87924b2f268b5ef20317e6b805d8 → 51417b0fa060154ad887e362235c68488003d009 → 4e80f54e10fe920439455123f0ac2cb8af5ab924。
+三个tree分别仍为3d961cbb04f5446f84d2089b4f65f3178f2bd7fa、c23914776684bf94fdd5961f447f7c24e7bb79bc、b2e8af2477cf623a945aa80bf8288a262dd4a5a9；作者及作者日期不变，Change-Id和Signed-off-by不变。新消息与c413b67e指定草稿逐字节一致。最终git diff为空，range-diff只含说明差异。输出解析准备误报修正1次，原文保留。
+
+tizen_base仍为61ef5d31ca91025c414c748477bef0c64ddfa67c，verdict B。sandbox以指定lease从fea0fe46推至4e80f54e，推后ls-remote一致，仅此一次LLVM远端推送，无refs/for或其他分支。原工作分支不动，新链在独立游离工作树。
+
+PM裁决：只改提交说明、树不变，不需要新QB。源码包中0008补丁文件只有提交说明部分和首行提交号会变，代码正文不变；QB1226850/1226851对新HEAD有效。79号B1–B6 PASS，原始源码FAIL保留。
+
+[80号](80_final_message_push.md)；[r7评审包](../../patches/rebase-359934-20261112-r7/README.md)。不构建、不访问QB；下一步按PM安排进行评审。

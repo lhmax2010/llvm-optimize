@@ -1,0 +1,37 @@
+cmake: use hybrid LLVM linkage on x86_64
+
+Enable shared LLVM and Clang linkage in the x86_64 recipe while keeping
+clang, lld and llvm-ar statically linked to LLVM components. Their
+driver aliases continue to share the same executable. Other tools use
+libLLVM and, where applicable, libclang-cpp through the normal upstream
+interfaces.
+
+Use TIZEN_HYBRID_LINK and a per-consumer TIZEN_STATIC_LLVM property to
+select component dependencies only for the three opted-in drivers. When
+disabled, the shared-link interfaces retain upstream behavior. Keep
+BUILD_SHARED_LIBS and the unified LLVM driver disabled on x86_64.
+
+Preserve upstream forced-static llvm-tblgen, clang-tblgen, lldb-tblgen,
+llvm-config and llvm-exegesis. Tool-private archives and build utilities
+retain upstream behavior. Do not change armv7l or aarch64 recipes,
+optimization flags, the static-devel %files rules or native archive
+conversion.
+
+Validation of the original hybrid implementation: local full GBS build
+produced 22 binary RPMs and one source RPM. The 188-entry NEEDED table
+had 183 passes, four non-default targets not produced, and one accepted
+--as-needed exception (AnnotateFunctions.so). Native archives passed
+225/225 checks and 90 complete objects were byte-identical.
+
+Add a post-build NEEDED assertion for the three component-linked
+drivers.
+A complete-recipe configuration probe found no empty component lists
+among 96 rewritten static interfaces; fail configuration if one appears.
+
+AddLLVM.cmake and AddClang.cmake are installed on every architecture,
+so the llvm-devel and clang payloads on armv7l and aarch64 carry the
+new text. TIZEN_HYBRID_LINK is set only by the x86_64 recipe; elsewhere
+the new function returns at once and the generated build is unchanged.
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+Change-Id: I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06

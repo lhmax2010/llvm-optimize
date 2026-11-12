@@ -1,0 +1,16 @@
+--- original output adapter
++++ corrected output adapter
+@@ -1,2 +1,11 @@
+-hunks=[l for l in rd.decode().splitlines() if l.strip().startswith('@@')]
+-assert all('## Commit message ##' in l for l in hunks),hunks
++section=None
++for line in rd.decode().splitlines():
++    if re.match(r'^\d+:',line):
++        section='metadata'
++    elif line.startswith('    @@ '):
++        title=line[7:].strip()
++        section='message' if title=='Commit message' else 'metadata' if title=='Metadata' else 'code'
++    elif line.strip().startswith('## '):
++        section='message' if line.strip()=='## Commit message ##' else 'code'
++    elif line.startswith(('    +','    -')):
++        assert section=='message',('non-message modification',section,line)
