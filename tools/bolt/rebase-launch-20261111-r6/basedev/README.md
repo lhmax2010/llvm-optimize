@@ -4,11 +4,13 @@ Authorized for one complete night run of fea0fe464d56e17f2c7588c557bfffd9f6ac352
 
 Use ../run-night.sh from a project directory (or run-night.sh at the entry root). It calls each project's own launch.sh. Toolchain uses tizen-base-toolchain_20261030.061318; Base-Dev uses tizen-base-dev_20261030.061217. Build logic, limits, gates and comparisons are unchanged.
 
-The copied night.py is preserved byte-for-byte and must not be used: its legacy coordinator calls the Base-Dev launcher for both projects and monitors different roots/unit names. The old launch.sh night branch remains unchanged for provenance, not as the authorized night command.
+The copied night.py is preserved byte-for-byte and must not be used: its legacy coordinator calls the Base-Dev launcher for both projects and monitors different roots/unit names. The Base-Dev launch.sh accepts only full/rehearsal/rehearsal-02 basedev. The legacy night and rehearsal toolchain branches are rejected.
 
-run-night.sh SOURCE_SHA --dry-run prints commands/units/roots without creating output directories or starting services. Without --dry-run it creates the summary directory, appends stdout/stderr to night.log, checks both full roots are absent, then waits for each project's controller to finish. A failed T result still proceeds to D. If controller state cannot be read, the queue stops because serial completion cannot be established. No terminal input is read.
+run-night.sh SOURCE_SHA --dry-run prints commands/units/roots without creating output directories or starting services. Without --dry-run it creates the summary directory, appends stdout/stderr to night.log, checks both full roots are absent, then waits for each project's controller to finish. A valid failed/stopped T result proceeds to D only after every project service has ended. Launcher failure (129/130/143 preserved, otherwise rc=2), missing/invalid result, failed state query or a live child service stops the queue. Before D, /home must have at least 80 GiB available. Each stop records a project and overall ended line with its reason. No terminal input is read.
 
 Full roots: W/temp/rebase-359934-20261111-r6/{toolchain,basedev}.
 Rehearsal roots: W/temp/rebase-359934-20261111-r6/rehearsal/{toolchain,basedev}/retry-02.
 Summary: W/temp/night-20261111-r6/night.log.
 Source: W/temp/rebase-359934-20261111-r6/source.
+
+The night coordinator is launched in rebase359934r6-night-20261111.service using systemd-run --user --collect, independent of a terminal. If Linger=no, do not log out during the build. test_serial.py covers the serial failure boundaries without starting real services. Existing test expectations remain unchanged; new CLI tests require legacy Base-Dev branches to be rejected.

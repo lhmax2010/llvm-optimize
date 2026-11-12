@@ -1,0 +1,18 @@
+CHECK_PASS QB-flags-exact
+CHECK_PASS QB-three-stage-sha-exact
+CHECK_PASS QB-profile-counts
+CHECK_PASS anchors
+CHECK_PASS debuglink-and-debugfiles
+CHECK_FAIL QB-23-packages Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/tools/bolt/rebase-launch-20261111-r6/toolchain/validate.py", line 16, in check
+    try:fn();result['checks'][name]='PASS';print('CHECK_PASS',name,flush=True)
+        ^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/tools/bolt/rebase-launch-20261111-r6/toolchain/validate.py", line 47, in pkgs
+    r=json.loads((O/'item2-result.json').read_text());assert r['status']=='ok',r
+                                                             ^^^^^^^^^^^^^^^^^
+AssertionError: {'status': 'differences', 'packages': 23, 'passed': 21, 'failed': 2}
+
+OBJECT_ROLE_DONE reference
+OBJECT_ROLE_DONE candidate
+CHECK_PASS QB-objects90
+VALIDATION 已结束 2026-11-12T01:55:34.366260+08:00 status=failed

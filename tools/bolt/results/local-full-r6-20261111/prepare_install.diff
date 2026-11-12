@@ -1,0 +1,64 @@
+--- 62/prepare.py
++++ local-r6/prepare_install.py
+@@ -1,9 +1,11 @@
+ from pathlib import Path,PurePosixPath
+ import sys,json,os,shutil,stat,hashlib,subprocess,re,posixpath
+-B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');W=B.parent/'llvm-optimize';E=Path(__file__).parent;C=W/'temp/qb-install-20261105/root';R=W/'temp/night-20261105/rehearsal/toolchain/retry-02/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0';P=W/'temp/qb-1216409-1216410/full-rpms/1216409'
++B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');W=B.parent/'llvm-optimize';E=Path(__file__).parent/'install';E.mkdir(exist_ok=False);C=W/'temp/local-full-r6-20261111-install/root';R=W/'temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0'
++identities=json.loads((Path(__file__).parent/'toolchain/comparison/rpm-identities.json').read_text())
++P={k:Path(v['local']['path']) for k,v in identities.items() if 'local' in v}
+ sys.path.insert(0,str(B/'tools/bolt/night-launch-20261105'));from rpm_io import manifest
+ from rpm_extract import extract_selected
+-assert json.loads((R.parents[3]/'evidence/result.json').read_text())['status']=='ok'
++assert json.loads((R.parents[3]/'evidence/build-result.json').read_text())['exit_code']==0
+ assert not C.exists();C.mkdir(parents=True);rows=[]
+ def sha(p):
+  with Path(p).open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+@@ -33,7 +35,7 @@
+  else:raise AssertionError(('missing fixed-snapshot source',src))
+ # Packaged platform LLDB, symbolizer and libLLVM from the same QB run, in fresh C.
+ for name in ['libllvm','llvm','lldb']:
+- rpm=P/(name+'-22.1.8-2.1.x86_64.rpm');m=manifest(rpm);rpmsha=sha(rpm);names={k for k,v in m.items() if stat.S_ISREG(v['mode'])};extract_selected(rpm,names,C)
++ rpm=P[name];m=manifest(rpm);rpmsha=sha(rpm);names={k for k,v in m.items() if stat.S_ISREG(v['mode'])};extract_selected(rpm,names,C)
+  for k,v in m.items():
+   p=C/k
+   if stat.S_ISREG(v['mode']):p.chmod(v['mode']&0o777);rows.append(dict(path=k,source_rpm=str(rpm),rpm_sha256=rpmsha,bytes=p.stat().st_size,sha256=sha(p)))
+@@ -43,8 +45,8 @@
+    if not p.is_symlink():p.symlink_to(v['target'])
+    rows.append(dict(path=k,source_rpm=str(rpm),symlink=v['target']))
+ (C/'usr/bin/lldb-server').symlink_to('/home/owner/share/tmp/sdk_tools/lldb/bin/lldb-server')
+-rows.append(dict(path='usr/bin/lldb-server',symlink='/home/owner/share/tmp/sdk_tools/lldb/bin/lldb-server',purpose='test-only alias to QB packaged platform server'))
+-for rel in ['/usr/bin/rpm','/usr/bin/rpmdb','/usr/bin/rpmkeys','/usr/bin/rpmsign','/usr/bin/rpmspec','/sbin/ldconfig','/bin/sh','/bin/mount','/bin/umount','/usr/bin/env']:copy(rel)
++rows.append(dict(path='usr/bin/lldb-server',symlink='/home/owner/share/tmp/sdk_tools/lldb/bin/lldb-server',purpose='test-only alias to locally built packaged platform server'))
++for rel in ['/usr/bin/rpm','/usr/bin/rpmdb','/usr/bin/rpmkeys','/usr/bin/rpmsign','/usr/bin/rpmspec','/sbin/ldconfig','/bin/sh','/bin/mount','/bin/umount','/usr/bin/env','/usr/bin/sha256sum']:copy(rel)
+ for rel in ['/etc/passwd','/etc/group','/etc/nsswitch.conf','/etc/hosts','/etc/ld.so.conf']:
+  if (R/rel.lstrip('/')).is_file():copy(rel)
+ for sub in ['usr/lib/rpm','etc/rpm']:
+@@ -56,8 +58,8 @@
+   for p in (R/sub).rglob('*'):
+    if p.is_file() or p.is_symlink():copy(str(p.relative_to(R)))
+ # RPM payload used for preflight; clang is installed by rpm later, not copied to C.
+-clang=P/'clang-22.1.8-2.1.x86_64.rpm';extract_selected(clang,{'usr/bin/clang-22'},C.parent/'rpm-probe');probe=C.parent/'rpm-probe/usr/bin/clang-22';probe.chmod(0o755)
+-programs=['/usr/bin/rpm','/usr/bin/rpmdb','/usr/bin/rpmkeys','/usr/bin/rpmsign','/usr/bin/rpmspec','/sbin/ldconfig','/bin/sh','/bin/mount','/bin/umount','/usr/bin/env','/usr/bin/lldb','/usr/bin/lldb-server','/usr/bin/llvm-symbolizer','/usr/bin/clang-22']
++clang=P['clang'];extract_selected(clang,{'usr/bin/clang-22'},C.parent/'rpm-probe');probe=C.parent/'rpm-probe/usr/bin/clang-22';probe.chmod(0o755)
++programs=['/usr/bin/rpm','/usr/bin/rpmdb','/usr/bin/rpmkeys','/usr/bin/rpmsign','/usr/bin/rpmspec','/sbin/ldconfig','/bin/sh','/bin/mount','/bin/umount','/usr/bin/env','/usr/bin/sha256sum','/usr/bin/lldb','/usr/bin/lldb-server','/usr/bin/llvm-symbolizer','/usr/bin/clang-22']
+ seen=set();deps=[]
+ def visit(rel,physical=None):
+  rel=posixpath.normpath(rel)
+@@ -86,12 +88,12 @@
+   a=shlex.split(line,comments=True)
+   if len(a)>=4 and a[1]=='exec':
+    x=a[3];rel=x if x.startswith('/') else next(v for v in ['/usr/bin/'+x,'/bin/'+x,'/usr/sbin/'+x,'/sbin/'+x] if resolve(C,v).is_file() or resolve(R,v).is_file());visit(rel);execs.append(dict(file=str(p.relative_to(C)),line=i,text=line,target=rel))
+-for sub in ['dev','proc','tmp','var/lib/rpm','var/cache/ldconfig','rpms','probe/install-20261105','opt/symbolizer']: (C/sub).mkdir(parents=True,exist_ok=True)
++for sub in ['dev','proc','tmp','var/lib/rpm','var/cache/ldconfig','rpms','probe/install-r6','opt/symbolizer']: (C/sub).mkdir(parents=True,exist_ok=True)
+ (C/'opt/symbolizer/llvm-symbolizer').symlink_to('/usr/bin/llvm-symbolizer')
+ for n in ['clang','clang-debuginfo']:
+- p=P/(n+'-22.1.8-2.1.x86_64.rpm');shutil.copy2(p,C/'rpms'/p.name);rows.append(dict(path='rpms/'+p.name,source=str(p),sha256=sha(p),copy_sha256=sha(C/'rpms'/p.name)))
++ p=P[n];shutil.copy2(p,C/'rpms'/p.name);rows.append(dict(path='rpms/'+p.name,source=str(p),sha256=sha(p),copy_sha256=sha(C/'rpms'/p.name)))
+ old=W/'temp/debuglink-20261028/full-20261030/install-test-root/probe/install-20261102'
+ for n in ['crash.c','probe.lldb']:
+- s=(old/n).read_text().replace('/probe/install-20261102/','/probe/install-20261105/');(C/'probe/install-20261105'/n).write_text(s)
++ s=(old/n).read_text().replace('/probe/install-20261102/','/probe/install-r6/');(C/'probe/install-r6'/n).write_text(s)
+ shutil.copyfile(B/'tools/bolt/results/debuglink-20261028/install-test-20261102-resume3/symbol-samples.json',E/'symbol-samples.json')
+-(E/'copied-files.json').write_text(json.dumps(rows,indent=2)+'\n');(E/'dependency-preflight.json').write_text(json.dumps(dict(PASS=True,programs=programs,closure=deps,rpmpopt=execs,snapshot='20261030.061318',source_root=str(R)),indent=2)+'\n');print('INSTALL_PREPARATION_PASS',len(rows),len(deps),'execs',len(execs))
++(E/'copied-files.json').write_text(json.dumps(rows,indent=2)+'\n');(E/'dependency-preflight.json').write_text(json.dumps(dict(PASS=True,programs=programs,closure=deps,rpmpopt=execs,snapshot='20261030.061318',isolation='rootless bwrap user/PID/mount namespaces; no sudo',source_root=str(R)),indent=2)+'\n');print('INSTALL_PREPARATION_PASS',len(rows),len(deps),'execs',len(execs))

@@ -1,0 +1,456 @@
+--- before/README.md
++++ after/README.md
+@@ -4,11 +4,13 @@
+ 
+ Use ../run-night.sh from a project directory (or run-night.sh at the entry root). It calls each project's own launch.sh. Toolchain uses tizen-base-toolchain_20261030.061318; Base-Dev uses tizen-base-dev_20261030.061217. Build logic, limits, gates and comparisons are unchanged.
+ 
+-The copied night.py is preserved byte-for-byte and must not be used: its legacy coordinator calls the Base-Dev launcher for both projects and monitors different roots/unit names. The old launch.sh night branch remains unchanged for provenance, not as the authorized night command.
++The copied night.py is preserved byte-for-byte and must not be used: its legacy coordinator calls the Base-Dev launcher for both projects and monitors different roots/unit names. The Base-Dev launch.sh accepts only full/rehearsal/rehearsal-02 basedev. The legacy night and rehearsal toolchain branches are rejected.
+ 
+-run-night.sh SOURCE_SHA --dry-run prints commands/units/roots without creating output directories or starting services. Without --dry-run it creates the summary directory, appends stdout/stderr to night.log, checks both full roots are absent, then waits for each project's controller to finish. A failed T result still proceeds to D. If controller state cannot be read, the queue stops because serial completion cannot be established. No terminal input is read.
++run-night.sh SOURCE_SHA --dry-run prints commands/units/roots without creating output directories or starting services. Without --dry-run it creates the summary directory, appends stdout/stderr to night.log, checks both full roots are absent, then waits for each project's controller to finish. A valid failed/stopped T result proceeds to D only after every project service has ended. Launcher failure (129/130/143 preserved, otherwise rc=2), missing/invalid result, failed state query or a live child service stops the queue. Before D, /home must have at least 80 GiB available. Each stop records a project and overall ended line with its reason. No terminal input is read.
+ 
+ Full roots: W/temp/rebase-359934-20261111-r6/{toolchain,basedev}.
+ Rehearsal roots: W/temp/rebase-359934-20261111-r6/rehearsal/{toolchain,basedev}/retry-02.
+ Summary: W/temp/night-20261111-r6/night.log.
+ Source: W/temp/rebase-359934-20261111-r6/source.
++
++The night coordinator is launched in rebase359934r6-night-20261111.service using systemd-run --user --collect, independent of a terminal. If Linger=no, do not log out during the build. test_serial.py covers the serial failure boundaries without starting real services. Existing test expectations remain unchanged; new CLI tests require legacy Base-Dev branches to be rejected.
+--- before/SHA256SUMS
++++ after/SHA256SUMS
+@@ -1,14 +1,14 @@
+-82c47e937113dc45c7bb6f10b141aadf684293e980d26d8e7e0d01b47c975aee  README.md
+-82c47e937113dc45c7bb6f10b141aadf684293e980d26d8e7e0d01b47c975aee  basedev/README.md
+-d643259314052b27eb20817d89fdcbecbc173108fe8d9f5036fd2d157bea9dd9  basedev/SHA256SUMS
++3816172a1cf45ee3e4b2ca5ec5a7f29fe6ffb84d55e28899254b07f43f53c85a  README.md
++3816172a1cf45ee3e4b2ca5ec5a7f29fe6ffb84d55e28899254b07f43f53c85a  basedev/README.md
++2c61ba1e25f9c890ebc554361543fa29b99ca5960a7084e7db3f5e27a900126d  basedev/SHA256SUMS
+ 0d3deb41ededb21856524510df9eed8fd6d227fe0e0f79d34ab0a318a49e78fa  basedev/audit_rehearsal.py
+ 140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe  basedev/checks.py
+ c0b513f3f9f9051aa5190efb0cb9b5f3ef95b0149a82001d80c3333244a4d978  basedev/correct_duplicate_sections.py
+-59529ee6d949501e318c4e84b3cb57d39107dc1a891828286e0dd7175eda5d2f  basedev/launch.sh
++8d13170421aedf27ab2e90f199b7d88f1537352fca1bf522edee0830d0131b8b  basedev/launch.sh
+ a23abce2bb30712c83c9f4b7b953fbaa21595ccff79ce1a4bb8db43257fa5f28  basedev/launcher.py
+ 45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a  basedev/log_support.py
+ 0b3c8c1d53b5b06e64435fb62f9e6fa99c2a40464d95d8d137ae0899e68c7a16  basedev/night.py
+-81a793f1ea49cf6c2918a07b633ee31753df5ed4014c4cd186cad993ac9673e9  basedev/provenance.json
++c77d49323fc269318d4991ae37be7e0bce6a4c8f23e55b7c3a5e637491809c1b  basedev/provenance.json
+ 1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456  basedev/release_checks.py
+ a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e  basedev/resource_report.py
+ 8cc8d3e0d32b351e7f5798de297184a249a90952f56ef081f1a98205ce21ca67  basedev/resume_release_checks.py
+@@ -23,9 +23,10 @@
+ e0c1574755ce597a56bed3f45257af8572ef3cc5a08a80863285fb8c2c823176  basedev/test_revalidation.py
+ 46d124368f21bc84d9a323730ce80a22cfedafd721cfa08a90ed61e57057b2e0  basedev/test_startup.py
+ 2e6ffe604e87292c1f64ca91cb6df20bdebbabb19677033413b7ecc211a04be7  basedev/validate.py
+-2b47b968f0d5a7b5d98f75c4971030040e14bc00d1e0553b31e9a2d04030852f  run-night.sh
+-82c47e937113dc45c7bb6f10b141aadf684293e980d26d8e7e0d01b47c975aee  toolchain/README.md
+-56afab38a2b67164de70374627cb0fc63e5786934e73322688d0af492f9183d1  toolchain/SHA256SUMS
++2d046b169a6abcf7b843e988b0517ade54c4cd69d5367c206ea7ed39dc4313ac  run-night.sh
++17d5f11b3b4c1cf159237e99750ac373634f384c8fbb84aec176820c7e861673  test_serial.py
++3816172a1cf45ee3e4b2ca5ec5a7f29fe6ffb84d55e28899254b07f43f53c85a  toolchain/README.md
++ad83160b7891c6dab7b6e7adc3e18181f671920b439379be8f5142eeae7e9e6b  toolchain/SHA256SUMS
+ ad0fe47fb5dd176a86234bc6efdf1de2d050739aa29b87405a58edb976cc6370  toolchain/audit_rehearsal.py
+ 140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe  toolchain/checks.py
+ ceba06c4d29ead739a2778ffd81a914d592af8ba81e55fb37b984aa0bde41acc  toolchain/compare_packages.py
+@@ -36,7 +37,7 @@
+ b7bac601c5d88c2e311776655b4082cf109ae89b96024c77cd3f257064da5c0e  toolchain/launcher.py
+ 45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a  toolchain/log_support.py
+ 00df5f204c88add8c43bb8fd36acd57b0110c8c02cc219cef46d3a175d506ab7  toolchain/night.py
+-e1f0809923b2c1088e73d7d7b75e207a76b6cef2075a73d2ae2a5b6990564633  toolchain/provenance.json
++9072dc3fec35cd29299b45b2066436e7fb3fb2a1f87a024fff969dbc95b2fc34  toolchain/provenance.json
+ fecbced8451924e528555b6ac3a94d94cd1042634409e58ccd7c1b441e1cc69c  toolchain/qb-reference.json
+ 1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456  toolchain/release_checks.py
+ a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e  toolchain/resource_report.py
+--- before/basedev/README.md
++++ after/basedev/README.md
+@@ -4,11 +4,13 @@
+ 
+ Use ../run-night.sh from a project directory (or run-night.sh at the entry root). It calls each project's own launch.sh. Toolchain uses tizen-base-toolchain_20261030.061318; Base-Dev uses tizen-base-dev_20261030.061217. Build logic, limits, gates and comparisons are unchanged.
+ 
+-The copied night.py is preserved byte-for-byte and must not be used: its legacy coordinator calls the Base-Dev launcher for both projects and monitors different roots/unit names. The old launch.sh night branch remains unchanged for provenance, not as the authorized night command.
++The copied night.py is preserved byte-for-byte and must not be used: its legacy coordinator calls the Base-Dev launcher for both projects and monitors different roots/unit names. The Base-Dev launch.sh accepts only full/rehearsal/rehearsal-02 basedev. The legacy night and rehearsal toolchain branches are rejected.
+ 
+-run-night.sh SOURCE_SHA --dry-run prints commands/units/roots without creating output directories or starting services. Without --dry-run it creates the summary directory, appends stdout/stderr to night.log, checks both full roots are absent, then waits for each project's controller to finish. A failed T result still proceeds to D. If controller state cannot be read, the queue stops because serial completion cannot be established. No terminal input is read.
++run-night.sh SOURCE_SHA --dry-run prints commands/units/roots without creating output directories or starting services. Without --dry-run it creates the summary directory, appends stdout/stderr to night.log, checks both full roots are absent, then waits for each project's controller to finish. A valid failed/stopped T result proceeds to D only after every project service has ended. Launcher failure (129/130/143 preserved, otherwise rc=2), missing/invalid result, failed state query or a live child service stops the queue. Before D, /home must have at least 80 GiB available. Each stop records a project and overall ended line with its reason. No terminal input is read.
+ 
+ Full roots: W/temp/rebase-359934-20261111-r6/{toolchain,basedev}.
+ Rehearsal roots: W/temp/rebase-359934-20261111-r6/rehearsal/{toolchain,basedev}/retry-02.
+ Summary: W/temp/night-20261111-r6/night.log.
+ Source: W/temp/rebase-359934-20261111-r6/source.
++
++The night coordinator is launched in rebase359934r6-night-20261111.service using systemd-run --user --collect, independent of a terminal. If Linger=no, do not log out during the build. test_serial.py covers the serial failure boundaries without starting real services. Existing test expectations remain unchanged; new CLI tests require legacy Base-Dev branches to be rejected.
+--- before/basedev/SHA256SUMS
++++ after/basedev/SHA256SUMS
+@@ -1,12 +1,12 @@
+-82c47e937113dc45c7bb6f10b141aadf684293e980d26d8e7e0d01b47c975aee  README.md
++3816172a1cf45ee3e4b2ca5ec5a7f29fe6ffb84d55e28899254b07f43f53c85a  README.md
+ 0d3deb41ededb21856524510df9eed8fd6d227fe0e0f79d34ab0a318a49e78fa  audit_rehearsal.py
+ 140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe  checks.py
+ c0b513f3f9f9051aa5190efb0cb9b5f3ef95b0149a82001d80c3333244a4d978  correct_duplicate_sections.py
+-59529ee6d949501e318c4e84b3cb57d39107dc1a891828286e0dd7175eda5d2f  launch.sh
++8d13170421aedf27ab2e90f199b7d88f1537352fca1bf522edee0830d0131b8b  launch.sh
+ a23abce2bb30712c83c9f4b7b953fbaa21595ccff79ce1a4bb8db43257fa5f28  launcher.py
+ 45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a  log_support.py
+ 0b3c8c1d53b5b06e64435fb62f9e6fa99c2a40464d95d8d137ae0899e68c7a16  night.py
+-81a793f1ea49cf6c2918a07b633ee31753df5ed4014c4cd186cad993ac9673e9  provenance.json
++c77d49323fc269318d4991ae37be7e0bce6a4c8f23e55b7c3a5e637491809c1b  provenance.json
+ 1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456  release_checks.py
+ a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e  resource_report.py
+ 8cc8d3e0d32b351e7f5798de297184a249a90952f56ef081f1a98205ce21ca67  resume_release_checks.py
+--- before/basedev/launch.sh
++++ after/basedev/launch.sh
+@@ -1,11 +1,11 @@
+ #!/bin/sh
+ set -eu
+-[ "$#" -ge 2 ] || { echo 'usage: launch.sh SOURCE_SHA full basedev | launch.sh SOURCE_SHA rehearsal|rehearsal-02 toolchain|basedev | launch.sh SOURCE_SHA night (legacy, do not use)' >&2; exit 2; }
++[ "$#" -eq 3 ] || { echo 'usage: launch.sh SOURCE_SHA full|rehearsal|rehearsal-02 basedev' >&2; exit 2; }
+ NIGHT_SOURCE_SHA=$1; export NIGHT_SOURCE_SHA
+ shift
++[ "$2" = basedev ] || exit 2
++FINAL_PROJECT=basedev; export FINAL_PROJECT
+ case "$1" in
+- full) [ "$#" -eq 2 ] || exit 2; [ "$2" = basedev ] || exit 2; FINAL_PROJECT=basedev; export FINAL_PROJECT; exec python3 -B "$(dirname "$0")/launcher.py" full ;;
+- night) [ "$#" -eq 1 ] || exit 2; exec python3 -B "$(dirname "$0")/night.py" ;;
+- rehearsal|rehearsal-02) [ "$#" -eq 2 ] || exit 2; case "$2" in toolchain|basedev) FINAL_PROJECT=$2; export FINAL_PROJECT ;; *) exit 2 ;; esac; exec python3 -B "$(dirname "$0")/launcher.py" "$1" ;;
++ full|rehearsal|rehearsal-02) exec python3 -B "$(dirname "$0")/launcher.py" "$1" ;;
+  *) exit 2 ;;
+ esac
+--- before/basedev/provenance.json
++++ after/basedev/provenance.json
+@@ -243,5 +243,15 @@
+       "README/provenance/checksums",
+       "new run-night.sh; legacy night.py unused and unchanged"
+     ]
++  },
++  "serial_safety_revision": {
++    "time": "2026-11-11T23:13:21.546044+08:00",
++    "source": "fea0fe464d56e17f2c7588c557bfffd9f6ac352b",
++    "changes": [
++      "run-night startup failure stops; all child services end; valid result required; 80 GiB before D; termination reasons",
++      "basedev shell only accepts full/rehearsal/rehearsal-02 basedev",
++      "test_serial.py 16 mock tests; original tests unchanged"
++    ],
++    "test_results": "98 total: 96 PASS, 2 original not-applicable skips"
+   }
+ }
+--- before/run-night.sh
++++ after/run-night.sh
+@@ -36,60 +36,125 @@
+ exec < /dev/null
+ t_status=not_run
+ d_status=not_run
+-trap 'rc=$?; printf "NIGHT 已结束 %s T=%s D=%s\n" "$(date -Iseconds)" "$t_status" "$d_status"; exit "$rc"' 0
+-trap 'exit 129' HUP
+-trap 'exit 130' INT
+-trap 'exit 143' TERM
++night_reason=unexpected-exit
++project=preflight
++project_status=not_run
++project_done=yes
++project_end() {
++    project_done=yes
++    printf 'NIGHT_PROJECT 已结束 %s %s status=%s reason=%s\n' "$(date -Iseconds)" "$project" "$project_status" "$night_reason"
++}
++finish() {
++    rc=$?
++    trap - 0
++    if [ "$project_done" = no ]; then
++        project_status=stopped
++        project_end
++    fi
++    printf 'NIGHT 已结束 %s T=%s D=%s reason=%s rc=%s\n' "$(date -Iseconds)" "$t_status" "$d_status" "$night_reason" "$rc"
++    exit "$rc"
++}
++trap finish 0
++trap 'night_reason=signal-1; exit 129' HUP
++trap 'night_reason=signal-2; exit 130' INT
++trap 'night_reason=signal-15; exit 143' TERM
+ for project in toolchain basedev; do
+     if [ -e "$build_base/$project" ] || [ -L "$build_base/$project" ]; then
++        night_reason=fresh-root-required
++        project_status=stopped
+         printf 'fresh root required: %s/%s\n' "$build_base" "$project"
+-        exit 1
++        project_end
++        exit 2
+     fi
+ done
++stop_project() {
++    night_reason=$1
++    project_status=stopped
++    project_end
++    return 2
++}
+ run_project() {
+     project=$1
++    project_done=no
++    project_status=failed
+     root=$build_base/$project
+     unit=rebase359934r6-$project-full-controller-20261111.service
+-    project_status=failed
++    if [ "$project" = basedev ]; then
++        available=$(python3 -B -c 'import shutil; print(shutil.disk_usage("/home").free)') || available=
++        case "$available" in ''|*[!0-9]*) stop_project disk-query-failed; return 2 ;; esac
++        printf 'NIGHT_DISK %s available_bytes=%s minimum_bytes=85899345920\n' "$(date -Iseconds)" "$available"
++        if [ "$available" -lt 85899345920 ]; then
++            stop_project insufficient-space-before-D
++            return 2
++        fi
++    fi
+     launch_rc=0
+     if [ "$project" = toolchain ]; then
+         /bin/sh "$entry_dir/toolchain/launch.sh" "$source_sha" full || launch_rc=$?
+     else
+         /bin/sh "$entry_dir/basedev/launch.sh" "$source_sha" full basedev || launch_rc=$?
+     fi
+-    if [ "$launch_rc" -eq 0 ]; then
+-        while :; do
+-            state=$(systemctl --user show "$unit" -p ActiveState --value) || state=
+-            if [ -z "$state" ]; then
+-                printf 'empty service state: %s; serial queue cannot safely continue\n' "$unit"
+-                printf 'NIGHT_PROJECT 已结束 %s %s {"status":"failed","reason":"controller-state-unavailable"}\n' "$(date -Iseconds)" "$project"
+-                return 2
+-            fi
+-            last=
+-            if [ -f "$root/evidence/rpm-build.log" ]; then
+-                last=$(tail -n 1 -- "$root/evidence/rpm-build.log") || last=
+-            elif [ -f "$root/controller.stdout" ]; then
+-                last=$(tail -n 1 -- "$root/controller.stdout") || last=
+-            fi
+-            [ -n "$last" ] || last='(no build log line yet)'
+-            printf 'NIGHT_PROGRESS %s %s state=%s last=%s\n' "$(date -Iseconds)" "$project" "$state" "$last"
+-            case "$state" in
+-                active|activating|deactivating|reloading) sleep 60 ;;
+-                inactive|failed) break ;;
+-                *) printf 'unknown service state: %s\n' "$state"; printf 'NIGHT_PROJECT 已结束 %s %s {"status":"failed","reason":"unknown-controller-state"}\n' "$(date -Iseconds)" "$project"; return 2 ;;
+-            esac
+-        done
+-        result=$(python3 -B -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["status"] in ("ok","failed","stopped"),d; print(json.dumps(d,ensure_ascii=False,separators=(",",":")))' "$root/evidence/result.json") || result=
+-        if [ -n "$result" ]; then
+-            project_status=$(printf '%s\n' "$result" | python3 -B -c 'import json,sys; print(json.load(sys.stdin)["status"])') || project_status=
+-            [ -n "$project_status" ] || project_status=failed
+-        else
+-            result='{"status":"failed","reason":"missing-or-invalid-result.json"}'
++    if [ "$launch_rc" -ne 0 ]; then
++        night_reason=launcher-failed-rc-$launch_rc
++        project_end
++        case "$launch_rc" in 129|130|143) return "$launch_rc" ;; *) return 2 ;; esac
++    fi
++    while :; do
++        state=$(systemctl --user show "$unit" -p ActiveState --value) || state=
++        if [ -z "$state" ]; then
++            stop_project controller-state-query-failed
++            return 2
+         fi
+-    else
+-        result="{\"status\":\"failed\",\"reason\":\"launcher-failed\",\"exit_code\":$launch_rc}"
++        last=
++        if [ -f "$root/evidence/rpm-build.log" ]; then
++            last=$(tail -n 1 -- "$root/evidence/rpm-build.log") || last=
++        elif [ -f "$root/controller.stdout" ]; then
++            last=$(tail -n 1 -- "$root/controller.stdout") || last=
++        fi
++        [ -n "$last" ] || last='(no build log line yet)'
++        printf 'NIGHT_PROGRESS %s %s state=%s last=%s\n' "$(date -Iseconds)" "$project" "$state" "$last"
++        case "$state" in
++            active|activating|deactivating|reloading) sleep 60 ;;
++            inactive|failed) break ;;
++            *) stop_project unknown-controller-state; return 2 ;;
++        esac
++    done
++    service_rows=$(systemctl --user list-units --all --no-legend --no-pager --plain "rebase359934r6-$project-full-*")
++    query_rc=$?
++    if [ "$query_rc" -ne 0 ]; then
++        stop_project project-services-query-failed
++        return 2
+     fi
+-    printf 'NIGHT_PROJECT 已结束 %s %s %s\n' "$(date -Iseconds)" "$project" "$result"
++    printf 'NIGHT_SERVICES %s %s\n%s\n' "$(date -Iseconds)" "$project" "$service_rows"
++    service_check=$(printf '%s\n' "$service_rows" | python3 -B -c '
++import sys
++rows=[line.split() for line in sys.stdin if line.strip()]
++if any(len(r)<4 for r in rows):
++ print("invalid-list-units-output"); sys.exit(2)
++active=[r[0]+":"+r[2] for r in rows if r[2] in ("active","activating","deactivating")]
++if active:
++ print("remaining-services="+",".join(active)); sys.exit(1)
++print("all-project-services-ended")
++')
++    check_rc=$?
++    if [ "$check_rc" -ne 0 ] || [ -z "$service_check" ]; then
++        printf 'NIGHT_SERVICE_CHECK %s\n' "$service_check"
++        stop_project project-services-not-confirmed-ended
++        return 2
++    fi
++    result=$(python3 -B -c 'import json,sys; d=json.load(open(sys.argv[1])); assert isinstance(d,dict) and d.get("status") in ("ok","failed","stopped"),d; print(json.dumps(d,ensure_ascii=False,separators=(",",":")))' "$root/evidence/result.json") || result=
++    if [ -z "$result" ]; then
++        stop_project missing-or-invalid-result.json
++        return 2
++    fi
++    project_status=$(printf '%s\n' "$result" | python3 -B -c 'import json,sys; print(json.load(sys.stdin)["status"])') || project_status=
++    if [ -z "$project_status" ]; then
++        stop_project result-status-query-failed
++        return 2
++    fi
++    printf 'NIGHT_RESULT %s %s %s\n' "$(date -Iseconds)" "$project" "$result"
++    night_reason=controller-result-$project_status
++    project_end
+     return 0
+ }
+ run_project toolchain
+@@ -100,4 +165,5 @@
+ queue_rc=$?
+ d_status=$project_status
+ [ "$queue_rc" -eq 0 ] || exit "$queue_rc"
++night_reason=serial-builds-and-validation-finished
+ [ "$t_status" = ok ] && [ "$d_status" = ok ]
+--- before/test_serial.py
++++ after/test_serial.py
+@@ -0,0 +1,94 @@
++# Isolated coordinator fixtures: no real systemd services or builds.
++from pathlib import Path
++import os,sys,subprocess,json,unittest
++ENTRY=Path(os.environ.get('SERIAL_ENTRY',str(Path(__file__).parent)))
++ROOT=Path(os.environ['SERIAL_TEST_ROOT']);ROOT.mkdir(exist_ok=False)
++SHA='fea0fe464d56e17f2c7588c557bfffd9f6ac352b'
++class SerialTests(unittest.TestCase):
++ def scenario(self,*,launch_rc=0,live='',query_failure=False,missing=False,invalid=False,tstatus='ok',free=100*1024**3,dry=False,state='inactive',existing=False):
++  d=ROOT/self._testMethodName;d.mkdir();work=d/'work';work.mkdir();entry=d/'entry';entry.mkdir();fake=d/'bin';fake.mkdir()
++  text=(ENTRY/'run-night.sh').read_text();changed=text.replace('work=/home/linhao/Toolchain/development/llvm-optimize','work='+str(work));assert changed!=text
++  (entry/'run-night.sh').write_text(changed)
++  for project in ('toolchain','basedev'):
++   p=entry/project;p.mkdir()
++   script='''#!/bin/sh
++set -eu
++project=PROJECT
++printf '%s\n' "$project" >> "$MOCK_CALLS"
++root=$MOCK_WORK/temp/rebase-359934-20261111-r6/$project
++mkdir -p "$root/evidence"
++if [ "$project" = toolchain ]; then
++ printf 'accepted\n' > "$root/controller-accepted"
++ if [ "$MOCK_RC" -ne 0 ]; then exit "$MOCK_RC"; fi
++fi
++status=ok
++if [ "$project" = toolchain ]; then status=$MOCK_TSTATUS; fi
++if [ "$project" = toolchain ] && [ "$MOCK_MISSING" = yes ]; then exit 0; fi
++if [ "$project" = toolchain ] && [ "$MOCK_INVALID" = yes ]; then
++ printf 'invalid json\n' > "$root/evidence/result.json"
++else
++ printf '{"status":"%s","reason":"fixture"}\n' "$status" > "$root/evidence/result.json"
++fi
++printf 'fixture last build line\n' > "$root/evidence/rpm-build.log"
++'''.replace('PROJECT',project)
++   (p/'launch.sh').write_text(script)
++  (fake/'systemctl').write_text('''#!/bin/sh
++case "$*" in
++ *list-units*)
++  if [ "$MOCK_QUERY_FAILURE" = yes ]; then exit 5; fi
++  if [ -n "$MOCK_LIVE" ]; then
++   printf 'rebase359934r6-toolchain-full-prep-20261111.service loaded %s running fixture\n' "$MOCK_LIVE"
++  else
++   printf 'rebase359934r6-toolchain-full-controller-20261111.service loaded inactive dead fixture\n'
++  fi ;;
++ *show*) printf '%s\n' "$MOCK_STATE" ;;
++ *) exit 8 ;;
++esac
++''');(fake/'systemctl').chmod(0o755)
++  (fake/'python3').write_text('''#!/bin/sh
++case "$*" in
++ *'shutil.disk_usage("/home").free'*) printf '%s\n' "$MOCK_FREE" ;;
++ *) exec REALPY "$@" ;;
++esac
++'''.replace('REALPY',sys.executable));(fake/'python3').chmod(0o755)
++  env=dict(os.environ,PATH=str(fake)+':'+os.environ['PATH'],MOCK_CALLS=str(d/'calls'),MOCK_WORK=str(work),MOCK_RC=str(launch_rc),MOCK_LIVE=live,MOCK_QUERY_FAILURE='yes' if query_failure else 'no',MOCK_MISSING='yes' if missing else 'no',MOCK_INVALID='yes' if invalid else 'no',MOCK_TSTATUS=tstatus,MOCK_FREE=str(free),MOCK_STATE=state)
++  if existing:(work/'temp/rebase-359934-20261111-r6/toolchain').mkdir(parents=True)
++  argv=['/bin/sh',str(entry/'run-night.sh'),SHA]+(['--dry-run'] if dry else [])
++  r=subprocess.run(argv,env=env,stdin=subprocess.DEVNULL,capture_output=True,text=True)
++  calls=(d/'calls').read_text().splitlines() if (d/'calls').exists() else []
++  log=work/'temp/night-20261111-r6/night.log';output=log.read_text() if log.exists() else ''
++  (d/'result.json').write_text(json.dumps(dict(argv=argv,rc=r.returncode,calls=calls,stdout=r.stdout,stderr=r.stderr,night_log=output),indent=2)+'\n')
++  if not dry:self.assertIn('NIGHT_PROJECT 已结束',output);self.assertIn('NIGHT 已结束',output);self.assertIn('reason=',output)
++  return r,calls,output,work
++ def stopped(self,**kw):
++  r,calls,out,work=self.scenario(**kw);self.assertEqual(calls,['toolchain']);self.assertEqual(r.returncode,2);return out
++ def test_controller_accepted_launch_returns7(self):self.assertIn('launcher-failed-rc-7',self.stopped(launch_rc=7))
++ def test_controller_failed_prep_active(self):self.stopped(live='active',state='failed')
++ def test_child_activating(self):self.stopped(live='activating')
++ def test_child_deactivating(self):self.stopped(live='deactivating')
++ def test_missing_result(self):self.assertIn('missing-or-invalid-result',self.stopped(missing=True))
++ def test_invalid_result(self):self.stopped(invalid=True)
++ def test_subservice_query_fails(self):self.assertIn('project-services-query-failed',self.stopped(query_failure=True))
++ def test_T_failed_complete_runs_D(self):
++  r,calls,out,w=self.scenario(tstatus='failed');self.assertEqual(calls,['toolchain','basedev']);self.assertEqual(r.returncode,1)
++ def test_T_stopped_complete_runs_D(self):
++  r,calls,out,w=self.scenario(tstatus='stopped');self.assertEqual(calls,['toolchain','basedev']);self.assertEqual(r.returncode,1)
++ def test_disk_insufficient_before_D(self):
++  out=self.stopped(free=79*1024**3);self.assertIn('available_bytes='+str(79*1024**3),out);self.assertIn('insufficient-space-before-D',out)
++ def test_both_success(self):
++  r,calls,out,w=self.scenario();self.assertEqual(calls,['toolchain','basedev']);self.assertEqual(r.returncode,0)
++ def test_dry_run_no_effects(self):
++  r,calls,out,w=self.scenario(dry=True);self.assertEqual(r.returncode,0);self.assertEqual(calls,[]);self.assertFalse((w/'temp').exists());self.assertIn('DRY_RUN',r.stdout)
++ def test_launch_signal_codes(self):
++  for signal_rc in (129,130,143):
++   old=self._testMethodName;self._testMethodName=old+'-'+str(signal_rc)
++   try:r,calls,out,w=self.scenario(launch_rc=signal_rc)
++   finally:self._testMethodName=old
++   self.assertEqual(calls,['toolchain']);self.assertEqual(r.returncode,signal_rc)
++ def test_existing_root_refused(self):
++  r,calls,out,w=self.scenario(existing=True);self.assertEqual(calls,[]);self.assertEqual(r.returncode,2);self.assertIn('fresh-root-required',out)
++ def test_controller_state_empty(self):self.stopped(state='')
++ def test_basedev_reject_legacy_branches(self):
++  for args in ([SHA,'night'],[SHA,'rehearsal','toolchain'],[SHA,'rehearsal-02','toolchain'],[SHA,'full','toolchain']):
++   r=subprocess.run(['/bin/sh',str(ENTRY/'basedev/launch.sh'),*args],capture_output=True,text=True);self.assertEqual(r.returncode,2,args)
++if __name__=='__main__':unittest.main(verbosity=2,failfast=True)
+--- before/toolchain/README.md
++++ after/toolchain/README.md
+@@ -4,11 +4,13 @@
+ 
+ Use ../run-night.sh from a project directory (or run-night.sh at the entry root). It calls each project's own launch.sh. Toolchain uses tizen-base-toolchain_20261030.061318; Base-Dev uses tizen-base-dev_20261030.061217. Build logic, limits, gates and comparisons are unchanged.
+ 
+-The copied night.py is preserved byte-for-byte and must not be used: its legacy coordinator calls the Base-Dev launcher for both projects and monitors different roots/unit names. The old launch.sh night branch remains unchanged for provenance, not as the authorized night command.
++The copied night.py is preserved byte-for-byte and must not be used: its legacy coordinator calls the Base-Dev launcher for both projects and monitors different roots/unit names. The Base-Dev launch.sh accepts only full/rehearsal/rehearsal-02 basedev. The legacy night and rehearsal toolchain branches are rejected.
+ 
+-run-night.sh SOURCE_SHA --dry-run prints commands/units/roots without creating output directories or starting services. Without --dry-run it creates the summary directory, appends stdout/stderr to night.log, checks both full roots are absent, then waits for each project's controller to finish. A failed T result still proceeds to D. If controller state cannot be read, the queue stops because serial completion cannot be established. No terminal input is read.
++run-night.sh SOURCE_SHA --dry-run prints commands/units/roots without creating output directories or starting services. Without --dry-run it creates the summary directory, appends stdout/stderr to night.log, checks both full roots are absent, then waits for each project's controller to finish. A valid failed/stopped T result proceeds to D only after every project service has ended. Launcher failure (129/130/143 preserved, otherwise rc=2), missing/invalid result, failed state query or a live child service stops the queue. Before D, /home must have at least 80 GiB available. Each stop records a project and overall ended line with its reason. No terminal input is read.
+ 
+ Full roots: W/temp/rebase-359934-20261111-r6/{toolchain,basedev}.
+ Rehearsal roots: W/temp/rebase-359934-20261111-r6/rehearsal/{toolchain,basedev}/retry-02.
+ Summary: W/temp/night-20261111-r6/night.log.
+ Source: W/temp/rebase-359934-20261111-r6/source.
++
++The night coordinator is launched in rebase359934r6-night-20261111.service using systemd-run --user --collect, independent of a terminal. If Linger=no, do not log out during the build. test_serial.py covers the serial failure boundaries without starting real services. Existing test expectations remain unchanged; new CLI tests require legacy Base-Dev branches to be rejected.
+--- before/toolchain/SHA256SUMS
++++ after/toolchain/SHA256SUMS
+@@ -1,4 +1,4 @@
+-82c47e937113dc45c7bb6f10b141aadf684293e980d26d8e7e0d01b47c975aee  README.md
++3816172a1cf45ee3e4b2ca5ec5a7f29fe6ffb84d55e28899254b07f43f53c85a  README.md
+ ad0fe47fb5dd176a86234bc6efdf1de2d050739aa29b87405a58edb976cc6370  audit_rehearsal.py
+ 140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe  checks.py
+ ceba06c4d29ead739a2778ffd81a914d592af8ba81e55fb37b984aa0bde41acc  compare_packages.py
+@@ -9,7 +9,7 @@
+ b7bac601c5d88c2e311776655b4082cf109ae89b96024c77cd3f257064da5c0e  launcher.py
+ 45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a  log_support.py
+ 00df5f204c88add8c43bb8fd36acd57b0110c8c02cc219cef46d3a175d506ab7  night.py
+-e1f0809923b2c1088e73d7d7b75e207a76b6cef2075a73d2ae2a5b6990564633  provenance.json
++9072dc3fec35cd29299b45b2066436e7fb3fb2a1f87a024fff969dbc95b2fc34  provenance.json
+ fecbced8451924e528555b6ac3a94d94cd1042634409e58ccd7c1b441e1cc69c  qb-reference.json
+ 1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456  release_checks.py
+ a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e  resource_report.py
+--- before/toolchain/provenance.json
++++ after/toolchain/provenance.json
+@@ -310,5 +310,15 @@
+       "README/provenance/checksums",
+       "new run-night.sh; legacy night.py unused and unchanged"
+     ]
++  },
++  "serial_safety_revision": {
++    "time": "2026-11-11T23:13:21.545231+08:00",
++    "source": "fea0fe464d56e17f2c7588c557bfffd9f6ac352b",
++    "changes": [
++      "run-night startup failure stops; all child services end; valid result required; 80 GiB before D; termination reasons",
++      "basedev shell only accepts full/rehearsal/rehearsal-02 basedev",
++      "test_serial.py 16 mock tests; original tests unchanged"
++    ],
++    "test_results": "98 total: 96 PASS, 2 original not-applicable skips"
+   }
+ }

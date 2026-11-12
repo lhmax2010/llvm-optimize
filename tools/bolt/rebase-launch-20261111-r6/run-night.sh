@@ -36,60 +36,125 @@ exec >> "$summary/night.log" 2>&1
 exec < /dev/null
 t_status=not_run
 d_status=not_run
-trap 'rc=$?; printf "NIGHT 已结束 %s T=%s D=%s\n" "$(date -Iseconds)" "$t_status" "$d_status"; exit "$rc"' 0
-trap 'exit 129' HUP
-trap 'exit 130' INT
-trap 'exit 143' TERM
+night_reason=unexpected-exit
+project=preflight
+project_status=not_run
+project_done=yes
+project_end() {
+    project_done=yes
+    printf 'NIGHT_PROJECT 已结束 %s %s status=%s reason=%s\n' "$(date -Iseconds)" "$project" "$project_status" "$night_reason"
+}
+finish() {
+    rc=$?
+    trap - 0
+    if [ "$project_done" = no ]; then
+        project_status=stopped
+        project_end
+    fi
+    printf 'NIGHT 已结束 %s T=%s D=%s reason=%s rc=%s\n' "$(date -Iseconds)" "$t_status" "$d_status" "$night_reason" "$rc"
+    exit "$rc"
+}
+trap finish 0
+trap 'night_reason=signal-1; exit 129' HUP
+trap 'night_reason=signal-2; exit 130' INT
+trap 'night_reason=signal-15; exit 143' TERM
 for project in toolchain basedev; do
     if [ -e "$build_base/$project" ] || [ -L "$build_base/$project" ]; then
+        night_reason=fresh-root-required
+        project_status=stopped
         printf 'fresh root required: %s/%s\n' "$build_base" "$project"
-        exit 1
+        project_end
+        exit 2
     fi
 done
+stop_project() {
+    night_reason=$1
+    project_status=stopped
+    project_end
+    return 2
+}
 run_project() {
     project=$1
+    project_done=no
+    project_status=failed
     root=$build_base/$project
     unit=rebase359934r6-$project-full-controller-20261111.service
-    project_status=failed
+    if [ "$project" = basedev ]; then
+        available=$(python3 -B -c 'import shutil; print(shutil.disk_usage("/home").free)') || available=
+        case "$available" in ''|*[!0-9]*) stop_project disk-query-failed; return 2 ;; esac
+        printf 'NIGHT_DISK %s available_bytes=%s minimum_bytes=85899345920\n' "$(date -Iseconds)" "$available"
+        if [ "$available" -lt 85899345920 ]; then
+            stop_project insufficient-space-before-D
+            return 2
+        fi
+    fi
     launch_rc=0
     if [ "$project" = toolchain ]; then
         /bin/sh "$entry_dir/toolchain/launch.sh" "$source_sha" full || launch_rc=$?
     else
         /bin/sh "$entry_dir/basedev/launch.sh" "$source_sha" full basedev || launch_rc=$?
     fi
-    if [ "$launch_rc" -eq 0 ]; then
-        while :; do
-            state=$(systemctl --user show "$unit" -p ActiveState --value) || state=
-            if [ -z "$state" ]; then
-                printf 'empty service state: %s; serial queue cannot safely continue\n' "$unit"
-                printf 'NIGHT_PROJECT 已结束 %s %s {"status":"failed","reason":"controller-state-unavailable"}\n' "$(date -Iseconds)" "$project"
-                return 2
-            fi
-            last=
-            if [ -f "$root/evidence/rpm-build.log" ]; then
-                last=$(tail -n 1 -- "$root/evidence/rpm-build.log") || last=
-            elif [ -f "$root/controller.stdout" ]; then
-                last=$(tail -n 1 -- "$root/controller.stdout") || last=
-            fi
-            [ -n "$last" ] || last='(no build log line yet)'
-            printf 'NIGHT_PROGRESS %s %s state=%s last=%s\n' "$(date -Iseconds)" "$project" "$state" "$last"
-            case "$state" in
-                active|activating|deactivating|reloading) sleep 60 ;;
-                inactive|failed) break ;;
-                *) printf 'unknown service state: %s\n' "$state"; printf 'NIGHT_PROJECT 已结束 %s %s {"status":"failed","reason":"unknown-controller-state"}\n' "$(date -Iseconds)" "$project"; return 2 ;;
-            esac
-        done
-        result=$(python3 -B -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["status"] in ("ok","failed","stopped"),d; print(json.dumps(d,ensure_ascii=False,separators=(",",":")))' "$root/evidence/result.json") || result=
-        if [ -n "$result" ]; then
-            project_status=$(printf '%s\n' "$result" | python3 -B -c 'import json,sys; print(json.load(sys.stdin)["status"])') || project_status=
-            [ -n "$project_status" ] || project_status=failed
-        else
-            result='{"status":"failed","reason":"missing-or-invalid-result.json"}'
-        fi
-    else
-        result="{\"status\":\"failed\",\"reason\":\"launcher-failed\",\"exit_code\":$launch_rc}"
+    if [ "$launch_rc" -ne 0 ]; then
+        night_reason=launcher-failed-rc-$launch_rc
+        project_end
+        case "$launch_rc" in 129|130|143) return "$launch_rc" ;; *) return 2 ;; esac
     fi
-    printf 'NIGHT_PROJECT 已结束 %s %s %s\n' "$(date -Iseconds)" "$project" "$result"
+    while :; do
+        state=$(systemctl --user show "$unit" -p ActiveState --value) || state=
+        if [ -z "$state" ]; then
+            stop_project controller-state-query-failed
+            return 2
+        fi
+        last=
+        if [ -f "$root/evidence/rpm-build.log" ]; then
+            last=$(tail -n 1 -- "$root/evidence/rpm-build.log") || last=
+        elif [ -f "$root/controller.stdout" ]; then
+            last=$(tail -n 1 -- "$root/controller.stdout") || last=
+        fi
+        [ -n "$last" ] || last='(no build log line yet)'
+        printf 'NIGHT_PROGRESS %s %s state=%s last=%s\n' "$(date -Iseconds)" "$project" "$state" "$last"
+        case "$state" in
+            active|activating|deactivating|reloading) sleep 60 ;;
+            inactive|failed) break ;;
+            *) stop_project unknown-controller-state; return 2 ;;
+        esac
+    done
+    service_rows=$(systemctl --user list-units --all --no-legend --no-pager --plain "rebase359934r6-$project-full-*")
+    query_rc=$?
+    if [ "$query_rc" -ne 0 ]; then
+        stop_project project-services-query-failed
+        return 2
+    fi
+    printf 'NIGHT_SERVICES %s %s\n%s\n' "$(date -Iseconds)" "$project" "$service_rows"
+    service_check=$(printf '%s\n' "$service_rows" | python3 -B -c '
+import sys
+rows=[line.split() for line in sys.stdin if line.strip()]
+if any(len(r)<4 for r in rows):
+ print("invalid-list-units-output"); sys.exit(2)
+active=[r[0]+":"+r[2] for r in rows if r[2] in ("active","activating","deactivating")]
+if active:
+ print("remaining-services="+",".join(active)); sys.exit(1)
+print("all-project-services-ended")
+')
+    check_rc=$?
+    if [ "$check_rc" -ne 0 ] || [ -z "$service_check" ]; then
+        printf 'NIGHT_SERVICE_CHECK %s\n' "$service_check"
+        stop_project project-services-not-confirmed-ended
+        return 2
+    fi
+    result=$(python3 -B -c 'import json,sys; d=json.load(open(sys.argv[1])); assert isinstance(d,dict) and d.get("status") in ("ok","failed","stopped"),d; print(json.dumps(d,ensure_ascii=False,separators=(",",":")))' "$root/evidence/result.json") || result=
+    if [ -z "$result" ]; then
+        stop_project missing-or-invalid-result.json
+        return 2
+    fi
+    project_status=$(printf '%s\n' "$result" | python3 -B -c 'import json,sys; print(json.load(sys.stdin)["status"])') || project_status=
+    if [ -z "$project_status" ]; then
+        stop_project result-status-query-failed
+        return 2
+    fi
+    printf 'NIGHT_RESULT %s %s %s\n' "$(date -Iseconds)" "$project" "$result"
+    night_reason=controller-result-$project_status
+    project_end
     return 0
 }
 run_project toolchain
@@ -100,4 +165,5 @@ run_project basedev
 queue_rc=$?
 d_status=$project_status
 [ "$queue_rc" -eq 0 ] || exit "$queue_rc"
+night_reason=serial-builds-and-validation-finished
 [ "$t_status" = ok ] && [ "$d_status" = ok ]

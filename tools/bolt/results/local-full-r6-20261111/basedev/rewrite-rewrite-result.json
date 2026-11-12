@@ -1,0 +1,94 @@
+{
+  "tool_sha256": "12778b710b1f163a83fdd68e7ecb96bc9f70849fac1d86e5131dbcac3d819642",
+  "profile_sha256": "d9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326",
+  "input_sha256": "bf15cf062439714651809cd3b5ca82619407081adca64ceb65699e6ccae50501",
+  "output_sha256": "a6be662e5432d1db81dadd188a4f0f6206dbfe42b81c1ac629ae50459cdf4ece",
+  "argv": [
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/reference-relocs-clang-22",
+    "-o",
+    "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/clang.bolt",
+    "-data=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/profile.fdata",
+    "-reorder-blocks=ext-tsp",
+    "-reorder-functions=cdsort",
+    "-split-functions",
+    "-split-all-cold",
+    "-split-eh",
+    "-dyno-stats",
+    "--thread-count=1",
+    "-stale-threshold=5",
+    "-use-old-text"
+  ],
+  "counts": {
+    "N": 23592,
+    "M": 144032,
+    "S": 23,
+    "U": 1,
+    "Q": 383,
+    "R": 0.0010172508794981563,
+    "S_over_N": 0.0009749067480501865
+  },
+  "elf": {
+    "entry": 54512320,
+    "loads": [
+      [
+        1,
+        4,
+        0,
+        0,
+        0,
+        41458604,
+        41458604,
+        4096
+      ],
+      [
+        1,
+        5,
+        41458624,
+        41462720,
+        41462720,
+        95424352,
+        95424352,
+        4096
+      ],
+      [
+        1,
+        6,
+        136882976,
+        136891168,
+        136891168,
+        3004136,
+        3007712,
+        4096
+      ],
+      [
+        1,
+        6,
+        139887120,
+        139899408,
+        139899408,
+        39888,
+        589866,
+        4096
+      ],
+      [
+        1,
+        5,
+        140509184,
+        140509184,
+        140509184,
+        12019560,
+        12019560,
+        2097152
+      ]
+    ],
+    "bolt_sections": [
+      ".bolt.org.rodata",
+      ".bolt.org.eh_frame",
+      ".bolt.org.gcc_except_table",
+      ".bolt.org.eh_frame_hdr",
+      ".bolt.org.text",
+      ".note.bolt_info"
+    ]
+  }
+}

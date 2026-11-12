@@ -1144,3 +1144,14 @@ T快照20261030.061318 / build.conf 8f201a0d…；D快照20261030.061217 / build
 T/D各一次演练均在 + cmake -G Ninja 停止，未运行Ninja；log-restarts=0、FLAGS与各自QB一致、WARNING=0，复制日志与原日志SHA/大小相同，资源报告生成，清理审计通过。全部完整根及汇总目录不存在，/home剩余244.021 GiB≥151.3GiB。本轮没有启动完整构建；今晚命令与进度查看见[74号§7](74_local_full_build_fa4f9978.md#7-入口准备与演练2026-11-11第二次)。
 
 ENTRY_PREP2 已结束 2026-11-11T18:03:29.724748+08:00 status=ok reason=T_D_rehearsals_pass_full_build_not_started
+
+
+## 2026-11-12：fea0fe46 T/D 完整构建、审计与比较完成（74号§8）
+
+串行入口已修正，98项测试：96PASS、2项原有SKIP、无FAIL/ERROR。Linger=no，启动时已告知不要注销。T/D GBS均exit0、无OOM；原队列T=failed（旧自动包比较）、D=ok，原失败保留。新增审计/比较在8GiB受限服务串行完成。
+
+指定QB1225393/1225395：T22/22二进制包按67号口径B PASS，D12/12载荷原始内容相同；各225静态归档的3853转换+11原生成员逐SHA全同，合计7706+22。FLAGS/profile/门禁/工具22.1.8检查通过，T/D最终参数仅差-g2/-gdwarf-4/-g。两份源码包原始FAIL保留：GBS合并源码tar vs QB八补丁、packaging目录及.git_archival提交标识的差异已逐文件归因，未扩大白名单。
+
+T RPM在新的rootless namespace中实际安装，LLDB自动加载符号，21/21 clang帧与llvm-symbolizer一致，冷函数抽查通过；无额外sudo。T/D BOLT输入与改写日志已保全，函数差异清单已生成，只记录事实。资源数据及UNKNOWN、du超时见[74号§8](74_local_full_build_fa4f9978.md#8-入口修正与完整构建fea0fe46)。全部根/副本保留，无Gerrit/sandbox推送或QB操作。
+
+LOCAL_FULL_R6 已结束 2026-11-12T12:13:57.322734+08:00 status=completed_with_differences reason=builds_ok_binary_policyB_pass_source_raw_FAIL_attributed

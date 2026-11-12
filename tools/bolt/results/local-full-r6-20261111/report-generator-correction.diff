@@ -1,0 +1,11 @@
+--- before
++++ after
+@@ -44,7 +44,7 @@
+  add('\n**'+p+' 原文**（L 为 GBS 原始日志行号）：')
+  take=raw[p]['flags']+a[p]['tools']+a[p]['native_end']+raw[p]['post_gate']+[x for x in raw[p]['disk_reports'] if x.get('data',{}).get('stage')=='post']
+  add(block('\n'.join('L'+str(x['line'])+': '+x['text'] for x in take)))
+- add('\nprofile N/M/S/U/Q/R：'+block(json.dumps(a[p]['profile_records'][0]['data']['counts'],ensure_ascii=False)))
++ add('\nprofile N/M/S/U/Q/R：'+block(json.dumps(a[p]['profile_records'][0]['data'],ensure_ascii=False)))
+  add('\nCMake 前最终环境变量赋值原文：'+block('\n'.join('L'+str(x['line'])+': '+x['text'] for x in a[p]['final_flags'].values())))
+  add('\n'+link(p+'/required-log-excerpts.txt','全部门禁与 post 摘录')+'；'+link(p+'/original-build.log.gz','完整 GBS 原始日志')+'；'+link(p+'/audit.json','审计及 QB 对照')+'。')
+ add('\n逐 token 比较：CFLAGS、CXXFLAGS 都只有 T 多出 -g2、-gdwarf-4、-g，移除这三个调试 token 后顺序和重复次数也完全相同；D 没有额外 token。两边架构参数都为 -m64 -march=nehalem -msse4.2 -mfpmath=sse，没有 -mtune。LDFLAGS 完全相同：-Wl,-z,relro,--as-needed -Wl,--gc-sections。空格数量在原文中保留，'+link('final-flags-diff.json','token 差异')+'不据此推断 T/D 机器码差异的原因。')

@@ -1,0 +1,11 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/rebase-launch-20261111-r6/toolchain/test_checks.py
++++ /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/full-entry-tests/toolchain/test_checks.py
+@@ -51,7 +51,7 @@
+  def test_preserved_native_debug_allowed(self):
+   self.assertEqual(check_native_archive(arc(elf(debug=True)),dict(members=1,results=[dict(ordinal=0,name='m.o',preserved=True)]))['preserved'],1)
+  def test_real_flags(self):
+-  E=Path(__file__).parents[1]/'results/second-review-20261104'
++  E=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/second-review-20261104')
+   for project in ['toolchain','basedev']:
+    r=json.loads((E/(project+'-rehearsal-audit.json')).read_text());log=r['TIZEN_LLVM_NORMALIZED_FLAGS']['text']+'\n'+r['TIZEN_LLVM_DROPPED_FLAGS']['text'];flags_check(log,project)
+    with self.assertRaises(AssertionError):flags_check(log+'\nTIZEN_LLVM_FLAGS_WARNING bad',project)

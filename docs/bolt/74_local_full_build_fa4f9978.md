@@ -357,3 +357,380 @@ tail -f /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261111-r6/
 ITEM4 已结束 2026-11-11T18:01:19.926722+08:00 status=ok reason=ready_not_started
 
 ENTRY_PREP2 已结束 2026-11-11T18:03:29.724748+08:00 status=ok reason=T_D_rehearsals_pass_full_build_not_started
+
+
+## 8. 入口修正与完整构建（fea0fe46）
+
+本节记录 2026-11-11 夜间启动、2026-11-12 完成的实际结果，前面的停止与演练记录均保留。**T/D 两次 GBS 完整构建成功且无 OOM；指定 QB 的二进制包比较为 T 22/22 口径 B PASS、D 12/12 原始载荷相同。两份源码包原始比较仍为 FAIL，差异归因逐项列在 §8.6，未扩充比较器白名单。** 安装测试中 21 个 clang 崩溃帧全部具名并完成符号化交叉核对。
+
+原入口自动验证仍报告 T failed、D ok，不能把本次补充比较改写成原队列全绿。T 的失败发生在旧 QB 基线的包比较，GBS 自身 exit_code=0；本轮按指定 QB 1225393/1225395 另做比较。
+
+证据总目录：[local-full-r6-20261111/](../../tools/bolt/results/local-full-r6-20261111/)。源码始终为 fea0fe464d56e17f2c7588c557bfffd9f6ac352b / tree b2e8af2477cf623a945aa80bf8288a262dd4a5a9，detached 且工作树干净；[收尾复核](../../tools/bolt/results/local-full-r6-20261111/source-final.json)。未推送 Gerrit/sandbox、未操作 QB、未删除文件，旧构建根和产品源码未改。
+
+### 8.1 串行调度修正与测试
+
+只修改获准的 r6 run-night.sh、basedev/launch.sh、README、provenance、SHA256SUMS 与新增入口测试；两个 launcher.py、资源设置、门禁、比较器及原 r2 未改。B 发布副本与 W 执行副本一致。
+
+- launch.sh 非零即停队列：129/130/143 原样传递，其他转 2，不启动 D。
+- controller 终止后再查询该项目所有 full-* 服务；active/activating/deactivating、查询失败、result.json 缺失或无效均停止。
+- T 的有效结果为 failed/stopped 且全部服务已结束时继续 D；D 启动前再次要求 /home ≥80 GiB。
+- 所有停止路径打印项目和队列结束行；dry-run 不创建根或启动服务。
+- Base-Dev 删除 legacy night 和 rehearsal toolchain，仅接受 full/rehearsal/rehearsal-02 basedev；usage 同步。
+
+[完整入口 diff](../../tools/bolt/results/local-full-r6-20261111/entry-changes.diff)；[run-night.sh.diff](../../tools/bolt/results/local-full-r6-20261111/run-night.sh.diff)；[basedev-launch.sh.diff](../../tools/bolt/results/local-full-r6-20261111/basedev-launch.sh.diff)。
+
+全部测试 **98 项：96 PASS，2 项原有不适用 SKIP，0 FAIL/ERROR**。其中原有 82 项（80 PASS、2 SKIP），新串行 mock 16/16 PASS；没有把跳过写成通过。旧测试期望没有改，路径副本差异保存在证据目录。新增 mock 覆盖用户八类场景，另覆盖信号状态、空服务状态、无效结果、根已存在和 legacy 分支拒绝。
+
+|项目|套件|总数|PASS|原有 SKIP|
+|---|---|---:|---:|---:|
+|toolchain|test_checks.py|15|15|0|
+|toolchain|test_integration.py|8|8|0|
+|toolchain|test_payload_overlap.py|3|3|0|
+|toolchain|test_revalidation.py|9|7|2|
+|toolchain|test_startup.py|5|5|0|
+|basedev|test_checks.py|15|15|0|
+|basedev|test_handoff_report.py|2|2|0|
+|basedev|test_integration.py|8|8|0|
+|basedev|test_payload_overlap.py|3|3|0|
+|basedev|test_revalidation.py|9|9|0|
+|basedev|test_startup.py|5|5|0|
+|coordinator|test_serial.py|16|16|0|
+
+[tests.json](../../tools/bolt/results/local-full-r6-20261111/tests.json)、[16项测试原文](../../tools/bolt/results/local-full-r6-20261111/test_serial.stderr)。测试生成器曾在写入测试前因嵌套引号产生 SyntaxError，只改生成器字符串边界，没有改测试判定；[原始准备错误](../../tools/bolt/results/local-full-r6-20261111/test-generator-preparation.txt)。
+
+### 8.2 启动、Linger 与队列原文
+
+启动前源身份、干净状态、无其他任务、完整根不存在均通过；/home 239.601 GiB ≥151.3 GiB。[preflight.json](../../tools/bolt/results/local-full-r6-20261111/preflight.json)、[services-before.txt](../../tools/bolt/results/local-full-r6-20261111/services-before.txt)。Linger=no（[linger.txt](../../tools/bolt/results/local-full-r6-20261111/linger.txt)），启动时已明确告知：**构建期间不要注销登录**。
+
+只执行一次后台调度命令：
+~~~text
+systemd-run --user --unit=rebase359934r6-night-20261111 --collect /bin/sh /home/linhao/Toolchain/development/llvm-optimize/tools/bolt/rebase-launch-20261111-r6/run-night.sh fea0fe464d56e17f2c7588c557bfffd9f6ac352b
+~~~
+
+
+调度、T、D 串行；没有重试。完整构建沿用原入口 MemoryMax=24482992128 B（MemTotal−8 GiB）、swap=0、CPUQuota=1200%、Nice=10、IO 2/7。入口自带的自动验证也由原 controller 执行，仍使用原入口配置；本轮随后新增的审计、包比较、函数比较和安装检查均在独立 8 GiB / swap 0 / CPU 400% / Nice 19 / IO idle 服务中串行运行。没有调整内存限制。
+
+监控连接约 00:02 断开，恢复连接时已是 11:36，期间服务独立完成；没有声称全程人工持续观测。原 night.log 和资源采样保留。恢复时只读查询，没有重启或干预构建服务。
+
+~~~text
+NIGHT_PROJECT 已结束 2026-11-12T01:56:13+08:00 toolchain status=failed reason=controller-result-failed
+NIGHT_PROJECT 已结束 2026-11-12T03:21:14+08:00 basedev status=ok reason=controller-result-ok
+NIGHT 已结束 2026-11-12T03:21:14+08:00 T=failed D=ok reason=serial-builds-and-validation-finished rc=1
+~~~
+
+
+[完整 night.log](../../tools/bolt/results/local-full-r6-20261111/night-final.log)、[night-launch-command.json](../../tools/bolt/results/local-full-r6-20261111/night-launch-command.json)、[结束后服务状态](../../tools/bolt/results/local-full-r6-20261111/services-final.json)。
+
+**toolchain**：GBS exit_code=0，构建 7875.23 秒；controller failed。
+
+~~~text
+{
+  "status": "failed",
+  "checks": {
+    "QB-flags-exact": "PASS",
+    "QB-three-stage-sha-exact": "PASS",
+    "QB-profile-counts": "PASS",
+    "anchors": "PASS",
+    "debuglink-and-debugfiles": "PASS",
+    "QB-23-packages": "FAIL",
+    "QB-objects90": "PASS"
+  }
+}
+~~~
+
+
+~~~text
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/tools/bolt/rebase-launch-20261111-r6/toolchain/launcher.py", line 252, in worker
+    stage(D, 'validation', ['python3', '-B', str(T / 'validate.py'), '--project', PROJECT, '--root', str(D), '--peer', str(D.parent / 'toolchain')])
+  File "/home/linhao/Toolchain/development/llvm-optimize/tools/bolt/rebase-launch-20261111-r6/toolchain/launcher.py", line 69, in stage
+    raise RuntimeError(name + ' failed, rc=' + str(r.returncode))
+RuntimeError: validation failed, rc=1
+~~~
+
+[toolchain/build-result.json](../../tools/bolt/results/local-full-r6-20261111/toolchain/build-result.json)；[toolchain/entry-validation-result.json](../../tools/bolt/results/local-full-r6-20261111/toolchain/entry-validation-result.json)。
+
+**basedev**：GBS exit_code=0，构建 3900.703 秒；controller ok。
+
+~~~text
+{
+  "status": "ok",
+  "project": "basedev",
+  "checks": {
+    "anchors": {
+      "status": "PASS"
+    },
+    "flags": {
+      "status": "PASS"
+    },
+    "profile": {
+      "status": "PASS"
+    },
+    "identity-chain": {
+      "status": "PASS"
+    },
+    "release": {
+      "status": "PASS"
+    },
+    "objects90": {
+      "status": "PASS"
+    }
+  },
+  "historical_selftest": false
+}
+~~~
+
+[basedev/build-result.json](../../tools/bolt/results/local-full-r6-20261111/basedev/build-result.json)；[basedev/entry-validation-result.json](../../tools/bolt/results/local-full-r6-20261111/basedev/entry-validation-result.json)。
+
+### 8.3 构建审计与最终参数
+
+|检查|T / QB 1225393|D / QB 1225395|
+|---|---|---|
+|GBS 完整构建|PASS|PASS|
+|log-restarts|0|0|
+|FLAGS 去时间前缀后逐字比较|相同|相同|
+|FLAGS_WARNING|0|0|
+|shell not found / NATIVE_ARCHIVES_CANCELLED / BOLT_CANCELLED|0|0|
+|BOLT_POST_GATE_PASS 之后 post BOLT_DISK_REPORT|存在|存在|
+|NATIVE_ARCHIVES_END|PASS 225|PASS 225|
+|converted / preserved|3853 / 11|3853 / 11|
+|compiler / disassembler / nm 版本|22.1.8 / 22.1.8 / 22.1.8|22.1.8 / 22.1.8 / 22.1.8|
+|与对应 QB 的 profile 计数|相同|相同|
+
+**toolchain 原文**（L 为 GBS 原始日志行号）：
+
+~~~text
+L623: [  175s] TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[-Os -fstack-protector -momit-leaf-frame-pointer -fno-omit-frame-pointer] CXXFLAGS=[-Os -fstack-protector -momit-leaf-frame-pointer -fno-omit-frame-pointer] LDFLAGS=[]
+L625: [  175s] TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[] CXXFLAGS=[] LDFLAGS=[]
+L24123: [ 5074s] NATIVE_ARCHIVES_TOOLS {"tool_versions": {"compiler": "22.1.8", "disassembler": "22.1.8", "nm": "22.1.8"}, "tool_directory": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin"}
+L24574: [ 7044s] NATIVE_ARCHIVES_END 1794417245.101607 PASS 225
+L25165: [ 7447s] BOLT_POST_GATE_PASS
+L25168: [ 7447s] BOLT_DISK_REPORT {"stage": "post", "time_ns": 1794417648942525944, "recorded": true, "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "device": 2049, "free_bytes": 210683092992, "build": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build", "work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "root": "/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64", "scopes": ["clang-bolt/**", "tools/bolt/**", "lib64/libLLVMBOLT*.a", "bin/llvm-bolt", "ThinLTO cache positive allocation delta"], "owned_paths": [{"category": "work", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "allocated_bytes": 3089846272, "logical_file_bytes": 3089831346}, {"category": "tool_objects", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt", "allocated_bytes": 146677760, "logical_file_bytes": 146220305}, {"category": "tool_executable", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt", "allocated_bytes": 566870016, "logical_file_bytes": 566862784}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTCore.a", "allocated_bytes": 32727040, "logical_file_bytes": 32726484}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTPasses.a", "allocated_bytes": 58339328, "logical_file_bytes": 58331192}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTProfile.a", "allocated_bytes": 16060416, "logical_file_bytes": 16059382}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRewrite.a", "allocated_bytes": 33910784, "logical_file_bytes": 33908010}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRuntimeLibs.a", "allocated_bytes": 1105920, "logical_file_bytes": 1104318}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTTargetX86.a", "allocated_bytes": 3297280, "logical_file_bytes": 3294190}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTUtils.a", "allocated_bytes": 1228800, "logical_file_bytes": 1225252}], "owned_filesystem_bytes": {"2049": 3950063616}, "used_bytes": 3950063616, "cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache", "cache_delta_known": true, "cache_delta_allocated_bytes": 0, "cache_delta_logical_bytes": 0, "cache_net_allocation_delta_bytes": -20397096960, "filesystem_device": 2049}
+~~~
+
+
+profile N/M/S/U/Q/R：
+~~~text
+{"N": 23592, "M": 144032, "S": 0, "U": 1, "Q": 383, "R": 4.238545331242318e-05, "S_over_N": 0.0}
+~~~
+
+
+CMake 前最终环境变量赋值原文：
+~~~text
+L454: [  175s] + CFLAGS=' -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument'
+L584: [  175s] + CXXFLAGS=' -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument   -g2 -gdwarf-4 -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables  -g -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument'
+L621: [  175s] + LDFLAGS='-Wl,-z,relro,--as-needed -Wl,--gc-sections'
+~~~
+
+
+[全部门禁与 post 摘录](../../tools/bolt/results/local-full-r6-20261111/toolchain/required-log-excerpts.txt)；[完整 GBS 原始日志](../../tools/bolt/results/local-full-r6-20261111/toolchain/original-build.log.gz)；[审计及 QB 对照](../../tools/bolt/results/local-full-r6-20261111/toolchain/audit.json)。
+
+**basedev 原文**（L 为 GBS 原始日志行号）：
+
+~~~text
+L574: [  248s] TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[-O2 -fstack-protector-strong -fno-omit-frame-pointer] CXXFLAGS=[-O2 -fstack-protector-strong -fno-omit-frame-pointer] LDFLAGS=[]
+L576: [  248s] TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4] CXXFLAGS=[-fno-inline-functions -Wl,-z,relro,--as-needed -feliminate-unused-debug-types --param=ssp-buffer-size=4] LDFLAGS=[]
+L24066: [ 2637s] NATIVE_ARCHIVES_TOOLS {"tool_versions": {"compiler": "22.1.8", "disassembler": "22.1.8", "nm": "22.1.8"}, "tool_directory": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin"}
+L24517: [ 3804s] NATIVE_ARCHIVES_END 1794423737.4974277 PASS 225
+L24905: [ 3816s] BOLT_POST_GATE_PASS
+L24908: [ 3816s] BOLT_DISK_REPORT {"stage": "post", "time_ns": 1794423749920735746, "recorded": true, "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "device": 2049, "free_bytes": 190745182208, "build": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build", "work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "root": "/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64", "scopes": ["clang-bolt/**", "tools/bolt/**", "lib64/libLLVMBOLT*.a", "bin/llvm-bolt", "ThinLTO cache positive allocation delta"], "owned_paths": [{"category": "work", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt", "allocated_bytes": 1429270528, "logical_file_bytes": 1429273773}, {"category": "tool_objects", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt", "allocated_bytes": 16089088, "logical_file_bytes": 15612289}, {"category": "tool_executable", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt", "allocated_bytes": 47284224, "logical_file_bytes": 47280568}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTCore.a", "allocated_bytes": 3424256, "logical_file_bytes": 3420984}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTPasses.a", "allocated_bytes": 6823936, "logical_file_bytes": 6822720}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTProfile.a", "allocated_bytes": 1748992, "logical_file_bytes": 1748198}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRewrite.a", "allocated_bytes": 3608576, "logical_file_bytes": 3607590}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRuntimeLibs.a", "allocated_bytes": 163840, "logical_file_bytes": 160506}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTTargetX86.a", "allocated_bytes": 475136, "logical_file_bytes": 475102}, {"category": "tool_library", "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTUtils.a", "allocated_bytes": 217088, "logical_file_bytes": 213124}], "owned_filesystem_bytes": {"2049": 1509105664}, "used_bytes": 1509105664, "cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache", "cache_delta_known": true, "cache_delta_allocated_bytes": 0, "cache_delta_logical_bytes": 0, "cache_net_allocation_delta_bytes": -1509134336, "filesystem_device": 2049}
+~~~
+
+
+profile N/M/S/U/Q/R：
+~~~text
+{"N": 23592, "M": 144032, "S": 23, "U": 1, "Q": 383, "R": 0.0010172508794981563, "S_over_N": 0.0009749067480501865}
+~~~
+
+
+CMake 前最终环境变量赋值原文：
+~~~text
+L435: [  248s] + CFLAGS=' -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument    -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables   -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument'
+L541: [  248s] + CXXFLAGS=' -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument    -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables   -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument'
+L572: [  248s] + LDFLAGS='-Wl,-z,relro,--as-needed -Wl,--gc-sections'
+~~~
+
+
+[全部门禁与 post 摘录](../../tools/bolt/results/local-full-r6-20261111/basedev/required-log-excerpts.txt)；[完整 GBS 原始日志](../../tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz)；[审计及 QB 对照](../../tools/bolt/results/local-full-r6-20261111/basedev/audit.json)。
+
+逐 token 比较：CFLAGS、CXXFLAGS 都只有 T 多出 -g2、-gdwarf-4、-g，移除这三个调试 token 后顺序和重复次数也完全相同；D 没有额外 token。两边架构参数都为 -m64 -march=nehalem -msse4.2 -mfpmath=sse，没有 -mtune。LDFLAGS 完全相同：-Wl,-z,relro,--as-needed -Wl,--gc-sections。空格数量在原文中保留，[token 差异](../../tools/bolt/results/local-full-r6-20261111/final-flags-diff.json)不据此推断 T/D 机器码差异的原因。
+
+### 8.4 资源
+
+阶段起止按 GBS 原始日志 [NNNNs] 锚点，非采样观察时刻。下表为入口 resource-table.md 原样；各阶段 cgroup 列是采样峰值，含文件缓存，不冒充独立阶段的内核 memory.peak。
+
+**toolchain**：全构建内核 memory.peak=24482992128 B；memory.events：low 0, high 0, max 3877, oom 0, oom_kill 0, oom_group_kill 0。swap peak=0；anon/file 未采集，均 **UNKNOWN**。
+
+|Phase|Seconds|Cgroup sampled bytes (includes cache)|llvm-bolt VmHWM bytes|Root du sampled bytes|Filesystem min available bytes|
+|---|---|---|---|---|---|
+|ordinary-build|3940.0|24482992128|UNKNOWN|46199988224|208583450624|
+|ordinary-install|191.0|18861355008|UNKNOWN|56534003712|195123052544|
+|BOLT|749.0|19720630272|9911152640|67924271104|187207700480|
+|cache-release|4.0|6185476096|UNKNOWN|UNKNOWN|190053105664|
+|archive-conversion|1984.0|15945318400|UNKNOWN|52422615040|202770407424|
+|platform-post|403.0|10600947712|UNKNOWN|44519174144|209042124800|
+|packaging|413.0|18198597632|UNKNOWN|47027040256|208326524928|
+
+
+资源样本 3887；du 132 次、50秒超时 32 次、全部非零 41 次。[非零原文](../../tools/bolt/results/local-full-r6-20261111/toolchain/du-nonzero-samples.json)；[阶段数据与边界](../../tools/bolt/results/local-full-r6-20261111/toolchain/resource-table.json)。
+
+**basedev**：全构建内核 memory.peak=18161836032 B；memory.events：low 0, high 0, max 0, oom 0, oom_kill 0, oom_group_kill 0。swap peak=0；anon/file 未采集，均 **UNKNOWN**。
+
+|Phase|Seconds|Cgroup sampled bytes (includes cache)|llvm-bolt VmHWM bytes|Root du sampled bytes|Filesystem min available bytes|
+|---|---|---|---|---|---|
+|ordinary-build|2226.0|11902005248|UNKNOWN|11207655424|192575094784|
+|ordinary-install|4.0|8761819136|UNKNOWN|UNKNOWN|191307046912|
+|BOLT|157.0|18123169792|9924120576|13375045632|189562822656|
+|cache-release|1.0|8222638080|UNKNOWN|UNKNOWN|189562437632|
+|archive-conversion|1168.0|8333471744|UNKNOWN|14028967936|189830004736|
+|platform-post|14.0|7196106752|UNKNOWN|UNKNOWN|190611931136|
+|packaging|71.0|10406600704|UNKNOWN|13605498880|190077300736|
+
+
+资源样本 1941；du 66 次、50秒超时 0 次、全部非零 0 次。[非零原文](../../tools/bolt/results/local-full-r6-20261111/basedev/du-nonzero-samples.json)；[阶段数据与边界](../../tools/bolt/results/local-full-r6-20261111/basedev/resource-table.json)。
+
+实际采样方式：约每2秒采 cgroup/文件系统，约每60秒由入口既有 chroot sudo -n 调用 du -sx -B1 /，单次50秒超时。T 的32次超时、其余9次非零样本均未估算补齐；D无超时。未启用入口不支持的10秒/5分钟新模式，构建根占用是成功 du 样本的峰值，下界而非连续精确峰值。T采样磁盘峰值67924271104 B，D14028967936 B；最小文件系统剩余见表。
+
+### 8.5 BOLT 输入及改写日志保全
+
+ELF 副本保存于 W/temp/local-full-r6-20261111-materials/{toolchain,basedev}/reference-relocs-clang-22，来源是各自 helper 实际 pipeline 输入；历史原文件只读。
+
+|项目|输入字节数|SHA256|
+|---|---:|---|
+|toolchain|226816920|ae3d837d862673b03c3c4718f6746f6986d8abe2078bad426b97905258b91a5c|
+|basedev|226782848|bf15cf062439714651809cd3b5ca82619407081adca64ceb65699e6ccae50501|
+
+
+[toolchain BOLT 改写日志原文](../../tools/bolt/results/local-full-r6-20261111/toolchain/rewrite-bolt.log)；[来源/大小/SHA](../../tools/bolt/results/local-full-r6-20261111/toolchain/rewrite-log-copies.json)；[输入身份](../../tools/bolt/results/local-full-r6-20261111/function-comparison/toolchain-bolt-input-command.json)。
+
+[basedev BOLT 改写日志原文](../../tools/bolt/results/local-full-r6-20261111/basedev/rewrite-bolt.log)；[来源/大小/SHA](../../tools/bolt/results/local-full-r6-20261111/basedev/rewrite-log-copies.json)；[输入身份](../../tools/bolt/results/local-full-r6-20261111/function-comparison/basedev-bolt-input-command.json)。
+
+### 8.6 与指定 QB 的逐包比较及源码包归因
+
+使用67号§8.1口径B，Release 从两边RPM头取得：本地T/D均1，QB T为2.1、D为5.1。实际RPM身份、VCS和SHA见各项目 comparison/rpm-identities.json。RPM头时间、release、payload mtime分别记录；不借此跳过文件内容。QB下载文件先按77号receipt复核SHA。
+
+T的非调试代码/数据保持相同；.debug及其debuglink按已批准release前缀规则通过，所以“口径B PASS”不等于这些调试文件原始SHA相同。D12个二进制包内容SHA全部直接相同。T的debugsource前缀路径映射后文件内容相同。
+
+|包|T 对 1225393|D 对 1225395|
+|---|---|---|
+|clang|PASS|PASS|
+|clang-debuginfo|PASS|无此包|
+|clang-devel|PASS|PASS|
+|clang-devel-debuginfo|PASS|无此包|
+|compiler-rt|PASS|PASS|
+|compiler-rt-debuginfo|PASS|无此包|
+|libllvm|PASS|PASS|
+|libllvm-debuginfo|PASS|无此包|
+|libomp|PASS|PASS|
+|libomp-debuginfo|PASS|无此包|
+|libomp-devel|PASS|PASS|
+|lldb|PASS|PASS|
+|lldb-debuginfo|PASS|无此包|
+|lldb-devel|PASS|PASS|
+|lldb-devel-debuginfo|PASS|无此包|
+|llvm|PASS|PASS|
+|llvm-debuginfo|PASS|无此包|
+|llvm-debugsource|PASS|无此包|
+|llvm-devel|PASS|PASS|
+|llvm-devel-debuginfo|PASS|无此包|
+|llvm-src|FAIL|FAIL|
+|llvm-static-devel|PASS|PASS|
+|python-clang|PASS|PASS|
+
+[T每文件结果（含允许的逐节差异）](../../tools/bolt/results/local-full-r6-20261111/toolchain/comparison/packages.json.gz)；[D每文件结果](../../tools/bolt/results/local-full-r6-20261111/basedev/comparison/packages.json)。源码包原始FAIL保留，没有为了得到PASS修改规则。
+
+每组 llvm-static-devel 的225个归档、3864个实际成员（3853转换+11原样保留）都逐成员计算并比较SHA，全同；合计 **7706个转换成员 + 22个原生成员**。额外连同其他包的归档，每组271归档、5829成员全部通过；完整归档SHA也相同。[T全量成员](../../tools/bolt/results/local-full-r6-20261111/toolchain/comparison/static-members.json.gz)、[D全量成员](../../tools/bolt/results/local-full-r6-20261111/basedev/comparison/static-members.json.gz)。这次确实运行了逐成员比较。
+
+源码包逐项事实：
+
+- spec/helper/转换器的差异来自 fea0fe46 对60fabc72，完整diff随比较结果保全；spec还含VCS、Release和GBS/QB的Patch/%patch写法差异。
+- Source1200、模型tar、llvm.manifest 的内容SHA相同，只存在0664/0644权限差异；与设计第7节第8条的源码包权限环境差异单列。
+- QB把8个补丁作为独立source文件；本地GBS将已应用补丁的源码直接导出tar，因而没有独立0001–0008。只在新临时目录应用QB八个补丁，27个受影响文件核对通过；没有改历史构建根。
+- 对两个tar逐文件流式核对184839/184826条目。应用QB补丁之后，除下述14项（含一个目录）外，全体路径/type/size/mode/link/内容SHA相同。
+- 本地多出的packaging/目录及12个文件，内容都逐个与 fea0fe46 的git对象SHA相同，属于GBS导出整个Git tree而QB使用上游tar的组织差异。
+- 唯一共有文件差异为 clang/bindings/python/.git_archival.txt：git archive 的提交身份展开。本地node=fea0fe46，QB上游tar node=ca7933e4；原文如下。该差异已经定位，但不把它偷偷加入既有白名单，源码包仍保留原始FAIL。
+
+local
+~~~text
+node: fea0fe464d56e17f2c7588c557bfffd9f6ac352b
+node-date: 2026-11-11T15:13:45+08:00
+describe-name: llvmorg-14-init-170503-gfea0fe464d56
+~~~
+
+
+qb
+~~~text
+node: ca7933e47d3a3451d81e72ac174dcb5aa28b59d1
+node-date: 2026-06-15T22:33:53+00:00
+describe-name: llvmorg-14-init-170484-gca7933e47d3a
+~~~
+
+
+本地tar354741498 B / 2ef564ef162f8f184199196a51886c58c356741b38628f4ca2fda7affc94d722；QBtar258009434 B / 1f5fe8da0a18255a63cde36f1570c88265bb8ffc6458deae06d04e77abc6f7d2。T/D各自的两个tar SHA均相同，因此同一份内容归因覆盖两组。
+
+[全部14项差异与补丁清单](../../tools/bolt/results/local-full-r6-20261111/source-attribution.json)、[12个packaging文件Git核对](../../tools/bolt/results/local-full-r6-20261111/source-extra-packaging-git-check.json)、[tar及归档标识](../../tools/bolt/results/local-full-r6-20261111/source-container-details.json)。tar全文件SHA清单：[本地](../../tools/bolt/results/local-full-r6-20261111/source-local-tar-manifest.json.gz)、[QB原始](../../tools/bolt/results/local-full-r6-20261111/source-qb-tar-manifest.json.gz)。没有无法定位的代码文件差异；以上事实不等于未经裁决把源码包改判PASS。
+
+### 8.7 T/D 函数差异（只记录事实）
+
+通过各自构建根的loader运行平台llvm-objdump --disassemble --no-show-raw-insn，在8GiB服务中流式处理成功。按可识别符号名及同名出现序号对齐；去掉指令行首地址，但保留操作数字面地址。计数包含地址引起的文本差异，不能据此认定对应数量的函数算法或性能改变。最终strip后的文件只覆盖objdump仍能识别的符号范围。
+
+|比较|T函数记录|D函数记录|完全相同记录|仅入口地址不同|指令文本/条数不同|只在T/只在D的名字|
+|---|---:|---:|---:|---:|---:|---|
+|bolt-input|144380|144380|347|13284|127206|3543/3543|
+|final-clang|51827|51827|75|5793|45959|0/0|
+
+完整差异函数名/地址/文本SHA：[BOLT输入](../../tools/bolt/results/local-full-r6-20261111/function-comparison/bolt-input-different-functions.json.gz)、[最终clang](../../tools/bolt/results/local-full-r6-20261111/function-comparison/final-clang-different-functions.json.gz)。未归一化 .llvm 数字后缀，没有下因果结论；完整反汇编四份约234–247MB gzip各自留在本地证据目录，[完整路径/大小/SHA索引](../../tools/bolt/results/local-full-r6-20261111/large-local-artifacts.json)，未上传超GitHub单文件限制的原文；逐函数清单与差异已上传。
+
+### 8.8 T RPM 安装与 LLDB
+
+遵守“不执行额外sudo”：预检rootless bwrap用户namespace可用，在新 W/temp/local-full-r6-20261111-install/root 内实际rpm --initdb、--noplugins --nodeps -ivh安装本次clang与clang-debuginfo。运行库/工具从本次T根只读复制，完整依赖闭包和10条rpmpopt exec预检通过；不是在历史chroot里装包。namespace内uid0只映射当前普通用户，无宿主root权限。
+
+这与43号sudo chroot的提权机制不同，测试对象和崩溃方法相同：LLDB仅打开/usr/bin/clang-22，自动加载/usr/lib/debug/usr/bin/clang-22.debug；真实SIGILL崩溃，core关闭。
+
+结果：安装SHA与RPM载荷一致，debug文件0644，debuglink CRC32匹配；**21/21 clang帧具名，21/21与llvm-symbolizer同地址名称相同**；另6个冷函数抽查一致。
+
+~~~text
+Preparing...                          ########################################
+Updating / installing...
+clang-debuginfo-22.1.8-1              ########################################
+clang-22.1.8-1                        ########################################
+clang-22.1.8-1.x86_64
+clang-debuginfo-22.1.8-1.x86_64
+~~~
+
+
+安装身份：
+~~~text
+{
+  "usr/bin/clang-22": "e08724d81231d8675c51d4908f4ff0e8d233ef3740c878da1c7eda42dd3532f5",
+  "usr/lib/debug/usr/bin/clang-22.debug": "9942e19c75ffef55f2846e6f1ea60651b4502de6e099c038a3d93bad4f5df690"
+}
+~~~
+
+
+[LLDB完整原文（image list/lookup/bt all）](../../tools/bolt/results/local-full-r6-20261111/install/lldb-auto.stdout)、[install/symbolizer.stdout](../../tools/bolt/results/local-full-r6-20261111/install/symbolizer.stdout)、[21帧/冷函数逐项及清理](../../tools/bolt/results/local-full-r6-20261111/install/result.json)、[复制来源与SHA](../../tools/bolt/results/local-full-r6-20261111/install/copied-files.json.gz)；完整argv保存在install/*-command.json。
+
+清理：所有bwrap进程已返回，临时proc/dev等namespace挂载随退出回收，未做宿主挂载/卸载。findmnt返回0，无测试根挂载；可读/proc中无测试根cwd/root/exe进程。306个外部进程有普通用户权限盲区，明确保留这个限制；未提权查看。根和RPM均保留。
+
+### 8.9 收尾与边界
+
+/home收尾可用 154250567680 B（143.657 GiB）；[df-final.txt](../../tools/bolt/results/local-full-r6-20261111/df-final.txt)。比较解包、函数反汇编、安装根与全部产物均保留，未删除任何文件。
+
+原入口自动完成的90 TU结果为T、D均PASS（不是本次额外重跑的检查），其原result已保全。本轮未运行新QB、额外完整构建、性能测量或函数差异因果实验。没有OOM，未提高限制或重试失败构建；T原自动验证失败和源码包原始FAIL均未隐藏。
+
+本次结论：构建和指定QB二进制/静态成员验证完成，安装符号检查通过；源码包组织/归档标识差异已定位但严格原比较为FAIL，不能写“整包全部逐字节相同”。
+
+~~~text
+NIGHT_PROJECT 已结束 2026-11-12T01:56:13+08:00 toolchain status=failed reason=controller-result-failed
+NIGHT_PROJECT 已结束 2026-11-12T03:21:14+08:00 basedev status=ok reason=controller-result-ok
+NIGHT 已结束 2026-11-12T03:21:14+08:00 T=failed D=ok reason=serial-builds-and-validation-finished rc=1
+AUDIT 已结束 2026-11-12T11:37:14.186866+08:00 toolchain status=recorded
+AUDIT 已结束 2026-11-12T11:37:19.808416+08:00 basedev status=recorded
+AUDIT_ALL 已结束 2026-11-12T11:37:19.810006+08:00
+FUNCTION_COMPARE 已结束 2026-11-12T12:07:42.084940+08:00 result={"bolt-input": {"status": "recorded", "toolchain_functions": 144380, "basedev_functions": 144380, "different_functions": 147576, "identical_function_records": 347, "scope": "functions identified by llvm-objdump from available symbols; instruction leading addresses removed, operand addresses retained; includes address-only differences; no causal claim"}, "final-clang": {"status": "recorded", "toolchain_functions": 51827, "basedev_functions": 51827, "different_functions": 51752, "identical_function_records": 75, "scope": "functions identified by llvm-objdump from available symbols; instruction leading addresses removed, operand addresses retained; includes address-only differences; no causal claim"}}
+INSTALL_LLDB 已结束 2026-11-12T12:08:57.826486+08:00 status=ok phase=symbolizer
+LOCAL_FULL_R6 已结束 2026-11-12T12:13:57.322734+08:00 status=completed_with_differences reason=builds_ok_binary_policyB_pass_source_raw_FAIL_attributed
+~~~
+
+
+文档生成阶段另有一次读取 JSON 层级的 KeyError（在写文档之前），只修正报告生成器的 data/ counts 层级，未修改测试、比较判据或产物；[原文](../../tools/bolt/results/local-full-r6-20261111/report-generator-error.txt)、[修正 diff](../../tools/bolt/results/local-full-r6-20261111/report-generator-correction.diff)。

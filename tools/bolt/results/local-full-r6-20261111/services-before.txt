@@ -1,0 +1,47 @@
+at-spi-dbus-bus.service                                          loaded active running Accessibility services bus
+dbus.service                                                     loaded active running D-Bus User Message Bus
+dconf.service                                                    loaded active running User preferences database
+evolution-addressbook-factory.service                            loaded active running Evolution address book service
+evolution-calendar-factory.service                               loaded active running Evolution calendar service
+evolution-source-registry.service                                loaded active running Evolution source registry
+filter-chain.service                                             loaded active running PipeWire filter chain daemon
+gcr-ssh-agent.service                                            loaded active running GCR ssh-agent wrapper
+gnome-keyring-daemon.service                                     loaded active running GNOME Keyring daemon
+gnome-session-manager@ubuntu.service                             loaded active running GNOME Session Manager (session: ubuntu)
+gnome-session-monitor.service                                    loaded active running Monitor Session leader for GNOME Session
+gnome-terminal-server.service                                    loaded active running GNOME Terminal Server
+gvfs-afc-volume-monitor.service                                  loaded active running Virtual filesystem service - Apple File Conduit monitor
+gvfs-daemon.service                                              loaded active running Virtual filesystem service
+gvfs-goa-volume-monitor.service                                  loaded active running Virtual filesystem service - GNOME Online Accounts monitor
+gvfs-gphoto2-volume-monitor.service                              loaded active running Virtual filesystem service - digital camera monitor
+gvfs-metadata.service                                            loaded active running Virtual filesystem metadata service
+gvfs-mtp-volume-monitor.service                                  loaded active running Virtual filesystem service - Media Transfer Protocol monitor
+gvfs-udisks2-volume-monitor.service                              loaded active running Virtual filesystem service - disk device monitor
+llvm-r6-fullprep-1111-001.service                                loaded active running /bin/sh -c "trap 'rc=\$?; printf \"已结束 %s status=%s unit=llvm-r6-fullprep-1111-001\\n\" \"\$(TZ=Asia/Shanghai date -Iseconds)\" \"\$rc\"' 0\nset -eu\npython3 - <<'PY'\nfrom pathlib import Path\nimport subprocess,shutil,json,datetime\nB=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');W=B.parent/'llvm-optimize'\nC=W/'temp/rebase-359934-20261111-r6/source'\ndef git(*a):return subprocess.check_output(['git','-C',str(C),*a],text=True).strip()\nservices=subprocess.check_output(['systemctl','--user','list-units','--type=service','--state=running','--no-pager','--no-legend','--plain'],text=True)\nsuspect=[l for l in services.splitlines() if any(x in l.split()[0] for x in ('llvm-','rebase','codex','pgo-','bolt-','night-')) and 'llvm-r6-fullprep-1111-001.service' not in l]\nprint('OTHER_TASK_SERVICES',suspect);assert not suspect,suspect\nassert git('rev-parse','HEAD')=='fea0fe464d56e17f2c7588c557bfffd9f6ac352b'\nassert git('rev-parse','HEAD^{tree}')=='b2e8af2477cf623a945aa80bf8288a262dd4a5a9'\nassert not git('status','--porcelain')\nroots=[W/'temp/rebase-359934-20261111-r6'/x for x in ('toolchain','basedev')]+[W/'temp/night-20261111-r6']\nassert all(not p.exists() for p in roots)\nfree=shutil.disk_usage('/home').free;print('FREE_GIB',free/1024**3);assert free>=151.3*1024**3\nE=B/'tools/bolt/results/local-full-r6-20261111';E.mkdir()\n(E/'preflight.json').write_text(json.dumps(dict(time=datetime.datetime.now().astimezone().isoformat(),head=git('rev-parse','HEAD'),tree=git('rev-parse','HEAD^{tree}'),status=git('status','--porcelain'),roots={str(p):p.exists() for p in roots},free_bytes=free,other_task_services=suspect),indent=2)+'\\n')\n(E/'services-before.txt').write_text(services)\nfor p in [B/'tools/bolt/rebase-launch-20261111-r6/run-night.sh',B/'tools/bolt/rebase-launch-20261111-r6/basedev/launch.sh']:\n print('FILE',p);print(p.read_text())\nprint('STATUS', (B/'docs/bolt/STATUS.md').read_text()[-1500:])\nPY"
+org.gnome.SettingsDaemon.A11ySettings.service                    loaded active running GNOME accessibility service
+org.gnome.SettingsDaemon.Color.service                           loaded active running GNOME color management service
+org.gnome.SettingsDaemon.Datetime.service                        loaded active running GNOME date & time service
+org.gnome.SettingsDaemon.Housekeeping.service                    loaded active running GNOME maintenance of expirable data service
+org.gnome.SettingsDaemon.Keyboard.service                        loaded active running GNOME keyboard configuration service
+org.gnome.SettingsDaemon.MediaKeys.service                       loaded active running GNOME keyboard shortcuts service
+org.gnome.SettingsDaemon.Power.service                           loaded active running GNOME power management service
+org.gnome.SettingsDaemon.PrintNotifications.service              loaded active running GNOME printer notifications service
+org.gnome.SettingsDaemon.Rfkill.service                          loaded active running GNOME RFKill support service
+org.gnome.SettingsDaemon.ScreensaverProxy.service                loaded active running GNOME FreeDesktop screensaver service
+org.gnome.SettingsDaemon.Sharing.service                         loaded active running GNOME file sharing service
+org.gnome.SettingsDaemon.Smartcard.service                       loaded active running GNOME smartcard service
+org.gnome.SettingsDaemon.Sound.service                           loaded active running GNOME sound sample caching service
+org.gnome.SettingsDaemon.Wacom.service                           loaded active running GNOME Wacom tablet support service
+org.gnome.SettingsDaemon.XSettings.service                       loaded active running GNOME XSettings service
+org.gnome.Shell@x11.service                                      loaded active running GNOME Shell on X11
+pipewire-pulse.service                                           loaded active running PipeWire PulseAudio
+pipewire.service                                                 loaded active running PipeWire Multimedia Service
+snap.firmware-updater.firmware-notifier.service                  loaded active running Service for snap application firmware-updater.firmware-notifier
+snap.snapd-desktop-integration.snapd-desktop-integration.service loaded active running Service for snap application snapd-desktop-integration.snapd-desktop-integration
+tracker-miner-fs-3.service                                       loaded active running Tracker file system data miner
+wireplumber.service                                              loaded active running Multimedia Service Session Manager
+xdg-desktop-portal-gnome.service                                 loaded active running Portal service (GNOME implementation)
+xdg-desktop-portal-gtk.service                                   loaded active running Portal service (GTK/GNOME implementation)
+xdg-desktop-portal.service                                       loaded active running Portal service
+xdg-document-portal.service                                      loaded active running flatpak document portal service
+xdg-permission-store.service                                     loaded active running sandboxed app permission store
