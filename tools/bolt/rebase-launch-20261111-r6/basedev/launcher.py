@@ -24,7 +24,7 @@ SOURCE = W / 'temp/rebase-359934-20261111-r6/source'
 COMMIT = os.environ.get('NIGHT_SOURCE_SHA', '')
 assert len(COMMIT) == 40 and all(c in '0123456789abcdef' for c in COMMIT), 'explicit full source SHA required'
 PROJECT = os.environ.get('FINAL_PROJECT', 'toolchain')
-assert PROJECT in ('toolchain', 'basedev')
+assert PROJECT == 'basedev', 'Base-Dev launcher requires FINAL_PROJECT=basedev'
 CONFIG = W / ('temp/final-20261103/configs/' + PROJECT + '/gbs.conf')
 BUILDCONF = CONFIG.parent / 'build.conf'
 BUILD_SHA = {'toolchain':'e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945',

@@ -1,0 +1,292 @@
+diff --git a/tools/bolt/rebase-launch-20261111-r6/README.md b/tools/bolt/rebase-launch-20261111-r6/README.md
+index cdd9a506..b3d165eb 100644
+--- a/tools/bolt/rebase-launch-20261111-r6/README.md
++++ b/tools/bolt/rebase-launch-20261111-r6/README.md
+@@ -14,3 +14,10 @@ Summary: W/temp/night-20261111-r6/night.log.
+ Source: W/temp/rebase-359934-20261111-r6/source.
+ 
+ The night coordinator is launched in rebase359934r6-night-20261111.service using systemd-run --user --collect, independent of a terminal. If Linger=no, do not log out during the build. test_serial.py covers the serial failure boundaries without starting real services. Existing test expectations remain unchanged; new CLI tests require legacy Base-Dev branches to be rejected.
++
++
++## 第七轮评审入口跟进（82号，2026-11-13）
++
++子服务只有 inactive、failed 视为结束（空列表允许）；其他状态或不完整查询输出停止队列，reason=project-services-not-confirmed-ended。T/D 调用 launch.sh 前即记 started，轮询收到信号时保留可能在运行的状态。Base-Dev launcher 直接断言 FINAL_PROJECT=basedev，不能绕过 shell 进入 Toolchain 的旧配置。启动时读取 Linger，no 只打印 NIGHT_WARNING，提示保持登录，不更改 Linger。
++
++30项 mock 测试通过：原16项保留，新增14项（含磁盘精确80GiB边界、故障/非数字、短行、reloading/maintenance、D缺结果、SIGTERM、直接入口断言和Linger）。第一次磁盘失败夹具漏接退出码，修正故障注入后全量重跑，断言未变。详见 docs/bolt/82_entry_fixes.md。本轮没有启动真实构建或修改 Toolchain launcher。
+diff --git a/tools/bolt/rebase-launch-20261111-r6/SHA256SUMS b/tools/bolt/rebase-launch-20261111-r6/SHA256SUMS
+index f3bc4d2f..71dfc7b8 100644
+--- a/tools/bolt/rebase-launch-20261111-r6/SHA256SUMS
++++ b/tools/bolt/rebase-launch-20261111-r6/SHA256SUMS
+@@ -1,14 +1,14 @@
+-3816172a1cf45ee3e4b2ca5ec5a7f29fe6ffb84d55e28899254b07f43f53c85a  README.md
++e4d0f66875f7001b5a1e3281dd58cace94643377920db2ddd56a398867fa43be  README.md
+ 3816172a1cf45ee3e4b2ca5ec5a7f29fe6ffb84d55e28899254b07f43f53c85a  basedev/README.md
+-2c61ba1e25f9c890ebc554361543fa29b99ca5960a7084e7db3f5e27a900126d  basedev/SHA256SUMS
++7d11505222454e36b05b4c11e3446cdd0c843f325e81b9cb52d9fc4e84e90197  basedev/SHA256SUMS
+ 0d3deb41ededb21856524510df9eed8fd6d227fe0e0f79d34ab0a318a49e78fa  basedev/audit_rehearsal.py
+ 140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe  basedev/checks.py
+ c0b513f3f9f9051aa5190efb0cb9b5f3ef95b0149a82001d80c3333244a4d978  basedev/correct_duplicate_sections.py
+ 8d13170421aedf27ab2e90f199b7d88f1537352fca1bf522edee0830d0131b8b  basedev/launch.sh
+-a23abce2bb30712c83c9f4b7b953fbaa21595ccff79ce1a4bb8db43257fa5f28  basedev/launcher.py
++3ea0c6e294b618c5587216e3b64063ad9acfdd000fc5035301e748797f04e48a  basedev/launcher.py
+ 45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a  basedev/log_support.py
+ 0b3c8c1d53b5b06e64435fb62f9e6fa99c2a40464d95d8d137ae0899e68c7a16  basedev/night.py
+-c77d49323fc269318d4991ae37be7e0bce6a4c8f23e55b7c3a5e637491809c1b  basedev/provenance.json
++05887f93557621fd3061aa1213b9f9b0d5d1e343550f1ac586f075f1dcdd034c  basedev/provenance.json
+ 1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456  basedev/release_checks.py
+ a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e  basedev/resource_report.py
+ 8cc8d3e0d32b351e7f5798de297184a249a90952f56ef081f1a98205ce21ca67  basedev/resume_release_checks.py
+@@ -23,8 +23,9 @@ e681e29ad3cf6f084983df46fbaa4727859bdc6b53f795188229d99d2a7ea7f9  basedev/sectio
+ e0c1574755ce597a56bed3f45257af8572ef3cc5a08a80863285fb8c2c823176  basedev/test_revalidation.py
+ 46d124368f21bc84d9a323730ce80a22cfedafd721cfa08a90ed61e57057b2e0  basedev/test_startup.py
+ 2e6ffe604e87292c1f64ca91cb6df20bdebbabb19677033413b7ecc211a04be7  basedev/validate.py
+-2d046b169a6abcf7b843e988b0517ade54c4cd69d5367c206ea7ed39dc4313ac  run-night.sh
+-17d5f11b3b4c1cf159237e99750ac373634f384c8fbb84aec176820c7e861673  test_serial.py
++6b47e65d03f000ee57efa2e2c5e3120bf91e55e59ac9b03c7da4ee50b40d0aa6  provenance.json
++3467fda295ee6f2f09d42e6bfec6cd846f28ecea45441a443496e9eba810b9c1  run-night.sh
++f74e7a6e7f49dbd9a7ad74e3b9305e573ddbcaccfa92847aad163fe875f9a7a6  test_serial.py
+ 3816172a1cf45ee3e4b2ca5ec5a7f29fe6ffb84d55e28899254b07f43f53c85a  toolchain/README.md
+ ad83160b7891c6dab7b6e7adc3e18181f671920b439379be8f5142eeae7e9e6b  toolchain/SHA256SUMS
+ ad0fe47fb5dd176a86234bc6efdf1de2d050739aa29b87405a58edb976cc6370  toolchain/audit_rehearsal.py
+diff --git a/tools/bolt/rebase-launch-20261111-r6/basedev/SHA256SUMS b/tools/bolt/rebase-launch-20261111-r6/basedev/SHA256SUMS
+index b7a36e35..c746e0f5 100644
+--- a/tools/bolt/rebase-launch-20261111-r6/basedev/SHA256SUMS
++++ b/tools/bolt/rebase-launch-20261111-r6/basedev/SHA256SUMS
+@@ -3,10 +3,10 @@
+ 140ce779a89267ca1b8eb476a12fba55b13d3300ff630b04cd73bd005f126ebe  checks.py
+ c0b513f3f9f9051aa5190efb0cb9b5f3ef95b0149a82001d80c3333244a4d978  correct_duplicate_sections.py
+ 8d13170421aedf27ab2e90f199b7d88f1537352fca1bf522edee0830d0131b8b  launch.sh
+-a23abce2bb30712c83c9f4b7b953fbaa21595ccff79ce1a4bb8db43257fa5f28  launcher.py
++3ea0c6e294b618c5587216e3b64063ad9acfdd000fc5035301e748797f04e48a  launcher.py
+ 45ef66f8a0d41689fe4745b23b2a1a73eebcc010fce39d2964e83e00b545181a  log_support.py
+ 0b3c8c1d53b5b06e64435fb62f9e6fa99c2a40464d95d8d137ae0899e68c7a16  night.py
+-c77d49323fc269318d4991ae37be7e0bce6a4c8f23e55b7c3a5e637491809c1b  provenance.json
++05887f93557621fd3061aa1213b9f9b0d5d1e343550f1ac586f075f1dcdd034c  provenance.json
+ 1dff84b98056606e568a64cbe066929118653860ce672f4d9f9ad875dea90456  release_checks.py
+ a68bf51666c05640b7e165b3bf4c8b5c0d655a8bab67b9a34595b561b4f0675e  resource_report.py
+ 8cc8d3e0d32b351e7f5798de297184a249a90952f56ef081f1a98205ce21ca67  resume_release_checks.py
+diff --git a/tools/bolt/rebase-launch-20261111-r6/basedev/launcher.py b/tools/bolt/rebase-launch-20261111-r6/basedev/launcher.py
+index 9278ec49..c141caec 100644
+--- a/tools/bolt/rebase-launch-20261111-r6/basedev/launcher.py
++++ b/tools/bolt/rebase-launch-20261111-r6/basedev/launcher.py
+@@ -24,7 +24,7 @@ SOURCE = W / 'temp/rebase-359934-20261111-r6/source'
+ COMMIT = os.environ.get('NIGHT_SOURCE_SHA', '')
+ assert len(COMMIT) == 40 and all(c in '0123456789abcdef' for c in COMMIT), 'explicit full source SHA required'
+ PROJECT = os.environ.get('FINAL_PROJECT', 'toolchain')
+-assert PROJECT in ('toolchain', 'basedev')
++assert PROJECT == 'basedev', 'Base-Dev launcher requires FINAL_PROJECT=basedev'
+ CONFIG = W / ('temp/final-20261103/configs/' + PROJECT + '/gbs.conf')
+ BUILDCONF = CONFIG.parent / 'build.conf'
+ BUILD_SHA = {'toolchain':'e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945',
+diff --git a/tools/bolt/rebase-launch-20261111-r6/basedev/provenance.json b/tools/bolt/rebase-launch-20261111-r6/basedev/provenance.json
+index 8df2906a..d8007c04 100644
+--- a/tools/bolt/rebase-launch-20261111-r6/basedev/provenance.json
++++ b/tools/bolt/rebase-launch-20261111-r6/basedev/provenance.json
+@@ -253,5 +253,23 @@
+       "test_serial.py 16 mock tests; original tests unchanged"
+     ],
+     "test_results": "98 total: 96 PASS, 2 original not-applicable skips"
++  },
++  "review7_entry_followup": {
++    "reason": "seventh-review local-entry follow-up, task82",
++    "time": "2026-11-13T00:40:15.323498+08:00",
++    "baseline_evidence_commit": "01191abf006c40e7ed4660c02111de6abb184762",
++    "changes": [
++      "subservice inactive/failed allowlist",
++      "started before T/D launch",
++      "Base-Dev direct PROJECT assertion",
++      "Linger=no warning only"
++    ],
++    "tests": {
++      "total": 30,
++      "passed": 30,
++      "original": 16,
++      "new": 14,
++      "preparation_fixes": 1
++    }
+   }
+ }
+diff --git a/tools/bolt/rebase-launch-20261111-r6/run-night.sh b/tools/bolt/rebase-launch-20261111-r6/run-night.sh
+index 319204f2..a0337472 100755
+--- a/tools/bolt/rebase-launch-20261111-r6/run-night.sh
++++ b/tools/bolt/rebase-launch-20261111-r6/run-night.sh
+@@ -16,7 +16,16 @@ entry_dir=$(CDPATH= cd -P -- "$(dirname -- "$0")" && pwd)
+ work=/home/linhao/Toolchain/development/llvm-optimize
+ build_base=$work/temp/rebase-359934-20261111-r6
+ summary=$work/temp/night-20261111-r6
++check_linger() {
++    login_user=$(id -un) || login_user=
++    [ -n "$login_user" ] || return 0
++    linger=$(loginctl show-user "$login_user" -p Linger --value 2>/dev/null) || linger=
++    if [ "$linger" = no ]; then
++        printf 'NIGHT_WARNING %s Linger=no; queue depends on user remaining logged in\n' "$(date -Iseconds)"
++    fi
++}
+ if [ "$dry_run" = yes ]; then
++    check_linger
+     for project in toolchain basedev; do
+         if [ "$project" = toolchain ]; then
+             printf 'ARGV /bin/sh %s/toolchain/launch.sh %s full\n' "$entry_dir" "$source_sha"
+@@ -34,6 +43,7 @@ fi
+ mkdir -p -- "$summary" || exit 1
+ exec >> "$summary/night.log" 2>&1
+ exec < /dev/null
++check_linger
+ t_status=not_run
+ d_status=not_run
+ night_reason=unexpected-exit
+@@ -88,6 +98,8 @@ run_project() {
+             return 2
+         fi
+     fi
++    project_status=started
++    case "$project" in toolchain) t_status=started ;; basedev) d_status=started ;; esac
+     launch_rc=0
+     if [ "$project" = toolchain ]; then
+         /bin/sh "$entry_dir/toolchain/launch.sh" "$source_sha" full || launch_rc=$?
+@@ -131,7 +143,7 @@ import sys
+ rows=[line.split() for line in sys.stdin if line.strip()]
+ if any(len(r)<4 for r in rows):
+  print("invalid-list-units-output"); sys.exit(2)
+-active=[r[0]+":"+r[2] for r in rows if r[2] in ("active","activating","deactivating")]
++active=[r[0]+":"+r[2] for r in rows if r[2] not in ("inactive","failed")]
+ if active:
+  print("remaining-services="+",".join(active)); sys.exit(1)
+ print("all-project-services-ended")
+diff --git a/tools/bolt/rebase-launch-20261111-r6/test_serial.py b/tools/bolt/rebase-launch-20261111-r6/test_serial.py
+index 2a4b2469..5b579d2a 100644
+--- a/tools/bolt/rebase-launch-20261111-r6/test_serial.py
++++ b/tools/bolt/rebase-launch-20261111-r6/test_serial.py
+@@ -1,11 +1,11 @@
+ # Isolated coordinator fixtures: no real systemd services or builds.
+ from pathlib import Path
+-import os,sys,subprocess,json,unittest
++import os,sys,subprocess,json,unittest,time,signal
+ ENTRY=Path(os.environ.get('SERIAL_ENTRY',str(Path(__file__).parent)))
+ ROOT=Path(os.environ['SERIAL_TEST_ROOT']);ROOT.mkdir(exist_ok=False)
+ SHA='fea0fe464d56e17f2c7588c557bfffd9f6ac352b'
+ class SerialTests(unittest.TestCase):
+- def scenario(self,*,launch_rc=0,live='',query_failure=False,missing=False,invalid=False,tstatus='ok',free=100*1024**3,dry=False,state='inactive',existing=False):
++ def scenario(self,*,launch_rc=0,live='',query_failure=False,missing=False,invalid=False,tstatus='ok',free=100*1024**3,dry=False,state='inactive',existing=False,rows=None,missing_d=False,disk_rc=0,poll_signal=False,linger='yes'):
+   d=ROOT/self._testMethodName;d.mkdir();work=d/'work';work.mkdir();entry=d/'entry';entry.mkdir();fake=d/'bin';fake.mkdir()
+   text=(ENTRY/'run-night.sh').read_text();changed=text.replace('work=/home/linhao/Toolchain/development/llvm-optimize','work='+str(work));assert changed!=text
+   (entry/'run-night.sh').write_text(changed)
+@@ -21,6 +21,7 @@ if [ "$project" = toolchain ]; then
+  printf 'accepted\n' > "$root/controller-accepted"
+  if [ "$MOCK_RC" -ne 0 ]; then exit "$MOCK_RC"; fi
+ fi
++if [ "$project" = basedev ] && [ "$MOCK_MISSING_D" = yes ]; then exit 0; fi
+ status=ok
+ if [ "$project" = toolchain ]; then status=$MOCK_TSTATUS; fi
+ if [ "$project" = toolchain ] && [ "$MOCK_MISSING" = yes ]; then exit 0; fi
+@@ -36,25 +37,36 @@ printf 'fixture last build line\n' > "$root/evidence/rpm-build.log"
+ case "$*" in
+  *list-units*)
+   if [ "$MOCK_QUERY_FAILURE" = yes ]; then exit 5; fi
++  if [ "$MOCK_ROWS_SET" = yes ]; then printf '%s\\n' "$MOCK_ROWS"; exit 0; fi
+   if [ -n "$MOCK_LIVE" ]; then
+    printf 'rebase359934r6-toolchain-full-prep-20261111.service loaded %s running fixture\n' "$MOCK_LIVE"
+   else
+    printf 'rebase359934r6-toolchain-full-controller-20261111.service loaded inactive dead fixture\n'
+   fi ;;
+- *show*) printf '%s\n' "$MOCK_STATE" ;;
++ *show*) : > "$MOCK_POLL_MARKER"; printf '%s\n' "$MOCK_STATE" ;;
+  *) exit 8 ;;
+ esac
+ ''');(fake/'systemctl').chmod(0o755)
+   (fake/'python3').write_text('''#!/bin/sh
+ case "$*" in
+- *'shutil.disk_usage("/home").free'*) printf '%s\n' "$MOCK_FREE" ;;
++ *'shutil.disk_usage("/home").free'*) [ "$MOCK_DISK_RC" -eq 0 ] || exit "$MOCK_DISK_RC"; printf '%s\n' "$MOCK_FREE" ;;
+  *) exec REALPY "$@" ;;
+ esac
+ '''.replace('REALPY',sys.executable));(fake/'python3').chmod(0o755)
+-  env=dict(os.environ,PATH=str(fake)+':'+os.environ['PATH'],MOCK_CALLS=str(d/'calls'),MOCK_WORK=str(work),MOCK_RC=str(launch_rc),MOCK_LIVE=live,MOCK_QUERY_FAILURE='yes' if query_failure else 'no',MOCK_MISSING='yes' if missing else 'no',MOCK_INVALID='yes' if invalid else 'no',MOCK_TSTATUS=tstatus,MOCK_FREE=str(free),MOCK_STATE=state)
++  (fake/'loginctl').write_text('#!/bin/sh\nprintf \'%s\\n\' "$MOCK_LINGER"\n');(fake/'loginctl').chmod(0o755)
++  (fake/'sleep').write_text('#!/bin/sh\nexec '+sys.executable+' -B -c "import time; time.sleep(.05)"\n');(fake/'sleep').chmod(0o755)
++  env=dict(os.environ,PATH=str(fake)+':'+os.environ['PATH'],MOCK_CALLS=str(d/'calls'),MOCK_WORK=str(work),MOCK_RC=str(launch_rc),MOCK_LIVE=live,MOCK_QUERY_FAILURE='yes' if query_failure else 'no',MOCK_MISSING='yes' if missing else 'no',MOCK_INVALID='yes' if invalid else 'no',MOCK_TSTATUS=tstatus,MOCK_FREE=str(free),MOCK_STATE=state,MOCK_ROWS_SET="no" if rows is None else "yes",MOCK_ROWS=rows or "",MOCK_MISSING_D="yes" if missing_d else "no",MOCK_DISK_RC=str(disk_rc),MOCK_POLL_MARKER=str(d/"poll-started"),MOCK_LINGER=linger)
+   if existing:(work/'temp/rebase-359934-20261111-r6/toolchain').mkdir(parents=True)
+   argv=['/bin/sh',str(entry/'run-night.sh'),SHA]+(['--dry-run'] if dry else [])
+-  r=subprocess.run(argv,env=env,stdin=subprocess.DEVNULL,capture_output=True,text=True)
++  if poll_signal:
++   proc=subprocess.Popen(argv,env=env,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
++   deadline=time.monotonic()+10
++   while not (d/'poll-started').exists() and proc.poll() is None and time.monotonic()<deadline:time.sleep(.01)
++   self.assertTrue((d/'poll-started').exists(),'poll marker missing')
++   proc.send_signal(signal.SIGTERM);stdout,stderr=proc.communicate(timeout=10)
++   r=subprocess.CompletedProcess(argv,proc.returncode,stdout,stderr)
++  else:
++   r=subprocess.run(argv,env=env,stdin=subprocess.DEVNULL,capture_output=True,text=True,timeout=15)
+   calls=(d/'calls').read_text().splitlines() if (d/'calls').exists() else []
+   log=work/'temp/night-20261111-r6/night.log';output=log.read_text() if log.exists() else ''
+   (d/'result.json').write_text(json.dumps(dict(argv=argv,rc=r.returncode,calls=calls,stdout=r.stdout,stderr=r.stderr,night_log=output),indent=2)+'\n')
+@@ -91,4 +103,48 @@ esac
+  def test_basedev_reject_legacy_branches(self):
+   for args in ([SHA,'night'],[SHA,'rehearsal','toolchain'],[SHA,'rehearsal-02','toolchain'],[SHA,'full','toolchain']):
+    r=subprocess.run(['/bin/sh',str(ENTRY/'basedev/launch.sh'),*args],capture_output=True,text=True);self.assertEqual(r.returncode,2,args)
++
++ def check_case(self,rc,calls,reason,**kw):
++  r,actual,out,w=self.scenario(**kw)
++  self.assertEqual(r.returncode,rc);self.assertEqual(actual,calls);self.assertIn('reason='+reason,out)
++  return out
++ def test_child_reloading(self):
++  self.check_case(2,['toolchain'],'project-services-not-confirmed-ended',live='reloading')
++ def test_child_maintenance(self):
++  self.check_case(2,['toolchain'],'project-services-not-confirmed-ended',live='maintenance')
++ def test_short_list_units_row(self):
++  self.check_case(2,['toolchain'],'project-services-not-confirmed-ended',rows='broken loaded')
++ def test_disk_exactly_80_GiB(self):
++  self.check_case(0,['toolchain','basedev'],'serial-builds-and-validation-finished',free=85899345920)
++ def test_disk_one_byte_below_80_GiB(self):
++  self.check_case(2,['toolchain'],'insufficient-space-before-D',free=85899345919)
++ def test_disk_query_failure(self):
++  self.check_case(2,['toolchain'],'disk-query-failed',disk_rc=7)
++ def test_disk_query_nonnumeric(self):
++  self.check_case(2,['toolchain'],'disk-query-failed',free='not-a-number')
++ def test_D_missing_result(self):
++  self.check_case(2,['toolchain','basedev'],'missing-or-invalid-result.json',missing_d=True)
++ def test_SIGTERM_while_polling_T(self):
++  out=self.check_case(143,['toolchain'],'signal-15',state='active',poll_signal=True)
++  self.assertIn('T=started D=not_run',out)
++ def test_old_night_basedev_refused(self):
++  r=subprocess.run(['/bin/sh',str(ENTRY/'basedev/launch.sh'),SHA,'night','basedev'],capture_output=True,text=True)
++  self.assertEqual(r.returncode,2)
++  self.assertNotIn('NIGHT_PROJECT',r.stdout+r.stderr) # rejected before any queue/log creation
++  (ROOT/'legacy-night-result.json').write_text(json.dumps({'rc':r.returncode,'D_started':False,'reason':'CLI rejects legacy night before coordinator log','stdout':r.stdout,'stderr':r.stderr},indent=2))
++ def test_direct_basedev_requires_project(self):
++  env=dict(os.environ,NIGHT_SOURCE_SHA=SHA);env.pop('FINAL_PROJECT',None)
++  r=subprocess.run([sys.executable,'-B',str(ENTRY/'basedev/launcher.py'),'full'],env=env,capture_output=True,text=True)
++  self.assertEqual(r.returncode,1)
++  self.assertIn('AssertionError: Base-Dev launcher requires FINAL_PROJECT=basedev',r.stderr)
++  self.assertNotIn('NIGHT_PROJECT',r.stdout+r.stderr)
++  (ROOT/'direct-launcher-result.json').write_text(json.dumps({'rc':r.returncode,'D_started':False,'reason':'assertion before configuration/side effects','stdout':r.stdout,'stderr':r.stderr},indent=2))
++ def test_empty_service_list_is_ended(self):
++  self.check_case(0,['toolchain','basedev'],'serial-builds-and-validation-finished',rows='')
++ def test_failed_service_is_ended(self):
++  self.check_case(0,['toolchain','basedev'],'serial-builds-and-validation-finished',live='failed')
++ def test_linger_no_warns_and_continues(self):
++  out=self.check_case(0,['toolchain','basedev'],'serial-builds-and-validation-finished',linger='no')
++  self.assertIn('NIGHT_WARNING',out);self.assertIn('queue depends on user remaining logged in',out)
++
+ if __name__=='__main__':unittest.main(verbosity=2,failfast=True)
+--- /dev/null
++++ provenance.json
+@@ -0,0 +1,18 @@
++{
++  "reason": "seventh-review local-entry follow-up, task82",
++  "time": "2026-11-13T00:40:15.323498+08:00",
++  "baseline_evidence_commit": "01191abf006c40e7ed4660c02111de6abb184762",
++  "changes": [
++    "subservice inactive/failed allowlist",
++    "started before T/D launch",
++    "Base-Dev direct PROJECT assertion",
++    "Linger=no warning only"
++  ],
++  "tests": {
++    "total": 30,
++    "passed": 30,
++    "original": 16,
++    "new": 14,
++    "preparation_fixes": 1
++  }
++}

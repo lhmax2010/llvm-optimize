@@ -1,0 +1,16 @@
+#!/bin/sh
+case "$*" in
+ *list-units*)
+  if [ "$MOCK_QUERY_FAILURE" = yes ]; then exit 5; fi
+  if [ "$MOCK_ROWS_SET" = yes ]; then printf '%s\n' "$MOCK_ROWS"; exit 0; fi
+  if [ -n "$MOCK_LIVE" ]; then
+   printf 'rebase359934r6-toolchain-full-prep-20261111.service loaded %s running fixture
+' "$MOCK_LIVE"
+  else
+   printf 'rebase359934r6-toolchain-full-controller-20261111.service loaded inactive dead fixture
+'
+  fi ;;
+ *show*) : > "$MOCK_POLL_MARKER"; printf '%s
+' "$MOCK_STATE" ;;
+ *) exit 8 ;;
+esac

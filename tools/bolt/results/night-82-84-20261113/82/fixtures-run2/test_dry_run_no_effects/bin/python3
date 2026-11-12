@@ -1,0 +1,6 @@
+#!/bin/sh
+case "$*" in
+ *'shutil.disk_usage("/home").free'*) [ "$MOCK_DISK_RC" -eq 0 ] || exit "$MOCK_DISK_RC"; printf '%s
+' "$MOCK_FREE" ;;
+ *) exec /usr/bin/python3 "$@" ;;
+esac

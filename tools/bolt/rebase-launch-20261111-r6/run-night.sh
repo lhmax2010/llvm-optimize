@@ -16,7 +16,16 @@ entry_dir=$(CDPATH= cd -P -- "$(dirname -- "$0")" && pwd)
 work=/home/linhao/Toolchain/development/llvm-optimize
 build_base=$work/temp/rebase-359934-20261111-r6
 summary=$work/temp/night-20261111-r6
+check_linger() {
+    login_user=$(id -un) || login_user=
+    [ -n "$login_user" ] || return 0
+    linger=$(loginctl show-user "$login_user" -p Linger --value 2>/dev/null) || linger=
+    if [ "$linger" = no ]; then
+        printf 'NIGHT_WARNING %s Linger=no; queue depends on user remaining logged in\n' "$(date -Iseconds)"
+    fi
+}
 if [ "$dry_run" = yes ]; then
+    check_linger
     for project in toolchain basedev; do
         if [ "$project" = toolchain ]; then
             printf 'ARGV /bin/sh %s/toolchain/launch.sh %s full\n' "$entry_dir" "$source_sha"
@@ -34,6 +43,7 @@ fi
 mkdir -p -- "$summary" || exit 1
 exec >> "$summary/night.log" 2>&1
 exec < /dev/null
+check_linger
 t_status=not_run
 d_status=not_run
 night_reason=unexpected-exit
@@ -88,6 +98,8 @@ run_project() {
             return 2
         fi
     fi
+    project_status=started
+    case "$project" in toolchain) t_status=started ;; basedev) d_status=started ;; esac
     launch_rc=0
     if [ "$project" = toolchain ]; then
         /bin/sh "$entry_dir/toolchain/launch.sh" "$source_sha" full || launch_rc=$?
@@ -131,7 +143,7 @@ import sys
 rows=[line.split() for line in sys.stdin if line.strip()]
 if any(len(r)<4 for r in rows):
  print("invalid-list-units-output"); sys.exit(2)
-active=[r[0]+":"+r[2] for r in rows if r[2] in ("active","activating","deactivating")]
+active=[r[0]+":"+r[2] for r in rows if r[2] not in ("inactive","failed")]
 if active:
  print("remaining-services="+",".join(active)); sys.exit(1)
 print("all-project-services-ended")

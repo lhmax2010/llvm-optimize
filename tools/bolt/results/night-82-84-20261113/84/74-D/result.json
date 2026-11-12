@@ -1,0 +1,968 @@
+{
+  "id": "74-D",
+  "environment": "local",
+  "project": "Base-Dev",
+  "commit": "fea0fe464d56e17f2c7588c557bfffd9f6ac352b",
+  "snapshot": "tizen-base-dev_20261030.061217",
+  "log": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+  "log_last_seconds": 3890,
+  "phases": {
+    "cmake": {
+      "seconds": 34,
+      "start": {
+        "line": 588,
+        "seconds": 248,
+        "text": "+ cmake -G Ninja -DTIZEN=1 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_HOST_TRIPLE=x86_64-tizen-linux-gnu -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-tizen-linux-gnu -DLLVM_TARGET_TRIPLE_ENV=x86_64-tizen-linux-gnu '-DCMAKE_ASM_FLAGS= -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument    -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables   -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument' '-DCMAKE_C_FLAGS= -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument    -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables   -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument' '-DCMAKE_CXX_FLAGS= -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument    -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables   -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument' '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections' '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections' -DLLVM_USE_LINKER=lld -DLLVM_ENABLE_LTO=Thin -DCMAKE_RANLIB=/usr/bin/llvm-ranlib -DCMAKE_AR=/usr/bin/llvm-ar -DLLVM_ENABLE_ASSERTIONS=No -DLLVM_ENABLE_RTTI=ON -DCMAKE_BUILD_TYPE=Release '-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64;BPF' -DCLANG_ENABLE_ARCMT=OFF -DLLVM_BUILD_LLVM_DYLIB=ON -DCLANG_BUILD_CLANG_DYLIB=ON -DLLVM_LINK_LLVM_DYLIB=ON -DCLANG_LINK_CLANG_DYLIB=ON -DTIZEN_HYBRID_LINK=ON -DBUILD_SHARED_LIBS=OFF -DLLVM_TOOL_LLVM_DRIVER_BUILD=OFF '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp' -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF -DLLVM_BUILD_EXAMPLES=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_BUILD_TESTS=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_ENABLE_DOXYGEN=OFF -DLLVM_BUILD_DOCS=OFF -DLLVM_INCLUDE_DOCS=OFF -DLLVM_OPTIMIZED_TABLEGEN=ON -DCMAKE_INSTALL_PREFIX=/usr -DLLVM_LIBDIR_SUFFIX=64 -DCLANG_RESOURCE_DIR=../lib64/clang/22 -DLLVM_BINUTILS_INCDIR=/usr/include -DLLVM_PARALLEL_COMPILE_JOBS=6 -DLLVM_PARALLEL_LINK_JOBS=2 -DTENSORFLOW_AOT_PATH=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/mlgo_sysroot -DLLVM_MLGO_EXPORT_TF_XLA_RUNTIME=OFF '-DLLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/xla_compiled_cpu_function.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/cpu_function_runtime.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/custom_call_status.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/executable_run_options.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o' -DLLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.h -DLLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.o -DLLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.h -DLLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.o ../llvm",
+        "raw": "[  248s] + cmake -G Ninja -DTIZEN=1 -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DLLVM_HOST_TRIPLE=x86_64-tizen-linux-gnu -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-tizen-linux-gnu -DLLVM_TARGET_TRIPLE_ENV=x86_64-tizen-linux-gnu '-DCMAKE_ASM_FLAGS= -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument    -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables   -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument' '-DCMAKE_C_FLAGS= -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument    -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables   -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument' '-DCMAKE_CXX_FLAGS= -ffunction-sections -fdata-sections  -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument    -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -Wformat -Wformat-security -fmessage-length=0 -frecord-gcc-switches -fdiagnostics-color=never -m64 -march=nehalem -msse4.2 -mfpmath=sse -fasynchronous-unwind-tables   -O3 -flto=thin -fomit-frame-pointer -Wno-unused-command-line-argument' '-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections' '-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections' -DLLVM_USE_LINKER=lld -DLLVM_ENABLE_LTO=Thin -DCMAKE_RANLIB=/usr/bin/llvm-ranlib -DCMAKE_AR=/usr/bin/llvm-ar -DLLVM_ENABLE_ASSERTIONS=No -DLLVM_ENABLE_RTTI=ON -DCMAKE_BUILD_TYPE=Release '-DLLVM_TARGETS_TO_BUILD=X86;ARM;AArch64;BPF' -DCLANG_ENABLE_ARCMT=OFF -DLLVM_BUILD_LLVM_DYLIB=ON -DCLANG_BUILD_CLANG_DYLIB=ON -DLLVM_LINK_LLVM_DYLIB=ON -DCLANG_LINK_CLANG_DYLIB=ON -DTIZEN_HYBRID_LINK=ON -DBUILD_SHARED_LIBS=OFF -DLLVM_TOOL_LLVM_DRIVER_BUILD=OFF '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp' -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF -DLLVM_BUILD_EXAMPLES=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_BUILD_TESTS=OFF -DLLVM_INCLUDE_TESTS=OFF -DLLVM_ENABLE_DOXYGEN=OFF -DLLVM_BUILD_DOCS=OFF -DLLVM_INCLUDE_DOCS=OFF -DLLVM_OPTIMIZED_TABLEGEN=ON -DCMAKE_INSTALL_PREFIX=/usr -DLLVM_LIBDIR_SUFFIX=64 -DCLANG_RESOURCE_DIR=../lib64/clang/22 -DLLVM_BINUTILS_INCDIR=/usr/include -DLLVM_PARALLEL_COMPILE_JOBS=6 -DLLVM_PARALLEL_LINK_JOBS=2 -DTENSORFLOW_AOT_PATH=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/mlgo_sysroot -DLLVM_MLGO_EXPORT_TF_XLA_RUNTIME=OFF '-DLLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/xla_compiled_cpu_function.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/cpu_function_runtime.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/custom_call_status.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/executable_run_options.cc.o;/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o' -DLLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.h -DLLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/InlinerSizeModel.o -DLLVM_OVERRIDE_MODEL_HEADER_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.h -DLLVM_OVERRIDE_MODEL_OBJECT_REGALLOCEVICTMODEL=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/mlgo_verify_assets/RegAllocEvictModel.o ../llvm"
+      },
+      "end": {
+        "line": 3157,
+        "seconds": 282,
+        "text": "-- Build files have been written to: /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build",
+        "raw": "[  282s] -- Build files have been written to: /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 5122686976,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 144,
+          "time_ns": 1794420214144757104
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "ordinary_ninja_including_links": {
+      "seconds": 2191,
+      "start": {
+        "line": 3158,
+        "seconds": 282,
+        "text": "+ ninja -d keeprsp -j 6",
+        "raw": "[  282s] + ninja -d keeprsp -j 6"
+      },
+      "end": {
+        "line": 10879,
+        "seconds": 2473,
+        "text": "[7633/7633] Linking CXX executable bin/yaml2obj",
+        "raw": "[ 2473s] [7633/7633] Linking CXX executable bin/yaml2obj"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 11902005248,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1099,
+          "time_ns": 1794422132724752738
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "ordinary_install": {
+      "seconds": 4,
+      "start": {
+        "line": 11243,
+        "seconds": 2474,
+        "text": "Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.gjjIvk",
+        "raw": "[ 2474s] Executing(%install): /bin/sh -e /var/tmp/rpm-tmp.gjjIvk"
+      },
+      "end": {
+        "line": 16817,
+        "seconds": 2478,
+        "text": "BOLT_DISK_REPORT {\"stage\": \"begin\", \"time_ns\": 1794422410961405113, \"recorded\": true, \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"device\": 2049, \"free_bytes\": 191043919872, \"build\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"root\": \"/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64\", \"scopes\": [\"clang-bolt/**\", \"tools/bolt/**\", \"lib64/libLLVMBOLT*.a\", \"bin/llvm-bolt\", \"ThinLTO cache positive allocation delta\"], \"owned_paths\": [{\"category\": \"work\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_objects\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_executable\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}], \"owned_filesystem_bytes\": {}, \"used_bytes\": 0, \"cache_path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache\", \"cache_delta_known\": false, \"cache_delta_allocated_bytes\": 0, \"cache_delta_logical_bytes\": 0, \"cache_net_allocation_delta_bytes\": null, \"filesystem_device\": 2049}",
+        "raw": "[ 2478s] BOLT_DISK_REPORT {\"stage\": \"begin\", \"time_ns\": 1794422410961405113, \"recorded\": true, \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"device\": 2049, \"free_bytes\": 191043919872, \"build\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"root\": \"/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64\", \"scopes\": [\"clang-bolt/**\", \"tools/bolt/**\", \"lib64/libLLVMBOLT*.a\", \"bin/llvm-bolt\", \"ThinLTO cache positive allocation delta\"], \"owned_paths\": [{\"category\": \"work\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_objects\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_executable\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}], \"owned_filesystem_bytes\": {}, \"used_bytes\": 0, \"cache_path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache\", \"cache_delta_known\": false, \"cache_delta_allocated_bytes\": 0, \"cache_delta_logical_bytes\": 0, \"cache_net_allocation_delta_bytes\": null, \"filesystem_device\": 2049}"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 8761819136,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1237,
+          "time_ns": 1794422409797987998
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "BOLT_total": {
+      "seconds": 157,
+      "start": {
+        "line": 16817,
+        "seconds": 2478,
+        "text": "BOLT_DISK_REPORT {\"stage\": \"begin\", \"time_ns\": 1794422410961405113, \"recorded\": true, \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"device\": 2049, \"free_bytes\": 191043919872, \"build\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"root\": \"/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64\", \"scopes\": [\"clang-bolt/**\", \"tools/bolt/**\", \"lib64/libLLVMBOLT*.a\", \"bin/llvm-bolt\", \"ThinLTO cache positive allocation delta\"], \"owned_paths\": [{\"category\": \"work\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_objects\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_executable\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}], \"owned_filesystem_bytes\": {}, \"used_bytes\": 0, \"cache_path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache\", \"cache_delta_known\": false, \"cache_delta_allocated_bytes\": 0, \"cache_delta_logical_bytes\": 0, \"cache_net_allocation_delta_bytes\": null, \"filesystem_device\": 2049}",
+        "raw": "[ 2478s] BOLT_DISK_REPORT {\"stage\": \"begin\", \"time_ns\": 1794422410961405113, \"recorded\": true, \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"device\": 2049, \"free_bytes\": 191043919872, \"build\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build\", \"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"root\": \"/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64\", \"scopes\": [\"clang-bolt/**\", \"tools/bolt/**\", \"lib64/libLLVMBOLT*.a\", \"bin/llvm-bolt\", \"ThinLTO cache positive allocation delta\"], \"owned_paths\": [{\"category\": \"work\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_objects\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}, {\"category\": \"tool_executable\", \"path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt\", \"allocated_bytes\": 0, \"logical_file_bytes\": 0}], \"owned_filesystem_bytes\": {}, \"used_bytes\": 0, \"cache_path\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache\", \"cache_delta_known\": false, \"cache_delta_allocated_bytes\": 0, \"cache_delta_logical_bytes\": 0, \"cache_net_allocation_delta_bytes\": null, \"filesystem_device\": 2049}"
+      },
+      "end": {
+        "line": 24041,
+        "seconds": 2635,
+        "text": "BOLT_COMPARE_ROOT_PASS",
+        "raw": "[ 2635s] BOLT_COMPARE_ROOT_PASS"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 18123169792,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1307,
+          "time_ns": 1794422550436226278
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "BOLT_reconfigure": {
+      "seconds": 7,
+      "start": {
+        "line": 16865,
+        "seconds": 2481,
+        "text": "+ bolt_step configure cmake -S ../llvm -B . '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86",
+        "raw": "[ 2481s] + bolt_step configure cmake -S ../llvm -B . '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86"
+      },
+      "end": {
+        "line": 18816,
+        "seconds": 2488,
+        "text": "-- Build files have been written to: /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build'",
+        "raw": "[ 2488s] -- Build files have been written to: /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build'"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 9228918784,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1242,
+          "time_ns": 1794422419837353523
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "BOLT_tool_build": {
+      "seconds": 87,
+      "start": {
+        "line": 23076,
+        "seconds": 2489,
+        "text": "+ bolt_checked tool-build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-build.txt python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step tool-build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-build.txt --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C 'NINJA_STATUS=[%f/%t] ' ninja -j 6 llvm-bolt",
+        "raw": "[ 2489s] + bolt_checked tool-build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-build.txt python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py run-step tool-build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/tool-build.txt --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C 'NINJA_STATUS=[%f/%t] ' ninja -j 6 llvm-bolt"
+      },
+      "end": {
+        "line": 23422,
+        "seconds": 2576,
+        "text": "BOLT_NINJA_EXIT_0",
+        "raw": "[ 2576s] BOLT_NINJA_EXIT_0"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 10664656896,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1262,
+          "time_ns": 1794422460024877492
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "BOLT_pipeline": {
+      "seconds": 57,
+      "start": {
+        "line": 24027,
+        "seconds": 2577,
+        "text": "+ python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py pipeline /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+        "raw": "[ 2577s] + python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py pipeline /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt"
+      },
+      "end": {
+        "line": 24033,
+        "seconds": 2634,
+        "text": "BOLT_PIPELINE_PASS",
+        "raw": "[ 2634s] BOLT_PIPELINE_PASS"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 18123169792,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1307,
+          "time_ns": 1794422550436226278
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "BOLT_compare_root": {
+      "seconds": 1,
+      "start": {
+        "line": 24038,
+        "seconds": 2634,
+        "text": "+ python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py compare-root /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-before.json /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-after-pipeline.json",
+        "raw": "[ 2634s] + python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py compare-root /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-before.json /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-after-pipeline.json"
+      },
+      "end": {
+        "line": 24041,
+        "seconds": 2635,
+        "text": "BOLT_COMPARE_ROOT_PASS",
+        "raw": "[ 2635s] BOLT_COMPARE_ROOT_PASS"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": "UNKNOWN"
+    },
+    "cache_release": {
+      "seconds": 1,
+      "start": {
+        "line": 24042,
+        "seconds": 2635,
+        "text": "+ bolt_optional python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py cache-release /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+        "raw": "[ 2635s] + bolt_optional python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py cache-release /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt"
+      },
+      "end": {
+        "line": 24044,
+        "seconds": 2636,
+        "text": "BOLT_CACHE_RELEASE removed path=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache files=13162 allocated_bytes=1602990080 seconds=0.43908409599680454",
+        "raw": "[ 2636s] BOLT_CACHE_RELEASE removed path=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache files=13162 allocated_bytes=1602990080 seconds=0.43908409599680454"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 8222638080,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1316,
+          "time_ns": 1794422568524919357
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "archive_conversion": {
+      "seconds": 1168,
+      "start": {
+        "line": 24065,
+        "seconds": 2636,
+        "text": "NATIVE_ARCHIVES_BEGIN 1794422569.8536565",
+        "raw": "[ 2636s] NATIVE_ARCHIVES_BEGIN 1794422569.8536565"
+      },
+      "end": {
+        "line": 24517,
+        "seconds": 3804,
+        "text": "NATIVE_ARCHIVES_END 1794423737.4974277 PASS 225",
+        "raw": "[ 3804s] NATIVE_ARCHIVES_END 1794423737.4974277 PASS 225"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 8333471744,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1707,
+          "time_ns": 1794423353866887484
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "platform_post_before_BOLT_post_gate": {
+      "seconds": 6,
+      "start": {
+        "line": 24520,
+        "seconds": 3805,
+        "text": "+ /usr/lib/rpm/find-debuginfo.sh /home/abuild/rpmbuild/BUILD/llvm-22.1.8",
+        "raw": "[ 3805s] + /usr/lib/rpm/find-debuginfo.sh /home/abuild/rpmbuild/BUILD/llvm-22.1.8"
+      },
+      "end": {
+        "line": 24901,
+        "seconds": 3811,
+        "text": "+ python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py post /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/post-gate --resource-dir /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22",
+        "raw": "[ 3811s] + python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py post /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/post-gate --resource-dir /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 7196106752,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1898,
+          "time_ns": 1794423738197401021
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "BOLT_post_gate": {
+      "seconds": 5,
+      "start": {
+        "line": 24901,
+        "seconds": 3811,
+        "text": "+ python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py post /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/post-gate --resource-dir /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22",
+        "raw": "[ 3811s] + python3 -B /home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py post /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22 /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/post-gate --resource-dir /home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22"
+      },
+      "end": {
+        "line": 24905,
+        "seconds": 3816,
+        "text": "BOLT_POST_GATE_PASS",
+        "raw": "[ 3816s] BOLT_POST_GATE_PASS"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 7143145472,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1902,
+          "time_ns": 1794423746233969605
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "packaging": {
+      "seconds": 70,
+      "start": {
+        "line": 24910,
+        "seconds": 3819,
+        "text": "Processing files: llvm-22.1.8-1.x86_64",
+        "raw": "[ 3819s] Processing files: llvm-22.1.8-1.x86_64"
+      },
+      "end": {
+        "line": 25167,
+        "seconds": 3889,
+        "text": "Wrote: /home/abuild/rpmbuild/RPMS/x86_64/python-clang-22.1.8-1.x86_64.rpm",
+        "raw": "[ 3889s] Wrote: /home/abuild/rpmbuild/RPMS/x86_64/python-clang-22.1.8-1.x86_64.rpm"
+      },
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "basis": "explicit GBS boundaries",
+      "cgroup_sampled_window_max": {
+        "bytes": 10406600704,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1922,
+          "time_ns": 1794423786411036688
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "BOLT_relink": {
+      "seconds": "UNKNOWN",
+      "reason": "no isolated start/end in preserved command logs; no inference from adjacent stdout gaps"
+    },
+    "BOLT_reference_strip": {
+      "seconds": "UNKNOWN",
+      "reason": "no isolated start/end in preserved command logs; no inference from adjacent stdout gaps"
+    },
+    "BOLT_candidate_strip": {
+      "seconds": "UNKNOWN",
+      "reason": "no isolated start/end in preserved command logs; no inference from adjacent stdout gaps"
+    },
+    "BOLT_rewrite": {
+      "seconds": "UNKNOWN",
+      "reason": "no isolated start/end in preserved command logs; no inference from adjacent stdout gaps"
+    },
+    "BOLT_RUNPATH": {
+      "seconds": "UNKNOWN",
+      "reason": "no isolated start/end in preserved command logs; no inference from adjacent stdout gaps"
+    },
+    "BOLT_tiny_gate": {
+      "seconds": "UNKNOWN",
+      "reason": "no isolated start/end in preserved command logs; no inference from adjacent stdout gaps"
+    },
+    "BOLT_security_gate": {
+      "seconds": "UNKNOWN",
+      "reason": "no isolated start/end in preserved command logs; no inference from adjacent stdout gaps"
+    },
+    "BOLT_real_gate_prestrip": {
+      "seconds": 4.12280879705213,
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "line": 24028,
+      "sample": {
+        "line": 24028,
+        "seconds": 2625,
+        "text": "BOLT_REAL_GATE_PASS {\"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/prestrip-real\", \"cases\": 8, \"seconds\": 4.12280879705213}",
+        "raw": "[ 2625s] BOLT_REAL_GATE_PASS {\"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/prestrip-real\", \"cases\": 8, \"seconds\": 4.12280879705213}"
+      },
+      "basis": "BOLT_REAL_GATE_PASS.seconds"
+    },
+    "BOLT_real_gate_preinstall": {
+      "seconds": 4.020604613004252,
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "line": 24030,
+      "sample": {
+        "line": 24030,
+        "seconds": 2634,
+        "text": "BOLT_REAL_GATE_PASS {\"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/preinstall-real\", \"cases\": 8, \"seconds\": 4.020604613004252}",
+        "raw": "[ 2634s] BOLT_REAL_GATE_PASS {\"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/preinstall-real\", \"cases\": 8, \"seconds\": 4.020604613004252}"
+      },
+      "basis": "BOLT_REAL_GATE_PASS.seconds"
+    },
+    "BOLT_real_gate_post": {
+      "seconds": 3.916587703046389,
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "line": 24902,
+      "sample": {
+        "line": 24902,
+        "seconds": 3816,
+        "text": "BOLT_REAL_GATE_PASS {\"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/post-gate/real\", \"cases\": 8, \"seconds\": 3.916587703046389}",
+        "raw": "[ 3816s] BOLT_REAL_GATE_PASS {\"work\": \"/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/post-gate/real\", \"cases\": 8, \"seconds\": 3.916587703046389}"
+      },
+      "basis": "BOLT_REAL_GATE_PASS.seconds"
+    }
+  },
+  "thinlto_links": {
+    "clang": {
+      "seconds": 156.064,
+      "reason": "Ninja stdout provides completion time, not start",
+      "completion": {
+        "line": 10134,
+        "seconds": 2209,
+        "text": "[6888/7633] Linking CXX executable bin/clang-22",
+        "raw": "[ 2209s] [6888/7633] Linking CXX executable bin/clang-22"
+      },
+      "log_source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "ninja_start_ms": 1770916,
+      "ninja_end_ms": 1926980,
+      "ninja_source": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/.ninja_log",
+      "ninja_line": 7665,
+      "ninja_raw": "1770916\t1926980\t1794421986338013817\tbin/clang-22\t5d104410b389af75",
+      "basis": "Ninja task interval, not exclusive wall contribution",
+      "cgroup_sampled_window_max": {
+        "bytes": 11902005248,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1099,
+          "time_ns": 1794422132724752738
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "libLLVM.so": {
+      "seconds": 94.512,
+      "reason": "Ninja stdout provides completion time, not start",
+      "completion": {
+        "line": 6404,
+        "seconds": 903,
+        "text": "[3162/7633] Linking CXX shared library lib64/libLLVM.so.22.1",
+        "raw": "[  903s] [3162/7633] Linking CXX shared library lib64/libLLVM.so.22.1"
+      },
+      "log_source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "ninja_start_ms": 526370,
+      "ninja_end_ms": 620882,
+      "ninja_source": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/.ninja_log",
+      "ninja_line": 3827,
+      "ninja_raw": "526370\t620882\t1794420741791964442\tlib64/libLLVM.so.22.1\tecf0930f84c26ba0",
+      "basis": "Ninja task interval, not exclusive wall contribution",
+      "cgroup_sampled_window_max": {
+        "bytes": 8858959872,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 443,
+          "time_ns": 1794420814753410181
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "libclang-cpp.so": {
+      "seconds": 76.732,
+      "reason": "Ninja stdout provides completion time, not start",
+      "completion": {
+        "line": 7433,
+        "seconds": 1386,
+        "text": "[4191/7633] Linking CXX shared library lib64/libclang-cpp.so.22.1",
+        "raw": "[ 1386s] [4191/7633] Linking CXX shared library lib64/libclang-cpp.so.22.1"
+      },
+      "log_source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "ninja_start_ms": 1027167,
+      "ninja_end_ms": 1103899,
+      "ninja_source": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/.ninja_log",
+      "ninja_line": 4892,
+      "ninja_raw": "1027167\t1103899\t1794421242588984310\tlib64/libclang-cpp.so.22.1\tcc5002ab77e701d7",
+      "basis": "Ninja task interval, not exclusive wall contribution",
+      "cgroup_sampled_window_max": {
+        "bytes": 9614360576,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 685,
+          "time_ns": 1794421300993304940
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "lld": {
+      "seconds": 77.941,
+      "reason": "Ninja stdout provides completion time, not start",
+      "completion": {
+        "line": 10784,
+        "seconds": 2389,
+        "text": "[7538/7633] Linking CXX executable bin/lld",
+        "raw": "[ 2389s] [7538/7633] Linking CXX executable bin/lld"
+      },
+      "log_source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "ninja_start_ms": 2029454,
+      "ninja_end_ms": 2107395,
+      "ninja_source": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/.ninja_log",
+      "ninja_line": 8410,
+      "ninja_raw": "2029454\t2107395\t1794422244876024074\tbin/lld\t4f3f4c77fae04dad",
+      "basis": "Ninja task interval, not exclusive wall contribution",
+      "cgroup_sampled_window_max": {
+        "bytes": 9297674240,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 1189,
+          "time_ns": 1794422313430099232
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    },
+    "liblldb": {
+      "seconds": 19.0,
+      "reason": "Ninja stdout provides completion time, not start",
+      "completion": {
+        "line": 8947,
+        "seconds": 1887,
+        "text": "[5705/7633] Linking CXX shared library lib64/liblldb.so.22.1.8",
+        "raw": "[ 1887s] [5705/7633] Linking CXX shared library lib64/liblldb.so.22.1.8"
+      },
+      "log_source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "ninja_start_ms": 1586176,
+      "ninja_end_ms": 1605176,
+      "ninja_source": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/.ninja_log",
+      "ninja_line": 6421,
+      "ninja_raw": "1586176\t1605176\t1794421801598006487\tlib64/liblldb.so.22.1.8\t3c83db55c6b4678",
+      "basis": "Ninja task interval, not exclusive wall contribution",
+      "cgroup_sampled_window_max": {
+        "bytes": 8290254848,
+        "source": {
+          "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+          "line": 942,
+          "time_ns": 1794421817426155776
+        },
+        "scope": "whole cgroup in overlapping task window; not exclusive task/process memory"
+      }
+    }
+  },
+  "memory": {
+    "memory_peak": 18161836032,
+    "events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "max_process_VmHWM": "UNKNOWN",
+    "anon": "UNKNOWN",
+    "file": "UNKNOWN",
+    "peak_source": {
+      "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+      "line": 1307,
+      "time_ns": 1794422550436226278
+    },
+    "resource_samples": 1941,
+    "first_sample": {
+      "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+      "line": 1,
+      "time_ns": 1794419926983133928
+    },
+    "last_sample": {
+      "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/resources.jsonl.gz",
+      "line": 1941,
+      "time_ns": 1794423824616001262
+    },
+    "events_scope": "per-key maxima from full raw sample series",
+    "memory_max": 24482992128,
+    "peak_final_file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/build-result.json",
+    "peak_final_field": "stats.memory.peak",
+    "build_seconds": 3900.702903185,
+    "truncated": false,
+    "time_note": "\u672a\u89c2\u6d4b\u5230memory.events max\u89e6\u9876",
+    "llvm_bolt_VmHWM": {
+      "bytes": 9924120576,
+      "source": {
+        "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/bolt-process.jsonl.gz",
+        "line": 3431,
+        "time_ns": 1794422550278838080
+      },
+      "command": [
+        "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+        "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/reference-relocs-clang-22",
+        "-o",
+        "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/clang.bolt",
+        "-data=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/profile.fdata",
+        "-reorder-blocks=ext-tsp",
+        "-reorder-functions=cdsort",
+        "-split-functions",
+        "-split-all-cold",
+        "-split-eh",
+        "-dyno-stats",
+        "--thread-count=1",
+        "-stale-threshold=5",
+        "-use-old-text"
+      ],
+      "scope": "only llvm-bolt sampled; maximum over all build processes UNKNOWN"
+    }
+  },
+  "disk": {
+    "root_peak": 14028967936,
+    "source": {
+      "file": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/du-root.jsonl.gz",
+      "line": 59,
+      "time_ns": 1794423404991340373
+    },
+    "raw": {
+      "time_ns": 1794423404991340373,
+      "argv": [
+        "sudo",
+        "-n",
+        "/usr/sbin/chroot",
+        "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-driver/local/BUILD-ROOTS/scratch.x86_64.0",
+        "/usr/bin/python3",
+        "-B",
+        "-c",
+        "import subprocess,sys\ntry:\n p=subprocess.run(['/usr/bin/du','-sx','-B1','/'],capture_output=True,text=True,timeout=50);sys.stdout.write(p.stdout);sys.stderr.write(p.stderr);sys.exit(p.returncode)\nexcept subprocess.TimeoutExpired:\n print('DU_TIMEOUT_50_SECONDS',file=sys.stderr);sys.exit(124)"
+      ],
+      "rc": 0,
+      "stdout": "14028967936\t/\n",
+      "stderr": "",
+      "seconds": 0.3430750969564542
+    },
+    "samples": 66,
+    "successful_samples": 66,
+    "timeouts": 0,
+    "nonzero_or_missing": 0,
+    "major_directories": "UNKNOWN: du measured / total only; BOLT-owned scopes below are separate measurements",
+    "scope": "maximum successful du -sx -B1 / samples, not guaranteed instantaneous peak"
+  },
+  "BOLT_disk_reports": [
+    {
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "line": 16817,
+      "gbs_seconds": 2478,
+      "data": {
+        "stage": "begin",
+        "time_ns": 1794422410961405113,
+        "recorded": true,
+        "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build",
+        "device": 2049,
+        "free_bytes": 191043919872,
+        "build": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build",
+        "work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+        "root": "/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64",
+        "scopes": [
+          "clang-bolt/**",
+          "tools/bolt/**",
+          "lib64/libLLVMBOLT*.a",
+          "bin/llvm-bolt",
+          "ThinLTO cache positive allocation delta"
+        ],
+        "owned_paths": [
+          {
+            "category": "work",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+            "allocated_bytes": 0,
+            "logical_file_bytes": 0
+          },
+          {
+            "category": "tool_objects",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt",
+            "allocated_bytes": 0,
+            "logical_file_bytes": 0
+          },
+          {
+            "category": "tool_executable",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+            "allocated_bytes": 0,
+            "logical_file_bytes": 0
+          }
+        ],
+        "owned_filesystem_bytes": {},
+        "used_bytes": 0,
+        "cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache",
+        "cache_delta_known": false,
+        "cache_delta_allocated_bytes": 0,
+        "cache_delta_logical_bytes": 0,
+        "cache_net_allocation_delta_bytes": null,
+        "filesystem_device": 2049
+      }
+    },
+    {
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "line": 24025,
+      "gbs_seconds": 2577,
+      "data": {
+        "stage": "tool-built",
+        "time_ns": 1794422509950037138,
+        "recorded": true,
+        "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+        "device": 2049,
+        "free_bytes": 190467203072,
+        "build": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build",
+        "work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+        "root": "/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64",
+        "scopes": [
+          "clang-bolt/**",
+          "tools/bolt/**",
+          "lib64/libLLVMBOLT*.a",
+          "bin/llvm-bolt",
+          "ThinLTO cache positive allocation delta"
+        ],
+        "owned_paths": [
+          {
+            "category": "work",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+            "allocated_bytes": 370499584,
+            "logical_file_bytes": 370415434
+          },
+          {
+            "category": "tool_objects",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt",
+            "allocated_bytes": 16089088,
+            "logical_file_bytes": 15612289
+          },
+          {
+            "category": "tool_executable",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+            "allocated_bytes": 47284224,
+            "logical_file_bytes": 47280568
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTCore.a",
+            "allocated_bytes": 3424256,
+            "logical_file_bytes": 3420984
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTPasses.a",
+            "allocated_bytes": 6823936,
+            "logical_file_bytes": 6822720
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTProfile.a",
+            "allocated_bytes": 1748992,
+            "logical_file_bytes": 1748198
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRewrite.a",
+            "allocated_bytes": 3608576,
+            "logical_file_bytes": 3607590
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRuntimeLibs.a",
+            "allocated_bytes": 163840,
+            "logical_file_bytes": 160506
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTTargetX86.a",
+            "allocated_bytes": 475136,
+            "logical_file_bytes": 475102
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTUtils.a",
+            "allocated_bytes": 217088,
+            "logical_file_bytes": 213124
+          }
+        ],
+        "owned_filesystem_bytes": {
+          "2049": 544190464
+        },
+        "used_bytes": 544190464,
+        "cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache",
+        "cache_delta_known": true,
+        "cache_delta_allocated_bytes": 93855744,
+        "cache_delta_logical_bytes": 92417624,
+        "cache_net_allocation_delta_bytes": 93855744,
+        "filesystem_device": 2049
+      }
+    },
+    {
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "line": 24036,
+      "gbs_seconds": 2634,
+      "data": {
+        "stage": "pipeline",
+        "time_ns": 1794422567501603938,
+        "recorded": true,
+        "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+        "device": 2049,
+        "free_bytes": 189562445824,
+        "build": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build",
+        "work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+        "root": "/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64",
+        "scopes": [
+          "clang-bolt/**",
+          "tools/bolt/**",
+          "lib64/libLLVMBOLT*.a",
+          "bin/llvm-bolt",
+          "ThinLTO cache positive allocation delta"
+        ],
+        "owned_paths": [
+          {
+            "category": "work",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+            "allocated_bytes": 1274572800,
+            "logical_file_bytes": 1274727744
+          },
+          {
+            "category": "tool_objects",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt",
+            "allocated_bytes": 16089088,
+            "logical_file_bytes": 15612289
+          },
+          {
+            "category": "tool_executable",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+            "allocated_bytes": 47284224,
+            "logical_file_bytes": 47280568
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTCore.a",
+            "allocated_bytes": 3424256,
+            "logical_file_bytes": 3420984
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTPasses.a",
+            "allocated_bytes": 6823936,
+            "logical_file_bytes": 6822720
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTProfile.a",
+            "allocated_bytes": 1748992,
+            "logical_file_bytes": 1748198
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRewrite.a",
+            "allocated_bytes": 3608576,
+            "logical_file_bytes": 3607590
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRuntimeLibs.a",
+            "allocated_bytes": 163840,
+            "logical_file_bytes": 160506
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTTargetX86.a",
+            "allocated_bytes": 475136,
+            "logical_file_bytes": 475102
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTUtils.a",
+            "allocated_bytes": 217088,
+            "logical_file_bytes": 213124
+          }
+        ],
+        "owned_filesystem_bytes": {
+          "2049": 1448263680
+        },
+        "used_bytes": 1448263680,
+        "cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache",
+        "cache_delta_known": true,
+        "cache_delta_allocated_bytes": 93855744,
+        "cache_delta_logical_bytes": 92417624,
+        "cache_net_allocation_delta_bytes": 93855744,
+        "filesystem_device": 2049
+      }
+    },
+    {
+      "source": "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz",
+      "line": 24908,
+      "gbs_seconds": 3816,
+      "data": {
+        "stage": "post",
+        "time_ns": 1794423749920735746,
+        "recorded": true,
+        "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+        "device": 2049,
+        "free_bytes": 190745182208,
+        "build": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build",
+        "work": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+        "root": "/home/abuild/rpmbuild/BUILDROOT/llvm-22.1.8-1.x86_64",
+        "scopes": [
+          "clang-bolt/**",
+          "tools/bolt/**",
+          "lib64/libLLVMBOLT*.a",
+          "bin/llvm-bolt",
+          "ThinLTO cache positive allocation delta"
+        ],
+        "owned_paths": [
+          {
+            "category": "work",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt",
+            "allocated_bytes": 1429270528,
+            "logical_file_bytes": 1429273773
+          },
+          {
+            "category": "tool_objects",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/bolt",
+            "allocated_bytes": 16089088,
+            "logical_file_bytes": 15612289
+          },
+          {
+            "category": "tool_executable",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+            "allocated_bytes": 47284224,
+            "logical_file_bytes": 47280568
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTCore.a",
+            "allocated_bytes": 3424256,
+            "logical_file_bytes": 3420984
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTPasses.a",
+            "allocated_bytes": 6823936,
+            "logical_file_bytes": 6822720
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTProfile.a",
+            "allocated_bytes": 1748992,
+            "logical_file_bytes": 1748198
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRewrite.a",
+            "allocated_bytes": 3608576,
+            "logical_file_bytes": 3607590
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTRuntimeLibs.a",
+            "allocated_bytes": 163840,
+            "logical_file_bytes": 160506
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTTargetX86.a",
+            "allocated_bytes": 475136,
+            "logical_file_bytes": 475102
+          },
+          {
+            "category": "tool_library",
+            "path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64/libLLVMBOLTUtils.a",
+            "allocated_bytes": 217088,
+            "logical_file_bytes": 213124
+          }
+        ],
+        "owned_filesystem_bytes": {
+          "2049": 1509105664
+        },
+        "used_bytes": 1509105664,
+        "cache_path": "/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache",
+        "cache_delta_known": true,
+        "cache_delta_allocated_bytes": 0,
+        "cache_delta_logical_bytes": 0,
+        "cache_net_allocation_delta_bytes": -1509134336,
+        "filesystem_device": 2049
+      }
+    }
+  ]
+}
