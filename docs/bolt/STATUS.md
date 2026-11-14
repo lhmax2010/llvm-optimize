@@ -1390,3 +1390,12 @@ T/D 只读ELF统计各复现2804条：TLSGD1536、TLSLD415、DTPOFF32 853，全�
 D report-stale **STOP/NOT RUN**：`profgen-release-build-20261114c.scope` 内 gbs/rpmbuild/ninja 正在运行，不满足无其他重任务前提；未取共享锁、未运行BOLT、未新建输出根、未删除或干预任何进程。原文：`STOP: other heavy tasks are running; D report-stale not started; shared lock not acquired.` 其他重任务结束后可重新核对前提执行已批准计划。本轮全部操作为单一串行4GiB/swap0/nice19/IO-idle服务。
 
 88号交付脚本另有两次准备错误：第一次tar.gz被忽略；修正后第二次秘密扫描命中脚本自身的标记字符串，按规则STOP且不再改脚本重跑。两份空staging-audit文件原样保留，不能作为审计通过证据；已准备的报告、结果、夹具压缩包及STOP原文正常提交。
+
+
+## 2026-11-14：92号
+
+[92号](92_tls_relocs_secret_scan.md)：T2804条全量指令分类：1536 IE、1252 LE、16其他（已解码的cmp/mov disp32+imm8）；D抽15条。两边ET_DYN/PIE、PT_TLS memsz65 align8。1951条同序列PLT32(__tls_get_addr)通过输入筛选，最终注册/应用路径UNKNOWN，不能使用“全LE且无残留”结论，标待验证。
+
+秘密扫描456个文件/版本或压缩成员记录，命中2处：21dcb101的88号报告L98和packaging-v2.stderr L3，都是引用扫描断言签名文字、不是私钥正文。按指定排除范围仍STOP，未扩大白名单、未改历史。88号原扫描误报的PM定性保留。
+
+report-stale在2026-11-14T02:10:31.657016-08:00准入SKIPPED：仍有profgen-release-build-20261114c.scope的gbs/rpmbuild/ninja；MemAvailable24765747200B、/home available37301350400B。未取锁、不等、不重试、未运行BOLT。全部原文见新证据目录night-92-20261114。

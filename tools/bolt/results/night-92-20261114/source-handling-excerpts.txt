@@ -1,0 +1,171 @@
+tools/bolt/results/night-87-20261114/source/bolt_lib_Rewrite_RewriteInstance.cpp
+2474: 
+2475: bool RewriteInstance::analyzeRelocation(
+2476:     const RelocationRef &Rel, uint32_t &RType, std::string &SymbolName,
+2477:     bool &IsSectionRelocation, uint64_t &SymbolAddress, int64_t &Addend,
+2478:     uint64_t &ExtractedValue) const {
+2479:   if (!Relocation::isSupported(RType))
+2480:     return false;
+2481: 
+2549:   // GOT relocation can cause the underlying instruction to be modified by the
+2550:   // linker, resulting in the extracted value being different from the actual
+2551:   // symbol. It's also possible to have a GOT entry for a symbol defined in the
+2552:   // binary. In the latter case, the instruction can be using the GOT version
+2553:   // causing the extracted value mismatch. Similar cases can happen for TLS.
+2554:   // Pass the relocation information as is to the disassembler and let it decide
+2555:   // how to use it for the operand symbolization.
+2556:   if (Relocation::isGOT(RType) || Relocation::isTLS(RType)) {
+2557:     SkipVerification = true;
+2558:   } else if (!SymbolAddress) {
+2583:     if (SymbolName == "__hot_start" || SymbolName == "__hot_end")
+2584:       return true;
+2585: 
+2586:     if (RType == ELF::R_X86_64_PLT32)
+2587:       return true;
+2588: 
+2589:     return truncateToSize(ExtractedValue, RelSize) ==
+2590:            truncateToSize(SymbolAddress + Addend - PCRelOffset, RelSize);
+2591:   };
+2592: 
+2593:   (void)verifyExtractedValue;
+2594:   assert(verifyExtractedValue() && "mismatched extracted relocation value");
+2595: 
+2596:   return true;
+2597: }
+3024:       // If we know the referenced symbol, register the relocation from
+3025:       // the code. It's required  to properly handle cases where
+3026:       // "symbol + addend" references an object different from "symbol".
+3027:       ContainingBF->addRelocation(Rel.getOffset(), ReferencedSymbol, RType,
+3028:                                   Addend, ExtractedValue);
+3029:     } else {
+3030:       LLVM_DEBUG({
+3031:         dbgs() << "BOLT-DEBUG: not creating PC-relative relocation at"
+3032:                << formatv("{0:x} for {1}\n", Rel.getOffset(), SymbolName);
+3033:       });
+3034:     }
+3035: 
+3036:     return;
+3037:   }
+3038: 
+3039:   bool ForceRelocation = BC->forceSymbolRelocations(SymbolName);
+3040:   if ((BC->isAArch64() || BC->isRISCV()) && Relocation::isGOT(RType))
+3041:     ForceRelocation = true;
+3042: 
+3043:   if (!ReferencedSection && !ForceRelocation) {
+3044:     LLVM_DEBUG(dbgs() << "BOLT-DEBUG: cannot determine referenced section.\n");
+3045:     return;
+3046:   }
+3047: 
+3048:   // Occasionally we may see a reference past the last byte of the function
+3049:   // typically as a result of __builtin_unreachable(). Check it here.
+3050:   BinaryFunction *ReferencedBF = BC->getBinaryFunctionContainingAddress(
+3051:       Address, /*CheckPastEnd*/ true, /*UseMaxSize*/ IsAArch64);
+3052: 
+tools/bolt/results/night-92-20261114/X86MCSymbolizer.cpp
+52:   // it without relocations. Return true on success, false otherwise.
+53:   auto processPCRelOperandNoRel = [&]() {
+54:     const int MemOp = BC.MIB->getMemoryOperandNo(Inst);
+55:     if (MemOp == -1)
+56:       return false;
+57: 
+58:     const unsigned DispOp = MemOp + X86::AddrDisp;
+59:     if (Inst.getNumOperands() != DispOp)
+60:       return false;
+61: 
+62:     const MCOperand &Base = Inst.getOperand(MemOp + X86::AddrBaseReg);
+63:     if (Base.getReg() != BC.MRI->getProgramCounter())
+64:       return false;
+65: 
+66:     const MCOperand &Scale = Inst.getOperand(MemOp + X86::AddrScaleAmt);
+67:     const MCOperand &Index = Inst.getOperand(MemOp + X86::AddrIndexReg);
+68:     if (Scale.getImm() != 0 && Index.getReg() != MCRegister::NoRegister)
+69:       return false;
+70: 
+71:     const MCSymbol *TargetSymbol;
+72:     uint64_t TargetOffset;
+73: 
+74:     if (!CreateNewSymbols) {
+75:       if (BinaryData *BD = BC.getBinaryDataContainingAddress(Value)) {
+76:         TargetSymbol = BD->getSymbol();
+77:         TargetOffset = Value - BD->getAddress();
+78:       } else {
+79:         return false;
+80:       }
+81:     } else {
+82:       std::tie(TargetSymbol, TargetOffset) =
+83:           BC.handleAddressRef(Value, Function, /*IsPCRel=*/true);
+84:     }
+85: 
+86:     addOperand(TargetSymbol, TargetOffset);
+87: 
+88:     return true;
+89:   };
+90: 
+91:   // Check for GOTPCRELX relocations first. Because these relocations allow the
+92:   // linker to modify the instruction, we have to check the offset range
+95:   // will be no other relocation in this range, since GOTPCRELX applies only to
+96:   // certain instruction types.
+97:   const uint64_t InstOffset = InstAddress - Function.getAddress();
+98:   const Relocation *Relocation =
+99:       Function.getRelocationInRange(InstOffset, InstOffset + InstSize);
+100:   if (Relocation && Relocation::isX86GOTPCRELX(Relocation->Type)) {
+101:     // If the operand is PC-relative, convert it without using the relocation
+102:     // information. For GOTPCRELX, it is safe to use the absolute address
+103:     // instead of extracting the addend from the relocation, as non-standard
+104:     // forms will be rejected by linker conversion process and the operand
+105:     // will always reference GOT which we don't rewrite.
+106:     if (processPCRelOperandNoRel())
+107:       return true;
+108: 
+109:     // The linker converted the PC-relative address to an absolute one.
+110:     // Symbolize this address.
+111:     if (CreateNewSymbols)
+112:       BC.handleAddressRef(Value, Function, /*IsPCRel=*/false);
+113: 
+114:     const BinaryData *Target = BC.getBinaryDataAtAddress(Value);
+115:     if (!Target) {
+116:       assert(!CreateNewSymbols &&
+117:              "BinaryData should exist at converted GOTPCRELX destination");
+118:       return false;
+119:     }
+120: 
+121:     addOperand(Target->getSymbol(), /*Addend=*/0);
+122: 
+123:     return true;
+124:   }
+125: 
+126:   // Check for relocations against the operand.
+127:   if (!Relocation || Relocation->Offset != InstOffset + ImmOffset)
+128:     Relocation = Function.getRelocationAt(InstOffset + ImmOffset);
+129: 
+130:   if (!Relocation)
+131:     return processPCRelOperandNoRel();
+132: 
+133:   // GOTPC64 is special because the X86 Assembler doesn't know how to emit
+134:   // a PC-relative 8-byte fixup, which is what we need to cover this. The
+135:   // only way to do this is to use the symbol name _GLOBAL_OFFSET_TABLE_.
+136:   if (Relocation::isX86GOTPC64(Relocation->Type)) {
+137:     auto PairOrErr = handleGOTPC64(*Relocation, InstAddress);
+151: 
+152:   // Process reference to the symbol.
+153:   if (CreateNewSymbols)
+154:     BC.handleAddressRef(SymbolValue, Function, Relocation->isPCRelative());
+155: 
+156:   uint64_t Addend = Relocation->Addend;
+157:   // Real addend for pc-relative targets is adjusted with a delta from
+158:   // the relocation placement to the next instruction.
+159:   if (Relocation->isPCRelative())
+160:     Addend += InstOffset + InstSize - Relocation->Offset;
+161: 
+162:   addOperand(Relocation->Symbol, Addend);
+163: 
+164:   return true;
+165: }
+166: 
+167: Expected<std::pair<MCSymbol *, uint64_t>>
+168: X86MCSymbolizer::handleGOTPC64(const Relocation &R, uint64_t InstrAddr) {
+169:   BinaryContext &BC = Function.getBinaryContext();
+170:   const BinaryData *GOTSymBD = BC.getGOTSymbol();
+171:   if (!GOTSymBD || !GOTSymBD->getAddress()) {
+172:     // This error is pretty serious but we can't kill the disassembler
+173:     // because of it, so don't make it fatal. Log it and warn the user.
