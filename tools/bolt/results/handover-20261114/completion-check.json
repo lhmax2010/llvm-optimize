@@ -1,0 +1,61 @@
+{
+  "time": "2026-11-14T15:00:48+08:00",
+  "report_bytes": 25087,
+  "claims_unchanged": true,
+  "secret_scan": "No candidates for private key blocks, GitHub tokens, credential URLs, authorization/cookie values or password/token flags in new evidence. No credential files read.",
+  "steps": [
+    {
+      "step": 1,
+      "status": "PARTIAL",
+      "reason": "5 active worktrees plus W/B saved; expanded old repositories OOM; REST complete comment/label view UNKNOWN"
+    },
+    {
+      "step": 2,
+      "status": "PARTIAL",
+      "reason": "machine/process/cron/locks saved; du193/223 known; bounded scan permission blind spots"
+    },
+    {
+      "step": 3,
+      "status": "PARTIAL",
+      "reason": "local files and context indexed; other sessions and old repo contents not fully audited"
+    },
+    {
+      "step": 4,
+      "status": "DONE",
+      "reason": "41 status rows with blockers and planning resource classes"
+    },
+    {
+      "step": 5,
+      "status": "STOP",
+      "reason": "PS10 full condition differs; claims untouched"
+    }
+  ],
+  "preparation_errors": [
+    {
+      "original": "ps --ww: unrecognized option",
+      "correction": "-ww",
+      "count": 1,
+      "evidence": "process-preparation-fix.diff"
+    },
+    {
+      "original": "Gerrit /gerrit/changes REST GET HTTP404",
+      "correction": "root /changes/361395/detail also404; stop REST fallback",
+      "count": 1,
+      "evidence": "gerrit-rest-root-check.json"
+    },
+    {
+      "original": "wc: docs/bolt/85_handover_snapshot.md: No such file or directory",
+      "correction": "generate new report; no existing file overwritten",
+      "unit": "llvm-handover85-20261114-015"
+    },
+    {
+      "original": "tail: cannot open 'STATUS.md' for reading: No such file or directory",
+      "correction": "read docs/bolt/STATUS.md",
+      "unit": "llvm-handover85-20261114-016"
+    },
+    {
+      "original": "SyntaxError: missing ) after argument list",
+      "correction": "tool request did not execute; resubmit report generation with safe quoting"
+    }
+  ]
+}

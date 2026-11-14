@@ -1,0 +1,43 @@
+{
+  "status": "STOP",
+  "date": "2026-11-14T14:44:45.206488+08:00",
+  "reason": "PS10 line376 full condition differs from fea0fe46 line533 (kind 10,11 versus 10,11,12,14); required equality not met",
+  "claims_file_modified": false,
+  "action": "stop step5 only as explicitly instructed; preserve raw comparison; complete handover report",
+  "raw": {
+    "ps10": {
+      "revision": "13c3e223d9e1b35e4affb55255c5042f8c940f35",
+      "rc": 0,
+      "matches": [
+        {
+          "line": 376,
+          "raw": "            if symbol[3] != 0xfff1 and (kind in (10, 11) or (kind == 1 and not target[2] & 1)):"
+        }
+      ],
+      "contexts": [
+        {
+          "start": 372,
+          "text": "            kind, symbol_index = info & 0xffffffff, info >> 32\n            symbol = struct.unpack_from('<IBBHQQ', data, symbols[4]+symbol_index*symbols[9])\n            checked += 1\n            # SHN_ABS references do not need runtime relocation.\n            if symbol[3] != 0xfff1 and (kind in (10, 11) or (kind == 1 and not target[2] & 1)):\n                forbidden.append(dict(type=kind, target_section=section[7], symbol_index=symbol_index))\n    return dict(checked=checked, forbidden=forbidden)"
+        }
+      ]
+    },
+    "fea": {
+      "revision": "fea0fe464d56e17f2c7588c557bfffd9f6ac352b",
+      "rc": 0,
+      "matches": [
+        {
+          "line": 533,
+          "raw": "            if symbol[3] != 0xfff1 and (kind in (10, 11, 12, 14) or (kind == 1 and not target[2] & 1)):"
+        }
+      ],
+      "contexts": [
+        {
+          "start": 529,
+          "text": "            if not target[2] & 2:\n                continue\n            checked += 1\n            # SHN_ABS references do not need runtime relocation.\n            if symbol[3] != 0xfff1 and (kind in (10, 11, 12, 14) or (kind == 1 and not target[2] & 1)):\n                forbidden.append(dict(type=kind, target_section=section[7], symbol_index=symbol_index))\n    return dict(checked=checked, forbidden=forbidden)"
+        }
+      ]
+    },
+    "literal_equal": false,
+    "condition_equal": false
+  }
+}
