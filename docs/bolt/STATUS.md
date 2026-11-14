@@ -1388,3 +1388,5 @@ PM裁决：只改提交说明、树不变，不需要新QB。源码包中0008补
 T/D 只读ELF统计各复现2804条：TLSGD1536、TLSLD415、DTPOFF32 853，全部.rela.text→.text，差值0；每类20个符号/偏移样例已保全。源码含义是跳过对应静态重定位的后续分析，不作“无害”判断。
 
 D report-stale **STOP/NOT RUN**：`profgen-release-build-20261114c.scope` 内 gbs/rpmbuild/ninja 正在运行，不满足无其他重任务前提；未取共享锁、未运行BOLT、未新建输出根、未删除或干预任何进程。原文：`STOP: other heavy tasks are running; D report-stale not started; shared lock not acquired.` 其他重任务结束后可重新核对前提执行已批准计划。本轮全部操作为单一串行4GiB/swap0/nice19/IO-idle服务。
+
+88号交付脚本另有两次准备错误：第一次tar.gz被忽略；修正后第二次秘密扫描命中脚本自身的标记字符串，按规则STOP且不再改脚本重跑。两份空staging-audit文件原样保留，不能作为审计通过证据；已准备的报告、结果、夹具压缩包及STOP原文正常提交。

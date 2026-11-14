@@ -83,3 +83,21 @@ STOP: other heavy tasks are running; D report-stale not started; shared lock not
 一次只读查找误用了根目录 `STATUS.md`，原文 `grep: STATUS.md: No such file or directory`；随即改读实际 `docs/bolt/STATUS.md`。不涉及产品判定或统计脚本修改。统计一次完成，无反复调参；入口测试无重试。
 
 步骤结束行原文如上。本报告于 2026-11-14T01:52:08.316832-08:00 整理；总体为 PARTIAL（步骤3 STOP），不是产品失败。
+
+### 交付准备修正一次
+
+首次打包时 `.gitignore:51:*.tar.*` 忽略了 `entry/fixtures.tar.gz`，导致 `staging-audit.json` 空文件；后续读取报 `json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)`。原文件保留。新脚本显式纳入已核对的交付文件，并允许已提交文件不出现在新增暂存差异中；逐文件核对暂存内容与工作文件，输出 `staging-audit-v2.json`。修正 diff、错误记录和115478字节夹具包一并补交；产品测试/ELF统计不重跑、不改变。
+
+### 交付脚本第二次准备错误：STOP，不再修正或重跑
+
+第一次修正后已纳入夹具压缩包，但脚本的秘密内容扫描把它自身代码中的私钥头标记字符串当作命中，产生下列断言。它只说明扫描脚本误报，不是发现了私钥；未修改该判定或再次运行打包脚本。`staging-audit-v2.json` 同样为空，不能称为审计通过。上述“输出新审计”是修正目标，实际未完成，以下STOP覆盖该目标。原始错误文件和两版脚本保留。入口30/30、两组2804统计均不受影响，步骤3仍未运行。后续只保存本停止记录并提交已准备的证据，不再执行实验或修正准备脚本。
+
+```text
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/night-88-20261114/package_evidence_v2.py", line 30, in <module>
+    assert b'-----BEGIN OPENSSH PRIVATE KEY-----' not in data and b'-----BEGIN RSA PRIVATE KEY-----' not in data
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+```
+
+88交付准备 已结束 2026-11-14T01:54:01.724353-08:00 status=STOP

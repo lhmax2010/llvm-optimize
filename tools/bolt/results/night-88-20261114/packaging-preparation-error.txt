@@ -1,0 +1,7 @@
+Packaging preparation error, not a product failure.
+check-ignore raw:
+.gitignore:51:*.tar.*	tools/bolt/results/night-88-20261114/entry/fixtures.tar.gz
+The original git add did not add this ignored archive. Its stdout redirect staging-audit.json stayed empty. The subsequent reader failed:
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+Original empty staging-audit.json is retained; new audit is staging-audit-v2.json.
+Fix: explicitly force-add only the reviewed delivery paths, validate all selected paths against their staged bytes; permit already committed paths not to appear in staged diff.
