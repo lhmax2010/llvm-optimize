@@ -1,0 +1,6 @@
+--- delivery-precheck-before
++++ delivery-precheck-after
+@@ -1 +1,2 @@
+-subprocess.run(['git','diff','--cached','--check'],check=True)
++subprocess.run(['git','diff','--cached','--check','--',*authored_paths],check=True)
++# Preserve raw git output, patches, logs and their whitespace verbatim.

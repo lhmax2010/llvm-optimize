@@ -1,0 +1,11 @@
+[Part 4] packaging: harden the native archive converter
+
+Validate compressed section headers before using their declared sizes
+as relocation bounds. Accept the known zlib and zstd types and require
+zero or power-of-two alignment. Require zero-width relocation markers
+other than R_X86_64_NONE to lie inside their target section, and reject
+RELR sections in archive members.
+
+Log inherited architecture options and signal handler states at startup.
+Malformed diagnostic environment flags remain nonfatal. Conversion
+commands, existing summary fields and existing log lines are unchanged.

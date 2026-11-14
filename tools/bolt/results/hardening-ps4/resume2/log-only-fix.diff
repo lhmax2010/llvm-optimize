@@ -1,0 +1,15 @@
+--- resume/converter-after.py
++++ resume2/converter-after.py
+@@ -1009,9 +1009,9 @@
+         architecture[name] = [token for token in tokens if token == '-m64' or
+                               token.startswith(('-march=', '-mtune=', '-msse', '-mfpmath='))]
+     inherited = {}
+-    for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
+-        handler = signal.getsignal(sig)
+-        inherited[signal.Signals(sig).name] = ('ignored' if handler == signal.SIG_IGN else
++    for name in ('SIGTERM', 'SIGINT', 'SIGHUP'):
++        handler = signal.getsignal(getattr(signal, name))
++        inherited[name] = ('ignored' if handler == signal.SIG_IGN else
+                                              'default' if handler == signal.SIG_DFL else 'handler')
+     print('NATIVE_ARCHIVES_STARTUP', json.dumps({
+         'architecture_parameters': architecture, 'signals': inherited}), flush=True)

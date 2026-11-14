@@ -1,0 +1,95 @@
+From b0c1732c08c5a81382f9eeef27ffe1e40c6c47d1 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Sat, 14 Nov 2026 03:49:23 -0800
+Subject: [PATCH] packaging: harden the native archive converter
+
+Validate compressed section headers before using their declared sizes
+as relocation bounds. Accept the known zlib and zstd types and require
+zero or power-of-two alignment.
+
+Require zero-width relocation markers other than R_X86_64_NONE to lie
+inside their target section, and explicitly reject RELR sections in
+archive members.
+
+Log inherited architecture options and signal handler states at startup.
+Keep malformed diagnostic environment flags nonfatal, and preserve the
+existing conversion commands, summary fields and log lines.
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+---
+ packaging/llvm-static-archives-native.py | 35 ++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)
+
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index fce59f78c955..c44edc8353b1 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -492,6 +492,8 @@ def pic_relocations(data):
+     sections = [struct.unpack_from('<IIQQQQIIQQ', data, off+i*stride) for i in range(count)]
+     checked, forbidden = 0, []
+     for section in sections:
++        if section[1] == 19:  # SHT_RELR is not supported in ET_REL members.
++            raise ValueError('unsupported RELR relocation section')
+         if section[1] == 0x40000014:
+             raise ValueError('unsupported CREL relocation section')
+         if section[1] not in (0, 8) and section[4] + section[5] > len(data):
+@@ -506,7 +508,11 @@ def pic_relocations(data):
+         if target[2] & 0x800:  # SHF_COMPRESSED: offsets use uncompressed size.
+             if target[5] < 24 or target[4] + 24 > len(data):
+                 raise ValueError('short compressed ELF section header')
+-            limit = struct.unpack_from('<IIQQ', data, target[4])[2]
++            compression, reserved, limit, alignment = struct.unpack_from('<IIQQ', data, target[4])
++            if compression not in (1, 2):  # ELFCOMPRESS_ZLIB / ELFCOMPRESS_ZSTD
++                raise ValueError('unsupported ELF compression type: '+str(compression))
++            if alignment and alignment & (alignment - 1):
++                raise ValueError('invalid compressed ELF section alignment: '+str(alignment))
+         symbols = sections[section[6]]
+         if (symbols[1] != 2 or symbols[9] != 24 or symbols[5] % 24 or
+                 symbols[4] + symbols[5] > len(data)):
+@@ -521,7 +527,8 @@ def pic_relocations(data):
+             kind, symbol_index = info & 0xffffffff, info >> 32
+             if kind not in X86_64_RELOCATION_WIDTHS:
+                 raise ValueError('uncertified x86_64 relocation type: '+str(kind))
+-            if kind != 0 and r_offset + X86_64_RELOCATION_WIDTHS[kind] > limit:
++            width = X86_64_RELOCATION_WIDTHS[kind]
++            if kind != 0 and (r_offset + width > limit or (width == 0 and r_offset == limit)):
+                 raise ValueError('relocation offset outside target section')
+             if symbol_index >= symbol_count:
+                 raise ValueError('relocation symbol index outside table')
+@@ -987,9 +994,33 @@ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+             signal.signal(sig, handler)
+ 
+ 
++def log_startup_context():
++    """Report exported target options and Python's inherited signal handlers."""
++    architecture = {}
++    for name in ('CFLAGS', 'CXXFLAGS'):
++        try:
++            tokens = shlex.split(os.environ.get(name, ''))
++        except ValueError as error:
++            # Diagnostics must not change conversion of already recorded IR.
++            architecture[name] = {'parse_error': str(error)}
++            continue
++        # Same inherited architecture categories as the packaging flag policy.
++        # Keep order and duplicates: the compiler applies last-option semantics.
++        architecture[name] = [token for token in tokens if token == '-m64' or
++                              token.startswith(('-march=', '-mtune=', '-msse', '-mfpmath='))]
++    inherited = {}
++    for name in ('SIGTERM', 'SIGINT', 'SIGHUP'):
++        handler = signal.getsignal(getattr(signal, name))
++        inherited[name] = ('ignored' if handler == signal.SIG_IGN else
++                                             'default' if handler == signal.SIG_DFL else 'handler')
++    print('NATIVE_ARCHIVES_STARTUP', json.dumps({
++        'architecture_parameters': architecture, 'signals': inherited}), flush=True)
++
++
+ def install_main():
+     global _CANCEL_SIGNAL
+     _CANCEL_SIGNAL = None
++    log_startup_context()
+     if signal.getsignal(signal.SIGCHLD) != signal.SIG_DFL:
+         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+         print('NATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL', flush=True)
+-- 
+2.43.0
+

@@ -1,0 +1,24 @@
+commit b0c1732c08c5a81382f9eeef27ffe1e40c6c47d1
+Author:     Hao Lin <hao.lin@samsung.com>
+AuthorDate: Sat Nov 14 03:49:23 2026 -0800
+Commit:     Hao Lin <hao.lin@samsung.com>
+CommitDate: Sat Nov 14 03:49:23 2026 -0800
+
+    packaging: harden the native archive converter
+    
+    Validate compressed section headers before using their declared sizes
+    as relocation bounds. Accept the known zlib and zstd types and require
+    zero or power-of-two alignment.
+    
+    Require zero-width relocation markers other than R_X86_64_NONE to lie
+    inside their target section, and explicitly reject RELR sections in
+    archive members.
+    
+    Log inherited architecture options and signal handler states at startup.
+    Keep malformed diagnostic environment flags nonfatal, and preserve the
+    existing conversion commands, summary fields and log lines.
+    
+    Signed-off-by: Hao Lin <hao.lin@samsung.com>
+
+ packaging/llvm-static-archives-native.py | 35 ++++++++++++++++++++++++++++++--
+ 1 file changed, 33 insertions(+), 2 deletions(-)

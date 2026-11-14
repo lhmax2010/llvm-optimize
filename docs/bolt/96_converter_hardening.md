@@ -1,6 +1,6 @@
 # 96号：转换器加固
 
-> 最新停点见文末“96号续”：PM已解除原文前提；83项运行、82通过、1个源码计数断言失败，未推送sandbox。
+> 最新状态见文末“96续二”：119/119测试通过，sandbox已推送b0c1732c；真实输入重放因空间不足SKIPPED。以下原STOP记录保留。
 
 **STOP，停在步骤1范围核对；没有产品修改、本地产品提交或sandbox推送。** 任务四项与设计v9摘要一致，但未找到第六轮评审原文，无法完成要求的逐条对应。这不是产品失败，也不是已经证实清单与原文不一致。
 
@@ -132,3 +132,87 @@ FAILED (failures=1)
 ### 7. 证据发布补记
 
 首次交付git add因*.log忽略规则未收5份原始测试日志并返回1；交互shell仍继续提交其余32文件为0f9431ec8ed74f11f0dc5572bd8f35f6ec828249。交付准备修正一次：显式git add -f补交这5份日志，核对暂存清单和单文件大小；后续命令以check=True衔接，保留原提交不重写。错误关键原文和修改记录见publication-error.txt/publication-fix.diff。产品测试FAIL保持不变，未改代码或重跑。
+
+
+## 96续二：新增日志写法修正、全量测试与 sandbox 推送
+
+**119/119测试通过；sandbox已从PS3推进至独立加固提交。真实输入重放SKIPPED（空间不足），未认证全量实物输出；重放PASS之前不得触发QB。** 本轮无产品STOP或远端拒绝；交付空白检查准备修正1次，见下文。此前STOP记录保持原文。
+
+### 1. PM裁决、修正范围与测试来源
+
+PM定性：test_converter_sighup的FAIL由新增只读日志循环沿用了安装/恢复循环的源码文本触发。测试以文本计数守护安装、恢复两处循环，产品语义未变；本次授权修正不计入准备错误次数。评审原文未入库，以设计第18条为准的前次裁决继续有效。
+
+仅将新增log_startup_context的信号遍历改为名称元组，通过getattr取得signal常量；JSON键名及ignored/default/handler值不变。RELR、Chdr、零宽三项加固未改；未改spec、原测试输入、期望或断言。[本次日志修正diff](../../tools/bolt/results/hardening-ps4/resume2/log-only-fix.diff)、[相对PS3完整产品diff](../../tools/bolt/results/hardening-ps4/resume2/product.diff)。
+
+将上轮环境原样复制到新的environment2，逐个.py核对SHA相同；输出与清理保留区使用新目录，没有覆盖历史结果。沿用既定118项范围，其中旧三提交身份test_messages仍为不适用，不计PASS。再加1项集成模拟：TERM=SIG_IGN、INT=SIG_DFL、HUP=自定义handler，CFLAGS不可解析；核对新增日志精确值、仅parse_error、不妨碍install被调用及原结束行/返回码。[新增测试diff](../../tools/bolt/results/hardening-ps4/resume2/new-test.diff)。
+
+### 2. 从头测试结果
+
+|套件|本轮实际运行|PASS|FAIL/ERROR|原文|
+|---|---:|---:|---:|---|
+|新增及加固正反例/日志|16|16|0|[new-tests.log](../../tools/bolt/results/hardening-ps4/resume2/new-tests.log)|
+|policy|46|46|0|[policy.log](../../tools/bolt/results/hardening-ps4/resume2/policy.log)|
+|release|5|5|0|[release.log](../../tools/bolt/results/hardening-ps4/resume2/release.log)|
+|r2|12|12|0|[r2.log](../../tools/bolt/results/hardening-ps4/resume2/r2.log)|
+|R3/R4/R5|40|40|0|[r3-r4-r5.log](../../tools/bolt/results/hardening-ps4/resume2/r3-r4-r5.log)|
+|总计|119|119|0|[test-summary.json](../../tools/bolt/results/hardening-ps4/resume2/test-summary.json)|
+
+所有结果均本轮重新运行，不沿用上轮PASS。此前test_converter_sighup及其后未运行的35项都已通过；subTest不另算测试数。既有完整helper套件及RPM构建不在本次转换器测试范围。模拟旧日志不变、既有小实物夹具通过，不等于450+10全量重放通过。
+
+### 3. 产品提交、说明与授权推送
+
+- 本地提交：`b0c1732c08c5a81382f9eeef27ffe1e40c6c47d1`；tree：`a590f588e4088d87e946d65eaf03162358323e85`。
+- 父提交：`ecb2dec72ec5afde9c6c70f166e2ac12b47c093e`，独立游离工作树，无新分支；原LLVM分支和原工作树未变。
+- 只改packaging/llvm-static-archives-native.py。作者/提交者Hao Lin <hao.lin@samsung.com>，Signed-off-by一致，不带Change-Id。采用单命令core.hooksPath=/dev/null，避免hook自动加Change-Id，不改仓库配置。
+- 英文说明及两份草稿均每行≤72列，ASCII及对外文本引用门禁6/6通过；无内部编号/路径。草稿只存证据，没有发布Gerrit文本。
+- [提交说明](../../tools/bolt/results/hardening-ps4/resume2/commit-message.txt)、[Part 4草稿](../../tools/bolt/results/hardening-ps4/resume2/part4-draft.txt)、[Part 3补充段草稿](../../tools/bolt/results/hardening-ps4/resume2/part3-supplement-draft.txt)。
+
+本任务按用户一次性授权直接推sandbox，未推refs/for。使用81号实际ref `refs/heads/sandbox/lhmax2025/bolt_pgo`、完整SSH URL及BatchMode；一次lease推送成功，无重试。推前、推后ls-remote分别为：
+
+```text
+ecb2dec72ec5afde9c6c70f166e2ac12b47c093e	refs/heads/sandbox/lhmax2025/bolt_pgo
+b0c1732c08c5a81382f9eeef27ffe1e40c6c47d1	refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+完整命令：
+
+```sh
+GIT_SSH_COMMAND='ssh -o BatchMode=yes' git push --force-with-lease=refs/heads/sandbox/lhmax2025/bolt_pgo:ecb2dec72ec5afde9c6c70f166e2ac12b47c093e ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm b0c1732c08c5a81382f9eeef27ffe1e40c6c47d1:refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+[推送原文](../../tools/bolt/results/hardening-ps4/resume2/sandbox-push.stderr.txt)。当前sandbox领先Gerrit PS3一个提交；未访问Gerrit评审接口、未加评审人/评论/打分，未访问QB。
+
+### 4. 真实输入重放准入
+
+检查时间：`2026-11-14T03:50:21.232626-08:00`。
+
+|条件|观测|判定|
+|---|---|---|
+|无gbs/rpmbuild/ninja/llvm-bolt重进程|本次可读/proc未发现匹配进程|满足|
+|/home可用≥30GiB|30625026048 B（28.522 GiB）|不满足|
+|MemAvailable≥20GiB|24254304256 B（22.589 GiB）|满足|
+|共享锁可立即取得|前述空间准入已失败，未尝试|NOT ATTEMPTED|
+
+**SKIPPED**，不等待、不重试、未取共享锁、未启动16GiB服务或450个发货归档/10个调试归档重放；无本轮全量成员内容比较结果。未因准入SKIPPED回退sandbox（用户要求回退的条件是真实重放出现差异或拒绝，本轮没有运行）。必须在以后获准重放PASS后才能触发QB。[准入证据](../../tools/bolt/results/hardening-ps4/resume2/replay-admission.json)。
+
+### 5. 资源、阅读范围与结束行
+
+全部操作在串行用户服务llvm-task96-resume2-20261114内，MemoryMax4GiB、swap0、Nice19、IO idle。未提高限制、未发生OOM。memory.events及峰值见[资源记录](../../tools/bolt/results/hardening-ps4/resume2/service-memory.json)。
+
+已读：PM续二授权、96号前次STOP和原测试脚本、当前转换器diff、119项本轮结果、署名/对外文本规则、81号实际sandbox ref、原工作树及分支身份、sandbox推前推后SHA、机器准入现场。未读未入库的第六轮原始评审；未访问QB或Gerrit评审；未重读/重放全量450+10实物，未运行完整helper套件或RPM构建。历史结果未覆盖，原STOP无删除。
+
+本轮新STOP：无。历史STOP原文见本页§4与“96号续”§4；其中源码计数FAIL按PM裁决通过本次授权修正闭合。
+
+```text
+96步骤3 已结束 2026-11-14T03:48:57.501060-08:00 status=PASS
+96步骤4 已结束 2026-11-14T03:49:23.508432-08:00 status=PASS
+96步骤5 已结束 2026-11-14T03:49:50.323489-08:00 status=PASS
+96步骤6 已结束 2026-11-14T03:50:21.232658-08:00 status=SKIPPED
+96续二 已结束 2026-11-14T03:51:39.025983-08:00 status=PASS replay=SKIPPED
+```
+
+[本轮全部文件索引](../../tools/bolt/results/hardening-ps4/resume2/README.md)。
+
+### 6. 交付检查准备修正（1次）
+
+首次git diff --cached --check把原始git show的缩进空行、format-patch的上下文/签名、远端Processing changes输出末尾空白判为错误，返回2，check=True阻止了后续证据commit。不是产品测试FAIL。按同一步准备错误可修正一次规则，将空白检查范围限于本轮编写的文档和脚本；原始证据的任何字节不改，产品及测试不改、不重跑。错误原文与检查diff见[publication-precheck-error.txt](../../tools/bolt/results/hardening-ps4/resume2/publication-precheck-error.txt)、[publication-precheck-fix.diff](../../tools/bolt/results/hardening-ps4/resume2/publication-precheck-fix.diff)。

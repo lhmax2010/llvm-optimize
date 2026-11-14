@@ -1,0 +1,8 @@
+Also validate compressed section headers before using their declared
+sizes as relocation bounds, accepting the known zlib and zstd types with
+zero or power-of-two alignment. Require zero-width relocation markers
+other than R_X86_64_NONE to lie inside their target section, and reject
+RELR sections in archive members. Log inherited architecture options and
+signal handler states at startup without making malformed diagnostic
+environment flags fatal or changing conversion commands, existing
+summary fields or existing log lines.

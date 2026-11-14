@@ -1,0 +1,25 @@
+--- resume/test_hardening.py
++++ resume2/test_hardening.py
+@@ -70,6 +70,22 @@
+     self.assertEqual(m.install_main(),0)
+    outputs.append(o.getvalue())
+   self.assertTrue(outputs[1].startswith('NATIVE_ARCHIVES_STARTUP '));self.assertEqual(outputs[1].split('\n',1)[1],outputs[0])
++ def test_mixed_startup_states_and_parse_error_continue(self):
++  custom=lambda *_:None
++  states={signal.SIGTERM:signal.SIG_IGN,signal.SIGINT:signal.SIG_DFL,signal.SIGHUP:custom,signal.SIGCHLD:signal.SIG_DFL}
++  argv=['tool','--root','r','--build','b','--evidence','e','--arch','x86_64','--debug-info','yes','--compiler','c','--disassembler','d','--nm','n']
++  out=io.StringIO()
++  with patch.object(sys,'argv',argv),patch.dict(os.environ,{'CFLAGS':'"','CXXFLAGS':'-O2 -march=nehalem'},clear=True),patch.object(a.signal,'getsignal',side_effect=lambda sig:states[sig]),patch.object(a.signal,'signal'),patch.object(a,'install',side_effect=lambda *args:print('NATIVE_ARCHIVES_END unchanged PASS 225')) as install,contextlib.redirect_stdout(out):
++   self.assertEqual(a.install_main(),0)
++  install.assert_called_once()
++  lines=out.getvalue().splitlines()
++  self.assertEqual(len(lines),2)
++  self.assertTrue(lines[0].startswith('NATIVE_ARCHIVES_STARTUP '))
++  obj=json.loads(lines[0].split(' ',1)[1])
++  self.assertEqual(obj['signals'],{'SIGTERM':'ignored','SIGINT':'default','SIGHUP':'handler'})
++  self.assertEqual(set(obj['architecture_parameters']['CFLAGS']),{'parse_error'})
++  self.assertEqual(obj['architecture_parameters']['CXXFLAGS'],['-march=nehalem'])
++  self.assertEqual(lines[1],'NATIVE_ARCHIVES_END unchanged PASS 225')
+ if __name__=='__main__':
+  r=unittest.TextTestRunner(verbosity=2,failfast=True).run(unittest.defaultTestLoader.loadTestsFromTestCase(Hardening))
+  Path(__file__).with_suffix('.result.json').write_text(json.dumps(dict(tests=r.testsRun,failures=len(r.failures),errors=len(r.errors),passed=r.wasSuccessful()),indent=2)+'\n')
