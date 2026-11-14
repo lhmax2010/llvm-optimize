@@ -1,6 +1,18 @@
 # 99号：周末低资源任务
 
-逐步交付；尚未完成的步骤不标PASS。全部分析串行、4GiB/swap0/CPU200%/Nice19/IO idle；每30秒检查MemAvailable，低于6GiB只停止本任务自己的服务。步骤1准入≥8GiB、磁盘≥60GiB通过。未进入另一项目目录、未操作其锁或进程。
+**五步已结束：1 STOP，2–5 PASS。** 步骤1既有测试出现进程读取竞态，未创建新产品提交或推送sandbox。步骤5使用已提交b0c1732c，完成450发货归档复核，以及225个原始归档的3853个转换成员重新生成/字节比较，全部一致。看门狗未触发，无OOM。
+
+步骤1–4和收尾服务4GiB/swap0/CPU200%/Nice19/IO idle；步骤5准备4GiB，实际重放按授权12GiB/CPU400%、jobs=2，每进程地址空间4GiB。所有服务串行，重放含准备总限120分钟，每30秒检查MemAvailable<6GiB即停止自己的服务。首次准入全部满足，没有进入30分钟等待。未进入另一项目目录、未操作其锁或进程。
+
+|步骤|状态|结果|
+|---|---|---|
+|1|STOP|103项已运行：102通过、1ERROR，16未运行；sandbox未推送|
+|2|PASS|8处B完成复核，3升A、5仍B；连同87号现为5A/5B|
+|3|PASS|68函数逐对指令diff；28算术序列、35 LEA/复制形式、5混合|
+|4|PASS|设计6项事实资料包；无推荐/裁决|
+|5|PASS|450发货归档/7728 ELF成员新旧检查一致；225 T原始归档重新转换3853成员、保留11成员，归档和逐成员SHA与发货T一致|
+
+[raw链接索引](../../tools/bolt/results/weekend-99-20261114/RAW_LINKS.md)。
 
 ## 步骤1：STOP（既有测试出现进程读取竞态）
 
@@ -30,7 +42,7 @@ ProcessLookupError: [Errno 3] No such process
 
 ## 进度
 
-步骤1–4已结束，步骤5待准入检查。
+五步均已结束；各步原始记录如下。
 
 ## 步骤2：PASS（8处完成复核，3处升A、5处仍B）
 
@@ -212,3 +224,39 @@ cmpl %r15d, %eax
 只读指定报告与JSON，未读取所有长日志或profile本体，没有新实验。准备修正0次。
 
 99步骤4 已结束 2026-11-14T06:34:48.654365-08:00 status=PASS
+
+## 步骤5：PASS（补足全部3853个成员的重新生成）
+
+首次检查2026-11-14T06:35:12-08:00：未发现gbs/rpmbuild/ninja/llvm-bolt重进程，MemAvailable=26,350,829,568B，/home可用206,627,004,416B。06:35:36非阻塞取得既有共享heavy-stage.lock；没有获取另一项目私有锁，重放结束已随服务退出释放。没有等待30分钟轮询，未到截止时间是因为首次已满足全部条件。
+
+### 输入和验证覆盖
+
+- 从git对象导出b0c1732c转换器，基线ecb2dec7；不使用步骤1留存的脏工作树文件。
+- 78号450个发货归档来自QB 1225393/1225395；79号已证明1226850/1226851的102个二进制包载荷与它们一致（本次只读79号该记录，未重读全部RPM，见baseline-chain.txt）。这些归档已是ELF。每个项目225归档、3864成员（历史3853转换+11原生），共7728；新旧inspect、elf_details、pic_relocations相同，forbidden为0，成员SHA和归档SHA未变化。实际convert保持既有的225个already-native skip行为，不能称这些输入又完成了一次代码生成。
+- 10个真实debug ThinLTO归档：1093转换+7原生，两级SHA及inspect其余字段与78号保留输出一致；保留输出也与发货T相同。
+- 为覆盖用户要求的全部3853个转换成员，读取63号保留build/lib64中其余215个对应原始归档，在新副本中用同样平台clang/llvm-dis/llvm-nm、loader、debug_info=yes、jobs=2转换。连同10个大归档，共225归档/3853转换+11原生；完整归档SHA、大小、成员顺序、逐成员SHA及其余inspect字段均与发货T相同。D覆盖为全量ELF检查与保留路径，不宣称D的3853成员重新代码生成。
+- 合法输入新增拒绝0。所有新生成的对象都经过产品PIC/符号门禁；未改产品测试或断言，没有产品失败后的重跑。
+
+[覆盖补足计划](../../tools/bolt/results/weekend-99-20261114/step5/coverage-plan.md)、[工具身份](../../tools/bolt/results/weekend-99-20261114/step5/tool-identities.json)、[第一段结果](../../tools/bolt/results/weekend-99-20261114/step5/result.json)、[3853全量结果/逐成员SHA](../../tools/bolt/results/weekend-99-20261114/step5/result-full.json)、[完整重放日志](../../tools/bolt/results/weekend-99-20261114/step5/replay-remaining.log)。第一段日志的“99步骤5 已结束”只指450+10子段完成，最终以本节的全量结束行为准。
+
+本轮输出根W/temp/weekend99-replay-20261114。其余215个临时输入/输出在记录SHA和逐成员结果后仅删除本任务自己的文件，保留JSON/日志；历史根、78保留输出及发货归档未写。10个大归档的新输出仍在debug/archives/。
+
+### 资源和准备修正
+
+服务含准备耗时2516.527s，cgroup峰值11222745088B（含文件缓存），OOM=0、oom_kill=0、max事件=0。最低MemAvailable=26307432448B，临时目录成功采样最大3583498291B。看门狗没有触发。VmHWM采样及命令行见[资源摘要](../../tools/bolt/results/weekend-99-20261114/step5/resource-summary.json)，短命子进程可能漏采。
+
+准备修正1次：在运行中的服务上用set-property设置RuntimeMaxSec被systemd拒绝，尚未开始重放。保留错误原文与diff，改为仅设置支持的MemoryMax/CPUQuota，并由单调时钟看门狗执行整个步骤7200秒限时；未因OOM提高上限。第二段从服务启动时间计时，包含准备及第一段，更严格。见[错误与修正](../../tools/bolt/results/weekend-99-20261114/step5/preparation-error.txt)。没有第二次准备错误。
+
+~~~text
+Failed to set unit properties on weekend99-step5-20261114.service: Cannot set property RuntimeMaxUSec, or unknown property.
+~~~
+
+### sandbox与没有运行的内容
+
+步骤1停止，所以本任务没有新建产品提交、查询或推送sandbox。任务输入/96号最后观测是b0c1732c；没有新的远端after观测，不能将本地状态冒充ls-remote结果。无自动回退。没有运行完整构建、BOLT/report-stale、QB、Gerrit查询/评审操作。只在证据仓库提交推送。
+
+已读：步骤1的产品git对象/既有测试，87号同源源码/反汇编及74号生成表，83号68函数名单和两份BOLT输入，58/59/84/86及设计指定段落，78号归档/转换保留产物、63号原始归档和平台工具。未读：另一项目目录、QB/Gerrit网页、全部历史GBS原日志、全部PGO profile本体；未做未授权的因果推断或决策。
+
+99步骤5全量 已结束 2026-11-14T07:16:54.105927-08:00 status=PASS
+
+99 已结束 2026-11-14T07:17:19.589999-08:00 1=STOP 2=PASS 3=PASS 4=PASS 5=PASS

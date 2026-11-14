@@ -1,0 +1,18 @@
+ERROR: test_process_states_at_run_return (test_r3.R4.test_process_states_at_run_return)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/weekend-99-20261114/step1/environment/test_r3.py", line 431, in test_process_states_at_run_return
+    rows=[state(direct),state(grandchild)]
+                        ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/weekend-99-20261114/step1/environment/test_r3.py", line 427, in state
+    fields=Path('/proc',str(pid),'stat').read_text().split(') ',1)[1].split()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1030, in read_text
+    return f.read()
+           ^^^^^^^^
+ProcessLookupError: [Errno 3] No such process
+
+----------------------------------------------------------------------
+Ran 24 tests in 22.102s
+
+FAILED (errors=1)
