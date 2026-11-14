@@ -1399,3 +1399,10 @@ D report-stale **STOP/NOT RUN**：`profgen-release-build-20261114c.scope` 内 gb
 秘密扫描456个文件/版本或压缩成员记录，命中2处：21dcb101的88号报告L98和packaging-v2.stderr L3，都是引用扫描断言签名文字、不是私钥正文。按指定排除范围仍STOP，未扩大白名单、未改历史。88号原扫描误报的PM定性保留。
 
 report-stale在2026-11-14T02:10:31.657016-08:00准入SKIPPED：仍有profgen-release-build-20261114c.scope的gbs/rpmbuild/ninja；MemAvailable24765747200B、/home available37301350400B。未取锁、不等、不重试、未运行BOLT。全部原文见新证据目录night-92-20261114。
+
+
+## 2026-11-14：93号
+
+PM关闭92号秘密扫描：PASS（无凭据）。两处命中是报告/stderr引用扫描断言文字，PM已核对无密钥正文；原STOP与历史不改。长期规则：引用扫描规则自身文字的报告和日志行登记为已知误报，不触发STOP，不豁免实际凭据。92号report-stale SKIPPED正确，周一由PM另行安排，本任务不运行。
+
+[93号](93_tls_output_check.md)总体FAIL/STOP：T/D最终clang SHA及辅助ELF登记通过。T的TPOFF64 GOT集合相同（2槽），最终1537处IE目标全部正确；.text+.text.cold为1536，额外1处在.bolt.org.text 0x27e3521，与输入同地址、同字节、同目标，差值已定位。LD固定data16×3前缀输入415、输出3（均旧节），非零fs位移0；其余412处输出形式未建立对应，覆盖未闭合，不能写全部TLS通过，也不能直接认定产品误编译。原汇总FAIL不改，D指令核对NOT RUN。待PM处理；没有写Gerrit。
