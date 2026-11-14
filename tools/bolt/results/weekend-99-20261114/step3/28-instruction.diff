@@ -1,0 +1,17 @@
+--- T-normalized
++++ D-normalized
+@@ -25,12 +25,12 @@
+ cmpq $0x101, %rbx
+ jl I77
+ movq %rbp, 0x10(%rsp)
++leaq 0x10(%r14), %rbp
+ movl $0x10, %r13d
+-movq %r12, %rbp
+ movq %r14, %rax
+ jmp I43
+ nopw %cs:(%rax,%rax)
+-nopl (%rax,%rax)
++nopl (%rax)
+ movl %ecx, (%rdx)
+ movq (%rsp), %rax
+ movq %rax, 0x4(%rdx)

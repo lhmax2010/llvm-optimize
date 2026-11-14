@@ -1,0 +1,49 @@
+--- T-normalized
++++ D-normalized
+@@ -115,8 +115,8 @@
+ cmpq $0x40, %rbp
+ jb I121
+ movq %rbx, 0x10(%rsp)
++leaq 0x4(%r15), %rbx
+ movl $0x4, %ebp
+-movq %r8, %r13
+ movq %r15, %rdi
+ jmp I179
+ testq %rbp, %rbp
+@@ -172,16 +172,16 @@
+ movl %edx, 0x4(%rcx)
+ nopw (%rax,%rax)
+ movq %r15, %rcx
+-movl %ebx, (%rcx)
++movl %r13d, (%rcx)
+ addq $0x4, %rbp
+-addq $0x4, %r13
++addq $0x4, %rbx
+ cmpq $0x40, %rbp
+ je I214
+ movq %rdi, %rcx
+ leaq (%r15,%rbp), %rdi
+-movslq (%r15,%rbp), %rbx
++movslq (%r15,%rbp), %r13
+ movslq (%r15), %rdx
+-movq (%r14,%rbx,8), %rax
++movq (%r14,%r13,8), %rax
+ movq 0x8(%rax), %rax
+ movq (%r14,%rdx,8), %rsi
+ cmpq 0x8(%rsi), %rax
+@@ -196,13 +196,13 @@
+ leaq (%r15,%rbp), %rdi
+ movq %r12, %r8
+ jmp I173
+-nopw (%rax,%rax)
++nopl (%rax,%rax)
+ movslq (%rcx), %rdx
+ movq (%r14,%rdx,8), %rsi
+ movq %rdi, %rcx
+ cmpq 0x8(%rsi), %rax
+ jbe I174
+-movq %r13, %rcx
++movq %rbx, %rcx
+ nopw %cs:(%rax,%rax)
+ nopl (%rax)
+ movl %edx, (%rcx)

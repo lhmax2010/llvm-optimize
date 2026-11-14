@@ -1,0 +1,21 @@
+--- T-normalized
++++ D-normalized
+@@ -98,8 +98,8 @@
+ cmpl $0x11, %r12d
+ jb I104
+ movq %rbx, 0x20(%rsp)
++leaq 0x8(%r13), %r12
+ movl $0x8, %r15d
+-movq %rbp, %r12
+ movq %r13, %r14
+ jmp I334
+ cmpl $0x1, %r12d
+@@ -114,7 +114,7 @@
+ leaq 0x30(%rsp), %r14
+ movq 0x8(%rsp), %rbx
+ jmp I137
+-nopl (%rax)
++nop
+ movq 0x50(%rbx), %rdi
+ movq (%r12,%r13), %rax
+ movq 0x10(%rax), %rax

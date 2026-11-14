@@ -1,0 +1,1131 @@
+--- T-normalized
++++ D-normalized
+@@ -6,46 +6,46 @@
+ pushq %rbx
+ subq $0x198, %rsp
+ movl %r8d, %ebx
+-movq %rcx, 0x98(%rsp)
++movq %rcx, 0xa0(%rsp)
+ movq %rdx, 0x8(%rsp)
+-movq %rsi, %r15
++movq %rsi, 0x60(%rsp)
+ movq %rdi, %r13
+ movq 0x18(%rdi), %rax
+-movq 0x20(%rax), %rax
+-movq 0x20(%rax), %r14
+-movq %rax, 0x60(%rsp)
+-movq 0x10(%rax), %rdi
++movq 0x20(%rax), %rbp
++movq 0x20(%rbp), %r14
++movq 0x10(%rbp), %rdi
+ movq (%rdi), %rax
+ callq *0x80(%rax)
+ movq %r14, %r9
+-movq %rax, 0x68(%rsp)
++movq %rax, 0x88(%rsp)
+ leaq 0x118(%rsp), %rax
+ movq %rax, 0x108(%rsp)
+ movabsq $0x1000000000, %rax
+ movq %rax, 0x110(%rsp)
+-movq %rbx, 0x90(%rsp)
+-leal -0x2(%rbx), %r12d
+-xorl %r14d, %r14d
+-leaq 0x108(%rsp), %rsi
++movq %rbx, 0x98(%rsp)
++leal -0x2(%rbx), %r15d
++xorl %r12d, %r12d
++leaq 0x108(%rsp), %r14
+ xorl %ebx, %ebx
+-movq %r13, 0xa0(%rsp)
++movq %r13, 0x78(%rsp)
++movq %r13, %r8
+ movq %r9, 0x10(%rsp)
+ jmp I39
+ nopw (%rax,%rax)
+-xorl %r13d, %r13d
+-cmpl %r12d, %r14d
+-leal 0x1(%r14), %eax
+-movl %eax, %r14d
++xorl %r8d, %r8d
++cmpl %r15d, %r12d
++leal 0x1(%r12), %eax
++movl %eax, %r12d
+ je I90
+ cmpl 0x114(%rsp), %ebx
+ jae I79
+ movq 0x108(%rsp), %rax
+ movl %ebx, %ecx
+-movq %r13, (%rax,%rcx,8)
+-movl 0x110(%rsp), %ebp
+-leal 0x1(%rbp), %ebx
++movq %r8, (%rax,%rcx,8)
++movl 0x110(%rsp), %r13d
++leal 0x1(%r13), %ebx
+ movl %ebx, 0x110(%rsp)
+-movq 0x20(%r13), %rax
++movq 0x20(%r8), %rax
+ movl 0x24(%rax), %eax
+ movl %eax, %ecx
+ andl $0x7fffffff, %ecx
+@@ -67,62 +67,63 @@
+ je I34
+ testb $0x1, 0x3(%rax)
+ je I34
+-movq 0x8(%rax), %r13
++movq 0x8(%rax), %r8
+ nopl (%rax,%rax)
+ movq 0x18(%rax), %rax
+ testq %rax, %rax
+ je I35
+ testb $0x1, 0x3(%rax)
+ je I35
+-cmpq %r13, 0x8(%rax)
++cmpq %r8, 0x8(%rax)
+ je I71
+ jmp I34
+ movl %ebx, %edx
+ incq %rdx
+ movl $0x8, %ecx
+-movq %rsi, %rbx
+-movq %rsi, %rdi
++movq %r14, %rdi
+ leaq 0x118(%rsp), %rsi
+-callq RELOC_TARGET
+-movq %rbx, %rsi
++movq %r8, %rbx
++callq RELOC_TARGET
+ movq 0x10(%rsp), %r9
++movq %rbx, %r8
+ movl 0x110(%rsp), %ebx
+ jmp I41
++movq %r8, 0x70(%rsp)
+ testl %ebx, %ebx
+-movq %r15, 0x80(%rsp)
+-je I236
++movq %rbp, 0x80(%rsp)
++je I237
+ movq 0x108(%rsp), %r14
+ movl %ebx, %eax
+-leaq (%r14,%rax,8), %rsi
++leaq (%r14,%rax,8), %r15
+ bsrq %rax, %rdx
+ xorl $0x3f, %edx
+ addl %edx, %edx
+ xorq $0x7e, %rdx
+ movq %r14, %rdi
+-movq %rsi, 0x38(%rsp)
++movq %r15, %rsi
+ callq RELOC_TARGET
+ leaq 0x8(%r14), %r12
+ cmpl $0x11, %ebx
+-jb I112
+-movq %r13, 0x88(%rsp)
++jb I113
++movq %r15, 0x68(%rsp)
++leaq 0x8(%r14), %r13
+ movl $0x8, %ebx
+-movq %r12, %r13
+-movq %r14, %rbp
++movq %r14, %r15
+ movq 0x10(%rsp), %r9
+-jmp I174
+-testl %ebp, %ebp
++jmp I175
++testl %r13d, %r13d
+ movq 0x10(%rsp), %r9
+-movq 0x38(%rsp), %rbp
+-je I236
++je I237
+ movq %r14, %rbx
+-jmp I136
+-nopl (%rax,%rax)
++jmp I137
++nopw %cs:(%rax,%rax)
++nop
+ movq %rbx, %rdx
+ subq %r14, %rdx
+ movq %rdx, %rax
+ sarq $0x3, %rax
+ cmpq $0x2, %rax
+-jl I161
++jl I162
+ shlq $0x3, %rax
+ subq %rax, %rdi
+ addq $0x10, %rdi
+@@ -132,8 +133,8 @@
+ movq %r14, %rcx
+ movq %r12, (%rcx)
+ leaq 0x8(%rbx), %r12
+-cmpq %rbp, %r12
+-je I236
++cmpq %r15, %r12
++je I237
+ movq %rbx, %rdi
+ movq %r12, %rbx
+ movq (%r12), %r12
+@@ -142,12 +143,12 @@
+ movq 0x20(%rsi), %rcx
+ movq 0x50(%rax), %r8
+ cmpq 0x50(%rcx), %r8
+-jg I119
++jg I120
+ movq (%rdi), %rdx
+ movq 0x20(%rdx), %rsi
+ movq %rbx, %rcx
+ cmpq 0x50(%rsi), %r8
+-jle I132
++jle I133
+ movq %rbx, %rcx
+ nopw %cs:(%rax,%rax)
+ nop
+@@ -157,44 +158,44 @@
+ movq 0x50(%rax), %rdi
+ addq $-0x8, %rcx
+ cmpq 0x50(%rsi), %rdi
+-jg I153
+-jmp I132
++jg I154
++jmp I133
+ movq %r14, %rcx
+ cmpq $0x8, %rdx
+-jne I132
++jne I133
+ movq %rsi, 0x8(%rdi)
+-jmp I131
++jmp I132
+ movq %rdx, 0x8(%rcx)
+ nop
+ movq %r14, %rcx
+-movq %r15, (%rcx)
++movq %rbp, (%rcx)
+ addq $0x8, %rbx
+ addq $0x8, %r13
+ cmpq $0x80, %rbx
+-je I208
+-movq %rbp, %rcx
+-leaq (%r14,%rbx), %rbp
+-movq (%r14,%rbx), %r15
++je I209
++movq %r15, %rcx
++leaq (%r14,%rbx), %r15
++movq (%r14,%rbx), %rbp
+ movq (%r14), %rdx
+-movq 0x20(%r15), %rax
++movq 0x20(%rbp), %rax
+ movq 0x20(%rdx), %rdi
+ movq 0x50(%rax), %rsi
+ cmpq 0x50(%rdi), %rsi
+-jle I192
++jle I193
+ cmpq $0x9, %rbx
+-jb I166
++jb I167
+ movq %r12, %rdi
+ movq %r14, %rsi
+ movq %rbx, %rdx
+ callq RELOC_TARGET
+ movq 0x10(%rsp), %r9
+-jmp I168
++jmp I169
+ nopw %cs:(%rax,%rax)
+ movq (%rcx), %rdx
+ movq 0x20(%rdx), %rdi
+-movq %rbp, %rcx
++movq %r15, %rcx
+ cmpq 0x50(%rdi), %rsi
+-jle I169
++jle I170
+ movq %r13, %rcx
+ nopw %cs:(%rax,%rax)
+ nopl (%rax)
+@@ -204,18 +205,18 @@
+ movq 0x50(%rax), %rdi
+ addq $-0x8, %rcx
+ cmpq 0x50(%rsi), %rdi
+-jg I200
+-jmp I169
++jg I201
++jmp I170
+ subq $-0x80, %r14
+-movq 0x80(%rsp), %r15
+-movq 0x88(%rsp), %r13
+-movq 0x38(%rsp), %r10
+-jmp I218
+-nopl (%rax)
++movq 0x80(%rsp), %rbp
++movq 0x68(%rsp), %r10
++jmp I219
++nopw %cs:(%rax,%rax)
++nopl (%rax,%rax)
+ movq %rax, (%rsi)
+ addq $0x8, %r14
+ cmpq %r10, %r14
+-je I236
++je I237
+ movq -0x8(%r14), %rcx
+ movq (%r14), %rax
+ movq 0x20(%rax), %rdx
+@@ -223,7 +224,7 @@
+ movq 0x50(%rdx), %r8
+ movq %r14, %rsi
+ cmpq 0x50(%rdi), %r8
+-jle I214
++jle I215
+ movq %r14, %rsi
+ nopl (%rax,%rax)
+ movq %rcx, (%rsi)
+@@ -232,9 +233,10 @@
+ movq 0x50(%rdx), %r8
+ addq $-0x8, %rsi
+ cmpq 0x50(%rdi), %r8
+-jg I228
+-jmp I214
+-movq 0x20(%r13), %rax
++jg I229
++jmp I215
++movq 0x70(%rsp), %rdi
++movq 0x20(%rdi), %rax
+ movl 0x44(%rax), %eax
+ movl %eax, %ecx
+ andl $0x7fffffff, %ecx
+@@ -248,32 +250,34 @@
+ cmovnsq %rdx, %rax
+ movq (%rax), %rax
+ testq %rax, %rax
+-je I271
++je I263
+ testb $0x1, 0x3(%rax)
+ movq 0x8(%rsp), %r12
+-jne I259
++jne I267
+ movq 0x18(%rax), %rax
+ testq %rax, %rax
+-je I269
++movq 0x60(%rsp), %r14
++je I276
+ testb $0x1, 0x3(%rax)
+-je I269
++jne I268
++jmp I276
++xorl %ebx, %ebx
++movq 0x60(%rsp), %r14
++movq 0x8(%rsp), %r12
++jmp I277
++movq 0x60(%rsp), %r14
+ movq 0x8(%rax), %rbx
+-nopw %cs:(%rax,%rax)
+-nopl (%rax,%rax)
+ movq 0x18(%rax), %rax
+ testq %rax, %rax
+-je I273
++je I277
+ testb $0x1, 0x3(%rax)
+-je I273
++je I277
+ cmpq %rbx, 0x8(%rax)
+-je I262
++je I269
+ xorl %ebx, %ebx
+-jmp I273
+-xorl %ebx, %ebx
+-movq 0x8(%rsp), %r12
+ movl 0x110(%rsp), %edx
+ cmpl 0x114(%rsp), %edx
+-jae I805
++jae I812
+ movq 0x108(%rsp), %rax
+ movl %edx, %ecx
+ movq %rbx, (%rax,%rcx,8)
+@@ -281,11 +285,11 @@
+ incl %eax
+ movl %eax, 0x110(%rsp)
+ movq 0x108(%rsp), %rcx
+-movq %rcx, 0x78(%rsp)
+-leaq (%rcx,%rax,8), %rbp
++movq %rcx, 0xb0(%rsp)
++leaq (%rcx,%rax,8), %r15
+ shlq $0x3, %rax
+ movq %rax, 0xc8(%rsp)
+-movq 0xa0(%rsp), %rdx
++movq 0x78(%rsp), %rdx
+ movq 0x20(%rdx), %rax
+ movl 0x4(%rax), %eax
+ andl $0x7fffffff, %eax
+@@ -293,35 +297,33 @@
+ shlq $0x4, %rax
+ movq (%rcx,%rax), %rax
+ andq $-0x8, %rax
+-movq %rax, 0xb8(%rsp)
++movq %rax, 0xc0(%rsp)
+ movq %r9, 0xd0(%rsp)
+-leaq 0xb8(%rsp), %rax
++leaq 0xc0(%rsp), %rax
+ movq %rax, 0xd8(%rsp)
+-movq 0x60(%rsp), %rax
+-movq %rax, 0xe0(%rsp)
+-leaq 0x68(%rsp), %rax
++movq %rbp, 0xe0(%rsp)
++leaq 0x88(%rsp), %rax
+ movq %rax, 0xe8(%rsp)
+ movq %rdx, 0xf0(%rsp)
++movq 0xa0(%rsp), %rax
++movq %rax, 0xf8(%rsp)
++movq %r14, 0x100(%rsp)
+ movq 0x98(%rsp), %rax
+-movq %rax, 0xf8(%rsp)
+-movq %r15, 0x100(%rsp)
+-movq 0x90(%rsp), %rax
+ shrl %eax
+-movq %rax, 0x38(%rsp)
++movq %rax, 0x68(%rsp)
+ leaq (,%rax,8), %rdx
+-movq %r13, 0x88(%rsp)
+-movq 0x20(%r13), %rax
++movq 0x20(%rdi), %rax
+ movl 0x4(%rax), %eax
+ leaq 0x10(%r12), %rcx
+-movq %rcx, 0x70(%rsp)
+-movl $0x8, %ebx
+-subq %rdx, %rbx
++movq %rcx, 0x90(%rsp)
++movl $0x8, %r13d
++subq %rdx, %r13
+ negq %rdx
+-movq %rdx, 0xb0(%rsp)
++movq %rdx, 0xb8(%rsp)
+ movl $0x1, %r14d
+-xorl %r13d, %r13d
++xorl %ebx, %ebx
+ nopl (%rax)
+-movq -0x10(%rbp,%r13), %rsi
++movq -0x10(%r15,%rbx), %rsi
+ movq 0x20(%rsi), %rdx
+ movl 0x60(%rdx), %ecx
+ movl 0x64(%rdx), %r8d
+@@ -335,35 +337,35 @@
+ movl %eax, %edx
+ movl %r14d, %ecx
+ callq RELOC_TARGET
+-movq -0x10(%rbp,%r13), %r15
++movq -0x10(%r15,%rbx), %rbp
+ movl 0x8(%r12), %edx
+ cmpl 0xc(%r12), %edx
+-jae I350
++jae I352
+ movq (%r12), %rsi
+ movl %edx, %ecx
+-movq %r15, (%rsi,%rcx,8)
++movq %rbp, (%rsi,%rcx,8)
+ incl 0x8(%r12)
+ incl %r14d
+-addq $-0x8, %r13
+-cmpq %r13, %rbx
+-jne I323
+-jmp I360
++addq $-0x8, %rbx
++cmpq %rbx, %r13
++jne I325
++jmp I362
+ incq %rdx
+ movl $0x8, %ecx
+ movq 0x8(%rsp), %rdi
+-movq 0x70(%rsp), %rsi
++movq 0x90(%rsp), %rsi
+ movl %eax, %r12d
+ callq RELOC_TARGET
+ movl %r12d, %eax
+ movq 0x8(%rsp), %r12
+ movl 0x8(%r12), %edx
+-jmp I341
++jmp I343
+ movl %eax, 0xac(%rsp)
+ movq 0x10(%rsp), %rdi
+ movq 0x30(%rdi), %rax
+-movq -0x8(%rbp), %rcx
+-movq 0xb0(%rsp), %rdx
+-movq -0x8(%rbp,%rdx), %r14
++movq -0x8(%r15), %rcx
++movq 0xb8(%rsp), %rdx
++movq -0x8(%r15,%rdx), %rbx
+ movq 0x20(%rcx), %rcx
+ movl 0x4(%rcx), %ecx
+ andl $0x7fffffff, %ecx
+@@ -373,42 +375,144 @@
+ leaq RELOC(%rip), %rdx
+ xorl %ecx, %ecx
+ callq RELOC_TARGET
+-movl %eax, %ebp
+-movq 0x20(%r14), %rax
+-movq 0x90(%rsp), %rcx
++movl %eax, 0x3c(%rsp)
++movq 0x20(%rbx), %rax
++movq 0x98(%rsp), %rcx
+ cmpl $0x4, %ecx
+-movq 0xa0(%rsp), %rbx
+-je I386
++je I388
+ cmpl $0x10, %ecx
+-movq 0x80(%rsp), %r13
+-jne I389
++movq 0x60(%rsp), %r13
++movq 0x78(%rsp), %r15
++jne I392
+ movq $-0x13b1, %r12
+-jmp I390
++jmp I393
+ movq $-0x13e7, %r12
+-movq 0x80(%rsp), %r13
+-jmp I390
++movq 0x60(%rsp), %r13
++movq 0x78(%rsp), %r15
++jmp I393
+ movq $-0x13c1, %r12
+-movl 0x64(%rax), %r15d
+-movq 0x38(%rbx), %rsi
++movl 0x64(%rax), %ebp
++movq 0x38(%r15), %rsi
+ movq %rsi, 0x40(%rsp)
+ testq %rsi, %rsi
+-je I398
++je I401
+ leaq 0x40(%rsp), %rdi
+ movl $0x1, %edx
+ callq RELOC_TARGET
+ leaq 0x48(%rsp), %rdx
+-movq 0x30(%rbx), %rax
++movq 0x30(%r15), %rax
+ cmpq $0x8, %rax
+-movq %r14, 0xc0(%rsp)
+-jb I424
++movq 0x80(%rsp), %rdi
++jb I427
+ movl %eax, %ecx
+ andl $0x7, %ecx
+ cmpl $0x3, %ecx
+-jne I424
++jne I427
+ andq $-0x8, %rax
+ movzbl 0x7(%rax), %ecx
+ cmpq $0x1, %rcx
+-jne I747
++jne I552
++movslq (%rax), %rdx
++leaq (%rax,%rdx,8), %rdx
++movzbl 0x4(%rax), %esi
++movzbl 0x5(%rax), %r8d
++addl %esi, %r8d
++leaq (%rdx,%r8,8), %rdx
++movzbl 0x6(%rax), %esi
++movq 0x10(%rdx,%rsi,8), %rdx
++movq %rdx, 0x48(%rsp)
++movq $0x0, 0x50(%rsp)
++cmpb $0x1, 0xa(%rax)
++jne I429
++jmp I557
++xorps %xmm0, %xmm0
++movups %xmm0, (%rdx)
++xorl %eax, %eax
++movq %rax, 0x58(%rsp)
++movq 0x88(%rsp), %rax
++shlq $0x5, %r12
++addq 0x8(%rax), %r12
++leaq 0x40(%rsp), %rsi
++movq %r12, %rdx
++movl 0x3c(%rsp), %ecx
++callq RELOC_TARGET
++movq %rax, %r14
++movq %rdx, %r12
++movq $0x0, 0x20(%rsp)
++movl %ebp, 0x1c(%rsp)
++xorps %xmm0, %xmm0
++movups %xmm0, 0x28(%rsp)
++movl $0x0, 0x18(%rsp)
++leaq 0x18(%rsp), %rdx
++movq %r12, %rdi
++movq %rax, %rsi
++callq RELOC_TARGET
++movl $0x1, 0x18(%rsp)
++xorps %xmm0, %xmm0
++movups %xmm0, 0x20(%rsp)
++leaq 0x18(%rsp), %rdx
++movq %r12, %rdi
++movq %r14, %rsi
++callq RELOC_TARGET
++movq 0x40(%rsp), %rsi
++testq %rsi, %rsi
++je I461
++leaq 0x40(%rsp), %rdi
++callq RELOC_TARGET
++movl 0x8(%r13), %eax
++movl 0x3c(%rsp), %ecx
++movl %ecx, 0x18(%rsp)
++leaq 0x1c(%rsp), %rdx
++movl %eax, 0x1c(%rsp)
++leaq 0x18(%rsp), %rsi
++movq 0xa0(%rsp), %rdi
++callq RELOC_TARGET
++movl 0x8(%r13), %edx
++cmpl 0xc(%r13), %edx
++jae I822
++movq (%r13), %rax
++movl %edx, %ecx
++movq %r12, (%rax,%rcx,8)
++incl 0x8(%r13)
++movq 0x8(%rsp), %rsi
++movl 0x8(%rsi), %edx
++cmpl 0xc(%rsi), %edx
++movq 0x10(%rsp), %rdi
++jae I829
++movq (%rsi), %rax
++movl %edx, %ecx
++movq %rbx, (%rax,%rcx,8)
++incl 0x8(%rsi)
++movq 0xc0(%rsp), %rsi
++leaq RELOC(%rip), %rdx
++xorl %ecx, %ecx
++callq RELOC_TARGET
++movl %eax, %r14d
++movq 0x98(%rsp), %rax
++cmpl $0x4, %eax
++je I535
++cmpl $0x8, %eax
++jne I541
++movl $0x9, %ebx
++movq 0x38(%r15), %rsi
++movq %rsi, 0x40(%rsp)
++testq %rsi, %rsi
++je I503
++leaq 0x40(%rsp), %rdi
++movl $0x1, %edx
++callq RELOC_TARGET
++movq 0x30(%r15), %rax
++cmpq $0x8, %rax
++jb I529
++movl %eax, %ecx
++andl $0x7, %ecx
++cmpl $0x3, %ecx
++movq 0x70(%rsp), %r8
++jne I547
++andq $-0x8, %rax
++movzbl 0x7(%rax), %ecx
++cmpq $0x1, %rcx
++jne I571
+ movslq (%rax), %rdx
+ leaq (%rax,%rdx,8), %rdx
+ movzbl 0x4(%rax), %esi
+@@ -420,97 +524,56 @@
+ movq %rdx, 0x48(%rsp)
+ movq $0x0, 0x50(%rsp)
+ cmpb $0x1, 0xa(%rax)
+-jne I426
+-jmp I752
+-xorps %xmm0, %xmm0
+-movups %xmm0, (%rdx)
++je I576
+ xorl %eax, %eax
+-movq %rax, 0x58(%rsp)
+-movq 0x68(%rsp), %rax
+-shlq $0x5, %r12
+-addq 0x8(%rax), %r12
+-leaq 0x40(%rsp), %rsi
+-movq 0x60(%rsp), %rdi
+-movq %r12, %rdx
+-movl %ebp, %ecx
+-callq RELOC_TARGET
+-movq %rax, %r14
+-movq %rdx, %r12
+-movq $0x0, 0x20(%rsp)
+-movl %r15d, 0x1c(%rsp)
+-xorps %xmm0, %xmm0
+-movups %xmm0, 0x28(%rsp)
+-movl $0x0, 0x18(%rsp)
+-leaq 0x18(%rsp), %rdx
+-movq %r12, %rdi
+-movq %rax, %rsi
+-callq RELOC_TARGET
+-movl $0x1, 0x18(%rsp)
+-xorps %xmm0, %xmm0
+-movups %xmm0, 0x20(%rsp)
+-leaq 0x18(%rsp), %rdx
+-movq %r12, %rdi
+-movq %r14, %rsi
+-callq RELOC_TARGET
+-movq 0x40(%rsp), %rsi
+-testq %rsi, %rsi
+-je I459
+-leaq 0x40(%rsp), %rdi
+-callq RELOC_TARGET
+-movl 0x8(%r13), %eax
+-movl %ebp, 0x18(%rsp)
+-leaq 0x1c(%rsp), %rdx
+-movl %eax, 0x1c(%rsp)
+-leaq 0x18(%rsp), %rsi
+-movq 0x98(%rsp), %rdi
+-callq RELOC_TARGET
+-movl 0x8(%r13), %edx
+-cmpl 0xc(%r13), %edx
+-movq 0xc0(%rsp), %r15
+-jae I814
+-movq (%r13), %rax
+-movl %edx, %ecx
+-movq %r12, (%rax,%rcx,8)
+-incl 0x8(%r13)
+-movq 0x8(%rsp), %rsi
+-movl 0x8(%rsi), %edx
+-cmpl 0xc(%rsi), %edx
+-movq 0x10(%rsp), %rdi
+-movl %ebp, 0xa8(%rsp)
+-jae I821
+-movq (%rsi), %rax
+-movl %edx, %ecx
+-movq %r15, (%rax,%rcx,8)
+-incl 0x8(%rsi)
+-movq 0xb8(%rsp), %rsi
+-leaq RELOC(%rip), %rdx
+-xorl %ecx, %ecx
+-callq RELOC_TARGET
+-movl %eax, %ebp
+-movq 0x90(%rsp), %rax
+-cmpl $0x4, %eax
+-je I735
+-cmpl $0x8, %eax
+-jne I741
+-movl $0x9, %r15d
+-movq 0x38(%rbx), %rsi
++jmp I589
++xorps %xmm0, %xmm0
++leaq 0x48(%rsp), %rax
++movups %xmm0, (%rax)
++xorl %eax, %eax
++movq 0x70(%rsp), %r8
++jmp I589
++movl $0x12, %ebx
++movq 0x38(%r15), %rsi
+ movq %rsi, 0x40(%rsp)
+ testq %rsi, %rsi
+-je I502
+-leaq 0x40(%rsp), %rdi
+-movl $0x1, %edx
+-callq RELOC_TARGET
+-movq 0x30(%rbx), %rax
+-cmpq $0x8, %rax
+-jb I526
+-movl %eax, %ecx
+-andl $0x7, %ecx
+-cmpl $0x3, %ecx
+-jne I526
++jne I500
++jmp I503
++movl $0x1, %ebx
++movq 0x38(%r15), %rsi
++movq %rsi, 0x40(%rsp)
++testq %rsi, %rsi
++jne I500
++jmp I503
++xorps %xmm0, %xmm0
++leaq 0x48(%rsp), %rax
++movups %xmm0, (%rax)
++xorl %eax, %eax
++jmp I589
++xorl %edx, %edx
++movq %rdx, 0x48(%rsp)
++movq $0x0, 0x50(%rsp)
++cmpb $0x1, 0xa(%rax)
++jne I429
++movslq (%rax), %rdx
++leaq (%rax,%rdx,8), %rdx
++movzbl 0x4(%rax), %esi
++movzbl 0x5(%rax), %r8d
++addl %esi, %r8d
++leaq (%rdx,%r8,8), %rdx
++movzbl 0x6(%rax), %esi
++addl %esi, %ecx
++leaq (%rdx,%rcx,8), %rcx
++movzbl 0x8(%rax), %eax
++leaq 0x17(%rcx,%rax,4), %rax
+ andq $-0x8, %rax
+-movzbl 0x7(%rax), %ecx
+-cmpq $0x1, %rcx
+-jne I766
++movq (%rax), %rax
++jmp I430
++xorl %edx, %edx
++movq %rdx, 0x48(%rsp)
++movq $0x0, 0x50(%rsp)
++cmpb $0x1, 0xa(%rax)
++jne I527
+ movslq (%rax), %rdx
+ leaq (%rax,%rdx,8), %rdx
+ movzbl 0x4(%rax), %esi
+@@ -518,28 +581,23 @@
+ addl %esi, %edi
+ leaq (%rdx,%rdi,8), %rdx
+ movzbl 0x6(%rax), %esi
+-movq 0x10(%rdx,%rsi,8), %rdx
+-movq %rdx, 0x48(%rsp)
+-movq $0x0, 0x50(%rsp)
+-cmpb $0x1, 0xa(%rax)
+-jne I529
+-jmp I771
+-xorps %xmm0, %xmm0
+-leaq 0x48(%rsp), %rax
+-movups %xmm0, (%rax)
+-xorl %eax, %eax
++addl %esi, %ecx
++leaq (%rdx,%rcx,8), %rcx
++movzbl 0x8(%rax), %eax
++leaq 0x17(%rcx,%rax,4), %rax
++andq $-0x8, %rax
++movq (%rax), %rax
+ movq %rax, 0x58(%rsp)
+-movq 0x68(%rsp), %rax
+-movq 0x88(%rsp), %rcx
+-movzwl 0x44(%rcx), %ecx
++movq 0x88(%rsp), %rax
++movzwl 0x44(%r8), %ecx
+ movq 0x8(%rax), %rdx
+ shll $0x5, %ecx
+ subq %rcx, %rdx
+ leaq 0x40(%rsp), %rsi
+-movq 0x60(%rsp), %rdi
+-movl %ebp, %ecx
+-callq RELOC_TARGET
+-movq %rax, %r14
++movq 0x80(%rsp), %rdi
++movl %r14d, %ecx
++callq RELOC_TARGET
++movq %rax, %rbp
+ movq %rdx, %r12
+ movl $0x1, 0x18(%rsp)
+ xorps %xmm0, %xmm0
+@@ -549,38 +607,38 @@
+ movq %rax, %rsi
+ callq RELOC_TARGET
+ movq $0x0, 0x20(%rsp)
+-movl 0xa8(%rsp), %eax
++movl 0x3c(%rsp), %eax
+ movl %eax, 0x1c(%rsp)
+ xorps %xmm0, %xmm0
+ movups %xmm0, 0x28(%rsp)
+ movl $0x4000000, 0x18(%rsp)
+ leaq 0x18(%rsp), %rdx
+ movq %r12, %rdi
+-movq %r14, %rsi
++movq %rbp, %rsi
+ callq RELOC_TARGET
+ movl $0x1, 0x18(%rsp)
+ movq $0x0, 0x20(%rsp)
+-movq %r15, 0x28(%rsp)
++movq %rbx, 0x28(%rsp)
+ leaq 0x18(%rsp), %rdx
+ movq %r12, %rdi
+-movq %r14, %rsi
++movq %rbp, %rsi
+ callq RELOC_TARGET
+ movq 0x40(%rsp), %rsi
+ testq %rsi, %rsi
+-je I572
++je I630
+ leaq 0x40(%rsp), %rdi
+ callq RELOC_TARGET
+ movl 0x8(%r13), %eax
+-movl %ebp, 0x18(%rsp)
++movl %r14d, 0x18(%rsp)
+ leaq 0x1c(%rsp), %rdx
+ movl %eax, 0x1c(%rsp)
+ leaq 0x18(%rsp), %rsi
+-movq 0x98(%rsp), %rdi
++movq 0xa0(%rsp), %rdi
+ callq RELOC_TARGET
+ movl 0x8(%r13), %edx
+ cmpl 0xc(%r13), %edx
+-jae I830
+-movq 0x78(%rsp), %rbp
++movq 0xb0(%rsp), %rbp
++jae I838
+ movq (%r13), %rax
+ movl %edx, %ecx
+ movq %r12, (%rax,%rcx,8)
+@@ -588,14 +646,14 @@
+ movq 0x20(%r12), %rax
+ movl 0x4(%rax), %eax
+ movq 0xc8(%rsp), %r12
+-addq 0xb0(%rsp), %r12
++addq 0xb8(%rsp), %r12
+ cmpq $0x8, %r12
+-jne I688
+-movq 0xa0(%rsp), %r14
++jne I746
++movq 0x78(%rsp), %r14
+ movq 0x38(%r14), %rsi
+ movq %rsi, 0x40(%rsp)
+ testq %rsi, %rsi
+-je I603
++je I661
+ leaq 0x40(%rsp), %rdi
+ movl $0x1, %edx
+ movl %eax, %ebx
+@@ -603,16 +661,15 @@
+ movl %ebx, %eax
+ movq 0x30(%r14), %rcx
+ cmpq $0x8, %rcx
+-leaq 0x48(%rsp), %rsi
+-jb I629
++jb I686
+ movl %ecx, %edx
+ andl $0x7, %edx
+ cmpl $0x3, %edx
+-jne I629
++jne I686
+ andq $-0x8, %rcx
+ movzbl 0x7(%rcx), %edx
+ cmpq $0x1, %rdx
+-jne I785
++jne I792
+ movslq (%rcx), %rsi
+ leaq (%rcx,%rsi,8), %rsi
+ movzbl 0x4(%rcx), %edi
+@@ -624,24 +681,25 @@
+ movq %rsi, 0x48(%rsp)
+ movq $0x0, 0x50(%rsp)
+ cmpb $0x1, 0xa(%rcx)
+-je I790
+-movl %eax, %ebx
+-jmp I632
+-movl %eax, %ebx
+-xorps %xmm0, %xmm0
+-movups %xmm0, (%rsi)
++je I797
++movl %eax, %ebp
++jmp I690
++movl %eax, %ebp
++xorps %xmm0, %xmm0
++leaq 0x48(%rsp), %rax
++movups %xmm0, (%rax)
+ xorl %eax, %eax
+ movq %rax, 0x58(%rsp)
+-movq 0x68(%rsp), %rax
++movq 0x88(%rsp), %rax
+ movq $-0x47100, %rdx
+ addq 0x8(%rax), %rdx
+ movq 0x20(%r14), %rax
+ movl 0x4(%rax), %ecx
+ leaq 0x40(%rsp), %rsi
+-movq 0x60(%rsp), %rdi
++movq 0x80(%rsp), %rdi
+ callq RELOC_TARGET
+ movq %rax, %r14
+-movq %rdx, %r15
++movq %rdx, %rbx
+ movq $0x0, 0x20(%rsp)
+ movl 0xac(%rsp), %eax
+ movl %eax, 0x1c(%rsp)
+@@ -649,34 +707,34 @@
+ movups %xmm0, 0x28(%rsp)
+ movl $0x0, 0x18(%rsp)
+ leaq 0x18(%rsp), %rdx
+-movq %r15, %rdi
++movq %rbx, %rdi
+ movq %r14, %rsi
+ callq RELOC_TARGET
+ movq $0x0, 0x20(%rsp)
+-movl %ebx, 0x1c(%rsp)
++movl %ebp, 0x1c(%rsp)
+ xorps %xmm0, %xmm0
+ movups %xmm0, 0x28(%rsp)
+ movl $0x0, 0x18(%rsp)
+ leaq 0x18(%rsp), %rdx
+-movq %r15, %rdi
++movq %rbx, %rdi
+ movq %r14, %rsi
+ callq RELOC_TARGET
+ movq 0x40(%rsp), %rsi
+ testq %rsi, %rsi
+-je I668
++je I726
+ leaq 0x40(%rsp), %rdi
+ callq RELOC_TARGET
+ movl 0x8(%r13), %edx
+ cmpl 0xc(%r13), %edx
+-jae I837
++jae I845
+ movq (%r13), %rax
+ movl %edx, %ecx
+-movq %r15, (%rax,%rcx,8)
++movq %rbx, (%rax,%rcx,8)
+ incl 0x8(%r13)
+ movq 0x108(%rsp), %rdi
+ leaq 0x118(%rsp), %rax
+ cmpq %rax, %rdi
+-je I680
++je I738
+ callq RELOC_TARGET
+ addq $0x198, %rsp
+ popq %rbx
+@@ -686,12 +744,11 @@
+ popq %r15
+ popq %rbp
+ retq
+-movq 0x38(%rsp), %rcx
++movq 0x68(%rsp), %rcx
+ addl $-0x2, %ecx
+-movq %rcx, 0x38(%rsp)
++movq %rcx, 0x68(%rsp)
+ xorl %r15d, %r15d
+ leaq 0xd0(%rsp), %r14
+-nopw (%rax,%rax)
+ movq -0x10(%rbp,%r12), %rsi
+ movq 0x20(%rsi), %rdx
+ leal 0x1(%r15), %ecx
+@@ -706,13 +763,13 @@
+ movq %r14, %rdi
+ movl %eax, %edx
+ callq RELOC_TARGET
+-cmpq %r15, 0x38(%rsp)
+-je I593
++cmpq %r15, 0x68(%rsp)
++je I651
+ movq -0x10(%rbp,%r12), %rbx
+ movq 0x8(%rsp), %rsi
+ movl 0x8(%rsi), %edx
+ cmpl 0xc(%rsi), %edx
+-jae I724
++jae I781
+ movq (%rsi), %rcx
+ movl %edx, %edx
+ movq %rbx, (%rcx,%rdx,8)
+@@ -720,75 +777,25 @@
+ incq %r15
+ addq $-0x8, %r12
+ cmpq $0x8, %r12
+-jne I694
+-jmp I593
++jne I751
++jmp I651
+ incq %rdx
+ movl $0x8, %ecx
+ movq 0x8(%rsp), %rdi
+-movq 0x70(%rsp), %rsi
++movq 0x90(%rsp), %rsi
+ movl %eax, %ebp
+ callq RELOC_TARGET
+ movq 0x8(%rsp), %rsi
+ movl %ebp, %eax
+-movq 0x78(%rsp), %rbp
++movq 0xb0(%rsp), %rbp
+ movl 0x8(%rsi), %edx
+-jmp I715
+-movl $0x12, %r15d
+-movq 0x38(%rbx), %rsi
+-movq %rsi, 0x40(%rsp)
+-testq %rsi, %rsi
+-jne I499
+-jmp I502
+-movl $0x1, %r15d
+-movq 0x38(%rbx), %rsi
+-movq %rsi, 0x40(%rsp)
+-testq %rsi, %rsi
+-jne I499
+-jmp I502
+-xorl %edx, %edx
+-movq %rdx, 0x48(%rsp)
+-movq $0x0, 0x50(%rsp)
+-cmpb $0x1, 0xa(%rax)
+-jne I426
+-movslq (%rax), %rdx
+-leaq (%rax,%rdx,8), %rdx
+-movzbl 0x4(%rax), %esi
+-movzbl 0x5(%rax), %edi
+-addl %esi, %edi
+-leaq (%rdx,%rdi,8), %rdx
+-movzbl 0x6(%rax), %esi
+-addl %esi, %ecx
+-leaq (%rdx,%rcx,8), %rcx
+-movzbl 0x8(%rax), %eax
+-leaq 0x17(%rcx,%rax,4), %rax
+-andq $-0x8, %rax
+-movq (%rax), %rax
+-jmp I427
+-xorl %edx, %edx
+-movq %rdx, 0x48(%rsp)
+-movq $0x0, 0x50(%rsp)
+-cmpb $0x1, 0xa(%rax)
+-jne I529
+-movslq (%rax), %rdx
+-leaq (%rax,%rdx,8), %rdx
+-movzbl 0x4(%rax), %esi
+-movzbl 0x5(%rax), %edi
+-addl %esi, %edi
+-leaq (%rdx,%rdi,8), %rdx
+-movzbl 0x6(%rax), %esi
+-addl %esi, %ecx
+-leaq (%rdx,%rcx,8), %rcx
+-movzbl 0x8(%rax), %eax
+-leaq 0x17(%rcx,%rax,4), %rax
+-andq $-0x8, %rax
+-movq (%rax), %rax
+-jmp I530
++jmp I772
+ xorl %esi, %esi
+ movq %rsi, 0x48(%rsp)
+ movq $0x0, 0x50(%rsp)
+ cmpb $0x1, 0xa(%rcx)
+-jne I627
+-movl %eax, %ebx
++jne I684
++movl %eax, %ebp
+ movslq (%rcx), %rax
+ leaq (%rcx,%rax,8), %rax
+ movzbl 0x4(%rcx), %esi
+@@ -802,43 +809,44 @@
+ leaq 0x17(%rax,%rcx,4), %rax
+ andq $-0x8, %rax
+ movq (%rax), %rax
+-jmp I633
++jmp I691
+ incq %rdx
+ leaq 0x108(%rsp), %rdi
+ movl $0x8, %ecx
+ leaq 0x118(%rsp), %rsi
+ callq RELOC_TARGET
+ movq 0x10(%rsp), %r9
++movq 0x70(%rsp), %rdi
+ movq 0x8(%rsp), %r12
+ movl 0x110(%rsp), %edx
+-jmp I276
++jmp I280
+ incq %rdx
+ leaq 0x10(%r13), %rsi
+ movl $0x8, %ecx
+ movq %r13, %rdi
+ callq RELOC_TARGET
+ movl 0x8(%r13), %edx
+-jmp I470
++jmp I472
+ incq %rdx
+ movl $0x8, %ecx
+ movq 0x8(%rsp), %rdi
+-movq 0x70(%rsp), %rsi
++movq 0x90(%rsp), %rsi
+ callq RELOC_TARGET
+ movq 0x10(%rsp), %rdi
+ movq 0x8(%rsp), %rsi
+ movl 0x8(%rsi), %edx
+-jmp I480
++jmp I481
+ incq %rdx
+ leaq 0x10(%r13), %rsi
+ movl $0x8, %ecx
+ movq %r13, %rdi
+ callq RELOC_TARGET
+ movl 0x8(%r13), %edx
+-jmp I582
++jmp I641
+ incq %rdx
+ leaq 0x10(%r13), %rsi
+ movl $0x8, %ecx
+ movq %r13, %rdi
+ callq RELOC_TARGET
+ movl 0x8(%r13), %edx
+-jmp I671
++jmp I729

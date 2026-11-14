@@ -1,0 +1,26 @@
+--- T-normalized
++++ D-normalized
+@@ -173,12 +173,12 @@
+ addq 0x30(%rsp), %rbp
+ addq %r13, %rax
+ movq 0x48(%rsp), %rdi
+-leaq (%rbp,%rdi), %r8
+ addq %rdx, %rcx
+ addq %rbp, %rcx
+ movq %rcx, %rdx
+ rolq $0x14, %rdx
+-addq %r8, %rax
++addq %rbp, %rax
++addq %rdi, %rax
+ movq 0x58(%rsp), %r8
+ addq %rdx, %rbp
+ rolq $0x2b, %rax
+@@ -275,7 +275,7 @@
+ leaq 0x50(%rsp), %rsi
+ jmp I127
+ nopw %cs:(%rax,%rax)
+-nop
++nopl (%rax)
+ movl $0x10, %eax
+ movq %r11, (%rsp)
+ leaq 0x20(%rsp), %rsi

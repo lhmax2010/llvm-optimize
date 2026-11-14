@@ -1,0 +1,337 @@
+
+/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22:	file format elf64-x86-64
+
+Disassembly of section .text:
+
+00000000052ef3e0 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE>:
+ 52ef3e0:      	pushq	%rbp
+ 52ef3e1:      	pushq	%r15
+ 52ef3e3:      	pushq	%r14
+ 52ef3e5:      	pushq	%r13
+ 52ef3e7:      	pushq	%r12
+ 52ef3e9:      	pushq	%rbx
+ 52ef3ea:      	subq	$0xa8, %rsp
+ 52ef3f1:      	movq	%rdx, %rbx
+ 52ef3f4:      	movq	%rsi, 0x50(%rsp)
+ 52ef3f9:      	movq	%rdi, 0x48(%rsp)
+ 52ef3fe:      	leaq	0x78(%rsp), %rax
+ 52ef403:      	movq	%rax, 0x68(%rsp)
+ 52ef408:      	movabsq	$0x600000000, %rax      # imm = 0x600000000
+ 52ef412:      	movq	%rax, 0x70(%rsp)
+ 52ef417:      	movq	%rcx, %rax
+ 52ef41a:      	shlq	$0x4, %rax
+ 52ef41e:      	leaq	(%rax,%rax,4), %rax
+ 52ef422:      	movq	%rax, 0x40(%rsp)
+ 52ef427:      	movq	%rcx, 0x60(%rsp)
+ 52ef42c:      	testq	%rcx, %rcx
+ 52ef42f:      	je	0x52ef4fb <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x11b>
+ 52ef435:      	xorl	%r12d, %r12d
+ 52ef438:      	leaq	0x68(%rsp), %r14
+ 52ef43d:      	xorl	%r13d, %r13d
+ 52ef440:      	movq	0x40(%rsp), %r15
+ 52ef445:      	jmp	0x52ef476 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x96>
+ 52ef447:      	nopw	(%rax,%rax)
+ 52ef450:      	movq	0x68(%rsp), %rax
+ 52ef455:      	movl	%r12d, %ecx
+ 52ef458:      	leaq	(%rbx,%r13), %rdx
+ 52ef45c:      	movq	%rdx, (%rax,%rcx,8)
+ 52ef460:      	movl	0x70(%rsp), %r12d
+ 52ef465:      	incl	%r12d
+ 52ef468:      	movl	%r12d, 0x70(%rsp)
+ 52ef46d:      	addq	$0x50, %r13
+ 52ef471:      	cmpq	%r13, %r15
+ 52ef474:      	je	0x52ef4a7 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0xc7>
+ 52ef476:      	movq	(%rbx,%r13), %rax
+ 52ef47a:      	cmpw	$0x0, 0x14(%rax)
+ 52ef47f:      	je	0x52ef46d <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x8d>
+ 52ef481:      	cmpl	0x74(%rsp), %r12d
+ 52ef486:      	jb	0x52ef450 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x70>
+ 52ef488:      	movl	%r12d, %edx
+ 52ef48b:      	incq	%rdx
+ 52ef48e:      	movl	$0x8, %ecx
+ 52ef493:      	movq	%r14, %rdi
+ 52ef496:      	leaq	0x78(%rsp), %rsi
+ 52ef49b:      	callq	0x40f8640 <_ZN4llvm15SmallVectorBaseIjE8grow_podEPvmm>
+ 52ef4a0:      	movl	0x70(%rsp), %r12d
+ 52ef4a5:      	jmp	0x52ef450 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x70>
+ 52ef4a7:      	testl	%r12d, %r12d
+ 52ef4aa:      	je	0x52ef4fb <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x11b>
+ 52ef4ac:      	movq	0x68(%rsp), %rbp
+ 52ef4b1:      	movl	%r12d, %eax
+ 52ef4b4:      	leaq	(%rbp,%rax,8), %r13
+ 52ef4b9:      	bsrq	%rax, %rdx
+ 52ef4bd:      	xorl	$0x3f, %edx
+ 52ef4c0:      	addl	%edx, %edx
+ 52ef4c2:      	xorq	$0x7e, %rdx
+ 52ef4c6:      	movq	%rbp, %rdi
+ 52ef4c9:      	movq	%r13, %rsi
+ 52ef4cc:      	callq	0x52fdee0 <_ZSt16__introsort_loopIPPKN4llvm13CodeViewDebug13LocalVariableElN9__gnu_cxx5__ops15_Iter_comp_iterIZNS1_21emitLocalVariableListERKNS1_12FunctionInfoENS0_8ArrayRefIS2_EEE3$_0EEEvT_SG_T0_T1_>
+ 52ef4d1:      	leaq	0x8(%rbp), %r15
+ 52ef4d5:      	cmpl	$0x11, %r12d
+ 52ef4d9:      	jb	0x52ef4f1 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x111>
+ 52ef4db:      	movq	%r13, 0x58(%rsp)
+ 52ef4e0:      	movl	$0x8, %r14d
+ 52ef4e6:      	movq	%r15, %r12
+ 52ef4e9:      	movq	%rbp, %r9
+ 52ef4ec:      	jmp	0x52ef7db <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x3fb>
+ 52ef4f1:      	cmpl	$0x1, %r12d
+ 52ef4f5:      	jne	0x52ef718 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x338>
+ 52ef4fb:      	movl	0x70(%rsp), %r14d
+ 52ef500:      	testq	%r14, %r14
+ 52ef503:      	movq	0x50(%rsp), %rbp
+ 52ef508:      	movq	0x48(%rsp), %r15
+ 52ef50d:      	je	0x52ef538 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x158>
+ 52ef50f:      	movq	0x68(%rsp), %r12
+ 52ef514:      	shlq	$0x3, %r14
+ 52ef518:      	xorl	%r13d, %r13d
+ 52ef51b:      	nopl	(%rax,%rax)
+ 52ef520:      	movq	(%r12,%r13), %rdx
+ 52ef524:      	movq	%r15, %rdi
+ 52ef527:      	movq	%rbp, %rsi
+ 52ef52a:      	callq	0x52f5380 <_ZN4llvm13CodeViewDebug17emitLocalVariableERKNS0_12FunctionInfoERKNS0_13LocalVariableE>
+ 52ef52f:      	addq	$0x8, %r13
+ 52ef533:      	cmpq	%r13, %r14
+ 52ef536:      	jne	0x52ef520 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x140>
+ 52ef538:      	cmpq	$0x0, 0x60(%rsp)
+ 52ef53e:      	movq	%r15, %r14
+ 52ef541:      	movq	0x40(%rsp), %r15
+ 52ef546:      	jne	0x52ef58a <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x1aa>
+ 52ef548:      	movq	0x68(%rsp), %rdi
+ 52ef54d:      	leaq	0x78(%rsp), %rax
+ 52ef552:      	cmpq	%rax, %rdi
+ 52ef555:      	je	0x52ef55c <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x17c>
+ 52ef557:      	callq	0x828a6d0 <free@plt>
+ 52ef55c:      	addq	$0xa8, %rsp
+ 52ef563:      	popq	%rbx
+ 52ef564:      	popq	%r12
+ 52ef566:      	popq	%r13
+ 52ef568:      	popq	%r14
+ 52ef56a:      	popq	%r15
+ 52ef56c:      	popq	%rbp
+ 52ef56d:      	retq
+ 52ef56e:      	movq	%r14, %rdi
+ 52ef571:      	movq	%rbp, %rsi
+ 52ef574:      	movq	%rbx, %rdx
+ 52ef577:      	callq	0x52f5380 <_ZN4llvm13CodeViewDebug17emitLocalVariableERKNS0_12FunctionInfoERKNS0_13LocalVariableE>
+ 52ef57c:      	nopl	(%rax)
+ 52ef580:      	addq	$0x50, %rbx
+ 52ef584:      	addq	$-0x50, %r15
+ 52ef588:      	je	0x52ef548 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x168>
+ 52ef58a:      	movq	(%rbx), %r12
+ 52ef58d:      	cmpw	$0x0, 0x14(%r12)
+ 52ef594:      	jne	0x52ef580 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x1a0>
+ 52ef596:      	cmpb	$0x1, 0x48(%rbx)
+ 52ef59a:      	jne	0x52ef56e <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x18e>
+ 52ef59c:      	leaq	-0x10(%r12), %r13
+ 52ef5a1:      	movq	-0x10(%r12), %rax
+ 52ef5a6:      	testb	$0x2, %al
+ 52ef5a8:      	jne	0x52ef5b7 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x1d7>
+ 52ef5aa:      	addl	%eax, %eax
+ 52ef5ac:      	andl	$0x78, %eax
+ 52ef5af:      	movq	%r13, %rcx
+ 52ef5b2:      	subq	%rax, %rcx
+ 52ef5b5:      	jmp	0x52ef5bc <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x1dc>
+ 52ef5b7:      	movq	-0x20(%r12), %rcx
+ 52ef5bc:      	movq	0x18(%rcx), %rbp
+ 52ef5c0:      	movl	0x40(%rbx), %r14d
+ 52ef5c4:      	movl	%r14d, 0x18(%rsp)
+ 52ef5c9:      	cmpq	$0x40, %r14
+ 52ef5cd:      	ja	0x52ef5da <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x1fa>
+ 52ef5cf:      	movq	0x38(%rbx), %rax
+ 52ef5d3:      	movq	%rax, 0x10(%rsp)
+ 52ef5d8:      	jmp	0x52ef602 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x222>
+ 52ef5da:      	addq	$0x3f, %r14
+ 52ef5de:      	shrq	$0x3, %r14
+ 52ef5e2:      	andl	$-0x8, %r14d
+ 52ef5e6:      	movq	%r14, %rdi
+ 52ef5e9:      	callq	0x828a830 <_Znam@plt>
+ 52ef5ee:      	movq	%rax, 0x10(%rsp)
+ 52ef5f3:      	movq	0x38(%rbx), %rsi
+ 52ef5f7:      	movq	%rax, %rdi
+ 52ef5fa:      	movq	%r14, %rdx
+ 52ef5fd:      	callq	0x828ace0 <memcpy@plt>
+ 52ef602:      	movzbl	0x44(%rbx), %eax
+ 52ef606:      	movb	%al, 0x1c(%rsp)
+ 52ef60a:      	movq	(%r13), %rax
+ 52ef60e:      	testb	$0x2, %al
+ 52ef610:      	jne	0x52ef676 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x296>
+ 52ef612:      	addl	%eax, %eax
+ 52ef614:      	andl	$0x78, %eax
+ 52ef617:      	subq	%rax, %r13
+ 52ef61a:      	movq	0x8(%r13), %rax
+ 52ef61e:      	testq	%rax, %rax
+ 52ef621:      	je	0x52ef684 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x2a4>
+ 52ef623:      	movq	0x8(%rax), %r14
+ 52ef627:      	movq	(%r14), %r13
+ 52ef62a:      	leaq	0x30(%rsp), %rax
+ 52ef62f:      	movq	%rax, 0x20(%rsp)
+ 52ef634:      	movq	%r13, 0x8(%rsp)
+ 52ef639:      	cmpq	$0x10, %r13
+ 52ef63d:      	jb	0x52ef65f <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x27f>
+ 52ef63f:      	leaq	0x20(%rsp), %rdi
+ 52ef644:      	leaq	0x8(%rsp), %rsi
+ 52ef649:      	xorl	%edx, %edx
+ 52ef64b:      	callq	0x828a710 <_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE9_M_createERmm@plt>
+ 52ef650:      	movq	%rax, 0x20(%rsp)
+ 52ef655:      	movq	0x8(%rsp), %rcx
+ 52ef65a:      	movq	%rcx, 0x30(%rsp)
+ 52ef65f:      	testq	%r13, %r13
+ 52ef662:      	je	0x52ef6a7 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x2c7>
+ 52ef664:      	addq	$0x18, %r14
+ 52ef668:      	cmpq	$0x1, %r13
+ 52ef66c:      	jne	0x52ef699 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x2b9>
+ 52ef66e:      	movzbl	(%r14), %ecx
+ 52ef672:      	movb	%cl, (%rax)
+ 52ef674:      	jmp	0x52ef6a7 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x2c7>
+ 52ef676:      	movq	-0x20(%r12), %r13
+ 52ef67b:      	movq	0x8(%r13), %rax
+ 52ef67f:      	testq	%rax, %rax
+ 52ef682:      	jne	0x52ef623 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x243>
+ 52ef684:      	leaq	0x30(%rsp), %rax
+ 52ef689:      	movq	%rax, 0x20(%rsp)
+ 52ef68e:      	movq	$0x0, 0x8(%rsp)
+ 52ef697:      	jmp	0x52ef6a7 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x2c7>
+ 52ef699:      	movq	%rax, %rdi
+ 52ef69c:      	movq	%r14, %rsi
+ 52ef69f:      	movq	%r13, %rdx
+ 52ef6a2:      	callq	0x828ace0 <memcpy@plt>
+ 52ef6a7:      	movq	0x8(%rsp), %rax
+ 52ef6ac:      	movq	%rax, 0x28(%rsp)
+ 52ef6b1:      	movq	0x20(%rsp), %rcx
+ 52ef6b6:      	movb	$0x0, (%rcx,%rax)
+ 52ef6ba:      	movq	0x48(%rsp), %r14
+ 52ef6bf:      	movq	%r14, %rdi
+ 52ef6c2:      	movq	%rbp, %rsi
+ 52ef6c5:      	leaq	0x10(%rsp), %rdx
+ 52ef6ca:      	leaq	0x20(%rsp), %rcx
+ 52ef6cf:      	callq	0x52f57f0 <_ZN4llvm13CodeViewDebug24emitConstantSymbolRecordEPKNS_6DITypeERNS_6APSIntERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEE>
+ 52ef6d4:      	movq	0x20(%rsp), %rdi
+ 52ef6d9:      	leaq	0x30(%rsp), %rax
+ 52ef6de:      	cmpq	%rax, %rdi
+ 52ef6e1:      	je	0x52ef6f0 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x310>
+ 52ef6e3:      	movq	0x30(%rsp), %rsi
+ 52ef6e8:      	incq	%rsi
+ 52ef6eb:      	callq	0x828a6f0 <_ZdlPvm@plt>
+ 52ef6f0:      	cmpl	$0x41, 0x18(%rsp)
+ 52ef6f5:      	movq	0x50(%rsp), %rbp
+ 52ef6fa:      	jb	0x52ef580 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x1a0>
+ 52ef700:      	movq	0x10(%rsp), %rdi
+ 52ef705:      	testq	%rdi, %rdi
+ 52ef708:      	je	0x52ef580 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x1a0>
+ 52ef70e:      	callq	0x828a840 <_ZdaPv@plt>
+ 52ef713:      	jmp	0x52ef580 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x1a0>
+ 52ef718:      	movq	%rbp, %r14
+ 52ef71b:      	jmp	0x52ef759 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x379>
+ 52ef71d:      	nopl	(%rax)
+ 52ef720:      	movq	%r14, %rdx
+ 52ef723:      	subq	%rbp, %rdx
+ 52ef726:      	movq	%rdx, %rax
+ 52ef729:      	sarq	$0x3, %rax
+ 52ef72d:      	cmpq	$0x2, %rax
+ 52ef731:      	jl	0x52ef7aa <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x3ca>
+ 52ef733:      	shlq	$0x3, %rax
+ 52ef737:      	subq	%rax, %rdi
+ 52ef73a:      	addq	$0x10, %rdi
+ 52ef73e:      	movq	%rbp, %rsi
+ 52ef741:      	callq	0x828ac50 <memmove@plt>
+ 52ef746:      	movq	%rbp, %rcx
+ 52ef749:      	movq	%r12, (%rcx)
+ 52ef74c:      	leaq	0x8(%r14), %r15
+ 52ef750:      	cmpq	%r13, %r15
+ 52ef753:      	je	0x52ef4fb <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x11b>
+ 52ef759:      	movq	%r14, %rdi
+ 52ef75c:      	movq	%r15, %r14
+ 52ef75f:      	movq	(%r15), %r12
+ 52ef762:      	movq	(%rbp), %rsi
+ 52ef766:      	movq	(%r12), %rax
+ 52ef76a:      	movq	(%rsi), %rcx
+ 52ef76d:      	movzwl	0x14(%rax), %r8d
+ 52ef772:      	cmpw	0x14(%rcx), %r8w
+ 52ef777:      	jb	0x52ef720 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x340>
+ 52ef779:      	movq	(%rdi), %rdx
+ 52ef77c:      	movq	(%rdx), %rsi
+ 52ef77f:      	movq	%r14, %rcx
+ 52ef782:      	cmpw	0x14(%rsi), %r8w
+ 52ef787:      	jae	0x52ef749 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x369>
+ 52ef789:      	movq	%r14, %rcx
+ 52ef78c:      	nopl	(%rax)
+ 52ef790:      	movq	%rdx, (%rcx)
+ 52ef793:      	movq	-0x10(%rcx), %rdx
+ 52ef797:      	movq	(%rdx), %rsi
+ 52ef79a:      	movzwl	0x14(%rax), %edi
+ 52ef79e:      	addq	$-0x8, %rcx
+ 52ef7a2:      	cmpw	0x14(%rsi), %di
+ 52ef7a6:      	jb	0x52ef790 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x3b0>
+ 52ef7a8:      	jmp	0x52ef749 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x369>
+ 52ef7aa:      	movq	%rbp, %rcx
+ 52ef7ad:      	cmpq	$0x8, %rdx
+ 52ef7b1:      	jne	0x52ef749 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x369>
+ 52ef7b3:      	movq	%rsi, 0x8(%rdi)
+ 52ef7b7:      	jmp	0x52ef746 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x366>
+ 52ef7b9:      	movq	%rdx, 0x8(%rcx)
+ 52ef7bd:      	nopl	(%rax)
+ 52ef7c0:      	movq	%rbp, %rcx
+ 52ef7c3:      	movq	%r13, (%rcx)
+ 52ef7c6:      	addq	$0x8, %r14
+ 52ef7ca:      	addq	$0x8, %r12
+ 52ef7ce:      	cmpq	$0x80, %r14
+ 52ef7d5:      	je	0x52ef85d <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x47d>
+ 52ef7db:      	movq	%r9, %rcx
+ 52ef7de:      	leaq	(%rbp,%r14), %r9
+ 52ef7e3:      	movq	(%rbp,%r14), %r13
+ 52ef7e8:      	movq	(%rbp), %rdx
+ 52ef7ec:      	movq	(%r13), %rax
+ 52ef7f0:      	movq	(%rdx), %rdi
+ 52ef7f3:      	movzwl	0x14(%rax), %esi
+ 52ef7f7:      	cmpw	0x14(%rdi), %si
+ 52ef7fb:      	jae	0x52ef820 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x440>
+ 52ef7fd:      	cmpq	$0x9, %r14
+ 52ef801:      	jb	0x52ef7b9 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x3d9>
+ 52ef803:      	movq	%r15, %rdi
+ 52ef806:      	movq	%rbp, %rsi
+ 52ef809:      	movq	%r14, %rdx
+ 52ef80c:      	callq	0x828ac50 <memmove@plt>
+ 52ef811:      	leaq	(%rbp,%r14), %r9
+ 52ef816:      	jmp	0x52ef7c0 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x3e0>
+ 52ef818:      	nopl	(%rax,%rax)
+ 52ef820:      	movq	(%rcx), %rdx
+ 52ef823:      	movq	(%rdx), %rdi
+ 52ef826:      	movq	%r9, %rcx
+ 52ef829:      	cmpw	0x14(%rdi), %si
+ 52ef82d:      	jae	0x52ef7c3 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x3e3>
+ 52ef82f:      	movq	%r12, %rcx
+ 52ef832:      	nopw	%cs:(%rax,%rax)
+ 52ef83c:      	nopl	(%rax)
+ 52ef840:      	movq	%rdx, (%rcx)
+ 52ef843:      	movq	-0x10(%rcx), %rdx
+ 52ef847:      	movq	(%rdx), %rsi
+ 52ef84a:      	movzwl	0x14(%rax), %edi
+ 52ef84e:      	addq	$-0x8, %rcx
+ 52ef852:      	cmpw	0x14(%rsi), %di
+ 52ef856:      	jb	0x52ef840 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x460>
+ 52ef858:      	jmp	0x52ef7c3 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x3e3>
+ 52ef85d:      	subq	$-0x80, %rbp
+ 52ef861:      	movq	0x58(%rsp), %r9
+ 52ef866:      	jmp	0x52ef880 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x4a0>
+ 52ef868:      	nopl	(%rax,%rax)
+ 52ef870:      	movq	%rax, (%rsi)
+ 52ef873:      	addq	$0x8, %rbp
+ 52ef877:      	cmpq	%r9, %rbp
+ 52ef87a:      	je	0x52ef4fb <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x11b>
+ 52ef880:      	movq	-0x8(%rbp), %rcx
+ 52ef884:      	movq	(%rbp), %rax
+ 52ef888:      	movq	(%rax), %rdx
+ 52ef88b:      	movq	(%rcx), %rdi
+ 52ef88e:      	movzwl	0x14(%rdx), %r8d
+ 52ef893:      	movq	%rbp, %rsi
+ 52ef896:      	cmpw	0x14(%rdi), %r8w
+ 52ef89b:      	jae	0x52ef870 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x490>
+ 52ef89d:      	movq	%rbp, %rsi
+ 52ef8a0:      	movq	%rcx, (%rsi)
+ 52ef8a3:      	movq	-0x10(%rsi), %rcx
+ 52ef8a7:      	movq	(%rcx), %rdi
+ 52ef8aa:      	movzwl	0x14(%rdx), %r8d
+ 52ef8af:      	addq	$-0x8, %rsi
+ 52ef8b3:      	cmpw	0x14(%rdi), %r8w
+ 52ef8b8:      	jb	0x52ef8a0 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x4c0>
+ 52ef8ba:      	jmp	0x52ef870 <_ZN4llvm13CodeViewDebug21emitLocalVariableListERKNS0_12FunctionInfoENS_8ArrayRefINS0_13LocalVariableEEE+0x490>

@@ -1,0 +1,127 @@
+--- T-normalized
++++ D-normalized
+@@ -4981,13 +4981,13 @@
+ movq %rsi, 0x1d0(%rsp)
+ movl $0xc, 0x1dc(%rsp)
+ movq 0x48(%r12), %rbx
+-movl 0x50(%r12), %r15d
++movl 0x50(%r12), %r12d
+ movl $0x0, 0x1d8(%rsp)
+-cmpq $0xd, %r15
++cmpq $0xd, %r12
+ jb I5752
+ leaq 0x1d0(%rsp), %rdi
+ movl $0x4, %ecx
+-movq %r15, %rdx
++movq %r12, %rdx
+ callq RELOC_TARGET
+ movl 0x1d8(%rsp), %eax
+ movq 0x1d0(%rsp), %rcx
+@@ -5751,37 +5751,37 @@
+ je I5916
+ jmp I5936
+ xorl %eax, %eax
+-testq %r15, %r15
++testq %r12, %r12
+ je I5825
+ movq %rsi, %rcx
+-leaq (,%r15,4), %rdx
++leaq (,%r12,4), %rdx
+ leaq (%rcx,%rax,4), %rdi
+ movq %rbx, %rsi
+ callq RELOC_TARGET
+ movl 0x1d8(%rsp), %eax
+ movq 0x1d0(%rsp), %rbp
+-addl %eax, %r15d
+-movl %r15d, 0x1d8(%rsp)
++addl %eax, %r12d
++movl %r12d, 0x1d8(%rsp)
+ je I6447
+-leaq (%rbp,%r15,4), %r14
+-bsrq %r15, %rdx
++leaq (%rbp,%r12,4), %r15
++bsrq %r12, %rdx
+ xorl $0x3f, %edx
+ addl %edx, %edx
+ xorq $0x7e, %rdx
+ movq %rbp, %rdi
+-movq %r14, %rsi
+-callq RELOC_TARGET
++movq %r15, %rsi
++callq RELOC_TARGET
++leaq 0x4(%rbp), %r14
++cmpl $0x11, %r12d
++jb I5783
++movq %r15, 0x90(%rsp)
++shlq $0x2, %r12
++movq %r12, 0x70(%rsp)
+ leaq 0x4(%rbp), %rbx
+-cmpl $0x11, %r15d
+-jb I5783
+-movq %r14, 0x90(%rsp)
+-shlq $0x2, %r15
+-movq %r15, 0x70(%rsp)
+ movl $0x4, %r13d
+-movq %rbx, %r14
+ movq %rbp, %r12
+ jmp I6371
+-cmpl $0x1, %r15d
++cmpl $0x1, %r12d
+ je I6447
+ movq %rbp, %r13
+ jmp I5803
+@@ -5798,12 +5798,12 @@
+ callq RELOC_TARGET
+ movq %rbp, %rax
+ movl %ebx, (%rax)
+-leaq 0x4(%r13), %rbx
+-cmpq %r14, %rbx
++leaq 0x4(%r13), %r14
++cmpq %r15, %r14
+ je I6447
+ movq %r13, %rdi
+-movq %rbx, %r13
+-movl (%rbx), %ebx
++movq %r14, %r13
++movl (%r14), %ebx
+ movl (%rbp), %ecx
+ cmpl %ecx, %ebx
+ jb I5787
+@@ -5824,8 +5824,8 @@
+ movl %ecx, 0x4(%rdi)
+ jmp I5798
+ movq %rsi, %rbp
+-addl %eax, %r15d
+-movl %r15d, 0x1d8(%rsp)
++addl %eax, %r12d
++movl %r12d, 0x1d8(%rsp)
+ jne I5765
+ jmp I6447
+ movq 0x40(%rsp), %rax
+@@ -6366,7 +6366,7 @@
+ movq %rbp, %rax
+ movl %r15d, (%rax)
+ addq $0x4, %r13
+-addq $0x4, %r14
++addq $0x4, %rbx
+ cmpq $0x40, %r13
+ je I6395
+ movq %r12, %rax
+@@ -6377,7 +6377,7 @@
+ jae I6384
+ cmpq $0x5, %r13
+ jb I6364
+-movq %rbx, %rdi
++movq %r14, %rdi
+ movq %rbp, %rsi
+ movq %r13, %rdx
+ callq RELOC_TARGET
+@@ -6386,7 +6386,7 @@
+ movq %r12, %rax
+ cmpl %ecx, %r15d
+ jae I6366
+-movq %r14, %rax
++movq %rbx, %rax
+ movl %ecx, (%rax)
+ movl -0x8(%rax), %ecx
+ addq $-0x4, %rax

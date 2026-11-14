@@ -1,0 +1,21 @@
+--- T-normalized
++++ D-normalized
+@@ -1198,8 +1198,8 @@
+ cmpl $0x11, %r14d
+ jb I1204
+ movq %r13, 0x18(%rsp)
++leaq 0x8(%rbx), %r13
+ movl $0x8, %r12d
+-movq %r15, %r13
+ movq %rbx, %rbp
+ jmp I4703
+ cmpl $0x1, %r14d
+@@ -1222,7 +1222,7 @@
+ xorps %xmm0, %xmm0
+ xorl %eax, %eax
+ jmp I1237
+-nopl (%rax)
++nopw (%rax,%rax)
+ movq (%rax), %rax
+ movq (%rax), %rsi
+ callq RELOC_TARGET

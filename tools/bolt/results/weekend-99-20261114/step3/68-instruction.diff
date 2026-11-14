@@ -1,0 +1,16 @@
+--- T-normalized
++++ D-normalized
+@@ -213,11 +213,11 @@
+ leaq 0x10(%r12), %rbp
+ cmpl $0x11, %ebx
+ jb I380
++leaq 0x10(%r12), %rbx
+ movl $0x10, %r15d
+-movq %rbp, %rbx
+ movq %r12, %rax
+ jmp I230
+-nopl (%rax,%rax)
++nopl (%rax)
+ movl %ecx, (%rdx)
+ movq 0xa0(%rsp), %rax
+ movq %rax, 0x4(%rdx)

@@ -1,0 +1,32 @@
+--- T-normalized
++++ D-normalized
+@@ -36,12 +36,12 @@
+ xorl %r9d, %r9d
+ callq RELOC_TARGET
+ movl %eax, 0x20(%rsp)
+-leal (%r15,%r12), %eax
+ movq 0x8(%r14), %rdi
+ movq 0x10(%r14), %r9
+ movl 0x30(%r14), %esi
+ notl %esi
+-addl %eax, %esi
++addl %r15d, %esi
++addl %r12d, %esi
+ movq 0x110(%rdi), %rdx
+ movq 0xe8(%rdi), %rcx
+ movq 0xf8(%rdi), %rax
+@@ -128,12 +128,12 @@
+ xorl %r9d, %r9d
+ callq RELOC_TARGET
+ movl %eax, 0x28(%rsp)
+-leal (%r15,%r12), %eax
+ movq 0x8(%r14), %rdi
+ movq 0x10(%r14), %r9
+ movl 0x30(%r14), %esi
+ notl %esi
+-addl %eax, %esi
++addl %r15d, %esi
++addl %r12d, %esi
+ movq 0x110(%rdi), %rdx
+ movq 0xe8(%rdi), %rcx
+ movq 0xf8(%rdi), %rax

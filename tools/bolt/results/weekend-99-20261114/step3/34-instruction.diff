@@ -1,0 +1,66 @@
+--- T-normalized
++++ D-normalized
+@@ -676,9 +676,9 @@
+ xorl -0x78(%rsp), %r12d
+ xorl -0x68(%rsp), %r12d
+ roll %r12d
+-leal (%r12,%rsi), %ecx
+ movq %r12, -0x48(%rsp)
+-addl %ecx, %eax
++addl %r12d, %eax
++addl %esi, %eax
+ movl %edi, %ecx
+ roll $0x5, %ecx
+ leal -0x70e44324(%rcx,%rax), %eax
+@@ -791,9 +791,9 @@
+ movl %r10d, %eax
+ andl %esi, %r10d
+ orl %edi, %r10d
+-leal (%r12,%r8), %edi
+ roll $0x1e, %eax
+-addl %edi, %r10d
++addl %r12d, %r10d
++addl %r8d, %r10d
+ movl %ecx, %edi
+ roll $0x5, %edi
+ leal -0x70e44324(%rdi,%r10), %r10d
+@@ -827,10 +827,10 @@
+ xorl -0x48(%rsp), %r13d
+ xorl %r15d, %r13d
+ roll %r13d
+-leal (%r13,%rsi), %edx
+ movq %r13, %r12
+ movq %r13, -0x78(%rsp)
+-addl %edx, %r10d
++addl %r13d, %r10d
++addl %esi, %r10d
+ movl %edi, %edx
+ roll $0x5, %edx
+ leal -0x70e44324(%rdx,%r10), %edx
+@@ -867,10 +867,10 @@
+ movl %edx, %eax
+ andl %esi, %edx
+ orl %edi, %edx
+-leal (%r13,%r8), %edi
+ movq %r13, -0x38(%rsp)
+ roll $0x1e, %eax
+-addl %edi, %edx
++addl %r13d, %edx
++addl %r8d, %edx
+ movl %r10d, %edi
+ roll $0x5, %edi
+ leal -0x70e44324(%rdi,%rdx), %r8d
+@@ -942,11 +942,11 @@
+ movl %r8d, %ecx
+ andl %esi, %r8d
+ orl %eax, %r8d
+-leal (%rbx,%rdi), %eax
+ movq %rbx, %r13
+ movq %rbx, -0x50(%rsp)
+ roll $0x1e, %ecx
+-addl %eax, %r8d
++addl %ebx, %r8d
++addl %edi, %r8d
+ movl %r10d, %eax
+ roll $0x5, %eax
+ leal -0x70e44324(%rax,%r8), %r8d

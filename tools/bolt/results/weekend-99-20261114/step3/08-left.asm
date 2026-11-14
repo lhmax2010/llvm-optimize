@@ -1,0 +1,1057 @@
+
+/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22:	file format elf64-x86-64
+
+Disassembly of section .text:
+
+0000000003501190 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE>:
+ 3501190:      	pushq	%rbp
+ 3501191:      	pushq	%r15
+ 3501193:      	pushq	%r14
+ 3501195:      	pushq	%r13
+ 3501197:      	pushq	%r12
+ 3501199:      	pushq	%rbx
+ 350119a:      	subq	$0x298, %rsp            # imm = 0x298
+ 35011a1:      	movzbl	(%rsi), %eax
+ 35011a4:      	leal	-0x40(%rax), %ecx
+ 35011a7:      	cmpl	$0x3, %ecx
+ 35011aa:      	jae	0x35011c0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x30>
+ 35011ac:      	xorl	%eax, %eax
+ 35011ae:      	addq	$0x298, %rsp            # imm = 0x298
+ 35011b5:      	popq	%rbx
+ 35011b6:      	popq	%r12
+ 35011b8:      	popq	%r13
+ 35011ba:      	popq	%r14
+ 35011bc:      	popq	%r15
+ 35011be:      	popq	%rbp
+ 35011bf:      	retq
+ 35011c0:      	movq	%rsi, %r13
+ 35011c3:      	movq	%rdi, %rbp
+ 35011c6:      	cmpl	$0x3d, %eax
+ 35011c9:      	je	0x35011d0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x40>
+ 35011cb:      	cmpl	$0x3e, %eax
+ 35011ce:      	jne	0x35011e6 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x56>
+ 35011d0:      	movzwl	0x2(%r13), %ecx
+ 35011d5:      	testl	$0x380, %ecx            # imm = 0x380
+ 35011db:      	setne	%dl
+ 35011de:      	xorl	%eax, %eax
+ 35011e0:      	testb	%dl, %dl
+ 35011e2:      	je	0x35011f3 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x63>
+ 35011e4:      	jmp	0x35011ae <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1e>
+ 35011e6:      	movzwl	0x2(%r13), %ecx
+ 35011eb:      	xorl	%edx, %edx
+ 35011ed:      	xorl	%eax, %eax
+ 35011ef:      	testb	%dl, %dl
+ 35011f1:      	jne	0x35011ae <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1e>
+ 35011f3:      	andl	$0x1, %ecx
+ 35011f6:      	jne	0x35011ae <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1e>
+ 35011f8:      	movq	0x8(%r13), %rdx
+ 35011fc:      	movl	$0xfd, %eax
+ 3501201:      	andl	0x8(%rdx), %eax
+ 3501204:      	cmpl	$0xc, %eax
+ 3501207:      	jne	0x35011ac <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1c>
+ 3501209:      	movq	0x10(%r13), %r14
+ 350120d:      	testq	%r14, %r14
+ 3501210:      	je	0x350121d <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8d>
+ 3501212:      	cmpq	$0x0, 0x8(%r14)
+ 3501217:      	je	0x3501d1f <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xb8f>
+ 350121d:      	leaq	0x48(%rsp), %r12
+ 3501222:      	movq	%r12, 0x38(%rsp)
+ 3501227:      	movabsq	$0x800000000, %rax      # imm = 0x800000000
+ 3501231:      	movq	%rax, 0x40(%rsp)
+ 3501236:      	leaq	0x158(%rsp), %rcx
+ 350123e:      	movq	%rcx, 0x140(%rsp)
+ 3501246:      	movq	$0x10, 0x148(%rsp)
+ 3501252:      	movl	$0x0, 0x150(%rsp)
+ 350125d:      	movb	$0x1, 0x154(%rsp)
+ 3501265:      	leaq	0x100(%rsp), %rcx
+ 350126d:      	movq	%rcx, 0xf0(%rsp)
+ 3501275:      	movq	%rax, 0xf8(%rsp)
+ 350127d:      	leaq	0x98(%rsp), %rcx
+ 3501285:      	movq	%rcx, 0x88(%rsp)
+ 350128d:      	movq	%rax, 0x90(%rsp)
+ 3501295:      	testq	%r14, %r14
+ 3501298:      	je	0x35012f9 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x169>
+ 350129a:      	xorl	%eax, %eax
+ 350129c:      	leaq	0x38(%rsp), %rbx
+ 35012a1:      	nopw	%cs:(%rax,%rax)
+ 35012ab:      	nopl	(%rax,%rax)
+ 35012b0:      	movq	0x18(%r14), %r15
+ 35012b4:      	cmpl	0x44(%rsp), %eax
+ 35012b8:      	jae	0x35012da <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x14a>
+ 35012ba:      	movq	0x38(%rsp), %rcx
+ 35012bf:      	movl	%eax, %eax
+ 35012c1:      	movq	%r15, (%rcx,%rax,8)
+ 35012c5:      	movl	0x40(%rsp), %eax
+ 35012c9:      	incl	%eax
+ 35012cb:      	movl	%eax, 0x40(%rsp)
+ 35012cf:      	movq	0x8(%r14), %r14
+ 35012d3:      	testq	%r14, %r14
+ 35012d6:      	jne	0x35012b0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x120>
+ 35012d8:      	jmp	0x35012f5 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x165>
+ 35012da:      	movl	%eax, %edx
+ 35012dc:      	incq	%rdx
+ 35012df:      	movl	$0x8, %ecx
+ 35012e4:      	movq	%rbx, %rdi
+ 35012e7:      	movq	%r12, %rsi
+ 35012ea:      	callq	0x40f8640 <_ZN4llvm15SmallVectorBaseIjE8grow_podEPvmm>
+ 35012ef:      	movl	0x40(%rsp), %eax
+ 35012f3:      	jmp	0x35012ba <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x12a>
+ 35012f5:      	movq	0x8(%r13), %rdx
+ 35012f9:      	movq	0x10(%rbp), %rdi
+ 35012fd:      	movq	0x330(%rbp), %rsi
+ 3501304:      	xorl	%ecx, %ecx
+ 3501306:      	callq	0x29ef5d0 <_ZNK4llvm18TargetLoweringBase12getValueTypeERKNS_10DataLayoutEPNS_4TypeEb>
+ 350130b:      	movw	%ax, 0xe0(%rsp)
+ 3501313:      	movq	%rdx, 0xe8(%rsp)
+ 350131b:      	testw	%ax, %ax
+ 350131e:      	je	0x3501bf9 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xa69>
+ 3501324:      	movzwl	%ax, %edx
+ 3501327:      	shll	$0x4, %edx
+ 350132a:      	leaq	-0x2627831(%rip), %rcx  # 0xed9b00 <_ZZNK4llvm3MVT13getSizeInBitsEvE9SizeTable>
+ 3501331:      	movq	-0x10(%rdx,%rcx), %rax
+ 3501336:      	movzbl	-0x8(%rdx,%rcx), %edx
+ 350133b:      	cmpb	$0x1, %dl
+ 350133e:      	je	0x3501e25 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xc95>
+ 3501344:      	testl	%eax, %eax
+ 3501346:      	je	0x3501d6b <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xbdb>
+ 350134c:      	movq	%rbp, 0x18(%rsp)
+ 3501351:      	movl	%eax, 0x8(%rsp)
+ 3501355:      	xorl	%ebx, %ebx
+ 3501357:      	movl	%eax, %ebp
+ 3501359:      	movl	$0x0, %r10d
+ 350135f:      	movq	%rax, 0x20(%rsp)
+ 3501364:      	cmpl	$0x41, %eax
+ 3501367:      	jae	0x3501c31 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xaa1>
+ 350136d:      	movq	%rbx, (%rsp)
+ 3501371:      	movl	0x40(%rsp), %eax
+ 3501375:      	testl	%eax, %eax
+ 3501377:      	je	0x3501c98 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xb08>
+ 350137d:      	movq	0x20(%rsp), %rcx
+ 3501382:      	decl	%ecx
+ 3501384:      	movq	%rcx, 0x28(%rsp)
+ 3501389:      	leaq	-0x1b79330(%rip), %r12  # 0x1988060 <_ZTSN12_GLOBAL__N_116CFIInstrInserterE.llvm.6225596434653274425+0x2fc>
+ 3501390:      	movq	%r13, 0xd8(%rsp)
+ 3501398:      	nopl	(%rax,%rax)
+ 35013a0:      	movq	0x38(%rsp), %rcx
+ 35013a5:      	movl	%eax, %edx
+ 35013a7:      	movq	-0x8(%rcx,%rdx,8), %r15
+ 35013ac:      	decl	%eax
+ 35013ae:      	movl	%eax, 0x40(%rsp)
+ 35013b2:      	cmpb	$0x1, 0x154(%rsp)
+ 35013ba:      	jne	0x3501410 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x280>
+ 35013bc:      	movq	0x140(%rsp), %rax
+ 35013c4:      	movl	0x14c(%rsp), %ecx
+ 35013cb:      	leaq	(,%rcx,8), %rdx
+ 35013d3:      	testq	%rcx, %rcx
+ 35013d6:      	je	0x35013f3 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x263>
+ 35013d8:      	xorl	%esi, %esi
+ 35013da:      	nopw	(%rax,%rax)
+ 35013e0:      	cmpq	%r15, (%rax,%rsi)
+ 35013e4:      	je	0x3501b09 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x979>
+ 35013ea:      	addq	$0x8, %rsi
+ 35013ee:      	cmpq	%rsi, %rdx
+ 35013f1:      	jne	0x35013e0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x250>
+ 35013f3:      	cmpl	0x148(%rsp), %ecx
+ 35013fa:      	jae	0x3501410 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x280>
+ 35013fc:      	movq	%r10, %r14
+ 35013ff:      	incl	%ecx
+ 3501401:      	movl	%ecx, 0x14c(%rsp)
+ 3501408:      	movq	%r15, (%rax,%rdx)
+ 350140c:      	jmp	0x350142c <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x29c>
+ 350140e:      	nop
+ 3501410:      	movq	%r10, %r14
+ 3501413:      	leaq	0x140(%rsp), %rdi
+ 350141b:      	movq	%r15, %rsi
+ 350141e:      	callq	0x40f7c60 <_ZN4llvm19SmallPtrSetImplBase14insert_imp_bigEPKv>
+ 3501423:      	cmpb	$0x1, %dl
+ 3501426:      	jne	0x3501500 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x370>
+ 350142c:      	movzbl	(%r15), %ecx
+ 3501430:      	xorl	%eax, %eax
+ 3501432:      	addl	$-0x36, %ecx
+ 3501435:      	cmpl	$0x1f, %ecx
+ 3501438:      	ja	0x35020b7 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf27>
+ 350143e:      	movslq	(%r12,%rcx,4), %rcx
+ 3501442:      	addq	%r12, %rcx
+ 3501445:      	jmpq	*%rcx
+ 3501447:      	movl	0x4(%r15), %eax
+ 350144b:      	testl	$0x40000000, %eax       # imm = 0x40000000
+ 3501450:      	jne	0x3501664 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x4d4>
+ 3501456:      	shll	$0x5, %eax
+ 3501459:      	movq	%r15, %rcx
+ 350145c:      	subq	%rax, %rcx
+ 350145f:      	jmp	0x3501668 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x4d8>
+ 3501464:      	movl	0x4(%r15), %eax
+ 3501468:      	testl	$0x40000000, %eax       # imm = 0x40000000
+ 350146d:      	jne	0x3501582 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x3f2>
+ 3501473:      	shll	$0x5, %eax
+ 3501476:      	movq	%r15, %rcx
+ 3501479:      	subq	%rax, %rcx
+ 350147c:      	jmp	0x3501586 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x3f6>
+ 3501481:      	movq	0x10(%r15), %rbx
+ 3501485:      	testq	%rbx, %rbx
+ 3501488:      	je	0x3501500 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x370>
+ 350148a:      	movl	0x40(%rsp), %eax
+ 350148e:      	movq	%r14, %r10
+ 3501491:      	nopw	%cs:(%rax,%rax)
+ 350149b:      	nopl	(%rax,%rax)
+ 35014a0:      	movq	0x18(%rbx), %r14
+ 35014a4:      	cmpl	0x44(%rsp), %eax
+ 35014a8:      	jae	0x35014cd <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x33d>
+ 35014aa:      	movq	0x38(%rsp), %rcx
+ 35014af:      	movl	%eax, %eax
+ 35014b1:      	movq	%r14, (%rcx,%rax,8)
+ 35014b5:      	movl	0x40(%rsp), %eax
+ 35014b9:      	incl	%eax
+ 35014bb:      	movl	%eax, 0x40(%rsp)
+ 35014bf:      	movq	0x8(%rbx), %rbx
+ 35014c3:      	testq	%rbx, %rbx
+ 35014c6:      	jne	0x35014a0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x310>
+ 35014c8:      	jmp	0x3501b0d <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x97d>
+ 35014cd:      	movl	%eax, %edx
+ 35014cf:      	incq	%rdx
+ 35014d2:      	movl	$0x8, %ecx
+ 35014d7:      	leaq	0x38(%rsp), %rdi
+ 35014dc:      	leaq	0x48(%rsp), %rsi
+ 35014e1:      	movq	%r10, %r15
+ 35014e4:      	callq	0x40f8640 <_ZN4llvm15SmallVectorBaseIjE8grow_podEPvmm>
+ 35014e9:      	movq	%r15, %r10
+ 35014ec:      	movl	0x40(%rsp), %eax
+ 35014f0:      	jmp	0x35014aa <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x31a>
+ 35014f2:      	nopw	%cs:(%rax,%rax)
+ 35014fc:      	nopl	(%rax)
+ 3501500:      	movq	%r14, %r10
+ 3501503:      	jmp	0x3501b09 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x979>
+ 3501508:      	movq	0x18(%rsp), %rax
+ 350150d:      	movq	0x10(%rax), %rdi
+ 3501511:      	movq	0x330(%rax), %rsi
+ 3501518:      	movq	0x8(%r15), %rdx
+ 350151c:      	xorl	%ecx, %ecx
+ 350151e:      	callq	0x29ef5d0 <_ZNK4llvm18TargetLoweringBase12getValueTypeERKNS_10DataLayoutEPNS_4TypeEb>
+ 3501523:      	testw	%ax, %ax
+ 3501526:      	je	0x3501805 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x675>
+ 350152c:      	movzwl	%ax, %ecx
+ 350152f:      	shll	$0x4, %ecx
+ 3501532:      	leaq	-0x2627a39(%rip), %rdx  # 0xed9b00 <_ZZNK4llvm3MVT13getSizeInBitsEvE9SizeTable>
+ 3501539:      	movq	-0x10(%rcx,%rdx), %rax
+ 350153e:      	movzbl	-0x8(%rcx,%rdx), %edx
+ 3501543:      	cmpb	$0x1, %dl
+ 3501546:      	movq	%r14, %r10
+ 3501549:      	je	0x3501e25 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xc95>
+ 350154f:      	testl	%eax, %eax
+ 3501551:      	je	0x3501ae0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x950>
+ 3501557:      	cmpl	$0x40, %eax
+ 350155a:      	ja	0x350184c <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x6bc>
+ 3501560:      	negb	%al
+ 3501562:      	movq	$-0x1, %rdx
+ 3501569:      	movl	%eax, %ecx
+ 350156b:      	shrq	%cl, %rdx
+ 350156e:      	cmpl	$0x40, 0x8(%rsp)
+ 3501573:      	ja	0x3501975 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x7e5>
+ 3501579:      	orq	%rdx, (%rsp)
+ 350157d:      	jmp	0x3501ae0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x950>
+ 3501582:      	movq	-0x8(%r15), %rcx
+ 3501586:      	movq	0x20(%rcx), %r12
+ 350158a:      	cmpb	$0x5, (%r12)
+ 350158f:      	movq	%r14, %r10
+ 3501592:      	jne	0x3502009 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe79>
+ 3501598:      	movl	0x20(%r12), %r9d
+ 350159d:      	cmpq	$0x40, %r9
+ 35015a1:      	movq	%r9, 0x10(%rsp)
+ 35015a6:      	ja	0x35016bf <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x52f>
+ 35015ac:      	movq	0x18(%r12), %r14
+ 35015b1:      	movl	0x8(%rsp), %esi
+ 35015b5:      	cmpq	$0x40, %rsi
+ 35015b9:      	jbe	0x350170c <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x57c>
+ 35015bf:      	movl	%esi, %edx
+ 35015c1:      	movq	(%rsp), %rax
+ 35015c5:      	addq	$0x3f, %rsi
+ 35015c9:      	movq	%rsi, %rcx
+ 35015cc:      	shrq	$0x6, %rcx
+ 35015d0:      	cmpl	$0xc1, %edx
+ 35015d6:      	jb	0x35015f8 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x468>
+ 35015d8:      	leal	(,%rcx,8), %edx
+ 35015df:      	leaq	(%r14,%rdx), %rdi
+ 35015e3:      	cmpq	%rdi, %rax
+ 35015e6:      	jae	0x3501b1a <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x98a>
+ 35015ec:      	addq	%rax, %rdx
+ 35015ef:      	cmpq	%r14, %rdx
+ 35015f2:      	jbe	0x3501b1a <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x98a>
+ 35015f8:      	xorl	%edx, %edx
+ 35015fa:      	movq	%rcx, %rdi
+ 35015fd:      	movq	%rdx, %rsi
+ 3501600:      	andq	$0x3, %rdi
+ 3501604:      	je	0x3501620 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x490>
+ 3501606:      	movq	%rdx, %rsi
+ 3501609:      	nopl	(%rax)
+ 3501610:      	movq	(%r14,%rsi,8), %r8
+ 3501614:      	orq	%r8, (%rax,%rsi,8)
+ 3501618:      	incq	%rsi
+ 350161b:      	decq	%rdi
+ 350161e:      	jne	0x3501610 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x480>
+ 3501620:      	subl	%ecx, %edx
+ 3501622:      	cmpl	$-0x4, %edx
+ 3501625:      	ja	0x3501710 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x580>
+ 350162b:      	nopl	(%rax,%rax)
+ 3501630:      	movq	(%r14,%rsi,8), %rdx
+ 3501634:      	orq	%rdx, (%rax,%rsi,8)
+ 3501638:      	movq	0x8(%r14,%rsi,8), %rdx
+ 350163d:      	orq	%rdx, 0x8(%rax,%rsi,8)
+ 3501642:      	movq	0x10(%r14,%rsi,8), %rdx
+ 3501647:      	orq	%rdx, 0x10(%rax,%rsi,8)
+ 350164c:      	movq	0x18(%r14,%rsi,8), %rdx
+ 3501651:      	orq	%rdx, 0x18(%rax,%rsi,8)
+ 3501656:      	addq	$0x4, %rsi
+ 350165a:      	cmpq	%rsi, %rcx
+ 350165d:      	jne	0x3501630 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x4a0>
+ 350165f:      	jmp	0x3501710 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x580>
+ 3501664:      	movq	-0x8(%r15), %rcx
+ 3501668:      	movq	0x20(%rcx), %rax
+ 350166c:      	cmpb	$0x5, (%rax)
+ 350166f:      	movq	%r14, %r10
+ 3501672:      	jne	0x3502009 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe79>
+ 3501678:      	movl	0x20(%rax), %ecx
+ 350167b:      	addq	$0x18, %rax
+ 350167f:      	cmpq	$0x41, %rcx
+ 3501683:      	jb	0x3501931 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x7a1>
+ 3501689:      	leaq	0x3f(%rcx), %rsi
+ 350168d:      	shrq	$0x6, %rsi
+ 3501691:      	movq	(%rax), %r8
+ 3501694:      	movl	%esi, %edx
+ 3501696:      	shll	$0x6, %edx
+ 3501699:      	incq	%rsi
+ 350169c:      	xorl	%edi, %edi
+ 350169e:      	nop
+ 35016a0:      	movq	-0x10(%r8,%rsi,8), %r9
+ 35016a5:      	testq	%r9, %r9
+ 35016a8:      	jne	0x3501909 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x779>
+ 35016ae:      	addl	$0x40, %edi
+ 35016b1:      	decq	%rsi
+ 35016b4:      	cmpq	$0x1, %rsi
+ 35016b8:      	ja	0x35016a0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x510>
+ 35016ba:      	jmp	0x3501912 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x782>
+ 35016bf:      	leaq	0x3f(%r9), %rbx
+ 35016c3:      	shrq	$0x3, %rbx
+ 35016c7:      	andl	$-0x8, %ebx
+ 35016ca:      	movq	%rbx, %rdi
+ 35016cd:      	movl	%ebp, %r13d
+ 35016d0:      	movq	%r10, %rbp
+ 35016d3:      	callq	0x828a830 <_Znam@plt>
+ 35016d8:      	movq	%rax, %r14
+ 35016db:      	movq	0x18(%r12), %rsi
+ 35016e0:      	movq	%rax, %rdi
+ 35016e3:      	movq	%rbx, %rdx
+ 35016e6:      	callq	0x828ace0 <memcpy@plt>
+ 35016eb:      	movq	0x10(%rsp), %r9
+ 35016f0:      	movq	%rbp, %r10
+ 35016f3:      	movl	%r13d, %ebp
+ 35016f6:      	movq	0xd8(%rsp), %r13
+ 35016fe:      	movl	0x8(%rsp), %esi
+ 3501702:      	cmpq	$0x40, %rsi
+ 3501706:      	ja	0x35015bf <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x42f>
+ 350170c:      	orq	%r14, (%rsp)
+ 3501710:      	cmpl	$0x41, %r9d
+ 3501714:      	jae	0x3501766 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x5d6>
+ 3501716:      	cmpq	%r10, %r14
+ 3501719:      	jbe	0x3501a49 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8b9>
+ 350171f:      	movq	%r14, %rax
+ 3501722:      	cmpl	$0x41, %ebp
+ 3501725:      	movl	%r9d, %ebp
+ 3501728:      	jb	0x3501a4c <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8bc>
+ 350172e:      	leaq	0x3f(%r9), %r12
+ 3501732:      	movq	%r12, %rbx
+ 3501735:      	shrq	$0x6, %rbx
+ 3501739:      	testq	%r10, %r10
+ 350173c:      	je	0x350174b <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x5bb>
+ 350173e:      	movq	%r10, %rdi
+ 3501741:      	callq	0x828a840 <_ZdaPv@plt>
+ 3501746:      	movq	0x10(%rsp), %r9
+ 350174b:      	movl	%r9d, %ebp
+ 350174e:      	movq	%r14, %rax
+ 3501751:      	cmpl	$0x41, %r9d
+ 3501755:      	jb	0x3501a4c <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8bc>
+ 350175b:      	addq	$0x3f, %r9
+ 350175f:      	movq	%r9, 0x30(%rsp)
+ 3501764:      	jmp	0x35017a0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x610>
+ 3501766:      	leaq	0x3f(%r9), %r12
+ 350176a:      	movq	%r12, %rbx
+ 350176d:      	shrq	$0x6, %rbx
+ 3501771:      	movq	%rbx, %rax
+ 3501774:      	nopw	%cs:(%rax,%rax)
+ 350177e:      	nop
+ 3501780:      	subq	$0x1, %rax
+ 3501784:      	jb	0x35017d8 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x648>
+ 3501786:      	movq	(%r10,%rax,8), %rcx
+ 350178a:      	cmpq	%rcx, (%r14,%rax,8)
+ 350178e:      	je	0x3501780 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x5f0>
+ 3501790:      	jbe	0x35017d8 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x648>
+ 3501792:      	cmpl	$0x41, %ebp
+ 3501795:      	jae	0x3501b82 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x9f2>
+ 350179b:      	movq	%r12, 0x30(%rsp)
+ 35017a0:      	movq	%r12, %rbp
+ 35017a3:      	shll	$0x3, %ebx
+ 35017a6:      	movq	%rbx, %rdi
+ 35017a9:      	callq	0x828a830 <_Znam@plt>
+ 35017ae:      	movq	%rax, %r10
+ 35017b1:      	movq	0x30(%rsp), %r12
+ 35017b6:      	shrq	$0x3, %rbp
+ 35017ba:      	andl	$-0x8, %ebp
+ 35017bd:      	movq	%r10, %rdi
+ 35017c0:      	movq	%r14, %rsi
+ 35017c3:      	movq	%rbp, %rdx
+ 35017c6:      	movq	%r10, %rbx
+ 35017c9:      	callq	0x828ace0 <memcpy@plt>
+ 35017ce:      	movq	%rbx, %r10
+ 35017d1:      	movq	0x10(%rsp), %rax
+ 35017d6:      	movl	%eax, %ebp
+ 35017d8:      	shrq	$0x3, %r12
+ 35017dc:      	andl	$-0x8, %r12d
+ 35017e0:      	movq	%r14, %rdi
+ 35017e3:      	movq	%r10, %rsi
+ 35017e6:      	movq	%r12, %rdx
+ 35017e9:      	movq	%r10, %rbx
+ 35017ec:      	callq	0x828a750 <bcmp@plt>
+ 35017f1:      	testl	%eax, %eax
+ 35017f3:      	leaq	-0x1b7979a(%rip), %r12  # 0x1988060 <_ZTSN12_GLOBAL__N_116CFIInstrInserterE.llvm.6225596434653274425+0x2fc>
+ 35017fa:      	jne	0x3501ab7 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x927>
+ 3501800:      	jmp	0x3501a62 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8d2>
+ 3501805:      	movl	0x8(%rdx), %eax
+ 3501808:      	movzbl	%al, %ecx
+ 350180b:      	cmpl	$0xc, %ecx
+ 350180e:      	setne	%sil
+ 3501812:      	testq	%rdx, %rdx
+ 3501815:      	sete	%dil
+ 3501819:      	orb	%sil, %dil
+ 350181c:      	je	0x3501ac9 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x939>
+ 3501822:      	testq	%rdx, %rdx
+ 3501825:      	setne	%al
+ 3501828:      	addl	$-0x13, %ecx
+ 350182b:      	cmpl	$-0x2, %ecx
+ 350182e:      	setae	%cl
+ 3501831:      	testb	%cl, %al
+ 3501833:      	jne	0x3501b69 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x9d9>
+ 3501839:      	movq	(%rsp), %rax
+ 350183d:      	movq	$-0x1, (%rax)
+ 3501844:      	movq	%r14, %r10
+ 3501847:      	jmp	0x3501ae0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x950>
+ 350184c:      	movl	%eax, %esi
+ 350184e:      	shrl	$0x6, %esi
+ 3501851:      	movl	%eax, %ecx
+ 3501853:      	movl	%esi, %edx
+ 3501855:      	andl	$0x3f, %ecx
+ 3501858:      	je	0x350186e <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x6de>
+ 350185a:      	negb	%cl
+ 350185c:      	movq	$-0x1, %rdi
+ 3501863:      	shrq	%cl, %rdi
+ 3501866:      	movq	(%rsp), %rcx
+ 350186a:      	orq	%rdi, (%rcx,%rdx,8)
+ 350186e:      	movq	(%rsp), %rcx
+ 3501872:      	movq	$-0x1, (%rcx)
+ 3501879:      	cmpl	$0x80, %eax
+ 350187e:      	jb	0x3501ae0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x950>
+ 3501884:      	decq	%rdx
+ 3501887:      	movl	%edx, %eax
+ 3501889:      	andl	$0x3, %eax
+ 350188c:      	addl	$-0x2, %esi
+ 350188f:      	movl	$0x1, %ecx
+ 3501894:      	cmpl	$0x3, %esi
+ 3501897:      	jb	0x35018f0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x760>
+ 3501899:      	andq	$-0x4, %rdx
+ 350189d:      	xorl	%ecx, %ecx
+ 350189f:      	nop
+ 35018a0:      	movq	(%rsp), %rsi
+ 35018a4:      	movq	$-0x1, 0x8(%rsi,%rcx,8)
+ 35018ad:      	movq	(%rsp), %rsi
+ 35018b1:      	movq	$-0x1, 0x10(%rsi,%rcx,8)
+ 35018ba:      	movq	(%rsp), %rsi
+ 35018be:      	movq	$-0x1, 0x18(%rsi,%rcx,8)
+ 35018c7:      	movq	(%rsp), %rsi
+ 35018cb:      	movq	$-0x1, 0x20(%rsi,%rcx,8)
+ 35018d4:      	addq	$0x4, %rcx
+ 35018d8:      	cmpq	%rcx, %rdx
+ 35018db:      	jne	0x35018a0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x710>
+ 35018dd:      	testq	%rax, %rax
+ 35018e0:      	je	0x3501ae0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x950>
+ 35018e6:      	incq	%rcx
+ 35018e9:      	nopl	(%rax)
+ 35018f0:      	movq	(%rsp), %rdx
+ 35018f4:      	movq	$-0x1, (%rdx,%rcx,8)
+ 35018fc:      	incq	%rcx
+ 35018ff:      	decq	%rax
+ 3501902:      	jne	0x35018f0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x760>
+ 3501904:      	jmp	0x3501ae0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x950>
+ 3501909:      	bsrq	%r9, %rdx
+ 350190d:      	xorl	$0x3f, %edx
+ 3501910:      	addl	%edi, %edx
+ 3501912:      	movl	%ecx, %esi
+ 3501914:      	andl	$0x3f, %esi
+ 3501917:      	movl	%ecx, %edi
+ 3501919:      	orl	$-0x40, %edi
+ 350191c:      	testl	%esi, %esi
+ 350191e:      	cmovel	%esi, %edi
+ 3501921:      	addl	%edx, %edi
+ 3501923:      	movl	%ecx, %esi
+ 3501925:      	subl	%edi, %esi
+ 3501927:      	movq	0x28(%rsp), %rdx
+ 350192c:      	cmpl	$0x40, %esi
+ 350192f:      	ja	0x3501948 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x7b8>
+ 3501931:      	cmpl	$0x41, %ecx
+ 3501934:      	jb	0x3501939 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x7a9>
+ 3501936:      	movq	(%rax), %rax
+ 3501939:      	movq	(%rax), %rdx
+ 350193c:      	movq	0x28(%rsp), %rax
+ 3501941:      	cmpq	%rax, %rdx
+ 3501944:      	cmovaeq	%rax, %rdx
+ 3501948:      	movq	0x20(%rsp), %rax
+ 350194d:      	subq	%rdx, %rax
+ 3501950:      	testl	%eax, %eax
+ 3501952:      	je	0x3501ae0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x950>
+ 3501958:      	cmpl	$0x40, %eax
+ 350195b:      	ja	0x3501981 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x7f1>
+ 350195d:      	negb	%al
+ 350195f:      	movq	$-0x1, %rdx
+ 3501966:      	movl	%eax, %ecx
+ 3501968:      	shrq	%cl, %rdx
+ 350196b:      	cmpl	$0x41, 0x8(%rsp)
+ 3501970:      	movq	%rsp, %rax
+ 3501973:      	jb	0x3501979 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x7e9>
+ 3501975:      	movq	(%rsp), %rax
+ 3501979:      	orq	%rdx, (%rax)
+ 350197c:      	jmp	0x3501ae0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x950>
+ 3501981:      	movl	%eax, %esi
+ 3501983:      	shrl	$0x6, %esi
+ 3501986:      	movl	%eax, %ecx
+ 3501988:      	movl	%esi, %edx
+ 350198a:      	andl	$0x3f, %ecx
+ 350198d:      	je	0x35019a3 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x813>
+ 350198f:      	negb	%cl
+ 3501991:      	movq	$-0x1, %rdi
+ 3501998:      	shrq	%cl, %rdi
+ 350199b:      	movq	(%rsp), %rcx
+ 350199f:      	orq	%rdi, (%rcx,%rdx,8)
+ 35019a3:      	movq	(%rsp), %rcx
+ 35019a7:      	movq	$-0x1, (%rcx)
+ 35019ae:      	cmpl	$0x80, %eax
+ 35019b3:      	jb	0x3501ae0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x950>
+ 35019b9:      	decq	%rdx
+ 35019bc:      	movl	%edx, %eax
+ 35019be:      	andl	$0x3, %eax
+ 35019c1:      	addl	$-0x2, %esi
+ 35019c4:      	movl	$0x1, %ecx
+ 35019c9:      	cmpl	$0x3, %esi
+ 35019cc:      	jb	0x3501a30 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8a0>
+ 35019ce:      	andq	$-0x4, %rdx
+ 35019d2:      	xorl	%ecx, %ecx
+ 35019d4:      	nopw	%cs:(%rax,%rax)
+ 35019de:      	nop
+ 35019e0:      	movq	(%rsp), %rsi
+ 35019e4:      	movq	$-0x1, 0x8(%rsi,%rcx,8)
+ 35019ed:      	movq	(%rsp), %rsi
+ 35019f1:      	movq	$-0x1, 0x10(%rsi,%rcx,8)
+ 35019fa:      	movq	(%rsp), %rsi
+ 35019fe:      	movq	$-0x1, 0x18(%rsi,%rcx,8)
+ 3501a07:      	movq	(%rsp), %rsi
+ 3501a0b:      	movq	$-0x1, 0x20(%rsi,%rcx,8)
+ 3501a14:      	addq	$0x4, %rcx
+ 3501a18:      	cmpq	%rcx, %rdx
+ 3501a1b:      	jne	0x35019e0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x850>
+ 3501a1d:      	testq	%rax, %rax
+ 3501a20:      	je	0x3501ae0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x950>
+ 3501a26:      	incq	%rcx
+ 3501a29:      	nopl	(%rax)
+ 3501a30:      	movq	(%rsp), %rdx
+ 3501a34:      	movq	$-0x1, (%rdx,%rcx,8)
+ 3501a3c:      	incq	%rcx
+ 3501a3f:      	decq	%rax
+ 3501a42:      	jne	0x3501a30 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8a0>
+ 3501a44:      	jmp	0x3501ae0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x950>
+ 3501a49:      	movq	%r10, %rax
+ 3501a4c:      	movq	%r14, %rbx
+ 3501a4f:      	movq	%rax, %r10
+ 3501a52:      	cmpq	%rax, %r14
+ 3501a55:      	leaq	-0x1b799fc(%rip), %r12  # 0x1988060 <_ZTSN12_GLOBAL__N_116CFIInstrInserterE.llvm.6225596434653274425+0x2fc>
+ 3501a5c:      	jne	0x3501b09 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x979>
+ 3501a62:      	movl	0x4(%r15), %eax
+ 3501a66:      	testl	$0x40000000, %eax       # imm = 0x40000000
+ 3501a6b:      	jne	0x3501a78 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8e8>
+ 3501a6d:      	shll	$0x5, %eax
+ 3501a70:      	movq	%r15, %rcx
+ 3501a73:      	subq	%rax, %rcx
+ 3501a76:      	jmp	0x3501a7c <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8ec>
+ 3501a78:      	movq	-0x8(%r15), %rcx
+ 3501a7c:      	movq	0x10(%rsp), %rsi
+ 3501a81:      	cmpq	%r13, (%rcx)
+ 3501a84:      	jne	0x3501aaf <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x91f>
+ 3501a86:      	movl	0xf8(%rsp), %edx
+ 3501a8d:      	cmpl	0xfc(%rsp), %edx
+ 3501a94:      	jae	0x3501bcb <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xa3b>
+ 3501a9a:      	movq	0xf0(%rsp), %rax
+ 3501aa2:      	movl	%edx, %ecx
+ 3501aa4:      	movq	%r15, (%rax,%rcx,8)
+ 3501aa8:      	incl	0xf8(%rsp)
+ 3501aaf:      	movq	%rbx, %r10
+ 3501ab2:      	cmpl	$0x41, %esi
+ 3501ab5:      	jb	0x3501b09 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x979>
+ 3501ab7:      	testq	%r14, %r14
+ 3501aba:      	je	0x3501ac4 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x934>
+ 3501abc:      	movq	%r14, %rdi
+ 3501abf:      	callq	0x828a840 <_ZdaPv@plt>
+ 3501ac4:      	movq	%rbx, %r10
+ 3501ac7:      	jmp	0x3501b09 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x979>
+ 3501ac9:      	shrl	$0x8, %eax
+ 3501acc:      	movq	%r14, %r10
+ 3501acf:      	testl	%eax, %eax
+ 3501ad1:      	jne	0x3501557 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x3c7>
+ 3501ad7:      	nopw	(%rax,%rax)
+ 3501ae0:      	movl	0x90(%rsp), %edx
+ 3501ae7:      	cmpl	0x94(%rsp), %edx
+ 3501aee:      	jae	0x3501b9c <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xa0c>
+ 3501af4:      	movq	0x88(%rsp), %rax
+ 3501afc:      	movl	%edx, %ecx
+ 3501afe:      	movq	%r15, (%rax,%rcx,8)
+ 3501b02:      	incl	0x90(%rsp)
+ 3501b09:      	movl	0x40(%rsp), %eax
+ 3501b0d:      	testl	%eax, %eax
+ 3501b0f:      	jne	0x35013a0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x210>
+ 3501b15:      	jmp	0x3501ce1 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xb51>
+ 3501b1a:      	movl	%ecx, %edx
+ 3501b1c:      	andl	$-0x4, %edx
+ 3501b1f:      	shrq	$0x3, %rsi
+ 3501b23:      	andl	$-0x20, %esi
+ 3501b26:      	xorl	%edi, %edi
+ 3501b28:      	nopl	(%rax,%rax)
+ 3501b30:      	movups	(%r14,%rdi), %xmm0
+ 3501b35:      	movups	0x10(%r14,%rdi), %xmm1
+ 3501b3b:      	movups	(%rax,%rdi), %xmm2
+ 3501b3f:      	orps	%xmm0, %xmm2
+ 3501b42:      	movups	0x10(%rax,%rdi), %xmm0
+ 3501b47:      	orps	%xmm1, %xmm0
+ 3501b4a:      	movups	%xmm2, (%rax,%rdi)
+ 3501b4e:      	movups	%xmm0, 0x10(%rax,%rdi)
+ 3501b53:      	addq	$0x20, %rdi
+ 3501b57:      	cmpq	%rdi, %rsi
+ 3501b5a:      	jne	0x3501b30 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x9a0>
+ 3501b5c:      	cmpl	%edx, %ecx
+ 3501b5e:      	je	0x3501710 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x580>
+ 3501b64:      	jmp	0x35015fa <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x46a>
+ 3501b69:      	movq	%rdx, %rdi
+ 3501b6c:      	callq	0x3c1ff30 <_ZNK4llvm4Type22getPrimitiveSizeInBitsEv>
+ 3501b71:      	cmpb	$0x1, %dl
+ 3501b74:      	movq	%r14, %r10
+ 3501b77:      	jne	0x350154f <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x3bf>
+ 3501b7d:      	jmp	0x3501e25 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xc95>
+ 3501b82:      	movl	%ebp, %eax
+ 3501b84:      	addq	$0x3f, %rax
+ 3501b88:      	shrq	$0x6, %rax
+ 3501b8c:      	cmpl	%ebx, %eax
+ 3501b8e:      	jne	0x3501739 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x5a9>
+ 3501b94:      	movq	%r12, %rbp
+ 3501b97:      	jmp	0x35017b6 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x626>
+ 3501b9c:      	incq	%rdx
+ 3501b9f:      	movl	$0x8, %ecx
+ 3501ba4:      	leaq	0x88(%rsp), %rdi
+ 3501bac:      	leaq	0x98(%rsp), %rsi
+ 3501bb4:      	movq	%r10, %rbx
+ 3501bb7:      	callq	0x40f8640 <_ZN4llvm15SmallVectorBaseIjE8grow_podEPvmm>
+ 3501bbc:      	movq	%rbx, %r10
+ 3501bbf:      	movl	0x90(%rsp), %edx
+ 3501bc6:      	jmp	0x3501af4 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x964>
+ 3501bcb:      	incq	%rdx
+ 3501bce:      	movl	$0x8, %ecx
+ 3501bd3:      	leaq	0xf0(%rsp), %rdi
+ 3501bdb:      	leaq	0x100(%rsp), %rsi
+ 3501be3:      	callq	0x40f8640 <_ZN4llvm15SmallVectorBaseIjE8grow_podEPvmm>
+ 3501be8:      	movq	0x10(%rsp), %rsi
+ 3501bed:      	movl	0xf8(%rsp), %edx
+ 3501bf4:      	jmp	0x3501a9a <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x90a>
+ 3501bf9:      	movl	0x8(%rdx), %eax
+ 3501bfc:      	movzbl	%al, %edi
+ 3501bff:      	cmpl	$0xc, %edi
+ 3501c02:      	setne	%cl
+ 3501c05:      	testq	%rdx, %rdx
+ 3501c08:      	sete	%sil
+ 3501c0c:      	orb	%cl, %sil
+ 3501c0f:      	je	0x3501d60 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xbd0>
+ 3501c15:      	testq	%rdx, %rdx
+ 3501c18:      	setne	%cl
+ 3501c1b:      	addl	$-0x13, %edi
+ 3501c1e:      	cmpl	$-0x2, %edi
+ 3501c21:      	setae	%al
+ 3501c24:      	testb	%al, %cl
+ 3501c26:      	jne	0x3501e14 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xc84>
+ 3501c2c:      	movq	%rbp, 0x18(%rsp)
+ 3501c31:      	movq	0x20(%rsp), %rax
+ 3501c36:      	movl	%eax, %ebp
+ 3501c38:      	movl	%eax, %r14d
+ 3501c3b:      	addq	$0x3f, %r14
+ 3501c3f:      	shrq	$0x3, %r14
+ 3501c43:      	andl	$-0x8, %r14d
+ 3501c47:      	movq	%r14, %rdi
+ 3501c4a:      	callq	0x828a830 <_Znam@plt>
+ 3501c4f:      	movq	%rax, %rbx
+ 3501c52:      	movq	%rax, %rdi
+ 3501c55:      	xorl	%esi, %esi
+ 3501c57:      	movq	%r14, %rdx
+ 3501c5a:      	callq	0x828ac20 <memset@plt>
+ 3501c5f:      	movq	$0x0, (%rbx)
+ 3501c66:      	movq	%r14, %rdi
+ 3501c69:      	callq	0x828a830 <_Znam@plt>
+ 3501c6e:      	movq	%rax, %r15
+ 3501c71:      	movq	%rax, %rdi
+ 3501c74:      	xorl	%esi, %esi
+ 3501c76:      	movq	%r14, %rdx
+ 3501c79:      	callq	0x828ac20 <memset@plt>
+ 3501c7e:      	movq	%r15, %r10
+ 3501c81:      	movq	$0x0, (%r15)
+ 3501c88:      	movq	%rbx, (%rsp)
+ 3501c8c:      	movl	0x40(%rsp), %eax
+ 3501c90:      	testl	%eax, %eax
+ 3501c92:      	jne	0x350137d <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1ed>
+ 3501c98:      	movl	%ebp, %ebx
+ 3501c9a:      	cmpl	$0x40, %ebx
+ 3501c9d:      	jbe	0x3501cea <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xb5a>
+ 3501c9f:      	movl	%ebx, %edx
+ 3501ca1:      	addq	$0x3f, %rdx
+ 3501ca5:      	shrq	$0x6, %rdx
+ 3501ca9:      	movq	(%rsp), %rsi
+ 3501cad:      	movl	%edx, %ecx
+ 3501caf:      	shll	$0x6, %ecx
+ 3501cb2:      	leaq	0x1(%rdx), %rdi
+ 3501cb6:      	xorl	%eax, %eax
+ 3501cb8:      	nopl	(%rax,%rax)
+ 3501cc0:      	movq	-0x10(%rsi,%rdi,8), %r8
+ 3501cc5:      	testq	%r8, %r8
+ 3501cc8:      	jne	0x3501dc5 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xc35>
+ 3501cce:      	addl	$0x40, %eax
+ 3501cd1:      	decq	%rdi
+ 3501cd4:      	cmpq	$0x1, %rdi
+ 3501cd8:      	ja	0x3501cc0 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xb30>
+ 3501cda:      	movl	%ecx, %edi
+ 3501cdc:      	jmp	0x3501dce <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xc3e>
+ 3501ce1:      	movl	0x8(%rsp), %ebx
+ 3501ce5:      	cmpl	$0x40, %ebx
+ 3501ce8:      	ja	0x3501c9f <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xb0f>
+ 3501cea:      	movq	(%rsp), %rsi
+ 3501cee:      	cmpq	$0x2, %rsi
+ 3501cf2:      	jb	0x3502009 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe79>
+ 3501cf8:      	bsrq	%rsi, %rcx
+ 3501cfc:      	xorq	$0x3f, %rcx
+ 3501d00:      	movq	$-0x1, %rax
+ 3501d07:      	shrq	%cl, %rax
+ 3501d0a:      	cmpq	%rax, %rsi
+ 3501d0d:      	jne	0x3502009 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe79>
+ 3501d13:      	movl	$0x40, %ebx
+ 3501d18:      	subl	%ecx, %ebx
+ 3501d1a:      	jmp	0x3501e4e <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xcbe>
+ 3501d1f:      	movq	0x18(%r14), %rcx
+ 3501d23:      	cmpb	$0x1, 0x124(%rbp)
+ 3501d2a:      	jne	0x3501d72 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xbe2>
+ 3501d2c:      	movl	0x11c(%rbp), %eax
+ 3501d32:      	testq	%rax, %rax
+ 3501d35:      	je	0x350121d <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8d>
+ 3501d3b:      	movq	0x110(%rbp), %rsi
+ 3501d42:      	shlq	$0x3, %rax
+ 3501d46:      	xorl	%edi, %edi
+ 3501d48:      	cmpq	%rcx, (%rsi,%rdi)
+ 3501d4c:      	je	0x35011ac <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1c>
+ 3501d52:      	addq	$0x8, %rdi
+ 3501d56:      	cmpq	%rdi, %rax
+ 3501d59:      	jne	0x3501d48 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xbb8>
+ 3501d5b:      	jmp	0x350121d <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8d>
+ 3501d60:      	shrl	$0x8, %eax
+ 3501d63:      	testl	%eax, %eax
+ 3501d65:      	jne	0x350134c <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1bc>
+ 3501d6b:      	xorl	%eax, %eax
+ 3501d6d:      	jmp	0x3502043 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xeb3>
+ 3501d72:      	movl	%ecx, %eax
+ 3501d74:      	shrl	$0x4, %eax
+ 3501d77:      	movl	%ecx, %esi
+ 3501d79:      	shrl	$0x9, %esi
+ 3501d7c:      	xorl	%eax, %esi
+ 3501d7e:      	movl	0x118(%rbp), %edi
+ 3501d84:      	decl	%edi
+ 3501d86:      	movq	0x110(%rbp), %r8
+ 3501d8d:      	andl	%edi, %esi
+ 3501d8f:      	movq	(%r8,%rsi,8), %r10
+ 3501d93:      	cmpq	%rcx, %r10
+ 3501d96:      	je	0x35011ac <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1c>
+ 3501d9c:      	movl	$0x1, %r9d
+ 3501da2:      	cmpq	$-0x1, %r10
+ 3501da6:      	je	0x350121d <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x8d>
+ 3501dac:      	addl	%r9d, %esi
+ 3501daf:      	incl	%r9d
+ 3501db2:      	andl	%edi, %esi
+ 3501db4:      	movq	(%r8,%rsi,8), %r10
+ 3501db8:      	xorl	%eax, %eax
+ 3501dba:      	cmpq	%rcx, %r10
+ 3501dbd:      	je	0x35011ae <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1e>
+ 3501dc3:      	jmp	0x3501da2 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xc12>
+ 3501dc5:      	bsrq	%r8, %rdi
+ 3501dc9:      	xorl	$0x3f, %edi
+ 3501dcc:      	addl	%eax, %edi
+ 3501dce:      	movl	%ebx, %eax
+ 3501dd0:      	andl	$0x3f, %eax
+ 3501dd3:      	movl	%ebx, %r8d
+ 3501dd6:      	orl	$-0x40, %r8d
+ 3501dda:      	testl	%eax, %eax
+ 3501ddc:      	cmovel	%eax, %r8d
+ 3501de0:      	addl	%edi, %r8d
+ 3501de3:      	subl	%r8d, %ebx
+ 3501de6:      	xorl	%eax, %eax
+ 3501de8:      	cmpl	$0x2, %ebx
+ 3501deb:      	jb	0x350200b <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe7b>
+ 3501df1:      	xorl	%edi, %edi
+ 3501df3:      	nopw	%cs:(%rax,%rax)
+ 3501dfd:      	nopl	(%rax)
+ 3501e00:      	cmpq	$-0x1, (%rsi,%rdi,8)
+ 3501e05:      	jne	0x3501e31 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xca1>
+ 3501e07:      	incq	%rdi
+ 3501e0a:      	addl	$-0x40, %eax
+ 3501e0d:      	cmpq	%rdi, %rdx
+ 3501e10:      	jne	0x3501e00 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xc70>
+ 3501e12:      	jmp	0x3501e46 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xcb6>
+ 3501e14:      	movq	%rdx, %rdi
+ 3501e17:      	callq	0x3c1ff30 <_ZNK4llvm4Type22getPrimitiveSizeInBitsEv>
+ 3501e1c:      	cmpb	$0x1, %dl
+ 3501e1f:      	jne	0x3501344 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1b4>
+ 3501e25:      	leaq	-0x27a997d(%rip), %rdi  # 0xd584af <.str.llvm.78920304263242176>
+ 3501e2c:      	callq	0x40cc8e0 <_ZN4llvm24reportFatalInternalErrorEPKc>
+ 3501e31:      	movl	%edi, %ecx
+ 3501e33:      	movq	(%rsi,%rcx,8), %rdx
+ 3501e37:      	notq	%rdx
+ 3501e3a:      	movl	$0x40, %ecx
+ 3501e3f:      	tzcntq	%rdx, %rcx
+ 3501e44:      	subl	%eax, %ecx
+ 3501e46:      	cmpl	%ecx, %ebx
+ 3501e48:      	jne	0x3502009 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe79>
+ 3501e4e:      	cmpl	$0x40, %ebp
+ 3501e51:      	ja	0x3501e67 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xcd7>
+ 3501e53:      	movq	%r10, %r14
+ 3501e56:      	cmpq	%rsi, %r10
+ 3501e59:      	je	0x3501e92 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xd02>
+ 3501e5b:      	xorl	%eax, %eax
+ 3501e5d:      	leaq	0x48(%rsp), %r12
+ 3501e62:      	jmp	0x3502028 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe98>
+ 3501e67:      	movl	%ebp, %edx
+ 3501e69:      	addq	$0x3f, %rdx
+ 3501e6d:      	shrq	$0x3, %rdx
+ 3501e71:      	andl	$-0x8, %edx
+ 3501e74:      	movq	%r10, %r14
+ 3501e77:      	movq	%r10, %rdi
+ 3501e7a:      	callq	0x828a750 <bcmp@plt>
+ 3501e7f:      	testl	%eax, %eax
+ 3501e81:      	je	0x3501e92 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xd02>
+ 3501e83:      	xorl	%eax, %eax
+ 3501e85:      	leaq	0x48(%rsp), %r12
+ 3501e8a:      	movq	%r14, %r10
+ 3501e8d:      	jmp	0x3502015 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe85>
+ 3501e92:      	movq	0x8(%r13), %rax
+ 3501e96:      	movq	(%rax), %r12
+ 3501e99:      	movq	%r12, %rdi
+ 3501e9c:      	movl	%ebx, %esi
+ 3501e9e:      	callq	0x3c203d0 <_ZN4llvm11IntegerType3getERNS_11LLVMContextEj>
+ 3501ea3:      	movq	0x18(%rsp), %rcx
+ 3501ea8:      	movq	0x10(%rcx), %rdi
+ 3501eac:      	movq	%rcx, 0x18(%rsp)
+ 3501eb1:      	movq	0x330(%rcx), %rsi
+ 3501eb8:      	movq	%rax, %rdx
+ 3501ebb:      	xorl	%ecx, %ecx
+ 3501ebd:      	callq	0x29ef5d0 <_ZNK4llvm18TargetLoweringBase12getValueTypeERKNS_10DataLayoutEPNS_4TypeEb>
+ 3501ec2:      	movl	%eax, %ebx
+ 3501ec4:      	movq	%rdx, %r15
+ 3501ec7:      	leaq	0xe0(%rsp), %rdi
+ 3501ecf:      	movl	%ebx, %esi
+ 3501ed1:      	callq	0x2cb4c60 <_ZNK4llvm3EVT6bitsGTES0_>
+ 3501ed6:      	testb	%al, %al
+ 3501ed8:      	je	0x35020b5 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf25>
+ 3501ede:      	movl	%ebx, %edi
+ 3501ee0:      	movq	%r15, %rsi
+ 3501ee3:      	callq	0x35180a0 <_ZNK4llvm3EVT7isRoundEv>
+ 3501ee8:      	testb	%al, %al
+ 3501eea:      	je	0x35020b5 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf25>
+ 3501ef0:      	movzwl	0xe0(%rsp), %ecx
+ 3501ef8:      	xorl	%eax, %eax
+ 3501efa:      	testq	%rcx, %rcx
+ 3501efd:      	movq	%r14, %r10
+ 3501f00:      	je	0x350200b <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe7b>
+ 3501f06:      	testw	%bx, %bx
+ 3501f09:      	je	0x350200b <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe7b>
+ 3501f0f:      	movl	%ecx, %eax
+ 3501f11:      	shll	$0x9, %eax
+ 3501f14:      	leaq	(%rax,%rcx,8), %rax
+ 3501f18:      	movq	0x18(%rsp), %r15
+ 3501f1d:      	addq	0x10(%r15), %rax
+ 3501f21:      	movzwl	%bx, %ecx
+ 3501f24:      	cmpw	$0xfff, 0x226e0(%rax,%rcx,2) # imm = 0xFFF
+ 3501f2e:      	ja	0x3502009 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe79>
+ 3501f34:      	movq	%r10, 0x28(%rsp)
+ 3501f39:      	movq	0x20(%r13), %rax
+ 3501f3d:      	movq	0x28(%r13), %rcx
+ 3501f41:      	addq	$0x30, %rcx
+ 3501f45:      	leaq	-0x18(%rax), %rsi
+ 3501f49:      	xorl	%edx, %edx
+ 3501f4b:      	cmpq	%rcx, %rax
+ 3501f4e:      	cmoveq	%rdx, %rsi
+ 3501f52:      	leaq	0x200(%rsp), %rbx
+ 3501f5a:      	movq	%rbx, %rdi
+ 3501f5d:      	xorl	%edx, %edx
+ 3501f5f:      	xorl	%ecx, %ecx
+ 3501f61:      	xorl	%r8d, %r8d
+ 3501f64:      	callq	0x2d857e0 <_ZN4llvm9IRBuilderINS_14ConstantFolderENS_24IRBuilderDefaultInserterEEC2EPNS_11InstructionEPNS_6MDNodeENS_8ArrayRefINS_17OperandBundleDefTIPNS_5ValueEEEEE>
+ 3501f69:      	movq	%rsp, %rsi
+ 3501f6c:      	movq	%r12, %rdi
+ 3501f6f:      	callq	0x3ae8930 <_ZN4llvm11ConstantInt3getERNS_11LLVMContextERKNS_5APIntE>
+ 3501f74:      	movw	$0x101, 0x1f8(%rsp)     # imm = 0x101
+ 3501f7e:      	leaq	0x1d8(%rsp), %rcx
+ 3501f86:      	movq	%rbx, %rdi
+ 3501f89:      	movq	%r13, %rsi
+ 3501f8c:      	movq	%rax, %rdx
+ 3501f8f:      	callq	0x2883230 <_ZN4llvm13IRBuilderBase9CreateAndEPNS_5ValueES2_RKNS_5TwineE>
+ 3501f94:      	movq	%rax, %rbx
+ 3501f97:      	leaq	0x110(%r15), %rsi
+ 3501f9e:      	leaq	0x1d8(%rsp), %rdi
+ 3501fa6:      	movq	%rax, %rdx
+ 3501fa9:      	callq	0x35154b0 <_ZN4llvm15SmallPtrSetImplIPNS_11InstructionEE6insertES2_>
+ 3501fae:      	leaq	0x348(%r15), %rdx
+ 3501fb5:      	movzbl	0x340(%r15), %ecx
+ 3501fbd:      	movq	%r13, %rdi
+ 3501fc0:      	movq	%rbx, %rsi
+ 3501fc3:      	movq	%rdx, 0x20(%rsp)
+ 3501fc8:      	callq	0x34fdcd0 <_ZL18replaceAllUsesWithPN4llvm5ValueES1_RNS_11SmallPtrSetIPNS_10BasicBlockELj32EEEb>
+ 3501fcd:      	movq	%rbx, 0x10(%rsp)
+ 3501fd2:      	movq	%rbx, %rdi
+ 3501fd5:      	xorl	%esi, %esi
+ 3501fd7:      	movq	%r13, %rdx
+ 3501fda:      	callq	0x3509f90 <_ZN4llvm4User10setOperandEjPNS_5ValueE>
+ 3501fdf:      	movl	0xf8(%rsp), %r13d
+ 3501fe7:      	testq	%r13, %r13
+ 3501fea:      	je	0x3502158 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xfc8>
+ 3501ff0:      	movq	0xf0(%rsp), %r14
+ 3501ff8:      	shlq	$0x3, %r13
+ 3501ffc:      	xorl	%r15d, %r15d
+ 3501fff:      	movq	0x18(%rsp), %rbx
+ 3502004:      	jmp	0x35020d4 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf44>
+ 3502009:      	xorl	%eax, %eax
+ 350200b:      	cmpl	$0x41, %ebp
+ 350200e:      	leaq	0x48(%rsp), %r12
+ 3502013:      	jb	0x3502028 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe98>
+ 3502015:      	testq	%r10, %r10
+ 3502018:      	je	0x3502028 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe98>
+ 350201a:      	movq	%r10, %rdi
+ 350201d:      	movq	%rax, %rbx
+ 3502020:      	callq	0x828a840 <_ZdaPv@plt>
+ 3502025:      	movq	%rbx, %rax
+ 3502028:      	cmpl	$0x41, 0x8(%rsp)
+ 350202d:      	jb	0x3502043 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xeb3>
+ 350202f:      	movq	(%rsp), %rdi
+ 3502033:      	testq	%rdi, %rdi
+ 3502036:      	je	0x3502043 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xeb3>
+ 3502038:      	movq	%rax, %rbx
+ 350203b:      	callq	0x828a840 <_ZdaPv@plt>
+ 3502040:      	movq	%rbx, %rax
+ 3502043:      	movq	0x88(%rsp), %rdi
+ 350204b:      	leaq	0x98(%rsp), %rcx
+ 3502053:      	cmpq	%rcx, %rdi
+ 3502056:      	movq	%rax, %rbx
+ 3502059:      	je	0x3502063 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xed3>
+ 350205b:      	callq	0x828a6d0 <free@plt>
+ 3502060:      	movq	%rbx, %rax
+ 3502063:      	movq	0xf0(%rsp), %rdi
+ 350206b:      	leaq	0x100(%rsp), %rcx
+ 3502073:      	cmpq	%rcx, %rdi
+ 3502076:      	je	0x3502080 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xef0>
+ 3502078:      	callq	0x828a6d0 <free@plt>
+ 350207d:      	movq	%rbx, %rax
+ 3502080:      	cmpb	$0x0, 0x154(%rsp)
+ 3502088:      	jne	0x350209a <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf0a>
+ 350208a:      	movq	0x140(%rsp), %rdi
+ 3502092:      	callq	0x828a6d0 <free@plt>
+ 3502097:      	movq	%rbx, %rax
+ 350209a:      	movq	0x38(%rsp), %rdi
+ 350209f:      	cmpq	%r12, %rdi
+ 35020a2:      	je	0x35011ae <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1e>
+ 35020a8:      	callq	0x828a6d0 <free@plt>
+ 35020ad:      	movq	%rbx, %rax
+ 35020b0:      	jmp	0x35011ae <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1e>
+ 35020b5:      	xorl	%eax, %eax
+ 35020b7:      	movq	%r14, %r10
+ 35020ba:      	jmp	0x350200b <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe7b>
+ 35020bf:      	movq	%r12, %rdi
+ 35020c2:      	callq	0x3b931e0 <_ZN4llvm11Instruction15eraseFromParentEv>
+ 35020c7:      	addq	$0x8, %r15
+ 35020cb:      	cmpq	%r15, %r13
+ 35020ce:      	je	0x3502158 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xfc8>
+ 35020d4:      	movq	(%r14,%r15), %r12
+ 35020d8:      	movl	0x4(%r12), %eax
+ 35020dd:      	testl	$0x40000000, %eax       # imm = 0x40000000
+ 35020e2:      	jne	0x35020ef <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf5f>
+ 35020e4:      	shll	$0x5, %eax
+ 35020e7:      	movq	%r12, %rcx
+ 35020ea:      	subq	%rax, %rcx
+ 35020ed:      	jmp	0x35020f4 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf64>
+ 35020ef:      	movq	-0x8(%r12), %rcx
+ 35020f4:      	movq	0x20(%rcx), %rax
+ 35020f8:      	leaq	0x18(%rax), %rdi
+ 35020fc:      	cmpl	$0x40, 0x20(%rax)
+ 3502100:      	ja	0x350210d <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf7d>
+ 3502102:      	movq	(%rdi), %rax
+ 3502105:      	cmpq	(%rsp), %rax
+ 3502109:      	jne	0x35020c7 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf37>
+ 350210b:      	jmp	0x3502119 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf89>
+ 350210d:      	movq	%rsp, %rsi
+ 3502110:      	callq	0x4094b10 <_ZNK4llvm5APInt13equalSlowCaseERKS0_>
+ 3502115:      	testb	%al, %al
+ 3502117:      	je	0x35020c7 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf37>
+ 3502119:      	movzbl	0x340(%rbx), %ecx
+ 3502120:      	movq	%r12, %rdi
+ 3502123:      	movq	0x10(%rsp), %rsi
+ 3502128:      	movq	0x20(%rsp), %rdx
+ 350212d:      	callq	0x34fdcd0 <_ZL18replaceAllUsesWithPN4llvm5ValueES1_RNS_11SmallPtrSetIPNS_10BasicBlockELj32EEEb>
+ 3502132:      	movq	0x58(%rbx), %rax
+ 3502136:      	addq	$-0x18, %rax
+ 350213a:      	cmpq	%r12, %rax
+ 350213d:      	jne	0x35020bf <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf2f>
+ 350213f:      	movq	0x20(%r12), %rax
+ 3502144:      	movq	0x18(%rsp), %rcx
+ 3502149:      	movq	%rax, 0x58(%rcx)
+ 350214d:      	movw	$0x0, 0x60(%rcx)
+ 3502153:      	jmp	0x35020bf <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xf2f>
+ 3502158:      	movl	0x90(%rsp), %eax
+ 350215f:      	testq	%rax, %rax
+ 3502162:      	je	0x35021d5 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1045>
+ 3502164:      	movq	0x88(%rsp), %rdx
+ 350216c:      	leaq	(,%rax,8), %rsi
+ 3502174:      	addq	$-0x8, %rsi
+ 3502178:      	movl	%esi, %edi
+ 350217a:      	notl	%edi
+ 350217c:      	movq	%rdx, %rcx
+ 350217f:      	testb	$0x18, %dil
+ 3502183:      	je	0x35021a3 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1013>
+ 3502185:      	movl	%esi, %edi
+ 3502187:      	shrl	$0x3, %edi
+ 350218a:      	incl	%edi
+ 350218c:      	andl	$0x3, %edi
+ 350218f:      	movq	%rdx, %rcx
+ 3502192:      	movq	(%rcx), %r8
+ 3502195:      	andb	$-0x5, 0x1(%r8)
+ 350219a:      	addq	$0x8, %rcx
+ 350219e:      	decq	%rdi
+ 35021a1:      	jne	0x3502192 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1002>
+ 35021a3:      	cmpq	$0x18, %rsi
+ 35021a7:      	jb	0x35021d5 <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x1045>
+ 35021a9:      	leaq	(%rdx,%rax,8), %rax
+ 35021ad:      	movq	(%rcx), %rdx
+ 35021b0:      	andb	$-0x5, 0x1(%rdx)
+ 35021b4:      	movq	0x8(%rcx), %rdx
+ 35021b8:      	andb	$-0x5, 0x1(%rdx)
+ 35021bc:      	movq	0x10(%rcx), %rdx
+ 35021c0:      	andb	$-0x5, 0x1(%rdx)
+ 35021c4:      	movq	0x18(%rcx), %rdx
+ 35021c8:      	andb	$-0x5, 0x1(%rdx)
+ 35021cc:      	addq	$0x20, %rcx
+ 35021d0:      	cmpq	%rax, %rcx
+ 35021d3:      	jne	0x35021ad <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0x101d>
+ 35021d5:      	leaq	0x200(%rsp), %rdi
+ 35021dd:      	callq	0x2d7fde0 <_ZN4llvm9IRBuilderINS_14ConstantFolderENS_24IRBuilderDefaultInserterEED2Ev>
+ 35021e2:      	movb	$0x1, %al
+ 35021e4:      	movq	0x28(%rsp), %r10
+ 35021e9:      	jmp	0x350200b <_ZN12_GLOBAL__N_114CodeGenPrepare15optimizeLoadExtEPN4llvm8LoadInstE+0xe7b>

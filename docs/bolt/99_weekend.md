@@ -54,3 +54,151 @@ ProcessLookupError: [Errno 3] No such process
 准备修正1次：初始解析整个生成文件，后续内部枚举重复编号覆盖opcode；保留原错误映射，修正为止于INSTRUCTION_LIST_END并断言不重复。见preparation-error.txt及parser-fix.diff；不是产品异常。
 
 99步骤2 已结束 2026-11-14T06:25:32.127791-08:00 status=PASS
+
+## 步骤3：PASS（68个函数逐一反汇编与指令diff）
+
+两份BOLT输入重新计算SHA，与83号完整SHA一致。使用74号Toolchain根的llvm-objdump，经该根loader和library-path串行反汇编136个函数范围；没有运行BOLT、没有全ELF反汇编落盘、没有修改原件。[工具与输入身份](../../tools/bolt/results/weekend-99-20261114/step3/identities.json)。
+
+原始T/D指令文本和raw.diff.gz全保留。分类视图去绝对地址、ThinLTO后缀，内部跳转写成指令序号，重定位控制的call/RIP地址标RELOC（仅用于分类，不是新等价门禁）。因此插入一条指令会造成后续I编号差异；这些不得误记为常量或基本块重排。另保留NOP差异，在次级分类时排除NOP及这种内部跳转编号噪声。
+
+**这是静态形式分类，不证明寄存器分配器、优化pass或快照是成因，不代替83号字节和重定位元组比较。** 多种变化共存时按可观测主要形式归类。
+
+|排他主类|数量|边界|
+|---|---:|---|
+|指令选择/序列形式变化：LEA减少、分开ADD/SUB增加|28|包含其他操作数变化，不声称每条一一语义等价|
+|指令选择/序列形式变化：LEA增加、原MOV复制存在|35|观察到重新计算/复制形式差异，不推断优化原因|
+|其他/混合变化|5|包含移位代替掩码、栈偏移/寄存器和较大序列变化|
+|可单独确认只有寄存器操作数变化|0|混合类中仍有寄存器变化，不等于没有寄存器变化|
+|可单独确认只有常量/偏移变化|0|混合类中仍有栈偏移变化|
+|可单独证明仅基本块顺序变化|0|未构造CFG同构证明，不以指令排序启发式冒充基本块结论|
+
+次级形式计数采用diff中LEA/ADD/SUB/MOV数量和明确的优先顺序，属于描述性分组，不是完整数据流归因。初始机械分组为45项少量opcode变化、23项混合；两种分组均保留，不把初始结果覆盖。
+
+[68项完整分类](../../tools/bolt/results/weekend-99-20261114/step3/observed-forms.json)、[初始分类与argv](../../tools/bolt/results/weekend-99-20261114/step3/classification.json)、[脚本](../../tools/bolt/results/weekend-99-20261114/step3/classify.py)。每个编号都有left.asm、right.asm、instruction.diff和raw.diff.gz。
+
+### 样例（每类3个）
+
+LEA + 算术 → 分开算术：
+
+- 04 `_ZL20printBSDMemberHeaderRN4llvm11raw_ostreamEmNS_9StringRefERKNSt6chrono10time_pointINS3_3_V212system_clockENS3_8durationIlSt5ratioILl1ELl1EEEEEEjjjm`：[diff](../../tools/bolt/results/weekend-99-20261114/step3/04-instruction.diff)
+~~~text
+T removed:
+leal (%rcx,%rsi), %eax
+subl %eax, %r12d
+D added:
+subl %ecx, %r12d
+subl %esi, %r12d
+~~~
+
+- 11 `_ZN12_GLOBAL__N_117VPCSEDenseMapInfo12getHashValueEPKN4llvm17VPSingleDefRecipeE`：[diff](../../tools/bolt/results/weekend-99-20261114/step3/11-instruction.diff)
+~~~text
+T removed:
+leaq (%r8,%r15), %r10
+addq %r10, %rcx
+D added:
+addq %r8, %rcx
+addq %r15, %rcx
+~~~
+
+- 34 `_ZN4llvm4SHA19hashBlockEv`：[diff](../../tools/bolt/results/weekend-99-20261114/step3/34-instruction.diff)
+~~~text
+T removed:
+leal (%r12,%rsi), %ecx
+addl %ecx, %eax
+leal (%r12,%r8), %edi
+addl %edi, %r10d
+leal (%r13,%rsi), %edx
+addl %edx, %r10d
+D added:
+addl %r12d, %eax
+addl %esi, %eax
+addl %r12d, %r10d
+addl %r8d, %r10d
+addl %r13d, %r10d
+addl %esi, %r10d
+~~~
+
+寄存器复制 → LEA形式：
+
+- 07 `_ZL37createAndCheckVectorTypesForPromotionRN4llvm9SetVectorIPNS_4TypeENS_11SmallVectorIS2_Lj0EEENS_8DenseSetIS2_NS_12DenseMapInfoIS2_vEEEELj0EEENS_8ArrayRefIPNS_10VectorTypeEEENS_12function_refIFvS2_EEERN12_GLOBAL__N_19PartitionERKNS_10DataLayoutERNS_15SmallVectorImplISD_EERbRS2_SR_SR_RSD_j`：[diff](../../tools/bolt/results/weekend-99-20261114/step3/07-instruction.diff)
+~~~text
+T removed:
+movq %rbx, %r15
+D added:
+leaq 0x8(%rsi), %r15
+~~~
+
+- 57 `_ZN5clang4Sema24checkFinalSuspendNoThrowEPKNS_4StmtE`：[diff](../../tools/bolt/results/weekend-99-20261114/step3/57-instruction.diff)
+~~~text
+T removed:
+movq %r14, 0x60(%rsp)
+movq %r14, 0x18(%rsp)
+D added:
+movq %r14, 0x60(%rsp)
+leaq 0x8(%rbp), %rax
+movq %rax, 0x18(%rsp)
+~~~
+
+- 68 `_ZZN12_GLOBAL__N_115InitListChecker26CheckDesignatedInitializerERKN5clang17InitializedEntityEPNS1_12InitListExprEPNS1_18DesignatedInitExprEjRNS1_8QualTypeEPNS1_11DeclContext22specific_decl_iteratorINS1_9FieldDeclEEEPN4llvm6APSIntERjS6_SJ_bbENK3$_0clERNS1_8SemaBase21SemaDiagnosticBuilderE`：[diff](../../tools/bolt/results/weekend-99-20261114/step3/68-instruction.diff)
+~~~text
+T removed:
+movq %rbp, %rbx
+D added:
+leaq 0x10(%r12), %rbx
+~~~
+
+混合/其他：
+
+- 01 `_ZL10combineMulPN4llvm6SDNodeERNS_12SelectionDAGERNS_14TargetLowering15DAGCombinerInfoERKNS_12X86SubtargetE`：[diff](../../tools/bolt/results/weekend-99-20261114/step3/01-instruction.diff)
+~~~text
+T removed:
+leal 0x3f(%rax), %esi
+andl $-0x40, %esi
+callq RELOC_TARGET
+callq RELOC_TARGET
+D added:
+movl %edx, %esi
+shll $0x6, %esi
+callq RELOC_TARGET
+callq RELOC_TARGET
+~~~
+
+- 03 `_ZL18lower128BitShuffleRKN4llvm5SDLocENS_8ArrayRefIiEENS_3MVTENS_7SDValueES6_RKNS_5APIntERKNS_12X86SubtargetERNS_12SelectionDAGE`：[diff](../../tools/bolt/results/weekend-99-20261114/step3/03-instruction.diff)
+~~~text
+T removed:
+movq %r15, 0x28(%rsp)
+movq %rbx, 0x20(%rsp)
+movq 0x20(%rsp), %r11
+movq 0x28(%rsp), %r14
+pushq 0x40(%rsp)
+pushq 0x40(%rsp)
+D added:
+movq %r15, 0x20(%rsp)
+movq %rbx, 0x28(%rsp)
+movq 0x28(%rsp), %r11
+movq 0x20(%rsp), %r14
+pushq 0x48(%rsp)
+pushq 0x48(%rsp)
+~~~
+
+- 23 `_ZN4llvm13slpvectorizer7BoUpSLP24computeMinimumValueSizesEv`：[diff](../../tools/bolt/results/weekend-99-20261114/step3/23-instruction.diff)
+~~~text
+T removed:
+leal 0x1(%rbx), %r15d
+movq (%rdx,%r15,8), %rdx
+movl $0x1, 0x1180(%r13)
+movl 0x90(%r13), %eax
+cmpl %r15d, %eax
+testq %rdi, %rdi
+D added:
+leal 0x1(%rbx), %esi
+movq (%rdx,%rsi,8), %rdx
+movl %esi, %r15d
+movl $0x1, 0x1180(%r13)
+movl 0x90(%r13), %eax
+cmpl %r15d, %eax
+~~~
+
+未读取最终clang、未做源文件/成因定位；读取83号68项名单与两份已保存输入。准备修正0次。
+
+99步骤3 已结束 2026-11-14T06:28:48.751091-08:00 status=PASS

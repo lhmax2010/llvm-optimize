@@ -1,0 +1,20 @@
+--- T-normalized
++++ D-normalized
+@@ -142,15 +142,15 @@
+ movq %r12, 0x10(%rsp)
+ movq %r15, 0x28(%rsp)
+ jl I147
++leaq 0x8(%r12), %r15
+ movl $0x8, %r14d
+-movq %rbx, %r15
+ jmp I227
+ cmpq %r15, %rbx
+ je I280
+ movq %r12, %r14
+ jmp I169
+ nopw %cs:(%rax,%rax)
+-nopl (%rax)
++nop
+ movq %r14, %rdx
+ subq %r12, %rdx
+ movq %rdx, %rax

@@ -1,0 +1,15 @@
+--- T-normalized
++++ D-normalized
+@@ -9,10 +9,10 @@
+ movq %r8, 0x18(%rsp)
+ movq %rdx, 0x10(%rsp)
+ movq %rdi, %rbx
+-leal (%rcx,%rsi), %eax
+ leal 0x43(%rsi,%rcx), %r12d
+ andl $-0x8, %r12d
+-subl %eax, %r12d
++subl %ecx, %r12d
++subl %esi, %r12d
+ movq %rcx, 0x20(%rsp)
+ leal -0x3c(%r12,%rcx), %r13d
+ movq (%rdi), %rax

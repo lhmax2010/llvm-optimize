@@ -1,0 +1,17 @@
+--- T-normalized
++++ D-normalized
+@@ -216,12 +216,12 @@
+ movq (%rsp), %rbx
+ testb $0x7, %bl
+ je I285
+-leaq (%r8,%r14), %r11
+ movq 0x8(%rsp), %rdi
+ movq -0x38(%rdi,%rbx,8), %rax
+ movq -0x30(%rdi,%rbx,8), %r9
+ addq %rax, %rcx
+-addq %r11, %rcx
++addq %r8, %rcx
++addq %r14, %rcx
+ rolq $0x1b, %rcx
+ movabsq $-0x4b6d499041670d8d, %r12
+ imulq %r12, %rcx
