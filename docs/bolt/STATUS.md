@@ -1406,3 +1406,12 @@ report-stale在2026-11-14T02:10:31.657016-08:00准入SKIPPED：仍有profgen-rel
 PM关闭92号秘密扫描：PASS（无凭据）。两处命中是报告/stderr引用扫描断言文字，PM已核对无密钥正文；原STOP与历史不改。长期规则：引用扫描规则自身文字的报告和日志行登记为已知误报，不触发STOP，不豁免实际凭据。92号report-stale SKIPPED正确，周一由PM另行安排，本任务不运行。
 
 [93号](93_tls_output_check.md)总体FAIL/STOP：T/D最终clang SHA及辅助ELF登记通过。T的TPOFF64 GOT集合相同（2槽），最终1537处IE目标全部正确；.text+.text.cold为1536，额外1处在.bolt.org.text 0x27e3521，与输入同地址、同字节、同目标，差值已定位。LD固定data16×3前缀输入415、输出3（均旧节），非零fs位移0；其余412处输出形式未建立对应，覆盖未闭合，不能写全部TLS通过，也不能直接认定产品误编译。原汇总FAIL不改，D指令核对NOT RUN。待PM处理；没有写Gerrit。
+
+
+## 2026-11-14：94号
+
+PM定性：93号FAIL为固定data16判据的覆盖缺口，不是已发现错误；原记录不改。[94号逐函数静态核对](94_tls_per_function.md) PASS：T/D各1187/1187个函数四项多重集合完全相同，未映射/不同0。辅助BOLT ELF与最终发货clang六个可执行节全同。主体IE1536、LD415、LD基址直线窗口内存操作494；415处LD均去掉冗余data16填充，旧节另保留3 LD和1 IE。每项目GOT集合相同、1537处输出IE目标全正确。全部126处旧节fs指令与输入同地址同字节。结论适用于两项目最终发货clang；不作“无害”或任意跨控制流证明。
+
+未运行构建/BOLT/report-stale，不访问QB/Gerrit，不改LLVM；92号report-stale仍留待PM安排。4GiB/swap0/nice19/idle串行服务；无准备修正或STOP。
+
+94 已结束 2026-11-14T02:56:17.938840-08:00 status=PASS
