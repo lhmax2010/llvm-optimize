@@ -1,0 +1,31 @@
+PS3: add fixed x86_64 flags and native-archive mode checks
+
+Relative to PS2, this patch set adds Part 3; Parts 1 and 2 are unchanged.
+Files changed: packaging/llvm.spec and
+packaging/llvm-static-archives-native.py.
+It fixes the x86_64 project-flag policy and declares the archive debug
+mode, with per-member checks and certified relocation handling.
+ARM build behavior is unchanged; installed CMake module text differs
+only through Part 1. To roll back Part 3, revert its two-file diff to
+PS2. The BOLT one-line bcond rollback does not roll back fixed flags.
+
+The final tree is b2e8af2477cf623a945aa80bf8288a262dd4a5a9, identical
+to the tree built in QB 1226850/1226851 (two projects, three arches).
+102/102 binary package payload comparisons matched the preceding
+certified QB baseline. Local full T/D builds passed the release gate;
+local/QB binary comparisons passed rule B. Source-package raw
+differences and the approved classifications remain separately recorded.
+Evidence: docs/bolt/79_qb_1226850_1226851.md and
+          docs/bolt/74_local_full_build_fa4f9978.md, section 8.10.
+
+Known follow-ups (not claimed resolved by this patch set):
+- The roughly 14-15% speed figure is historical local measurement;
+  a controlled QB A/B measurement is still pending.
+- Ten product-path jump-past-end warnings relate to BOLT's handling
+  of compiler-generated __builtin_unreachable-style end branches.
+  Source/instruction evidence is grade A at two sites and grade B at
+  eight sites; all ten have not been individually proved unreachable.
+  See docs/bolt/87_entry_sync_bolt_nop_resource_plan.md.
+- The 2804 unsupported-relocation records still need a detailed census;
+  the existing summary does not establish their individual types.
+- Converter hardening will be proposed as a separate follow-up patch.

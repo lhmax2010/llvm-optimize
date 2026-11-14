@@ -1,0 +1,29 @@
+PS2: add the guarded BOLT clang pipeline
+
+Relative to PS1, this patch set adds Part 2 without changing Part 1.
+It introduces the certified BOLT profile, helper gates and x86_64
+packaging pipeline. Its tree is identical to the original two-commit
+hybrid-linkage plus BOLT tree c23914776684bf94fdd5961f447f7c24e7bb79bc.
+
+Files added or changed relative to PS1:
+- packaging/clang-bolt-helper.py
+- packaging/clang-bolt-v2.fdata.xz
+- packaging/llvm.spec
+
+BOLT runs only on x86_64. ARM retains its previous build behavior;
+only the inherited installed CMake module text change from Part 1
+remains in ARM binary payloads. The BOLT Sources are unconditional
+so generated Patch declarations remain visible on every architecture.
+Disable BOLT in QB by changing the x86_64 bcond_without clang_bolt
+to bcond_with clang_bolt (one line). Local builds can also use
+--without clang_bolt. This disables BOLT, not hybrid linkage.
+
+This intermediate tree was validated as part of the final chain,
+not by a separately certified full build of this patch set.
+The final tree b2e8af2477cf623a945aa80bf8288a262dd4a5a9 was built by
+QB 1226850/1226851 for two projects and three architectures.
+102/102 binary package payload comparisons matched the preceding
+certified QB baseline. Local full T/D builds passed the release gate;
+local/QB comparisons passed rule B, with source exceptions recorded.
+Evidence: docs/bolt/79_qb_1226850_1226851.md, B1-B6 summary;
+docs/bolt/74_local_full_build_fa4f9978.md, section 8.10.

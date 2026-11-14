@@ -1,0 +1,29 @@
+--- /home/linhao/Toolchain/development/llvm-optimize/temp/single-change-20261114/export90-old-PS2/llvm.spec
++++ /home/linhao/Toolchain/development/llvm-optimize/temp/single-change-20261114/export90-PS2/llvm.spec
+@@ -37,7 +37,7 @@
+ %endif
+ 
+ Name:      llvm
+-VCS:       #bde009d1197a09f7b7b76382a0166e03c841bdb9
++VCS:       #d0b2e82aa90b11251a13b67d890642bf2fa6f66c
+ Summary:   The LLVM Project is a collection of modular and reusable compiler and toolchain technologies
+ Version:   22.1.8
+ Release:   1
+@@ -63,7 +63,7 @@
+ Patch4:     0005-Merge-MLGO-AOT-compilation-support-and-optimization-.patch
+ Patch5:     0006-libcxxabi-declare-__gnu_unwind_frame-in-cxa_personal.patch
+ Patch6:     0007-libcxx-backport-EH-ABI-forced-unwind-handling.patch
+-Patch7:     0008-cmake-use-hybrid-LLVM-linkage-on-x86_64.patch
++Patch7:     0008-x86_64-hybrid-LLVM-linkage-and-BOLT-optimized-clang.patch
+ 
+ %ifarch x86_64
+ BuildRequires: util-linux
+@@ -206,7 +206,7 @@
+ %patch -P 5 -p1
+ # 0007-libcxx-backport-EH-ABI-forced-unwind-handling.patch
+ %patch -P 6 -p1
+-# 0008-cmake-use-hybrid-LLVM-linkage-on-x86_64.patch
++# 0008-x86_64-hybrid-LLVM-linkage-and-BOLT-optimized-clang.patch
+ %patch -P 7 -p1
+ %if %{with mlgo}
+ mkdir -p mlgo_verify_assets

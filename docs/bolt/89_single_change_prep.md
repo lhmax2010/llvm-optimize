@@ -139,3 +139,17 @@ FileNotFoundError: [Errno 2] No such file or directory: 'tools/bolt/results/sing
 分析和导出均在串行4GiB/swap0/Nice19/idle用户服务 `llvm-prep89-resume-20261114` 中运行。所有既有证据只读；原 STOP 未删除。新 [raw链接索引](../../tools/bolt/results/single-change-20261114/resume/RAW_LINKS.md)。需 PM 裁决是否允许上述导出说明/文件名变化，不能作为准备错误修正规则来自动放行。
 
 89续 已结束 2026-11-14T00:40:16-08:00 status=STOP
+
+
+## 90号 PM 导出差异裁决（2026-11-14T00:47:09-08:00）
+
+按设计第7节第8条的冻结规则，先裁决、再比较。单评审方案相对原链导出的已知差异固定为：
+
+1. 两个 spec 的 VCS 行。
+2. 两个 spec 中 Patch7 文件名与 %patch 前注释中的文件名；新名由 gbs 根据新标题生成。
+3. 0008 文件名和头部（Subject 与提交说明），前提是从第一个 diff --git 到文件末尾逐字节相同。
+
+清单外任何差异仍 STOP。PM 已裁定89续结果符合此三类（0008正文SHA e99fa7abdc0a828c9eb9295c163a239ed7438c0df378446bf10e07ae3a89b6c6，其余18文件全同），据此通过；原STOP记录不删除。本次仍按固定规则独立核对。以后QB源码包比较同样采用此单评审方案已知差异，作为R2(e)的Patch写法差异；不扩展其他规则。PS2相对bde009d1采用同一规则，不涉及Part3。
+
+
+90号执行结果：上述固定清单下，两组导出及各五项解析通过；361395已上传PS2/PS3，PS1不变，sandbox已同步ecb2dec7。完整结果及草稿见 [90号](90_single_change_push.md)。89原STOP和执行边界保留。

@@ -1,0 +1,30 @@
+PS1: hybrid LLVM linkage on x86_64
+
+This patch set introduces Part 1 only. It uses shared LLVM/Clang
+linkage for selected targets while keeping clang, lld and llvm-ar
+statically linked to LLVM components, with a hybrid-link assertion.
+
+Files changed:
+- clang/cmake/modules/AddClang.cmake
+- clang/tools/driver/CMakeLists.txt
+- lld/cmake/modules/AddLLD.cmake
+- lld/tools/lld/CMakeLists.txt
+- llvm/cmake/modules/AddLLVM.cmake
+- llvm/tools/llvm-ar/CMakeLists.txt
+- packaging/llvm.spec
+
+The build-policy changes take effect on x86_64. On ARM, the installed
+AddLLVM.cmake and AddClang.cmake text changes; the new helper returns
+without changing the ARM build behavior. See design decision 7.15.
+To roll back this part, revert its seven-file diff; there is no new
+project configuration requirement.
+
+This intermediate tree was validated as part of the final chain,
+not by a separately certified full build of this patch set.
+The final tree b2e8af2477cf623a945aa80bf8288a262dd4a5a9 was built by
+QB 1226850/1226851 for Toolchain and Base-Dev on three architectures.
+102/102 binary package payload comparisons matched the preceding
+certified QB baseline. Local full T/D builds passed the release gate;
+local/QB comparisons passed the recorded rule B (not raw RPM identity).
+Evidence: docs/bolt/79_qb_1226850_1226851.md, B1-B6 summary;
+docs/bolt/74_local_full_build_fa4f9978.md, section 8.10.

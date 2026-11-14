@@ -1,0 +1,90 @@
+%vendor Tizen
+%_project Tizen-Base-Toolchain
+
+%distribution Tizen-Base-Toolchain / standard
+%_project Tizen-Base-Toolchain
+
+### from Tizen-Base-Toolchain
+
+%_repository standard
+%release_name Tizen11.0/Unified
+
+%tizen_version_major 11
+%tizen_version_minor 0
+%tizen_version_patch 0
+
+%tizen_version %{tizen_version_major}.%{tizen_version_minor}
+%tizen_full_version %{tizen_version}.%{tizen_version_patch}
+%tizen %tizen_version
+%vendor tizen
+%_vendor tizen
+%_with_tizen 1
+
+%opensuse_bs 1
+%_default_patch_fuzz   2
+
+%_binary_payload w5T.xzdio
+# skip package list
+%_skip_check_packages autogen bison boost expat findutils flex fribidi glibc \\\
+gmp gn golang grep libgc libgcrypt libogg libsigc++ libvorbis libxml2 libzio \\\
+m4 nspr openssl openssl1.1 perl-Devel-Symdump perl-gettext perl-Pod-Coverage \\\
+perl-Test-Pod perl-Test-Pod-Coverage perl-TimeDate procps-ng python3-mako \\\
+python3-mock python3-ply python-funcsigs python-mako python-mock python-ply \\\
+setup zlib openssl3 autoconf libxcrypt
+
+%__spec_check_pre \
+for name in %_skip_check_packages \
+do \
+    if [ "$name" = "%{name}" ]; then \
+        exit 0 \
+    fi \
+done \
+%{___build_pre} \
+%{nil}
+
+%_with_mlgo 1
+%mlgo_build_jobs 6
+%mlgo_verify_configure_only 0
+%___optflags_toolchain_gcc --param=ssp-buffer-size=4
+# clang utils
+%__ar_clang llvm-ar
+%__ranlib_clang llvm-ranlib
+%__cc_clang %{_host}-clang
+%__cxx_clang %{_host}-clang++
+%__optflags_toolchain_clang -Os -fstack-protector -Wno-unused-command-line-argument -Wno-error=unused-but-set-variable -Wno-error=unused-command-line-argument %{?___optflags_toolchain_clang:%{___optflags_toolchain_clang}}
+
+# gcc utils
+%__ar_gcc gcc-ar
+%__ranlib_gcc gcc-ranlib
+%__cc_gcc %{_host}-gcc
+%__cxx_gcc %{_host}-g++
+%__optflags_toolchain_gcc -O2 -fno-inline-functions -fstack-protector-strong %{?___optflags_toolchain_gcc:%{___optflags_toolchain_gcc}}
+
+%_toolchain %{?_toolchain_override}%{!?_toolchain_override:clang}
+%toolchain_is() %((echo "%_toolchain" | %{__grep} -qE "%{1}") && echo 1 || echo 0)
+
+%__ar %{expand:%%{__ar_%{_toolchain}}}
+%__ranlib %{expand:%%{__ranlib_%{_toolchain}}}
+%__cc %{expand:%%{__cc_%{_toolchain}}}
+%__cxx %{expand:%%{__cxx_%{_toolchain}}}
+%__optflags_toolchain %{expand:%%{__optflags_toolchain_%{_toolchain}}}
+
+%prep %%prep\
+export AR=%{__ar} RANLIB=%{__ranlib};\
+%{nil}
+
+%build %%build\
+export AR=%{__ar} RANLIB=%{__ranlib};\
+export CC=%{__cc} CXX=%{__cxx};\
+%{nil}
+
+%install %{?_enable_debug_packages:%{?buildsubdir:%{debug_package}}}\
+%%install\
+export AR=%{__ar} RANLIB=%{__ranlib};\
+export CC=%{__cc} CXX=%{__cxx};\
+%{nil}
+%build_hostarch x86_64
+%qemu_user_space_build 1
+%_ldflags_arch_extra ,-O1,--hash-style=gnu
+%build_ldflags -Wl,-z,relro,--as-needed%{?_ldflags_arch_extra}
+
