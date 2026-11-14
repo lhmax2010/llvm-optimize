@@ -1,0 +1,11 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/night-86-20261114/step5.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/night-87-20261114/step5.py
+@@ -10,7 +10,7 @@
+  return h.hexdigest()
+ ident={k:dict(path=str(p),exists=p.is_file(),bytes=p.stat().st_size if p.is_file() else None,sha256=sha(p) if p.is_file() else 'UNKNOWN') for k,p in paths.items()}
+ out=W/'temp/report-stale-proposal-20261116'
+-options=json.loads((B/'tools/bolt/results/local-full-r6-20261111/basedev/rewrite-bolt.log.argv.json').read_text())['argv'][5:]
++options=json.loads((B/'tools/bolt/results/local-full-r6-20261111/basedev/rewrite-bolt.log.argv.json').read_text())['argv'][4:]
+ assert options[0].startswith('-data=')
+ options=options[1:]
+ lib=':'.join(str(p) for p in [build/'lib64',root/'lib64',root/'usr/lib64'])

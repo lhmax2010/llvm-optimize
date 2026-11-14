@@ -1,0 +1,66 @@
+180:static cl::opt<unsigned> ReportBadLayout(
+181:    "report-bad-layout",
+182:    cl::desc("print top <uint> functions with suboptimal code layout on input"),
+183:    cl::init(0), cl::Hidden, cl::cat(BoltOptCategory));
+184:
+185:static cl::opt<bool>
+186:    ReportStaleFuncs("report-stale",
+187:                     cl::desc("print the list of functions with stale profile"),
+188:                     cl::Hidden, cl::cat(BoltOptCategory));
+189:
+190:enum SctcModes : char {
+191:  SctcAlways,
+192:  SctcPreserveDirection,
+193:  SctcHeuristic
+194:};
+1510:      if (IsHotParentOfBOLTSplitFunction)
+1511:        for (const BinaryFunction *Fragment : Function.getFragments())
+1512:          Size += Fragment->getSize();
+1513:      double Density = (double)1.0 * Function.getSampleCountInBytes() / Size;
+1514:      FuncDensityList.emplace_back(Density, SampleCount);
+1515:      LLVM_DEBUG(BC.outs() << Function << ": executed bytes "
+1516:                           << Function.getSampleCountInBytes() << ", size (b) "
+1517:                           << Size << ", density " << Density
+1518:                           << ", sample count " << SampleCount << '\n');
+1519:    }
+1520:  }
+1521:  BC.NumProfiledFuncs = ProfiledFunctions.size();
+1522:  BC.NumStaleProfileFuncs = NumStaleProfileFunctions;
+1523:
+1524:  const size_t NumAllProfiledFunctions =
+1525:      ProfiledFunctions.size() + NumStaleProfileFunctions;
+1526:  BC.outs() << "BOLT-INFO: " << NumAllProfiledFunctions << " out of "
+1527:            << NumRegularFunctions << " functions in the binary ("
+1528:            << format("%.1f", NumAllProfiledFunctions /
+1529:                                  (float)NumRegularFunctions * 100.0f)
+1530:            << "%) have non-empty execution profile\n";
+1531:  if (NumNonSimpleProfiledFunctions) {
+1532:    BC.outs() << "BOLT-INFO: " << NumNonSimpleProfiledFunctions << " function"
+1533:              << (NumNonSimpleProfiledFunctions == 1 ? "" : "s")
+1534:              << " with profile could not be optimized\n";
+1535:  }
+1536:  if (NumAllStaleFunctions) {
+1537:    const float PctStale =
+1538:        NumAllStaleFunctions / (float)NumAllProfiledFunctions * 100.0f;
+1539:    auto printErrorOrWarning = [&]() {
+1540:      if (PctStale > opts::StaleThreshold)
+1541:        BC.errs() << "BOLT-ERROR: ";
+1542:      else
+1543:        BC.errs() << "BOLT-WARNING: ";
+1544:    };
+1545:    printErrorOrWarning();
+1546:    BC.errs() << NumAllStaleFunctions
+1547:              << format(" (%.1f%% of all profiled)", PctStale) << " function"
+1548:              << (NumAllStaleFunctions == 1 ? "" : "s")
+1549:              << " have invalid (possibly stale) profile."
+1550:                 " Use -report-stale to see the list.\n";
+1551:    if (TotalSampleCount > 0) {
+1552:      printErrorOrWarning();
+1553:      BC.errs() << (StaleSampleCount + InferredSampleCount) << " out of "
+1554:                << TotalSampleCount << " samples in the binary ("
+1555:                << format("%.1f",
+1556:                          ((100.0f * (StaleSampleCount + InferredSampleCount)) /
+1557:                           TotalSampleCount))
+1558:                << "%) belong to functions with invalid"
+1559:                   " (possibly stale) profile.\n";
+1560:    }

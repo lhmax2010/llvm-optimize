@@ -1,0 +1,32 @@
+# 语义伪diff；不是可应用补丁，未修改入口
+--- toolchain/launcher.py, basedev/launcher.py (stage)
++++ proposed
++ stage_start = {wall_ns: time.time_ns(), monotonic_ns: time.monotonic_ns()}
+  run existing stage command unchanged
++ stage_end = {wall_ns: time.time_ns(), monotonic_ns: time.monotonic_ns(), rc, signal}
+--- both launcher.py (materialize / generated monitor)
++++ proposed
++ every 2s: memory.current, memory.peak, memory.events, memory.stat anon/file
++ preserve last readable cgroup snapshot before unit collection, mark missing explicitly
++ every 10s: filesystem used/available bytes with monotonic+wall timestamps
++ every 300s: serial per-directory du (BUILD/BUILDROOT/SOURCES/RPMS/BOLT/profile)
++ each du bounded 50s; record rc, timeout, start/end, permission blind spots
++ keep parents/children distinct; do not sum overlapping trees
+--- new collector (not implemented)
++++ proposed
++ per exec/exit event: pid/ppid, argv, monotonic start/end, rusage, sampled VmHWM
++ wait4 only proves directly reaped children; no false all-descendant guarantee
++ privileged tracing/chroot scope needs separate authorization; if unavailable UNKNOWN
++ long link and BOLT substep exact timing uses actual exec events or .ninja_log where valid
++ do not modify product helper/spec or infer duration from adjacent unrelated log lines
+--- toolchain/resource_report.py, basedev/resource_report.py (report)
++++ proposed
++ stage rows keyed by actual command events; align cgroup samples by monotonic time
++ report anon/file separately, unknown short-process maxima explicitly
++ memory.events max>0 => memory peak >= limit; timing annotated reclaim affected
++ disk max=maximum successful sample, retain timeout count and coverage
+--- run-night.sh / README / provenance / SHA256SUMS / new tests
++++ proposed
++ pass collector option only; keep existing serial/stopping gates unchanged
++ tests: clock rollback, short-lived grandchildren, vanished cgroup, du timeout/permissions,
++ prep/build handoff, truncated peak, sampling overhead and no change to product argv

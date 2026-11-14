@@ -1,0 +1,791 @@
+## 1 _ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb
+llvm_lib_Target_X86_X86InstrInfo.cpp
+1219: MachineInstr *X86InstrInfo::convertToThreeAddressWithLEA(unsigned MIOpc,
+1220:                                                          MachineInstr &MI,
+1221:                                                          LiveVariables *LV,
+1222:                                                          LiveIntervals *LIS,
+1223:                                                          bool Is8BitOp) const {
+1224:   // We handle 8-bit adds and various 16-bit opcodes in the switch below.
+1225:   MachineBasicBlock &MBB = *MI.getParent();
+1226:   MachineRegisterInfo &RegInfo = MBB.getParent()->getRegInfo();
+1227:   assert((Is8BitOp ||
+1228:           RegInfo.getTargetRegisterInfo()->getRegSizeInBits(
+1229:               *RegInfo.getRegClass(MI.getOperand(0).getReg())) == 16) &&
+1230:          "Unexpected type for LEA transform");
+1231: 
+1232:   // TODO: For a 32-bit target, we need to adjust the LEA variables with
+1233:   // something like this:
+1234:   //   Opcode = X86::LEA32r;
+1235:   //   InRegLEA = RegInfo.createVirtualRegister(&X86::GR32_NOSPRegClass);
+1236:   //   OutRegLEA =
+1237:   //       Is8BitOp ? RegInfo.createVirtualRegister(&X86::GR32ABCD_RegClass)
+1238:   //                : RegInfo.createVirtualRegister(&X86::GR32RegClass);
+1239:   if (!Subtarget.is64Bit())
+1240:     return nullptr;
+1241: 
+1242:   unsigned Opcode = X86::LEA64_32r;
+1243:   Register InRegLEA = RegInfo.createVirtualRegister(&X86::GR64_NOSPRegClass);
+1244:   Register OutRegLEA = RegInfo.createVirtualRegister(&X86::GR32RegClass);
+1245:   Register InRegLEA2;
+1246: 
+1247:   // Build and insert into an implicit UNDEF value. This is OK because
+1248:   // we will be shifting and then extracting the lower 8/16-bits.
+1249:   // This has the potential to cause partial register stall. e.g.
+1250:   //   movw    (%rbp,%rcx,2), %dx
+1251:   //   leal    -65(%rdx), %esi
+1252:   // But testing has shown this *does* help performance in 64-bit mode (at
+1253:   // least on modern x86 machines).
+1254:   MachineBasicBlock::iterator MBBI = MI.getIterator();
+1255:   Register Dest = MI.getOperand(0).getReg();
+1256:   Register Src = MI.getOperand(1).getReg();
+1257:   unsigned SrcSubReg = MI.getOperand(1).getSubReg();
+1258:   Register Src2;
+1259:   unsigned Src2SubReg;
+1260:   bool IsDead = MI.getOperand(0).isDead();
+1261:   bool IsKill = MI.getOperand(1).isKill();
+1262:   unsigned SubReg = Is8BitOp ? X86::sub_8bit : X86::sub_16bit;
+1263:   assert(!MI.getOperand(1).isUndef() && "Undef op doesn't need optimization");
+1264:   MachineInstr *ImpDef =
+1265:       BuildMI(MBB, MBBI, MI.getDebugLoc(), get(X86::IMPLICIT_DEF), InRegLEA);
+1266:   MachineInstr *InsMI =
+1267:       BuildMI(MBB, MBBI, MI.getDebugLoc(), get(TargetOpcode::COPY))
+1268:           .addReg(InRegLEA, RegState::Define, SubReg)
+1269:           .addReg(Src, getKillRegState(IsKill), SrcSubReg);
+1270:   MachineInstr *ImpDef2 = nullptr;
+1271:   MachineInstr *InsMI2 = nullptr;
+1272: 
+1273:   MachineInstrBuilder MIB =
+1274:       BuildMI(MBB, MBBI, MI.getDebugLoc(), get(Opcode), OutRegLEA);
+1275: #define CASE_NF(OP)                                                            \
+1276:   case X86::OP:                                                                \
+1277:   case X86::OP##_NF:
+1278:   switch (MIOpc) {
+1279:   default:
+1280:     llvm_unreachable("Unreachable!");
+1281:   CASE_NF(SHL8ri)
+1282:   CASE_NF(SHL16ri) {
+1283:     unsigned ShAmt = MI.getOperand(2).getImm();
+1284:     MIB.addReg(0)
+1285:         .addImm(1LL << ShAmt)
+1286:         .addReg(InRegLEA, RegState::Kill)
+1287:         .addImm(0)
+1288:         .addReg(0);
+1289:     break;
+1290:   }
+1291:   CASE_NF(INC8r)
+1292:   CASE_NF(INC16r)
+1293:     addRegOffset(MIB, InRegLEA, true, 1);
+1294:     break;
+1295:   CASE_NF(DEC8r)
+1296:   CASE_NF(DEC16r)
+1297:     addRegOffset(MIB, InRegLEA, true, -1);
+1298:     break;
+1299:   CASE_NF(ADD8ri)
+1300:   CASE_NF(ADD16ri)
+1301:   case X86::ADD8ri_DB:
+1302:   case X86::ADD16ri_DB:
+1303:     addRegOffset(MIB, InRegLEA, true, MI.getOperand(2).getImm());
+1304:     break;
+1305:   CASE_NF(ADD8rr)
+1306:   CASE_NF(ADD16rr)
+1307:   case X86::ADD8rr_DB:
+1308:   case X86::ADD16rr_DB: {
+1309:     Src2 = MI.getOperand(2).getReg();
+1310:     Src2SubReg = MI.getOperand(2).getSubReg();
+1311:     bool IsKill2 = MI.getOperand(2).isKill();
+1312:     assert(!MI.getOperand(2).isUndef() && "Undef op doesn't need optimization");
+1313:     if (Src == Src2) {
+1314:       // ADD8rr/ADD16rr killed %reg1028, %reg1028
+1315:       // just a single insert_subreg.
+1316:       addRegReg(MIB, InRegLEA, true, X86::NoSubRegister, InRegLEA, false,
+1317:                 X86::NoSubRegister);
+1318:     } else {
+1319:       if (Subtarget.is64Bit())
+1320:         InRegLEA2 = RegInfo.createVirtualRegister(&X86::GR64_NOSPRegClass);
+1321:       else
+1322:         InRegLEA2 = RegInfo.createVirtualRegister(&X86::GR32_NOSPRegClass);
+1323:       // Build and insert into an implicit UNDEF value. This is OK because
+1324:       // we will be shifting and then extracting the lower 8/16-bits.
+1325:       ImpDef2 = BuildMI(MBB, &*MIB, MI.getDebugLoc(), get(X86::IMPLICIT_DEF),
+1326:                         InRegLEA2);
+1327:       InsMI2 = BuildMI(MBB, &*MIB, MI.getDebugLoc(), get(TargetOpcode::COPY))
+1328:                    .addReg(InRegLEA2, RegState::Define, SubReg)
+1329:                    .addReg(Src2, getKillRegState(IsKill2), Src2SubReg);
+1330:       addRegReg(MIB, InRegLEA, true, X86::NoSubRegister, InRegLEA2, true,
+1331:                 X86::NoSubRegister);
+1332:     }
+1333:     if (LV && IsKill2 && InsMI2)
+1334:       LV->replaceKillInstruction(Src2, MI, *InsMI2);
+1335:     break;
+1336:   }
+1337:   }
+
+## 2 _ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE
+llvm_lib_Target_X86_X86InstrInfo.cpp
+1409: MachineInstr *X86InstrInfo::convertToThreeAddress(MachineInstr &MI,
+1410:                                                   LiveVariables *LV,
+1411:                                                   LiveIntervals *LIS) const {
+1412:   // The following opcodes also sets the condition code register(s). Only
+1413:   // convert them to equivalent lea if the condition code register def's
+1414:   // are dead!
+1415:   if (hasLiveCondCodeDef(MI))
+1416:     return nullptr;
+1417: 
+1418:   MachineFunction &MF = *MI.getParent()->getParent();
+1419:   // All instructions input are two-addr instructions.  Get the known operands.
+1420:   const MachineOperand &Dest = MI.getOperand(0);
+1421:   const MachineOperand &Src = MI.getOperand(1);
+1422: 
+1423:   // Ideally, operations with undef should be folded before we get here, but we
+1424:   // can't guarantee it. Bail out because optimizing undefs is a waste of time.
+1425:   // Without this, we have to forward undef state to new register operands to
+1426:   // avoid machine verifier errors.
+1427:   if (Src.isUndef())
+1428:     return nullptr;
+1429:   if (MI.getNumOperands() > 2)
+1430:     if (MI.getOperand(2).isReg() && MI.getOperand(2).isUndef())
+1431:       return nullptr;
+1432: 
+1433:   MachineInstr *NewMI = nullptr;
+1434:   Register SrcReg, SrcReg2;
+1435:   unsigned SrcSubReg, SrcSubReg2;
+1436:   bool Is64Bit = Subtarget.is64Bit();
+1437: 
+1438:   bool Is8BitOp = false;
+1439:   unsigned NumRegOperands = 2;
+1440:   unsigned MIOpc = MI.getOpcode();
+1441:   switch (MIOpc) {
+1442:   default:
+1443:     llvm_unreachable("Unreachable!");
+1444:   CASE_NF(SHL64ri) {
+1445:     assert(MI.getNumOperands() >= 3 && "Unknown shift instruction!");
+1446:     unsigned ShAmt = getTruncatedShiftCount(MI, 2);
+1447:     if (!isTruncatedShiftCountForLEA(ShAmt))
+1448:       return nullptr;
+1449: 
+1450:     // LEA can't handle RSP.
+1451:     if (Src.getReg().isVirtual() && !MF.getRegInfo().constrainRegClass(
+1452:                                         Src.getReg(), &X86::GR64_NOSPRegClass))
+1453:       return nullptr;
+1454: 
+1455:     NewMI = BuildMI(MF, MI.getDebugLoc(), get(X86::LEA64r))
+1456:                 .add(Dest)
+1457:                 .addReg(0)
+1458:                 .addImm(1LL << ShAmt)
+1459:                 .add(Src)
+1460:                 .addImm(0)
+1461:                 .addReg(0);
+1462:     break;
+1463:   }
+1464:   CASE_NF(SHL32ri) {
+1465:     assert(MI.getNumOperands() >= 3 && "Unknown shift instruction!");
+1466:     unsigned ShAmt = getTruncatedShiftCount(MI, 2);
+1467:     if (!isTruncatedShiftCountForLEA(ShAmt))
+1468:       return nullptr;
+1469: 
+1470:     unsigned Opc = Is64Bit ? X86::LEA64_32r : X86::LEA32r;
+1471: 
+1472:     // LEA can't handle ESP.
+1473:     bool isKill;
+1474:     MachineOperand ImplicitOp = MachineOperand::CreateReg(0, false);
+1475:     if (!classifyLEAReg(MI, Src, Opc, /*AllowSP=*/false, SrcReg, SrcSubReg,
+1476:                         isKill, ImplicitOp, LV, LIS))
+1477:       return nullptr;
+1478: 
+1479:     MachineInstrBuilder MIB =
+1480:         BuildMI(MF, MI.getDebugLoc(), get(Opc))
+1481:             .add(Dest)
+1482:             .addReg(0)
+1483:             .addImm(1LL << ShAmt)
+1484:             .addReg(SrcReg, getKillRegState(isKill), SrcSubReg)
+1485:             .addImm(0)
+1486:             .addReg(0);
+1487:     if (ImplicitOp.getReg() != 0)
+1488:       MIB.add(ImplicitOp);
+1489:     NewMI = MIB;
+1490: 
+1491:     // Add kills if classifyLEAReg created a new register.
+1492:     if (LV && SrcReg != Src.getReg())
+1493:       LV->getVarInfo(SrcReg).Kills.push_back(NewMI);
+1494:     break;
+1495:   }
+1496:   CASE_NF(SHL8ri)
+1497:     Is8BitOp = true;
+1498:     [[fallthrough]];
+1499:   CASE_NF(SHL16ri) {
+1500:     assert(MI.getNumOperands() >= 3 && "Unknown shift instruction!");
+1501:     unsigned ShAmt = getTruncatedShiftCount(MI, 2);
+1502:     if (!isTruncatedShiftCountForLEA(ShAmt))
+1503:       return nullptr;
+1504:     return convertToThreeAddressWithLEA(MIOpc, MI, LV, LIS, Is8BitOp);
+1505:   }
+1506:   CASE_NF(INC64r)
+1507:   CASE_NF(INC32r) {
+1508:     assert(MI.getNumOperands() >= 2 && "Unknown inc instruction!");
+1509:     unsigned Opc = (MIOpc == X86::INC64r || MIOpc == X86::INC64r_NF)
+1510:                        ? X86::LEA64r
+1511:                        : (Is64Bit ? X86::LEA64_32r : X86::LEA32r);
+1512:     bool isKill;
+1513:     MachineOperand ImplicitOp = MachineOperand::CreateReg(0, false);
+1514:     if (!classifyLEAReg(MI, Src, Opc, /*AllowSP=*/false, SrcReg, SrcSubReg,
+1515:                         isKill, ImplicitOp, LV, LIS))
+1516:       return nullptr;
+1517: 
+1518:     MachineInstrBuilder MIB = BuildMI(MF, MI.getDebugLoc(), get(Opc))
+1519:                                   .add(Dest)
+1520:                                   .addReg(SrcReg, getKillRegState(isKill));
+1521:     if (ImplicitOp.getReg() != 0)
+1522:       MIB.add(ImplicitOp);
+1523: 
+1524:     NewMI = addOffset(MIB, 1);
+1525: 
+1526:     // Add kills if classifyLEAReg created a new register.
+1527:     if (LV && SrcReg != Src.getReg())
+1528:       LV->getVarInfo(SrcReg).Kills.push_back(NewMI);
+1529:     break;
+1530:   }
+1531:   CASE_NF(DEC64r)
+1532:   CASE_NF(DEC32r) {
+1533:     assert(MI.getNumOperands() >= 2 && "Unknown dec instruction!");
+1534:     unsigned Opc = (MIOpc == X86::DEC64r || MIOpc == X86::DEC64r_NF)
+1535:                        ? X86::LEA64r
+1536:                        : (Is64Bit ? X86::LEA64_32r : X86::LEA32r);
+1537: 
+1538:     bool isKill;
+1539:     MachineOperand ImplicitOp = MachineOperand::CreateReg(0, false);
+1540:     if (!classifyLEAReg(MI, Src, Opc, /*AllowSP=*/false, SrcReg, SrcSubReg,
+1541:                         isKill, ImplicitOp, LV, LIS))
+1542:       return nullptr;
+1543: 
+1544:     MachineInstrBuilder MIB = BuildMI(MF, MI.getDebugLoc(), get(Opc))
+1545:                                   .add(Dest)
+1546:                                   .addReg(SrcReg, getKillRegState(isKill));
+1547:     if (ImplicitOp.getReg() != 0)
+1548:       MIB.add(ImplicitOp);
+1549: 
+1550:     NewMI = addOffset(MIB, -1);
+1551: 
+1552:     // Add kills if classifyLEAReg created a new register.
+1553:     if (LV && SrcReg != Src.getReg())
+1554:       LV->getVarInfo(SrcReg).Kills.push_back(NewMI);
+1555:     break;
+1556:   }
+1557:   CASE_NF(DEC8r)
+1558:   CASE_NF(INC8r)
+1559:     Is8BitOp = true;
+1560:     [[fallthrough]];
+1561:   CASE_NF(DEC16r)
+1562:   CASE_NF(INC16r)
+1563:     return convertToThreeAddressWithLEA(MIOpc, MI, LV, LIS, Is8BitOp);
+1564:   CASE_NF(ADD64rr)
+1565:   CASE_NF(ADD32rr)
+1566:   case X86::ADD64rr_DB:
+1567:   case X86::ADD32rr_DB: {
+1568:     assert(MI.getNumOperands() >= 3 && "Unknown add instruction!");
+1569:     unsigned Opc;
+1570:     if (MIOpc == X86::ADD64rr || MIOpc == X86::ADD64rr_NF ||
+1571:         MIOpc == X86::ADD64rr_DB)
+1572:       Opc = X86::LEA64r;
+1573:     else
+1574:       Opc = Is64Bit ? X86::LEA64_32r : X86::LEA32r;
+1575: 
+1576:     const MachineOperand &Src2 = MI.getOperand(2);
+1577:     bool isKill2;
+1578:     MachineOperand ImplicitOp2 = MachineOperand::CreateReg(0, false);
+1579:     if (!classifyLEAReg(MI, Src2, Opc, /*AllowSP=*/false, SrcReg2, SrcSubReg2,
+1580:                         isKill2, ImplicitOp2, LV, LIS))
+1581:       return nullptr;
+1582: 
+1583:     bool isKill;
+1584:     MachineOperand ImplicitOp = MachineOperand::CreateReg(0, false);
+1585:     if (Src.getReg() == Src2.getReg()) {
+1586:       // Don't call classify LEAReg a second time on the same register, in case
+1587:       // the first call inserted a COPY from Src2 and marked it as killed.
+1588:       isKill = isKill2;
+1589:       SrcReg = SrcReg2;
+1590:       SrcSubReg = SrcSubReg2;
+1591:     } else {
+1592:       if (!classifyLEAReg(MI, Src, Opc, /*AllowSP=*/true, SrcReg, SrcSubReg,
+1593:                           isKill, ImplicitOp, LV, LIS))
+1594:         return nullptr;
+1595:     }
+1596: 
+1597:     MachineInstrBuilder MIB = BuildMI(MF, MI.getDebugLoc(), get(Opc)).add(Dest);
+1598:     if (ImplicitOp.getReg() != 0)
+1599:       MIB.add(ImplicitOp);
+1600:     if (ImplicitOp2.getReg() != 0)
+1601:       MIB.add(ImplicitOp2);
+1602: 
+1603:     NewMI =
+1604:         addRegReg(MIB, SrcReg, isKill, SrcSubReg, SrcReg2, isKill2, SrcSubReg2);
+1605: 
+1606:     // Add kills if classifyLEAReg created a new register.
+1607:     if (LV) {
+1608:       if (SrcReg2 != Src2.getReg())
+1609:         LV->getVarInfo(SrcReg2).Kills.push_back(NewMI);
+1610:       if (SrcReg != SrcReg2 && SrcReg != Src.getReg())
+1611:         LV->getVarInfo(SrcReg).Kills.push_back(NewMI);
+1612:     }
+1613:     NumRegOperands = 3;
+1614:     break;
+1615:   }
+1616:   CASE_NF(ADD8rr)
+1617:   case X86::ADD8rr_DB:
+1618:     Is8BitOp = true;
+1619:     [[fallthrough]];
+1620:   CASE_NF(ADD16rr)
+1621:   case X86::ADD16rr_DB:
+1622:     return convertToThreeAddressWithLEA(MIOpc, MI, LV, LIS, Is8BitOp);
+1623:   CASE_NF(ADD64ri32)
+1624:   case X86::ADD64ri32_DB:
+1625:     assert(MI.getNumOperands() >= 3 && "Unknown add instruction!");
+1626:     NewMI = addOffset(
+1627:         BuildMI(MF, MI.getDebugLoc(), get(X86::LEA64r)).add(Dest).add(Src),
+1628:         MI.getOperand(2));
+1629:     break;
+1630:   CASE_NF(ADD32ri)
+1631:   case X86::ADD32ri_DB: {
+1632:     assert(MI.getNumOperands() >= 3 && "Unknown add instruction!");
+1633:     unsigned Opc = Is64Bit ? X86::LEA64_32r : X86::LEA32r;
+1634: 
+1635:     bool isKill;
+1636:     MachineOperand ImplicitOp = MachineOperand::CreateReg(0, false);
+1637:     if (!classifyLEAReg(MI, Src, Opc, /*AllowSP=*/true, SrcReg, SrcSubReg,
+1638:                         isKill, ImplicitOp, LV, LIS))
+1639:       return nullptr;
+1640: 
+1641:     MachineInstrBuilder MIB =
+1642:         BuildMI(MF, MI.getDebugLoc(), get(Opc))
+1643:             .add(Dest)
+1644:             .addReg(SrcReg, getKillRegState(isKill), SrcSubReg);
+1645:     if (ImplicitOp.getReg() != 0)
+1646:       MIB.add(ImplicitOp);
+1647: 
+1648:     NewMI = addOffset(MIB, MI.getOperand(2));
+1649: 
+1650:     // Add kills if classifyLEAReg created a new register.
+1651:     if (LV && SrcReg != Src.getReg())
+1652:       LV->getVarInfo(SrcReg).Kills.push_back(NewMI);
+1653:     break;
+1654:   }
+1655:   CASE_NF(ADD8ri)
+1656:   case X86::ADD8ri_DB:
+1657:     Is8BitOp = true;
+1658:     [[fallthrough]];
+1659:   CASE_NF(ADD16ri)
+1660:   case X86::ADD16ri_DB:
+1661:     return convertToThreeAddressWithLEA(MIOpc, MI, LV, LIS, Is8BitOp);
+1662:   CASE_NF(SUB8ri)
+1663:   CASE_NF(SUB16ri)
+1664:     /// FIXME: Support these similar to ADD8ri/ADD16ri*.
+1665:     return nullptr;
+1666:   CASE_NF(SUB32ri) {
+1667:     if (!MI.getOperand(2).isImm())
+1668:       return nullptr;
+1669:     int64_t Imm = MI.getOperand(2).getImm();
+1670:     if (!isInt<32>(-Imm))
+
+## 3 _ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE
+llvm_lib_Target_ARM_ARMLoadStoreOptimizer.cpp
+1118: static unsigned getUpdatingLSMultipleOpcode(unsigned Opc,
+1119:                                             ARM_AM::AMSubMode Mode) {
+1120:   switch (Opc) {
+1121:   default: llvm_unreachable("Unhandled opcode!");
+1122:   case ARM::LDMIA:
+1123:   case ARM::LDMDA:
+1124:   case ARM::LDMDB:
+1125:   case ARM::LDMIB:
+1126:     switch (Mode) {
+1127:     default: llvm_unreachable("Unhandled submode!");
+1128:     case ARM_AM::ia: return ARM::LDMIA_UPD;
+1129:     case ARM_AM::ib: return ARM::LDMIB_UPD;
+1130:     case ARM_AM::da: return ARM::LDMDA_UPD;
+1131:     case ARM_AM::db: return ARM::LDMDB_UPD;
+1132:     }
+1133:   case ARM::STMIA:
+1134:   case ARM::STMDA:
+1135:   case ARM::STMDB:
+1136:   case ARM::STMIB:
+1137:     switch (Mode) {
+1138:     default: llvm_unreachable("Unhandled submode!");
+1139:     case ARM_AM::ia: return ARM::STMIA_UPD;
+1140:     case ARM_AM::ib: return ARM::STMIB_UPD;
+1141:     case ARM_AM::da: return ARM::STMDA_UPD;
+1142:     case ARM_AM::db: return ARM::STMDB_UPD;
+1143:     }
+1144:   case ARM::t2LDMIA:
+1145:   case ARM::t2LDMDB:
+1146:     switch (Mode) {
+1147:     default: llvm_unreachable("Unhandled submode!");
+1148:     case ARM_AM::ia: return ARM::t2LDMIA_UPD;
+1149:     case ARM_AM::db: return ARM::t2LDMDB_UPD;
+1150:     }
+1151:   case ARM::t2STMIA:
+1152:   case ARM::t2STMDB:
+1153:     switch (Mode) {
+1154:     default: llvm_unreachable("Unhandled submode!");
+1155:     case ARM_AM::ia: return ARM::t2STMIA_UPD;
+1156:     case ARM_AM::db: return ARM::t2STMDB_UPD;
+1157:     }
+1158:   case ARM::VLDMSIA:
+1159:     switch (Mode) {
+1160:     default: llvm_unreachable("Unhandled submode!");
+1161:     case ARM_AM::ia: return ARM::VLDMSIA_UPD;
+1162:     case ARM_AM::db: return ARM::VLDMSDB_UPD;
+1163:     }
+1164:   case ARM::VLDMDIA:
+1165:     switch (Mode) {
+1166:     default: llvm_unreachable("Unhandled submode!");
+1167:     case ARM_AM::ia: return ARM::VLDMDIA_UPD;
+1168:     case ARM_AM::db: return ARM::VLDMDDB_UPD;
+1169:     }
+1170:   case ARM::VSTMSIA:
+1171:     switch (Mode) {
+1172:     default: llvm_unreachable("Unhandled submode!");
+1173:     case ARM_AM::ia: return ARM::VSTMSIA_UPD;
+1174:     case ARM_AM::db: return ARM::VSTMSDB_UPD;
+1175:     }
+1176:   case ARM::VSTMDIA:
+1177:     switch (Mode) {
+1178:     default: llvm_unreachable("Unhandled submode!");
+1179:     case ARM_AM::ia: return ARM::VSTMDIA_UPD;
+1180:     case ARM_AM::db: return ARM::VSTMDDB_UPD;
+1181:     }
+1182:   }
+1183: }
+
+## 4 _ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl
+llvm_lib_Target_AArch64_AArch64InstrInfo.cpp
+270: static unsigned getBranchDisplacementBits(unsigned Opc) {
+271:   switch (Opc) {
+272:   default:
+273:     llvm_unreachable("unexpected opcode!");
+274:   case AArch64::B:
+275:     return BDisplacementBits;
+276:   case AArch64::TBNZW:
+277:   case AArch64::TBZW:
+278:   case AArch64::TBNZX:
+279:   case AArch64::TBZX:
+280:     return TBZDisplacementBits;
+281:   case AArch64::CBNZW:
+282:   case AArch64::CBZW:
+283:   case AArch64::CBNZX:
+284:   case AArch64::CBZX:
+285:     return CBZDisplacementBits;
+286:   case AArch64::Bcc:
+287:     return BCCDisplacementBits;
+288:   case AArch64::CBWPri:
+289:   case AArch64::CBXPri:
+290:   case AArch64::CBBAssertExt:
+291:   case AArch64::CBHAssertExt:
+292:   case AArch64::CBWPrr:
+293:   case AArch64::CBXPrr:
+294:     return CBDisplacementBits;
+295:   }
+296: }
+297: 
+298: bool AArch64InstrInfo::isBranchOffsetInRange(unsigned BranchOp,
+299:                                              int64_t BrOffset) const {
+300:   unsigned Bits = getBranchDisplacementBits(BranchOp);
+301:   assert(Bits >= 3 && "max branch displacement must be enough to jump"
+302:                       "over conditional branch expansion");
+303:   return isIntN(Bits, BrOffset / 4);
+304: }
+
+## 5 _ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE
+llvm_lib_Target_AArch64_AArch64InstrInfo.cpp
+306: MachineBasicBlock *
+307: AArch64InstrInfo::getBranchDestBlock(const MachineInstr &MI) const {
+308:   switch (MI.getOpcode()) {
+309:   default:
+310:     llvm_unreachable("unexpected opcode!");
+311:   case AArch64::B:
+312:     return MI.getOperand(0).getMBB();
+313:   case AArch64::TBZW:
+314:   case AArch64::TBNZW:
+315:   case AArch64::TBZX:
+316:   case AArch64::TBNZX:
+317:     return MI.getOperand(2).getMBB();
+318:   case AArch64::CBZW:
+319:   case AArch64::CBNZW:
+320:   case AArch64::CBZX:
+321:   case AArch64::CBNZX:
+322:   case AArch64::Bcc:
+323:     return MI.getOperand(1).getMBB();
+324:   case AArch64::CBWPri:
+325:   case AArch64::CBXPri:
+326:   case AArch64::CBBAssertExt:
+327:   case AArch64::CBHAssertExt:
+328:   case AArch64::CBWPrr:
+329:   case AArch64::CBXPrr:
+330:     return MI.getOperand(3).getMBB();
+331:   }
+332: }
+
+## 6 _ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb
+llvm_lib_Target_AArch64_AArch64InstrInfo.cpp
+406: // Branch analysis.
+407: bool AArch64InstrInfo::analyzeBranch(MachineBasicBlock &MBB,
+408:                                      MachineBasicBlock *&TBB,
+409:                                      MachineBasicBlock *&FBB,
+410:                                      SmallVectorImpl<MachineOperand> &Cond,
+411:                                      bool AllowModify) const {
+412:   // If the block has no terminators, it just falls into the block after it.
+413:   MachineBasicBlock::iterator I = MBB.getLastNonDebugInstr();
+414:   if (I == MBB.end())
+415:     return false;
+416: 
+417:   // Skip over SpeculationBarrierEndBB terminators
+418:   if (I->getOpcode() == AArch64::SpeculationBarrierISBDSBEndBB ||
+419:       I->getOpcode() == AArch64::SpeculationBarrierSBEndBB) {
+420:     --I;
+421:   }
+422: 
+423:   if (!isUnpredicatedTerminator(*I))
+424:     return false;
+425: 
+426:   // Get the last instruction in the block.
+427:   MachineInstr *LastInst = &*I;
+428: 
+429:   // If there is only one terminator instruction, process it.
+430:   unsigned LastOpc = LastInst->getOpcode();
+431:   if (I == MBB.begin() || !isUnpredicatedTerminator(*--I)) {
+432:     if (isUncondBranchOpcode(LastOpc)) {
+433:       TBB = LastInst->getOperand(0).getMBB();
+434:       return false;
+435:     }
+436:     if (isCondBranchOpcode(LastOpc)) {
+437:       // Block ends with fall-through condbranch.
+438:       parseCondBranch(LastInst, TBB, Cond);
+439:       return false;
+440:     }
+441:     return true; // Can't handle indirect branch.
+442:   }
+443: 
+444:   // Get the instruction before it if it is a terminator.
+445:   MachineInstr *SecondLastInst = &*I;
+446:   unsigned SecondLastOpc = SecondLastInst->getOpcode();
+447: 
+448:   // If AllowModify is true and the block ends with two or more unconditional
+449:   // branches, delete all but the first unconditional branch.
+450:   if (AllowModify && isUncondBranchOpcode(LastOpc)) {
+451:     while (isUncondBranchOpcode(SecondLastOpc)) {
+452:       LastInst->eraseFromParent();
+453:       LastInst = SecondLastInst;
+454:       LastOpc = LastInst->getOpcode();
+455:       if (I == MBB.begin() || !isUnpredicatedTerminator(*--I)) {
+456:         // Return now the only terminator is an unconditional branch.
+457:         TBB = LastInst->getOperand(0).getMBB();
+458:         return false;
+459:       }
+460:       SecondLastInst = &*I;
+461:       SecondLastOpc = SecondLastInst->getOpcode();
+462:     }
+463:   }
+464: 
+465:   // If we're allowed to modify and the block ends in a unconditional branch
+466:   // which could simply fallthrough, remove the branch.  (Note: This case only
+467:   // matters when we can't understand the whole sequence, otherwise it's also
+468:   // handled by BranchFolding.cpp.)
+469:   if (AllowModify && isUncondBranchOpcode(LastOpc) &&
+470:       MBB.isLayoutSuccessor(getBranchDestBlock(*LastInst))) {
+471:     LastInst->eraseFromParent();
+472:     LastInst = SecondLastInst;
+473:     LastOpc = LastInst->getOpcode();
+474:     if (I == MBB.begin() || !isUnpredicatedTerminator(*--I)) {
+475:       assert(!isUncondBranchOpcode(LastOpc) &&
+476:              "unreachable unconditional branches removed above");
+477: 
+478:       if (isCondBranchOpcode(LastOpc)) {
+479:         // Block ends with fall-through condbranch.
+480:         parseCondBranch(LastInst, TBB, Cond);
+481:         return false;
+482:       }
+483:       return true; // Can't handle indirect branch.
+484:     }
+485:     SecondLastInst = &*I;
+486:     SecondLastOpc = SecondLastInst->getOpcode();
+487:   }
+488: 
+489:   // If there are three terminators, we don't know what sort of block this is.
+490:   if (SecondLastInst && I != MBB.begin() && isUnpredicatedTerminator(*--I))
+491:     return true;
+492: 
+493:   // If the block ends with a B and a Bcc, handle it.
+494:   if (isCondBranchOpcode(SecondLastOpc) && isUncondBranchOpcode(LastOpc)) {
+495:     parseCondBranch(SecondLastInst, TBB, Cond);
+496:     FBB = LastInst->getOperand(0).getMBB();
+497:     return false;
+498:   }
+499: 
+500:   // If the block ends with two unconditional branches, handle it.  The second
+
+## 7 _ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE
+llvm_lib_Target_AArch64_AArch64InstrInfo.cpp
+216: static void parseCondBranch(MachineInstr *LastInst, MachineBasicBlock *&Target,
+217:                             SmallVectorImpl<MachineOperand> &Cond) {
+218:   // Block ends with fall-through condbranch.
+219:   switch (LastInst->getOpcode()) {
+220:   default:
+221:     llvm_unreachable("Unknown branch instruction?");
+222:   case AArch64::Bcc:
+223:     Target = LastInst->getOperand(1).getMBB();
+224:     Cond.push_back(LastInst->getOperand(0));
+225:     break;
+226:   case AArch64::CBZW:
+227:   case AArch64::CBZX:
+228:   case AArch64::CBNZW:
+229:   case AArch64::CBNZX:
+230:     Target = LastInst->getOperand(1).getMBB();
+231:     Cond.push_back(MachineOperand::CreateImm(-1));
+232:     Cond.push_back(MachineOperand::CreateImm(LastInst->getOpcode()));
+233:     Cond.push_back(LastInst->getOperand(0));
+234:     break;
+235:   case AArch64::TBZW:
+236:   case AArch64::TBZX:
+237:   case AArch64::TBNZW:
+238:   case AArch64::TBNZX:
+239:     Target = LastInst->getOperand(2).getMBB();
+240:     Cond.push_back(MachineOperand::CreateImm(-1));
+241:     Cond.push_back(MachineOperand::CreateImm(LastInst->getOpcode()));
+242:     Cond.push_back(LastInst->getOperand(0));
+243:     Cond.push_back(LastInst->getOperand(1));
+244:     break;
+245:   case AArch64::CBWPri:
+246:   case AArch64::CBXPri:
+247:   case AArch64::CBWPrr:
+248:   case AArch64::CBXPrr:
+249:     Target = LastInst->getOperand(3).getMBB();
+250:     Cond.push_back(MachineOperand::CreateImm(-1));
+251:     Cond.push_back(MachineOperand::CreateImm(LastInst->getOpcode()));
+252:     Cond.push_back(LastInst->getOperand(0));
+253:     Cond.push_back(LastInst->getOperand(1));
+254:     Cond.push_back(LastInst->getOperand(2));
+255:     break;
+256:   case AArch64::CBBAssertExt:
+257:   case AArch64::CBHAssertExt:
+258:     Target = LastInst->getOperand(3).getMBB();
+259:     Cond.push_back(MachineOperand::CreateImm(-1));                    // -1
+260:     Cond.push_back(MachineOperand::CreateImm(LastInst->getOpcode())); // Opc
+261:     Cond.push_back(LastInst->getOperand(0));                          // Cond
+262:     Cond.push_back(LastInst->getOperand(1));                          // Op0
+263:     Cond.push_back(LastInst->getOperand(2));                          // Op1
+264:     Cond.push_back(LastInst->getOperand(4));                          // Ext0
+265:     Cond.push_back(LastInst->getOperand(5));                          // Ext1
+266:     break;
+267:   }
+268: }
+
+## 8 _ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.3519096245939212560
+llvm_lib_Target_AArch64_AArch64CondBrTuning.cpp
+115: MachineInstr *AArch64CondBrTuning::convertToCondBr(MachineInstr &MI) {
+116:   AArch64CC::CondCode CC;
+117:   MachineBasicBlock *TargetMBB = TII->getBranchDestBlock(MI);
+118:   switch (MI.getOpcode()) {
+119:   default:
+120:     llvm_unreachable("Unexpected opcode!");
+121: 
+122:   case AArch64::CBZW:
+123:   case AArch64::CBZX:
+124:     CC = AArch64CC::EQ;
+125:     break;
+126:   case AArch64::CBNZW:
+127:   case AArch64::CBNZX:
+128:     CC = AArch64CC::NE;
+129:     break;
+130:   case AArch64::TBZW:
+131:   case AArch64::TBZX:
+132:     CC = AArch64CC::PL;
+133:     break;
+134:   case AArch64::TBNZW:
+135:   case AArch64::TBNZX:
+136:     CC = AArch64CC::MI;
+137:     break;
+138:   }
+139:   return BuildMI(*MI.getParent(), MI, MI.getDebugLoc(), TII->get(AArch64::Bcc))
+140:       .addImm(CC)
+141:       .addMBB(TargetMBB);
+142: }
+143: 
+144: bool AArch64CondBrTuning::tryToTuneBranch(MachineInstr &MI,
+145:                                           MachineInstr &DefMI) {
+
+## 9 _ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE
+clang_lib_Sema_SemaObjC.cpp
+1771: Sema::RetainOwnershipKind
+1772: SemaObjC::parsedAttrToRetainOwnershipKind(const ParsedAttr &AL) {
+1773:   switch (AL.getKind()) {
+1774:   case ParsedAttr::AT_CFConsumed:
+1775:   case ParsedAttr::AT_CFReturnsRetained:
+1776:   case ParsedAttr::AT_CFReturnsNotRetained:
+1777:     return Sema::RetainOwnershipKind::CF;
+1778:   case ParsedAttr::AT_OSConsumesThis:
+1779:   case ParsedAttr::AT_OSConsumed:
+1780:   case ParsedAttr::AT_OSReturnsRetained:
+1781:   case ParsedAttr::AT_OSReturnsNotRetained:
+1782:   case ParsedAttr::AT_OSReturnsRetainedOnZero:
+1783:   case ParsedAttr::AT_OSReturnsRetainedOnNonZero:
+1784:     return Sema::RetainOwnershipKind::OS;
+1785:   case ParsedAttr::AT_NSConsumesSelf:
+1786:   case ParsedAttr::AT_NSConsumed:
+1787:   case ParsedAttr::AT_NSReturnsRetained:
+1788:   case ParsedAttr::AT_NSReturnsNotRetained:
+1789:   case ParsedAttr::AT_NSReturnsAutoreleased:
+1790:     return Sema::RetainOwnershipKind::NS;
+1791:   default:
+1792:     llvm_unreachable("Wrong argument supplied");
+1793:   }
+1794: }
+
+## 10 _ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE
+clang_lib_Sema_SemaObjC.cpp
+1771: Sema::RetainOwnershipKind
+1772: SemaObjC::parsedAttrToRetainOwnershipKind(const ParsedAttr &AL) {
+1773:   switch (AL.getKind()) {
+1774:   case ParsedAttr::AT_CFConsumed:
+1775:   case ParsedAttr::AT_CFReturnsRetained:
+1776:   case ParsedAttr::AT_CFReturnsNotRetained:
+1777:     return Sema::RetainOwnershipKind::CF;
+1778:   case ParsedAttr::AT_OSConsumesThis:
+1779:   case ParsedAttr::AT_OSConsumed:
+1780:   case ParsedAttr::AT_OSReturnsRetained:
+1781:   case ParsedAttr::AT_OSReturnsNotRetained:
+1782:   case ParsedAttr::AT_OSReturnsRetainedOnZero:
+1783:   case ParsedAttr::AT_OSReturnsRetainedOnNonZero:
+1784:     return Sema::RetainOwnershipKind::OS;
+1785:   case ParsedAttr::AT_NSConsumesSelf:
+1786:   case ParsedAttr::AT_NSConsumed:
+1787:   case ParsedAttr::AT_NSReturnsRetained:
+1788:   case ParsedAttr::AT_NSReturnsNotRetained:
+1789:   case ParsedAttr::AT_NSReturnsAutoreleased:
+1790:     return Sema::RetainOwnershipKind::NS;
+1791:   default:
+1792:     llvm_unreachable("Wrong argument supplied");
+1793:   }
+1794: }
+1795: 
+1796: bool SemaObjC::checkNSReturnsRetainedReturnType(SourceLocation Loc,
+1797:                                                 QualType QT) {
+1798:   if (isValidSubjectOfNSReturnsRetainedAttribute(QT))
+1799:     return false;
+1800: 
+1801:   Diag(Loc, diag::warn_ns_attribute_wrong_return_type)
+1802:       << "'ns_returns_retained'" << 0 << 0;
+1803:   return true;
+1804: }
+1805: 
+1806: /// \return whether the parameter is a pointer to OSObject pointer.
+1807: bool SemaObjC::isValidOSObjectOutParameter(const Decl *D) {
+1808:   const auto *PVD = dyn_cast<ParmVarDecl>(D);
+1809:   if (!PVD)
+1810:     return false;
+1811:   QualType QT = PVD->getType();
+1812:   QualType PT = QT->getPointeeType();
+1813:   return !PT.isNull() && isValidSubjectOfOSAttribute(PT);
+1814: }
+1815: 
+1816: void SemaObjC::handleXReturnsXRetainedAttr(Decl *D, const ParsedAttr &AL) {
+1817:   QualType ReturnType;
+1818:   Sema::RetainOwnershipKind K = parsedAttrToRetainOwnershipKind(AL);
+1819: 
+1820:   if (const auto *MD = dyn_cast<ObjCMethodDecl>(D)) {

@@ -1,0 +1,76 @@
+{
+  "status": "BLOCKED_FOR_EXISTING_TOOL_DEBUG_DETAILS",
+  "input_identity": {
+    "input": {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22",
+      "exists": true,
+      "bytes": 226782848,
+      "sha256": "bf15cf062439714651809cd3b5ca82619407081adca64ceb65699e6ccae50501"
+    },
+    "tool": {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+      "exists": true,
+      "bytes": 47280568,
+      "sha256": "12778b710b1f163a83fdd68e7ecb96bc9f70849fac1d86e5131dbcac3d819642"
+    },
+    "loader": {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+      "exists": true,
+      "bytes": 251728,
+      "sha256": "5eeb34519f748a986864fd49be40b467dc7e7cc3ddbfea8c12eb3abbbea5e5be"
+    },
+    "profile": {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/profile.fdata",
+      "exists": true,
+      "bytes": 171232190,
+      "sha256": "d9b132f9430dfed32e080c65b4422bd76eba4a9c2101a2b18a7f66c94133b326"
+    }
+  },
+  "known_original_tool_sha256": "12778b710b1f163a83fdd68e7ecb96bc9f70849fac1d86e5131dbcac3d819642",
+  "known_current_tool_matches": true,
+  "source_detail_flag": "-debug-only=bolt",
+  "existing_tool_compiled_with": "-DNDEBUG",
+  "current_tool_can_report_stale": true,
+  "current_tool_can_emit_LLVM_DEBUG_details": false,
+  "conditional_combined_argv": [
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+    "--library-path",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/llvm-bolt",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22",
+    "-o",
+    "/home/linhao/Toolchain/development/llvm-optimize/temp/report-stale-proposal-20261116/clang.bolt",
+    "-data=/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/clang-bolt/profile.fdata",
+    "-reorder-blocks=ext-tsp",
+    "-reorder-functions=cdsort",
+    "-split-functions",
+    "-split-all-cold",
+    "-split-eh",
+    "-dyno-stats",
+    "--thread-count=1",
+    "-stale-threshold=5",
+    "-use-old-text",
+    "-report-stale",
+    "-debug-only=bolt"
+  ],
+  "conditional_argv_warning": "NOT EXECUTABLE AS APPROVED PLAN: existing tool compiles details out; requires separately authorized non-NDEBUG diagnostic tool and a newly recorded SHA. Do not execute this argv with existing tool.",
+  "input_filters": [
+    "non-ALLOC relocation section",
+    "ALLOC relocated target",
+    "skip .plt .rela.plt .got.plt .eh_frame .gcc_except_table",
+    "skipRelocationType",
+    "x86 converted-bit normalization",
+    "TLS skipped on x86",
+    "existing dynamic relocation skipped",
+    "analyzeRelocation false only when isSupported false"
+  ],
+  "resources": {
+    "process_memory": "~10GB historical basis; diagnostic build/debug log overhead UNKNOWN",
+    "proposed_cgroup": "16GiB pending PM",
+    "runtime": "UNKNOWN; request 60min hard cap",
+    "disk": "5GiB provisional; stdout/stderr combined could exhaust cap",
+    "stop": "OOM/no retry; home<30GiB or output>5GiB; timeout60min; diagnostic success requires original count2804 reproduced and mapped"
+  },
+  "can_combine": "Only with separately approved non-NDEBUG same-source diagnostic tool; existing 74 tool cannot combine detail logging. Both flags share one pass, but changed tool identity/performance, verbose volume and early cap can invalidate reproduction.",
+  "executed": false
+}
