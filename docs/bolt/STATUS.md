@@ -7,6 +7,13 @@
 若 Gerrit 因提交者与推送账号不一致而拒收，立即停止该次操作，保留并原样报告完整拒绝输出；报告后再以 Hao Lin <hao.lin@samsung.com> 重新提交。不得隐瞒拒收或继续使用被拒身份重试；仍须遵循具体任务的分支推送授权。
 
 
+## 长期远端授权与证据发布规则（PM 澄清，2026-11-14）
+
+- 任务中“远端写操作只有……”这类限制，只约束 LLVM 侧远端（Gerrit、sandbox、tizen_base 等）和 QB。
+- 证据仓库 llvm-optimize 的 bolt-v4 提交与推送始终允许。按 [docs/README.md 第4条](../README.md)，每个任务完成后都要提交并推送，不需每次单独授权。
+- 证据仓库只能推 bolt-v4，不推 main，不 force push。不把证据发布授权扩展为 LLVM 或 QB 的写授权。
+- 此澄清覆盖90号中“证据仓库推送另待确认”的解释；原执行记录保留。
+
 日期：2026-10-12（Asia/Shanghai）；证据目录名20261013按用户指定。
 W=`/home/linhao/Toolchain/development/llvm-optimize`；B=`/home/linhao/Toolchain/development/llvm-optimize-bolt`；E=`/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261013`。
 分支bolt-v4；起点为最新origin/main `fb833a4c8ee1ece09027a0d5d04e254ea9899a5f`。W开场docs/47_review_round4_package.md与gbs_llvm.conf有归档会话修改，未触碰；其后主分支提交由归档会话独立推进，不合并到本任务。
@@ -1342,3 +1349,10 @@ PM裁决：只改提交说明、树不变，不需要新QB。源码包中0008补
 - 361396/361397仍NEW/PS1，未放弃。三条note与两份放弃说明只有草稿，尚未发布。最终tree仍b2e8af24，无代码变更或新构建。
 - Gerrit成功响应有标题>50字符warning，按本任务72列要求保留，没有重写重试。
 - 本任务仅授权三项远端写，证据本地提交后，GitHub证据发布另待确认。
+
+
+### 90号证据发布补记（2026-11-14T01:10:04-08:00）
+
+用户确认后，已将证据提交 `cc79ac1ba753c7510aae4916d88ed7ee4fa44fc8` 普通推送到 GitHub bolt-v4；ls-remote 精确核对通过。PM授权范围澄清已写入上方长期规则。本轮不再操作任何LLVM远端，也不发布note或放弃说明。
+
+读取README时首次误用仓库根目录README.md，FileNotFoundError；根据git ls-files定位为docs/README.md，路径修正一次，错误与diff保存在90号publication证据。身份核对和推送没有失败、没有重试。

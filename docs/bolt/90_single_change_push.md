@@ -98,3 +98,18 @@ after:  ecb2dec72ec5afde9c6c70f166e2ac12b47c093e
 ```
 
 90核对与授权推送 已结束 2026-11-14T00:56:59-08:00 status=PASS
+
+
+## 7. 证据发布与 PM 授权范围澄清（2026-11-14T01:10:04-08:00）
+
+用户明确同意发布 `cc79ac1ba753c7510aae4916d88ed7ee4fa44fc8`。已普通推送到 `https://github.com/lhmax2010/llvm-optimize.git` 的 bolt-v4，并以 ls-remote 核对：
+
+```text
+cc79ac1ba753c7510aae4916d88ed7ee4fa44fc8 refs/heads/bolt-v4
+```
+
+此前“证据推送待确认”的记录是当时状态，现已完成。PM 澄清：任务的远端写限制只约束LLVM远端和QB，证据仓库bolt-v4按README第4条始终需要提交并推送；只推bolt-v4，不推main，不force push。该长期规则已写入STATUS。
+
+本次发布前身份/工作树核对通过。阅读README时，误读不存在的根目录README.md，产生一次FileNotFoundError；通过git ls-files定位docs/README.md，按长期准备错误规则仅修正路径一次，随后读取及发布通过。错误和diff保存于publication/，不属于产品FAIL或远端拒绝。
+
+[证据发布补记索引](../../tools/bolt/results/single-change-20261114/push/publication/RAW_LINKS.md)。本次不再访问Gerrit或QB；90号的三个patch set和sandbox状态引用前述成功核对，不声称重新查询。
