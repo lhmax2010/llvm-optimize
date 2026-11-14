@@ -1,0 +1,18 @@
+--- original/create_commits.py
++++ resume/create_commits.py
+@@ -1,5 +1,5 @@
+ import pathlib,subprocess,json,os,re,email.parser,email.policy,datetime,difflib
+-B=pathlib.Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');E=B/'tools/bolt/results/single-change-20261114'
++B=pathlib.Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');E=B/'tools/bolt/results/single-change-20261114/resume'
+ R=pathlib.Path('/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261106/source')
+ N=pathlib.Path('/home/linhao/Toolchain/development/llvm-optimize/temp/single-change-20261114/source')
+ ids=['c5244e13258bb541458dcd4a08254217d7c556a9','bde009d1197a09f7b7b76382a0166e03c841bdb9','2cdd37ff747765e99c2befa3e6e8a88663ab77fe']
+@@ -20,7 +20,7 @@
+  reconstructed=subject.encode()+b'\n\n'+body
+  assert reconstructed==msg,(i,'r8-message-mismatch')
+  text=msg.decode();parts=text.rstrip('\n').rsplit('\n\n',1)
+- trailers=parts[1].splitlines();assert len(trailers)==2 and trailers[0]=='Signed-off-by: Hao Lin <hao.lin@samsung.com>' and trailers[1].startswith('Change-Id: ')
++ trailers=parts[1].splitlines();assert len(trailers)==2 and trailers.count('Signed-off-by: Hao Lin <hao.lin@samsung.com>')==1 and sum(re.fullmatch(r'Change-Id: I[0-9a-f]{40}', t) is not None for t in trailers)==1
+  bodies.append(parts[0].split('\n\n',1)[1]);msgs.append(text)
+  (E/f'original-{i:04d}-message.txt').write_bytes(msg)
+  proof.append({'part':i,'r8_message_byte_equal':True,'source':sha})

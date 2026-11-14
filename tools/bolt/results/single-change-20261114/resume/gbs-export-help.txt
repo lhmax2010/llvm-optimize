@@ -1,0 +1,52 @@
+usage: gbs export [-h] [-o OUTDIR] [--spec SPEC] [-c COMMIT] [--include-all]
+                  [--fallback-to-native] [--source-rpm] [--no-patch-export]
+                  [--upstream-branch UPSTREAM_BRANCH]
+                  [--upstream-tag UPSTREAM_TAG]
+                  [--squash-patches-until SQUASH_PATCHES_UNTIL]
+                  [--packaging-dir PACKAGING_DIR] [--outdir-directly]
+                  [--with-submodules]
+                  [gitdir]
+
+    Examples:
+      $ gbs export --spec my.spec --commit d64065c
+      $ gbs export --source-rpm -o /tmp/
+      $ gbs export --include-all
+    
+
+positional arguments:
+  gitdir                path to git repository
+
+options:
+  -h, --help            show this help message and exit
+  -o OUTDIR, --outdir OUTDIR
+                        output directory
+  --spec SPEC           specify a spec file to use. It should be a file name
+                        that GBS will find it in packaging dir
+  -c COMMIT, --commit COMMIT
+                        specify a commit ID to export
+  --include-all         uncommitted changes and untracked files would be
+                        included while generating tar ball
+  --fallback-to-native  Fall back to native packaging mode (i.e. create
+                        tarball directly from exported commit, not from
+                        upstream tag, and without patches) in case patch or
+                        upstream tarball generation fails.
+  --source-rpm          generate source rpm
+  --no-patch-export     don't create patches between upstream and export-
+                        treeish, and create tar ball from the export-treeish
+                        instead of upstream branch
+  --upstream-branch UPSTREAM_BRANCH
+                        upstream branch
+  --upstream-tag UPSTREAM_TAG
+                        upstream tag format, '${upstreamversion}' is expanded
+                        to the version in the spec file. E.g.
+                        'v${upstreamversion}'
+  --squash-patches-until SQUASH_PATCHES_UNTIL
+                        when generating patches, squash patches up to given
+                        commit-ish into one monolithic diff file. Format is
+                        the commit-ish optionally followed by a colon and diff
+                        filename base.
+  --packaging-dir PACKAGING_DIR
+                        directory containing packaging files
+  --outdir-directly     Use the directory of --outdir parameter directlyrather
+                        than outdir/pkg-version-release
+  --with-submodules     export source code also with submodule code togerther

@@ -1,0 +1,29 @@
+--- old/libcxx-runtimes.spec
++++ PS3/libcxx-runtimes.spec
+@@ -2,7 +2,7 @@
+ %define llvm_version 22.1.8
+ 
+ Name:           libcxx-runtimes
+-VCS:            #2cdd37ff747765e99c2befa3e6e8a88663ab77fe
++VCS:            #ecb2dec72ec5afde9c6c70f166e2ac12b47c093e
+ Version:        22.1.8
+ Release:        1
+ ExclusiveArch:  armv7l aarch64 x86_64
+@@ -22,7 +22,7 @@
+ Patch4:     0005-Merge-MLGO-AOT-compilation-support-and-optimization-.patch
+ Patch5:     0006-libcxxabi-declare-__gnu_unwind_frame-in-cxa_personal.patch
+ Patch6:     0007-libcxx-backport-EH-ABI-forced-unwind-handling.patch
+-Patch7:     0008-cmake-use-hybrid-LLVM-linkage-on-x86_64.patch
++Patch7:     0008-x86_64-hybrid-linkage-BOLT-clang-fixed-flags-and-arc.patch
+ 
+ BuildRequires:  clang = %{version}
+ BuildRequires:  cmake
+@@ -82,7 +82,7 @@
+ %patch -P 5 -p1
+ # 0007-libcxx-backport-EH-ABI-forced-unwind-handling.patch
+ %patch -P 6 -p1
+-# 0008-cmake-use-hybrid-LLVM-linkage-on-x86_64.patch
++# 0008-x86_64-hybrid-linkage-BOLT-clang-fixed-flags-and-arc.patch
+ %patch -P 7 -p1
+ cp %{SOURCE2} .
+ cp %{SOURCE3} .

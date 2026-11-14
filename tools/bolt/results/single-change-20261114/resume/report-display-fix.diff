@@ -1,0 +1,6 @@
+--- display-original
++++ display-fixed
+@@ -1,2 +1,2 @@
+-for name in ['export-SOURCE_PROVENANCE.diff','export-llvm.spec.diff','export-libcxx-runtimes.spec.diff','export-0008.diff']:
++for name in ['export-'+p.replace('/','_')+'.diff' for p in json.loads((E/'export-comparison.json').read_text())['changed']]+['export-0008.diff']:
+  print(name);print((E/name).read_text()[:2800])
