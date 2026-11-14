@@ -1,0 +1,47 @@
+1: 
+2: /home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22:	file format elf64-x86-64
+3: 
+4: Disassembly of section .text:
+5: 
+6: 0000000006cb9d80 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE>:
+7:  6cb9d80: 48 8b 46 48                  	movq	0x48(%rsi), %rax
+8:  6cb9d84: 0f b7 48 08                  	movzwl	0x8(%rax), %ecx
+9:  6cb9d88: 8d 81 2c ff ff ff            	leal	-0xd4(%rcx), %eax
+10:  6cb9d8e: 83 f8 32                     	cmpl	$0x32, %eax
+11:  6cb9d91: 77 24                        	ja	0x6cb9db7 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x37>
+12:  6cb9d93: 48 ba 00 00 00 00 00 e0 07 00	movabsq	$0x7e00000000000, %rdx  # imm = 0x7E00000000000
+13:  6cb9d9d: 48 0f a3 c2                  	btq	%rax, %rdx
+14:  6cb9da1: 73 06                        	jae	0x6cb9da9 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x29>
+15:  6cb9da3: b8 02 00 00 00               	movl	$0x2, %eax
+16:  6cb9da8: c3                           	retq
+17:  6cb9da9: ba 3b 00 00 00               	movl	$0x3b, %edx
+18:  6cb9dae: 48 0f a3 c2                  	btq	%rax, %rdx
+19:  6cb9db2: 73 03                        	jae	0x6cb9db7 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x37>
+20:  6cb9db4: 31 c0                        	xorl	%eax, %eax
+21:  6cb9db6: c3                           	retq
+22:  6cb9db7: b8 01 00 00 00               	movl	$0x1, %eax
+23:  6cb9dbc: 83 c1 c4                     	addl	$-0x3c, %ecx
+24:  6cb9dbf: ba 61 00 00 00               	movl	$0x61, %edx
+25:  6cb9dc4: 0f a3 ca                     	btl	%ecx, %edx
+26:  6cb9dc7: 73 01                        	jae	0x6cb9dca <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x4a>
+27:  6cb9dc9: c3                           	retq
+28:  6cb9dca: cc                           	int3
+29:  6cb9dcb: cc                           	int3
+30:  6cb9dcc: cc                           	int3
+31:  6cb9dcd: cc                           	int3
+32:  6cb9dce: cc                           	int3
+33:  6cb9dcf: cc                           	int3
+34: 
+35: 0000000006cb9dd0 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE>:
+36:  6cb9dd0: 41 56                        	pushq	%r14
+37:  6cb9dd2: 53                           	pushq	%rbx
+38:  6cb9dd3: 48 81 ec 98 00 00 00         	subq	$0x98, %rsp
+39:  6cb9dda: 48 83 e2 f0                  	andq	$-0x10, %rdx
+40:  6cb9dde: 48 8b 0a                     	movq	(%rdx), %rcx
+41:  6cb9de1: f6 41 11 04                  	testb	$0x4, 0x11(%rcx)
+42:  6cb9de5: 75 75                        	jne	0x6cb9e5c <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x8c>
+43:  6cb9de7: 48 8b 41 08                  	movq	0x8(%rcx), %rax
+44:  6cb9deb: 48 83 e0 f0                  	andq	$-0x10, %rax
+45:  6cb9def: 48 8b 00                     	movq	(%rax), %rax
+46:  6cb9df2: 0f b6 50 10                  	movzbl	0x10(%rax), %edx
+47:  6cb9df6: 31 c0                        	xorl	%eax, %eax

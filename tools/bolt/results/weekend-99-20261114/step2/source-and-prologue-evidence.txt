@@ -1,0 +1,639 @@
+
+clang_lib_Sema_SemaObjC.cpp
+1771: Sema::RetainOwnershipKind
+1772: SemaObjC::parsedAttrToRetainOwnershipKind(const ParsedAttr &AL) {
+1773:   switch (AL.getKind()) {
+1774:   case ParsedAttr::AT_CFConsumed:
+1775:   case ParsedAttr::AT_CFReturnsRetained:
+1776:   case ParsedAttr::AT_CFReturnsNotRetained:
+1777:     return Sema::RetainOwnershipKind::CF;
+1778:   case ParsedAttr::AT_OSConsumesThis:
+1779:   case ParsedAttr::AT_OSConsumed:
+1780:   case ParsedAttr::AT_OSReturnsRetained:
+1781:   case ParsedAttr::AT_OSReturnsNotRetained:
+1782:   case ParsedAttr::AT_OSReturnsRetainedOnZero:
+1783:   case ParsedAttr::AT_OSReturnsRetainedOnNonZero:
+1784:     return Sema::RetainOwnershipKind::OS;
+1785:   case ParsedAttr::AT_NSConsumesSelf:
+1786:   case ParsedAttr::AT_NSConsumed:
+1787:   case ParsedAttr::AT_NSReturnsRetained:
+1788:   case ParsedAttr::AT_NSReturnsNotRetained:
+1789:   case ParsedAttr::AT_NSReturnsAutoreleased:
+1790:     return Sema::RetainOwnershipKind::NS;
+1791:   default:
+1792:     llvm_unreachable("Wrong argument supplied");
+1793:   }
+1794: }
+1795: 
+1796: bool SemaObjC::checkNSReturnsRetainedReturnType(SourceLocation Loc,
+1797:                                                 QualType QT) {
+1798:   if (isValidSubjectOfNSReturnsRetainedAttribute(QT))
+1799:     return false;
+1800: 
+1801:   Diag(Loc, diag::warn_ns_attribute_wrong_return_type)
+1802:       << "'ns_returns_retained'" << 0 << 0;
+1803:   return true;
+1804: }
+1805: 
+1806: /// \return whether the parameter is a pointer to OSObject pointer.
+1807: bool SemaObjC::isValidOSObjectOutParameter(const Decl *D) {
+1808:   const auto *PVD = dyn_cast<ParmVarDecl>(D);
+1809:   if (!PVD)
+1810:     return false;
+1811:   QualType QT = PVD->getType();
+1812:   QualType PT = QT->getPointeeType();
+1813:   return !PT.isNull() && isValidSubjectOfOSAttribute(PT);
+1814: }
+1815: 
+1816: void SemaObjC::handleXReturnsXRetainedAttr(Decl *D, const ParsedAttr &AL) {
+1817:   QualType ReturnType;
+1818:   Sema::RetainOwnershipKind K = parsedAttrToRetainOwnershipKind(AL);
+
+llvm_lib_Target_AArch64_AArch64InstrInfo.cpp
+216: static void parseCondBranch(MachineInstr *LastInst, MachineBasicBlock *&Target,
+217:                             SmallVectorImpl<MachineOperand> &Cond) {
+218:   // Block ends with fall-through condbranch.
+219:   switch (LastInst->getOpcode()) {
+220:   default:
+221:     llvm_unreachable("Unknown branch instruction?");
+222:   case AArch64::Bcc:
+223:     Target = LastInst->getOperand(1).getMBB();
+224:     Cond.push_back(LastInst->getOperand(0));
+225:     break;
+226:   case AArch64::CBZW:
+227:   case AArch64::CBZX:
+228:   case AArch64::CBNZW:
+229:   case AArch64::CBNZX:
+230:     Target = LastInst->getOperand(1).getMBB();
+231:     Cond.push_back(MachineOperand::CreateImm(-1));
+232:     Cond.push_back(MachineOperand::CreateImm(LastInst->getOpcode()));
+233:     Cond.push_back(LastInst->getOperand(0));
+234:     break;
+235:   case AArch64::TBZW:
+236:   case AArch64::TBZX:
+237:   case AArch64::TBNZW:
+238:   case AArch64::TBNZX:
+239:     Target = LastInst->getOperand(2).getMBB();
+240:     Cond.push_back(MachineOperand::CreateImm(-1));
+241:     Cond.push_back(MachineOperand::CreateImm(LastInst->getOpcode()));
+242:     Cond.push_back(LastInst->getOperand(0));
+243:     Cond.push_back(LastInst->getOperand(1));
+244:     break;
+245:   case AArch64::CBWPri:
+246:   case AArch64::CBXPri:
+247:   case AArch64::CBWPrr:
+248:   case AArch64::CBXPrr:
+249:     Target = LastInst->getOperand(3).getMBB();
+250:     Cond.push_back(MachineOperand::CreateImm(-1));
+251:     Cond.push_back(MachineOperand::CreateImm(LastInst->getOpcode()));
+252:     Cond.push_back(LastInst->getOperand(0));
+253:     Cond.push_back(LastInst->getOperand(1));
+254:     Cond.push_back(LastInst->getOperand(2));
+255:     break;
+256:   case AArch64::CBBAssertExt:
+257:   case AArch64::CBHAssertExt:
+258:     Target = LastInst->getOperand(3).getMBB();
+259:     Cond.push_back(MachineOperand::CreateImm(-1));                    // -1
+260:     Cond.push_back(MachineOperand::CreateImm(LastInst->getOpcode())); // Opc
+261:     Cond.push_back(LastInst->getOperand(0));                          // Cond
+262:     Cond.push_back(LastInst->getOperand(1));                          // Op0
+263:     Cond.push_back(LastInst->getOperand(2));                          // Op1
+264:     Cond.push_back(LastInst->getOperand(4));                          // Ext0
+265:     Cond.push_back(LastInst->getOperand(5));                          // Ext1
+266:     break;
+267:   }
+268: }
+
+llvm_lib_Target_X86_X86InstrInfo.cpp
+1275: #define CASE_NF(OP)                                                            \
+1276:   case X86::OP:                                                                \
+1277:   case X86::OP##_NF:
+1278:   switch (MIOpc) {
+1279:   default:
+1280:     llvm_unreachable("Unreachable!");
+1281:   CASE_NF(SHL8ri)
+1282:   CASE_NF(SHL16ri) {
+1283:     unsigned ShAmt = MI.getOperand(2).getImm();
+1284:     MIB.addReg(0)
+1285:         .addImm(1LL << ShAmt)
+1286:         .addReg(InRegLEA, RegState::Kill)
+1287:         .addImm(0)
+1288:         .addReg(0);
+1289:     break;
+1290:   }
+1291:   CASE_NF(INC8r)
+1292:   CASE_NF(INC16r)
+1293:     addRegOffset(MIB, InRegLEA, true, 1);
+1294:     break;
+1295:   CASE_NF(DEC8r)
+1296:   CASE_NF(DEC16r)
+1297:     addRegOffset(MIB, InRegLEA, true, -1);
+1298:     break;
+1299:   CASE_NF(ADD8ri)
+1300:   CASE_NF(ADD16ri)
+1301:   case X86::ADD8ri_DB:
+1302:   case X86::ADD16ri_DB:
+1303:     addRegOffset(MIB, InRegLEA, true, MI.getOperand(2).getImm());
+1304:     break;
+1305:   CASE_NF(ADD8rr)
+1306:   CASE_NF(ADD16rr)
+1307:   case X86::ADD8rr_DB:
+1308:   case X86::ADD16rr_DB: {
+1309:     Src2 = MI.getOperand(2).getReg();
+1310:     Src2SubReg = MI.getOperand(2).getSubReg();
+1311:     bool IsKill2 = MI.getOperand(2).isKill();
+1312:     assert(!MI.getOperand(2).isUndef() && "Undef op doesn't need optimization");
+1313:     if (Src == Src2) {
+1314:       // ADD8rr/ADD16rr killed %reg1028, %reg1028
+1315:       // just a single insert_subreg.
+1316:       addRegReg(MIB, InRegLEA, true, X86::NoSubRegister, InRegLEA, false,
+1317:                 X86::NoSubRegister);
+1318:     } else {
+1319:       if (Subtarget.is64Bit())
+1320:         InRegLEA2 = RegInfo.createVirtualRegister(&X86::GR64_NOSPRegClass);
+1321:       else
+1322:         InRegLEA2 = RegInfo.createVirtualRegister(&X86::GR32_NOSPRegClass);
+1323:       // Build and insert into an implicit UNDEF value. This is OK because
+1324:       // we will be shifting and then extracting the lower 8/16-bits.
+1325:       ImpDef2 = BuildMI(MBB, &*MIB, MI.getDebugLoc(), get(X86::IMPLICIT_DEF),
+1326:                         InRegLEA2);
+1327:       InsMI2 = BuildMI(MBB, &*MIB, MI.getDebugLoc(), get(TargetOpcode::COPY))
+1328:                    .addReg(InRegLEA2, RegState::Define, SubReg)
+1329:                    .addReg(Src2, getKillRegState(IsKill2), Src2SubReg);
+1330:       addRegReg(MIB, InRegLEA, true, X86::NoSubRegister, InRegLEA2, true,
+1331:                 X86::NoSubRegister);
+1332:     }
+1333:     if (LV && IsKill2 && InsMI2)
+1334:       LV->replaceKillInstruction(Src2, MI, *InsMI2);
+1335:     break;
+1336:   }
+1337:   }
+
+llvm_lib_Target_ARM_ARMLoadStoreOptimizer.cpp
+1118: static unsigned getUpdatingLSMultipleOpcode(unsigned Opc,
+1119:                                             ARM_AM::AMSubMode Mode) {
+1120:   switch (Opc) {
+1121:   default: llvm_unreachable("Unhandled opcode!");
+1122:   case ARM::LDMIA:
+1123:   case ARM::LDMDA:
+1124:   case ARM::LDMDB:
+1125:   case ARM::LDMIB:
+1126:     switch (Mode) {
+1127:     default: llvm_unreachable("Unhandled submode!");
+1128:     case ARM_AM::ia: return ARM::LDMIA_UPD;
+1129:     case ARM_AM::ib: return ARM::LDMIB_UPD;
+1130:     case ARM_AM::da: return ARM::LDMDA_UPD;
+1131:     case ARM_AM::db: return ARM::LDMDB_UPD;
+1132:     }
+1133:   case ARM::STMIA:
+1134:   case ARM::STMDA:
+1135:   case ARM::STMDB:
+1136:   case ARM::STMIB:
+1137:     switch (Mode) {
+1138:     default: llvm_unreachable("Unhandled submode!");
+1139:     case ARM_AM::ia: return ARM::STMIA_UPD;
+1140:     case ARM_AM::ib: return ARM::STMIB_UPD;
+1141:     case ARM_AM::da: return ARM::STMDA_UPD;
+1142:     case ARM_AM::db: return ARM::STMDB_UPD;
+1143:     }
+1144:   case ARM::t2LDMIA:
+1145:   case ARM::t2LDMDB:
+1146:     switch (Mode) {
+1147:     default: llvm_unreachable("Unhandled submode!");
+1148:     case ARM_AM::ia: return ARM::t2LDMIA_UPD;
+1149:     case ARM_AM::db: return ARM::t2LDMDB_UPD;
+1150:     }
+1151:   case ARM::t2STMIA:
+1152:   case ARM::t2STMDB:
+1153:     switch (Mode) {
+1154:     default: llvm_unreachable("Unhandled submode!");
+1155:     case ARM_AM::ia: return ARM::t2STMIA_UPD;
+1156:     case ARM_AM::db: return ARM::t2STMDB_UPD;
+1157:     }
+1158:   case ARM::VLDMSIA:
+1159:     switch (Mode) {
+1160:     default: llvm_unreachable("Unhandled submode!");
+1161:     case ARM_AM::ia: return ARM::VLDMSIA_UPD;
+1162:     case ARM_AM::db: return ARM::VLDMSDB_UPD;
+1163:     }
+1164:   case ARM::VLDMDIA:
+1165:     switch (Mode) {
+1166:     default: llvm_unreachable("Unhandled submode!");
+1167:     case ARM_AM::ia: return ARM::VLDMDIA_UPD;
+1168:     case ARM_AM::db: return ARM::VLDMDDB_UPD;
+1169:     }
+1170:   case ARM::VSTMSIA:
+1171:     switch (Mode) {
+1172:     default: llvm_unreachable("Unhandled submode!");
+1173:     case ARM_AM::ia: return ARM::VSTMSIA_UPD;
+1174:     case ARM_AM::db: return ARM::VSTMSDB_UPD;
+1175:     }
+1176:   case ARM::VSTMDIA:
+1177:     switch (Mode) {
+1178:     default: llvm_unreachable("Unhandled submode!");
+1179:     case ARM_AM::ia: return ARM::VSTMDIA_UPD;
+1180:     case ARM_AM::db: return ARM::VSTMDDB_UPD;
+1181:     }
+1182:   }
+1183: }
+
+tools/bolt/results/night-86-20261114/disassembly/toolchain/07.txt
+1: 
+2: /home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22:	file format elf64-x86-64
+3: 
+4: Disassembly of section .text:
+5: 
+6: 0000000002f1fa00 <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE>:
+7:  2f1fa00: 41 57                        	pushq	%r15
+8:  2f1fa02: 41 56                        	pushq	%r14
+9:  2f1fa04: 41 54                        	pushq	%r12
+10:  2f1fa06: 53                           	pushq	%rbx
+11:  2f1fa07: 48 83 ec 28                  	subq	$0x28, %rsp
+12:  2f1fa0b: 0f b7 47 44                  	movzwl	0x44(%rdi), %eax
+13:  2f1fa0f: 4c 8b 77 20                  	movq	0x20(%rdi), %r14
+14:  2f1fa13: 3d 83 08 00 00               	cmpl	$0x883, %eax            # imm = 0x883
+15:  2f1fa18: 0f 8e c2 00 00 00            	jle	0x2f1fae0 <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0xe0>
+16:  2f1fa1e: 8d 88 7c f7 ff ff            	leal	-0x884(%rax), %ecx
+17:  2f1fa24: 83 f9 04                     	cmpl	$0x4, %ecx
+18:  2f1fa27: 0f 83 db 01 00 00            	jae	0x2f1fc08 <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x208>
+19:  2f1fa2d: 49 8b 46 30                  	movq	0x30(%r14), %rax
+20:  2f1fa31: 48 89 06                     	movq	%rax, (%rsi)
+21:  2f1fa34: c7 44 24 08 01 00 00 00      	movl	$0x1, 0x8(%rsp)
+22:  2f1fa3c: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+23:  2f1fa45: 48 c7 44 24 18 ff ff ff ff   	movq	$-0x1, 0x18(%rsp)
+24:  2f1fa4e: 8b 72 08                     	movl	0x8(%rdx), %esi
+25:  2f1fa51: 48 8b 0a                     	movq	(%rdx), %rcx
+26:  2f1fa54: 48 8d 5c 24 08               	leaq	0x8(%rsp), %rbx
+27:  2f1fa59: 3b 72 0c                     	cmpl	0xc(%rdx), %esi
+28:  2f1fa5c: 0f 83 de 05 00 00            	jae	0x2f20040 <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x640>
+29:  2f1fa62: 49 89 de                     	movq	%rbx, %r14
+30:  2f1fa65: 8b 42 08                     	movl	0x8(%rdx), %eax
+31:  2f1fa68: 48 c1 e0 05                  	shlq	$0x5, %rax
+32:  2f1fa6c: 41 0f 10 06                  	movups	(%r14), %xmm0
+33:  2f1fa70: 41 0f 10 4e 10               	movups	0x10(%r14), %xmm1
+34:  2f1fa75: 0f 11 4c 01 10               	movups	%xmm1, 0x10(%rcx,%rax)
+35:  2f1fa7a: 0f 11 04 01                  	movups	%xmm0, (%rcx,%rax)
+60:  2f1fae0: 8d 88 16 fe ff ff            	leal	-0x1ea(%rax), %ecx
+61:  2f1fae6: 83 f9 04                     	cmpl	$0x4, %ecx
+62:  2f1fae9: 0f 83 12 02 00 00            	jae	0x2f1fd01 <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x301>
+63:  2f1faef: 49 8b 46 70                  	movq	0x70(%r14), %rax
+64:  2f1faf3: 48 89 06                     	movq	%rax, (%rsi)
+65:  2f1faf6: c7 44 24 08 01 00 00 00      	movl	$0x1, 0x8(%rsp)
+66:  2f1fafe: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+67:  2f1fb07: 48 c7 44 24 18 ff ff ff ff   	movq	$-0x1, 0x18(%rsp)
+131:  2f1fc03: e9 d5 02 00 00               	jmp	0x2f1fedd <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x4dd>
+132:  2f1fc08: 05 37 e1 ff ff               	addl	$0xffffe137, %eax       # imm = 0xFFFFE137
+133:  2f1fc0d: b9 03 00 0c 00               	movl	$0xc0003, %ecx          # imm = 0xC0003
+134:  2f1fc12: 0f a3 c1                     	btl	%eax, %ecx
+135:  2f1fc15: 0f 83 33 0a 00 00            	jae	0x2f2064e <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0xc4e>
+136:  2f1fc1b: 49 8b 46 50                  	movq	0x50(%r14), %rax
+137:  2f1fc1f: 48 89 06                     	movq	%rax, (%rsi)
+138:  2f1fc22: c7 44 24 08 01 00 00 00      	movl	$0x1, 0x8(%rsp)
+139:  2f1fc2a: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+140:  2f1fc33: 48 c7 44 24 18 ff ff ff ff   	movq	$-0x1, 0x18(%rsp)
+141:  2f1fc3c: 8b 72 08                     	movl	0x8(%rdx), %esi
+142:  2f1fc3f: 48 8b 0a                     	movq	(%rdx), %rcx
+143:  2f1fc42: 48 8d 5c 24 08               	leaq	0x8(%rsp), %rbx
+144:  2f1fc47: 3b 72 0c                     	cmpl	0xc(%rdx), %esi
+145:  2f1fc4a: 0f 83 8d 04 00 00            	jae	0x2f200dd <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x6dd>
+146:  2f1fc50: 49 89 de                     	movq	%rbx, %r14
+147:  2f1fc53: 8b 42 08                     	movl	0x8(%rdx), %eax
+148:  2f1fc56: 48 c1 e0 05                  	shlq	$0x5, %rax
+149:  2f1fc5a: 41 0f 10 06                  	movups	(%r14), %xmm0
+150:  2f1fc5e: 41 0f 10 4e 10               	movups	0x10(%r14), %xmm1
+151:  2f1fc63: 0f 11 4c 01 10               	movups	%xmm1, 0x10(%rcx,%rax)
+152:  2f1fc68: 0f 11 04 01                  	movups	%xmm0, (%rcx,%rax)
+153:  2f1fc6c: 8b 72 08                     	movl	0x8(%rdx), %esi
+154:  2f1fc6f: ff c6                        	incl	%esi
+155:  2f1fc71: 89 72 08                     	movl	%esi, 0x8(%rdx)
+156:  2f1fc74: 0f b7 47 44                  	movzwl	0x44(%rdi), %eax
+157:  2f1fc78: c7 44 24 08 01 00 00 00      	movl	$0x1, 0x8(%rsp)
+158:  2f1fc80: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+159:  2f1fc89: 48 89 44 24 18               	movq	%rax, 0x18(%rsp)
+160:  2f1fc8e: 48 8b 0a                     	movq	(%rdx), %rcx
+161:  2f1fc91: 3b 72 0c                     	cmpl	0xc(%rdx), %esi
+162:  2f1fc94: 0f 83 93 04 00 00            	jae	0x2f2012d <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x72d>
+163:  2f1fc9a: 8b 42 08                     	movl	0x8(%rdx), %eax
+164:  2f1fc9d: 48 c1 e0 05                  	shlq	$0x5, %rax
+165:  2f1fca1: 0f 10 03                     	movups	(%rbx), %xmm0
+166:  2f1fca4: 0f 10 4b 10                  	movups	0x10(%rbx), %xmm1
+167:  2f1fca8: 0f 11 4c 01 10               	movups	%xmm1, 0x10(%rcx,%rax)
+168:  2f1fcad: 0f 11 04 01                  	movups	%xmm0, (%rcx,%rax)
+169:  2f1fcb1: 8b 72 08                     	movl	0x8(%rdx), %esi
+170:  2f1fcb4: ff c6                        	incl	%esi
+171:  2f1fcb6: 89 72 08                     	movl	%esi, 0x8(%rdx)
+172:  2f1fcb9: 48 8b 5f 20                  	movq	0x20(%rdi), %rbx
+173:  2f1fcbd: 48 8b 0a                     	movq	(%rdx), %rcx
+174:  2f1fcc0: 3b 72 0c                     	cmpl	0xc(%rdx), %esi
+175:  2f1fcc3: 0f 83 b1 04 00 00            	jae	0x2f2017a <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x77a>
+176:  2f1fcc9: 8b 42 08                     	movl	0x8(%rdx), %eax
+177:  2f1fccc: 48 c1 e0 05                  	shlq	$0x5, %rax
+178:  2f1fcd0: 0f 10 03                     	movups	(%rbx), %xmm0
+179:  2f1fcd3: 0f 10 4b 10                  	movups	0x10(%rbx), %xmm1
+180:  2f1fcd7: 0f 11 4c 01 10               	movups	%xmm1, 0x10(%rcx,%rax)
+181:  2f1fcdc: 0f 11 04 01                  	movups	%xmm0, (%rcx,%rax)
+182:  2f1fce0: 8b 72 08                     	movl	0x8(%rdx), %esi
+183:  2f1fce3: ff c6                        	incl	%esi
+184:  2f1fce5: 89 72 08                     	movl	%esi, 0x8(%rdx)
+185:  2f1fce8: 48 8b 5f 20                  	movq	0x20(%rdi), %rbx
+186:  2f1fcec: 48 83 c3 20                  	addq	$0x20, %rbx
+187:  2f1fcf0: 48 8b 0a                     	movq	(%rdx), %rcx
+188:  2f1fcf3: 3b 72 0c                     	cmpl	0xc(%rdx), %esi
+189:  2f1fcf6: 0f 82 8a 01 00 00            	jb	0x2f1fe86 <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x486>
+190:  2f1fcfc: e9 dc 01 00 00               	jmp	0x2f1fedd <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x4dd>
+475:  2f20128: e9 26 fb ff ff               	jmp	0x2f1fc53 <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x253>
+496:  2f20175: e9 20 fb ff ff               	jmp	0x2f1fc9a <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x29a>
+515:  2f201b9: e9 0b fb ff ff               	jmp	0x2f1fcc9 <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x2c9>
+
+tools/bolt/results/night-86-20261114/disassembly/toolchain/09.txt
+1: 
+2: /home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22:	file format elf64-x86-64
+3: 
+4: Disassembly of section .text:
+5: 
+6: 0000000006cb9d80 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE>:
+7:  6cb9d80: 48 8b 46 48                  	movq	0x48(%rsi), %rax
+8:  6cb9d84: 0f b7 48 08                  	movzwl	0x8(%rax), %ecx
+9:  6cb9d88: 8d 81 2c ff ff ff            	leal	-0xd4(%rcx), %eax
+10:  6cb9d8e: 83 f8 32                     	cmpl	$0x32, %eax
+11:  6cb9d91: 77 24                        	ja	0x6cb9db7 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x37>
+12:  6cb9d93: 48 ba 00 00 00 00 00 e0 07 00	movabsq	$0x7e00000000000, %rdx  # imm = 0x7E00000000000
+13:  6cb9d9d: 48 0f a3 c2                  	btq	%rax, %rdx
+14:  6cb9da1: 73 06                        	jae	0x6cb9da9 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x29>
+15:  6cb9da3: b8 02 00 00 00               	movl	$0x2, %eax
+16:  6cb9da8: c3                           	retq
+17:  6cb9da9: ba 3b 00 00 00               	movl	$0x3b, %edx
+18:  6cb9dae: 48 0f a3 c2                  	btq	%rax, %rdx
+19:  6cb9db2: 73 03                        	jae	0x6cb9db7 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x37>
+20:  6cb9db4: 31 c0                        	xorl	%eax, %eax
+21:  6cb9db6: c3                           	retq
+22:  6cb9db7: b8 01 00 00 00               	movl	$0x1, %eax
+23:  6cb9dbc: 83 c1 c4                     	addl	$-0x3c, %ecx
+24:  6cb9dbf: ba 61 00 00 00               	movl	$0x61, %edx
+25:  6cb9dc4: 0f a3 ca                     	btl	%ecx, %edx
+26:  6cb9dc7: 73 01                        	jae	0x6cb9dca <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x4a>
+27:  6cb9dc9: c3                           	retq
+28:  6cb9dca: cc                           	int3
+29:  6cb9dcb: cc                           	int3
+30:  6cb9dcc: cc                           	int3
+31:  6cb9dcd: cc                           	int3
+32:  6cb9dce: cc                           	int3
+33:  6cb9dcf: cc                           	int3
+34: 
+35: 0000000006cb9dd0 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE>:
+36:  6cb9dd0: 41 56                        	pushq	%r14
+37:  6cb9dd2: 53                           	pushq	%rbx
+38:  6cb9dd3: 48 81 ec 98 00 00 00         	subq	$0x98, %rsp
+39:  6cb9dda: 48 83 e2 f0                  	andq	$-0x10, %rdx
+40:  6cb9dde: 48 8b 0a                     	movq	(%rdx), %rcx
+41:  6cb9de1: f6 41 11 04                  	testb	$0x4, 0x11(%rcx)
+42:  6cb9de5: 75 75                        	jne	0x6cb9e5c <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x8c>
+43:  6cb9de7: 48 8b 41 08                  	movq	0x8(%rcx), %rax
+44:  6cb9deb: 48 83 e0 f0                  	andq	$-0x10, %rax
+45:  6cb9def: 48 8b 00                     	movq	(%rax), %rax
+46:  6cb9df2: 0f b6 50 10                  	movzbl	0x10(%rax), %edx
+47:  6cb9df6: 31 c0                        	xorl	%eax, %eax
+48:  6cb9df8: 83 fa 0b                     	cmpl	$0xb, %edx
+49:  6cb9dfb: 74 61                        	je	0x6cb9e5e <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x8e>
+50:  6cb9dfd: 83 fa 1f                     	cmpl	$0x1f, %edx
+51:  6cb9e00: 74 5c                        	je	0x6cb9e5e <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x8e>
+52:  6cb9e02: 49 89 fe                     	movq	%rdi, %r14
+53:  6cb9e05: 89 f3                        	movl	%esi, %ebx
+54:  6cb9e07: 48 89 cf                     	movq	%rcx, %rdi
+55:  6cb9e0a: e8 f1 ea f7 00               	callq	0x7c38900 <_ZNK5clang4Type5getAsINS_11TypedefTypeEEEPKT_v>
+56:  6cb9e0f: 48 85 c0                     	testq	%rax, %rax
+57:  6cb9e12: 74 55                        	je	0x6cb9e69 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x99>
+58:  6cb9e14: 48 8b 78 18                  	movq	0x18(%rax), %rdi
+59:  6cb9e18: f6 47 1d 01                  	testb	$0x1, 0x1d(%rdi)
+60:  6cb9e1c: 74 4b                        	je	0x6cb9e69 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x99>
+61:  6cb9e1e: e8 dd 95 8a 00               	callq	0x7563400 <_ZNK5clang4Decl8getAttrsEv>
+62:  6cb9e23: 8b 48 08                     	movl	0x8(%rax), %ecx
+63:  6cb9e26: 48 85 c9                     	testq	%rcx, %rcx
+64:  6cb9e29: 74 3e                        	je	0x6cb9e69 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x99>
+65:  6cb9e2b: 48 8b 00                     	movq	(%rax), %rax
+66:  6cb9e2e: 48 c1 e1 03                  	shlq	$0x3, %rcx
+67:  6cb9e32: 31 d2                        	xorl	%edx, %edx
+68:  6cb9e34: 66 2e 0f 1f 84 00 00 00 00 00	nopw	%cs:(%rax,%rax)
+69:  6cb9e3e: 66 90                        	nop
+70:  6cb9e40: 48 8b 34 10                  	movq	(%rax,%rdx), %rsi
+71:  6cb9e44: 66 81 7e 24 41 01            	cmpw	$0x141, 0x24(%rsi)      # imm = 0x141
+72:  6cb9e4a: 74 0b                        	je	0x6cb9e57 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x87>
+73:  6cb9e4c: 48 83 c2 08                  	addq	$0x8, %rdx
+74:  6cb9e50: 48 39 d1                     	cmpq	%rdx, %rcx
+75:  6cb9e53: 75 eb                        	jne	0x6cb9e40 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x70>
+76:  6cb9e55: eb 12                        	jmp	0x6cb9e69 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x99>
+77:  6cb9e57: 48 39 d1                     	cmpq	%rdx, %rcx
+78:  6cb9e5a: 74 0d                        	je	0x6cb9e69 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x99>
+79:  6cb9e5c: 31 c0                        	xorl	%eax, %eax
+80:  6cb9e5e: 48 81 c4 98 00 00 00         	addq	$0x98, %rsp
+81:  6cb9e65: 5b                           	popq	%rbx
+82:  6cb9e66: 41 5e                        	popq	%r14
+83:  6cb9e68: c3                           	retq
+84:  6cb9e69: 48 8d 7c 24 10               	leaq	0x10(%rsp), %rdi
+85:  6cb9e6e: 4c 89 f6                     	movq	%r14, %rsi
+86:  6cb9e71: 89 da                        	movl	%ebx, %edx
+87:  6cb9e73: b9 60 1c 00 00               	movl	$0x1c60, %ecx           # imm = 0x1C60
+88:  6cb9e78: e8 b3 57 b1 ff               	callq	0x67cf630 <_ZN5clang8SemaBase4DiagENS_14SourceLocationEj>
+89:  6cb9e7d: 80 bc 24 88 00 00 00 01      	cmpb	$0x1, 0x88(%rsp)
+90:  6cb9e85: 75 28                        	jne	0x6cb9eaf <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0xdf>
+91:  6cb9e87: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+92:  6cb9e8c: 48 85 c0                     	testq	%rax, %rax
+93:  6cb9e8f: 75 0f                        	jne	0x6cb9ea0 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0xd0>
+94:  6cb9e91: 48 8b 7c 24 38               	movq	0x38(%rsp), %rdi
+95:  6cb9e96: e8 f5 4f b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+96:  6cb9e9b: 48 89 44 24 30               	movq	%rax, 0x30(%rsp)
+97:  6cb9ea0: 0f b6 08                     	movzbl	(%rax), %ecx
+98:  6cb9ea3: c6 44 08 01 01               	movb	$0x1, 0x1(%rax,%rcx)
+99:  6cb9ea8: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+100:  6cb9ead: eb 70                        	jmp	0x6cb9f1f <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x14f>
+101:  6cb9eaf: 80 bc 24 94 00 00 00 01      	cmpb	$0x1, 0x94(%rsp)
+102:  6cb9eb7: 75 7a                        	jne	0x6cb9f33 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x163>
+103:  6cb9eb9: bb 60 02 00 00               	movl	$0x260, %ebx            # imm = 0x260
+104:  6cb9ebe: 48 03 5c 24 10               	addq	0x10(%rsp), %rbx
+105:  6cb9ec3: 48 8b 7c 24 20               	movq	0x20(%rsp), %rdi
+106:  6cb9ec8: 48 85 ff                     	testq	%rdi, %rdi
+107:  6cb9ecb: 74 08                        	je	0x6cb9ed5 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x105>
+108:  6cb9ecd: 48 8b 07                     	movq	(%rdi), %rax
+109:  6cb9ed0: ff 50 20                     	callq	*0x20(%rax)
+110:  6cb9ed3: eb 02                        	jmp	0x6cb9ed7 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x107>
+111:  6cb9ed5: 31 c0                        	xorl	%eax, %eax
+112:  6cb9ed7: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+113:  6cb9edc: 48 8d 74 24 08               	leaq	0x8(%rsp), %rsi
+114:  6cb9ee1: 48 89 df                     	movq	%rbx, %rdi
+115:  6cb9ee4: e8 07 96 a1 ff               	callq	0x66d34f0 <_ZN4llvm12DenseMapBaseINS_8DenseMapIN5clang16CanonicalDeclPtrIKNS2_12FunctionDeclEEESt6vectorISt4pairINS2_14SourceLocationENS2_17PartialDiagnosticEESaISB_EENS_12DenseMapInfoIS6_vEENS_6detail12DenseMapPairIS6_SD_EEEES6_SD_SF_SI_E24lookupOrInsertIntoBucketIS6_JEEES8_IPSI_bEOT_DpOT0_>
+116:  6cb9ee9: 8b 8c 24 90 00 00 00         	movl	0x90(%rsp), %ecx
+117:  6cb9ef0: 48 8b 40 08                  	movq	0x8(%rax), %rax
+118:  6cb9ef4: 48 c1 e1 05                  	shlq	$0x5, %rcx
+119:  6cb9ef8: 48 8d 1c 08                  	leaq	(%rax,%rcx), %rbx
+120:  6cb9efc: 48 8b 44 08 08               	movq	0x8(%rax,%rcx), %rax
+121:  6cb9f01: 48 85 c0                     	testq	%rax, %rax
+122:  6cb9f04: 75 0d                        	jne	0x6cb9f13 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x143>
+123:  6cb9f06: 48 8b 7b 10                  	movq	0x10(%rbx), %rdi
+124:  6cb9f0a: e8 81 4f b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+125:  6cb9f0f: 48 89 43 08                  	movq	%rax, 0x8(%rbx)
+126:  6cb9f13: 0f b6 08                     	movzbl	(%rax), %ecx
+127:  6cb9f16: c6 44 08 01 01               	movb	$0x1, 0x1(%rax,%rcx)
+128:  6cb9f1b: 48 8b 43 08                  	movq	0x8(%rbx), %rax
+129:  6cb9f1f: 0f b6 08                     	movzbl	(%rax), %ecx
+130:  6cb9f22: 8d 51 01                     	leal	0x1(%rcx), %edx
+131:  6cb9f25: 88 10                        	movb	%dl, (%rax)
+132:  6cb9f27: 48 8d 15 71 7b 02 fa         	leaq	-0x5fd848f(%rip), %rdx  # 0xce1a9f <.str.17.llvm.11538720969109503106>
+133:  6cb9f2e: 48 89 54 c8 10               	movq	%rdx, 0x10(%rax,%rcx,8)
+134:  6cb9f33: 80 bc 24 88 00 00 00 01      	cmpb	$0x1, 0x88(%rsp)
+135:  6cb9f3b: 75 28                        	jne	0x6cb9f65 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x195>
+136:  6cb9f3d: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+137:  6cb9f42: 48 85 c0                     	testq	%rax, %rax
+138:  6cb9f45: 75 0f                        	jne	0x6cb9f56 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x186>
+139:  6cb9f47: 48 8b 7c 24 38               	movq	0x38(%rsp), %rdi
+140:  6cb9f4c: e8 3f 4f b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+141:  6cb9f51: 48 89 44 24 30               	movq	%rax, 0x30(%rsp)
+142:  6cb9f56: 0f b6 08                     	movzbl	(%rax), %ecx
+143:  6cb9f59: c6 44 08 01 02               	movb	$0x2, 0x1(%rax,%rcx)
+144:  6cb9f5e: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+145:  6cb9f63: eb 70                        	jmp	0x6cb9fd5 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x205>
+146:  6cb9f65: 80 bc 24 94 00 00 00 01      	cmpb	$0x1, 0x94(%rsp)
+147:  6cb9f6d: 75 77                        	jne	0x6cb9fe6 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x216>
+148:  6cb9f6f: bb 60 02 00 00               	movl	$0x260, %ebx            # imm = 0x260
+149:  6cb9f74: 48 03 5c 24 10               	addq	0x10(%rsp), %rbx
+150:  6cb9f79: 48 8b 7c 24 20               	movq	0x20(%rsp), %rdi
+151:  6cb9f7e: 48 85 ff                     	testq	%rdi, %rdi
+152:  6cb9f81: 74 08                        	je	0x6cb9f8b <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x1bb>
+153:  6cb9f83: 48 8b 07                     	movq	(%rdi), %rax
+154:  6cb9f86: ff 50 20                     	callq	*0x20(%rax)
+155:  6cb9f89: eb 02                        	jmp	0x6cb9f8d <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x1bd>
+156:  6cb9f8b: 31 c0                        	xorl	%eax, %eax
+157:  6cb9f8d: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+158:  6cb9f92: 48 8d 74 24 08               	leaq	0x8(%rsp), %rsi
+159:  6cb9f97: 48 89 df                     	movq	%rbx, %rdi
+160:  6cb9f9a: e8 51 95 a1 ff               	callq	0x66d34f0 <_ZN4llvm12DenseMapBaseINS_8DenseMapIN5clang16CanonicalDeclPtrIKNS2_12FunctionDeclEEESt6vectorISt4pairINS2_14SourceLocationENS2_17PartialDiagnosticEESaISB_EENS_12DenseMapInfoIS6_vEENS_6detail12DenseMapPairIS6_SD_EEEES6_SD_SF_SI_E24lookupOrInsertIntoBucketIS6_JEEES8_IPSI_bEOT_DpOT0_>
+161:  6cb9f9f: 8b 8c 24 90 00 00 00         	movl	0x90(%rsp), %ecx
+162:  6cb9fa6: 48 8b 40 08                  	movq	0x8(%rax), %rax
+163:  6cb9faa: 48 c1 e1 05                  	shlq	$0x5, %rcx
+164:  6cb9fae: 48 8d 1c 08                  	leaq	(%rax,%rcx), %rbx
+165:  6cb9fb2: 48 8b 44 08 08               	movq	0x8(%rax,%rcx), %rax
+166:  6cb9fb7: 48 85 c0                     	testq	%rax, %rax
+167:  6cb9fba: 75 0d                        	jne	0x6cb9fc9 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x1f9>
+168:  6cb9fbc: 48 8b 7b 10                  	movq	0x10(%rbx), %rdi
+169:  6cb9fc0: e8 cb 4e b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+170:  6cb9fc5: 48 89 43 08                  	movq	%rax, 0x8(%rbx)
+171:  6cb9fc9: 0f b6 08                     	movzbl	(%rax), %ecx
+172:  6cb9fcc: c6 44 08 01 02               	movb	$0x2, 0x1(%rax,%rcx)
+173:  6cb9fd1: 48 8b 43 08                  	movq	0x8(%rbx), %rax
+174:  6cb9fd5: 0f b6 08                     	movzbl	(%rax), %ecx
+175:  6cb9fd8: 8d 51 01                     	leal	0x1(%rcx), %edx
+176:  6cb9fdb: 88 10                        	movb	%dl, (%rax)
+177:  6cb9fdd: 48 c7 44 c8 10 00 00 00 00   	movq	$0x0, 0x10(%rax,%rcx,8)
+178:  6cb9fe6: 80 bc 24 88 00 00 00 01      	cmpb	$0x1, 0x88(%rsp)
+179:  6cb9fee: 75 28                        	jne	0x6cba018 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x248>
+180:  6cb9ff0: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+181:  6cb9ff5: 48 85 c0                     	testq	%rax, %rax
+182:  6cb9ff8: 75 0f                        	jne	0x6cba009 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x239>
+183:  6cb9ffa: 48 8b 7c 24 38               	movq	0x38(%rsp), %rdi
+184:  6cb9fff: e8 8c 4e b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+185:  6cba004: 48 89 44 24 30               	movq	%rax, 0x30(%rsp)
+186:  6cba009: 0f b6 08                     	movzbl	(%rax), %ecx
+187:  6cba00c: c6 44 08 01 02               	movb	$0x2, 0x1(%rax,%rcx)
+188:  6cba011: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+189:  6cba016: eb 70                        	jmp	0x6cba088 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x2b8>
+190:  6cba018: 80 bc 24 94 00 00 00 01      	cmpb	$0x1, 0x94(%rsp)
+191:  6cba020: 75 77                        	jne	0x6cba099 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x2c9>
+192:  6cba022: bb 60 02 00 00               	movl	$0x260, %ebx            # imm = 0x260
+193:  6cba027: 48 03 5c 24 10               	addq	0x10(%rsp), %rbx
+194:  6cba02c: 48 8b 7c 24 20               	movq	0x20(%rsp), %rdi
+195:  6cba031: 48 85 ff                     	testq	%rdi, %rdi
+196:  6cba034: 74 08                        	je	0x6cba03e <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x26e>
+197:  6cba036: 48 8b 07                     	movq	(%rdi), %rax
+198:  6cba039: ff 50 20                     	callq	*0x20(%rax)
+199:  6cba03c: eb 02                        	jmp	0x6cba040 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x270>
+200:  6cba03e: 31 c0                        	xorl	%eax, %eax
+201:  6cba040: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+202:  6cba045: 48 8d 74 24 08               	leaq	0x8(%rsp), %rsi
+203:  6cba04a: 48 89 df                     	movq	%rbx, %rdi
+204:  6cba04d: e8 9e 94 a1 ff               	callq	0x66d34f0 <_ZN4llvm12DenseMapBaseINS_8DenseMapIN5clang16CanonicalDeclPtrIKNS2_12FunctionDeclEEESt6vectorISt4pairINS2_14SourceLocationENS2_17PartialDiagnosticEESaISB_EENS_12DenseMapInfoIS6_vEENS_6detail12DenseMapPairIS6_SD_EEEES6_SD_SF_SI_E24lookupOrInsertIntoBucketIS6_JEEES8_IPSI_bEOT_DpOT0_>
+205:  6cba052: 8b 8c 24 90 00 00 00         	movl	0x90(%rsp), %ecx
+206:  6cba059: 48 8b 40 08                  	movq	0x8(%rax), %rax
+207:  6cba05d: 48 c1 e1 05                  	shlq	$0x5, %rcx
+208:  6cba061: 48 8d 1c 08                  	leaq	(%rax,%rcx), %rbx
+209:  6cba065: 48 8b 44 08 08               	movq	0x8(%rax,%rcx), %rax
+210:  6cba06a: 48 85 c0                     	testq	%rax, %rax
+211:  6cba06d: 75 0d                        	jne	0x6cba07c <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x2ac>
+212:  6cba06f: 48 8b 7b 10                  	movq	0x10(%rbx), %rdi
+213:  6cba073: e8 18 4e b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+214:  6cba078: 48 89 43 08                  	movq	%rax, 0x8(%rbx)
+215:  6cba07c: 0f b6 08                     	movzbl	(%rax), %ecx
+216:  6cba07f: c6 44 08 01 02               	movb	$0x2, 0x1(%rax,%rcx)
+217:  6cba084: 48 8b 43 08                  	movq	0x8(%rbx), %rax
+218:  6cba088: 0f b6 08                     	movzbl	(%rax), %ecx
+219:  6cba08b: 8d 51 01                     	leal	0x1(%rcx), %edx
+220:  6cba08e: 88 10                        	movb	%dl, (%rax)
+221:  6cba090: 48 c7 44 c8 10 00 00 00 00   	movq	$0x0, 0x10(%rax,%rcx,8)
+222:  6cba099: 48 8d 7c 24 10               	leaq	0x10(%rsp), %rdi
+223:  6cba09e: e8 6d 28 ac ff               	callq	0x677c910 <_ZN5clang8SemaBase21SemaDiagnosticBuilderD2Ev>
+224:  6cba0a3: b0 01                        	movb	$0x1, %al
+225:  6cba0a5: 48 81 c4 98 00 00 00         	addq	$0x98, %rsp
+226:  6cba0ac: 5b                           	popq	%rbx
+227:  6cba0ad: 41 5e                        	popq	%r14
+228:  6cba0af: c3                           	retq
+
+tools/bolt/results/night-86-20261114/disassembly/toolchain/10.txt
+1: 
+2: /home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22:	file format elf64-x86-64
+3: 
+4: Disassembly of section .text:
+5: 
+6: 0000000006cba180 <_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE>:
+7:  6cba180: 55                           	pushq	%rbp
+8:  6cba181: 41 57                        	pushq	%r15
+9:  6cba183: 41 56                        	pushq	%r14
+10:  6cba185: 41 55                        	pushq	%r13
+11:  6cba187: 41 54                        	pushq	%r12
+12:  6cba189: 53                           	pushq	%rbx
+13:  6cba18a: 48 81 ec a8 00 00 00         	subq	$0xa8, %rsp
+14:  6cba191: 48 89 d3                     	movq	%rdx, %rbx
+15:  6cba194: 49 89 fe                     	movq	%rdi, %r14
+16:  6cba197: 48 8b 42 48                  	movq	0x48(%rdx), %rax
+17:  6cba19b: 48 8b 40 08                  	movq	0x8(%rax), %rax
+18:  6cba19f: 0f b7 c8                     	movzwl	%ax, %ecx
+19:  6cba1a2: 8d 91 2c ff ff ff            	leal	-0xd4(%rcx), %edx
+20:  6cba1a8: 83 fa 32                     	cmpl	$0x32, %edx
+21:  6cba1ab: 77 18                        	ja	0x6cba1c5 <_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE+0x45>
+22:  6cba1ad: 48 bf 3b 00 00 00 00 e0 07 00	movabsq	$0x7e0000000003b, %rdi  # imm = 0x7E0000000003B
+23:  6cba1b7: 48 0f a3 d7                  	btq	%rdx, %rdi
+24:  6cba1bb: 73 08                        	jae	0x6cba1c5 <_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE+0x45>
+25:  6cba1bd: 41 bf 03 00 00 00            	movl	$0x3, %r15d
+26:  6cba1c3: eb 17                        	jmp	0x6cba1dc <_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE+0x5c>
+27:  6cba1c5: 41 bf 02 00 00 00            	movl	$0x2, %r15d
+28:  6cba1cb: 83 c1 c4                     	addl	$-0x3c, %ecx
+29:  6cba1ce: ba 61 00 00 00               	movl	$0x61, %edx
+30:  6cba1d3: 0f a3 ca                     	btl	%ecx, %edx
+31:  6cba1d6: 0f 83 0f 0d 00 00            	jae	0x6cbaeeb <_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE+0xd6b>
+32:  6cba1dc: 8b 56 1c                     	movl	0x1c(%rsi), %edx
+33:  6cba1df: 89 d1                        	movl	%edx, %ecx
+34:  6cba1e1: 83 e1 7f                     	andl	$0x7f, %ecx
+35:  6cba1e4: 83 f9 13                     	cmpl	$0x13, %ecx
+36:  6cba1e7: 40 0f 95 c7                  	setne	%dil
+37:  6cba1eb: 48 85 f6                     	testq	%rsi, %rsi
+38:  6cba1ee: 41 0f 94 c0                  	sete	%r8b
+39:  6cba1f2: 41 08 f8                     	orb	%dil, %r8b
+40:  6cba1f5: 0f 84 9b 00 00 00            	je	0x6cba296 <_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE+0x116>
+41:  6cba1fb: 49 8b 3e                     	movq	(%r14), %rdi
+42:  6cba1fe: 48 8b bf e8 00 00 00         	movq	0xe8(%rdi), %rdi
+43:  6cba205: f6 47 6b 04                  	testb	$0x4, 0x6b(%rdi)
+44:  6cba209: 74 35                        	je	0x6cba240 <_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE+0xc0>
+45:  6cba20b: 89 d7                        	movl	%edx, %edi
+
+parseCondBranch remaining low-range discrimination
+191:  2f1fd01: 05 18 fe ff ff               	addl	$0xfffffe18, %eax       # imm = 0xFFFFFE18
+192:  2f1fd06: 83 f8 02                     	cmpl	$0x2, %eax
+193:  2f1fd09: 0f 83 9d 01 00 00            	jae	0x2f1feac <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x4ac>
+194:  2f1fd0f: 49 8b 46 70                  	movq	0x70(%r14), %rax
+195:  2f1fd13: 48 89 06                     	movq	%rax, (%rsi)
+196:  2f1fd16: c7 44 24 08 01 00 00 00      	movl	$0x1, 0x8(%rsp)
+197:  2f1fd1e: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+198:  2f1fd27: 48 c7 44 24 18 ff ff ff ff   	movq	$-0x1, 0x18(%rsp)
+199:  2f1fd30: 8b 72 08                     	movl	0x8(%rdx), %esi
+200:  2f1fd33: 48 8b 0a                     	movq	(%rdx), %rcx
+201:  2f1fd36: 48 8d 5c 24 08               	leaq	0x8(%rsp), %rbx
+202:  2f1fd3b: 3b 72 0c                     	cmpl	0xc(%rdx), %esi
+203:  2f1fd3e: 0f 83 7a 04 00 00            	jae	0x2f201be <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0x7be>
+204:  2f1fd44: 49 89 de                     	movq	%rbx, %r14

@@ -1471,3 +1471,5 @@ PM定性：93号FAIL为固定data16判据的覆盖缺口，不是已发现错误
 ## 2026-11-14：99号周末低资源任务
 
 [99号](99_weekend.md)逐步交付。步骤1 STOP：103项运行102通过、1 ERROR，读取测试子进程/proc/stat发生ProcessLookupError，16项未运行；没有修改测试或重试。只保留一行缩进未提交修改，产品HEAD和sandbox最后已知仍b0c1732c；未查询/推送sandbox。步骤2–5继续独立执行，重放未PASS前不得触发QB。
+
+99步骤2：8个B级告警完成生成枚举/位图复核，parseCondBranch与两处ParsedAttr升A，其余5处保留B；连同87已有2A，总计5A/5B。没有运行BOLT或作无害判断。准备枚举解析修正1次，原错误输出保留。

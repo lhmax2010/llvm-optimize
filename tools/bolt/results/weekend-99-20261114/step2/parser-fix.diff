@@ -1,0 +1,9 @@
+--- original-parser
++++ fixed-parser
+@@
+ for no,l in enumerate(lines,1):
++    if "INSTRUCTION_LIST_END" in l: break
+     m=re.match(pattern,l)
+     if m:
++        assert int(m[2]) not in d
+         d[int(m[2])] = entry

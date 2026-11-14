@@ -1,0 +1,87 @@
+3389:  2d00b99: 4c 8b 41 10                  	movq	0x10(%rcx), %r8
+3390:  2d00b9d: 48 39 f1                     	cmpq	%rsi, %rcx
+3391:  2d00ba0: 75 9e                        	jne	0x2d00b40 <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3930>
+3392:  2d00ba2: 49 89 39                     	movq	%rdi, (%r9)
+3393:  2d00ba5: eb 9d                        	jmp	0x2d00b44 <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3934>
+3394:  2d00ba7: 66 0f 1f 84 00 00 00 00 00   	nopw	(%rax,%rax)
+3395:  2d00bb0: 48 c7 45 18 00 00 00 00      	movq	$0x0, 0x18(%rbp)
+3396:  2d00bb8: 48 8b 45 00                  	movq	(%rbp), %rax
+3397:  2d00bbc: 48 8b 4d 08                  	movq	0x8(%rbp), %rcx
+3398:  2d00bc0: 48 83 e0 f8                  	andq	$-0x8, %rax
+3399:  2d00bc4: 48 8b 11                     	movq	(%rcx), %rdx
+3400:  2d00bc7: 83 e2 07                     	andl	$0x7, %edx
+3401:  2d00bca: 48 09 c2                     	orq	%rax, %rdx
+3402:  2d00bcd: 48 89 11                     	movq	%rdx, (%rcx)
+3403:  2d00bd0: 48 89 48 08                  	movq	%rcx, 0x8(%rax)
+3404:  2d00bd4: 48 83 65 00 07               	andq	$0x7, (%rbp)
+3405:  2d00bd9: 48 c7 45 08 00 00 00 00      	movq	$0x0, 0x8(%rbp)
+3406:  2d00be1: 48 8b 44 24 18               	movq	0x18(%rsp), %rax
+3407:  2d00be6: 48 8b 40 28                  	movq	0x28(%rax), %rax
+3408:  2d00bea: 4c 8b 68 20                  	movq	0x20(%rax), %r13
+3409:  2d00bee: 4c 8b 65 20                  	movq	0x20(%rbp), %r12
+3410:  2d00bf2: 4d 85 e4                     	testq	%r12, %r12
+3411:  2d00bf5: 0f 84 cb fe ff ff            	je	0x2d00ac6 <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x38b6>
+3412:  2d00bfb: 44 0f b6 7d 2b               	movzbl	0x2b(%rbp), %r15d
+3413:  2d00c00: 4d 8d b5 e8 00 00 00         	leaq	0xe8(%r13), %r14
+3414:  2d00c07: 41 8b 85 f0 00 00 00         	movl	0xf0(%r13), %eax
+3415:  2d00c0e: 44 39 f8                     	cmpl	%r15d, %eax
+3416:  2d00c11: 0f 87 a0 fe ff ff            	ja	0x2d00ab7 <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x38a7>
+3417:  2d00c17: 49 8d 4f 01                  	leaq	0x1(%r15), %rcx
+3418:  2d00c1b: 45 39 bd f4 00 00 00         	cmpl	%r15d, 0xf4(%r13)
+3419:  2d00c22: 77 26                        	ja	0x2d00c4a <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3a3a>
+3420:  2d00c24: 49 8d b5 f8 00 00 00         	leaq	0xf8(%r13), %rsi
+3421:  2d00c2b: b9 08 00 00 00               	movl	$0x8, %ecx
+3422:  2d00c30: 4c 89 f7                     	movq	%r14, %rdi
+3423:  2d00c33: 49 8d 57 01                  	leaq	0x1(%r15), %rdx
+3424:  2d00c37: e8 04 7a 3f 01               	callq	0x40f8640 <_ZN4llvm15SmallVectorBaseIjE8grow_podEPvmm>
+3425:  2d00c3c: 49 8d 4f 01                  	leaq	0x1(%r15), %rcx
+3426:  2d00c40: 0f 57 c0                     	xorps	%xmm0, %xmm0
+3427:  2d00c43: 41 8b 85 f0 00 00 00         	movl	0xf0(%r13), %eax
+3428:  2d00c4a: 39 c1                        	cmpl	%eax, %ecx
+3429:  2d00c4c: 0f 84 5e fe ff ff            	je	0x2d00ab0 <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x38a0>
+3430:  2d00c52: 89 c0                        	movl	%eax, %eax
+3431:  2d00c54: 48 8d 3c c5 00 00 00 00      	leaq	(,%rax,8), %rdi
+3432:  2d00c5c: 49 03 3e                     	addq	(%r14), %rdi
+3433:  2d00c5f: 49 89 ce                     	movq	%rcx, %r14
+3434:  2d00c62: 48 89 ca                     	movq	%rcx, %rdx
+3435:  2d00c65: 48 29 c2                     	subq	%rax, %rdx
+3436:  2d00c68: 48 c1 e2 03                  	shlq	$0x3, %rdx
+3437:  2d00c6c: 31 f6                        	xorl	%esi, %esi
+3438:  2d00c6e: e8 ad 9f 58 05               	callq	0x828ac20 <memset@plt>
+3439:  2d00c73: 4c 89 f1                     	movq	%r14, %rcx
+3440:  2d00c76: 4d 8d b5 e8 00 00 00         	leaq	0xe8(%r13), %r14
+3441:  2d00c7d: 0f 57 c0                     	xorps	%xmm0, %xmm0
+3442:  2d00c80: e9 2b fe ff ff               	jmp	0x2d00ab0 <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x38a0>
+3443:  2d00c85: 48 8d 54 24 30               	leaq	0x30(%rsp), %rdx
+3444:  2d00c8a: 48 8b 4c 24 20               	movq	0x20(%rsp), %rcx
+3445:  2d00c8f: 8b b4 24 88 00 00 00         	movl	0x88(%rsp), %esi
+3446:  2d00c96: 81 f9 4a 0b 00 00            	cmpl	$0xb4a, %ecx            # imm = 0xB4A
+3447:  2d00c9c: 0f 8f c8 00 00 00            	jg	0x2d00d6a <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3b5a>
+3448:  2d00ca2: 8d 81 56 fc ff ff            	leal	-0x3aa(%rcx), %eax
+3449:  2d00ca8: 83 f8 06                     	cmpl	$0x6, %eax
+3450:  2d00cab: 76 27                        	jbe	0x2d00cd4 <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3ac4>
+3451:  2d00cad: 81 c1 29 f8 ff ff            	addl	$0xfffff829, %ecx       # imm = 0xFFFFF829
+3452:  2d00cb3: b8 55 00 00 00               	movl	$0x55, %eax
+3453:  2d00cb8: 0f a3 c8                     	btl	%ecx, %eax
+3454:  2d00cbb: 0f 83 e1 16 00 00            	jae	0x2d023a2 <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x5192>
+3455:  2d00cc1: 89 f0                        	movl	%esi, %eax
+3456:  2d00cc3: 48 8d 0d 66 d0 18 fe         	leaq	-0x1e72f9a(%rip), %rcx  # 0xe8dd30 <.Lswitch.table._ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE.152>
+3457:  2d00cca: 4c 8b 74 c1 f8               	movq	-0x8(%rcx,%rax,8), %r14
+3458:  2d00ccf: e9 3b 01 00 00               	jmp	0x2d00e0f <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3bff>
+3459:  2d00cd4: b9 55 00 00 00               	movl	$0x55, %ecx
+3460:  2d00cd9: 0f a3 c1                     	btl	%eax, %ecx
+3461:  2d00cdc: 48 8b 4c 24 20               	movq	0x20(%rsp), %rcx
+3462:  2d00ce1: 73 ca                        	jae	0x2d00cad <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3a9d>
+3463:  2d00ce3: 89 f0                        	movl	%esi, %eax
+3464:  2d00ce5: 48 8d 0d 64 c7 18 fe         	leaq	-0x1e7389c(%rip), %rcx  # 0xe8d450 <.Lswitch.table._ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE.151>
+3465:  2d00cec: 4c 8b 74 c1 f8               	movq	-0x8(%rcx,%rax,8), %r14
+3466:  2d00cf1: e9 19 01 00 00               	jmp	0x2d00e0f <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3bff>
+3467:  2d00cf6: 8b bc 24 98 00 00 00         	movl	0x98(%rsp), %edi
+3468:  2d00cfd: 85 ff                        	testl	%edi, %edi
+3469:  2d00cff: 0f 84 86 03 00 00            	je	0x2d0108b <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3e7b>
+3470:  2d00d05: 48 8b 04 24                  	movq	(%rsp), %rax
+3471:  2d00d09: 48 8b 40 50                  	movq	0x50(%rax), %rax
+3472:  2d00d0d: 80 b8 08 02 00 00 00         	cmpb	$0x0, 0x208(%rax)
+3473:  2d00d14: 0f 84 71 03 00 00            	je	0x2d0108b <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3e7b>
+3474:  2d00d1a: 44 89 e6                     	movl	%r12d, %esi
+3475:  2d00d1d: 41 0f b7 4d 28               	movzwl	0x28(%r13), %ecx

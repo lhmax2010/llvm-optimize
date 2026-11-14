@@ -1,0 +1,114 @@
+[
+  {
+    "index": 1,
+    "name": "_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb",
+    "old_grade": "B",
+    "grade": "B",
+    "basis": "0x900000009对应INC16r/INC16r_NF/INC8r/INC8r_NF（1891,1894,1923,1926）；对应源码CASE_NF(INC8r/INC16r)。其他SHL/ADD/DEC先分流；尚未解码全跳表及所有入口到末尾bit-test的控制流，不升级。",
+    "source": "llvm_lib_Target_X86_X86InstrInfo.cpp",
+    "source_lines": [
+      1219,
+      1337
+    ],
+    "asm_evidence": "tools/bolt/results/night-86-20261114/disassembly/toolchain/01.txt",
+    "jump": "0x27f0b69"
+  },
+  {
+    "index": 2,
+    "name": "_ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE",
+    "old_grade": "B",
+    "grade": "B",
+    "basis": "0x4104041+5663对应5个VBROADCAST浮点rmk，0x2082000001041+15066对应6个VPBROADCAST整数rmk。已映射末端拒绝前11种枚举，但主switch还有大量分支/跳表，不能用最后一个位图证明整个default路径。",
+    "source": "llvm_lib_Target_X86_X86InstrInfo.cpp",
+    "source_lines": [
+      1409,
+      1670
+    ],
+    "asm_evidence": "tools/bolt/results/night-86-20261114/disassembly/toolchain/02.txt",
+    "jump": "0x27f3576"
+  },
+  {
+    "index": 3,
+    "name": "_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE",
+    "old_grade": "B",
+    "grade": "B",
+    "basis": "0x55+2007为STMDA/STMDB/STMIA/STMIB，0x55+938为LDMDA/LDMDB/LDMIA/LDMIB；对应getUpdatingLSMultipleOpcode L1122–1142。源码尚有t2/VFP及Mode分支；没有完整复原内联调用链和Mode表，所以保持B。",
+    "source": "llvm_lib_Target_ARM_ARMLoadStoreOptimizer.cpp",
+    "source_lines": [
+      1118,
+      1183
+    ],
+    "asm_evidence": "tools/bolt/results/night-86-20261114/disassembly/toolchain/03.txt",
+    "jump": "0x2d00cbb"
+  },
+  {
+    "index": 6,
+    "name": "_ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb",
+    "old_grade": "B",
+    "grade": "B",
+    "basis": "7881+0xc0003为TBNZW/TBNZX/TBZW/TBZX，成功选operand2（0x50），随后比较MBB successor，与getBranchDestBlock调用相符。尚未唯一定位所有内联入口，保持B。",
+    "source": "llvm_lib_Target_AArch64_AArch64InstrInfo.cpp",
+    "source_lines": [
+      406,
+      500
+    ],
+    "asm_evidence": "tools/bolt/results/night-86-20261114/disassembly/toolchain/06.txt",
+    "jump": "0x2f1f785"
+  },
+  {
+    "index": 7,
+    "name": "_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE",
+    "old_grade": "B",
+    "grade": "A",
+    "basis": "函数入口直接读取opcode；2180..2183先取operand1；另侧2107及488..493分流；余下7881+0xc0003匹配TBNZW/TBNZX/TBZW/TBZX，成功取operand2。该集合精确对应parseCondBranch L235–243，失败jae到end为L220–221 default。合法case全部绕开该末尾拒绝分支。",
+    "source": "llvm_lib_Target_AArch64_AArch64InstrInfo.cpp",
+    "source_lines": [
+      216,
+      268
+    ],
+    "asm_evidence": "tools/bolt/results/night-86-20261114/disassembly/toolchain/07.txt",
+    "jump": "0x2f1fc15"
+  },
+  {
+    "index": 8,
+    "name": "_ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.3519096245939212560",
+    "old_grade": "B",
+    "grade": "B",
+    "basis": "生成枚举将同一0xc0003准确映射到四种TBZ/TBNZ，operand2读取与convertToCondBr→getBranchDestBlock相符；同一内联范围还混有cond-code选择，未逐一复原全部入口路径，不升级。",
+    "source": "llvm_lib_Target_AArch64_AArch64CondBrTuning.cpp",
+    "source_lines": [
+      115,
+      145
+    ],
+    "asm_evidence": "tools/bolt/results/night-86-20261114/disassembly/toolchain/08.txt",
+    "jump": "0x3095780"
+  },
+  {
+    "index": 9,
+    "name": "_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE",
+    "old_grade": "B",
+    "grade": "A",
+    "basis": "ParsedAttr由AttributeCommonInfo.h L67–70按生成表从0顺序展开。CF=60/65/66，对应0x61；NS=212/213/215/216/217，对应0x3b；OS=257..262，对应0x7e00000000000。14种合法kind在真实汇编分流逐项得到正确返回值；末尾jae只有不满足这些合法集合时执行，对应源码L1791–1792。",
+    "source": "clang_lib_Sema_SemaObjC.cpp",
+    "source_lines": [
+      1771,
+      1794
+    ],
+    "asm_evidence": "tools/bolt/results/night-86-20261114/disassembly/toolchain/09.txt",
+    "jump": "0x6cb9dc7"
+  },
+  {
+    "index": 10,
+    "name": "_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE",
+    "old_grade": "B",
+    "grade": "A",
+    "basis": "handleXReturnsXRetainedAttr入口紧接读取kind；0x7e0000000003b合并OS/NS，0x61识别CF，完整覆盖上述14种kind。与L1818调用parsedAttrToRetainOwnershipKind逐指令对应；失败jae到end只在违反其unreachable前提时出现。",
+    "source": "clang_lib_Sema_SemaObjC.cpp",
+    "source_lines": [
+      1771,
+      1820
+    ],
+    "asm_evidence": "tools/bolt/results/night-86-20261114/disassembly/toolchain/10.txt",
+    "jump": "0x6cba1d6"
+  }
+]

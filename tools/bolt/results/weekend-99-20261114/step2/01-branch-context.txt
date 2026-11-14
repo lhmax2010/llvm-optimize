@@ -1,0 +1,87 @@
+178:  27f0a30: 48 8b 44 24 20               	movq	0x20(%rsp), %rax
+179:  27f0a35: 48 8b 70 38                  	movq	0x38(%rax), %rsi
+180:  27f0a39: 48 89 b4 24 d8 00 00 00      	movq	%rsi, 0xd8(%rsp)
+181:  27f0a41: 48 85 f6                     	testq	%rsi, %rsi
+182:  27f0a44: 74 31                        	je	0x27f0a77 <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x357>
+183:  27f0a46: 4c 8d bc 24 d8 00 00 00      	leaq	0xd8(%rsp), %r15
+184:  27f0a4e: ba 01 00 00 00               	movl	$0x1, %edx
+185:  27f0a53: 4c 89 ff                     	movq	%r15, %rdi
+186:  27f0a56: e8 35 60 3e 01               	callq	0x3bd6a90 <_ZN4llvm16MetadataTracking5trackEPvRNS_8MetadataENS_12PointerUnionIJPNS_15MetadataAsValueEPS2_PNS_14DebugValueUserEEEE>
+187:  27f0a5b: 48 8b b4 24 d8 00 00 00      	movq	0xd8(%rsp), %rsi
+188:  27f0a63: 48 89 34 24                  	movq	%rsi, (%rsp)
+189:  27f0a67: 48 85 f6                     	testq	%rsi, %rsi
+190:  27f0a6a: 74 12                        	je	0x27f0a7e <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x35e>
+191:  27f0a6c: 48 89 e2                     	movq	%rsp, %rdx
+192:  27f0a6f: 4c 89 ff                     	movq	%r15, %rdi
+193:  27f0a72: e8 09 64 3e 01               	callq	0x3bd6e80 <_ZN4llvm16MetadataTracking7retrackEPvRNS_8MetadataES1_>
+194:  27f0a77: 49 c7 07 00 00 00 00         	movq	$0x0, (%r15)
+195:  27f0a7e: 66 0f ef c0                  	pxor	%xmm0, %xmm0
+196:  27f0a82: f3 0f 7f 44 24 08            	movdqu	%xmm0, 0x8(%rsp)
+197:  27f0a88: 48 c7 44 24 18 00 00 00 00   	movq	$0x0, 0x18(%rsp)
+198:  27f0a91: 48 c7 c1 c0 f4 fe ff         	movq	$-0x10b40, %rcx         # imm = 0xFFFEF4C0
+199:  27f0a98: 48 8b 44 24 50               	movq	0x50(%rsp), %rax
+200:  27f0a9d: 48 03 48 08                  	addq	0x8(%rax), %rcx
+201:  27f0aa1: 49 89 e7                     	movq	%rsp, %r15
+202:  27f0aa4: 48 8b 7c 24 30               	movq	0x30(%rsp), %rdi
+203:  27f0aa9: 48 8b 74 24 20               	movq	0x20(%rsp), %rsi
+204:  27f0aae: 4c 89 fa                     	movq	%r15, %rdx
+205:  27f0ab1: 44 8b 44 24 70               	movl	0x70(%rsp), %r8d
+206:  27f0ab6: e8 c5 21 00 00               	callq	0x27f2c80 <_ZN4llvm7BuildMIERNS_17MachineBasicBlockENS_26MachineInstrBundleIteratorINS_12MachineInstrELb0EEERKNS_10MIMetadataERKNS_11MCInstrDescENS_8RegisterE>
+207:  27f0abb: 49 89 c5                     	movq	%rax, %r13
+208:  27f0abe: 49 89 d4                     	movq	%rdx, %r12
+209:  27f0ac1: 48 8b 34 24                  	movq	(%rsp), %rsi
+210:  27f0ac5: 48 85 f6                     	testq	%rsi, %rsi
+211:  27f0ac8: 74 08                        	je	0x27f0ad2 <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x3b2>
+212:  27f0aca: 48 89 e7                     	movq	%rsp, %rdi
+213:  27f0acd: e8 ce 61 3e 01               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+214:  27f0ad2: 48 8b b4 24 d8 00 00 00      	movq	0xd8(%rsp), %rsi
+215:  27f0ada: 48 85 f6                     	testq	%rsi, %rsi
+216:  27f0add: 74 0d                        	je	0x27f0aec <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x3cc>
+217:  27f0adf: 48 8d bc 24 d8 00 00 00      	leaq	0xd8(%rsp), %rdi
+218:  27f0ae7: e8 b4 61 3e 01               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+219:  27f0aec: 48 8b 54 24 68               	movq	0x68(%rsp), %rdx
+220:  27f0af1: 81 fa dd 05 00 00            	cmpl	$0x5dd, %edx            # imm = 0x5DD
+221:  27f0af7: 4c 89 a4 24 98 00 00 00      	movq	%r12, 0x98(%rsp)
+222:  27f0aff: 7f 34                        	jg	0x27f0b35 <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x415>
+223:  27f0b01: 8d 82 be fe ff ff            	leal	-0x142(%rdx), %eax
+224:  27f0b07: 83 f8 07                     	cmpl	$0x7, %eax
+225:  27f0b0a: 0f 86 42 01 00 00            	jbe	0x27f0c52 <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x532>
+226:  27f0b10: 8d 82 c2 fd ff ff            	leal	-0x23e(%rdx), %eax
+227:  27f0b16: 83 f8 14                     	cmpl	$0x14, %eax
+228:  27f0b19: 0f 86 39 02 00 00            	jbe	0x27f0d58 <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x638>
+229:  27f0b1f: 81 c2 4b fd ff ff            	addl	$0xfffffd4b, %edx       # imm = 0xFFFFFD4B
+230:  27f0b25: 48 8d 05 04 4c 6a fe         	leaq	-0x195b3fc(%rip), %rax  # 0xe95730 <_ZTSN4llvm2cl15OptionValueCopyIjEE+0x3069>
+231:  27f0b2c: 48 63 0c 90                  	movslq	(%rax,%rdx,4), %rcx
+232:  27f0b30: 48 01 c1                     	addq	%rax, %rcx
+233:  27f0b33: ff e1                        	jmpq	*%rcx
+234:  27f0b35: 81 fa cb 10 00 00            	cmpl	$0x10cb, %edx           # imm = 0x10CB
+235:  27f0b3b: 0f 8f 21 01 00 00            	jg	0x27f0c62 <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x542>
+236:  27f0b41: 8d 8a 22 fa ff ff            	leal	-0x5de(%rdx), %ecx
+237:  27f0b47: 48 b8 09 00 00 00 09 00 00 00	movabsq	$0x900000009, %rax      # imm = 0x900000009
+238:  27f0b51: 83 f9 23                     	cmpl	$0x23, %ecx
+239:  27f0b54: 48 8d 5c 24 78               	leaq	0x78(%rsp), %rbx
+240:  27f0b59: 0f 86 09 04 00 00            	jbe	0x27f0f68 <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x848>
+241:  27f0b5f: 81 c2 9d f8 ff ff            	addl	$0xfffff89d, %edx       # imm = 0xFFFFF89D
+242:  27f0b65: 48 0f a3 d0                  	btq	%rdx, %rax
+243:  27f0b69: 0f 83 0f 21 00 00            	jae	0x27f2c7e <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x255e>
+244:  27f0b6f: 48 c7 44 24 08 00 00 00 00   	movq	$0x0, 0x8(%rsp)
+245:  27f0b78: 8b 44 24 3c                  	movl	0x3c(%rsp), %eax
+246:  27f0b7c: 89 44 24 04                  	movl	%eax, 0x4(%rsp)
+247:  27f0b80: 66 0f ef c0                  	pxor	%xmm0, %xmm0
+248:  27f0b84: f3 0f 7f 44 24 10            	movdqu	%xmm0, 0x10(%rsp)
+249:  27f0b8a: c7 04 24 00 00 00 04         	movl	$0x4000000, (%rsp)      # imm = 0x4000000
+250:  27f0b91: 48 89 e2                     	movq	%rsp, %rdx
+251:  27f0b94: 4c 89 e7                     	movq	%r12, %rdi
+252:  27f0b97: 4c 89 ee                     	movq	%r13, %rsi
+253:  27f0b9a: e8 d1 fa e5 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+254:  27f0b9f: c7 04 24 01 00 00 00         	movl	$0x1, (%rsp)
+255:  27f0ba6: 48 c7 44 24 08 00 00 00 00   	movq	$0x0, 0x8(%rsp)
+256:  27f0baf: 48 c7 44 24 10 01 00 00 00   	movq	$0x1, 0x10(%rsp)
+257:  27f0bb8: 48 89 e2                     	movq	%rsp, %rdx
+258:  27f0bbb: 4c 89 e7                     	movq	%r12, %rdi
+259:  27f0bbe: 4c 89 ee                     	movq	%r13, %rsi
+260:  27f0bc1: e8 aa fa e5 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+261:  27f0bc6: 66 0f ef c0                  	pxor	%xmm0, %xmm0
+262:  27f0bca: 66 0f 7f 44 24 10            	movdqa	%xmm0, 0x10(%rsp)
+263:  27f0bd0: 66 0f 7f 04 24               	movdqa	%xmm0, (%rsp)
+264:  27f0bd5: 48 89 e2                     	movq	%rsp, %rdx
