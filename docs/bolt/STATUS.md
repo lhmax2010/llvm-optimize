@@ -14,6 +14,20 @@
 - 证据仓库只能推 bolt-v4，不推 main，不 force push。不把证据发布授权扩展为 LLVM 或 QB 的写授权。
 - 此澄清覆盖90号中“证据仓库推送另待确认”的解释；原执行记录保留。
 
+## 长期对外文本规则（91号PM补充，2026-11-14起）
+
+适用于发到Gerrit或其他总部可见位置的提交说明、patch-set note、评论、放弃说明和评审回复：
+
+1. 只用英文；不得出现中文、其他语言标点或全角字符。
+2. 不得引用总部无法访问的内容：GitHub链接或lhmax2010仓库名、证据仓库路径（docs/…、tools/bolt/results/…）、raw链接、bolt-v4或main/master分支、sandbox分支名、本地机器路径（/home/…、W/B工作区）、内部文档编号。
+3. 允许QB构建号、Gerrit change号、提交/tree SHA、LLVM源码路径。
+4. 每次发布前，对每份待发文本执行以下门禁；两者输出均须为空（grep rc=1）。任何命中或grep执行错误均STOP，不发布，保留原文。LLVM源码路径中的tools/允许，但需逐条说明理由。
+
+```sh
+grep -nP '[^\x00-\x7F]' TEXT
+grep -niE 'github|lhmax|raw\.githubusercontent|bolt-v4|sandbox|/home/|docs/bolt|tools/bolt|\bmaster\b|\bmain\b|号' TEXT
+```
+
 日期：2026-10-12（Asia/Shanghai）；证据目录名20261013按用户指定。
 W=`/home/linhao/Toolchain/development/llvm-optimize`；B=`/home/linhao/Toolchain/development/llvm-optimize-bolt`；E=`/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261013`。
 分支bolt-v4；起点为最新origin/main `fb833a4c8ee1ece09027a0d5d04e254ea9899a5f`。W开场docs/47_review_round4_package.md与gbs_llvm.conf有归档会话修改，未触碰；其后主分支提交由归档会话独立推进，不合并到本任务。
@@ -1356,3 +1370,12 @@ PM裁决：只改提交说明、树不变，不需要新QB。源码包中0008补
 用户确认后，已将证据提交 `cc79ac1ba753c7510aae4916d88ed7ee4fa44fc8` 普通推送到 GitHub bolt-v4；ls-remote 精确核对通过。PM授权范围澄清已写入上方长期规则。本轮不再操作任何LLVM远端，也不发布note或放弃说明。
 
 读取README时首次误用仓库根目录README.md，FileNotFoundError；根据git ls-files定位为docs/README.md，路径修正一次，错误与diff保存在90号publication证据。身份核对和推送没有失败、没有重试。
+
+
+## 2026-11-14：91号
+
+[91号发布记录](91_single_change_notes.md)：PASS。PM定稿PS1/2/3 note已分别发布到361395,1/2/3，每条回读只移除自动Patch Set前缀，正文逐字节一致。361396,1与361397,1已按90号说明放弃，均ABANDONED/PS1；361395仍NEW/PS3（ecb2dec7），PS1/PS2 revision不变。未推代码、未动sandbox、未构建、未投票/增加评审人。
+
+五份文本的ASCII/禁止引用门禁10/10通过。长期对外文本规则已置于STATUS顶部：只用英文，不引用总部不可访问的证据仓库/本地路径，每次发布前执行grep门禁。实际写入严格五项，无STOP、拒绝、准备错误或重试。旧90号草稿保留；本次发布文件位于publish/。
+
+91 已结束 2026-11-14T01:26:43-08:00 status=PASS

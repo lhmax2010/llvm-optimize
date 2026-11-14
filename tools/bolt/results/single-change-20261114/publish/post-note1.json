@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "ssh",
+    "-o",
+    "BatchMode=yes",
+    "-p",
+    "29418",
+    "lhmax2025@review.tizen.org",
+    "gerrit review 361395,1 --message 'Patch Set 1 - Part 1: hybrid LLVM linkage on x86_64\n\nHow to review: this change is uploaded as three cumulative patch sets.\nPS1 contains Part 1. Compare PS1 -> PS2 to see Part 2 (BOLT) alone,\nand PS2 -> PS3 to see Part 3 (flags and archive conversion) alone.\n\nWhat Part 1 does:\n- On x86_64, LLVM/Clang tools link against libLLVM and libclang-cpp,\n  while clang, lld and llvm-ar stay statically linked (these are the\n  binaries qemu-accel uses for cross builds).\n- It is selected by TIZEN_HYBRID_LINK, which only the x86_64 recipe\n  sets. Without it, the new CMake helpers return immediately and the\n  upstream behavior is kept.\n- Files: llvm/cmake/modules/AddLLVM.cmake,\n  clang/cmake/modules/AddClang.cmake, lld/cmake/modules/AddLLD.cmake,\n  the clang, lld and llvm-ar CMakeLists.txt, packaging/llvm.spec.\n\narmv7l/aarch64: build behavior is unchanged. AddLLVM.cmake and\nAddClang.cmake are installed on every architecture, so the ARM\nllvm-devel and clang packages carry the new CMake text. Against the\npre-change QB builds (1216401/1216400), 60 of 68 ARM packages are\nidentical and the other 8 differ only in these two files.\n\nRollback: revert Part 1.\n\nValidation: PS1 was not built on its own; it was validated as part of\nthe complete series (see the PS3 note).'"
+  ],
+  "rc": 0,
+  "time": "2026-11-14T01:23:08-08:00"
+}

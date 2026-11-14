@@ -1,0 +1,38 @@
+gerrit review 361395,3 --message 'Patch Set 3 - adds Part 3: fixed x86_64 flags and archive checks
+
+Compare PS2 -> PS3 to see Part 3 only. Files: packaging/llvm.spec,
+packaging/llvm-static-archives-native.py.
+
+What it does:
+- x86_64 compile and link flags are fixed to the Toolchain project'"'"'s
+  effective values, so a GCC-oriented project no longer passes options
+  that clang rejects (-feliminate-unused-debug-types). Dropped and
+  unreviewed project options are printed (TIZEN_LLVM_DROPPED_FLAGS,
+  TIZEN_LLVM_FLAGS_WARNING) and do not stop the build.
+- The static-archive converter from Change 359934 gets an explicit
+  debug-info mode, a same-version check of its three tools, stricter
+  archive/ELF/relocation parsing, and signal handling.
+
+Validation of the complete series (this tree):
+- QB 1226850 (Tizen-Base-Toolchain) and 1226851 (Tizen-Base-Dev):
+  x86_64, armv7l and aarch64 builds all succeeded.
+- All 102 binary packages have the same payload as the previous QB
+  validation of these changes (1225393/1225395); 1294 static archives
+  (22,520 members) are identical member by member.
+- Local full builds of both projects match QB (Base-Dev byte-identical;
+  Toolchain debug files differ only in the Release path prefix). The
+  final clang is identical between local and QB builds, and LLDB
+  resolves 21/21 clang frames with the installed debug info.
+
+Known open items (tracked, not blocking):
+1. QB A/B speed measurement of the final build is pending.
+2. BOLT prints 10 "jump past end ... replacing with nop" warnings. The
+   BOLT source treats this pattern as the result of
+   __builtin_unreachable(): a branch to the very end of a function,
+   taken only if an "unreachable" assumption is violated. 2 sites are
+   traced to llvm_unreachable in the source; the other 8 show the same
+   pattern; analysis continues.
+3. BOLT reports "Failed to analyze 2804 relocations" (relocation types
+   it does not support); a per-type census is in progress.
+4. A defensive hardening patch for the converter will follow
+   separately.'
