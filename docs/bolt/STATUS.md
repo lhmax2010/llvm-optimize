@@ -1453,3 +1453,8 @@ PM定性：93号FAIL为固定data16判据的覆盖缺口，不是已发现错误
 独立游离加固提交 `b0c1732c08c5a81382f9eeef27ffe1e40c6c47d1` / tree `a590f588e4088d87e946d65eaf03162358323e85`，父PS3 `ecb2dec72ec5afde9c6c70f166e2ac12b47c093e`；只改转换器，不带Change-Id，原工作树/分支未改。按本次一次性例外，以PS3明确lease推sandbox，ls-remote前后 `ecb2dec72ec5afde9c6c70f166e2ac12b47c093e` → `b0c1732c08c5a81382f9eeef27ffe1e40c6c47d1`。sandbox当前领先Gerrit PS3一个提交；未推refs/for或发布Gerrit文字。
 
 真实输入重放 **SKIPPED**：2026-11-14T03:50:21.232626-08:00 /home仅30625026048 B（28.522GiB），低于30GiB；MemAvailable 24254304256 B，未发现匹配重进程。未取锁、不等、不重试、未运行450+10全量重放。**重放PASS之前不得触发QB**；单元/小实物夹具通过不能替代全量不变证明。Part 4与Part 3补充草稿见96号resume2证据，均未对外发布。
+
+
+## 2026-11-14：97号磁盘清理盘点（不删除）
+
+见[97号](97_disk_cleanup_inventory.md)。只读盘点完成；权限盲区完整大小UNKNOWN，没有删除/移动/压缩或锁变更。/home项目A 141.724GiB、B ≥223.493GiB、C ≥686.001GiB（跨目录去重；共享ARM输入另列C ≥11.430GiB，/var/tmp另盘）。只删A预计释放141.724GiB、可用166.948GiB，距186GiB缺19.052GiB；加两组有条件建议B后可用199.127GiB、富余13.127GiB。旧QB下载可用性未核实，仍B；当前74 gbs-root仍B，D report-stale依赖未解除，不计入建议释放。源码链/b0c1732c、源码保护备份、74材料、450归档及10调试输入/old-new产物、TU、profile原件、当前QB RPM全C。清理需另行批准，删除前重查完整占用/锁/挂载。96全量重放仍SKIPPED、PASS前不得触发QB。STOP无；工具调用准备语法错误一次已记录，不涉及产品判定。

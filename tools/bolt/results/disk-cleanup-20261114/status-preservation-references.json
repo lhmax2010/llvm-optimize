@@ -1,0 +1,146 @@
+[
+  {
+    "line": 51,
+    "text": "| 资料盘点 | 完成；51d534ff67ec3aae560643564e764455bc9fc953 | 02_inventory.md；E/inventory输入/工具/SHA/spec/宏/锁快照 |"
+  },
+  {
+    "line": 72,
+    "text": "| 未改W跟踪文件/W llvm/构建根，未构建LLVM、采profile、插桩、挂载或干扰项目锁 | 命令日志/写入限定/原件SHA；操作边界；供应商原Bash脚本只读复制，新写shell全POSIX |"
+  },
+  {
+    "line": 86,
+    "text": "## 重任务锁协作规则"
+  },
+  {
+    "line": 88,
+    "text": "归档会话开场使用W/temp/review-round4-20261012/hold_lock.py，以O_CREAT|O_EXCL同时占用W/temp/.llvm-optimize-exclusive.lock与W/temp/gbs-root-x86_64-archivefix-v2/.llvm-optimize-exclusive.lock，JSON含pid/session/start；只有拥有者匹配记录才删除。脚本/记录只读封存E/inventory/archive-*。以后重任务先由归档会话明确释放/移交，再核验树身份/无重进程并按该机制取得锁；不能删“看似过时”的锁。本轮没有获取、等待、释放锁或向拥有者发信号。后续新根的锁路径随移交重新固定。"
+  },
+  {
+    "line": 105,
+    "text": "早期草案/Quickbuild环境与首次准备停止详见05和905b14f之前的STATUS；原文另保全在25对应raw。该阶段59夹具和profile压缩完成，初始草案b3ec4f0未推Gerrit；历史debug-only、双flags、二次安装与缓存复制方案均已由后文最新裁决替代。共享重锁规则仍为flock独占、等锁≤2h、单次≤60min；普通重段16GiB/swap0、nice15/ionice3、准入12GiB、运行<3GiB终止，轻段4GiB/nice19/ionice3、准入6GiB。特定任务明确覆盖的资源上限单独登记。"
+  },
+  {
+    "line": 115,
+    "text": "步骤2实测：缓存完整复制及原缓存终审PASS；dual/reference严格符号表不一致（2344个STT_FILE），按已裁决fallback到reference；BOLT匹配R0.004238545%、S/N0%，note/strip-all/三目标PASS。30输入初轮首个.o因.GCC.command.line编译器路径差异FAIL，剩余29未执行；公平argv0重测遇到入口内存不足及共享锁占用，待继续等锁。07与r1-rehearsal.json给全部实测，不把该30门禁记PASS。"
+  },
+  {
+    "line": 133,
+    "text": "| 5 周三计划 | 正式origin/main交接+锁空闲为开始条件，先匹配、新树完整cache副本、工具链接cache隔离/普通任务0、debug本地逐包字节对照及逐缺失DWARF证明；发布完整构建待做；Gerrit推送条件/命令列出但不执行 | 01附录v4.1 |"
+  },
+  {
+    "line": 138,
+    "text": "共享锁cache段约41m、其余最长reference约11m；公平30段实际等锁363.056s/持锁351.706s，未等锁超时；一次内存准入SKIP和自己的未取锁等待暂挂记录保留，没有豁免入口12GiB。轻实验与公平重测串行，没有向归档项目锁/进程发信号。只在B/E/R1新BOLT工作写入，W tracked/llvm不改，未进入归档任何构建根。"
+  },
+  {
+    "line": 153,
+    "text": "步骤1完成：95/95 fixtures PASS（0.408s；4GiB轻scope1.528s），完整patch及公开封套静态apply/整树PASS；本地源码 d6ddbff5ba74bfb420b357b5b6ba9ed300971bb4（父cb679968），文本patch/profile/manifest更新，无Gerrit推送。Quickbuild单一路径估12–15分钟、kernel峰约6.04GiB（R1温缓存依据；新llvm-bolt构建/正常post另计），详情11与single-path-estimate.json。今晚不取共享锁、不跑重阶段、不进入归档根。步骤2副本清理、步骤3周三计划更新待执行。"
+  },
+  {
+    "line": 157,
+    "text": "步骤3周三计划更新完成：01最新附录覆盖原v4/旧v4.1；正式READY交接（/var/tmp具体路径由STATUS给出）、共享锁与磁盘/内存准入→先匹配→新树原地cache、只构建同树BOLT且普通任务0、唯一重链/strip/BOLT/三目标/SHA链/单次原post尾检→30与90同一实体路径完整对象→本地debug同模式普通cb RPM逐包字节清单与逐缺失普通DWARF/全部其他debug证明→满足资格/评审/源recipe一致性/Source传输条件才可未来sandbox推送。发布分支完整普通/BOLT构建继续挂账。今夜只读同步origin/main=6e874fdbd0149a33167c9b83f8938d17df7c7ceb，其STATUS明确BOLT交接NOT READY，没有新根/cache/完成指纹；没有进入归档根，不凭目录存在开跑。旧段落的复制新树cache/原cache冻结/双路严格比较均已被最新人工裁决覆盖。"
+  },
+  {
+    "line": 165,
+    "text": "- 仅4GiB/swap0/nice19/ionice3轻scope，入口≥6GiB、运行≥3GiB；fixture峰0.049GiB、freeze峰0.198GiB、清理峰0.306GiB，scope均回收。无共享锁、重阶段、chroot/mount、归档根进入、standalone或完整LLVM构建；W tracked只保留其他会话既有gbs_llvm.conf变更，W/llvm未写。"
+  },
+  {
+    "line": 180,
+    "text": "资格scope1.025s、kernel峰515,751,936B/0.480GiB，16GiB/swap0/nice15/ionice3；入口17.43GiB、最低17.40GiB，OOM0。短命BOLT未被0.5秒VmHWM采样捕获，采样Python12596kB不能冒充BOLT峰值。共享锁等约0.000014s/持1.063s，finally已释；proc已卸载，所有scope回收。停止后轻审计8文件/22RPM SHA大小不变、原cache完整name/size/mtime相同、归档证据元数据相同；未进入本次两棵/var/tmp ARM根，W tracked既有gbs改动保留不写。"
+  },
+  {
+    "line": 190,
+    "text": "第一步PASS：唯一原链接字串已保存（SHA352a6f57…），只改输出/depfile、保留原cache字串并追加emit-relocs；链接8.840s、LLVM strip-debug5.376s、scope17.571s，kernel峰13.071GiB、最大采样VmHWM10211668kB。去debug输入SHA158275040dbaa71999f60a4b62e4dd9a23a58b4d72e7ff85fb3c5f5ebff064e4，226,738,888B；之前完整ELF3,560,483,168B。普通clang未变，cache仍47107/96877810360B，free60,410,531,840B；锁/proc/scope均回收。早期匹配下一步，不把本重链PASS冒充匹配PASS。"
+  },
+  {
+    "line": 192,
+    "text": "第二步早期匹配PASS：历史SHA1da7bb73…工具以全部正式参数对去debug的重链输入完整重写，N=23592/M=144032/S=0/U=1/Q=383，R=0.004238545%、S/N=0%，整数5%双门禁PASS，禁infer-stale。scope26.075s、kernel峰3.809GiB；早期产物用后已删除（非候选），日志/输出SHA保留；共享锁/proc/scope均回收。只有下一步本树新工具的正式产物可以成为候选。"
+  },
+  {
+    "line": 196,
+    "text": "**交接树的CMakeCache/build.ninja已被失败配置改写且未恢复**，停止SHA bd8ad3aa…/a37efa6a…，before/after快照在本次E；其他生成配置也受影响，不可直接ninja续跑，不能假定只覆盖两文件即完整恢复。本轮不修复重试，按停止规则只审计/报告。普通clang仍7df0ff90…；22RPM逐SHA大小及归档独立install证据元数据未变；cache规模47107/96877810360B不变，部分mtime由原地LLD访问改变，符合授权。锁/proc/scope全回收，未进入两棵ARM树。"
+  },
+  {
+    "line": 208,
+    "text": "停止后审计仅修正一次错误的.ninja_log旧基线比较（可变生成记录，不是保护原件），必要清理审计PASS；22RPM与普通clang/source/spec/ar/lld SHA、归档证据元数据未变，原cache仍bd8ad3aa…/ninja a37efa6a…保持上轮STOP状态、未恢复。本次只4GiB轻任务，未取共享锁，proc/scope均回收，没有进入两棵ARM树，W tracked/llvm未写。E=W/temp/bolt-v4-20261014-cmake-recovery；根内新/home/abuild/bolt-work/bolt-v4-20261014-cmake-recovery。14给全部证据/未完成边界，raw随后更新。本任务状态STOP_TEMPORARY_SOURCE_LAYOUT_ERROR。"
+  },
+  {
+    "line": 218,
+    "text": "树仍未恢复，当前cache17f7fbc72b14f6b1a5116aa17622e0af244fe84f2e72ef1e32bba61d3ca32876、ninja c0068a3e42ae3b4303357000ddb6f30a0f72d46da704128277a052953ead4d42；失败配置开始以来923个时间筛选改写文件清单、原始命令/环境、关键项与完整cache差异、59,160,293B ninja差异均保存。15与rpm-env-stop/restoration/configure给证据。恢复cmake32.714s/scope35.128s，峰0.567GiB/VmHWM328556kB；均4GiB轻scope、无共享锁/重阶段，proc/scope回收。普通clang与22RPM逐SHA大小、归档证据元数据、源码前后清单全部PASS；cache47626/96880098760B原地使用、不复制（比开工+519/+2288400B，允许LLD写入）。free60543275008B。草案/源d6ddbff5/patch/manifest无修改，无新夹具PASS声明；本次未完成候选验证目标，在恢复产品门禁处停止。"
+  },
+  {
+    "line": 232,
+    "text": "原clang/22RPM/归档证据/源码与原树cache/ninja配置SHA审计PASS，未在原树cmake/ninja或刷新生成头；但临时配置沿用15原lto.cache预置，测试链接仍新增361文件1674072B（cache47987/96881772832B），未满足原树仅作输入来源意图，已如实记录，不再触碰原cache。下次临时配置用专用cache且不复制原cache。全部proc/scope回收、候选重锁已释；第四步对象/双模式/DWARF清单/性能全部NOT RUN，geom未知，sandbox未尝试。最终候选SHA4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9保留；源d6ddbff5与封套未改。周四核Quickbuild统计/双5%门禁及性能，不核local/Quickbuild SHA相等。"
+  },
+  {
+    "line": 254,
+    "text": "续跑九STOP_PROCESS_TIMEOUT_FIXTURE_SECOND_ERROR：健壮性修改后的138夹具137通过1失败，进程后代退出观察修正一次后仍见R，按第二次错误立即停，不再试。安全属性/宏链开关OFF比对/ARM与AArch64性能/真实新门禁全部NOT RUN，不能生成合格源提交。候选4ec、普通clang、禁用cache/ninja未变；22RPM/归档/源码保护PASS、原cache47987/96881772832B；scope已回收，无重锁/proc/CMake/Ninja/ARM树/Gerrit动作。源HEAD仍a141，未完成修复及manifest单独保存；生产prune移除，rsp证据无@不改代码。35新增测试方法；准备/查找错误、初次109单测未纳入cgroup偏差详见21及review-corrections/resources。保持QB默认开启，回退需新spec提交改bcond_with，正式说明必须注明。"
+  },
+  {
+    "line": 266,
+    "text": "ARM/AArch64性能均PASS：geom30 0.856351167/0.847699213；独立20与留出10、600样本/条件/保护见21及95a2955版STATUS。无源码/Gerrit动作，锁/proc/scope回收。"
+  },
+  {
+    "line": 286,
+    "text": "22RPM逐包身份PASS；完整合并根no_bolt_products 17722路径/47cmake，最终helper复查PASS。新压缩提交OFF debug20/release18段与新基线逐字相同，ON顺序snapshot<compare-root<转换<install且转换一次；四post平台段逐字一致、尾检最后；真实7df/4ec安全、tiny三目标、双根post/反向/compare-root、111计划正负例全PASS。4ec候选未重生成。受保护22RPM/归档证据/原坏配置/缓存/源码未变，锁/proc/scope回收。产品准备修正0次、产品门禁失败0次；发布准备三类各修正1次（stdout错误假设、忽略归档暂存、索引脚本目标路径），查找更正及完整原文见24。"
+  },
+  {
+    "line": 302,
+    "text": "持锁3374.417秒（56.240分钟）<60；18GiB/swap0/nice15/ionice3，scope峰11.102GiB、最大观测VmHWM10.410GiB，宿主最低可用5.581GiB、disk最低free236.253GiB，内存事件全0。卸载/进程/锁/scope全部回收；下层240,718路径清单和六SHA前后完全一致。上层完整保留至周五待用户处置，无源码/Gerrit评审/tizen_base/QB操作。准备估算与askpass环境各修正1次，首次只读准备未设cgroup偏差如实在25登记；图形实际输入一次。原始日志/分阶段采样/完整脚本、dry-run、tool-plan/tool-verify、TF与下层审计全部公开于25对应raw，Source父676不变。"
+  },
+  {
+    "line": 323,
+    "text": "长期规则：发布代码不设磁盘空间门槛，只记录剩余空间；磁盘失败的诊断值必须在失败后由本次构建实际数据计算。本地开发机的资源、锁、磁盘规则只约束本地操作，不得进入发布代码。"
+  },
+  {
+    "line": 331,
+    "text": "直接在e2463165 amend为 `9e5675f57d122549997caffa39b655dfefc46fee`（父67619ec8，Hao Lin/原Change-Id），不叠加e971。%build全段9331B、基线install1895B、实际平台链304B逐字节相同；只允许尾检-B及末尾report，8个BOLT shell动作包装。call恢复直接日志，无线程/管道、不检查成功日志文本；诊断disk/not-disk/unknown，日志不可用不猜测。289测试、三类加unknown、sh-e rc1、gbs export及构建根Tizen五项全部PASS。一次图形认证，锁171.4秒，overlay/proc/dev卸载完、下层清单及六SHA不变；未运行原树cmake/ninja/-P。材料de32b57先GitHub，304raw核验PASS后以e246精确租约更新唯一bolt_pgo，推后已等于该源SHA；无refs/for、QB或新分支操作。详见27末节和narrow-disk-20261019。"
+  },
+  {
+    "line": 340,
+    "text": "目的盘当前可用229,464,346,624B；以历史OFF下界+本地30GiB保留量作准入参考需268,361,400,320B，差38,897,053,696B（36.225GiB），还未计BOLT/导出。该参考不是新快照精确需求；容量未覆盖参考，完整构建未启动，没有持重锁或编译进程。补测/清理/清理后全构建、RPM对比、五项解析全部NOT RUN。本地容量规则不进发布代码；旧树/保全证据不删。29及disk-footprint-20261021给原始采样副本、当前du、输入来源、缺项、生命周期边界与续测方法。"
+  },
+  {
+    "line": 345,
+    "text": "完成 [31_build_root_inventory.md](31_build_root_inventory.md)：三块已挂载本地文件系统扫描、88个候选独立du，列95个>5GiB根/重要子目录（父子项不可相加）。保全17个关键资产大小/SHA，核实22RPM硬链接；权限盲区原样报告。末次可见lsof/fuser无根句柄，未见活动overlay/项目锁，不能据此解除保护；main patch/hybrid、Rnew/N/N38/H、两ARM树、var/tmp交接树继续建议保留。"
+  },
+  {
+    "line": 379,
+    "text": "续跑段持锁3203.387秒后确认cgroup冻结并释放锁；冻结保留约14.1GiB内存。随后60分钟的准入采样仅约7.56–9.89GiB可用，未达12GiB，按规则停止。cgroup峰值16GiB，oom/oom_kill均0；此前LLD有文件页I/O等待。所有本次构建/监视进程退出，新根5个挂载已卸载、无残留；完整新根和对象保留，没有删除任何历史根或缓存。"
+  },
+  {
+    "line": 385,
+    "text": "用户释放内存后，第一轮9e5675f在本任务新根baseline-root恢复；普通构建尚未完成。01:45:30 CST用户明确批准本次两轮本地测量使用20GiB cgroup上限（原16GiB），已调整本轮并为第二轮使用同一限额。swap0、运行中MemAvailable<3GiB停止、锁与其他本地规则不变；不进入发布代码。源提交仍为d20e873b；既有299测试/五项解析PASS，不代表双轮完整构建认证。详见32第9节，当前进行中。"
+  },
+  {
+    "line": 387,
+    "text": "同日后续用户裁决覆盖上面的20GiB上限：取消本次测量的cgroup内存上限与内存准入等待，已设置MemoryMax=infinity；冻结续租已恢复，同一普通链接现场继续。锁/磁盘/代码边界不变，详见32第9节及memory-unlimited.json。"
+  },
+  {
+    "line": 390,
+    "text": "2026-10-23 03:49进度：第一轮普通构建356/356和普通安装完成，BOLT实际tool-plan/执行均113项（111BOLT+2TF），工具实物复核通过。tool-built BOLT自有占用3.762GiB（含cache新增1.120GiB）；正在重链，尚无完整candidate/RPM，不能宣称完整增量或释放收益。MemoryMax=infinity、无内存准入续租；最新持锁3200.228秒后冻结/释放/恢复成功。全根du历史竞态缺口、修正和原始读数均存证，见32第9.1节。未访问Gerrit/QB，未删除任何构建根。"
+  },
+  {
+    "line": 400,
+    "text": "2026-10-23 07:38：第二轮d20e873b在独立revised-root完成普通构建7634/7634，进入%install；固定输入SHA已核对。全程无内存上限/准入/低内存冻结，两次共享锁续租成功。首轮已保全，第二轮缓存释放、候选/RPM和峰值比较待完成；详见32第11节。"
+  },
+  {
+    "line": 408,
+    "text": "用户取消内存上限、准入和低内存冻结后，本地第二轮正常完成；共享锁仍按小于60分钟分段续租，swap0/nice/IO与本地磁盘规则保留，均未写入发布代码。9e5675f首轮及d20e873b修订轮均完整构建成功，各22二进制RPM+1源码RPM，产物已保全。299测试、五项Tizen RPM解析和真实113任务白名单/工具实物、匹配、安全属性、tiny、compare-root、225归档转换及post全部PASS。源提交d20e873b2c7dfac10fab9235e2b781dad08dc4c7仅在本地，没有推Gerrit或操作QB。"
+  },
+  {
+    "line": 969,
+    "text": "见 [69](69_rebase_on_359934.md)。基线 13c3e223（NEW）；新链 a73a7da3 → e08ed9ed → a3d18c2d。7706/7706 重放完全相同，46+5 回归及真实 C-2 正反例通过。T 演练通过；D 到达 CMake 且参数正确，但 log-restarts=1 和收尾日志要求使审计未通过，保留现场、不重试。未完整构建、未推送 Gerrit。"
+  },
+  {
+    "line": 1397,
+    "text": "D report-stale **STOP/NOT RUN**：`profgen-release-build-20261114c.scope` 内 gbs/rpmbuild/ninja 正在运行，不满足无其他重任务前提；未取共享锁、未运行BOLT、未新建输出根、未删除或干预任何进程。原文：`STOP: other heavy tasks are running; D report-stale not started; shared lock not acquired.` 其他重任务结束后可重新核对前提执行已批准计划。本轮全部操作为单一串行4GiB/swap0/nice19/IO-idle服务。"
+  },
+  {
+    "line": 1408,
+    "text": "report-stale在2026-11-14T02:10:31.657016-08:00准入SKIPPED：仍有profgen-release-build-20261114c.scope的gbs/rpmbuild/ninja；MemAvailable24765747200B、/home available37301350400B。未取锁、不等、不重试、未运行BOLT。全部原文见新证据目录night-92-20261114。"
+  },
+  {
+    "line": 1455,
+    "text": "真实输入重放 **SKIPPED**：2026-11-14T03:50:21.232626-08:00 /home仅30625026048 B（28.522GiB），低于30GiB；MemAvailable 24254304256 B，未发现匹配重进程。未取锁、不等、不重试、未运行450+10全量重放。**重放PASS之前不得触发QB**；单元/小实物夹具通过不能替代全量不变证明。Part 4与Part 3补充草稿见96号resume2证据，均未对外发布。"
+  }
+]
