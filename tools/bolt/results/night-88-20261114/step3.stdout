@@ -1,0 +1,18 @@
+STOP: other heavy tasks are running; D report-stale not started; shared lock not acquired.
+29234 gbs 0::/user.slice/user-1000.slice/user@1000.service/app.slice/profgen-release-build-20261114c.scope /usr/bin/python3 /usr/bin/gbs -c /home/linhao/Toolchain/development/llvm_autofdo_bolt_agent/temp/gbs/gbs_llvm_x86_release.conf build -A x86_64 --spec llvm.spec --buildroot /home/linhao/Toolchain/devel
+34255 rpmbuild 0::/user.slice/user-1000.slice/user@1000.service/app.slice/profgen-release-build-20261114c.scope rpmbuild --define _smp_mflags -j4 --define mlgo_build_jobs 4 --define _srcdefattr (-,root,root) --nosignature --target=x86_64 --define _build_create_debug 1 -ba /home/abuild/rpmbuild/SOURCES/llvm.spec
+41183 ninja 0::/user.slice/user-1000.slice/user@1000.service/app.slice/profgen-release-build-20261114c.scope ninja -j 4 
+PARENT 29233 python3 -u /home/linhao/Toolchain/development/llvm_autofdo_bolt_agent/temp/profgen-release-20261114c/build_worker.py 
+PARENT 29232 python3 -u /home/linhao/Toolchain/development/llvm_autofdo_bolt_agent/temp/profgen-release-20261114c/build_supervisor.py 
+PARENT 2476 /usr/lib/systemd/systemd --user 
+PARENT 1 /sbin/init splash 
+PARENT 34254 su -s /bin/bash -c /.build.command - abuild 
+PARENT 29618 /bin/bash /usr/bin/build --uid 1000:1000 --target x86_64 --jobs 40 --cachedir /home/linhao/Toolchain/development/llvm_autofdo_bolt_agent/temp/GBS-ROOT-LLVM-RELEASE-20261114c/local/cache --dist /home/linhao/Toolchain/development/llvm_autofdo_bolt_agent/temp/gbs-tmp-llvm-x86/linhao-gbs/tizen_unified_s
+PARENT 29617 sudo /usr/bin/build --uid 1000:1000 --target x86_64 --jobs 40 --cachedir /home/linhao/Toolchain/development/llvm_autofdo_bolt_agent/temp/GBS-ROOT-LLVM-RELEASE-20261114c/local/cache --dist /home/linhao/Toolchain/development/llvm_autofdo_bolt_agent/temp/gbs-tmp-llvm-x86/linhao-gbs/tizen_unified_standa
+PARENT 29616 sh -c sudo /usr/bin/build --uid 1000:1000 --target x86_64 --jobs 40 --cachedir '/home/linhao/Toolchain/development/llvm_autofdo_bolt_agent/temp/GBS-ROOT-LLVM-RELEASE-20261114c/local/cache' --dist '/home/linhao/Toolchain/development/llvm_autofdo_bolt_agent/temp/gbs-tmp-llvm-x86/linhao-gbs'/tizen_unif
+PARENT 29254 /usr/bin/perl /usr/bin/depanneur --arch=x86_64 --repository=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.120529/repos/standard/packages/ --repository=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchai
+PARENT 29253 sh -c -- depanneur --arch=x86_64 --repository=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.120529/repos/standard/packages/ --repository=https://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Unified-Toolchain/tizen-unified-toolchain_20261104.125
+PARENT 29234 /usr/bin/python3 /usr/bin/gbs -c /home/linhao/Toolchain/development/llvm_autofdo_bolt_agent/temp/gbs/gbs_llvm_x86_release.conf build -A x86_64 --spec llvm.spec --buildroot /home/linhao/Toolchain/development/llvm_autofdo_bolt_agent/temp/GBS-ROOT-LLVM-RELEASE-20261114c --threads 1 --define _smp_mflags
+PARENT 34280 /bin/sh -e /var/tmp/rpm-tmp.beVovz 
+PARENT 34255 rpmbuild --define _smp_mflags -j4 --define mlgo_build_jobs 4 --define _srcdefattr (-,root,root) --nosignature --target=x86_64 --define _build_create_debug 1 -ba /home/abuild/rpmbuild/SOURCES/llvm.spec 
+88步骤3 已结束 2026-11-14T01:50:07.703364-08:00 status=STOP

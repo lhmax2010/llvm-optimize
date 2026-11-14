@@ -1,0 +1,162 @@
+bolt_lib_Rewrite_RewriteInstance.cpp
+2470:                              const RelocationRef &Rel) {
+2471:   return getRelocationSymbol(cast<ELF64LEObjectFile>(Obj), Rel);
+2472: }
+2473: } // anonymous namespace
+2474: 
+2475: bool RewriteInstance::analyzeRelocation(
+2476:     const RelocationRef &Rel, uint32_t &RType, std::string &SymbolName,
+2477:     bool &IsSectionRelocation, uint64_t &SymbolAddress, int64_t &Addend,
+2478:     uint64_t &ExtractedValue) const {
+2479:   if (!Relocation::isSupported(RType))
+2480:     return false;
+2481: 
+2482:   auto IsWeakReference = [](const SymbolRef &Symbol) {
+2483:     Expected<uint32_t> SymFlagsOrErr = Symbol.getFlags();
+2484:     if (!SymFlagsOrErr)
+2485:       return false;
+2659: void RewriteInstance::processRelocations() {
+2660:   if (!BC->HasRelocations)
+2661:     return;
+2662: 
+2663:   for (const SectionRef &Section : InputFile->sections()) {
+2664:     section_iterator SecIter = cantFail(Section.getRelocatedSection());
+2665:     if (SecIter == InputFile->section_end())
+2666:       continue;
+2667:     if (BinarySection(*BC, Section).isAllocatable())
+2668:       continue;
+2669: 
+2670:     readRelocations(Section);
+2671:   }
+2672: 
+2673:   if (NumFailedRelocations)
+2674:     BC->errs() << "BOLT-WARNING: Failed to analyze " << NumFailedRelocations
+2675:                << " relocations\n";
+2829: void RewriteInstance::readRelocations(const SectionRef &Section) {
+2830:   LLVM_DEBUG({
+2831:     StringRef SectionName = cantFail(Section.getName());
+2832:     dbgs() << "BOLT-DEBUG: reading relocations for section " << SectionName
+2833:            << ":\n";
+2834:   });
+2835:   if (BinarySection(*BC, Section).isAllocatable()) {
+2836:     LLVM_DEBUG(dbgs() << "BOLT-DEBUG: ignoring runtime relocations\n");
+2837:     return;
+2838:   }
+2839:   section_iterator SecIter = cantFail(Section.getRelocatedSection());
+2840:   assert(SecIter != InputFile->section_end() && "relocated section expected");
+2841:   SectionRef RelocatedSection = *SecIter;
+2842: 
+2843:   StringRef RelocatedSectionName = cantFail(RelocatedSection.getName());
+2844:   LLVM_DEBUG(dbgs() << "BOLT-DEBUG: relocated section is "
+2845:                     << RelocatedSectionName << '\n');
+2846: 
+2847:   if (!BinarySection(*BC, RelocatedSection).isAllocatable()) {
+2848:     LLVM_DEBUG(dbgs() << "BOLT-DEBUG: ignoring relocations against "
+2849:                       << "non-allocatable section\n");
+2850:     return;
+2851:   }
+2852:   const bool SkipRelocs = StringSwitch<bool>(RelocatedSectionName)
+2853:                               .Cases({".plt", ".rela.plt", ".got.plt",
+2854:                                       ".eh_frame", ".gcc_except_table"},
+2855:                                      true)
+2856:                               .Default(false);
+2857:   if (SkipRelocs) {
+2858:     LLVM_DEBUG(
+2859:         dbgs() << "BOLT-DEBUG: ignoring relocations against known section\n");
+2860:     return;
+2861:   }
+2862: 
+2863:   for (const RelocationRef &Rel : Section.relocations())
+2864:     handleRelocation(RelocatedSection, Rel);
+2865: }
+2866: 
+2867: void RewriteInstance::handleRelocation(const SectionRef &RelocatedSection,
+2868:                                        const RelocationRef &Rel) {
+2869:   const bool IsAArch64 = BC->isAArch64();
+2870:   const bool IsX86 = BC->isX86();
+2871:   const bool IsFromCode = RelocatedSection.isText();
+2872:   const bool IsWritable = BinarySection(*BC, RelocatedSection).isWritable();
+2873: 
+2874:   SmallString<16> TypeName;
+2875:   Rel.getTypeName(TypeName);
+2876:   uint32_t RType = Relocation::getType(Rel);
+2877:   if (Relocation::skipRelocationType(RType))
+2878:     return;
+2879: 
+2880:   // Adjust the relocation type as the linker might have skewed it.
+2881:   if (IsX86 && (RType & ELF::R_X86_64_converted_reloc_bit)) {
+2882:     if (opts::Verbosity >= 1)
+2883:       dbgs() << "BOLT-WARNING: ignoring R_X86_64_converted_reloc_bit\n";
+2884:     RType &= ~ELF::R_X86_64_converted_reloc_bit;
+2885:   }
+2886: 
+2887:   if (Relocation::isTLS(RType)) {
+2888:     // No special handling required for TLS relocations on X86.
+2889:     if (IsX86)
+2890:       return;
+2891: 
+2892:     // The non-got related TLS relocations on AArch64 and RISC-V also could be
+2893:     // skipped.
+2894:     if (!Relocation::isGOT(RType))
+2895:       return;
+2896:   }
+2897: 
+2898:   if (!IsAArch64 && BC->getDynamicRelocationAt(Rel.getOffset())) {
+2899:     LLVM_DEBUG({
+2900:       dbgs() << formatv("BOLT-DEBUG: address {0:x} has a ", Rel.getOffset())
+2901:              << "dynamic relocation against it. Ignoring static relocation.\n";
+2902:     });
+2903:     return;
+2904:   }
+2905: 
+2906:   std::string SymbolName;
+2907:   uint64_t SymbolAddress;
+2908:   int64_t Addend;
+2909:   uint64_t ExtractedValue;
+2910:   bool IsSectionRelocation;
+2911:   if (!analyzeRelocation(Rel, RType, SymbolName, IsSectionRelocation,
+2912:                          SymbolAddress, Addend, ExtractedValue)) {
+2913:     LLVM_DEBUG({
+2914:       dbgs() << "BOLT-WARNING: failed to analyze relocation @ offset = "
+2915:              << formatv("{0:x}; type name = {1}\n", Rel.getOffset(), TypeName);
+2916:     });
+2917:     ++NumFailedRelocations;
+2918:     return;
+2919:   }
+bolt_lib_Core_Relocation.cpp
+33: static bool isSupportedX86(uint32_t Type) {
+34:   switch (Type) {
+35:   default:
+36:     return false;
+37:   case ELF::R_X86_64_8:
+38:   case ELF::R_X86_64_16:
+39:   case ELF::R_X86_64_32:
+40:   case ELF::R_X86_64_32S:
+41:   case ELF::R_X86_64_64:
+42:   case ELF::R_X86_64_PC8:
+43:   case ELF::R_X86_64_PC32:
+44:   case ELF::R_X86_64_PC64:
+45:   case ELF::R_X86_64_PLT32:
+46:   case ELF::R_X86_64_GOTPC64:
+47:   case ELF::R_X86_64_GOTPCREL:
+48:   case ELF::R_X86_64_GOTTPOFF:
+49:   case ELF::R_X86_64_TPOFF32:
+50:   case ELF::R_X86_64_GOTPCRELX:
+51:   case ELF::R_X86_64_REX_GOTPCRELX:
+52:     return true;
+53:   }
+54: }
+244: static bool skipRelocationTypeX86(uint32_t Type) {
+245:   return Type == ELF::R_X86_64_NONE;
+246: }
+573: static bool isTLSX86(uint32_t Type) {
+574:   switch (Type) {
+575:   default:
+576:     return false;
+577:   case ELF::R_X86_64_TPOFF32:
+578:   case ELF::R_X86_64_TPOFF64:
+579:   case ELF::R_X86_64_GOTTPOFF:
+580:     return true;
+581:   }
+582: }
+583: 

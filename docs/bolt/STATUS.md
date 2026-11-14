@@ -1379,3 +1379,12 @@ PM裁决：只改提交说明、树不变，不需要新QB。源码包中0008补
 五份文本的ASCII/禁止引用门禁10/10通过。长期对外文本规则已置于STATUS顶部：只用英文，不引用总部不可访问的证据仓库/本地路径，每次发布前执行grep门禁。实际写入严格五项，无STOP、拒绝、准备错误或重试。旧90号草稿保留；本次发布文件位于publish/。
 
 91 已结束 2026-11-14T01:26:43-08:00 status=PASS
+
+
+## 2026-11-14：88号
+
+[88号](88_entry_sync_reloc_stats_report_stale.md)：入口同步 PASS；补齐 W 的 basedev/SHA256SUMS、basedev/provenance.json 和顶层 provenance.json（覆盖前备份），完整目录一致、两级清单 OK、82号30/30、dry-run PASS。87号缺rg为准备错误，不是产品失败。本轮不使用rg。
+
+T/D 只读ELF统计各复现2804条：TLSGD1536、TLSLD415、DTPOFF32 853，全部.rela.text→.text，差值0；每类20个符号/偏移样例已保全。源码含义是跳过对应静态重定位的后续分析，不作“无害”判断。
+
+D report-stale **STOP/NOT RUN**：`profgen-release-build-20261114c.scope` 内 gbs/rpmbuild/ninja 正在运行，不满足无其他重任务前提；未取共享锁、未运行BOLT、未新建输出根、未删除或干预任何进程。原文：`STOP: other heavy tasks are running; D report-stale not started; shared lock not acquired.` 其他重任务结束后可重新核对前提执行已批准计划。本轮全部操作为单一串行4GiB/swap0/nice19/IO-idle服务。
