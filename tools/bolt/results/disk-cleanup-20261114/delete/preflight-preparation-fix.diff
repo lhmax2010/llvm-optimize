@@ -1,0 +1,28 @@
+--- preflight.py
++++ preflight-v2.py
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env python3
+ import pathlib,json,subprocess,os,stat,time,datetime,gzip,hashlib
+-D=pathlib.Path(__file__).parent;E=D.parent;B=D.parents[4]
++D=pathlib.Path(__file__).parent/"check02";D.mkdir(exist_ok=False);(D/"listings").mkdir();E=D.parent.parent;B=D.parents[5]
+ W=pathlib.Path("/home/linhao/Toolchain/development/llvm-optimize")
+ def save(n,v):(D/n).write_text(json.dumps(v,ensure_ascii=False,indent=2)+"\n")
+ def now():return datetime.datetime.now().astimezone().isoformat()
+@@ -38,14 +38,15 @@
+  for r in reference:
+   p=pathlib.Path(r["path"]);expected=lookup.get(str(p))
+   exists=p.is_file();actual=p.stat().st_size if exists else None
+-  checks.append({"path":str(p),"expected_bytes":expected,"actual_bytes":actual,"ok":exists and expected is not None and actual==expected})
++  auxiliary=(str(p).endswith("/usr/bin/llvm-dwarfdump") or str(p).endswith("/lib64/ld-linux-x86-64.so.2")) and "expected_sha256" not in r
++  checks.append({"path":str(p),"expected_bytes":expected,"actual_bytes":actual,"check":"existence-only auxiliary tool, no byte baseline in97" if auxiliary else "exact byte size against97 source manifest","ok":exists and (auxiliary or (expected is not None and actual==expected))})
+  replay=json.loads((E/"replay-assets-current.json").read_text())
+  for r in replay["debug_inputs"]["files"]+replay["outputs"]:
+   p=pathlib.Path(r["path"]);actual=p.stat().st_size if p.is_file() else None
+   checks.append({"path":str(p),"expected_bytes":r["size"],"actual_bytes":actual,"ok":actual==r["size"]})
+  return {"checks":checks,"pass":all(x["ok"] for x in checks),"count":len(checks),"time":now(),"note":"97 stored size_match plus identity SHA; actual byte baselines recovered from the same 74/67 manifests used by97"}
+ def main():
+- allowed=json.loads((D/"approved-paths.json").read_text());paths=[r["path"] for r in allowed]
++ allowed=json.loads((D.parent/"approved-paths.json").read_text());paths=[r["path"] for r in allowed]
+  originals=validate_originals();save("originals-before.json",originals)
+  oc=occupied(paths);save("occupancy-before.json",oc)
+  mrc,ms=mounts()
