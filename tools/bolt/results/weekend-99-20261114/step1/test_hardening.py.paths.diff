@@ -1,0 +1,11 @@
+--- 96/test_hardening.py
++++ 99/test_hardening.py
+@@ -4,7 +4,7 @@
+ P=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/hardening-ps4-20261114/source/packaging/llvm-static-archives-native.py')
+ def load(name,path):
+  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+-a=load('new',P);old=load('old',Path(__file__).resolve().parent.parent/'baseline-converter.py')
++a=load('new',P);old=load('old','/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hardening-ps4/baseline-converter.py')
+ def fixture(kind=2,offset=0,compressed=False,typ=1,alignment=1,size=24):
+  header=b'\x7fELF'+bytes([2,1,1])+b'\0'*9+struct.pack('<HHIQQQIHHHHHH',1,62,1,0,0,64,0,64,0,0,64,4,0)
+  sh=lambda t,f,o,n,l=0,i=0,e=0:struct.pack('<IIQQQQIIQQ',0,t,f,0,o,n,l,i,8,e)
