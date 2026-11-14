@@ -1,0 +1,11 @@
+--- /home/linhao/Toolchain/development/llvm-optimize/temp/fifth-review-20261111/rerun3/environment/test_regressions.py
++++ /home/linhao/Toolchain/development/llvm-optimize/temp/hardening-ps4-20261114/environment/test_regressions.py
+@@ -1,7 +1,7 @@
+ import importlib.util,sys,unittest,subprocess,json,hashlib,shlex,tempfile
+ from pathlib import Path
+ from unittest import mock
+-B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');S=B.parent/'llvm-optimize/temp/rebase-359934-20261106/source';E=Path(__file__).parent
++B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');S=B.parent/'llvm-optimize/temp/hardening-ps4-20261114/source';E=Path(__file__).parent
+ sys.path.insert(0,str(B/'tools'))
+ p=S/'packaging/llvm-static-archives-native.py';sp=importlib.util.spec_from_file_location('llvm_static_archives_source',p);a=importlib.util.module_from_spec(sp);sys.modules[sp.name]=a;sp.loader.exec_module(a)
+ print('CONVERTER_IMPORT',p,'SHA256',hashlib.sha256(p.read_bytes()).hexdigest(),flush=True)

@@ -1,0 +1,23 @@
+{"suite": "policy", "argv": ["/usr/bin/python3", "-B", "/home/linhao/Toolchain/development/llvm-optimize/temp/hardening-ps4-20261114/environment/run_preserved.py", "/home/linhao/Toolchain/development/llvm-optimize/temp/hardening-ps4-20261114/environment/test_regressions.py"], "rc": 0, "tests": 46, "status": "PASS", "time": "2026-11-14T03:37:36.549141-08:00"}
+{"suite": "release", "argv": ["/usr/bin/python3", "-B", "/home/linhao/Toolchain/development/llvm-optimize/temp/hardening-ps4-20261114/environment/run_preserved.py", "/home/linhao/Toolchain/development/llvm-optimize/temp/hardening-ps4-20261114/environment/test50.py"], "rc": 0, "tests": 5, "status": "PASS", "time": "2026-11-14T03:37:36.626908-08:00"}
+{"suite": "r2", "argv": ["/usr/bin/python3", "-B", "/home/linhao/Toolchain/development/llvm-optimize/temp/hardening-ps4-20261114/environment/run_preserved.py", "/home/linhao/Toolchain/development/llvm-optimize/temp/hardening-ps4-20261114/environment/test_r2.py"], "rc": 0, "tests": 12, "status": "PASS", "time": "2026-11-14T03:37:38.116532-08:00"}
+{"suite": "r3-r4-r5", "argv": ["/usr/bin/python3", "-B", "/home/linhao/Toolchain/development/llvm-optimize/temp/hardening-ps4-20261114/environment/run_preserved.py", "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hardening-ps4/resume/selected_r3.py"], "rc": 1, "tests": 5, "status": "STOP", "time": "2026-11-14T03:37:38.348536-08:00"}
+test_ar_bad_lengths_and_names (test_r3.R3.test_ar_bad_lengths_and_names) ... ok
+test_ar_positive_duplicate_longnames_indexes (test_r3.R3.test_ar_positive_duplicate_longnames_indexes) ... ok
+test_converter_exited_leader_descendant (test_r3.R3.test_converter_exited_leader_descendant) ... ok
+test_converter_normal_wait4 (test_r3.R3.test_converter_normal_wait4) ... ok
+test_converter_sighup (test_r3.R3.test_converter_sighup) ... FAIL
+
+======================================================================
+FAIL: test_converter_sighup (test_r3.R3.test_converter_sighup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/hardening-ps4-20261114/environment/test_r3.py", line 218, in test_converter_sighup
+    self.assertEqual(source.count('for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)'),2)
+AssertionError: 3 != 2
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.159s
+
+FAILED (failures=1)
+
