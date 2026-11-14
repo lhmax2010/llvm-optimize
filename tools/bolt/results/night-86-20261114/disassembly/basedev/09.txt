@@ -1,0 +1,228 @@
+
+/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22:	file format elf64-x86-64
+
+Disassembly of section .text:
+
+0000000006cb9cd0 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE>:
+ 6cb9cd0: 48 8b 46 48                  	movq	0x48(%rsi), %rax
+ 6cb9cd4: 0f b7 48 08                  	movzwl	0x8(%rax), %ecx
+ 6cb9cd8: 8d 81 2c ff ff ff            	leal	-0xd4(%rcx), %eax
+ 6cb9cde: 83 f8 32                     	cmpl	$0x32, %eax
+ 6cb9ce1: 77 24                        	ja	0x6cb9d07 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x37>
+ 6cb9ce3: 48 ba 00 00 00 00 00 e0 07 00	movabsq	$0x7e00000000000, %rdx  # imm = 0x7E00000000000
+ 6cb9ced: 48 0f a3 c2                  	btq	%rax, %rdx
+ 6cb9cf1: 73 06                        	jae	0x6cb9cf9 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x29>
+ 6cb9cf3: b8 02 00 00 00               	movl	$0x2, %eax
+ 6cb9cf8: c3                           	retq
+ 6cb9cf9: ba 3b 00 00 00               	movl	$0x3b, %edx
+ 6cb9cfe: 48 0f a3 c2                  	btq	%rax, %rdx
+ 6cb9d02: 73 03                        	jae	0x6cb9d07 <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x37>
+ 6cb9d04: 31 c0                        	xorl	%eax, %eax
+ 6cb9d06: c3                           	retq
+ 6cb9d07: b8 01 00 00 00               	movl	$0x1, %eax
+ 6cb9d0c: 83 c1 c4                     	addl	$-0x3c, %ecx
+ 6cb9d0f: ba 61 00 00 00               	movl	$0x61, %edx
+ 6cb9d14: 0f a3 ca                     	btl	%ecx, %edx
+ 6cb9d17: 73 01                        	jae	0x6cb9d1a <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x4a>
+ 6cb9d19: c3                           	retq
+ 6cb9d1a: cc                           	int3
+ 6cb9d1b: cc                           	int3
+ 6cb9d1c: cc                           	int3
+ 6cb9d1d: cc                           	int3
+ 6cb9d1e: cc                           	int3
+ 6cb9d1f: cc                           	int3
+
+0000000006cb9d20 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE>:
+ 6cb9d20: 41 56                        	pushq	%r14
+ 6cb9d22: 53                           	pushq	%rbx
+ 6cb9d23: 48 81 ec 98 00 00 00         	subq	$0x98, %rsp
+ 6cb9d2a: 48 83 e2 f0                  	andq	$-0x10, %rdx
+ 6cb9d2e: 48 8b 0a                     	movq	(%rdx), %rcx
+ 6cb9d31: f6 41 11 04                  	testb	$0x4, 0x11(%rcx)
+ 6cb9d35: 75 75                        	jne	0x6cb9dac <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x8c>
+ 6cb9d37: 48 8b 41 08                  	movq	0x8(%rcx), %rax
+ 6cb9d3b: 48 83 e0 f0                  	andq	$-0x10, %rax
+ 6cb9d3f: 48 8b 00                     	movq	(%rax), %rax
+ 6cb9d42: 0f b6 50 10                  	movzbl	0x10(%rax), %edx
+ 6cb9d46: 31 c0                        	xorl	%eax, %eax
+ 6cb9d48: 83 fa 0b                     	cmpl	$0xb, %edx
+ 6cb9d4b: 74 61                        	je	0x6cb9dae <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x8e>
+ 6cb9d4d: 83 fa 1f                     	cmpl	$0x1f, %edx
+ 6cb9d50: 74 5c                        	je	0x6cb9dae <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x8e>
+ 6cb9d52: 49 89 fe                     	movq	%rdi, %r14
+ 6cb9d55: 89 f3                        	movl	%esi, %ebx
+ 6cb9d57: 48 89 cf                     	movq	%rcx, %rdi
+ 6cb9d5a: e8 11 eb f7 00               	callq	0x7c38870 <_ZNK5clang4Type5getAsINS_11TypedefTypeEEEPKT_v>
+ 6cb9d5f: 48 85 c0                     	testq	%rax, %rax
+ 6cb9d62: 74 55                        	je	0x6cb9db9 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x99>
+ 6cb9d64: 48 8b 78 18                  	movq	0x18(%rax), %rdi
+ 6cb9d68: f6 47 1d 01                  	testb	$0x1, 0x1d(%rdi)
+ 6cb9d6c: 74 4b                        	je	0x6cb9db9 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x99>
+ 6cb9d6e: e8 fd 95 8a 00               	callq	0x7563370 <_ZNK5clang4Decl8getAttrsEv>
+ 6cb9d73: 8b 48 08                     	movl	0x8(%rax), %ecx
+ 6cb9d76: 48 85 c9                     	testq	%rcx, %rcx
+ 6cb9d79: 74 3e                        	je	0x6cb9db9 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x99>
+ 6cb9d7b: 48 8b 00                     	movq	(%rax), %rax
+ 6cb9d7e: 48 c1 e1 03                  	shlq	$0x3, %rcx
+ 6cb9d82: 31 d2                        	xorl	%edx, %edx
+ 6cb9d84: 66 2e 0f 1f 84 00 00 00 00 00	nopw	%cs:(%rax,%rax)
+ 6cb9d8e: 66 90                        	nop
+ 6cb9d90: 48 8b 34 10                  	movq	(%rax,%rdx), %rsi
+ 6cb9d94: 66 81 7e 24 41 01            	cmpw	$0x141, 0x24(%rsi)      # imm = 0x141
+ 6cb9d9a: 74 0b                        	je	0x6cb9da7 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x87>
+ 6cb9d9c: 48 83 c2 08                  	addq	$0x8, %rdx
+ 6cb9da0: 48 39 d1                     	cmpq	%rdx, %rcx
+ 6cb9da3: 75 eb                        	jne	0x6cb9d90 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x70>
+ 6cb9da5: eb 12                        	jmp	0x6cb9db9 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x99>
+ 6cb9da7: 48 39 d1                     	cmpq	%rdx, %rcx
+ 6cb9daa: 74 0d                        	je	0x6cb9db9 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x99>
+ 6cb9dac: 31 c0                        	xorl	%eax, %eax
+ 6cb9dae: 48 81 c4 98 00 00 00         	addq	$0x98, %rsp
+ 6cb9db5: 5b                           	popq	%rbx
+ 6cb9db6: 41 5e                        	popq	%r14
+ 6cb9db8: c3                           	retq
+ 6cb9db9: 48 8d 7c 24 10               	leaq	0x10(%rsp), %rdi
+ 6cb9dbe: 4c 89 f6                     	movq	%r14, %rsi
+ 6cb9dc1: 89 da                        	movl	%ebx, %edx
+ 6cb9dc3: b9 60 1c 00 00               	movl	$0x1c60, %ecx           # imm = 0x1C60
+ 6cb9dc8: e8 b3 57 b1 ff               	callq	0x67cf580 <_ZN5clang8SemaBase4DiagENS_14SourceLocationEj>
+ 6cb9dcd: 80 bc 24 88 00 00 00 01      	cmpb	$0x1, 0x88(%rsp)
+ 6cb9dd5: 75 28                        	jne	0x6cb9dff <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0xdf>
+ 6cb9dd7: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+ 6cb9ddc: 48 85 c0                     	testq	%rax, %rax
+ 6cb9ddf: 75 0f                        	jne	0x6cb9df0 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0xd0>
+ 6cb9de1: 48 8b 7c 24 38               	movq	0x38(%rsp), %rdi
+ 6cb9de6: e8 a5 50 b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+ 6cb9deb: 48 89 44 24 30               	movq	%rax, 0x30(%rsp)
+ 6cb9df0: 0f b6 08                     	movzbl	(%rax), %ecx
+ 6cb9df3: c6 44 08 01 01               	movb	$0x1, 0x1(%rax,%rcx)
+ 6cb9df8: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+ 6cb9dfd: eb 70                        	jmp	0x6cb9e6f <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x14f>
+ 6cb9dff: 80 bc 24 94 00 00 00 01      	cmpb	$0x1, 0x94(%rsp)
+ 6cb9e07: 75 7a                        	jne	0x6cb9e83 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x163>
+ 6cb9e09: bb 60 02 00 00               	movl	$0x260, %ebx            # imm = 0x260
+ 6cb9e0e: 48 03 5c 24 10               	addq	0x10(%rsp), %rbx
+ 6cb9e13: 48 8b 7c 24 20               	movq	0x20(%rsp), %rdi
+ 6cb9e18: 48 85 ff                     	testq	%rdi, %rdi
+ 6cb9e1b: 74 08                        	je	0x6cb9e25 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x105>
+ 6cb9e1d: 48 8b 07                     	movq	(%rdi), %rax
+ 6cb9e20: ff 50 20                     	callq	*0x20(%rax)
+ 6cb9e23: eb 02                        	jmp	0x6cb9e27 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x107>
+ 6cb9e25: 31 c0                        	xorl	%eax, %eax
+ 6cb9e27: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+ 6cb9e2c: 48 8d 74 24 08               	leaq	0x8(%rsp), %rsi
+ 6cb9e31: 48 89 df                     	movq	%rbx, %rdi
+ 6cb9e34: e8 07 96 a1 ff               	callq	0x66d3440 <_ZN4llvm12DenseMapBaseINS_8DenseMapIN5clang16CanonicalDeclPtrIKNS2_12FunctionDeclEEESt6vectorISt4pairINS2_14SourceLocationENS2_17PartialDiagnosticEESaISB_EENS_12DenseMapInfoIS6_vEENS_6detail12DenseMapPairIS6_SD_EEEES6_SD_SF_SI_E24lookupOrInsertIntoBucketIS6_JEEES8_IPSI_bEOT_DpOT0_>
+ 6cb9e39: 8b 8c 24 90 00 00 00         	movl	0x90(%rsp), %ecx
+ 6cb9e40: 48 8b 40 08                  	movq	0x8(%rax), %rax
+ 6cb9e44: 48 c1 e1 05                  	shlq	$0x5, %rcx
+ 6cb9e48: 48 8d 1c 08                  	leaq	(%rax,%rcx), %rbx
+ 6cb9e4c: 48 8b 44 08 08               	movq	0x8(%rax,%rcx), %rax
+ 6cb9e51: 48 85 c0                     	testq	%rax, %rax
+ 6cb9e54: 75 0d                        	jne	0x6cb9e63 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x143>
+ 6cb9e56: 48 8b 7b 10                  	movq	0x10(%rbx), %rdi
+ 6cb9e5a: e8 31 50 b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+ 6cb9e5f: 48 89 43 08                  	movq	%rax, 0x8(%rbx)
+ 6cb9e63: 0f b6 08                     	movzbl	(%rax), %ecx
+ 6cb9e66: c6 44 08 01 01               	movb	$0x1, 0x1(%rax,%rcx)
+ 6cb9e6b: 48 8b 43 08                  	movq	0x8(%rbx), %rax
+ 6cb9e6f: 0f b6 08                     	movzbl	(%rax), %ecx
+ 6cb9e72: 8d 51 01                     	leal	0x1(%rcx), %edx
+ 6cb9e75: 88 10                        	movb	%dl, (%rax)
+ 6cb9e77: 48 8d 15 21 7c 02 fa         	leaq	-0x5fd83df(%rip), %rdx  # 0xce1a9f <.str.17.llvm.7108310428302734452>
+ 6cb9e7e: 48 89 54 c8 10               	movq	%rdx, 0x10(%rax,%rcx,8)
+ 6cb9e83: 80 bc 24 88 00 00 00 01      	cmpb	$0x1, 0x88(%rsp)
+ 6cb9e8b: 75 28                        	jne	0x6cb9eb5 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x195>
+ 6cb9e8d: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+ 6cb9e92: 48 85 c0                     	testq	%rax, %rax
+ 6cb9e95: 75 0f                        	jne	0x6cb9ea6 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x186>
+ 6cb9e97: 48 8b 7c 24 38               	movq	0x38(%rsp), %rdi
+ 6cb9e9c: e8 ef 4f b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+ 6cb9ea1: 48 89 44 24 30               	movq	%rax, 0x30(%rsp)
+ 6cb9ea6: 0f b6 08                     	movzbl	(%rax), %ecx
+ 6cb9ea9: c6 44 08 01 02               	movb	$0x2, 0x1(%rax,%rcx)
+ 6cb9eae: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+ 6cb9eb3: eb 70                        	jmp	0x6cb9f25 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x205>
+ 6cb9eb5: 80 bc 24 94 00 00 00 01      	cmpb	$0x1, 0x94(%rsp)
+ 6cb9ebd: 75 77                        	jne	0x6cb9f36 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x216>
+ 6cb9ebf: bb 60 02 00 00               	movl	$0x260, %ebx            # imm = 0x260
+ 6cb9ec4: 48 03 5c 24 10               	addq	0x10(%rsp), %rbx
+ 6cb9ec9: 48 8b 7c 24 20               	movq	0x20(%rsp), %rdi
+ 6cb9ece: 48 85 ff                     	testq	%rdi, %rdi
+ 6cb9ed1: 74 08                        	je	0x6cb9edb <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x1bb>
+ 6cb9ed3: 48 8b 07                     	movq	(%rdi), %rax
+ 6cb9ed6: ff 50 20                     	callq	*0x20(%rax)
+ 6cb9ed9: eb 02                        	jmp	0x6cb9edd <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x1bd>
+ 6cb9edb: 31 c0                        	xorl	%eax, %eax
+ 6cb9edd: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+ 6cb9ee2: 48 8d 74 24 08               	leaq	0x8(%rsp), %rsi
+ 6cb9ee7: 48 89 df                     	movq	%rbx, %rdi
+ 6cb9eea: e8 51 95 a1 ff               	callq	0x66d3440 <_ZN4llvm12DenseMapBaseINS_8DenseMapIN5clang16CanonicalDeclPtrIKNS2_12FunctionDeclEEESt6vectorISt4pairINS2_14SourceLocationENS2_17PartialDiagnosticEESaISB_EENS_12DenseMapInfoIS6_vEENS_6detail12DenseMapPairIS6_SD_EEEES6_SD_SF_SI_E24lookupOrInsertIntoBucketIS6_JEEES8_IPSI_bEOT_DpOT0_>
+ 6cb9eef: 8b 8c 24 90 00 00 00         	movl	0x90(%rsp), %ecx
+ 6cb9ef6: 48 8b 40 08                  	movq	0x8(%rax), %rax
+ 6cb9efa: 48 c1 e1 05                  	shlq	$0x5, %rcx
+ 6cb9efe: 48 8d 1c 08                  	leaq	(%rax,%rcx), %rbx
+ 6cb9f02: 48 8b 44 08 08               	movq	0x8(%rax,%rcx), %rax
+ 6cb9f07: 48 85 c0                     	testq	%rax, %rax
+ 6cb9f0a: 75 0d                        	jne	0x6cb9f19 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x1f9>
+ 6cb9f0c: 48 8b 7b 10                  	movq	0x10(%rbx), %rdi
+ 6cb9f10: e8 7b 4f b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+ 6cb9f15: 48 89 43 08                  	movq	%rax, 0x8(%rbx)
+ 6cb9f19: 0f b6 08                     	movzbl	(%rax), %ecx
+ 6cb9f1c: c6 44 08 01 02               	movb	$0x2, 0x1(%rax,%rcx)
+ 6cb9f21: 48 8b 43 08                  	movq	0x8(%rbx), %rax
+ 6cb9f25: 0f b6 08                     	movzbl	(%rax), %ecx
+ 6cb9f28: 8d 51 01                     	leal	0x1(%rcx), %edx
+ 6cb9f2b: 88 10                        	movb	%dl, (%rax)
+ 6cb9f2d: 48 c7 44 c8 10 00 00 00 00   	movq	$0x0, 0x10(%rax,%rcx,8)
+ 6cb9f36: 80 bc 24 88 00 00 00 01      	cmpb	$0x1, 0x88(%rsp)
+ 6cb9f3e: 75 28                        	jne	0x6cb9f68 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x248>
+ 6cb9f40: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+ 6cb9f45: 48 85 c0                     	testq	%rax, %rax
+ 6cb9f48: 75 0f                        	jne	0x6cb9f59 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x239>
+ 6cb9f4a: 48 8b 7c 24 38               	movq	0x38(%rsp), %rdi
+ 6cb9f4f: e8 3c 4f b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+ 6cb9f54: 48 89 44 24 30               	movq	%rax, 0x30(%rsp)
+ 6cb9f59: 0f b6 08                     	movzbl	(%rax), %ecx
+ 6cb9f5c: c6 44 08 01 02               	movb	$0x2, 0x1(%rax,%rcx)
+ 6cb9f61: 48 8b 44 24 30               	movq	0x30(%rsp), %rax
+ 6cb9f66: eb 70                        	jmp	0x6cb9fd8 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x2b8>
+ 6cb9f68: 80 bc 24 94 00 00 00 01      	cmpb	$0x1, 0x94(%rsp)
+ 6cb9f70: 75 77                        	jne	0x6cb9fe9 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x2c9>
+ 6cb9f72: bb 60 02 00 00               	movl	$0x260, %ebx            # imm = 0x260
+ 6cb9f77: 48 03 5c 24 10               	addq	0x10(%rsp), %rbx
+ 6cb9f7c: 48 8b 7c 24 20               	movq	0x20(%rsp), %rdi
+ 6cb9f81: 48 85 ff                     	testq	%rdi, %rdi
+ 6cb9f84: 74 08                        	je	0x6cb9f8e <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x26e>
+ 6cb9f86: 48 8b 07                     	movq	(%rdi), %rax
+ 6cb9f89: ff 50 20                     	callq	*0x20(%rax)
+ 6cb9f8c: eb 02                        	jmp	0x6cb9f90 <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x270>
+ 6cb9f8e: 31 c0                        	xorl	%eax, %eax
+ 6cb9f90: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+ 6cb9f95: 48 8d 74 24 08               	leaq	0x8(%rsp), %rsi
+ 6cb9f9a: 48 89 df                     	movq	%rbx, %rdi
+ 6cb9f9d: e8 9e 94 a1 ff               	callq	0x66d3440 <_ZN4llvm12DenseMapBaseINS_8DenseMapIN5clang16CanonicalDeclPtrIKNS2_12FunctionDeclEEESt6vectorISt4pairINS2_14SourceLocationENS2_17PartialDiagnosticEESaISB_EENS_12DenseMapInfoIS6_vEENS_6detail12DenseMapPairIS6_SD_EEEES6_SD_SF_SI_E24lookupOrInsertIntoBucketIS6_JEEES8_IPSI_bEOT_DpOT0_>
+ 6cb9fa2: 8b 8c 24 90 00 00 00         	movl	0x90(%rsp), %ecx
+ 6cb9fa9: 48 8b 40 08                  	movq	0x8(%rax), %rax
+ 6cb9fad: 48 c1 e1 05                  	shlq	$0x5, %rcx
+ 6cb9fb1: 48 8d 1c 08                  	leaq	(%rax,%rcx), %rbx
+ 6cb9fb5: 48 8b 44 08 08               	movq	0x8(%rax,%rcx), %rax
+ 6cb9fba: 48 85 c0                     	testq	%rax, %rax
+ 6cb9fbd: 75 0d                        	jne	0x6cb9fcc <_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE+0x2ac>
+ 6cb9fbf: 48 8b 7b 10                  	movq	0x10(%rbx), %rdi
+ 6cb9fc3: e8 c8 4e b1 fb               	callq	0x27cee90 <_ZN5clang20DiagStorageAllocator8AllocateEv>
+ 6cb9fc8: 48 89 43 08                  	movq	%rax, 0x8(%rbx)
+ 6cb9fcc: 0f b6 08                     	movzbl	(%rax), %ecx
+ 6cb9fcf: c6 44 08 01 02               	movb	$0x2, 0x1(%rax,%rcx)
+ 6cb9fd4: 48 8b 43 08                  	movq	0x8(%rbx), %rax
+ 6cb9fd8: 0f b6 08                     	movzbl	(%rax), %ecx
+ 6cb9fdb: 8d 51 01                     	leal	0x1(%rcx), %edx
+ 6cb9fde: 88 10                        	movb	%dl, (%rax)
+ 6cb9fe0: 48 c7 44 c8 10 00 00 00 00   	movq	$0x0, 0x10(%rax,%rcx,8)
+ 6cb9fe9: 48 8d 7c 24 10               	leaq	0x10(%rsp), %rdi
+ 6cb9fee: e8 6d 28 ac ff               	callq	0x677c860 <_ZN5clang8SemaBase21SemaDiagnosticBuilderD2Ev>
+ 6cb9ff3: b0 01                        	movb	$0x1, %al
+ 6cb9ff5: 48 81 c4 98 00 00 00         	addq	$0x98, %rsp
+ 6cb9ffc: 5b                           	popq	%rbx
+ 6cb9ffd: 41 5e                        	popq	%r14
+ 6cb9fff: c3                           	retq

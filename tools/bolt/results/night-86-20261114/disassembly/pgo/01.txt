@@ -1,0 +1,47 @@
+
+/home/linhao/Toolchain/development/llvm-optimize/temp/pgo-bolt-followup-20261105/reference-relocs-clang-22:	file format elf64-x86-64
+
+Disassembly of section .text:
+
+0000000003ee3100 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE>:
+ 3ee3100: 0f b7 4e 44                  	movzwl	0x44(%rsi), %ecx
+ 3ee3104: 48 8b 46 20                  	movq	0x20(%rsi), %rax
+ 3ee3108: ba 10 00 00 00               	movl	$0x10, %edx
+ 3ee310d: 81 f9 5f 07 00 00            	cmpl	$0x75f, %ecx            # imm = 0x75F
+ 3ee3113: 75 05                        	jne	0x3ee311a <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x1a>
+ 3ee3115: 48 8b 04 10                  	movq	(%rax,%rdx), %rax
+ 3ee3119: c3                           	retq
+ 3ee311a: 81 f9 83 08 00 00            	cmpl	$0x883, %ecx            # imm = 0x883
+ 3ee3120: 7f 0f                        	jg	0x3ee3131 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x31>
+ 3ee3122: 81 f9 3b 08 00 00            	cmpl	$0x83b, %ecx            # imm = 0x83B
+ 3ee3128: 75 29                        	jne	0x3ee3153 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x53>
+ 3ee312a: ba 30 00 00 00               	movl	$0x30, %edx
+ 3ee312f: eb e4                        	jmp	0x3ee3115 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x15>
+ 3ee3131: 8d 91 7c f7 ff ff            	leal	-0x884(%rcx), %edx
+ 3ee3137: 83 fa 04                     	cmpl	$0x4, %edx
+ 3ee313a: 72 ee                        	jb	0x3ee312a <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x2a>
+ 3ee313c: 81 c1 37 e1 ff ff            	addl	$0xffffe137, %ecx       # imm = 0xFFFFE137
+ 3ee3142: ba 03 00 0c 00               	movl	$0xc0003, %edx          # imm = 0xC0003
+ 3ee3147: 0f a3 ca                     	btl	%ecx, %edx
+ 3ee314a: 73 0e                        	jae	0x3ee315a <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x5a>
+ 3ee314c: ba 50 00 00 00               	movl	$0x50, %edx
+ 3ee3151: eb c2                        	jmp	0x3ee3115 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x15>
+ 3ee3153: ba 70 00 00 00               	movl	$0x70, %edx
+ 3ee3158: eb bb                        	jmp	0x3ee3115 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x15>
+ 3ee315a: cc                           	int3
+ 3ee315b: cc                           	int3
+ 3ee315c: cc                           	int3
+ 3ee315d: cc                           	int3
+ 3ee315e: cc                           	int3
+ 3ee315f: cc                           	int3
+
+0000000003ee3160 <_ZN12_GLOBAL__N_112FinalizeISel20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.5148459099903333794>:
+ 3ee3160: 50                           	pushq	%rax
+ 3ee3161: 48 89 f7                     	movq	%rsi, %rdi
+ 3ee3164: e8 07 00 00 00               	callq	0x3ee3170 <_ZL7runImplRN4llvm15MachineFunctionE>
+ 3ee3169: 24 01                        	andb	$0x1, %al
+ 3ee316b: 59                           	popq	%rcx
+ 3ee316c: c3                           	retq
+ 3ee316d: cc                           	int3
+ 3ee316e: cc                           	int3
+ 3ee316f: cc                           	int3

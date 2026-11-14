@@ -263,6 +263,8 @@ fea0fe46，llvm-static-archives-native.py，第520–525行原文：
 
 只有目标节SHF_ALLOC且符号非SHN_ABS时，8/16/32/32S绝对重定位进入forbidden；64位绝对重定位还要求目标不是SHF_WRITE。转换成员settings.pic_level非零时据forbidden报错。原生成员仅记录禁止项，不因forbidden列表非空报错。32/64位条件与60fabc72逐字相同。
 
+相对上传父提交 PS10 的对照见文末补充。
+
 fea0fe46，llvm-static-archives-native.py，第474–479行原文：
 
 ~~~python
@@ -357,3 +359,6 @@ fea0fe46，llvm-static-archives-native.py，第519–525行原文：
 ~~~
 
 上述条件与fea0fe46第533行完全相同。本次未读取其他历史版本来外推更早的行为。
+
+
+补充（2026-11-14）：上传链的父提交是 PS10（13c3e223），不是 60fabc72；60fabc72 已含本系列新增的 8/16 位类型，上面的对照只说明本系列内部未变。PS10 第376行的类型集合为 (10, 11)，fea0fe46 第533行为 (10, 11, 12, 14)；新增的 12/14 即 R_X86_64_16/R_X86_64_8。到达该判断前的过滤条件逐项对照见[全路径复核证据](../../night-86-20261114/claims-path-review.md)，32、32S、64 位三条路径的有效条件与 PS10 等价。结论不变：句4与代码相符。

@@ -1,0 +1,612 @@
+
+/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22:	file format elf64-x86-64
+
+Disassembly of section .text:
+
+0000000002f1ea90 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE>:
+ 2f1ea90: 0f b7 4e 44                  	movzwl	0x44(%rsi), %ecx
+ 2f1ea94: 48 8b 46 20                  	movq	0x20(%rsi), %rax
+ 2f1ea98: 81 f9 83 08 00 00            	cmpl	$0x883, %ecx            # imm = 0x883
+ 2f1ea9e: 7f 15                        	jg	0x2f1eab5 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x25>
+ 2f1eaa0: 8d 91 18 fe ff ff            	leal	-0x1e8(%rcx), %edx
+ 2f1eaa6: 83 fa 06                     	cmpl	$0x6, %edx
+ 2f1eaa9: 73 39                        	jae	0x2f1eae4 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x54>
+ 2f1eaab: ba 70 00 00 00               	movl	$0x70, %edx
+ 2f1eab0: 48 8b 04 10                  	movq	(%rax,%rdx), %rax
+ 2f1eab4: c3                           	retq
+ 2f1eab5: 8d 91 7c f7 ff ff            	leal	-0x884(%rcx), %edx
+ 2f1eabb: 83 fa 04                     	cmpl	$0x4, %edx
+ 2f1eabe: 73 0a                        	jae	0x2f1eaca <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x3a>
+ 2f1eac0: ba 30 00 00 00               	movl	$0x30, %edx
+ 2f1eac5: 48 8b 04 10                  	movq	(%rax,%rdx), %rax
+ 2f1eac9: c3                           	retq
+ 2f1eaca: 81 c1 37 e1 ff ff            	addl	$0xffffe137, %ecx       # imm = 0xFFFFE137
+ 2f1ead0: ba 03 00 0c 00               	movl	$0xc0003, %edx          # imm = 0xC0003
+ 2f1ead5: 0f a3 ca                     	btl	%ecx, %edx
+ 2f1ead8: 73 19                        	jae	0x2f1eaf3 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x63>
+ 2f1eada: ba 50 00 00 00               	movl	$0x50, %edx
+ 2f1eadf: 48 8b 04 10                  	movq	(%rax,%rdx), %rax
+ 2f1eae3: c3                           	retq
+ 2f1eae4: ba 10 00 00 00               	movl	$0x10, %edx
+ 2f1eae9: 81 f9 5f 07 00 00            	cmpl	$0x75f, %ecx            # imm = 0x75F
+ 2f1eaef: 74 bf                        	je	0x2f1eab0 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x20>
+ 2f1eaf1: eb cd                        	jmp	0x2f1eac0 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x30>
+ 2f1eaf3: cc                           	int3
+ 2f1eaf4: cc                           	int3
+ 2f1eaf5: cc                           	int3
+ 2f1eaf6: cc                           	int3
+ 2f1eaf7: cc                           	int3
+ 2f1eaf8: cc                           	int3
+ 2f1eaf9: cc                           	int3
+ 2f1eafa: cc                           	int3
+ 2f1eafb: cc                           	int3
+ 2f1eafc: cc                           	int3
+ 2f1eafd: cc                           	int3
+ 2f1eafe: cc                           	int3
+ 2f1eaff: cc                           	int3
+
+0000000002f1eb00 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE>:
+ 2f1eb00: 55                           	pushq	%rbp
+ 2f1eb01: 41 57                        	pushq	%r15
+ 2f1eb03: 41 56                        	pushq	%r14
+ 2f1eb05: 41 55                        	pushq	%r13
+ 2f1eb07: 41 54                        	pushq	%r12
+ 2f1eb09: 53                           	pushq	%rbx
+ 2f1eb0a: 48 81 ec 98 00 00 00         	subq	$0x98, %rsp
+ 2f1eb11: 4c 89 cd                     	movq	%r9, %rbp
+ 2f1eb14: 4d 89 c4                     	movq	%r8, %r12
+ 2f1eb17: 48 89 4c 24 48               	movq	%rcx, 0x48(%rsp)
+ 2f1eb1c: 48 89 94 24 80 00 00 00      	movq	%rdx, 0x80(%rsp)
+ 2f1eb24: 49 89 f7                     	movq	%rsi, %r15
+ 2f1eb27: 48 89 fb                     	movq	%rdi, %rbx
+ 2f1eb2a: 4c 8b ac 24 d0 00 00 00      	movq	0xd0(%rsp), %r13
+ 2f1eb32: 4c 89 ef                     	movq	%r13, %rdi
+ 2f1eb35: e8 f6 14 95 00               	callq	0x3870030 <_ZN4llvm12RegScavenger4initERNS_17MachineBasicBlockE>
+ 2f1eb3a: 4d 8d 75 58                  	leaq	0x58(%r13), %r14
+ 2f1eb3e: 4c 89 f7                     	movq	%r14, %rdi
+ 2f1eb41: 4c 89 fe                     	movq	%r15, %rsi
+ 2f1eb44: e8 77 21 6a 00               	callq	0x35c0cc0 <_ZN4llvm12LiveRegUnits11addLiveOutsERKNS_17MachineBasicBlockE>
+ 2f1eb49: 49 8d 47 30                  	leaq	0x30(%r15), %rax
+ 2f1eb4d: 48 89 84 24 88 00 00 00      	movq	%rax, 0x88(%rsp)
+ 2f1eb55: 49 89 45 20                  	movq	%rax, 0x20(%r13)
+ 2f1eb59: 49 8b 4d 10                  	movq	0x10(%r13), %rcx
+ 2f1eb5d: 49 8b 45 58                  	movq	0x58(%r13), %rax
+ 2f1eb61: 48 8b 89 78 01 00 00         	movq	0x178(%rcx), %rcx
+ 2f1eb68: 48 83 79 18 00               	cmpq	$0x0, 0x18(%rcx)
+ 2f1eb6d: 0f 88 ef 00 00 00            	js	0x2f1ec62 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x162>
+ 2f1eb73: 48 8b 50 38                  	movq	0x38(%rax), %rdx
+ 2f1eb77: 48 85 d2                     	testq	%rdx, %rdx
+ 2f1eb7a: 74 49                        	je	0x2f1ebc5 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0xc5>
+ 2f1eb7c: 48 8b 70 08                  	movq	0x8(%rax), %rsi
+ 2f1eb80: 8b b6 f8 17 00 00            	movl	0x17f8(%rsi), %esi
+ 2f1eb86: 89 f7                        	movl	%esi, %edi
+ 2f1eb88: c1 ef 0c                     	shrl	$0xc, %edi
+ 2f1eb8b: 48 8d 3c 7a                  	leaq	(%rdx,%rdi,2), %rdi
+ 2f1eb8f: 81 e6 ff 0f 00 00            	andl	$0xfff, %esi            # imm = 0xFFF
+ 2f1eb95: 49 8b 55 60                  	movq	0x60(%r13), %rdx
+ 2f1eb99: 0f 1f 80 00 00 00 00         	nopl	(%rax)
+ 2f1eba0: 41 89 f0                     	movl	%esi, %r8d
+ 2f1eba3: 41 c1 e8 06                  	shrl	$0x6, %r8d
+ 2f1eba7: 4e 8b 04 c2                  	movq	(%rdx,%r8,8), %r8
+ 2f1ebab: 49 0f a3 f0                  	btq	%rsi, %r8
+ 2f1ebaf: 0f 82 b1 00 00 00            	jb	0x2f1ec66 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x166>
+ 2f1ebb5: 44 0f bf 07                  	movswl	(%rdi), %r8d
+ 2f1ebb9: 48 83 c7 02                  	addq	$0x2, %rdi
+ 2f1ebbd: 44 01 c6                     	addl	%r8d, %esi
+ 2f1ebc0: 45 85 c0                     	testl	%r8d, %r8d
+ 2f1ebc3: 75 db                        	jne	0x2f1eba0 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0xa0>
+ 2f1ebc5: 48 8b 03                     	movq	(%rbx), %rax
+ 2f1ebc8: 48 89 df                     	movq	%rbx, %rdi
+ 2f1ebcb: 4c 89 fe                     	movq	%r15, %rsi
+ 2f1ebce: 48 8b 94 24 80 00 00 00      	movq	0x80(%rsp), %rdx
+ 2f1ebd6: 31 c9                        	xorl	%ecx, %ecx
+ 2f1ebd8: 45 31 c0                     	xorl	%r8d, %r8d
+ 2f1ebdb: 45 31 c9                     	xorl	%r9d, %r9d
+ 2f1ebde: 6a 00                        	pushq	$0x0
+ 2f1ebe0: 41 54                        	pushq	%r12
+ 2f1ebe2: ff 90 38 01 00 00            	callq	*0x138(%rax)
+ 2f1ebe8: 48 83 c4 10                  	addq	$0x10, %rsp
+ 2f1ebec: 49 8b 16                     	movq	(%r14), %rdx
+ 2f1ebef: 48 8b 72 38                  	movq	0x38(%rdx), %rsi
+ 2f1ebf3: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1ebf6: 0f 84 30 05 00 00            	je	0x2f1f12c <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x62c>
+ 2f1ebfc: 48 8b 42 08                  	movq	0x8(%rdx), %rax
+ 2f1ec00: 8b 88 f8 17 00 00            	movl	0x17f8(%rax), %ecx
+ 2f1ec06: 89 cf                        	movl	%ecx, %edi
+ 2f1ec08: c1 ef 0c                     	shrl	$0xc, %edi
+ 2f1ec0b: 0f b7 80 fc 17 00 00         	movzwl	0x17fc(%rax), %eax
+ 2f1ec12: c1 e0 03                     	shll	$0x3, %eax
+ 2f1ec15: 48 03 42 40                  	addq	0x40(%rdx), %rax
+ 2f1ec19: 48 8d 14 7e                  	leaq	(%rsi,%rdi,2), %rdx
+ 2f1ec1d: 81 e1 ff 0f 00 00            	andl	$0xfff, %ecx            # imm = 0xFFF
+ 2f1ec23: 49 8b 75 60                  	movq	0x60(%r13), %rsi
+ 2f1ec27: 31 ff                        	xorl	%edi, %edi
+ 2f1ec29: eb 1a                        	jmp	0x2f1ec45 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x145>
+ 2f1ec2b: 0f 1f 44 00 00               	nopl	(%rax,%rax)
+ 2f1ec30: 44 0f bf 04 3a               	movswl	(%rdx,%rdi), %r8d
+ 2f1ec35: 44 01 c1                     	addl	%r8d, %ecx
+ 2f1ec38: 48 83 c7 02                  	addq	$0x2, %rdi
+ 2f1ec3c: 45 85 c0                     	testl	%r8d, %r8d
+ 2f1ec3f: 0f 84 e7 04 00 00            	je	0x2f1f12c <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x62c>
+ 2f1ec45: 48 83 3c b8 00               	cmpq	$0x0, (%rax,%rdi,4)
+ 2f1ec4a: 74 e4                        	je	0x2f1ec30 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x130>
+ 2f1ec4c: 41 b8 01 00 00 00            	movl	$0x1, %r8d
+ 2f1ec52: 49 d3 e0                     	shlq	%cl, %r8
+ 2f1ec55: 41 89 c9                     	movl	%ecx, %r9d
+ 2f1ec58: 41 c1 e9 06                  	shrl	$0x6, %r9d
+ 2f1ec5c: 4e 09 04 ce                  	orq	%r8, (%rsi,%r9,8)
+ 2f1ec60: eb ce                        	jmp	0x2f1ec30 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x130>
+ 2f1ec62: 49 8b 55 60                  	movq	0x60(%r13), %rdx
+ 2f1ec66: 31 f6                        	xorl	%esi, %esi
+ 2f1ec68: 48 8d 3d 21 f2 91 fe         	leaq	-0x16e0ddf(%rip), %rdi  # 0x183de90 <_ZN4llvm12_GLOBAL__N_15GPR64E.llvm.2752348720065382647>
+ 2f1ec6f: eb 1d                        	jmp	0x2f1ec8e <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x18e>
+ 2f1ec71: 66 2e 0f 1f 84 00 00 00 00 00	nopw	%cs:(%rax,%rax)
+ 2f1ec7b: 0f 1f 44 00 00               	nopl	(%rax,%rax)
+ 2f1ec80: 48 83 c6 02                  	addq	$0x2, %rsi
+ 2f1ec84: 48 83 fe 40                  	cmpq	$0x40, %rsi
+ 2f1ec88: 0f 84 ec 00 00 00            	je	0x2f1ed7a <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x27a>
+ 2f1ec8e: 44 0f b7 34 3e               	movzwl	(%rsi,%rdi), %r14d
+ 2f1ec93: 45 89 f0                     	movl	%r14d, %r8d
+ 2f1ec96: 41 c1 e8 06                  	shrl	$0x6, %r8d
+ 2f1ec9a: 4e 8b 04 c1                  	movq	(%rcx,%r8,8), %r8
+ 2f1ec9e: 4d 0f a3 f0                  	btq	%r14, %r8
+ 2f1eca2: 72 dc                        	jb	0x2f1ec80 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x180>
+ 2f1eca4: 4c 8b 48 38                  	movq	0x38(%rax), %r9
+ 2f1eca8: 4d 85 c9                     	testq	%r9, %r9
+ 2f1ecab: 74 44                        	je	0x2f1ecf1 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x1f1>
+ 2f1ecad: 4c 8b 40 08                  	movq	0x8(%rax), %r8
+ 2f1ecb1: 4f 8d 14 76                  	leaq	(%r14,%r14,2), %r10
+ 2f1ecb5: 47 8b 44 d0 10               	movl	0x10(%r8,%r10,8), %r8d
+ 2f1ecba: 45 89 c2                     	movl	%r8d, %r10d
+ 2f1ecbd: 41 c1 ea 0c                  	shrl	$0xc, %r10d
+ 2f1ecc1: 4f 8d 0c 51                  	leaq	(%r9,%r10,2), %r9
+ 2f1ecc5: 41 81 e0 ff 0f 00 00         	andl	$0xfff, %r8d            # imm = 0xFFF
+ 2f1eccc: 0f 1f 40 00                  	nopl	(%rax)
+ 2f1ecd0: 45 89 c2                     	movl	%r8d, %r10d
+ 2f1ecd3: 41 c1 ea 06                  	shrl	$0x6, %r10d
+ 2f1ecd7: 4e 8b 14 d2                  	movq	(%rdx,%r10,8), %r10
+ 2f1ecdb: 4d 0f a3 c2                  	btq	%r8, %r10
+ 2f1ecdf: 72 9f                        	jb	0x2f1ec80 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x180>
+ 2f1ece1: 45 0f bf 11                  	movswl	(%r9), %r10d
+ 2f1ece5: 49 83 c1 02                  	addq	$0x2, %r9
+ 2f1ece9: 45 01 d0                     	addl	%r10d, %r8d
+ 2f1ecec: 45 85 d2                     	testl	%r10d, %r10d
+ 2f1ecef: 75 df                        	jne	0x2f1ecd0 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x1d0>
+ 2f1ecf1: 4d 85 f6                     	testq	%r14, %r14
+ 2f1ecf4: 0f 84 80 00 00 00            	je	0x2f1ed7a <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x27a>
+ 2f1ecfa: 49 8b 87 fc 00 00 00         	movq	0xfc(%r15), %rax
+ 2f1ed01: 48 8d 0d 20 66 68 05         	leaq	0x5686620(%rip), %rcx   # 0x85a5328 <_ZN4llvm12MBBSectionID13ColdSectionIDE>
+ 2f1ed08: 39 01                        	cmpl	%eax, (%rcx)
+ 2f1ed0a: 75 6e                        	jne	0x2f1ed7a <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x27a>
+ 2f1ed0c: 48 c1 e8 20                  	shrq	$0x20, %rax
+ 2f1ed10: 39 41 04                     	cmpl	%eax, 0x4(%rcx)
+ 2f1ed13: 75 65                        	jne	0x2f1ed7a <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x27a>
+ 2f1ed15: 48 b8 00 00 00 00 01 00 00 00	movabsq	$0x100000000, %rax      # imm = 0x100000000
+ 2f1ed1f: 48 01 c5                     	addq	%rax, %rbp
+ 2f1ed22: 48 c1 ed 21                  	shrq	$0x21, %rbp
+ 2f1ed26: 0f 85 67 07 00 00            	jne	0x2f1f493 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x993>
+ 2f1ed2c: 48 89 5c 24 48               	movq	%rbx, 0x48(%rsp)
+ 2f1ed31: 49 8b 34 24                  	movq	(%r12), %rsi
+ 2f1ed35: 48 89 74 24 78               	movq	%rsi, 0x78(%rsp)
+ 2f1ed3a: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1ed3d: 0f 84 fb 03 00 00            	je	0x2f1f13e <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x63e>
+ 2f1ed43: 48 8d 5c 24 78               	leaq	0x78(%rsp), %rbx
+ 2f1ed48: ba 01 00 00 00               	movl	$0x1, %edx
+ 2f1ed4d: 48 89 df                     	movq	%rbx, %rdi
+ 2f1ed50: e8 3b 7d cb 00               	callq	0x3bd6a90 <_ZN4llvm16MetadataTracking5trackEPvRNS_8MetadataENS_12PointerUnionIJPNS_15MetadataAsValueEPS2_PNS_14DebugValueUserEEEE>
+ 2f1ed55: 48 8b 74 24 78               	movq	0x78(%rsp), %rsi
+ 2f1ed5a: 48 89 74 24 28               	movq	%rsi, 0x28(%rsp)
+ 2f1ed5f: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1ed62: 0f 84 e2 03 00 00            	je	0x2f1f14a <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x64a>
+ 2f1ed68: 48 8d 54 24 28               	leaq	0x28(%rsp), %rdx
+ 2f1ed6d: 48 89 df                     	movq	%rbx, %rdi
+ 2f1ed70: e8 0b 81 cb 00               	callq	0x3bd6e80 <_ZN4llvm16MetadataTracking7retrackEPvRNS_8MetadataES1_>
+ 2f1ed75: e9 c9 03 00 00               	jmp	0x2f1f143 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x643>
+ 2f1ed7a: 49 8b 47 20                  	movq	0x20(%r15), %rax
+ 2f1ed7e: 48 8b 40 28                  	movq	0x28(%rax), %rax
+ 2f1ed82: 48 85 c0                     	testq	%rax, %rax
+ 2f1ed85: 0f 84 f7 06 00 00            	je	0x2f1f482 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x982>
+ 2f1ed8b: 0f b7 40 72                  	movzwl	0x72(%rax), %eax
+ 2f1ed8f: 25 01 01 00 00               	andl	$0x101, %eax            # imm = 0x101
+ 2f1ed94: 3d 00 01 00 00               	cmpl	$0x100, %eax            # imm = 0x100
+ 2f1ed99: 0f 85 e3 06 00 00            	jne	0x2f1f482 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x982>
+ 2f1ed9f: 49 89 de                     	movq	%rbx, %r14
+ 2f1eda2: 49 8b 34 24                  	movq	(%r12), %rsi
+ 2f1eda6: 48 89 74 24 60               	movq	%rsi, 0x60(%rsp)
+ 2f1edab: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1edae: 74 30                        	je	0x2f1ede0 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x2e0>
+ 2f1edb0: 48 8d 5c 24 60               	leaq	0x60(%rsp), %rbx
+ 2f1edb5: ba 01 00 00 00               	movl	$0x1, %edx
+ 2f1edba: 48 89 df                     	movq	%rbx, %rdi
+ 2f1edbd: e8 ce 7c cb 00               	callq	0x3bd6a90 <_ZN4llvm16MetadataTracking5trackEPvRNS_8MetadataENS_12PointerUnionIJPNS_15MetadataAsValueEPS2_PNS_14DebugValueUserEEEE>
+ 2f1edc2: 48 8b 74 24 60               	movq	0x60(%rsp), %rsi
+ 2f1edc7: 48 89 74 24 28               	movq	%rsi, 0x28(%rsp)
+ 2f1edcc: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1edcf: 74 1b                        	je	0x2f1edec <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x2ec>
+ 2f1edd1: 48 8d 54 24 28               	leaq	0x28(%rsp), %rdx
+ 2f1edd6: 48 89 df                     	movq	%rbx, %rdi
+ 2f1edd9: e8 a2 80 cb 00               	callq	0x3bd6e80 <_ZN4llvm16MetadataTracking7retrackEPvRNS_8MetadataES1_>
+ 2f1edde: eb 05                        	jmp	0x2f1ede5 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x2e5>
+ 2f1ede0: 48 8d 5c 24 28               	leaq	0x28(%rsp), %rbx
+ 2f1ede5: 48 c7 03 00 00 00 00         	movq	$0x0, (%rbx)
+ 2f1edec: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1edef: 0f 11 44 24 30               	movups	%xmm0, 0x30(%rsp)
+ 2f1edf4: 48 c7 44 24 40 00 00 00 00   	movq	$0x0, 0x40(%rsp)
+ 2f1edfd: 48 c7 c1 20 46 fc ff         	movq	$-0x3b9e0, %rcx         # imm = 0xFFFC4620
+ 2f1ee04: 4c 89 f3                     	movq	%r14, %rbx
+ 2f1ee07: 49 03 4e 08                  	addq	0x8(%r14), %rcx
+ 2f1ee0b: 4c 8d 74 24 28               	leaq	0x28(%rsp), %r14
+ 2f1ee10: 4c 89 ff                     	movq	%r15, %rdi
+ 2f1ee13: 49 8d 77 30                  	leaq	0x30(%r15), %rsi
+ 2f1ee17: 4c 89 f2                     	movq	%r14, %rdx
+ 2f1ee1a: e8 31 0d 8d ff               	callq	0x27efb50 <_ZN4llvm7BuildMIERNS_17MachineBasicBlockENS_26MachineInstrBundleIteratorINS_12MachineInstrELb0EEERKNS_10MIMetadataERKNS_11MCInstrDescE>
+ 2f1ee1f: 49 89 c5                     	movq	%rax, %r13
+ 2f1ee22: 48 89 d5                     	movq	%rdx, %rbp
+ 2f1ee25: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1ee2e: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1ee31: 0f 11 44 24 18               	movups	%xmm0, 0x18(%rsp)
+ 2f1ee36: 48 b8 00 00 00 01 08 00 00 00	movabsq	$0x801000000, %rax      # imm = 0x801000000
+ 2f1ee40: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+ 2f1ee45: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1ee4a: 48 89 ef                     	movq	%rbp, %rdi
+ 2f1ee4d: 4c 89 ee                     	movq	%r13, %rsi
+ 2f1ee50: e8 1b 18 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1ee55: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1ee5e: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1ee61: 0f 11 44 24 18               	movups	%xmm0, 0x18(%rsp)
+ 2f1ee66: 48 b8 00 00 00 00 ff 00 00 00	movabsq	$0xff00000000, %rax     # imm = 0xFF00000000
+ 2f1ee70: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+ 2f1ee75: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1ee7a: 48 89 ef                     	movq	%rbp, %rdi
+ 2f1ee7d: 4c 89 ee                     	movq	%r13, %rsi
+ 2f1ee80: e8 eb 17 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1ee85: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1ee8e: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1ee91: 0f 11 44 24 18               	movups	%xmm0, 0x18(%rsp)
+ 2f1ee96: 48 b8 00 00 00 00 08 00 00 00	movabsq	$0x800000000, %rax      # imm = 0x800000000
+ 2f1eea0: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+ 2f1eea5: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1eeaa: 48 89 ef                     	movq	%rbp, %rdi
+ 2f1eead: 4c 89 ee                     	movq	%r13, %rsi
+ 2f1eeb0: e8 bb 17 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1eeb5: c7 44 24 08 01 00 00 00      	movl	$0x1, 0x8(%rsp)
+ 2f1eebd: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1eec6: 48 c7 44 24 18 f0 ff ff ff   	movq	$-0x10, 0x18(%rsp)
+ 2f1eecf: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1eed4: 48 89 ef                     	movq	%rbp, %rdi
+ 2f1eed7: 4c 89 ee                     	movq	%r13, %rsi
+ 2f1eeda: e8 91 17 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1eedf: 48 8b 74 24 28               	movq	0x28(%rsp), %rsi
+ 2f1eee4: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1eee7: 74 0a                        	je	0x2f1eef3 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x3f3>
+ 2f1eee9: 48 8d 7c 24 28               	leaq	0x28(%rsp), %rdi
+ 2f1eeee: e8 ad 7d cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1eef3: 48 8b 74 24 60               	movq	0x60(%rsp), %rsi
+ 2f1eef8: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1eefb: 4c 8b 6c 24 48               	movq	0x48(%rsp), %r13
+ 2f1ef00: 74 0a                        	je	0x2f1ef0c <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x40c>
+ 2f1ef02: 48 8d 7c 24 60               	leaq	0x60(%rsp), %rdi
+ 2f1ef07: e8 94 7d cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1ef0c: 49 8b 34 24                  	movq	(%r12), %rsi
+ 2f1ef10: 48 89 74 24 58               	movq	%rsi, 0x58(%rsp)
+ 2f1ef15: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1ef18: 74 2e                        	je	0x2f1ef48 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x448>
+ 2f1ef1a: 4c 8d 74 24 58               	leaq	0x58(%rsp), %r14
+ 2f1ef1f: ba 01 00 00 00               	movl	$0x1, %edx
+ 2f1ef24: 4c 89 f7                     	movq	%r14, %rdi
+ 2f1ef27: e8 64 7b cb 00               	callq	0x3bd6a90 <_ZN4llvm16MetadataTracking5trackEPvRNS_8MetadataENS_12PointerUnionIJPNS_15MetadataAsValueEPS2_PNS_14DebugValueUserEEEE>
+ 2f1ef2c: 48 8b 74 24 58               	movq	0x58(%rsp), %rsi
+ 2f1ef31: 48 89 74 24 28               	movq	%rsi, 0x28(%rsp)
+ 2f1ef36: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1ef39: 74 14                        	je	0x2f1ef4f <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x44f>
+ 2f1ef3b: 48 8d 54 24 28               	leaq	0x28(%rsp), %rdx
+ 2f1ef40: 4c 89 f7                     	movq	%r14, %rdi
+ 2f1ef43: e8 38 7f cb 00               	callq	0x3bd6e80 <_ZN4llvm16MetadataTracking7retrackEPvRNS_8MetadataES1_>
+ 2f1ef48: 49 c7 06 00 00 00 00         	movq	$0x0, (%r14)
+ 2f1ef4f: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1ef52: 0f 11 44 24 30               	movups	%xmm0, 0x30(%rsp)
+ 2f1ef57: 48 c7 44 24 40 00 00 00 00   	movq	$0x0, 0x40(%rsp)
+ 2f1ef60: 48 c7 c1 20 14 ff ff         	movq	$-0xebe0, %rcx          # imm = 0xFFFF1420
+ 2f1ef67: 48 03 4b 08                  	addq	0x8(%rbx), %rcx
+ 2f1ef6b: 4c 8d 74 24 28               	leaq	0x28(%rsp), %r14
+ 2f1ef70: 4c 89 ff                     	movq	%r15, %rdi
+ 2f1ef73: 48 8b b4 24 88 00 00 00      	movq	0x88(%rsp), %rsi
+ 2f1ef7b: 4c 89 f2                     	movq	%r14, %rdx
+ 2f1ef7e: e8 cd 0b 8d ff               	callq	0x27efb50 <_ZN4llvm7BuildMIERNS_17MachineBasicBlockENS_26MachineInstrBundleIteratorINS_12MachineInstrELb0EEERKNS_10MIMetadataERKNS_11MCInstrDescE>
+ 2f1ef83: 48 89 d7                     	movq	%rdx, %rdi
+ 2f1ef86: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1ef8f: 4c 89 6c 24 18               	movq	%r13, 0x18(%rsp)
+ 2f1ef94: c7 44 24 08 04 00 00 00      	movl	$0x4, 0x8(%rsp)
+ 2f1ef9c: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1efa1: 48 89 c6                     	movq	%rax, %rsi
+ 2f1efa4: e8 c7 16 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1efa9: 48 8b 74 24 28               	movq	0x28(%rsp), %rsi
+ 2f1efae: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1efb1: 74 0a                        	je	0x2f1efbd <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x4bd>
+ 2f1efb3: 48 8d 7c 24 28               	leaq	0x28(%rsp), %rdi
+ 2f1efb8: e8 e3 7c cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1efbd: 48 8b 74 24 58               	movq	0x58(%rsp), %rsi
+ 2f1efc2: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1efc5: 74 0a                        	je	0x2f1efd1 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x4d1>
+ 2f1efc7: 48 8d 7c 24 58               	leaq	0x58(%rsp), %rdi
+ 2f1efcc: e8 cf 7c cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1efd1: 4d 8d 7d 30                  	leaq	0x30(%r13), %r15
+ 2f1efd5: 49 8b 34 24                  	movq	(%r12), %rsi
+ 2f1efd9: 48 89 74 24 50               	movq	%rsi, 0x50(%rsp)
+ 2f1efde: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1efe1: 74 2e                        	je	0x2f1f011 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x511>
+ 2f1efe3: 4c 8d 74 24 50               	leaq	0x50(%rsp), %r14
+ 2f1efe8: ba 01 00 00 00               	movl	$0x1, %edx
+ 2f1efed: 4c 89 f7                     	movq	%r14, %rdi
+ 2f1eff0: e8 9b 7a cb 00               	callq	0x3bd6a90 <_ZN4llvm16MetadataTracking5trackEPvRNS_8MetadataENS_12PointerUnionIJPNS_15MetadataAsValueEPS2_PNS_14DebugValueUserEEEE>
+ 2f1eff5: 48 8b 74 24 50               	movq	0x50(%rsp), %rsi
+ 2f1effa: 48 89 74 24 28               	movq	%rsi, 0x28(%rsp)
+ 2f1efff: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f002: 74 14                        	je	0x2f1f018 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x518>
+ 2f1f004: 48 8d 54 24 28               	leaq	0x28(%rsp), %rdx
+ 2f1f009: 4c 89 f7                     	movq	%r14, %rdi
+ 2f1f00c: e8 6f 7e cb 00               	callq	0x3bd6e80 <_ZN4llvm16MetadataTracking7retrackEPvRNS_8MetadataES1_>
+ 2f1f011: 49 c7 06 00 00 00 00         	movq	$0x0, (%r14)
+ 2f1f018: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1f01b: 0f 11 44 24 30               	movups	%xmm0, 0x30(%rsp)
+ 2f1f020: 48 c7 44 24 40 00 00 00 00   	movq	$0x0, 0x40(%rsp)
+ 2f1f029: 48 c7 c1 20 82 fd ff         	movq	$-0x27de0, %rcx         # imm = 0xFFFD8220
+ 2f1f030: 48 03 4b 08                  	addq	0x8(%rbx), %rcx
+ 2f1f034: 48 8d 54 24 28               	leaq	0x28(%rsp), %rdx
+ 2f1f039: 4c 89 ef                     	movq	%r13, %rdi
+ 2f1f03c: 4c 89 fe                     	movq	%r15, %rsi
+ 2f1f03f: e8 0c 0b 8d ff               	callq	0x27efb50 <_ZN4llvm7BuildMIERNS_17MachineBasicBlockENS_26MachineInstrBundleIteratorINS_12MachineInstrELb0EEERKNS_10MIMetadataERKNS_11MCInstrDescE>
+ 2f1f044: 48 89 c3                     	movq	%rax, %rbx
+ 2f1f047: 49 89 d6                     	movq	%rdx, %r14
+ 2f1f04a: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1f053: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1f056: 0f 11 44 24 18               	movups	%xmm0, 0x18(%rsp)
+ 2f1f05b: 48 b8 00 00 00 01 08 00 00 00	movabsq	$0x801000000, %rax      # imm = 0x801000000
+ 2f1f065: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+ 2f1f06a: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1f06f: 4c 89 f7                     	movq	%r14, %rdi
+ 2f1f072: 48 89 de                     	movq	%rbx, %rsi
+ 2f1f075: e8 f6 15 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1f07a: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1f083: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1f086: 0f 11 44 24 18               	movups	%xmm0, 0x18(%rsp)
+ 2f1f08b: 48 b8 00 00 00 01 ff 00 00 00	movabsq	$0xff01000000, %rax     # imm = 0xFF01000000
+ 2f1f095: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+ 2f1f09a: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1f09f: 4c 89 f7                     	movq	%r14, %rdi
+ 2f1f0a2: 48 89 de                     	movq	%rbx, %rsi
+ 2f1f0a5: e8 c6 15 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1f0aa: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1f0b3: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1f0b6: 0f 11 44 24 18               	movups	%xmm0, 0x18(%rsp)
+ 2f1f0bb: 48 b8 00 00 00 00 08 00 00 00	movabsq	$0x800000000, %rax      # imm = 0x800000000
+ 2f1f0c5: 48 89 44 24 08               	movq	%rax, 0x8(%rsp)
+ 2f1f0ca: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1f0cf: 4c 89 f7                     	movq	%r14, %rdi
+ 2f1f0d2: 48 89 de                     	movq	%rbx, %rsi
+ 2f1f0d5: e8 96 15 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1f0da: c7 44 24 08 01 00 00 00      	movl	$0x1, 0x8(%rsp)
+ 2f1f0e2: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1f0eb: 48 c7 44 24 18 10 00 00 00   	movq	$0x10, 0x18(%rsp)
+ 2f1f0f4: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1f0f9: 4c 89 f7                     	movq	%r14, %rdi
+ 2f1f0fc: 48 89 de                     	movq	%rbx, %rsi
+ 2f1f0ff: e8 6c 15 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1f104: 48 8b 74 24 28               	movq	0x28(%rsp), %rsi
+ 2f1f109: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f10c: 74 0a                        	je	0x2f1f118 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x618>
+ 2f1f10e: 48 8d 7c 24 28               	leaq	0x28(%rsp), %rdi
+ 2f1f113: e8 88 7b cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1f118: 48 8b 74 24 50               	movq	0x50(%rsp), %rsi
+ 2f1f11d: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f120: 74 0a                        	je	0x2f1f12c <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x62c>
+ 2f1f122: 48 8d 7c 24 50               	leaq	0x50(%rsp), %rdi
+ 2f1f127: e8 74 7b cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1f12c: 48 81 c4 98 00 00 00         	addq	$0x98, %rsp
+ 2f1f133: 5b                           	popq	%rbx
+ 2f1f134: 41 5c                        	popq	%r12
+ 2f1f136: 41 5d                        	popq	%r13
+ 2f1f138: 41 5e                        	popq	%r14
+ 2f1f13a: 41 5f                        	popq	%r15
+ 2f1f13c: 5d                           	popq	%rbp
+ 2f1f13d: c3                           	retq
+ 2f1f13e: 48 8d 5c 24 28               	leaq	0x28(%rsp), %rbx
+ 2f1f143: 48 c7 03 00 00 00 00         	movq	$0x0, (%rbx)
+ 2f1f14a: 4c 89 a4 24 90 00 00 00      	movq	%r12, 0x90(%rsp)
+ 2f1f152: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1f155: 0f 11 44 24 30               	movups	%xmm0, 0x30(%rsp)
+ 2f1f15a: 48 c7 44 24 40 00 00 00 00   	movq	$0x0, 0x40(%rsp)
+ 2f1f163: 48 c7 c1 c0 21 ff ff         	movq	$-0xde40, %rcx          # imm = 0xFFFF21C0
+ 2f1f16a: 48 8b 44 24 48               	movq	0x48(%rsp), %rax
+ 2f1f16f: 48 03 48 08                  	addq	0x8(%rax), %rcx
+ 2f1f173: 48 8d 6c 24 28               	leaq	0x28(%rsp), %rbp
+ 2f1f178: 4c 89 ff                     	movq	%r15, %rdi
+ 2f1f17b: 49 8d 77 30                  	leaq	0x30(%r15), %rsi
+ 2f1f17f: 48 89 ea                     	movq	%rbp, %rdx
+ 2f1f182: 45 89 f0                     	movl	%r14d, %r8d
+ 2f1f185: e8 f6 3a 8d ff               	callq	0x27f2c80 <_ZN4llvm7BuildMIERNS_17MachineBasicBlockENS_26MachineInstrBundleIteratorINS_12MachineInstrELb0EEERKNS_10MIMetadataERKNS_11MCInstrDescENS_8RegisterE>
+ 2f1f18a: 48 89 c3                     	movq	%rax, %rbx
+ 2f1f18d: 49 89 d4                     	movq	%rdx, %r12
+ 2f1f190: 48 8b bc 24 80 00 00 00      	movq	0x80(%rsp), %rdi
+ 2f1f198: e8 53 ee 6a 00               	callq	0x35cdff0 <_ZNK4llvm17MachineBasicBlock9getSymbolEv>
+ 2f1f19d: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1f1a6: 48 89 44 24 18               	movq	%rax, 0x18(%rsp)
+ 2f1f1ab: c7 44 24 20 00 00 00 00      	movl	$0x0, 0x20(%rsp)
+ 2f1f1b3: 48 c7 44 24 08 0f 01 00 00   	movq	$0x10f, 0x8(%rsp)       # imm = 0x10F
+ 2f1f1bc: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1f1c1: 4c 89 e7                     	movq	%r12, %rdi
+ 2f1f1c4: 48 89 de                     	movq	%rbx, %rsi
+ 2f1f1c7: e8 a4 14 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1f1cc: 48 8b 74 24 28               	movq	0x28(%rsp), %rsi
+ 2f1f1d1: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f1d4: 74 0a                        	je	0x2f1f1e0 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x6e0>
+ 2f1f1d6: 48 8d 7c 24 28               	leaq	0x28(%rsp), %rdi
+ 2f1f1db: e8 c0 7a cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1f1e0: 48 8b 74 24 78               	movq	0x78(%rsp), %rsi
+ 2f1f1e5: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f1e8: 4c 8b a4 24 90 00 00 00      	movq	0x90(%rsp), %r12
+ 2f1f1f0: 74 0a                        	je	0x2f1f1fc <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x6fc>
+ 2f1f1f2: 48 8d 7c 24 78               	leaq	0x78(%rsp), %rdi
+ 2f1f1f7: e8 a4 7a cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1f1fc: 49 8b 34 24                  	movq	(%r12), %rsi
+ 2f1f200: 48 89 74 24 70               	movq	%rsi, 0x70(%rsp)
+ 2f1f205: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f208: 48 8b 5c 24 48               	movq	0x48(%rsp), %rbx
+ 2f1f20d: 74 2e                        	je	0x2f1f23d <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x73d>
+ 2f1f20f: 48 8d 6c 24 70               	leaq	0x70(%rsp), %rbp
+ 2f1f214: ba 01 00 00 00               	movl	$0x1, %edx
+ 2f1f219: 48 89 ef                     	movq	%rbp, %rdi
+ 2f1f21c: e8 6f 78 cb 00               	callq	0x3bd6a90 <_ZN4llvm16MetadataTracking5trackEPvRNS_8MetadataENS_12PointerUnionIJPNS_15MetadataAsValueEPS2_PNS_14DebugValueUserEEEE>
+ 2f1f221: 48 8b 74 24 70               	movq	0x70(%rsp), %rsi
+ 2f1f226: 48 89 74 24 28               	movq	%rsi, 0x28(%rsp)
+ 2f1f22b: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f22e: 74 15                        	je	0x2f1f245 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x745>
+ 2f1f230: 48 8d 54 24 28               	leaq	0x28(%rsp), %rdx
+ 2f1f235: 48 89 ef                     	movq	%rbp, %rdi
+ 2f1f238: e8 43 7c cb 00               	callq	0x3bd6e80 <_ZN4llvm16MetadataTracking7retrackEPvRNS_8MetadataES1_>
+ 2f1f23d: 48 c7 45 00 00 00 00 00      	movq	$0x0, (%rbp)
+ 2f1f245: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1f248: 0f 11 44 24 30               	movups	%xmm0, 0x30(%rsp)
+ 2f1f24d: 48 c7 44 24 40 00 00 00 00   	movq	$0x0, 0x40(%rsp)
+ 2f1f256: 48 c7 c1 a0 27 ff ff         	movq	$-0xd860, %rcx          # imm = 0xFFFF27A0
+ 2f1f25d: 48 03 4b 08                  	addq	0x8(%rbx), %rcx
+ 2f1f261: 48 8d 54 24 28               	leaq	0x28(%rsp), %rdx
+ 2f1f266: 4c 89 ff                     	movq	%r15, %rdi
+ 2f1f269: 49 8d 77 30                  	leaq	0x30(%r15), %rsi
+ 2f1f26d: 45 89 f0                     	movl	%r14d, %r8d
+ 2f1f270: e8 0b 3a 8d ff               	callq	0x27f2c80 <_ZN4llvm7BuildMIERNS_17MachineBasicBlockENS_26MachineInstrBundleIteratorINS_12MachineInstrELb0EEERKNS_10MIMetadataERKNS_11MCInstrDescENS_8RegisterE>
+ 2f1f275: 48 89 c3                     	movq	%rax, %rbx
+ 2f1f278: 48 89 d5                     	movq	%rdx, %rbp
+ 2f1f27b: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1f284: 44 89 74 24 0c               	movl	%r14d, 0xc(%rsp)
+ 2f1f289: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1f28c: 0f 11 44 24 18               	movups	%xmm0, 0x18(%rsp)
+ 2f1f291: c7 44 24 08 00 00 00 00      	movl	$0x0, 0x8(%rsp)
+ 2f1f299: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1f29e: 48 89 ef                     	movq	%rbp, %rdi
+ 2f1f2a1: 48 89 c6                     	movq	%rax, %rsi
+ 2f1f2a4: e8 c7 13 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1f2a9: 48 8b bc 24 80 00 00 00      	movq	0x80(%rsp), %rdi
+ 2f1f2b1: e8 3a ed 6a 00               	callq	0x35cdff0 <_ZNK4llvm17MachineBasicBlock9getSymbolEv>
+ 2f1f2b6: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1f2bf: 48 89 44 24 18               	movq	%rax, 0x18(%rsp)
+ 2f1f2c4: c7 44 24 20 00 00 00 00      	movl	$0x0, 0x20(%rsp)
+ 2f1f2cc: 48 c7 44 24 08 0f 22 00 00   	movq	$0x220f, 0x8(%rsp)      # imm = 0x220F
+ 2f1f2d5: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1f2da: 48 89 ef                     	movq	%rbp, %rdi
+ 2f1f2dd: 48 89 de                     	movq	%rbx, %rsi
+ 2f1f2e0: e8 8b 13 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1f2e5: c7 44 24 08 01 00 00 00      	movl	$0x1, 0x8(%rsp)
+ 2f1f2ed: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1f2f0: 0f 11 44 24 10               	movups	%xmm0, 0x10(%rsp)
+ 2f1f2f5: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1f2fa: 48 89 ef                     	movq	%rbp, %rdi
+ 2f1f2fd: 48 89 de                     	movq	%rbx, %rsi
+ 2f1f300: e8 6b 13 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1f305: 48 8b 74 24 28               	movq	0x28(%rsp), %rsi
+ 2f1f30a: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f30d: 74 0a                        	je	0x2f1f319 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x819>
+ 2f1f30f: 48 8d 7c 24 28               	leaq	0x28(%rsp), %rdi
+ 2f1f314: e8 87 79 cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1f319: 48 8b 74 24 70               	movq	0x70(%rsp), %rsi
+ 2f1f31e: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f321: 74 0a                        	je	0x2f1f32d <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x82d>
+ 2f1f323: 48 8d 7c 24 70               	leaq	0x70(%rsp), %rdi
+ 2f1f328: e8 73 79 cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1f32d: 49 8b 34 24                  	movq	(%r12), %rsi
+ 2f1f331: 48 89 74 24 68               	movq	%rsi, 0x68(%rsp)
+ 2f1f336: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f339: 48 8b 5c 24 48               	movq	0x48(%rsp), %rbx
+ 2f1f33e: 4c 8d 64 24 28               	leaq	0x28(%rsp), %r12
+ 2f1f343: 74 2e                        	je	0x2f1f373 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x873>
+ 2f1f345: 4c 8d 64 24 68               	leaq	0x68(%rsp), %r12
+ 2f1f34a: ba 01 00 00 00               	movl	$0x1, %edx
+ 2f1f34f: 4c 89 e7                     	movq	%r12, %rdi
+ 2f1f352: e8 39 77 cb 00               	callq	0x3bd6a90 <_ZN4llvm16MetadataTracking5trackEPvRNS_8MetadataENS_12PointerUnionIJPNS_15MetadataAsValueEPS2_PNS_14DebugValueUserEEEE>
+ 2f1f357: 48 8b 74 24 68               	movq	0x68(%rsp), %rsi
+ 2f1f35c: 48 89 74 24 28               	movq	%rsi, 0x28(%rsp)
+ 2f1f361: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f364: 74 15                        	je	0x2f1f37b <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x87b>
+ 2f1f366: 48 8d 54 24 28               	leaq	0x28(%rsp), %rdx
+ 2f1f36b: 4c 89 e7                     	movq	%r12, %rdi
+ 2f1f36e: e8 0d 7b cb 00               	callq	0x3bd6e80 <_ZN4llvm16MetadataTracking7retrackEPvRNS_8MetadataES1_>
+ 2f1f373: 49 c7 04 24 00 00 00 00      	movq	$0x0, (%r12)
+ 2f1f37b: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1f37e: 0f 11 44 24 30               	movups	%xmm0, 0x30(%rsp)
+ 2f1f383: 48 c7 44 24 40 00 00 00 00   	movq	$0x0, 0x40(%rsp)
+ 2f1f38c: 48 c7 c1 c0 fb fe ff         	movq	$-0x10440, %rcx         # imm = 0xFFFEFBC0
+ 2f1f393: 48 03 4b 08                  	addq	0x8(%rbx), %rcx
+ 2f1f397: 48 8d 54 24 28               	leaq	0x28(%rsp), %rdx
+ 2f1f39c: 4c 89 ff                     	movq	%r15, %rdi
+ 2f1f39f: 48 8b b4 24 88 00 00 00      	movq	0x88(%rsp), %rsi
+ 2f1f3a7: e8 a4 07 8d ff               	callq	0x27efb50 <_ZN4llvm7BuildMIERNS_17MachineBasicBlockENS_26MachineInstrBundleIteratorINS_12MachineInstrELb0EEERKNS_10MIMetadataERKNS_11MCInstrDescE>
+ 2f1f3ac: 48 89 d7                     	movq	%rdx, %rdi
+ 2f1f3af: 48 c7 44 24 10 00 00 00 00   	movq	$0x0, 0x10(%rsp)
+ 2f1f3b8: 44 89 74 24 0c               	movl	%r14d, 0xc(%rsp)
+ 2f1f3bd: 0f 57 c0                     	xorps	%xmm0, %xmm0
+ 2f1f3c0: 0f 11 44 24 18               	movups	%xmm0, 0x18(%rsp)
+ 2f1f3c5: c7 44 24 08 00 00 00 00      	movl	$0x0, 0x8(%rsp)
+ 2f1f3cd: 48 8d 54 24 08               	leaq	0x8(%rsp), %rdx
+ 2f1f3d2: 48 89 c6                     	movq	%rax, %rsi
+ 2f1f3d5: e8 96 12 73 00               	callq	0x3650670 <_ZN4llvm12MachineInstr10addOperandERNS_15MachineFunctionERKNS_14MachineOperandE>
+ 2f1f3da: 48 8b 74 24 28               	movq	0x28(%rsp), %rsi
+ 2f1f3df: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f3e2: 74 0a                        	je	0x2f1f3ee <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x8ee>
+ 2f1f3e4: 48 8d 7c 24 28               	leaq	0x28(%rsp), %rdi
+ 2f1f3e9: e8 b2 78 cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1f3ee: 48 8b 74 24 68               	movq	0x68(%rsp), %rsi
+ 2f1f3f3: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f3f6: 74 0a                        	je	0x2f1f402 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x902>
+ 2f1f3f8: 48 8d 7c 24 68               	leaq	0x68(%rsp), %rdi
+ 2f1f3fd: e8 9e 78 cb 00               	callq	0x3bd6ca0 <_ZN4llvm16MetadataTracking7untrackEPvRNS_8MetadataE>
+ 2f1f402: 49 8d 45 58                  	leaq	0x58(%r13), %rax
+ 2f1f406: 48 8b 10                     	movq	(%rax), %rdx
+ 2f1f409: 48 8b 72 38                  	movq	0x38(%rdx), %rsi
+ 2f1f40d: 48 85 f6                     	testq	%rsi, %rsi
+ 2f1f410: 0f 84 16 fd ff ff            	je	0x2f1f12c <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x62c>
+ 2f1f416: 48 8b 42 08                  	movq	0x8(%rdx), %rax
+ 2f1f41a: 44 89 f1                     	movl	%r14d, %ecx
+ 2f1f41d: 48 8d 3c 49                  	leaq	(%rcx,%rcx,2), %rdi
+ 2f1f421: 8b 4c f8 10                  	movl	0x10(%rax,%rdi,8), %ecx
+ 2f1f425: 41 89 c8                     	movl	%ecx, %r8d
+ 2f1f428: 41 c1 e8 0c                  	shrl	$0xc, %r8d
+ 2f1f42c: 0f b7 44 f8 14               	movzwl	0x14(%rax,%rdi,8), %eax
+ 2f1f431: c1 e0 03                     	shll	$0x3, %eax
+ 2f1f434: 48 03 42 40                  	addq	0x40(%rdx), %rax
+ 2f1f438: 4a 8d 14 46                  	leaq	(%rsi,%r8,2), %rdx
+ 2f1f43c: 81 e1 ff 0f 00 00            	andl	$0xfff, %ecx            # imm = 0xFFF
+ 2f1f442: 49 8b 75 60                  	movq	0x60(%r13), %rsi
+ 2f1f446: 31 ff                        	xorl	%edi, %edi
+ 2f1f448: eb 1b                        	jmp	0x2f1f465 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x965>
+ 2f1f44a: 66 0f 1f 44 00 00            	nopw	(%rax,%rax)
+ 2f1f450: 44 0f bf 04 3a               	movswl	(%rdx,%rdi), %r8d
+ 2f1f455: 44 01 c1                     	addl	%r8d, %ecx
+ 2f1f458: 48 83 c7 02                  	addq	$0x2, %rdi
+ 2f1f45c: 45 85 c0                     	testl	%r8d, %r8d
+ 2f1f45f: 0f 84 c7 fc ff ff            	je	0x2f1f12c <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x62c>
+ 2f1f465: 48 83 3c b8 00               	cmpq	$0x0, (%rax,%rdi,4)
+ 2f1f46a: 74 e4                        	je	0x2f1f450 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x950>
+ 2f1f46c: 41 b8 01 00 00 00            	movl	$0x1, %r8d
+ 2f1f472: 49 d3 e0                     	shlq	%cl, %r8
+ 2f1f475: 41 89 c9                     	movl	%ecx, %r9d
+ 2f1f478: 41 c1 e9 06                  	shrl	$0x6, %r9d
+ 2f1f47c: 4e 09 04 ce                  	orq	%r8, (%rsi,%r9,8)
+ 2f1f480: eb ce                        	jmp	0x2f1f450 <_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE+0x950>
+ 2f1f482: 48 8d 3d dd a6 eb fd         	leaq	-0x2145923(%rip), %rdi  # 0xdd9b66 <.L.str.18>
+ 2f1f489: be 01 00 00 00               	movl	$0x1, %esi
+ 2f1f48e: e8 1d d1 1a 01               	callq	0x40cc5b0 <_ZN4llvm18report_fatal_errorEPKcb>
+ 2f1f493: 48 8d 3d e7 d6 e1 fd         	leaq	-0x21e2919(%rip), %rdi  # 0xd3cb81 <.L.str.56>
+ 2f1f49a: be 01 00 00 00               	movl	$0x1, %esi
+ 2f1f49f: e8 0c d1 1a 01               	callq	0x40cc5b0 <_ZN4llvm18report_fatal_errorEPKcb>
+ 2f1f4a4: cc                           	int3
+ 2f1f4a5: cc                           	int3
+ 2f1f4a6: cc                           	int3
+ 2f1f4a7: cc                           	int3
+ 2f1f4a8: cc                           	int3
+ 2f1f4a9: cc                           	int3
+ 2f1f4aa: cc                           	int3
+ 2f1f4ab: cc                           	int3
+ 2f1f4ac: cc                           	int3
+ 2f1f4ad: cc                           	int3
+ 2f1f4ae: cc                           	int3
+ 2f1f4af: cc                           	int3

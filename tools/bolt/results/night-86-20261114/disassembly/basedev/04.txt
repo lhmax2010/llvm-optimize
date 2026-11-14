@@ -1,0 +1,101 @@
+
+/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22:	file format elf64-x86-64
+
+Disassembly of section .text:
+
+0000000002f1e980 <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl>:
+ 2f1e980: 81 fe 83 08 00 00            	cmpl	$0x883, %esi            # imm = 0x883
+ 2f1e986: 7f 14                        	jg	0x2f1e99c <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0x1c>
+ 2f1e988: 8d 86 18 fe ff ff            	leal	-0x1e8(%rsi), %eax
+ 2f1e98e: 83 f8 06                     	cmpl	$0x6, %eax
+ 2f1e991: 73 7e                        	jae	0x2f1ea11 <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0x91>
+ 2f1e993: 48 8d 05 26 d0 65 05         	leaq	0x565d026(%rip), %rax   # 0x857b9c0 <_ZL18CBDisplacementBits+0x78>
+ 2f1e99a: eb 2b                        	jmp	0x2f1e9c7 <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0x47>
+ 2f1e99c: 8d 86 7c f7 ff ff            	leal	-0x884(%rsi), %eax
+ 2f1e9a2: 83 f8 04                     	cmpl	$0x4, %eax
+ 2f1e9a5: 73 09                        	jae	0x2f1e9b0 <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0x30>
+ 2f1e9a7: 48 8d 05 82 d1 65 05         	leaq	0x565d182(%rip), %rax   # 0x857bb30 <_ZL19CBZDisplacementBits+0x78>
+ 2f1e9ae: eb 17                        	jmp	0x2f1e9c7 <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0x47>
+ 2f1e9b0: 81 c6 37 e1 ff ff            	addl	$0xffffe137, %esi       # imm = 0xFFFFE137
+ 2f1e9b6: b8 03 00 0c 00               	movl	$0xc0003, %eax          # imm = 0xC0003
+ 2f1e9bb: 0f a3 f0                     	btl	%esi, %eax
+ 2f1e9be: 73 6b                        	jae	0x2f1ea2b <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0xab>
+ 2f1e9c0: 48 8d 05 b1 d0 65 05         	leaq	0x565d0b1(%rip), %rax   # 0x857ba78 <_ZL19TBZDisplacementBits+0x78>
+ 2f1e9c7: 8b 38                        	movl	(%rax), %edi
+ 2f1e9c9: 48 8d 72 03                  	leaq	0x3(%rdx), %rsi
+ 2f1e9cd: 48 85 d2                     	testq	%rdx, %rdx
+ 2f1e9d0: 48 0f 49 f2                  	cmovnsq	%rdx, %rsi
+ 2f1e9d4: b0 01                        	movb	$0x1, %al
+ 2f1e9d6: 48 83 ff 3f                  	cmpq	$0x3f, %rdi
+ 2f1e9da: 77 34                        	ja	0x2f1ea10 <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0x90>
+ 2f1e9dc: 48 c1 fe 02                  	sarq	$0x2, %rsi
+ 2f1e9e0: 8d 4f ff                     	leal	-0x1(%rdi), %ecx
+ 2f1e9e3: 48 c7 c0 ff ff ff ff         	movq	$-0x1, %rax
+ 2f1e9ea: 48 d3 e0                     	shlq	%cl, %rax
+ 2f1e9ed: 48 85 ff                     	testq	%rdi, %rdi
+ 2f1e9f0: 48 89 c1                     	movq	%rax, %rcx
+ 2f1e9f3: 48 0f 44 cf                  	cmoveq	%rdi, %rcx
+ 2f1e9f7: 48 39 f1                     	cmpq	%rsi, %rcx
+ 2f1e9fa: 7e 03                        	jle	0x2f1e9ff <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0x7f>
+ 2f1e9fc: 31 c0                        	xorl	%eax, %eax
+ 2f1e9fe: c3                           	retq
+ 2f1e9ff: 31 c9                        	xorl	%ecx, %ecx
+ 2f1ea01: 85 ff                        	testl	%edi, %edi
+ 2f1ea03: 48 f7 d0                     	notq	%rax
+ 2f1ea06: 48 0f 45 c8                  	cmovneq	%rax, %rcx
+ 2f1ea0a: 48 39 ce                     	cmpq	%rcx, %rsi
+ 2f1ea0d: 0f 9e c0                     	setle	%al
+ 2f1ea10: c3                           	retq
+ 2f1ea11: 81 fe 5f 07 00 00            	cmpl	$0x75f, %esi            # imm = 0x75F
+ 2f1ea17: 75 09                        	jne	0x2f1ea22 <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0xa2>
+ 2f1ea19: 48 8d 05 80 d2 65 05         	leaq	0x565d280(%rip), %rax   # 0x857bca0 <_ZL17BDisplacementBits+0x78>
+ 2f1ea20: eb a5                        	jmp	0x2f1e9c7 <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0x47>
+ 2f1ea22: 48 8d 05 bf d1 65 05         	leaq	0x565d1bf(%rip), %rax   # 0x857bbe8 <_ZL19BCCDisplacementBits+0x78>
+ 2f1ea29: eb 9c                        	jmp	0x2f1e9c7 <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0x47>
+ 2f1ea2b: cc                           	int3
+ 2f1ea2c: cc                           	int3
+ 2f1ea2d: cc                           	int3
+ 2f1ea2e: cc                           	int3
+ 2f1ea2f: cc                           	int3
+
+0000000002f1ea30 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE>:
+ 2f1ea30: 0f b7 4e 44                  	movzwl	0x44(%rsi), %ecx
+ 2f1ea34: 48 8b 46 20                  	movq	0x20(%rsi), %rax
+ 2f1ea38: 81 f9 83 08 00 00            	cmpl	$0x883, %ecx            # imm = 0x883
+ 2f1ea3e: 7f 15                        	jg	0x2f1ea55 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x25>
+ 2f1ea40: 8d 91 18 fe ff ff            	leal	-0x1e8(%rcx), %edx
+ 2f1ea46: 83 fa 06                     	cmpl	$0x6, %edx
+ 2f1ea49: 73 39                        	jae	0x2f1ea84 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x54>
+ 2f1ea4b: ba 70 00 00 00               	movl	$0x70, %edx
+ 2f1ea50: 48 8b 04 10                  	movq	(%rax,%rdx), %rax
+ 2f1ea54: c3                           	retq
+ 2f1ea55: 8d 91 7c f7 ff ff            	leal	-0x884(%rcx), %edx
+ 2f1ea5b: 83 fa 04                     	cmpl	$0x4, %edx
+ 2f1ea5e: 73 0a                        	jae	0x2f1ea6a <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x3a>
+ 2f1ea60: ba 30 00 00 00               	movl	$0x30, %edx
+ 2f1ea65: 48 8b 04 10                  	movq	(%rax,%rdx), %rax
+ 2f1ea69: c3                           	retq
+ 2f1ea6a: 81 c1 37 e1 ff ff            	addl	$0xffffe137, %ecx       # imm = 0xFFFFE137
+ 2f1ea70: ba 03 00 0c 00               	movl	$0xc0003, %edx          # imm = 0xC0003
+ 2f1ea75: 0f a3 ca                     	btl	%ecx, %edx
+ 2f1ea78: 73 19                        	jae	0x2f1ea93 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x63>
+ 2f1ea7a: ba 50 00 00 00               	movl	$0x50, %edx
+ 2f1ea7f: 48 8b 04 10                  	movq	(%rax,%rdx), %rax
+ 2f1ea83: c3                           	retq
+ 2f1ea84: ba 10 00 00 00               	movl	$0x10, %edx
+ 2f1ea89: 81 f9 5f 07 00 00            	cmpl	$0x75f, %ecx            # imm = 0x75F
+ 2f1ea8f: 74 bf                        	je	0x2f1ea50 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x20>
+ 2f1ea91: eb cd                        	jmp	0x2f1ea60 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x30>
+ 2f1ea93: cc                           	int3
+ 2f1ea94: cc                           	int3
+ 2f1ea95: cc                           	int3
+ 2f1ea96: cc                           	int3
+ 2f1ea97: cc                           	int3
+ 2f1ea98: cc                           	int3
+ 2f1ea99: cc                           	int3
+ 2f1ea9a: cc                           	int3
+ 2f1ea9b: cc                           	int3
+ 2f1ea9c: cc                           	int3
+ 2f1ea9d: cc                           	int3
+ 2f1ea9e: cc                           	int3
+ 2f1ea9f: cc                           	int3

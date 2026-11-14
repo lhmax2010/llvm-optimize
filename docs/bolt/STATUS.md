@@ -1284,3 +1284,14 @@ PM裁决：只改提交说明、树不变，不需要新QB。源码包中0008补
 - 41项交接表覆盖入口、产品加固、claims、Gerrit、T/D归因、84缺采、V1b/V2、资源报备、乙一、§7未决、§8风险及每周基线。建议11/16起先确认裁决/入口部署和资源，再推进身份方法/归因/乙一；历史一次授权不延续。旧失败原文保留，最新状态按85及81–84读取。
 
 85 交接已结束 2026-11-14T15:00:48+08:00 status=PARTIAL（步骤5 STOP；盲区见85）
+
+
+## 2026-11-14：86号
+
+[86号报告](86_claims_entry_bolt_warnings.md)。各步骤独立：1 PASS；2 STOP；3 STOP；4 PASS_WITH_UNKNOWN；5 STOP。未构建、未访问QB/Gerrit、未改LLVM。
+
+- PM定性：85步骤5的STOP正确，是PM前提错误（整条条件相等），不计准备错误。PS10外层已有ALLOC过滤；32/32S/64的有效PIC政策与fea等价。全路径/192合法组合核对通过，claims已补父提交PS10说明；新增解析加固不称整函数接受集合相同。
+- W授权五文件已备份同步，SHA均与B一致；完整清单还报basedev/SHA256SUMS、basedev/provenance.json及缺失顶层provenance.json。未越权同步、未回滚；30项测试及dry-run NOT RUN，下次使用仍阻塞。
+- 74本地T/D内部BOLT日志各有10个jump-past-end和2804重定位汇总；58/59 PGO为2个和1551。QB保存主日志没有内部告警，不等于没有告警。22组定向反汇编保存；读取旧3ee2d847源码对象失败后STOP，可达性及类型/节细分未完成。
+- 830在A构建stdout；B的23次训练stdout/stderr为0。C显式23个profraw全部对应B专用目录，保全SHA一致，A构建profile未进入该52,528,216B合并结果。每条警告精确PID及A默认profile内容UNKNOWN。
+- 资源报备脚本argv切片断言失败，未修正/重跑；没有生成经核对的命令/采集/磁盘报备稿，仍需后续完成。所有STOP原文见86；已有证据不覆盖。

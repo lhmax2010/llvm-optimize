@@ -1,0 +1,49 @@
+51: def stage_a(d,rehearsal):
+52:  r=root(d);inner=r/INNER.lstrip('/');build=inner/'build';build.mkdir(exist_ok=True)
+53:  # Bootstrap runtime is absent from the fixed snapshot's installed compiler.
+54:  # Copy its same-version, previously-built profile runtime into this fresh root only.
+55:  runtime=H/'gbs-root/local/BUILD-ROOTS/scratch.x86_64.0'/INNER.lstrip('/')/'build/lib64/clang/22/lib/linux/libclang_rt.profile-x86_64.a'
+56:  local=r/'home/abuild/pgo-resource';local.mkdir(exist_ok=True);shutil.copyfile(runtime,local/runtime.name)
+57:  code="from pathlib import Path;import shutil;p=Path('/usr/lib64/clang/22/lib/linux/libclang_rt.profile-x86_64.a');assert not p.exists();p.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile('/home/abuild/pgo-resource/libclang_rt.profile-x86_64.a',p)"
+58:  call(['sudo','-n','/usr/sbin/chroot',str(r),'/usr/bin/python3','-B','-c',code],d/'evidence/bootstrap-runtime.stdout')
+59:  save(d/'evidence/bootstrap-runtime.json',{'source':str(runtime),'sha256':sha(runtime),'note':'existing same-version runtime, provisioned only in fresh test root; own profile target built at night'})
+60:  args=json.loads((E/'cmake-A.json').read_text());env=json.loads((E/'rpm-environment.json').read_text())
+61:  script='#!/bin/sh\nset -eu\ncd '+shlex.quote(INNER+'/build')+'\nprintf "PATH=%s\\n" "$PATH"\ncommand -v clang\ncommand -v clang++\n'+shlex.join(args)+'\nprintf "%s\\n" PGO_A_CONFIGURE_PASS\n'
+62:  if not rehearsal:script+='ninja -j6 clang_rt.profile-x86_64\nninja -j6 clang\nprintf "%s\\n" PGO_A_BUILD_PASS\n'
+63:  (local/'stage-A.sh').write_text(script);save(d/'evidence/cmake-argv.json',args)
+64:  service(d,'A',prefix(r)+[k+'='+v for k,v in env.items()]+['/bin/sh','/home/abuild/pgo-resource/stage-A.sh'],r)
+65:  assert (build/'build.ninja').exists();assert 'PGO_A_CONFIGURE_PASS' in (d/'evidence/A/stdout').read_text()
+66:  # Verify configured compiler identities and IR option without invoking ninja.
+67:  cache=(build/'CMakeCache.txt').read_text();assert 'LLVM_BUILD_INSTRUMENTED:STRING=IR' in cache
+68:  save(d/'evidence/configure-proof.json',{'PASS':True,'cache_sha256':sha(build/'CMakeCache.txt'),'build_ninja_sha256':sha(build/'build.ninja'),'rehearsal_no_ninja':rehearsal})
+69: 
+70: def stage_b(d):
+71:  r=root(d);b=r/INNER.lstrip('/')/'build';profiles=d/'profiles';profiles.mkdir();objects=d/'objects';objects.mkdir()
+72:  rows=json.loads((E/'training.json').read_text());commands=[]
+73:  loader=r/'lib64/ld-linux-x86-64.so.2';libpath=str(b/'lib64')+':'+str(r/'usr/lib64')+':'+str(r/'lib64')
+74:  for i,row in enumerate(rows):
+75:   assert sha(row['path'])==row['sha256']
+76:   commands.append({'name':row['name'],'argv':[str(loader),'--library-path',libpath,str(b/'bin/clang-22'),'--driver-mode=g++',*row['compiler_args'],'-c',row['path'],'-o',str(objects/(str(i)+'.o'))],'LLVM_PROFILE_FILE':str(profiles/(str(i)+'-%m-%p.profraw'))})
+77:  save(d/'training-commands.json',commands)
+78:  service(d,'B',['/usr/bin/python3','-B',str(T/'train.py'),str(d)],r)
+79:  raws=sorted(profiles.glob('*.profraw'));assert raws and all(p.stat().st_size for p in raws)
+80:  save(d/'evidence/profraw.json',{'count':len(raws),'total_bytes':sum(p.stat().st_size for p in raws),'files':[{'path':str(p),'bytes':p.stat().st_size,'sha256':sha(p)} for p in raws]})
+81: 
+82: def stage_c(d):
+83:  hr=root(H);hb=hr/INNER.lstrip('/')/'build';tool=hb/'bin/llvm-profdata';profile=d/'profiles/clang.profdata'
+84:  argv=[str(hr/'lib64/ld-linux-x86-64.so.2'),'--library-path',str(hb/'lib64')+':'+str(hr/'usr/lib64')+':'+str(hr/'lib64'),str(tool),'merge','-o',str(profile),*[str(p) for p in sorted((d/'profiles').glob('*.profraw'))]]
+85:  service(d,'C',argv,root(d));assert profile.stat().st_size
+86:  save(d/'evidence/profdata.json',{'path':str(profile),'bytes':profile.stat().st_size,'sha256':sha(profile),'llvm_profdata':str(tool),'tool_sha256':sha(tool),'tool_source':'same 3ee2d847 full-20261030 build; no additional LLVM target built'})
+87:  return profile
+88: 
+
+train.py:
+from common import *
+import sys
+D=Path(sys.argv[1]);rows=json.loads((D/'training-commands.json').read_text());out=D/'evidence/B'
+for i,row in enumerate(rows):
+ env=os.environ.copy();env['LLVM_PROFILE_FILE']=row['LLVM_PROFILE_FILE']
+ call(row['argv'],out/(str(i)+'-'+row['name']+'.stdout'),env=env)
+ p=Path(row['argv'][-1]);assert p.is_file() and p.stat().st_size
+ assert list((D/'profiles').glob(str(i)+'-*.profraw')), 'missing profile for '+row['name']
+ print('PGO_TRAIN',i,row['name'],'PASS',flush=True)

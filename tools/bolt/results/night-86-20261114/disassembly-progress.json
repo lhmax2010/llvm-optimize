@@ -1,0 +1,1073 @@
+[
+  {
+    "project": "toolchain",
+    "input": {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22",
+      "bytes": 226816920,
+      "sha256": "ae3d837d862673b03c3c4718f6746f6986d8abe2078bad426b97905258b91a5c"
+    },
+    "loader": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+    "tool": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+    "tool_sha256": "932ee69bb4993a2d66ab787ba2b0c4d5671d13d59babf42eae940821a5708c75",
+    "version": "LLVM (http://llvm.org/):\n  LLVM version 22.1.8\n  Optimized build.\n\n\n  Registered Targets:\n    aarch64    - AArch64 (little endian)\n    aarch64_32 - AArch64 (little endian ILP32)\n    aarch64_be - AArch64 (big endian)\n    arm        - ARM\n    arm64      - ARM64 (little endian)\n    arm64_32   - ARM64 (little endian ILP32)\n    armeb      - ARM (big endian)\n    bpf        - BPF (host endian)\n    bpfeb      - BPF (big endian)\n    bpfel      - BPF (little endian)\n    thumb      - Thumb\n    thumbeb    - Thumb (big endian)\n    x86        - 32-bit X86: Pentium-Pro and above\n    x86-64     - 64-bit X86: EM64T and AMD64\n",
+    "debug_sections": [],
+    "relocation_sections": [
+      ".rela.dyn",
+      ".rela.plt",
+      ".relro_padding",
+      ".rela.text",
+      ".rela.init",
+      ".rela.data",
+      ".rela.fini_array",
+      ".rela.init_array",
+      ".rela.data.rel.ro",
+      ".rela.rodata"
+    ],
+    "functions": [
+      {
+        "warning": {
+          "line": 10,
+          "text": "BOLT-WARNING: jump past end detected at 0x27f0b69 in function _ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb",
+          "type": 2,
+          "section": 14,
+          "address": 41879328,
+          "size": 9566
+        },
+        "next_symbol": {
+          "name": "_ZN4llvm7BuildMIERNS_17MachineBasicBlockENS_26MachineInstrBundleIteratorINS_12MachineInstrELb0EEERKNS_10MIMetadataERKNS_11MCInstrDescENS_8RegisterE",
+          "type": 2,
+          "section": 14,
+          "address": 41888896,
+          "size": 459
+        },
+        "jump_address": 41880425,
+        "function_end": 41888894,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb,_ZN4llvm7BuildMIERNS_17MachineBasicBlockENS_26MachineInstrBundleIteratorINS_12MachineInstrELb0EEERKNS_10MIMetadataERKNS_11MCInstrDescENS_8RegisterE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/toolchain/01.txt",
+        "near_warning": [
+          " 27f0b59: 0f 86 09 04 00 00            \tjbe\t0x27f0f68 <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x848>",
+          " 27f0b5f: 81 c2 9d f8 ff ff            \taddl\t$0xfffff89d, %edx       # imm = 0xFFFFF89D",
+          " 27f0b65: 48 0f a3 d0                  \tbtq\t%rdx, %rax",
+          " 27f0b69: 0f 83 0f 21 00 00            \tjae\t0x27f2c7e <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x255e>",
+          " 27f0b6f: 48 c7 44 24 08 00 00 00 00   \tmovq\t$0x0, 0x8(%rsp)",
+          " 27f0b78: 8b 44 24 3c                  \tmovl\t0x3c(%rsp), %eax",
+          " 27f0b7c: 89 44 24 04                  \tmovl\t%eax, 0x4(%rsp)",
+          " 27f0b80: 66 0f ef c0                  \tpxor\t%xmm0, %xmm0",
+          " 27f0b84: f3 0f 7f 44 24 10            \tmovdqu\t%xmm0, 0x10(%rsp)"
+        ]
+      },
+      {
+        "warning": {
+          "line": 11,
+          "text": "BOLT-WARNING: jump past end detected at 0x27f3576 in function _ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE",
+          "type": 2,
+          "section": 14,
+          "address": 41889840,
+          "size": 8600
+        },
+        "next_symbol": {
+          "name": "_ZN4llvm7BuildMIERNS_15MachineFunctionERKNS_10MIMetadataERKNS_11MCInstrDescE",
+          "type": 2,
+          "section": 14,
+          "address": 41898448,
+          "size": 163
+        },
+        "jump_address": 41891190,
+        "function_end": 41898440,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE,_ZN4llvm7BuildMIERNS_15MachineFunctionERKNS_10MIMetadataERKNS_11MCInstrDescE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/toolchain/02.txt",
+        "near_warning": [
+          " 27f3568: b9 41 40 10 04               \tmovl\t$0x4104041, %ecx        # imm = 0x4104041",
+          " 27f356d: 0f a3 c1                     \tbtl\t%eax, %ecx",
+          " 27f3570: 0f 82 ca fb ff ff            \tjb\t0x27f3140 <_ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE+0x110>",
+          " 27f3576: e9 4d 1c 00 00               \tjmp\t0x27f51c8 <_ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE+0x2198>",
+          " 27f357b: 48 8d 15 f2 21 6a fe         \tleaq\t-0x195de0e(%rip), %rdx  # 0xe95774 <_ZTSN4llvm2cl15OptionValueCopyIjEE+0x30ad>",
+          " 27f3582: 48 63 0c 8a                  \tmovslq\t(%rdx,%rcx,4), %rcx",
+          " 27f3586: 48 01 d1                     \taddq\t%rdx, %rcx",
+          " 27f3589: ff e1                        \tjmpq\t*%rcx",
+          " 27f358b: 41 bd 5c 08 00 00            \tmovl\t$0x85c, %r13d           # imm = 0x85C"
+        ]
+      },
+      {
+        "warning": {
+          "line": 12,
+          "text": "BOLT-WARNING: jump past end detected at 0x2d00cbb in function _ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE",
+          "type": 2,
+          "section": 14,
+          "address": 47174160,
+          "size": 20882
+        },
+        "next_symbol": {
+          "name": "_ZN12_GLOBAL__N_115ARMLoadStoreOpt14FormCandidatesERKN4llvm11SmallVectorINS0_15MemOpQueueEntryELj8EEE",
+          "type": 2,
+          "section": 14,
+          "address": 47195056,
+          "size": 1562
+        },
+        "jump_address": 47189179,
+        "function_end": 47195042,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE,_ZN12_GLOBAL__N_115ARMLoadStoreOpt14FormCandidatesERKN4llvm11SmallVectorINS0_15MemOpQueueEntryELj8EEE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/toolchain/03.txt",
+        "near_warning": [
+          " 2d00cad: 81 c1 29 f8 ff ff            \taddl\t$0xfffff829, %ecx       # imm = 0xFFFFF829",
+          " 2d00cb3: b8 55 00 00 00               \tmovl\t$0x55, %eax",
+          " 2d00cb8: 0f a3 c8                     \tbtl\t%ecx, %eax",
+          " 2d00cbb: 0f 83 e1 16 00 00            \tjae\t0x2d023a2 <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x5192>",
+          " 2d00cc1: 89 f0                        \tmovl\t%esi, %eax",
+          " 2d00cc3: 48 8d 0d 66 d0 18 fe         \tleaq\t-0x1e72f9a(%rip), %rcx  # 0xe8dd30 <.Lswitch.table._ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE.152>",
+          " 2d00cca: 4c 8b 74 c1 f8               \tmovq\t-0x8(%rcx,%rax,8), %r14",
+          " 2d00ccf: e9 3b 01 00 00               \tjmp\t0x2d00e0f <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3bff>",
+          " 2d00cd4: b9 55 00 00 00               \tmovl\t$0x55, %ecx"
+        ]
+      },
+      {
+        "warning": {
+          "line": 13,
+          "text": "BOLT-WARNING: jump past end detected at 0x2f1ea1e in function _ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl",
+          "type": 2,
+          "section": 14,
+          "address": 49408480,
+          "size": 171
+        },
+        "next_symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE",
+          "type": 2,
+          "section": 14,
+          "address": 49408656,
+          "size": 99
+        },
+        "jump_address": 49408542,
+        "function_end": 49408651,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl,_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/toolchain/04.txt",
+        "near_warning": [
+          " 2f1ea10: 81 c6 37 e1 ff ff            \taddl\t$0xffffe137, %esi       # imm = 0xFFFFE137",
+          " 2f1ea16: b8 03 00 0c 00               \tmovl\t$0xc0003, %eax          # imm = 0xC0003",
+          " 2f1ea1b: 0f a3 f0                     \tbtl\t%esi, %eax",
+          " 2f1ea1e: 73 6b                        \tjae\t0x2f1ea8b <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0xab>",
+          " 2f1ea20: 48 8d 05 e1 d0 65 05         \tleaq\t0x565d0e1(%rip), %rax   # 0x857bb08 <_ZL19TBZDisplacementBits+0x78>",
+          " 2f1ea27: 8b 38                        \tmovl\t(%rax), %edi",
+          " 2f1ea29: 48 8d 72 03                  \tleaq\t0x3(%rdx), %rsi",
+          " 2f1ea2d: 48 85 d2                     \ttestq\t%rdx, %rdx",
+          " 2f1ea30: 48 0f 49 f2                  \tcmovnsq\t%rdx, %rsi"
+        ]
+      },
+      {
+        "warning": {
+          "line": 14,
+          "text": "BOLT-WARNING: jump past end detected at 0x2f1ead8 in function _ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE",
+          "type": 2,
+          "section": 14,
+          "address": 49408656,
+          "size": 99
+        },
+        "next_symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE",
+          "type": 2,
+          "section": 14,
+          "address": 49408768,
+          "size": 2468
+        },
+        "jump_address": 49408728,
+        "function_end": 49408755,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE,_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/toolchain/05.txt",
+        "near_warning": [
+          " 2f1eaca: 81 c1 37 e1 ff ff            \taddl\t$0xffffe137, %ecx       # imm = 0xFFFFE137",
+          " 2f1ead0: ba 03 00 0c 00               \tmovl\t$0xc0003, %edx          # imm = 0xC0003",
+          " 2f1ead5: 0f a3 ca                     \tbtl\t%ecx, %edx",
+          " 2f1ead8: 73 19                        \tjae\t0x2f1eaf3 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x63>",
+          " 2f1eada: ba 50 00 00 00               \tmovl\t$0x50, %edx",
+          " 2f1eadf: 48 8b 04 10                  \tmovq\t(%rax,%rdx), %rax",
+          " 2f1eae3: c3                           \tretq",
+          " 2f1eae4: ba 10 00 00 00               \tmovl\t$0x10, %edx",
+          " 2f1eae9: 81 f9 5f 07 00 00            \tcmpl\t$0x75f, %ecx            # imm = 0x75F"
+        ]
+      },
+      {
+        "warning": {
+          "line": 15,
+          "text": "BOLT-WARNING: jump past end detected at 0x2f1f785 in function _ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb",
+          "type": 2,
+          "section": 14,
+          "address": 49411248,
+          "size": 1212
+        },
+        "next_symbol": {
+          "name": "_ZN4llvm26MachineInstrBundleIteratorINS_12MachineInstrELb0EEmmEv",
+          "type": 2,
+          "section": 14,
+          "address": 49412464,
+          "size": 55
+        },
+        "jump_address": 49411973,
+        "function_end": 49412460,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb,_ZN4llvm26MachineInstrBundleIteratorINS_12MachineInstrELb0EEmmEv",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/toolchain/06.txt",
+        "near_warning": [
+          " 2f1f774: 41 81 c1 37 e1 ff ff         \taddl\t$0xffffe137, %r9d       # imm = 0xFFFFE137",
+          " 2f1f77b: 41 ba 03 00 0c 00            \tmovl\t$0xc0003, %r10d         # imm = 0xC0003",
+          " 2f1f781: 45 0f a3 ca                  \tbtl\t%r9d, %r10d",
+          " 2f1f785: 0f 83 e1 01 00 00            \tjae\t0x2f1f96c <_ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb+0x4bc>",
+          " 2f1f78b: 41 ba 50 00 00 00            \tmovl\t$0x50, %r10d",
+          " 2f1f791: 4d 8b 48 08                  \tmovq\t0x8(%r8), %r9",
+          " 2f1f795: 41 bf 5f 07 00 00            \tmovl\t$0x75f, %r15d           # imm = 0x75F",
+          " 2f1f79b: 4e 3b 0c 10                  \tcmpq\t(%rax,%r10), %r9",
+          " 2f1f79f: 75 55                        \tjne\t0x2f1f7f6 <_ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb+0x346>"
+        ]
+      },
+      {
+        "warning": {
+          "line": 16,
+          "text": "BOLT-WARNING: jump past end detected at 0x2f1fc15 in function _ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE",
+          "type": 2,
+          "section": 14,
+          "address": 49412608,
+          "size": 3150
+        },
+        "next_symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo22analyzeBranchPredicateERNS_17MachineBasicBlockERNS_15TargetInstrInfo22MachineBranchPredicateEb",
+          "type": 2,
+          "section": 14,
+          "address": 49415760,
+          "size": 369
+        },
+        "jump_address": 49413141,
+        "function_end": 49415758,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE,_ZNK4llvm16AArch64InstrInfo22analyzeBranchPredicateERNS_17MachineBasicBlockERNS_15TargetInstrInfo22MachineBranchPredicateEb",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/toolchain/07.txt",
+        "near_warning": [
+          " 2f1fc08: 05 37 e1 ff ff               \taddl\t$0xffffe137, %eax       # imm = 0xFFFFE137",
+          " 2f1fc0d: b9 03 00 0c 00               \tmovl\t$0xc0003, %ecx          # imm = 0xC0003",
+          " 2f1fc12: 0f a3 c1                     \tbtl\t%eax, %ecx",
+          " 2f1fc15: 0f 83 33 0a 00 00            \tjae\t0x2f2064e <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0xc4e>",
+          " 2f1fc1b: 49 8b 46 50                  \tmovq\t0x50(%r14), %rax",
+          " 2f1fc1f: 48 89 06                     \tmovq\t%rax, (%rsi)",
+          " 2f1fc22: c7 44 24 08 01 00 00 00      \tmovl\t$0x1, 0x8(%rsp)",
+          " 2f1fc2a: 48 c7 44 24 10 00 00 00 00   \tmovq\t$0x0, 0x10(%rsp)",
+          " 2f1fc33: 48 c7 44 24 18 ff ff ff ff   \tmovq\t$-0x1, 0x18(%rsp)"
+        ]
+      },
+      {
+        "warning": {
+          "line": 17,
+          "text": "BOLT-WARNING: jump past end detected at 0x3095780 in function _ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.3519096245939212560/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.3519096245939212560",
+          "type": 2,
+          "section": 14,
+          "address": 50941952,
+          "size": 2510
+        },
+        "next_symbol": {
+          "name": "_ZN4llvm2cl3optIbLb0ENS0_6parserIbEEEC2IJA24_cNS0_12OptionHiddenENS0_11initializerIbEEEEEDpRKT_",
+          "type": 2,
+          "section": 14,
+          "address": 50944464,
+          "size": 471
+        },
+        "jump_address": 50943872,
+        "function_end": 50944462,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.3519096245939212560,_ZN4llvm2cl3optIbLb0ENS0_6parserIbEEEC2IJA24_cNS0_12OptionHiddenENS0_11initializerIbEEEEEDpRKT_",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/toolchain/08.txt",
+        "near_warning": [
+          " 3095771: b9 50 00 00 00               \tmovl\t$0x50, %ecx",
+          " 3095776: 8d b2 37 e1 ff ff            \tleal\t-0x1ec9(%rdx), %esi",
+          " 309577c: 41 0f a3 f2                  \tbtl\t%esi, %r10d",
+          " 3095780: 0f 83 48 02 00 00            \tjae\t0x30959ce <_ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.3519096245939212560+0x9ce>",
+          " 3095786: 81 fa c8 1e 00 00            \tcmpl\t$0x1ec8, %edx           # imm = 0x1EC8",
+          " 309578c: 44 89 44 24 08               \tmovl\t%r8d, 0x8(%rsp)",
+          " 3095791: 0f 8f 9d 00 00 00            \tjg\t0x3095834 <_ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.3519096245939212560+0x834>",
+          " 3095797: 81 c2 7c f7 ff ff            \taddl\t$0xfffff77c, %edx       # imm = 0xFFFFF77C",
+          " 309579d: 83 fa 02                     \tcmpl\t$0x2, %edx"
+        ]
+      },
+      {
+        "warning": {
+          "line": 18,
+          "text": "BOLT-WARNING: jump past end detected at 0x6cb9dc7 in function _ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE",
+          "type": 2,
+          "section": 14,
+          "address": 114007424,
+          "size": 74
+        },
+        "next_symbol": {
+          "name": "_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE",
+          "type": 2,
+          "section": 14,
+          "address": 114007504,
+          "size": 736
+        },
+        "jump_address": 114007495,
+        "function_end": 114007498,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE,_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/toolchain/09.txt",
+        "near_warning": [
+          " 6cb9dbc: 83 c1 c4                     \taddl\t$-0x3c, %ecx",
+          " 6cb9dbf: ba 61 00 00 00               \tmovl\t$0x61, %edx",
+          " 6cb9dc4: 0f a3 ca                     \tbtl\t%ecx, %edx",
+          " 6cb9dc7: 73 01                        \tjae\t0x6cb9dca <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x4a>",
+          " 6cb9dc9: c3                           \tretq",
+          " 6cb9dca: cc                           \tint3",
+          " 6cb9dcb: cc                           \tint3",
+          " 6cb9dcc: cc                           \tint3",
+          " 6cb9dcd: cc                           \tint3"
+        ]
+      },
+      {
+        "warning": {
+          "line": 19,
+          "text": "BOLT-WARNING: jump past end detected at 0x6cba1d6 in function _ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE",
+          "type": 2,
+          "section": 14,
+          "address": 114008448,
+          "size": 3435
+        },
+        "next_symbol": {
+          "name": "_ZN5clang8SemaObjC29handleReturnsInnerPointerAttrEPNS_4DeclERKNS_10ParsedAttrE",
+          "type": 2,
+          "section": 14,
+          "address": 114011888,
+          "size": 491
+        },
+        "jump_address": 114008534,
+        "function_end": 114011883,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE,_ZN5clang8SemaObjC29handleReturnsInnerPointerAttrEPNS_4DeclERKNS_10ParsedAttrE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/toolchain/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/toolchain/10.txt",
+        "near_warning": [
+          " 6cba1cb: 83 c1 c4                     \taddl\t$-0x3c, %ecx",
+          " 6cba1ce: ba 61 00 00 00               \tmovl\t$0x61, %edx",
+          " 6cba1d3: 0f a3 ca                     \tbtl\t%ecx, %edx",
+          " 6cba1d6: 0f 83 0f 0d 00 00            \tjae\t0x6cbaeeb <_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE+0xd6b>",
+          " 6cba1dc: 8b 56 1c                     \tmovl\t0x1c(%rsi), %edx",
+          " 6cba1df: 89 d1                        \tmovl\t%edx, %ecx",
+          " 6cba1e1: 83 e1 7f                     \tandl\t$0x7f, %ecx",
+          " 6cba1e4: 83 f9 13                     \tcmpl\t$0x13, %ecx",
+          " 6cba1e7: 40 0f 95 c7                  \tsetne\t%dil"
+        ]
+      }
+    ]
+  },
+  {
+    "project": "basedev",
+    "input": {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22",
+      "bytes": 226782848,
+      "sha256": "bf15cf062439714651809cd3b5ca82619407081adca64ceb65699e6ccae50501"
+    },
+    "loader": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+    "tool": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+    "tool_sha256": "ff9a844b46e7868041aa870936faab6fc2be4fd706af48abed954b49cd824a6e",
+    "version": "LLVM (http://llvm.org/):\n  LLVM version 22.1.8\n  Optimized build.\n\n\n  Registered Targets:\n    aarch64    - AArch64 (little endian)\n    aarch64_32 - AArch64 (little endian ILP32)\n    aarch64_be - AArch64 (big endian)\n    arm        - ARM\n    arm64      - ARM64 (little endian)\n    arm64_32   - ARM64 (little endian ILP32)\n    armeb      - ARM (big endian)\n    bpf        - BPF (host endian)\n    bpfeb      - BPF (big endian)\n    bpfel      - BPF (little endian)\n    thumb      - Thumb\n    thumbeb    - Thumb (big endian)\n    x86        - 32-bit X86: Pentium-Pro and above\n    x86-64     - 64-bit X86: EM64T and AMD64\n",
+    "debug_sections": [],
+    "relocation_sections": [
+      ".rela.dyn",
+      ".rela.plt",
+      ".relro_padding",
+      ".rela.text",
+      ".rela.init",
+      ".rela.data",
+      ".rela.fini_array",
+      ".rela.init_array",
+      ".rela.data.rel.ro",
+      ".rela.rodata"
+    ],
+    "functions": [
+      {
+        "warning": {
+          "line": 10,
+          "text": "BOLT-WARNING: jump past end detected at 0x27f0b69 in function _ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb",
+          "type": 2,
+          "section": 14,
+          "address": 41879328,
+          "size": 9566
+        },
+        "next_symbol": {
+          "name": "_ZN4llvm7BuildMIERNS_17MachineBasicBlockENS_26MachineInstrBundleIteratorINS_12MachineInstrELb0EEERKNS_10MIMetadataERKNS_11MCInstrDescENS_8RegisterE",
+          "type": 2,
+          "section": 14,
+          "address": 41888896,
+          "size": 459
+        },
+        "jump_address": 41880425,
+        "function_end": 41888894,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb,_ZN4llvm7BuildMIERNS_17MachineBasicBlockENS_26MachineInstrBundleIteratorINS_12MachineInstrELb0EEERKNS_10MIMetadataERKNS_11MCInstrDescENS_8RegisterE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/basedev/01.txt",
+        "near_warning": [
+          " 27f0b59: 0f 86 09 04 00 00            \tjbe\t0x27f0f68 <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x848>",
+          " 27f0b5f: 81 c2 9d f8 ff ff            \taddl\t$0xfffff89d, %edx       # imm = 0xFFFFF89D",
+          " 27f0b65: 48 0f a3 d0                  \tbtq\t%rdx, %rax",
+          " 27f0b69: 0f 83 0f 21 00 00            \tjae\t0x27f2c7e <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0x255e>",
+          " 27f0b6f: 48 c7 44 24 08 00 00 00 00   \tmovq\t$0x0, 0x8(%rsp)",
+          " 27f0b78: 8b 44 24 3c                  \tmovl\t0x3c(%rsp), %eax",
+          " 27f0b7c: 89 44 24 04                  \tmovl\t%eax, 0x4(%rsp)",
+          " 27f0b80: 66 0f ef c0                  \tpxor\t%xmm0, %xmm0",
+          " 27f0b84: f3 0f 7f 44 24 10            \tmovdqu\t%xmm0, 0x10(%rsp)"
+        ]
+      },
+      {
+        "warning": {
+          "line": 11,
+          "text": "BOLT-WARNING: jump past end detected at 0x27f3576 in function _ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE",
+          "type": 2,
+          "section": 14,
+          "address": 41889840,
+          "size": 8600
+        },
+        "next_symbol": {
+          "name": "_ZN4llvm7BuildMIERNS_15MachineFunctionERKNS_10MIMetadataERKNS_11MCInstrDescE",
+          "type": 2,
+          "section": 14,
+          "address": 41898448,
+          "size": 163
+        },
+        "jump_address": 41891190,
+        "function_end": 41898440,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE,_ZN4llvm7BuildMIERNS_15MachineFunctionERKNS_10MIMetadataERKNS_11MCInstrDescE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/basedev/02.txt",
+        "near_warning": [
+          " 27f3568: b9 41 40 10 04               \tmovl\t$0x4104041, %ecx        # imm = 0x4104041",
+          " 27f356d: 0f a3 c1                     \tbtl\t%eax, %ecx",
+          " 27f3570: 0f 82 ca fb ff ff            \tjb\t0x27f3140 <_ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE+0x110>",
+          " 27f3576: e9 4d 1c 00 00               \tjmp\t0x27f51c8 <_ZNK4llvm12X86InstrInfo21convertToThreeAddressERNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsE+0x2198>",
+          " 27f357b: 48 8d 15 f2 21 6a fe         \tleaq\t-0x195de0e(%rip), %rdx  # 0xe95774 <_ZTSN4llvm2cl15OptionValueCopyIjEE+0x30ad>",
+          " 27f3582: 48 63 0c 8a                  \tmovslq\t(%rdx,%rcx,4), %rcx",
+          " 27f3586: 48 01 d1                     \taddq\t%rdx, %rcx",
+          " 27f3589: ff e1                        \tjmpq\t*%rcx",
+          " 27f358b: 41 bd 5c 08 00 00            \tmovl\t$0x85c, %r13d           # imm = 0x85C"
+        ]
+      },
+      {
+        "warning": {
+          "line": 12,
+          "text": "BOLT-WARNING: jump past end detected at 0x2d00c5b in function _ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE",
+          "type": 2,
+          "section": 14,
+          "address": 47174064,
+          "size": 20882
+        },
+        "next_symbol": {
+          "name": "_ZN12_GLOBAL__N_115ARMLoadStoreOpt14FormCandidatesERKN4llvm11SmallVectorINS0_15MemOpQueueEntryELj8EEE",
+          "type": 2,
+          "section": 14,
+          "address": 47194960,
+          "size": 1562
+        },
+        "jump_address": 47189083,
+        "function_end": 47194946,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE,_ZN12_GLOBAL__N_115ARMLoadStoreOpt14FormCandidatesERKN4llvm11SmallVectorINS0_15MemOpQueueEntryELj8EEE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/basedev/03.txt",
+        "near_warning": [
+          " 2d00c4d: 81 c1 29 f8 ff ff            \taddl\t$0xfffff829, %ecx       # imm = 0xFFFFF829",
+          " 2d00c53: b8 55 00 00 00               \tmovl\t$0x55, %eax",
+          " 2d00c58: 0f a3 c8                     \tbtl\t%ecx, %eax",
+          " 2d00c5b: 0f 83 e1 16 00 00            \tjae\t0x2d02342 <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x5192>",
+          " 2d00c61: 89 f0                        \tmovl\t%esi, %eax",
+          " 2d00c63: 48 8d 0d c6 d0 18 fe         \tleaq\t-0x1e72f3a(%rip), %rcx  # 0xe8dd30 <.Lswitch.table._ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE.152>",
+          " 2d00c6a: 4c 8b 74 c1 f8               \tmovq\t-0x8(%rcx,%rax,8), %r14",
+          " 2d00c6f: e9 3b 01 00 00               \tjmp\t0x2d00daf <_ZN12_GLOBAL__N_115ARMLoadStoreOpt21LoadStoreMultipleOptiERN4llvm17MachineBasicBlockE+0x3bff>",
+          " 2d00c74: b9 55 00 00 00               \tmovl\t$0x55, %ecx"
+        ]
+      },
+      {
+        "warning": {
+          "line": 13,
+          "text": "BOLT-WARNING: jump past end detected at 0x2f1e9be in function _ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl",
+          "type": 2,
+          "section": 14,
+          "address": 49408384,
+          "size": 171
+        },
+        "next_symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE",
+          "type": 2,
+          "section": 14,
+          "address": 49408560,
+          "size": 99
+        },
+        "jump_address": 49408446,
+        "function_end": 49408555,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl,_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/basedev/04.txt",
+        "near_warning": [
+          " 2f1e9b0: 81 c6 37 e1 ff ff            \taddl\t$0xffffe137, %esi       # imm = 0xFFFFE137",
+          " 2f1e9b6: b8 03 00 0c 00               \tmovl\t$0xc0003, %eax          # imm = 0xC0003",
+          " 2f1e9bb: 0f a3 f0                     \tbtl\t%esi, %eax",
+          " 2f1e9be: 73 6b                        \tjae\t0x2f1ea2b <_ZNK4llvm16AArch64InstrInfo21isBranchOffsetInRangeEjl+0xab>",
+          " 2f1e9c0: 48 8d 05 b1 d0 65 05         \tleaq\t0x565d0b1(%rip), %rax   # 0x857ba78 <_ZL19TBZDisplacementBits+0x78>",
+          " 2f1e9c7: 8b 38                        \tmovl\t(%rax), %edi",
+          " 2f1e9c9: 48 8d 72 03                  \tleaq\t0x3(%rdx), %rsi",
+          " 2f1e9cd: 48 85 d2                     \ttestq\t%rdx, %rdx",
+          " 2f1e9d0: 48 0f 49 f2                  \tcmovnsq\t%rdx, %rsi"
+        ]
+      },
+      {
+        "warning": {
+          "line": 14,
+          "text": "BOLT-WARNING: jump past end detected at 0x2f1ea78 in function _ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE",
+          "type": 2,
+          "section": 14,
+          "address": 49408560,
+          "size": 99
+        },
+        "next_symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE",
+          "type": 2,
+          "section": 14,
+          "address": 49408672,
+          "size": 2468
+        },
+        "jump_address": 49408632,
+        "function_end": 49408659,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE,_ZNK4llvm16AArch64InstrInfo20insertIndirectBranchERNS_17MachineBasicBlockES2_S2_RKNS_8DebugLocElPNS_12RegScavengerE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/basedev/05.txt",
+        "near_warning": [
+          " 2f1ea6a: 81 c1 37 e1 ff ff            \taddl\t$0xffffe137, %ecx       # imm = 0xFFFFE137",
+          " 2f1ea70: ba 03 00 0c 00               \tmovl\t$0xc0003, %edx          # imm = 0xC0003",
+          " 2f1ea75: 0f a3 ca                     \tbtl\t%ecx, %edx",
+          " 2f1ea78: 73 19                        \tjae\t0x2f1ea93 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x63>",
+          " 2f1ea7a: ba 50 00 00 00               \tmovl\t$0x50, %edx",
+          " 2f1ea7f: 48 8b 04 10                  \tmovq\t(%rax,%rdx), %rax",
+          " 2f1ea83: c3                           \tretq",
+          " 2f1ea84: ba 10 00 00 00               \tmovl\t$0x10, %edx",
+          " 2f1ea89: 81 f9 5f 07 00 00            \tcmpl\t$0x75f, %ecx            # imm = 0x75F"
+        ]
+      },
+      {
+        "warning": {
+          "line": 15,
+          "text": "BOLT-WARNING: jump past end detected at 0x2f1f725 in function _ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb",
+          "type": 2,
+          "section": 14,
+          "address": 49411152,
+          "size": 1212
+        },
+        "next_symbol": {
+          "name": "_ZN4llvm26MachineInstrBundleIteratorINS_12MachineInstrELb0EEmmEv",
+          "type": 2,
+          "section": 14,
+          "address": 49412368,
+          "size": 55
+        },
+        "jump_address": 49411877,
+        "function_end": 49412364,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb,_ZN4llvm26MachineInstrBundleIteratorINS_12MachineInstrELb0EEmmEv",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/basedev/06.txt",
+        "near_warning": [
+          " 2f1f714: 41 81 c1 37 e1 ff ff         \taddl\t$0xffffe137, %r9d       # imm = 0xFFFFE137",
+          " 2f1f71b: 41 ba 03 00 0c 00            \tmovl\t$0xc0003, %r10d         # imm = 0xC0003",
+          " 2f1f721: 45 0f a3 ca                  \tbtl\t%r9d, %r10d",
+          " 2f1f725: 0f 83 e1 01 00 00            \tjae\t0x2f1f90c <_ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb+0x4bc>",
+          " 2f1f72b: 41 ba 50 00 00 00            \tmovl\t$0x50, %r10d",
+          " 2f1f731: 4d 8b 48 08                  \tmovq\t0x8(%r8), %r9",
+          " 2f1f735: 41 bf 5f 07 00 00            \tmovl\t$0x75f, %r15d           # imm = 0x75F",
+          " 2f1f73b: 4e 3b 0c 10                  \tcmpq\t(%rax,%r10), %r9",
+          " 2f1f73f: 75 55                        \tjne\t0x2f1f796 <_ZNK4llvm16AArch64InstrInfo13analyzeBranchERNS_17MachineBasicBlockERPS1_S4_RNS_15SmallVectorImplINS_14MachineOperandEEEb+0x346>"
+        ]
+      },
+      {
+        "warning": {
+          "line": 16,
+          "text": "BOLT-WARNING: jump past end detected at 0x2f1fbb5 in function _ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE",
+          "type": 2,
+          "section": 14,
+          "address": 49412512,
+          "size": 3150
+        },
+        "next_symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo22analyzeBranchPredicateERNS_17MachineBasicBlockERNS_15TargetInstrInfo22MachineBranchPredicateEb",
+          "type": 2,
+          "section": 14,
+          "address": 49415664,
+          "size": 369
+        },
+        "jump_address": 49413045,
+        "function_end": 49415662,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE,_ZNK4llvm16AArch64InstrInfo22analyzeBranchPredicateERNS_17MachineBasicBlockERNS_15TargetInstrInfo22MachineBranchPredicateEb",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/basedev/07.txt",
+        "near_warning": [
+          " 2f1fba8: 05 37 e1 ff ff               \taddl\t$0xffffe137, %eax       # imm = 0xFFFFE137",
+          " 2f1fbad: b9 03 00 0c 00               \tmovl\t$0xc0003, %ecx          # imm = 0xC0003",
+          " 2f1fbb2: 0f a3 c1                     \tbtl\t%eax, %ecx",
+          " 2f1fbb5: 0f 83 33 0a 00 00            \tjae\t0x2f205ee <_ZL15parseCondBranchPN4llvm12MachineInstrERPNS_17MachineBasicBlockERNS_15SmallVectorImplINS_14MachineOperandEEE+0xc4e>",
+          " 2f1fbbb: 49 8b 46 50                  \tmovq\t0x50(%r14), %rax",
+          " 2f1fbbf: 48 89 06                     \tmovq\t%rax, (%rsi)",
+          " 2f1fbc2: c7 44 24 08 01 00 00 00      \tmovl\t$0x1, 0x8(%rsp)",
+          " 2f1fbca: 48 c7 44 24 10 00 00 00 00   \tmovq\t$0x0, 0x10(%rsp)",
+          " 2f1fbd3: 48 c7 44 24 18 ff ff ff ff   \tmovq\t$-0x1, 0x18(%rsp)"
+        ]
+      },
+      {
+        "warning": {
+          "line": 17,
+          "text": "BOLT-WARNING: jump past end detected at 0x3095740 in function _ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.16369883096672426180/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.16369883096672426180",
+          "type": 2,
+          "section": 14,
+          "address": 50941888,
+          "size": 2510
+        },
+        "next_symbol": {
+          "name": "_ZN4llvm2cl3optIbLb0ENS0_6parserIbEEEC2IJA24_cNS0_12OptionHiddenENS0_11initializerIbEEEEEDpRKT_",
+          "type": 2,
+          "section": 14,
+          "address": 50944400,
+          "size": 471
+        },
+        "jump_address": 50943808,
+        "function_end": 50944398,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.16369883096672426180,_ZN4llvm2cl3optIbLb0ENS0_6parserIbEEEC2IJA24_cNS0_12OptionHiddenENS0_11initializerIbEEEEEDpRKT_",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/basedev/08.txt",
+        "near_warning": [
+          " 3095731: b9 50 00 00 00               \tmovl\t$0x50, %ecx",
+          " 3095736: 8d b2 37 e1 ff ff            \tleal\t-0x1ec9(%rdx), %esi",
+          " 309573c: 41 0f a3 f2                  \tbtl\t%esi, %r10d",
+          " 3095740: 0f 83 48 02 00 00            \tjae\t0x309598e <_ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.16369883096672426180+0x9ce>",
+          " 3095746: 81 fa c8 1e 00 00            \tcmpl\t$0x1ec8, %edx           # imm = 0x1EC8",
+          " 309574c: 44 89 44 24 08               \tmovl\t%r8d, 0x8(%rsp)",
+          " 3095751: 0f 8f 9d 00 00 00            \tjg\t0x30957f4 <_ZN12_GLOBAL__N_119AArch64CondBrTuning20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.16369883096672426180+0x834>",
+          " 3095757: 81 c2 7c f7 ff ff            \taddl\t$0xfffff77c, %edx       # imm = 0xFFFFF77C",
+          " 309575d: 83 fa 02                     \tcmpl\t$0x2, %edx"
+        ]
+      },
+      {
+        "warning": {
+          "line": 18,
+          "text": "BOLT-WARNING: jump past end detected at 0x6cb9d17 in function _ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE",
+          "type": 2,
+          "section": 14,
+          "address": 114007248,
+          "size": 74
+        },
+        "next_symbol": {
+          "name": "_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE",
+          "type": 2,
+          "section": 14,
+          "address": 114007328,
+          "size": 736
+        },
+        "jump_address": 114007319,
+        "function_end": 114007322,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE,_ZN5clang8SemaObjC32checkNSReturnsRetainedReturnTypeENS_14SourceLocationENS_8QualTypeE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/basedev/09.txt",
+        "near_warning": [
+          " 6cb9d0c: 83 c1 c4                     \taddl\t$-0x3c, %ecx",
+          " 6cb9d0f: ba 61 00 00 00               \tmovl\t$0x61, %edx",
+          " 6cb9d14: 0f a3 ca                     \tbtl\t%ecx, %edx",
+          " 6cb9d17: 73 01                        \tjae\t0x6cb9d1a <_ZN5clang8SemaObjC31parsedAttrToRetainOwnershipKindERKNS_10ParsedAttrE+0x4a>",
+          " 6cb9d19: c3                           \tretq",
+          " 6cb9d1a: cc                           \tint3",
+          " 6cb9d1b: cc                           \tint3",
+          " 6cb9d1c: cc                           \tint3",
+          " 6cb9d1d: cc                           \tint3"
+        ]
+      },
+      {
+        "warning": {
+          "line": 19,
+          "text": "BOLT-WARNING: jump past end detected at 0x6cba126 in function _ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE",
+          "type": 2,
+          "section": 14,
+          "address": 114008272,
+          "size": 3435
+        },
+        "next_symbol": {
+          "name": "_ZN5clang8SemaObjC29handleReturnsInnerPointerAttrEPNS_4DeclERKNS_10ParsedAttrE",
+          "type": 2,
+          "section": 14,
+          "address": 114011712,
+          "size": 491
+        },
+        "jump_address": 114008358,
+        "function_end": 114011707,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/basedev/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE,_ZN5clang8SemaObjC29handleReturnsInnerPointerAttrEPNS_4DeclERKNS_10ParsedAttrE",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/local-full-r6-20261111-materials/basedev/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/basedev/10.txt",
+        "near_warning": [
+          " 6cba11b: 83 c1 c4                     \taddl\t$-0x3c, %ecx",
+          " 6cba11e: ba 61 00 00 00               \tmovl\t$0x61, %edx",
+          " 6cba123: 0f a3 ca                     \tbtl\t%ecx, %edx",
+          " 6cba126: 0f 83 0f 0d 00 00            \tjae\t0x6cbae3b <_ZN5clang8SemaObjC27handleXReturnsXRetainedAttrEPNS_4DeclERKNS_10ParsedAttrE+0xd6b>",
+          " 6cba12c: 8b 56 1c                     \tmovl\t0x1c(%rsi), %edx",
+          " 6cba12f: 89 d1                        \tmovl\t%edx, %ecx",
+          " 6cba131: 83 e1 7f                     \tandl\t$0x7f, %ecx",
+          " 6cba134: 83 f9 13                     \tcmpl\t$0x13, %ecx",
+          " 6cba137: 40 0f 95 c7                  \tsetne\t%dil"
+        ]
+      }
+    ]
+  },
+  {
+    "project": "pgo",
+    "input": {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize/temp/pgo-bolt-followup-20261105/reference-relocs-clang-22",
+      "bytes": 212193208,
+      "sha256": "1a72e99d92b857524a82c5cff257b48fc72b56e6290f6b90cd5d0dadd31741f7"
+    },
+    "loader": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+    "tool": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+    "tool_sha256": "932ee69bb4993a2d66ab787ba2b0c4d5671d13d59babf42eae940821a5708c75",
+    "version": "LLVM (http://llvm.org/):\n  LLVM version 22.1.8\n  Optimized build.\n\n\n  Registered Targets:\n    aarch64    - AArch64 (little endian)\n    aarch64_32 - AArch64 (little endian ILP32)\n    aarch64_be - AArch64 (big endian)\n    arm        - ARM\n    arm64      - ARM64 (little endian)\n    arm64_32   - ARM64 (little endian ILP32)\n    armeb      - ARM (big endian)\n    bpf        - BPF (host endian)\n    bpfeb      - BPF (big endian)\n    bpfel      - BPF (little endian)\n    thumb      - Thumb\n    thumbeb    - Thumb (big endian)\n    x86        - 32-bit X86: Pentium-Pro and above\n    x86-64     - 64-bit X86: EM64T and AMD64\n",
+    "debug_sections": [],
+    "relocation_sections": [
+      ".rela.dyn",
+      ".rela.plt",
+      ".relro_padding",
+      ".rela.text",
+      ".rela.init",
+      ".rela.data",
+      ".rela.fini_array",
+      ".rela.init_array",
+      ".rela.data.rel.ro",
+      ".rela.rodata"
+    ],
+    "functions": [
+      {
+        "warning": {
+          "line": 10,
+          "text": "BOLT-WARNING: jump past end detected at 0x3ee314a in function _ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE",
+          "type": 2,
+          "section": 14,
+          "address": 65941760,
+          "size": 90
+        },
+        "next_symbol": {
+          "name": "_ZN12_GLOBAL__N_112FinalizeISel20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.5148459099903333794",
+          "type": 2,
+          "section": 14,
+          "address": 65941856,
+          "size": 13
+        },
+        "jump_address": 65941834,
+        "function_end": 65941850,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE,_ZN12_GLOBAL__N_112FinalizeISel20runOnMachineFunctionERN4llvm15MachineFunctionE.llvm.5148459099903333794",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/pgo-bolt-followup-20261105/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/pgo/01.txt",
+        "near_warning": [
+          " 3ee313c: 81 c1 37 e1 ff ff            \taddl\t$0xffffe137, %ecx       # imm = 0xFFFFE137",
+          " 3ee3142: ba 03 00 0c 00               \tmovl\t$0xc0003, %edx          # imm = 0xC0003",
+          " 3ee3147: 0f a3 ca                     \tbtl\t%ecx, %edx",
+          " 3ee314a: 73 0e                        \tjae\t0x3ee315a <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x5a>",
+          " 3ee314c: ba 50 00 00 00               \tmovl\t$0x50, %edx",
+          " 3ee3151: eb c2                        \tjmp\t0x3ee3115 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x15>",
+          " 3ee3153: ba 70 00 00 00               \tmovl\t$0x70, %edx",
+          " 3ee3158: eb bb                        \tjmp\t0x3ee3115 <_ZNK4llvm16AArch64InstrInfo18getBranchDestBlockERKNS_12MachineInstrE+0x15>",
+          " 3ee315a: cc                           \tint3"
+        ]
+      },
+      {
+        "warning": {
+          "line": 11,
+          "text": "BOLT-WARNING: jump past end detected at 0x4a05080 in function _ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb/1 : replacing with nop.",
+          "kind": "nop"
+        },
+        "symbol": {
+          "name": "_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb",
+          "type": 2,
+          "section": 14,
+          "address": 77613088,
+          "size": 4090
+        },
+        "next_symbol": {
+          "name": "_ZN4llvmL9addRegRegERKNS_19MachineInstrBuilderENS_8RegisterEbjS3_bj",
+          "type": 2,
+          "section": 14,
+          "address": 77617184,
+          "size": 179
+        },
+        "jump_address": 77615232,
+        "function_end": 77617178,
+        "argv": [
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64/ld-linux-x86-64.so.2",
+          "--library-path",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+          "-d",
+          "--disassemble-symbols=_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb,_ZN4llvmL9addRegRegERKNS_19MachineInstrBuilderENS_8RegisterEbjS3_bj",
+          "/home/linhao/Toolchain/development/llvm-optimize/temp/pgo-bolt-followup-20261105/reference-relocs-clang-22"
+        ],
+        "rc": 0,
+        "output": "tools/bolt/results/night-86-20261114/disassembly/pgo/02.txt",
+        "near_warning": [
+          " 4a05070: 0f 86 bb 01 00 00            \tjbe\t0x4a05231 <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0xa11>",
+          " 4a05076: 81 c2 9d f8 ff ff            \taddl\t$0xfffff89d, %edx       # imm = 0xFFFFF89D",
+          " 4a0507c: 48 0f a3 d0                  \tbtq\t%rdx, %rax",
+          " 4a05080: 0f 83 94 07 00 00            \tjae\t0x4a0581a <_ZNK4llvm12X86InstrInfo28convertToThreeAddressWithLEAEjRNS_12MachineInstrEPNS_13LiveVariablesEPNS_13LiveIntervalsEb+0xffa>",
+          " 4a05086: 45 31 ff                     \txorl\t%r15d, %r15d",
+          " 4a05089: 48 8d 5c 24 10               \tleaq\t0x10(%rsp), %rbx",
+          " 4a0508e: 4c 89 7b 08                  \tmovq\t%r15, 0x8(%rbx)",
+          " 4a05092: 8b 44 24 04                  \tmovl\t0x4(%rsp), %eax",
+          " 4a05096: 89 43 04                     \tmovl\t%eax, 0x4(%rbx)"
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,163 @@
+312: def ir_settings(lines, require_recorded_options=True, arch='x86_64', debug_info=None):
+313:     """Read LLVM 22 textual metadata/attributes without modifying input IR."""
+314:     retained, metadata = [], {}
+315:     triple, command_id = None, None
+316:     levels, cpus, features = {}, set(), set()
+317:     for line in lines:
+318:         # Intrinsic references, not string literals in LLVM's own implementation.
+319:         for intrinsic in ('llvm.type.test', 'llvm.public.type.test'):
+320:             if re.search(r'@'+re.escape(intrinsic)+r'(?:\.|\s*\()', line):
+321:                 raise ValueError('unsupported type metadata/intrinsic: '+intrinsic)
+322:         if re.search(r'!vcall_visibility\b', line):
+323:             raise ValueError('unsupported type metadata: !vcall_visibility')
+324:         if re.search(r'!"EnableSplitLTOUnit"\s*,\s*i32\s+1\b', line):
+325:             raise ValueError('unsupported type metadata: EnableSplitLTOUnit=1')
+326:         if line.startswith('!llvm.commandline = '):
+327:             match = re.fullmatch(r'!llvm.commandline = !\{!(\d+)\}\s*', line)
+328:             if not match or command_id is not None:
+329:                 raise ValueError('exactly one recorded command is required')
+330:             command_id = match[1]
+331:         match = re.fullmatch(r'!(\d+) = !\{!"(.*)"\}\s*', line)
+332:         if match:
+333:             metadata[match[1]] = match[2]
+334:         if line.startswith('target triple = '):
+335:             value = line.split('"')[1]
+336:             if triple is not None:
+337:                 raise ValueError('multiple IR triples')
+338:             triple = value; retained.append(line.rstrip())
+339:         if line.startswith('attributes #'):
+340:             retained.append(line.rstrip())
+341:             cpus.update(re.findall(r'"target-cpu"="([^"]+)"', line))
+342:             features.update(re.findall(r'"target-features"="([^"]+)"', line))
+343:         if line.startswith('!') and any('"'+n+'"' in line for n in ('PIC Level', 'PIE Level', 'Code Model')):
+344:             retained.append(line.rstrip())
+345:             match = re.search(r'!"(PIC Level|PIE Level|Code Model)", i32 (\d+)', line)
+346:             if not match:
+347:                 raise ValueError('unrecognized relocation flag: '+line.rstrip())
+348:             key, value = match.groups()
+349:             if key in levels and levels[key] != int(value):
+350:                 raise ValueError('conflicting relocation flags')
+351:             levels[key] = int(value)
+352:     if triple not in CERTIFIED_TRIPLES.get(arch, set()):
+353:         raise ValueError('uncertified '+arch+' IR triple: '+str(triple))
+354:     pic, pie = levels.get('PIC Level', 0), levels.get('PIE Level', 0)
+355:     if pic not in (0, 1, 2) or pie not in (0, 1, 2) or (pie and pie != pic):
+356:         raise ValueError('unsupported PIC/PIE flags')
+357:     if 'Code Model' in levels:
+358:         raise ValueError('explicit code model requires separate certification')
+359:     if command_id not in metadata:
+360:         raise ValueError('missing original command: backend policy cannot be certified')
+361:     recorded_command = shlex.split(re.sub(r'\\([0-9A-Fa-f]{2})',
+362:         lambda match: chr(int(match[1], 16)), metadata[command_id]))
+363:     found_debug = 'yes' if any(token.startswith('-g') for token in recorded_command) else 'no'
+364:     if debug_info is not None and debug_info != found_debug:
+365:         raise ValueError('debug-info expected %s, found %s' %
+366:                          ('debug' if debug_info == 'yes' else 'release',
+367:                           'debug' if found_debug == 'yes' else 'release'))
+368:     policy = classify_options(recorded_command, arch)
+369:     flags = ['--no-default-config', '--target='+triple, '-x', 'ir', policy['optimization'],
+370:              *(('-f'+key) if policy['switches'][key] else ('-fno-'+key)
+371:                for key in SWITCH_KEYS)]
+372:     if policy['dwarf']:
+373:         flags += ['-g', policy['dwarf']]
+374:     flags += ['-ffp-contract='+policy['fp_contract'], '-c']
+375:     flags += ([{1: '-fpie', 2: '-fPIE'}[pie]] if pie else
+376:               [{1: '-fpic', 2: '-fPIC'}[pic]] if pic else ['-fno-pic', '-fno-pie'])
+377:     return dict(triple=triple, pic_level=pic, pie_level=pie, target_cpu=sorted(cpus),
+378:                 target_features=sorted(features), flags=flags, evidence=retained,
+379:                 recorded_command=recorded_command, policy=policy)
+
+471: def pic_relocations(data):
+472:     """Validate x86_64 ET_REL tables and reject non-PIC ALLOC relocations.
+473: 
+474:     Absolute 8-, 16- and 32-bit relocations against non-absolute symbols
+475:     are forbidden in both writable and read-only ALLOC sections; 64-bit
+476:     absolute relocations are forbidden in read-only ALLOC sections.
+477:     SHN_ABS references remain allowed. Debug sections are excluded from
+478:     the PIC policy, but all relocation indexes and target byte ranges are
+479:     validated. PC-relative relocations may be legitimate (e.g. .eh_frame).
+480:     """
+481:     if (len(data) < 64 or member_kind(data) != 'machine' or
+482:             data[4:6] != b'\x02\x01' or struct.unpack_from('<H', data, 18)[0] != 62):
+483:         raise ValueError('not x86_64 ELF64 little-endian ET_REL')
+484:     off = struct.unpack_from('<Q', data, 40)[0]
+485:     stride, count = struct.unpack_from('<HH', data, 58)
+486:     if not off or stride != 64 or off + 64 > len(data):
+487:         raise ValueError('invalid ELF section table')
+488:     if not count:
+489:         count = struct.unpack_from('<IIQQQQIIQQ', data, off)[5]
+490:     if not count or count > (len(data)-off) // stride:
+491:         raise ValueError('ELF section table outside member')
+492:     sections = [struct.unpack_from('<IIQQQQIIQQ', data, off+i*stride) for i in range(count)]
+493:     checked, forbidden = 0, []
+494:     for section in sections:
+495:         if section[1] == 0x40000014:
+496:             raise ValueError('unsupported CREL relocation section')
+497:         if section[1] not in (0, 8) and section[4] + section[5] > len(data):
+498:             raise ValueError('ELF section outside member')
+499:     for section in sections:
+500:         if section[1] not in (4, 9):
+501:             continue
+502:         if section[6] >= count or section[7] >= count:
+503:             raise ValueError('relocation link/info outside section table')
+504:         target = sections[section[7]]
+505:         limit = target[5]
+506:         if target[2] & 0x800:  # SHF_COMPRESSED: offsets use uncompressed size.
+507:             if target[5] < 24 or target[4] + 24 > len(data):
+508:                 raise ValueError('short compressed ELF section header')
+509:             limit = struct.unpack_from('<IIQQ', data, target[4])[2]
+510:         symbols = sections[section[6]]
+511:         if (symbols[1] != 2 or symbols[9] != 24 or symbols[5] % 24 or
+512:                 symbols[4] + symbols[5] > len(data)):
+513:             raise ValueError('invalid relocation symbol table')
+514:         relocation_stride = 24 if section[1] == 4 else 16
+515:         if (section[9] != relocation_stride or section[5] % relocation_stride or
+516:                 section[4] + section[5] > len(data)):
+517:             raise ValueError('invalid relocation table')
+518:         symbol_count = symbols[5] // 24
+519:         for pos in range(section[4], section[4]+section[5], section[9]):
+520:             r_offset, info = struct.unpack_from('<QQ', data, pos)
+521:             kind, symbol_index = info & 0xffffffff, info >> 32
+522:             if kind not in X86_64_RELOCATION_WIDTHS:
+523:                 raise ValueError('uncertified x86_64 relocation type: '+str(kind))
+524:             if kind != 0 and r_offset + X86_64_RELOCATION_WIDTHS[kind] > limit:
+525:                 raise ValueError('relocation offset outside target section')
+526:             if symbol_index >= symbol_count:
+527:                 raise ValueError('relocation symbol index outside table')
+528:             symbol = struct.unpack_from('<IBBHQQ', data, symbols[4]+symbol_index*symbols[9])
+529:             if not target[2] & 2:
+530:                 continue
+531:             checked += 1
+532:             # SHN_ABS references do not need runtime relocation.
+533:             if symbol[3] != 0xfff1 and (kind in (10, 11, 12, 14) or (kind == 1 and not target[2] & 1)):
+534:                 forbidden.append(dict(type=kind, target_section=section[7], symbol_index=symbol_index))
+535:     return dict(checked=checked, forbidden=forbidden)
+
+847:             def process(item):
+848:                 member, source, target = item
+849:                 command.check()
+850:                 if member['kind'] == 'machine':
+851:                     if sha(target) != member['sha256']:
+852:                         raise ValueError('native member changed')
+853:                     relocs = pic_relocations(target.read_bytes())
+854:                     atomic_json(source.parent/'relocations.json', relocs)
+855:                     return dict(ordinal=member['ordinal'], name=member['name'], preserved=True,
+856:                                 relocation_check=relocs)
+857:                 text_ir = source.with_suffix('.ll')
+858:                 with text_ir.open('wb') as out:
+859:                     command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
+860:                 with text_ir.open() as lines:
+861:                     settings = ir_settings(lines, arch=arch, debug_info=debug_info)
+862:                 atomic_json(source.parent/'ir-settings.json', settings)
+863:                 text_ir.unlink()
+864:                 record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
+865:                 data = target.read_bytes()
+866:                 if settings['policy']['dwarf'] is None and elf_details(data)[1]:
+867:                     raise ValueError('release conversion unexpectedly emitted debug sections')
+868:                 relocs = pic_relocations(data)
+869:                 atomic_json(source.parent/'relocations.json', relocs)
+870:                 if settings['pic_level'] and relocs['forbidden']:
+871:                     raise ValueError('non-PIC relocation in '+str(target))
+872:                 symbols = check_symbols(nm, source, target, command)
+873:                 return dict(ordinal=member['ordinal'], name=member['name'], preserved=False,
+874:                             settings=settings, conversion=record, symbols=symbols, sha256=sha(target))
