@@ -1,0 +1,477 @@
+
+docs/bolt/design/tizen_llvm_speed_design_v9.md
+96: 
+97: - 速度数据只能作为方向参考，不能作为结论。
+98: - 沿用旧 BOLT profile 时，在 PGO 版 clang 上有 85.3% 的函数 profile 过期，BOLT 硬失败。重新采集后 R = 0.005%，通过。
+99: - 58、59 号的 BOLT 日志里都有 1551 条 relocation 分析警告，还有两处"jump past end … replacing with nop"，分别在 `AArch64InstrInfo::getBranchDestBlock` 和 `X86InstrInfo::convertToThreeAddressWithLEA`，即 AArch64 和 x86_64 两个后端。这两处至今没有解释（第 2.5、8 节）。
+100: - -use-old-text 放不下时，BOLT 只给警告，退出码为 0。但这个输出还没有完成发布级的正确性认证，不能直接当作"可用"。
+101: 
+102: ## 2. BOLT+PGO 产品化
+103: 
+104: ### 2.1 候选方案
+105: 
+106: | 方案 | 构建内做什么 | 构建时间 | 资源 | 主要代价 |
+107: |---|---|---|---|---|
+108: | 甲：构建内完整 PGO | 插桩构建 → 训练 → 合并 → 带 profile 正式构建 → BOLT 插桩、训练、优化 | 新增步骤约 81 分钟（历史分项相加的规划值，不是同基线完整构建的受控增量） | 单进程峰值 VmHWM 17.0e9 B（BOLT 插桩）；磁盘已知部分规划下界约 92–96 GiB，加 30 GiB 保留线后为 122–126 GiB（59 号第 3、7 节），真实峰值未测 | 时间和磁盘最大；需要在构建内新增 merge-fdata、插桩 runtime，以及训练输入作为源文件 |
+109: | 乙一：两份 profile 都预采集，离线成对生成（推荐） | 带 PGO profile 正式构建 → 用预采集的 BOLT profile 做 rewrite（流程与现状相同） | 省去构建内采集步骤；但 PGO 可能改变编译、链接、静态库转换和 BOLT 各阶段的耗时与资源，整包增量待同基线实测 | 待实测 | 两份 profile 必须与构建输入严格对应；输入一变，就要离线重新生成或重新认证 |
+110: | 乙二：PGO profile 预采集，BOLT profile 在构建内采集 | 带 profile 正式构建 → 构建内 BOLT 插桩、训练、合并、优化 | 在乙一基础上再 +461 s（实测） | 单进程峰值 VmHWM 17.0e9 B；临时磁盘约 +3.8 GB（插桩 clang 0.58 GB + 原始 fdata 3.0 GB + 合并结果 0.19 GB） | 改动已通过评审的 BOLT 流程：新增两个 ninja 目标，重新认证 111+2 任务白名单，替换 profile SHA 门禁；23 份训练输入及其完整编译参数要作为源文件发布 |
+111: 
+112: 推荐乙一，理由如下：
+113: 
+114: - 它是现状的最小扩展。现在的 BOLT profile 已经是预采集、随源码发布的，乙一只是把 PGO profile 用同一套机制一起发布。
+115: - BOLT 的流程、匹配公式与阈值（-stale-threshold=5，R 和 S/N 都不超过 5%）、rewrite 参数都不变。需要改的是 helper 中固定的 profile 身份：从一份改为按开关组合选择两份（第 2.2 节），并在新配置下重新确认任务闭包、工具构建和全部门禁。
+116: - 体积可接受。合并后的 BOLT profile 约 194 MB，按现有 Source1200 的压缩比看，压缩后预计在 10–20 MB 量级；PGO profdata 52.5 MB，压缩后的大小待测。
+117: 
+118: 乙一具有可行性依据：基线是自托管构建（用快照里的上一版 clang 编译 llvm 包），63 号已证明同一提交、同一快照下，本地与 QB 的 clang 逐字节相同。但 63 号只证明了已测的非 PGO 配方在指定快照下可复现，不能直接推出 PGO 配方、或换一个构建编译器时也同样可复现。离线 profile 是否适用，由第 2.2 节的输入身份检查、实际产物身份和兼容性认证共同确认。
+119: 
+120: 乙二和甲都保留为备选，不作为默认方案。
+121: 
+122: ### 2.2 乙一的具体设计
+123: 
+124: **离线生成**（独立脚本，不在 RPM 构建内运行）
+125: 
+126: - 在与 QB 相同快照的 gbs 根里，按甲的流程一次完成以下步骤：
+127:   1. 构建插桩 clang；
+128:   2. PGO 训练，合并得到 llvm.profdata；
+129:   3. 用这份 profdata 构建正式的 PGO clang；
+130:   4. 在这个 PGO clang 上做 BOLT 插桩、训练、合并，得到 BOLT profile。
+131: - 两份 profile 和一份共同清单 `llvm-profiles.manifest` 在同一次运行中产生，不能分开替换。
+132: - 清单记录：
+133:   - 输入身份（定义见下）；
+134:   - spec 提交与 tree；
+135:   - 快照名与 build.conf SHA；
+136:   - 插桩参数，包括 `-mllvm -vp-counters-per-site` 的取值；
+137:   - PGO 与 BOLT 两份训练清单（含 SHA 和完整编译参数）；
+138:   - llvm-profdata、llvm-bolt、merge-fdata 的版本与 SHA；
+139:   - 插桩运行期间 `LLVM Profile Warning` 的条数与首行原文；
+140:   - 两份 profile 的 SHA 与大小（压缩前、压缩后）；
+141:   - BOLT 匹配结果（N/M/S/U/Q、R、S/N）。
+
+docs/bolt/design/tizen_llvm_speed_design_v9.md
+149:   - 现有 BOLT 的 23 份训练输入（13 份 ARM + 10 份 AArch64，其中 3 份是合成文件）只能作为初始资产，未经审计不能声称代表全平台负载。
+150: 
+151: **输入身份**：分为强制比对的部分和只记录的部分。清单分成两部分：一是"配方摘要"，即生成 profile 时的编译输入；二是"资产清单"，即生成出来的 profile 及其 SHA。资产本身不计入配方摘要，避免自引用。
+152: 
+153: 强制比对（不一致则构建失败）：
+154: 
+155: 1. **编译输入的内容摘要。** 在 %prep 结束、全部补丁已经应用之后，对解出的源码树求确定性摘要：按相对路径排序，计入路径、文件类型、有效 mode、符号链接目标和文件内容；不计时间戳。%prep 解出的 MLGO 模型资产在源码树内，一并计入。
+156:    - 不对补丁文件本身求摘要。73 号中，0008 补丁只因提交说明折行，SHA 就从 ffe7768b… 变为 afca2209…，而代码正文逐字节相同；按补丁文件求摘要，会让每次只改提交说明、补丁重新编号或拆分的发布都失配。上游源码包和各补丁文件的 SHA 另行写入清单，作为来源记录，不作为身份判据。
+157:    - 排除规则作用于展开并应用补丁之后的路径，不作用于补丁容器文件。以下内容明确排除；排除清单同时写进 spec 注释和清单，增删需要评审：
+158:      - 源码树中的 `packaging/` 目录（如果源码包把它带进了源码树）；
+159:      - `llvm.spec`：其中影响编译的部分，由第 2 项的实际参数和 cmake 命令行覆盖；另外 GBS 写入的 VCS 行每个提交都会变化；
+160:      - `clang-bolt-helper.py`、`llvm-static-archives-native.py`：只做门禁和归档转换，不参与 clang 的编译；
+161:      - PGO profile、BOLT profile 和清单本身。
+162:    - 求摘要会多遍历一次源码树，耗时在实施时实测并记入第 2.4 节报备。
+163: 
+164:    清单记录生成 profile 时所用的配方提交；包含这些资产的发布提交，由发布记录另行绑定。
+165: 2. **实际生效的固定编译与链接参数串，以及 %build 中完整的 cmake 命令行**（全部 -D 选项原样计入，不做"是否影响代码生成"的人工筛选）。两个例外：
+166:    - 调度参数：`LLVM_PARALLEL_COMPILE_JOBS`、`LLVM_PARALLEL_LINK_JOBS`、ninja -j 和 ThinLTO backend 线程数，只记录、不强制。这一例外的前提，是第 4.2 节并行度调参按口径 A 的逐字节实证通过；实证不通过，就收回这一例外。
+167:    - `LLVM_PROFDATA_FILE`：比较所指文件的 SHA，不比较路径。离线生成与 GBS 构建中 profile 的存放路径可能不同。
+168:    - 源码树内资产的路径参数：spec 用 `$PWD` 拼出 MLGO 模型和运行时对象的路径（如 `TENSORFLOW_AOT_PATH`、`LLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS` 及四个模型 header/object 参数），同一份资产放在不同构建目录时参数串就不同。对明确列出的这些参数，保存原始 argv，另外生成一份用于身份比较的表示：路径改写为相对 %prep 源码根的路径，并附所指资产的内容摘要。不得对整个参数串做路径替换，也不得规范化目标三元组、sysroot、安装路径或未列出的参数。构建根本身作为强制身份字段单独比较（第 4 项），不同构建根就是不同身份。
+169: 3. **构建工具链的上游版本号。** 不按包名查询：本 spec 不产生名为 `lld` 的包，lld、ld.lld 都在 llvm 主包里（spec %files 第 735–736 行），`rpm -q lld` 在正常构建根里会因"未安装"而失败。改为按实际使用的工具检查：
+170:    - 从 CMakeCache.txt 取 `CMAKE_C_COMPILER`、`CMAKE_CXX_COMPILER`、`CMAKE_AR`、`CMAKE_RANLIB`；链接器由构建编译器的 `-print-prog-name=ld.lld` 解析（对应 `LLVM_USE_LINKER=lld`）。
+171:    - 每个工具解析为真实路径，执行 `rpm -qf --qf '%{NAME} %{VERSION} %{RELEASE}\n'`，并解析工具自身 `--version` 输出的上游版本号。
+172:    - 任一工具不属于任何包、版本无法解析、`rpm` 的 VERSION 与工具自报版本不一致，或与认证身份的上游版本号（例如 22.1.8）不一致，就失败。包名、路径和 Release 只记录。
+173:    - 检查的是绝对路径指向的实际文件，PATH 中另一个同名工具不影响结果。
+174: 4. **CMake 配置结果。** cmake 完成后，对生成的配置头求内容摘要：`include/llvm/Config/config.h`、`llvm-config.h`、`abi-breaking.h`、`Targets.def`、`AsmPrinters.def`、`AsmParsers.def`、`Disassemblers.def`、`TargetMCAs.def`、`tools/clang/include/clang/Config/config.h`。
+175:    - 理由：spec 没有显式设置 zlib、zstd、libxml2、terminfo、libedit、libffi 等功能开关，LLVM 会按构建根里能否找到这些开发包自动开关，clang 的代码随之改变。这些结果不出现在 cmake 命令行里，而构建根包清单只记录、不强制，前三项全部通过时这类差异会被放过。
+176:    - 配置结果还包括 CMake 编译参数探测（HandleLLVMOptions 中 `check_*_compiler_flag` 的结果）以及它对最终编译命令的影响。这些结果既不在 cmake 命令行里，也不在配置头里。对 clang、lld、llvm-ar 及其依赖库的全部编译边，记录有序的 FLAGS、DEFINES、INCLUDES（CMake 探测到的宏和头文件目录在后两者里），按实际规则展开响应文件，不排序、不去重。
+177:    - 用于身份比较的路径表示，沿用第 2 项的显式白名单及其认证结果，不另行采用"删除构建目录前缀"这类通用规则；宏字符串值和 prefix-map 规则不做通用路径替换。PGO 开启时，FLAGS 里的 `-fprofile-instr-use=` 按第 2 项 `LLVM_PROFDATA_FILE` 的规则改为所指文件的 SHA。原始表示和比较表示同时保存。
+178:    - **构建根路径单独作为强制身份字段。** 全部编译边的 INCLUDES 都含构建根下的绝对路径（GBS 和 QB 目前都是 `/home/abuild/rpmbuild/BUILD/llvm-22.1.8`），白名单不覆盖它们，所以构建根一变，身份必然失配。构建根的原文单独记录、单独比较。
+179:    - 验证用例：
+180:      - 构建根相同，只把同一份已认证资产放到白名单允许的另一位置：按认证路径规则通过；
+181:      - 换构建根：必须失配；
+182:      - 资产内容改变、DEFINES 改变、包含目录顺序改变：必须失配；
+183:      - 参数字符串中恰好含构建根前缀：不能被隐藏。
+184:    - 第 2 项中"用两个不同路径的构建根做对照认证"的要求，随这一条改为：构建根不同就是不同身份，不做跨构建根的认证。
+185:    - 实施前，先逐行审计这些头文件和参数摘要：找出随构建根变化、但不影响 x86_64 代码生成的字段（例如 clang 的 HOST_LINK_VERSION），列入排除规则；同时确认清单是否完整。审计结果写成固定附件，冻结之后才启用。审计未完成，乙一不上线。
+186: 
+187: 只记录、不强制（不一致时只在构建日志中打 warning）：
+188: 
+189: - 构建工具链的 Release 号与 VCS 提交号；
+190: - 编译器、链接器、归档工具二进制的 SHA；
+191: - 构建根完整包清单（rpm -qa 排序后）的摘要，以及其中 gcc、libstdc++、glibc 等头文件和库所在包的版本；
+192: - 快照名；
+193: - 上游源码包和各补丁文件的 SHA。
+194: 
+195: 这样分的理由：基线是自托管构建，每次 QB 重建，下一次构建都会拿到新的编译器二进制，以及新的 Release 号和 VCS（71 号中 T 的 Release 为 2.1、D 为 5.1，VCS 随每个提交变化）。如果把这些设为强制，每发布一次就必须追加认证一次。
+196: 
+197: 这一折中的保证范围有限，要写明：
+198: - 上游版本号相同，只说明来源声明一致，不等于构建输入等价。
+199: - 配置结果摘要能拦住构建根中功能开关的变化，但拦不住构建编译器或 libstdc++ 头文件本身的变化。
+200: - BOLT 匹配门禁只检查 BOLT profile 的适配程度，不能替代 PGO、功能和消费者性能的认证；在"PGO 开、BOLT 关"的组合下，它完全不起作用。
+201: - 快照漂移（构建编译器、libstdc++ 头文件等）会不会改变 clang 自身的代码，由下面的 T/D 归因实验给出证据。证据出来之前，这一折中只是临时安排，最终是否把工具链 Release 号或 libstdc++ 版本改为强制，由第 7 节裁决。
+202: 
+203: **T/D 两个身份与归因实验**：Toolchain（debug）和 Base-Dev（release）先作为两个不同的身份。同一份 BOLT profile 在 QB 上，Toolchain 的过期函数数 S=0，Base-Dev 为 S=23（71 号）。这说明两边送进 BOLT 的 clang 相对这份 profile 的匹配结果不同；它不给出两边全部代码差异的数量，也不给出原因。两边至少有三处同时不同：
+204: 
+205: - 调试参数：`-g2 -gdwarf-4 -g` 对无；
+206: - 构建编译器：快照中的 clang 22.1.8-2.1 对 22.1.8-5.1；
+207: - GCC/libstdc++：14.2.0-1.7 对 14.2.0-1.24。clang 自身大量模板是经 libstdc++ 头文件实例化的。
+208: 
+209: 本包用 ThinLTO 构建。单独编译一个源文件只能得到 bitcode；去掉 -flto 得到的机器码又与最终链接不同。最终机器码是 lld 的 ThinLTO 后端在跨模块导入和内联之后生成的。所以逐源文件编译、比较 `.text` 的做法，即使得到"字节相同"，也可能只是没有复现 ThinLTO 链接，会把原因错归到快照。
+
+docs/bolt/design/tizen_llvm_speed_design_v9.md
+243: PGO 生效检查按开关执行：PGO 开启时，检查预期作用范围内的目标在 build.ninja 中确实带 `-fprofile-instr-use=`，并且路径指向认证映射指定的那个文件（核对 SHA）；PGO 关闭时，检查这些目标没有意外带上 profile-use 参数，也不要求提供 PGO 资产。BOLT 的资产检查按组合单独执行，两者互不影响。
+244: 
+245: 身份不符时，打印有差异的字段并停止。
+246: 
+247: **spec 中的使用**
+248: 
+249: - 新增 Source：PGO profile、与之成对的 BOLT profile、清单。现有的 Source1200（非 PGO 用 BOLT profile）继续保留。
+250: - 当前输入身份必须出现在清单的认证列表中，否则构建失败。清单可以记录多个已认证的身份。
+251: - 通过 LLVM 自带的 CMake 选项 LLVM_PROFDATA_FILE 传入 PGO profile。上游 CMake 在文件不存在时只打 warning，所以 spec 在 cmake 之前自己检查文件存在，cmake 之后检查 build.ninja（见上文"检查时机"）。
+252: - **PGO 匹配程度**：
+253:   - 先确认 profile 的类型：Frontend、IR 还是 CSIR，并核对对应的使用阶段。LLVM 的插桩构建默认生成 IR profile，匹配在 IR PGO pass 中进行；前端的 -Wprofile-instr-out-of-date 汇总诊断不适用于 IR profile，而 IR 侧的缺失与 COMDAT/weak 不匹配警告默认被抑制（llvm-22.1.8 的 CodeGenModule.cpp 第 857–872 行、PGOInstrumentation.cpp 第 1407–1439 行）。
+254:   - 只有取得同一统计域内完整的 matched、missing、mismatched 计数，才计算匹配率，并写明统计单位（函数实例还是去重函数），以及 COMDAT、重复编译单元和 ThinLTO 阶段如何处理。
+255:   - 不得用警告条数或 profdata 记录数代替当前构建的分母。取不到完整计数时，记为 UNKNOWN；不把"没有警告"解释为"零过期"，也不据此追加认证身份。
+256:   - 辅助指标：本包用 ThinLTO，IR PGO 的注解在预链接阶段完成，构建树中 clang 各编译单元的 .o 就是带注解的 bitcode。对这些 bitcode 执行 `llvm-dis`，统计已定义函数中带 `function_entry_count` 元数据的比例，称为"最终 IR 注解覆盖率"，不得称为 PGO 匹配率：最终预链接 bitcode 中的函数集合不一定就是 profile-use 当时的候选集合（之后还有删除、克隆和内联），不同编译单元的同名局部函数也不是同一个函数，同名 ODR 定义也可能有不同的 CFG/profile hash。
+257:   - 完整的匹配计数，优先在 profile-use 查询发生的阶段取得：记录模块身份、函数/profile key、函数 hash 和 matched/missing/mismatched 状态。局部函数按模块区分；COMDAT/ODR 去重必须保留 hash 不同的定义。统计范围覆盖实际链接进 clang 的 LLVM/Clang 编译单元。取得手段尚未确定：`-pgo-warn-*` 只报缺失和不匹配，给不出分母；`-mllvm -stats` 需要启用了统计的编译器，快照里的编译器是否支持未知；转换器会拒绝 `-mllvm`。候选做法是用 pass 插件或打了补丁的 `opt`，对 profile-use 之前的 IR 重放 profile 查询。手段确定并通过夹具验证之前，匹配率记为 UNKNOWN。
+258:   - 离线重放的结果要算作当前构建的计数，还需证明重放与真实的 profile-use 阶段等价：
+259:     - 输入恰好是实际 profile-use 阶段的输入 IR；
+260:     - 目标配置、profile 类型、查询选项以及 key/hash 的生成规则都相同；
+261:     - 至少取若干真实编译单元，把重放结果与实际 profile-use 阶段逐函数核对 key、hash 和查询状态；
+262:     - 用于观测的改动不得改变原有的优化流程和输出。
+263:     合成夹具通过只证明计数逻辑正确，不能单独证明这一点。无法证明时继续记为 UNKNOWN。CSIR 部分单独认证。
+264:   - 如果 profile 是 CSIR，上下文敏感的那部分在 ThinLTO 后链接阶段才使用，预链接 bitcode 的统计覆盖不到，要单独说明。
+265:   - 需要额外诊断选项（如 `-mllvm -pgo-warn-missing-function`）时，只在离线认证构建中使用。这类选项会进入静态库成员的记录命令，而转换器会拒绝 `-mllvm`，所以认证构建要关闭转换，或另行处理。
+266:   - llvm-profdata 统计的有 profile 函数数与计数占比，作为辅助记录，和上一个已认证基线比较，不作分母。
+267:   - 发布构建中，这些指标只记录在构建日志末尾，不拦截。
+268:   - 计数方法本身先用夹具验证：全匹配、完全缺失、部分 hash 不匹配、仅 COMDAT 不匹配、同一函数跨编译单元重复、执行次数为 0 的函数、健康编译单元不产生警告、跨编译单元的同名局部函数、同名 ODR 定义 hash 不同、匹配后被删除的函数、克隆出的函数。报告的比例必须与已知真值一致。
+269: - **追加认证**：输入变化后，离线完成兼容性认证，才能把新身份追加进清单，否则就重新生成。认证内容：
+270:   - PGO 确实生效（build.ninja 检查）；
+271:   - PGO 匹配率（计数方法验证通过后才可用；数值阈值在基线实验后另行裁决，不沿用 BOLT 的 5%）；
+272:   - BOLT 匹配门禁通过；
+273:   - 第 2.5 节身份一致性矩阵的冻结子集，以及发货库消费者验收；
+274:   - 冻结留出集（第 3.1 节第二层）上的快速性能检查：与已认证的 PGO 版本比较，不与非 PGO 版本比较（PGO 静默失效时，clang 只是退回非 PGO 水平，和非 PGO 版本比照样"没有回退"）。判据为配对几何均值比值不劣于事先写定的阈值，阈值在第一次追加认证之前写定。
+275:   
+276:   PGO 匹配率为 UNKNOWN 时，不得据此通过追加认证；PGO 诊断计数只是认证的附件，不能单独作为认证依据。
+277: - BOLT 侧继续沿用 -stale-threshold=5，以及 helper 的 R、S/N 都不超过 5% 的硬门禁，不放宽。
+278: - **开关组合与 profile 选择**：PGO 和 BOLT 分别有 %bcond 开关。BOLT 默认开启；PGO 在第二批默认开启的条件见第 6 节。
+279: 
+280:   | PGO | BOLT | 使用的 profile |
+281:   |---|---|---|
+282:   | 关 | 关 | 不用 profile，普通基线 |
+283:   | 关 | 开 | 现有的 Source1200（非 PGO 用 BOLT profile），行为与当前基线完全相同 |
+284:   | 开 | 关 | 清单中按当前身份（T 或 D）认证的 PGO profile |
+285:   | 开 | 开 | 该 PGO profile，以及按当前身份认证的成对 BOLT profile |
+286: 
+287:   - 按"（T/D 身份，PGO 开关，BOLT 开关）"在清单中查找唯一的资产映射，不限定资产总数。T、D 可以引用同一对 profile，也可以引用不同的配对资产。使用任何 profile 之前，先检查映射和 SHA；匹配门禁只判断适配程度，不承担识别"是否拿错资产"的职责。
+288:   - 现有的 Source1200 已同时用于两边：T 的 S=0，D 的 S=23、R=0.10%，都在 5% 门槛内。PGO 的配对资产按同样的方式认证，并记录两边各自的匹配数据。
+289:   - 关闭 PGO 时，行为与当前基线完全相同（包括总部转换器的改动），不回退到旧的源码链。
+290:   - 训练或匹配失败时明确报错，不在构建中静默降级；需要回退时，靠提交修改开关实现。
+291: 
+292: **PGO 的作用范围**：LLVM_PROFDATA_FILE 加在整个 CMake 构建的全局编译参数上，不是只给 clang 用的。实施前，必须先从构建日志中盘点所有带 -fprofile-instr-use 的编译单元及其所属目标，并公开清单。处理规则：
+293: 
+294: - **主构建中的 LLVM/Clang/LLD 库和工具：** 允许在作用范围内，属于预期行为。lld、llvm-ar 不单独训练，但它们的代码同样会变，要按第 2.5 节验收。
+295: - **compiler-rt、libomp 等随包发布、会被其他包链接的运行库：** 本期排除在 PGO 作用范围之外。若盘点发现它们已在范围内，先用 CMake 隔离；隔离不了的，列为裁决项，并补充 ABI、功能和下游运行性能/内存验收。
+296: - **静态库转换器：** 成员的 recorded command 会多出 -fprofile-instr-use 等参数。转换器必须给它们明确分类：分支权重和入口计数已写在 IR 中，因此不重放。不能笼统忽略所有 profile 参数，未知参数照旧拒绝。这项改动要用真实的 PGO bitcode 成员做转换验证，并验证 GNU ld 与 lld 两类 static-devel 消费者。该参数带构建根的绝对路径，会进入成员的 .GCC.command.line；PGO 开、关两组产物在这一节上必然不同，这是 PGO 本身带来的变化。另有一条维护约束：转换器把 -g0 也算作调试选项（以 -g 开头），release 声明下带 -g0 的成员会被拒绝。当前 7706 条命令中 -g0 出现 0 次；将来配方若引入 -g0，要先把判定改为"实际产生调试信息的选项"，再重新认证。
+297: - **llvm-static-devel 和共享库：** 归档成员和 libLLVM.so、libclang-cpp.so 等发货库的代码，都会随 PGO 变化。这一点单独列在变更说明里，并按第 2.5 节对这些库的消费者做验收。
+
+docs/bolt/design/tizen_llvm_speed_design_v9.md
+312: - lld 是否单独做 PGO/BOLT，要等第 4.1 节把 ThinLTO 大链接从普通编译阶段拆出来之后再判断。如果要做，训练负载必须包含链接任务；现有训练全是编译任务，profile 会偏向编译路径。
+313: - llvm-ar 不在静态库转换的关键路径上。转换器重新打包用的是 /usr/bin/ar，逐成员编译用的是 clang。所以本月不为 llvm-ar 单独做 PGO/BOLT。
+314: - 本月只为 clang 交付 PGO+BOLT。lld、llvm-ar 只给可行性和资源数据。
+315: 
+316: ### 2.4 资源报备
+317: 
+318: 报备在大资源试验之前提交，先按历史测量值和不确定性给出预算，试验后再补实测。每个数都标明口径：
+319: 
+320: 1. **cgroup memory.peak（含文件缓存）：** 历史 PGO 试验的正式编译阶段为 20.21 GiB（58 号），当前完整构建为 17.26 GiB（63 号）。两次的 Ninja -j 和 MemoryMax 相同，但源码和快照不同，差出的约 3 GiB 只用于风险预报，不是受控条件下的 PGO 增量。
+321:    - **被限额截断的值要单独标注。** 74 号本地 Toolchain 构建的 memory.peak 恰好等于 MemoryMax（24,482,992,128 B），触顶 3877 次，没有 OOM。这个峰值只是下界，记为"≥ 限额（截断）"；同一次构建中普通编译阶段的时长也是在内存回收压力下测得的。这类数据不作为并行度调参等对照的基线。Base-Dev 那次没有触顶（memory.events max=0），可以按实测值使用。
+322: 2. **不含文件缓存的部分：** 用 memory.stat 的 anon、file 两项分开。现有证据里没有这一项，在下一次完整构建时采集。
+323: 3. **最大单进程 VmHWM 及其完整命令行：** 乙一预计仍是 ld.lld，历史值 13.3e9 B。若选乙二或甲，最大单进程会变成 llvm-bolt -instrument 的 17.0e9 B，必须单独报备。
+324: 4. **T/D 归因实验的析因构建**：每格约一次完整构建，最多两格。
+325: 5. **输入身份检查的额外开销**：源码树摘要和配置头摘要的耗时，实施时实测。
+326: 
+327: 磁盘和时长待第一批实测。周报只列实测的时长、内存和磁盘，并标注口径。
+328: 
+329: ### 2.5 正确性验收
+330: 
+331: **编译器身份一致性**：同一源码、配方、工具链、resource-dir 和 sysroot 下，比较 PGO 开/关 × BOLT 开/关四种组合。比较三项：目标文件字节、退出码、stderr 原文，要求全部相同。
+332: 
+333: 输入分四类，在验收前冻结清单：
+334: 
+
+docs/bolt/design/tizen_llvm_speed_design_v9.md
+570: **其他约定**：
+571: 
+572: - 总部父提交：两个父 change 已合入。上传前和之后每周，核对一次 tizen_base HEAD 相对 13c3e223 的内容差异；出现内容提交，就按变更范围重新改接和认证，不把旧认证自动继承过来。
+573: - profile 和训练资产：必须具备可再生成的入口、来源与许可记录、维护责任人，以及更新触发条件。所有构建依赖都能在受限的构建根内取得，不依赖历史根、宿主路径或联网下载。
+574: 
+575: ## 7. 需要裁决的事项
+576: 
+577: 1. **BOLT profile 的交付方式：** 推荐乙一，即两份 profile 都预采集、离线成对生成。备选是乙二（BOLT 改为构建内采集），实测代价为 +461 s、单进程峰值 VmHWM 17.0e9 B、临时磁盘 +3.8 GB，还要重新认证任务白名单和 profile 门禁，并把训练输入作为源文件发布。
+578: 2. **PGO profile 的交付方式：** 推荐预采集文件随源码发布。构建内完整训练（甲）只作为默认关闭的开关。
+579: 3. **输入身份不在清单的认证列表中时：** 推荐构建失败；离线复验通过后可追加认证，不强制重新训练。
+580: 4. **-use-old-text 放不下时：** 推荐暂时允许新段并打印数据，等第 2.2 节的实验批次结果出来再定最终做法；新段路径必须通过全部门禁。体积增量的可接受上限也需要确定。
+581: 5. **身份一致性验收失败时：** 推荐一律按缺陷处理，定位原因之前不放行。
+582: 6. **PGO 作用范围：** 运行库本期排除在外；llvm-static-devel 成员随 PGO 变化，是否接受。PGO 默认开启之前必须完成这一条。
+583: 7. **第二类内存**（编译其他包时编译器的内存）可接受的变化幅度与报备标准。
+584: 8. **llvm 源码包和 debugsource 包与 QB 的剩余差异（已裁决，2026-11-12；74 号第 8.10 节及 79 号的两次修正）：** 本地 GBS 对 QB 的源码包逐文件按两个维度独立判定，两项都通过该文件才通过：
+585:    - 权限：只允许本地 0664 对 QB 0644 的组写位差异，不论内容是否相同；其他任何权限、属主、链接变化判 FAIL。
+586:    - 内容：内容 SHA 相同直接通过；不同时只能由以下四类解释，且每类都要有逐项证据，无法解释的判 FAIL：(b) QB 把补丁 0001–0008 作为独立文件、本地 tar 已应用补丁，应用后受影响文件逐个一致；(c) 本地多出的 packaging/ 目录，每个文件与当次提交的 git 对象一致；(d) `.git_archival.txt` 的 node、node-date、describe-name 三行；(e) spec 的 VCS、Release 及 Patch/%patch 写法。
+587:    - 报告同时列出原始结果和按本规则判定的结果，原始 FAIL 照常保留；不得把按规则判定的 PASS 写成"源码包完全相同"。debugsource 的 Release 路径前缀按口径 B 的已批准规则处理。
+588:    - 这条规则在 79 号中修正过两次，都是起草时漏列造成的（权限例外原先按文件名点名、又绑在"内容相同"上）。**自此冻结**：以后的比较不得在看到结果后再改规则；确需修改，先写明理由并经裁决，再重新比较。
+589: 9. **"效果不变"** 按第 0.3 节的两套口径执行；RPM 压缩方式的改动需要另行批准。
+590: 10. **分配器方案若有收益：** 能否接受新增一个构建期依赖。
+591: 11. **PGO 关闭时的 BOLT profile：** 推荐继续沿用现有的 Source1200，与新的成对 profile 并存（源码包多一份约 10 MB 的压缩文件）。另一种做法是要求 BOLT 必须和 PGO 同开同关，这样只需一份 profile，但"关闭 PGO、保留 BOLT"的组合就没有了。
+592: 12. **输入身份的强制范围：** 暂按第 2.2 节执行：强制比对编译输入摘要、参数、cmake 命令行、工具链上游版本号和配置结果摘要；工具链的 Release/VCS、二进制 SHA、构建根包清单只记录。等 T/D 归因实验有了结果再定最终做法：如果快照漂移（构建编译器或 libstdc++）被证明会改变 clang 的代码，就把工具链 Release 号和 libstdc++ 版本改为强制，代价是每次发布后都要追加认证；如果不会，维持现状。PGO 默认开启之前必须完成这一条。
+593: 13. **追加认证时 PGO 匹配率的阈值，以及留出集性能检查的阈值：** 先验证计数方法，再做基线实验，之后另行裁决；不沿用 BOLT 的 5%。PGO 默认开启之前必须完成这一条。
+
+docs/bolt/design/tizen_llvm_speed_design_v9.md
+603: - **ARM 包并非完全不变：** 混合链接提交修改的 CMake 模块会安装进所有架构的 llvm-devel 和 clang 包。ARM 上构建行为不变，但载荷文本会变；已裁决作为已知例外接受（第 7 节第 15 条）。77 号已完成 ARM 包与改动前基线（PS7）的逐包比较，差异只有这两个模块文件；以后的 tree 只要 ARM 载荷与 1225393/1225395 相同，就沿用这一结论，出现其他差异须停止归因。
+604: - **上传后的跟进补丁会改变 tree：** 第 18 条的加固项改的是转换器，Toolchain 构建中带调试信息的成员都会经过新检查。跟进补丁要像第五轮修复一样，先在带调试节重定位的真实成员上验证（78 号的 450 个归档和 10 个调试归档），再按第一批的标准重跑 QB 和本地完整构建。
+605: - **BOLT 的 nop 改写还没有解释：** 两处"jump past end → nop"分别位于 AArch64 和 x86_64 后端的函数中，另有 1551 条 relocation 分析失败。本月必须给出解释并补定向验证（第 2.5 节）。
+606: - **PGO profile 可能不完整：** 插桩构建时有 830 条计数器耗尽警告，这些数据是否进入了发布 profile 还不清楚（UNKNOWN）。如果进入了，间接调用的 value profiling 不完整，可能削弱 PGO 收益。
+607: - **身份检查放过漂移：** 只记录、不强制的输入（工具链 Release/VCS、编译器二进制、构建根头文件和库）发生变化时，profile 可能逐渐失配。配置结果摘要能拦住构建根功能开关的变化，但拦不住构建编译器和头文件本身的变化。BOLT 匹配门禁只能发现 BOLT profile 的大幅失配；PGO 的失配和收益下降，它看不到。在"PGO 开、BOLT 关"的组合下，只能靠追加认证、发布日志中的记录和定期测速发现。T/D 的 S=23 已经说明两套构建输入存在实际差异，原因待归因。
+608: - **速度收益可能比预期小：** 目前只有噪声很大、而且是在训练集上测的本地数据。分层测速后，平台包那一层的收益可能明显小于 LLVM 源码那一层。最终以 QB 数据为准。
+609: - **profile 随源码发布可能被质疑：** 52.5 MB 的 PGO profile 加上两份 BOLT profile 放进源码包，总部可能有顾虑。备选是甲，代价是新增步骤约 81 分钟（规划值），磁盘规划下界 122–126 GiB。
+610: - **"理论上不改变产物"的项可能证不出来：** 并行度调整、BOLT 重链复用，理论上不改变发布产物，但必须逐字节实证，实证不通过就放弃该项。相同代码折叠会改变编译器产物，不属于这一类，按第 2.5 节验收。
+611: - **QB 构建机的内存和磁盘上限未知：** 每项改动都只报实测值，不作"可以接受"的判断。
+612: 
+613: ## 9. 修订说明
+614: 
+615: ### v9
+616: 
+617: 依据：第七轮定向评审（两家，都判"可以上传"，没有严重问题），以及 74 号第 8 节、79 号、80 号的实际结果。
+618: 
+619: - **版本状态与用词**：写明最终上传候选 4e80f54e（与 fea0fe46 的三棵树相同，只改说明）、fea0fe46 的 QB 复验和本地 T/D 完整构建都已完成；把"基线"拆成"总部父提交""复验比较基线""已验证的代码树""最终上传候选"四个说法。
+620: - **第 6 节**：第一批的复验、本地完整构建、提交说明三项改为已完成并写明结果；纠正"本地对 QB 二进制载荷应逐字节相同"的说法（Toolchain 的调试文件按口径 B 判定）；写明提交说明的实际做法是删去验证状态，而不是更新为最终结果；新增"第一批上传后的跟进"，包括本地入口的子服务状态白名单等修复（评审指出的重要问题）、产品加固补丁和 claims 文档的小修正；上传前再改一次 0003 的说明，写明 PIC 拒绝只针对转换后的成员。
+621: - **第 2.2 节 T/D 归因实验**：新增"逐函数比较的规范化"——屏蔽被重定位的字段、去掉 ThinLTO 的 `.llvm.<数字>` 后缀、只比较 BOLT 输入，并先用三组已知答案验证比较器（评审指出的重要问题：74 号的粗比较几乎所有函数都"不同"，回答不了条件效应）；写明第 1 步的前提已满足；摘录 74 号已比较的 T/D 架构参数。
+622: - **第 2.2 节输入身份**：构建根路径改为单独的强制身份字段，验证用例改为"换构建根必须失配"，纠正原用例与白名单规则的矛盾。
+623: - **第 2.2 节 PGO 计数**：离线重放查询的结果，要先证明与真实 profile-use 阶段等价，才能算作当前构建的计数。
+624: - **第 2.4、4.1 节**：memory.peak 等于限额或有触顶事件时，记为"≥ 限额（截断）"，该次构建的数据不作为对照基线。
+625: - **第 7 节**：第 8 条写入双维度判定规则并冻结；第 18 条改为已裁决。
+
+docs/bolt/58_pgo_resource_results.md
+1: # 58：PGO 资源测量结果
+2: 
+3: **启动时余量不足：可用 170.686 GiB，低于目标 177.548 GiB，差 6.861 GiB，可能触发运行中 20 GiB 停止线。** 用户已批准高于最低预算时启动。A/B/C已完成；D在原BOLT陈旧profile门禁失败（85.3% > 5%），未完成打包。没有OOM或磁盘不足，没有重试。
+4: 
+5: ## 1. 本地预算调整与启动
+6: 
+7: 沿用47号源码3ee2d847和固定Toolchain快照20261013.024319，未修改发布源码/spec/helper/Source。只修改本地budget常量/公式及警告记录：旧210.695GiB硬预算改为177.548GiB目标（仅记录）和151.290GiB最低启动预算（硬门槛），均由原始70,485,561,344B采样值计算，未使用四舍五入值反算。原12项加3项边界测试共15项通过。
+8: 
+9: 预算 JSON 与controller首行原文：
+10: 
+
+docs/bolt/58_pgo_resource_results.md
+97: 
+98: 已在总结束后执行47号原始 `report.py` 一次，exit0；完整输出 `report.stdout`、结构化结果 `full/resources-summary.json`，命令见 `report-command.json`。下列cgroup值来自每个独立服务结束前的内核memory.peak，**包含文件缓存**；进程VmHWM来自2秒抽样的所有可读PID，短进程或不可读进程可能漏采，不能冒充完整进程记账。通过loader启动时进程名为ld-linux-x86-64，真实工具见完整cmdline。
+99: 
+100: |阶段|状态|服务实测耗时s|cgroup峰值|最大进程VmHWM|进程/命令摘要|构建根边界du最大值|/home最小可用|
+101: |---|---|---:|---|---|---|---|---|
+102: |A|PASS|4068.547|7,227,248,640 B (6.731 GiB)|5,930,262,528 B (5.523 GiB)|ld.lld；ld.lld … -o bin/clang-22|26,444,713,984 B (24.629 GiB)|156,150,726,656 B (145.427 GiB)|
+103: |B|PASS|201.930|1,481,818,112 B (1.380 GiB)|1,046,290,432 B (0.974 GiB)|ld-linux-x86-64；loader … 插桩clang-22，训练0|26,444,713,984 B (24.629 GiB)|155,218,534,400 B (144.559 GiB)|
+104: |C|PASS|3.278|1,824,751,616 B (1.699 GiB)|1,976,971,264 B (1.841 GiB)|ld-linux-x86-64；loader … llvm-profdata merge|26,444,713,984 B (24.629 GiB)|155,177,299,968 B (144.520 GiB)|
+105: |D|FAIL：BOLT stale profile|7472.449|21,703,991,296 B (20.213 GiB)|13,305,700,352 B (12.392 GiB)|ld.lld；ld.lld … -o bin/clang-22（普通编译）|64,830,697,472 B (60.378 GiB)|83,763,408,896 B (78.011 GiB)|
+106: 
+107: 完整VmHWM的PID、进程名、命令原文和采样时间见 `process-peak-identities.json`；不是仅采llvm-bolt。服务起止时间见 `stage-times.json`。A耗时包含CMake配置和profile运行库/clang构建；B/C不包含前后记录SHA的时间；prepare服务另列，不混入A/D。
+108: 
+109: - stage-A/prepare：117.427s，cgroup峰值5,694,087,168 B (5.303 GiB)，结束根du7,022,018,560 B (6.540 GiB)。
+110: - stage-D/prepare：124.614s，cgroup峰值5,790,814,208 B (5.393 GiB)，结束根du7,022,112,768 B (6.540 GiB)。
+111: 
+112: D子阶段：耗时同时列日志秒数差和采样器观察时间（服务开始/结束还包括GBS收尾），两者不混用。磁盘只是边界扫描，**所有真实连续峰值UNKNOWN**；普通编译退出/安装入口的扫描90秒超时，7,074,676,736B只是普通编译入口观测，不能据此说编译峰值只有6.59GiB。
+113: 
+114: |D子阶段|GBS日志区间/差值s|采样观察耗时s|阶段cgroup峰值|最大进程VmHWM|边界du观测|/home最小可用|
+115: |---|---|---:|---|---|---|---|
+116: |setup|开始→[268s]|276.447|4,478,197,760 B (4.171 GiB)|65,052,672 B (0.061 GiB) / gbs|7,074,676,736 B (6.589 GiB)|146,420,011,008 B (136.364 GiB)|
+117: |ordinary-compile|[268s]→[6444s] / 6176|6176.712|21,703,991,296 B (20.213 GiB)|13,305,700,352 B (12.392 GiB) / ld.lld|UNKNOWN（出口扫描超时；入口6.589GiB）|104,091,758,592 B (96.943 GiB)|
+118: |ordinary-install|[6444s]→[6772s] / 328|327.407|11,565,408,256 B (10.771 GiB)|65,052,672 B (0.061 GiB) / gbs|60,700,127,232 B (56.531 GiB)|90,878,791,680 B (84.637 GiB)|
+119: |BOLT|[6772s]→失败[7463s] / 691|692.108|14,664,306,688 B (13.657 GiB)|9,267,929,088 B (8.631 GiB) / ld.lld|64,830,697,472 B (60.378 GiB)|83,763,408,896 B (78.011 GiB)|
+120: |cache-release / archive-install / platform-post / packaging|NOT RUN|NOT RUN|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN|
+121: 
+122: 锚点：GBS:L345 %build=268s，L10888 %install=6444s，L16467 disk-report begin=6772s，L23683 tool-built=7190s，L23686失败=7463s。工具构建BOLT_NINJA_EXIT_0见L23081；tool-verify报告113/113。pipeline失败早于compare-root、cache-release、静态库转换、平台后处理、打包，不能用此前构建补全后续资源。
+123: 
+124: 本地资源限制：MemoryMax=24,482,979,840B（MemTotal减8GiB），MemorySwapMax=0，CPUQuota=1200%，nice10，ionice best-effort/7；Ninja -j6，GBS外层threads30，三个宏仍为jobs8、_smp_mflags -j8、_costomized_smp_mflags -j20。每阶段systemd-command.json、command.json、service-result.json保存实际值，所有已运行阶段oom/oom_kill为0。systemd-run打印的Memory peak与内核采样值不是同一记录来源，表中统一使用内核memory.peak，不采用其14.4M/512K等尾行值。
+125: 
+126: C阶段进程VmHWM可大于cgroup记账峰值：两个量分别是进程驻留高水位和cgroup计费，不作加减或相等推断。VmHWM为PID生命周期高水位，阶段内采样不能消去它此前的驻留峰值。
+127: 
+128: ## 5. 训练与profile磁盘数据
+129: 
+130: 23/23训练PASS（13 ARM、10 AArch64），生成profraw **23份，共746,313,472 B (0.695 GiB)**。合并profdata **52,528,216 B (0.049 GiB)**，SHA256 `8c60fb561f4a445d1456da90cf7552a79a31abcbf3aab44f28710ad66dee1805`。两者在阶段A根外的profiles目录，单独列出，不混入根du。profdata另复制一份到D根内，该副本已计入D根占用，汇总时不再重复相加。
+131: 
+132: profraw阶段末保留量即已观察最大保留量；写入过程没有profile目录连续大小采样，因此瞬时峰值UNKNOWN。profdata亦只记录完成大小，合并过程中临时输出峰值UNKNOWN。完整每文件SHA/逻辑大小/分配大小见 `profile-final-inventory.json`，训练argv和每条结束标记见stage-A证据。工具llvm-profdata使用同源码的full-20261030已有版本，未额外编译目标，身份见profdata.json。
+133: 
+134: 附带观察：A构建stdout:L1084起有830条 `LLVM Profile Warning: Unable to track new values: Running out of static counters.  Consider using option -mllvm -vp-counters-per-site=<n> to allocate more value profile counters at compile time.`，是A构建期间执行工具的警告。B的23条训练stdout/stderr未出现该警告，C合并成功。计数和首行见 `profile-runtime-warnings.json`；没有因此修改插桩参数、补采或重跑，也不把该警告直接认定为BOLT陈旧profile的原因。
+135: 
+136: ## 6. 两根共存、磁盘下界与清理状态
+137: 
+138: A在B/C边界均为26,444,713,984B，D退出边界为64,830,697,472B。D运行期间A不再构建/写入，按这一不变前提组合的**边界记录最大共存根占用为91,275,411,456 B (85.007 GiB)**；这不是同时连续扫描的精确峰值，真实共存峰值仍UNKNOWN。没有把两个历史独立峰值直接当作同一时刻实测值。普通用户结束后du对两个根分别可见26,444,709,888B和64,830,693,376B，均exit1、有root属主目录权限盲区，只作下界；完整full目录可见94,775,939,072B，也有同样盲区。没有为补测另行sudo。
+139: 
+140: 全过程/home最低可用 **83,763,408,896 B (78.011 GiB)**，时间 **2026-11-04T23:46:58.438352+08:00**，D/BOLT阶段，距20GiB停止线仍58.011GiB。结束后的df原文：
+141: 
+142: ```text
+143: Filesystem         1B-blocks          Used   Available Use% Mounted on
+144: /dev/sda1      1967844950016 1781133635584 86674702336  96% /home
+145: ```
+146: 
+147: 所有原始根、profraw/profdata和失败现场保留。原入口完成正常清理；audit.json中的mounts和remaining_stage_processes均为空。控制器最终failed是D的rc1，不是残留资源或OOM。没有重试、手动启动后续阶段、懒卸载或杀外部进程。
+148: 
+149: ## 7. 证据与外推范围
+150: 
+151: 证据根：`tools/bolt/results/pgo-resource-full-20261104/`。`full-provenance.json`记录所有已归档原件/副本大小、SHA256和gzip状态；大于1MiB文本压缩保存，原始现场不删。`SHA256SUMS`校验本目录交付文件。15项测试原文、预算警告、获批清理的文件清单/检查/df、启动前检查和一次启动命令均在同目录。日志未包含成功的pipeline报告时，明确记录缺失，不制造N/M/S/U/Q认证结果。
+152: 
+153: 这些数值仅代表本机、固定Toolchain快照、3ee2d847及23份训练输入的这一次试验；源码A只构建插桩clang与profile运行库，不能视为一次完整插桩软件包构建。PGO输出大小、profile不兼容事实可用于后续设计；cgroup内存（含缓存）、耗时和磁盘边界下界受并发、内核和机器影响，不能直接当作QB三架构共享磁盘的容量上限。BOLT失败后的缓存释放/转换/打包资源尚无PGO数据。
+
+docs/bolt/59_pgo_bolt_followup.md
+89: 
+90: 每步独立systemd用户服务，MemoryMax=24,482,992,128B（本机MemTotal−8GiB）、MemorySwapMax=0、CPUQuota=1200%、nice10、ionice2/7。每2秒采样各PID的VmHWM/命令及磁盘可用空间，另用time -v记录每个命令的完整最大RSS；保留30GiB磁盘停止线。服务与阶段均有带时区结束行。没有OOM；所有产物保留。
+91: 
+92: ### 5.2 资源与文件
+93: 
+94: |步骤|阶段耗时s|cgroup memory.peak B（含文件缓存）|进程VmHWM B（2秒采样）|time -v 最大RSS B|
+95: |---|---:|---:|---:|---:|
+96: |instrument|77.954|17074352128|17014747136|17014747136|
+97: |train|379.427|3890348032|1293144064|1293144064|
+98: |merge|3.396|1585553408|1162305536|1369427968|
+99: |optimize|44.984|8712601600|8890351616|8890351616|
+100: |speed|1175.357|4953731072|1204346880|1205088256|
+101: 
+102: VmHWM按完整cmdline识别，loader启动的进程Name为ld-linux-x86-64，不误称为loader本身的工作集；完整PID/命令见step-resource-summary.json。merge仅约3秒，2秒采样低于time -v；不把采样下界冒充完整峰值。cgroup含缓存但共享页按内核记账归属，可能小于进程RSS，不能把两者相加。阶段耗时含SHA/清单落盘及初始化，speed阶段还会读取大编译器文件核对身份；这些额外时间不计入三轮编译中位数。命令本身耗时见各commands.json。
+103: 
+104: |产物|逻辑字节|SHA256/证据|
+105: |---|---:|---|
+106: |插桩clang|577278208|`d43b3cfcaa264f84ba248b64e55de4e4cf794b29ca075d77195fe8f93b4491b3`|
+107: |23份fdata合计|3006326841|train/profiles.json逐文件SHA|
+108: |merged.fdata|194262069|`6dbac6326e419b37d60334ed4a8614e31547799bc97d98ac49e67199c02b9d55`|
+109: |PGO+BOLT clang，未strip/打包|259324032|`f2914387cfa1f3140078f6cb98fb85b8560d48b3ff7a10414b572c4883d868b5`|
+110: 
+111: 优化llvm-bolt自身VmHWM为8,890,351,616B；54号非PGO同口径为9,931,661,312B，减少1,041,309,696B（10.485%），比值0.895153。这是两个具体输入的实测，不是通用PGO降内存保证。插桩峰值与优化峰值必须分开。
+112: 
+113: ### 5.3 Profile与BOLT警告
+114: 
+
+docs/bolt/59_pgo_bolt_followup.md
+150: ## 6. 三方编译速度（额外观察，不改变门禁结论）
+151: 
+152: 同training.json的23份输入，所有-O*优化等级token移除后统一加-O2，其余参数不变；只做-c。三种编译器各3轮，每轮每种编译器顺序跑完23份，轮间轮换编译器顺序。通过各自根的loader/库启动：nonPGO BOLT来自55号T的clang.candidate，PGO来自D的ordinary-clang-22，PGO+BOLT来自本次optimize/clang-22。完整身份在speed/compiler-identities.json。没有用宿主编译器。
+153: 
+154: 取每轮23份耗时之和，再取3轮中位数；time -v RSS取69次中最大值。未绑核、未关闭ASLR、没有清页缓存；未停止外部进程。每次记录load average，1分钟load范围2.31–32.06，存在明显负载高点；没有连续采样外部进程CPU，无法确认高load来源。该结果是训练集内观察，不外推到未见源码或Tizen全量构建。
+155: 
+156: |clang|三轮23份耗时s|中位数s|最大RSS B|相对nonPGO BOLT|
+157: |---|---|---:|---:|---:|
+158: |nonpgo-bolt|120.362, 107.038, 130.257|120.362|1178853376|1.000000|
+159: |pgo|110.209, 106.972, 108.553|108.553|1205088256|0.901886|
+160: |pgo-bolt|104.708, 104.284, 135.639|104.708|1195032576|0.869938|
+161: 
+162: 异常耗时例：`speed/2-pgo-bolt-22.time`记录user=4.67s、system=0.17s、elapsed=32.64s、CPU=14%，不是32秒都在执行编译器CPU指令；原因未确认，原始记录保留。
+163: 
+164: **轮间波动明显**：nonPGO BOLT为107.038–130.257s，PGO+BOLT为104.284–135.639s；中位数的3.542%差小于轮间波动幅度，不能据此认定稳定加速，也不归因于某个未经证实的后台负载。
+165: 
+166: PGO+BOLT / PGO 中位数比=0.964577；相对PGO耗时变化=-3.542%。逐输入中位数与全部207次原始记录见speed-unit-medians.json、speed/measurements.json。编译器strip状态不同（nonPGO已strip，PGO ordinary含debug，PGO+BOLT未strip），因此首轮读取/缓存效应也属于本次观察条件，不声称是只控制代码布局的冷启动实验。
+167: 
+168: ## 7. 更新后的PGO+BOLT完整资源估算
+169: 
+170: 下表严格区分实测和借用；顺序执行的内存不能相加。58号kernel memory.peak与55号阶段采样memory.current口径不同。
+171: 
+172: |阶段|耗时s|cgroup B|进程VmHWM B|性质/来源|
+173: |---|---:|---:|---:|---|
+174: |PGO插桩clang构建|4068.547|7227248640|5930262528|58§4实测|
+175: |IR训练|201.930|1481818112|1046290432|58§4实测；profraw746313472B|
+176: |IR合并|3.278|1824751616|1976971264|58§4实测；profdata52528216B|
+177: |PGO普通编译|6176|21703991296|13305700352|58§4实测|
+178: |PGO普通安装|328|11565408256|65052672|58§4实测；进程峰值是所见gbs，非完整安装工具峰值|
+179: |BOLT工具准备/构建及检查|418|UNKNOWN|UNKNOWN|58§4日志6772→7190实测；该子段内存未独立拆分|
+180: |PGO重链/strip-debug|UNKNOWN|UNKNOWN|UNKNOWN|58§4的273s pipeline还含旧profile失败rewrite，不能直接归作重链时间|
+181: |BOLT instrument|77.954|17074352128|17014747136|本次实测|
+182: |BOLT train|379.427|3890348032|1293144064|本次实测|
+183: |BOLT merge|3.396|1585553408|1162305536|本次实测|
+184: |BOLT optimize|44.984|8712601600|8890351616|本次实测|
+185: |缓存释放|9|3716710400|UNKNOWN|借用55§7 T非PGO采样值，估算|
+186: |静态库转换|2544|10596343808|UNKNOWN|借用55§7 T非PGO采样值，估算|
+187: |平台后处理|700|7375040512|UNKNOWN|借用55§7 T非PGO采样值，估算|
+188: |打包|292|10014306304|UNKNOWN|借用55§7 T非PGO采样值，估算|
+189: 
+190: 58号整个旧BOLT阶段为691s、cgroup 14,664,306,688B、进程峰值9,267,929,088B（ld.lld）；它包含工具准备、重链、strip-debug和失败rewrite，不拿来替代本次优化数据，也不直接与本次优化时间相加。A/D prepare另有117.427s/124.614s；本表不能直接求和冒充完整流水线耗时。
+191: 
+192: 已测cgroup阶段最大为PGO普通编译21,703,991,296B（20.213GiB），不是将各阶段峰值相加；不代表尚未完成的PGO打包端到端上限。后处理和打包未对PGO产物重跑，借用值不能写作本次实测。
+193: 
+194: 两根磁盘：58号A+D边界组合实测91,275,411,456B（85.007GiB），连续共存峰值UNKNOWN；普通编译出口du缺采样。借用55号T根采样峰值70,485,561,344B加A根26,444,713,984B，得96,930,275,328B（90.274GiB），这是估算而非本次同时测得。
+195: 本次补测目录（排除额外speed测试）的普通文件分配占用（st_blocks×512，不含目录块）4,948,119,552B（4.608GiB），分项在experiment-footprint.json；其中包含输入/工具副本、插桩输出、23份fdata、合并profile、优化输出和训练对象。为保留本实验全部现场，保守额外加上这份副本占用及根外IR profraw/profdata，得到102,677,236,568B（95.626GiB）已知部分规划值，加30GiB保留空间为125.626GiB。它可能重复保留生产流程中可复用的文件，且仍不是完整构建可保证峰值；真实PGO根峰值和后处理需要完整构建再测。speed额外产物独立列出，不计入构建需求。
+196: 
+197: ## 8. 结束、清理与证据
+198: 
+199: 按本轮授权只删除两处目录，详见[61号](61_disk_cleanup.md)。stage-A构建根已删除，但证据、profiles、objects保留；D根和其他历史根只读，没有重建、打包、源码修改或Gerrit推送。现有Source1200未改。本次工具复制、fdata、优化产物、全部速度测试输出保留。
+200: 
+201: ```text
+202: SERVICE 已结束 2026-11-05T10:11:20.528235+08:00 status=ok reason=exit-0
+203: SERVICE 已结束 2026-11-05T10:17:53.763207+08:00 status=ok reason=exit-0
+204: SERVICE 已结束 2026-11-05T10:18:02.573817+08:00 status=ok reason=exit-0
+205: SERVICE 已结束 2026-11-05T10:18:48.662863+08:00 status=ok reason=exit-0
+
+docs/bolt/86_claims_entry_bolt_warnings.md
+126: ## 5. 830追溯：合并输入明确，PID不完整
+127: 
+128: [步骤4结果](../../tools/bolt/results/night-86-20261114/step4-result.json)；
+129: [830行原文](../../tools/bolt/results/night-86-20261114/counter-warning-lines.json)；
+130: [84个连续告警段及Ninja上下文](../../tools/bolt/results/night-86-20261114/counter-warning-groups.json)；
+131: [tblgen进程采样](../../tools/bolt/results/night-86-20261114/A-tblgen-process-records.json)。
+132: 
+133: - **已证明**：830条都在58号A构建stdout，首行为L1084；B训练另阶段独立记录，不是这830条的来源。A采样保存161条含tblgen的命令记录，告警附近Ninja目标是IntrinsicsNVPTX.h、ARM/AArch64/BPF生成表、Options.inc等。
+134: - **UNKNOWN**：每条告警没有PID/命令标签，不能把邻近Ninja进度行武断对应成精确进程，也不能称830个独立进程。构建期生成工具的归属有上下文支持，但未完成逐警告PID证明。
+135: - **已证明**：23次clang训练的stdout/stderr全部0条此告警，见[逐训练输出核对](../../tools/bolt/results/night-86-20261114/training-warning-audit.json)；这只覆盖本次训练，不保证其他负载不会耗尽。
+136: - **已证明**：C显式合并的23个profraw都对应B的0–22号LLVM_PROFILE_FILE模式，大小/SHA与保存清单及现存保全文件逐一一致；合并结果52,528,216B，SHA256 8c60fb561f4a445d1456da90cf7552a79a31abcbf3aab44f28710ad66dee1805。
+137: - A启动是env -i，未设置指向B目录的LLVM_PROFILE_FILE；B在A结束后通过profiles.mkdir()创建专用目录（不是exist_ok复用），每条训练独立设定i-%m-%p；C只合并该目录显式列表。因此A构建期产生的profraw未进入这一合并清单。**A各工具默认profile的实际路径/内容仍UNKNOWN**，未保存的旧A根不重建。
+
+docs/bolt/84_resource_breakdown.md
+1: # 84. 资源拆分第一步（已有证据，未重新构建）
+2: 
+3: 结论：PASS（完成已有数据的拆分；不能恢复的细项明确记为 UNKNOWN）。本报告不排候选优先级、不判断收益是否可以接受。
+4: 
+5: ## 1. 口径与读取边界
+6: 
+7: 已读设计 v9 §2.2、§2.4、§4.1/4.2、§6，63/74 号材料、57/77/79 号身份记录；逐行读取下表九份完整 x86_64 GBS 日志、本地三份原始内存/进程/du采样、最终build-result，以及只读构建树中的 .ninja_log 和 build.ninja。没有访问 QB 网站，没有读取或修改 LLVM Git 仓库，没有运行 clang/lld/CMake/Ninja/GBS，没有重测构建。83号的微型夹具不作为资源样本。
+8: 
+9: 分析在 MemoryMax=8G、MemorySwapMax=0、CPUQuota=400%、Nice=19、IOSchedulingClass=idle 的串行用户服务中完成。解析代码和原始读取清单：[analyze_resources.py](../../tools/bolt/results/night-82-84-20261113/84/analyze_resources.py)、[read-inputs.json](../../tools/bolt/results/night-82-84-20261113/84/read-inputs.json)；本地ThinLTO规则原文/行号/SHA：[thinlto-build-rules.json](../../tools/bolt/results/night-82-84-20261113/84/thinlto-build-rules.json)；完整结构化结果：[all-results.json](../../tools/bolt/results/night-82-84-20261113/84/all-results.json)。
+10: 
+11: - GBS 时间为日志的整数秒；只用明确起止行相减。表中“总日志窗口”是 0 到最后一条 GBS 时间戳，不等于 controller 的墙钟时长。阶段可嵌套，不能相加。
+12: - 普通Ninja窗口含链接。独立纯编译耗时 UNKNOWN：编译与链接并行，不能把链接时长从窗口相减。每个大链接用 .ninja_log 的 start_ms/end_ms；任务互相重叠，不能把五项求和当作串行耗时。
+13: - QB只有Ninja完成行，无法恢复大链接起点；不把相邻完成行的间隔当成任务耗时。保留完成行原文作定位，时长记 UNKNOWN。
+14: - 内存峰值是整个 cgroup（含文件缓存）；阶段内 memory.current 最大采样值只表示该时间窗口的整个组，不能归到一个链接器。单进程 VmHWM 仅有 llvm-bolt 采样，全构建最大单进程及其命令 UNKNOWN。
+15: - 本地日志没有 cgroup memory.stat 的 anon/file；host /proc/meminfo 不能替代，均记 UNKNOWN。
+16: - du是约60秒一次、单次50秒限时的根目录总量采样。峰值是成功采样最大值，不保证捕获瞬时峰值。没有分层du，完整主要目录分布 UNKNOWN；BOLT_DISK_REPORT 的有限作用域另列，不能等同整个构建根。
+17: - 74-T memory.peak 等于 MemoryMax，max=3877、oom=0，记“≥ 限额（截断）”；时长标“受内存回收影响”，不作为资源候选的对照基线。D未触顶，按实测记录。
+18: 
+19: ## 2. 各来源身份（全部 x86_64）
+20: 
+21: |来源|环境/项目|源码提交|快照|总日志窗口 s / 证据|
+22: |---|---|---|---|---|
+23: |63-T|local / Toolchain|9e39fa8a61392652bb28b75fc26216675bcad1d5|tizen-base-toolchain_20261030.061318|10351 / [gbs-original-0.log.gz](../../tools/bolt/results/qb-snapshot-rebuild-20261105/completed/gbs-original-0.log.gz)|
+24: |74-T|local / Toolchain|fea0fe464d56e17f2c7588c557bfffd9f6ac352b|tizen-base-toolchain_20261030.061318|7863 / [original-build.log.gz](../../tools/bolt/results/local-full-r6-20261111/toolchain/original-build.log.gz)|
+25: |74-D|local / Base-Dev|fea0fe464d56e17f2c7588c557bfffd9f6ac352b|tizen-base-dev_20261030.061217|3890 / [original-build.log.gz](../../tools/bolt/results/local-full-r6-20261111/basedev/original-build.log.gz)|
+26: |1216409|QB / Toolchain|9e39fa8a61392652bb28b75fc26216675bcad1d5|tizen-base-toolchain_20261030.061318|9115 / [llvm.buildlog.txt.gz](../../tools/bolt/results/qb-1216409-1216410/1216409/x86_64/llvm.buildlog.txt.gz)|
+27: |1216410|QB / Base-Dev|9e39fa8a61392652bb28b75fc26216675bcad1d5|tizen-base-dev_20261030.061217|5816 / [llvm.buildlog.txt.gz](../../tools/bolt/results/qb-1216409-1216410/1216410/x86_64/llvm.buildlog.txt.gz)|
+28: |1225393|QB / Toolchain|60fabc723f30c5cc04146a9dd83487ebed63f259|tizen-base-toolchain_20261030.061318|9200 / [llvm.buildlog.txt.gz](../../tools/bolt/results/qb-1225393-1225395/1225393/x86_64/llvm.buildlog.txt.gz)|
+29: |1225395|QB / Base-Dev|60fabc723f30c5cc04146a9dd83487ebed63f259|tizen-base-dev_20261030.061217|5862 / [llvm.buildlog.txt.gz](../../tools/bolt/results/qb-1225393-1225395/1225395/x86_64/llvm.buildlog.txt.gz)|
+30: |1226850|QB / Toolchain|fea0fe464d56e17f2c7588c557bfffd9f6ac352b|tizen-base-toolchain_20261030.061318|9138 / [llvm.buildlog.txt.gz](../../tools/bolt/results/qb-1226850-1226851/1226850/x86_64/llvm.buildlog.txt.gz)|
+31: |1226851|QB / Base-Dev|fea0fe464d56e17f2c7588c557bfffd9f6ac352b|tizen-base-dev_20261030.061217|5801 / [llvm.buildlog.txt.gz](../../tools/bolt/results/qb-1226850-1226851/1226851/x86_64/llvm.buildlog.txt.gz)|
+32: 
+33: 总日志窗口的最后时间戳、原文行号见 [log-window-endpoints.json](../../tools/bolt/results/night-82-84-20261113/84/log-window-endpoints.json)，源码路径保存在各来源 result.json；原始压缩文件大小与SHA见读取清单。不同源码、项目、环境分别列示，不合并成一次实验。
+34: 
+35: ## 3. 63-T：local / Toolchain
+36: 
+37: 提交 9e39fa8a61392652bb28b75fc26216675bcad1d5；快照 tizen-base-toolchain_20261030.061318。日志 [gbs-original-0.log.gz](../../tools/bolt/results/qb-snapshot-rebuild-20261105/completed/gbs-original-0.log.gz)；完整锚点 [anchors.txt](../../tools/bolt/results/night-82-84-20261113/84/63-T/anchors.txt)；数据 [result.json](../../tools/bolt/results/night-82-84-20261113/84/63-T/result.json)。
+38: 
+39: ### 阶段时长
+40: 
+41: |阶段|秒|日志行/时间或字段|
+42: |---|---:|---|
+43: |CMake配置|58|L690 [183s] → L3259 [241s]|
+44: |普通Ninja编译（含重叠链接）|4458|L3260 [241s] → L10981 [4699s]|
+45: |普通安装至BOLT begin|374|L11345 [4700s] → L16924 [5074s]|
+46: |BOLT begin至compare-root结束（含各子阶段）|1934|L16924 [5074s] → L24145 [7008s]|
+47: |BOLT重新配置|14|L16971 [5290s] → L18922 [5304s]|
+48: |BOLT工具构建|148|L23182 [5307s] → L23528 [5455s]|
+49: |BOLT pipeline总窗口|1033|L24131 [5456s] → L24139 [6489s]|
+50: |compare-root门禁|518|L24142 [6490s] → L24145 [7008s]|
+51: |cache-release|122|L24146 [7008s] → L24147 [7130s]|
+52: |静态库转换|2285|L24167 [7131s] → L24618 [9416s]|
+53: |find-debuginfo开始至post门禁前的平台后处理|404|L24621 [9423s] → L25205 [9827s]|
+54: |BOLT post门禁|27|L25205 [9827s] → L25209 [9854s]|
+55: |RPM文件处理至最后Wrote|489|L25212 [9857s] → L25681 [10346s]|
+56: |BOLT重新链接|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+57: |reference strip|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+58: |candidate strip|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+59: |BOLT rewrite|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+60: |RUNPATH调整|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
