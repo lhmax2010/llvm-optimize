@@ -127,3 +127,8 @@ FAILED (failures=1)
 已读：PM补充、v9范围（此前已读）、PS3转换器和spec的架构参数分类/export位置、78号测试调用与实际脚本、选定测试的新结果、独立工作树diff及原工作区身份。未读第六轮原文（PM确认未入库），未访问QB/Gerrit/sandbox，未执行剩余35项或实物全量重放。
 
 96续 已结束 2026-11-14T03:39:46.459382-08:00 status=STOP
+
+
+### 7. 证据发布补记
+
+首次交付git add因*.log忽略规则未收5份原始测试日志并返回1；交互shell仍继续提交其余32文件为0f9431ec8ed74f11f0dc5572bd8f35f6ec828249。交付准备修正一次：显式git add -f补交这5份日志，核对暂存清单和单文件大小；后续命令以check=True衔接，保留原提交不重写。错误关键原文和修改记录见publication-error.txt/publication-fix.diff。产品测试FAIL保持不变，未改代码或重跑。
