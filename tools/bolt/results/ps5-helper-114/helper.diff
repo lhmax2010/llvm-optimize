@@ -1,0 +1,356 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 2ad38975b10d..bbb97728b91f 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -52,6 +52,7 @@ segment layout), then add/verify debuglink. clang-debuginfo carries the matching
+ symtab at /usr/lib/debug/usr/bin/clang-22.debug; it contains no source-line DWARF.
+ """
+ import traceback
++import errno
+ import argparse
+ import collections
+ import shlex
+@@ -113,6 +114,17 @@ class GateError(RuntimeError):
+ class LiveDescendantsError(GateError):
+     """Live descendants remained after the drain deadline."""
+ 
++class SessionInspectionError(GateError):
++    """An incomplete scan is never evidence of an empty session."""
++    def __init__(self, message, members):
++        super().__init__(message)
++        self.members = members
++
++
++class SessionDeadlineError(SessionInspectionError, LiveDescendantsError):
++    """Deadline exhausted before completing session inspection."""
++
++
+ def require(ok, message):
+     if not ok:
+         raise GateError(message)
+@@ -154,109 +166,178 @@ def proc_stat(path):
+     try:
+         pid = int(text.split(' ', 1)[0])
+         fields = text.rsplit(')', 1)[1].split()
+-        require(len(fields) >= 18, 'short process stat: '+str(path))
+-        return pid, fields[0], int(fields[2]), int(fields[17]), int(fields[3])
++        require(len(fields) >= 20, 'short process stat: '+str(path))
++        return pid, fields[0], int(fields[2]), int(fields[17]), int(fields[3]), int(fields[19])
+     except (ValueError, IndexError) as error:
+         raise GateError('malformed process stat: '+str(path)) from error
+ 
+-def live_group_members(group):
+-    require(proc_stat('/proc/self/stat')[0] == os.getpid(), 'PID namespace mismatch in /proc/self/stat')
+-    members = []
+-    try:
+-        with os.scandir('/proc') as entries:
+-            for entry in entries:
+-                if not entry.name.isdecimal():
+-                    continue
+-                try:
+-                    pid, state, pgrp, threads, session = proc_stat('/proc/'+entry.name+'/stat')
+-                except (FileNotFoundError, ProcessLookupError):
+-                    continue
+-                if pgrp == group and (state not in ('Z', 'X') or threads > 1):
+-                    members.append((pid, state))
+-    except OSError as error:
+-        raise GateError('cannot enumerate/read process group: '+str(error)) from error
+-    return sorted(members)
++_SESSION_KILL_MODE = None
+ 
+-def wait_group_exit(group, timeout=10):
+-    deadline = time.monotonic()+timeout
+-    while True:
+-        members = live_group_members(group)
+-        if not members:
+-            return
+-        require(time.monotonic() < deadline, 'process group %d still alive: %s' %
+-                (group, ', '.join('%d:%s' % item for item in members)))
+-        time.sleep(.02)
+ 
+-def live_session_members(sid):
++def session_kill_mode():
++    """Select once, before spawning, and disclose the weaker fallback."""
++    global _SESSION_KILL_MODE
++    if _SESSION_KILL_MODE is None:
++        mode = 'pidfd'
++        try:
++            fd = os.pidfd_open(os.getpid(), 0)
++            try:
++                signal.pidfd_send_signal(fd, 0, None, 0)
++            finally:
++                os.close(fd)
++        except AttributeError:
++            mode = 'fallback-recheck'
++        except OSError as error:
++            if error.errno not in (errno.ENOSYS, errno.EPERM):
++                raise
++            mode = 'fallback-recheck'
++        print('SESSION_KILL_MODE='+mode, file=sys.stderr, flush=True)
++        _SESSION_KILL_MODE = mode
++    return _SESSION_KILL_MODE
++
++
++def session_deadline(deadline, members):
++    if deadline is not None and time.monotonic() >= deadline:
++        raise SessionDeadlineError(
++            'session deadline expired; scan incomplete; last observed members: '+
++            ', '.join('%d:%s' % item[:2] for item in members), members)
++
++
++def kill_session_member(sid, pid, starttime, deadline=None):
++    session_deadline(deadline, [(pid, '?', starttime)])
++    if session_kill_mode() == 'pidfd':
++        fd = os.pidfd_open(pid, 0)
++        try:
++            current = proc_stat('/proc/%d/stat' % pid)
++            session_deadline(deadline, [(pid, current[1], starttime)])
++            if current[4] == sid:
++                signal.pidfd_send_signal(fd, signal.SIGKILL, None, 0)
++        finally:
++            os.close(fd)
++    else:
++        current = proc_stat('/proc/%d/stat' % pid)
++        session_deadline(deadline, [(pid, current[1], starttime)])
++        if current[4] == sid and current[5] == starttime:
++            # This only narrows the check-to-kill race; unlike pidfd it does
++            # not guarantee process identity across the final numeric lookup.
++            os.kill(pid, signal.SIGKILL)
++
++
++def live_session_members(sid, deadline=None):
++    session_deadline(deadline, [])
+     require(proc_stat('/proc/self/stat')[0] == os.getpid(), 'PID namespace mismatch in /proc/self/stat')
+-    members = []
++    members, denied = [], []
+     try:
+         with os.scandir('/proc') as entries:
+             for entry in entries:
++                session_deadline(deadline, members)
+                 if not entry.name.isdecimal():
+                     continue
+                 try:
+-                    pid, state, pgrp, threads, session = proc_stat('/proc/'+entry.name+'/stat')
++                    pid, state, pgrp, threads, session, starttime = proc_stat('/proc/'+entry.name+'/stat')
+                 except (FileNotFoundError, ProcessLookupError):
+                     continue
++                except PermissionError as error:
++                    denied.append('%s: %s' % (entry.name, error))
++                    continue
+                 if session == sid and (state not in ('Z', 'X') or threads > 1):
+-                    members.append((pid, state))
++                    members.append((pid, state, starttime))
+     except OSError as error:
+-        raise GateError('cannot enumerate/read process session: '+str(error)) from error
++        raise SessionInspectionError('cannot enumerate/read process session; scan incomplete: '+str(error), members) from error
++    session_deadline(deadline, members)
++    if denied:
++        raise SessionInspectionError('scan incomplete; permission denied: '+'; '.join(denied), members)
+     return sorted(members)
+ 
+ 
+-def wait_session_exit(sid, timeout=10, *, kill=False):
++def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+     # The unreaped session leader pins the SID. Descendants that call setsid()
+     # themselves escape this session and are outside this tracking model.
+-    deadline = time.monotonic()+timeout
++    # This is not cgroup containment and does not adopt/reap grandchildren.
++    # Deadlines are cooperative; an individual kernel operation can overrun.
++    if deadline is None:
++        deadline = time.monotonic()+timeout
+     while True:
+-        members = live_session_members(sid)
+-        if not members:
+-            return
++        errors = []
++        deadline_error = None
++        try:
++            members = live_session_members(sid, deadline)
++        except SessionInspectionError as error:
++            errors.append(str(error))
++            members = error.members
++            if isinstance(error, SessionDeadlineError):
++                deadline_error = error
+         if kill:
+-            # A job may have its own process group (e.g. ninja 1.13 jobs).
+-            # Scan again after killing to catch forks during the previous scan.
+-            for pid, state in members:
++            # Keep processing other members after a denied signal or lost PID.
++            for pid, state, starttime in members:
+                 try:
+-                    os.kill(pid, signal.SIGKILL)
+-                except ProcessLookupError:
++                    session_deadline(deadline, members)
++                    kill_session_member(sid, pid, starttime, deadline)
++                except (FileNotFoundError, ProcessLookupError):
+                     pass
++                except SessionInspectionError as error:
++                    errors.append(str(error))
++                    break
++                except PermissionError as error:
++                    errors.append('PID %d: %s' % (pid, error))
++        if errors:
++            if deadline_error is not None:
++                raise SessionDeadlineError("; ".join(errors), members)
++            raise GateError('session cleanup/check failed: '+'; '.join(errors)+
++                            '; last observed members: '+repr(members))
++        if not members:
++            return
+         if time.monotonic() >= deadline:
+-            raise LiveDescendantsError('process session %d still alive: %s' %
+-                                       (sid, ', '.join('%d:%s' % item for item in members)))
+-        time.sleep(.02)
++            raise LiveDescendantsError('process session %d deadline expired; scan incomplete; last observed members: %s' %
++                                       (sid, ', '.join('%d:%s' % item[:2] for item in members)))
++        time.sleep(min(.02, max(0, deadline-time.monotonic())))
+ 
+ 
+ def kill_session(sid, timeout=10):
++    deadline = time.monotonic()+timeout
+     # Kill the leader's group even if a subsequent /proc scan fails.
++    errors = []
+     try:
+         os.killpg(sid, signal.SIGKILL)
+     except ProcessLookupError:
+         pass
+-    wait_session_exit(sid, timeout, kill=True)
++    except PermissionError as error:
++        errors.append('leader group: '+str(error))
++    try:
++        wait_session_exit(sid, timeout, kill=True, deadline=deadline)
++    except GateError as error:
++        if not errors:
++            raise
++        errors.append(str(error))
++    if errors:
++        raise GateError('session cleanup failed: '+'; '.join(errors))
+ 
+ _CANCEL_SIGNAL = None
+-_ACTIVE_GROUP = None  # SID of the unreaped leader; name retained for callers.
++_ACTIVE_SESSION = None  # SID of the unreaped leader; cleared before final reap.
+ _SPAWNING = False
+ _DEFERRED_SECOND_SIGNAL = None
++_FORCE_EXITING = False
+ 
+ 
+ def record_cancel(signum, frame):
+-    global _CANCEL_SIGNAL, _DEFERRED_SECOND_SIGNAL
++    global _CANCEL_SIGNAL, _DEFERRED_SECOND_SIGNAL, _FORCE_EXITING
+     if _CANCEL_SIGNAL is not None:
+         if _SPAWNING:
+             if _DEFERRED_SECOND_SIGNAL is None:
+                 _DEFERRED_SECOND_SIGNAL = signum
+             return
+-        # Kill the active session before honoring an immediate second signal.
+-        # Bound the rescan so an unkillable member cannot delay termination.
+-        if _ACTIVE_GROUP is not None:
+-            try: kill_session(_ACTIVE_GROUP, 1)
+-            except Exception: pass
+-        # This second-signal path terminates by signal; original handlers are not restored.
+-        signal.signal(signum, signal.SIG_DFL)
+-        os.kill(os.getpid(), signum)
++        try:
++            if not _FORCE_EXITING:
++                _FORCE_EXITING = True
++                # Best effort, once only. Another signal abandons this pass
++                # and terminates immediately, without restarting its budget.
++                if _ACTIVE_SESSION is not None:
++                    try: kill_session(_ACTIVE_SESSION, 1)
++                    except Exception: pass
++        finally:
++            # This terminal path deliberately does not restore old handlers.
++            signal.signal(signum, signal.SIG_DFL)
++            os.kill(os.getpid(), signum)
+         return
+     _CANCEL_SIGNAL = signum
+ 
+@@ -289,13 +370,15 @@ def reap_child(process, timeout=1):
+         time.sleep(.01)
+ 
+ def call(argv, log, cwd=None, timeout=300):
+-    global _ACTIVE_GROUP, _SPAWNING, _DEFERRED_SECOND_SIGNAL
++    global _ACTIVE_SESSION, _SPAWNING, _DEFERRED_SECOND_SIGNAL
+     log = Path(log); log.parent.mkdir(parents=True, exist_ok=True)
+     process = None; reaped = False; primary = None
++    session_retired = False
+     previous = signal.getsignal(signal.SIGCHLD)
+     try:
+         if previous != signal.SIG_DFL:
+             signal.signal(signal.SIGCHLD, signal.SIG_DFL)
++        session_kill_mode()
+         save(log.with_suffix(log.suffix+'.argv.json'),
+              {'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None,
+               'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+@@ -312,7 +395,7 @@ def call(argv, log, cwd=None, timeout=300):
+             try:
+                 process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
+                                            stderr=subprocess.STDOUT, start_new_session=True)
+-                _ACTIVE_GROUP = process.pid
++                _ACTIVE_SESSION = process.pid
+             finally:
+                 _SPAWNING = False
+                 if _DEFERRED_SECOND_SIGNAL is not None:
+@@ -329,7 +412,9 @@ def call(argv, log, cwd=None, timeout=300):
+                 primary = ('COMMAND_ERROR: command exited successfully with live descendants: '+
+                            str(error))
+                 raise GateError(primary) from error
+-            _ACTIVE_GROUP = None
++            # Retire scan/kill authority before a reap can release the SID.
++            session_retired = True
++            _ACTIVE_SESSION = None
+             require(reap_child(process) == rc, 'child exit status changed while reaping')
+             reaped = True
+         text = log.read_text(errors='replace')
+@@ -344,17 +429,23 @@ def call(argv, log, cwd=None, timeout=300):
+                        ('TIMEOUT: ' if isinstance(error, subprocess.TimeoutExpired) else 'COMMAND_ERROR: ')+str(error))
+         cleanup = []
+         if process is not None and not reaped:
+-            # Keep the unreaped leader as a SID anchor until session cleanup ends.
+-            try:
+-                kill_session(process.pid, 10)
+-            except Exception as failure:
+-                cleanup.append(str(failure))
+-            _ACTIVE_GROUP = None
+-            try:
+-                reap_child(process, 1)
+-            except Exception as failure:
+-                cleanup.append(str(failure))
++            if not session_retired:
++                # Keep the unreaped leader as an anchor until cleanup ends.
++                try:
++                    kill_session(process.pid, 10)
++                except Exception as failure:
++                    cleanup.append(str(failure))
++            session_retired = True
++            _ACTIVE_SESSION = None
++            if process.returncode is None:
++                try:
++                    reap_child(process, 1)
++                except Exception as failure:
++                    cleanup.append(str(failure))
+         if isinstance(error, (KeyboardInterrupt, SystemExit)):
++            if cleanup and isinstance(error, SystemExit) and error.code in (None, 0):
++                # A successful exit request cannot conceal failed child cleanup.
++                raise GateError(primary+'; cleanup error: '+'; '.join(cleanup)) from error
+             raise
+         if _CANCEL_SIGNAL is not None and not cancel_originated:
+             primary = 'CANCELLED: cancelled by signal %s; while handling: %s' % (_CANCEL_SIGNAL, primary)
+@@ -365,7 +456,7 @@ def call(argv, log, cwd=None, timeout=300):
+         failure.bolt_log = str(log)
+         raise failure from error
+     finally:
+-        _ACTIVE_GROUP = None
++        _ACTIVE_SESSION = None
+         if previous is not None and previous != signal.SIG_DFL:
+             signal.signal(signal.SIGCHLD, previous)
+ 
+@@ -1974,7 +2065,8 @@ def main():
+     print(json.dumps(result,ensure_ascii=False),flush=True)
+ 
+ def cli():
+-    global _CANCEL_SIGNAL, _SPAWNING, _DEFERRED_SECOND_SIGNAL
++    global _CANCEL_SIGNAL, _SPAWNING, _DEFERRED_SECOND_SIGNAL, _FORCE_EXITING
++    _FORCE_EXITING = False
+     _SPAWNING = False
+     _DEFERRED_SECOND_SIGNAL = None
+     previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)}

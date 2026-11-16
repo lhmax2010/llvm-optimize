@@ -1,0 +1,126 @@
+{
+  "legacy_tests": 661,
+  "new_tests": 34,
+  "total": 695,
+  "passed": 695,
+  "PASS": true,
+  "suites": [
+    {
+      "suite": "policy",
+      "tests": 46,
+      "PASS": true,
+      "log": "tests/policy.log"
+    },
+    {
+      "suite": "release",
+      "tests": 5,
+      "PASS": true,
+      "log": "tests/release.log"
+    },
+    {
+      "suite": "r2",
+      "tests": 12,
+      "expected": 12,
+      "rc": 0,
+      "PASS": true,
+      "log": "r2-114-final.log"
+    },
+    {
+      "suite": "r3-r4-r5",
+      "tests": 40,
+      "expected": 40,
+      "rc": 0,
+      "PASS": true,
+      "log": "r3-r4-r5-114-final.log"
+    },
+    {
+      "suite": "hardening",
+      "tests": 16,
+      "expected": 16,
+      "rc": 0,
+      "PASS": true,
+      "log": "hardening-114-final.log"
+    },
+    {
+      "suite": "review-r11",
+      "tests": 19,
+      "expected": 19,
+      "rc": 0,
+      "PASS": true,
+      "log": "review-r11-114-final.log"
+    },
+    {
+      "suite": "helper",
+      "tests": 393,
+      "expected": 393,
+      "rc": 0,
+      "PASS": true,
+      "log": "helper-114-final.log"
+    },
+    {
+      "suite": "targeted",
+      "tests": 30,
+      "expected": 30,
+      "rc": 0,
+      "PASS": true,
+      "log": "targeted-114-final.log"
+    },
+    {
+      "suite": "N1",
+      "tests": 6,
+      "expected": 6,
+      "rc": 0,
+      "PASS": true,
+      "log": "N1-114-final.log"
+    },
+    {
+      "suite": "regression109",
+      "tests": 45,
+      "expected": 45,
+      "rc": 0,
+      "PASS": true,
+      "log": "regression109-114-final.log"
+    },
+    {
+      "suite": "sessions110",
+      "tests": 35,
+      "expected": 35,
+      "rc": 0,
+      "PASS": true,
+      "log": "sessions110-114-final.log"
+    },
+    {
+      "suite": "P1-P2-S2",
+      "tests": 14,
+      "expected": 14,
+      "rc": 0,
+      "PASS": true,
+      "log": "P1-P2-S2-114-final.log"
+    }
+  ],
+  "new": {
+    "tests": 34,
+    "failures": 0,
+    "errors": 0,
+    "PASS": true
+  },
+  "python39_syntax": "PASS (AST only; runtime Python 3.12)",
+  "preparation_corrections": [
+    {
+      "step": "fixture discovery",
+      "detail": "Initial read-only lookup used bolt worktree temp path; corrected to main workspace temp path before preparing tests."
+    },
+    {
+      "step": "r2 fixture preparation",
+      "detail": "Missing post-expanded.stdout corrected once; first attempt ran 0 r2 tests; later 12/12 PASS."
+    },
+    {
+      "step": "evidence staging",
+      "correction_number": 1,
+      "error": "git add returned 1 because *.log paths are ignored; nonignored paths may already be staged.",
+      "fix": "Explicit git add -f for only the manifest-listed deliverables; do not change .gitignore."
+    }
+  ],
+  "historical_test_note": "P1/P2/S2 test_s2_comment_only_helper_change still checks 56902c58 vs H, since task114 intentionally changes helper AST. The 13 other P1/P2 tests exercise current unchanged spec. r14 three scenarios use the existing owned-process tree fixture rather than global pgrep cleanup.",
+  "final_reverification": "After SystemExit(0)+cleanup-error guard, reran 610 legacy tests and all 34 new tests; policy 46/release 5 results remain valid because spec/converter are byte-identical."
+}

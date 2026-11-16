@@ -1,0 +1,718 @@
+[
+  {
+    "test": "__main__.R1.test_short_lived_descendant_succeeds",
+    "elapsed": 2.1175451659946702
+  },
+  {
+    "test": "__main__.R1.test_success_with_live_descendant_fails_and_cleans",
+    "elapsed": 10.089190219994634,
+    "descendant_status": -9
+  },
+  {
+    "test": "__main__.Regression.test_child_mask_chld_ignored",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "-c",
+      "import signal,sys,runpy\nsignal.signal(signal.SIGCHLD,signal.SIG_IGN)\nsys.argv=sys.argv[1:]\nrunpy.run_path(sys.argv[0],run_name=\"__main__\")\n",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/mask.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpnx9xuebo/mask.log"
+    ],
+    "rc": 0,
+    "stdout": "parent SIGCHLD before 1\nchild: SigBlk: 0000000000000000 SigIgn: 0000000000000000 SigCgt: 0000000000000400\nparent SIGCHLD after 1\nparent self: SigBlk:\t0000000000000000 SigIgn:\t0000000001011000\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_child_mask_chld_int_ignored",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "-c",
+      "import signal,sys,runpy\nsignal.signal(signal.SIGCHLD,signal.SIG_IGN)\nsignal.signal(signal.SIGINT,signal.SIG_IGN)\nsys.argv=sys.argv[1:]\nrunpy.run_path(sys.argv[0],run_name=\"__main__\")\n",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/mask.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmp0tj1_rme/mask.log"
+    ],
+    "rc": 0,
+    "stdout": "parent SIGCHLD before 1\nchild: SigBlk: 0000000000000000 SigIgn: 0000000000000002 SigCgt: 0000000000000400\nparent SIGCHLD after 1\nparent self: SigBlk:\t0000000000000000 SigIgn:\t0000000001011002\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_archive_probe",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h4b.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/llvm-static-archives-native.py",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmphthi6vaa"
+    ],
+    "rc": 0,
+    "stdout": "normal.a                                 ACCEPT names=['a_very_long_name.o', 'another_long_name.o']\nthin.a                                   ACCEPT names=['a_very_long_name.o', 'another_long_name.o']\nshort.a                                  ACCEPT names=['short.o']\nnormal + second same-size // table       REJECT ValueError: duplicate GNU ar long-name table\nnormal + empty // before the real one    REJECT ValueError: duplicate GNU ar long-name table\nthin + second same-size // table         REJECT ValueError: duplicate GNU ar long-name table\nthin + empty // before the real one      REJECT ValueError: duplicate GNU ar long-name table\nshort names + one empty //               ACCEPT names=['short.o']\n",
+    "stderr": ""
+  },
+  {
+    "test": "__main__.Regression.test_claude_h1_cancel",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h1.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "cancel",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpvrz2iyg8/h1.log"
+    ],
+    "rc": 0,
+    "stdout": "cancel   GateError: CANCELLED: cancelled by signal 15 (see /home/linhao/Toolchain/developm SIGCHLD_after=1 restore_events(child_pid_still_exists)=[('restore', False)]\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h1_fail",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h1.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "fail",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmp7vfafhu5/h1.log"
+    ],
+    "rc": 0,
+    "stdout": "fail     GateError: COMMAND_ERROR: COMMAND_FAILED rc=7: sh (see /home/linhao/Toolchain/dev SIGCHLD_after=1 restore_events(child_pid_still_exists)=[('restore', False)]\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h1_kbint",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h1.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "kbint",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpbftpydzg/h1.log"
+    ],
+    "rc": 0,
+    "stdout": "kbint    KeyboardInterrupt:                                                               SIGCHLD_after=1 restore_events(child_pid_still_exists)=[('restore', False)]\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h1_ok",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h1.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "ok",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpfb6t6be5/h1.log"
+    ],
+    "rc": 0,
+    "stdout": "ok       returned                                                                         SIGCHLD_after=1 restore_events(child_pid_still_exists)=[('restore', False)]\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h1_sysexit",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h1.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "sysexit",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpximfbakr/h1.log"
+    ],
+    "rc": 0,
+    "stdout": "sysexit  SystemExit: 3                                                                    SIGCHLD_after=1 restore_events(child_pid_still_exists)=[('restore', False)]\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h1_timeout",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h1.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "timeout",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpwmgjo479/h1.log"
+    ],
+    "rc": 0,
+    "stdout": "timeout  GateError: TIMEOUT: Command '560222' timed out after 1 seconds (see /home/linhao/ SIGCHLD_after=1 restore_events(child_pid_still_exists)=[('restore', False)]\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_deferred_then_third_257",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "deferred-then-third",
+      "397",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmp_i51ggdw",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_deferred_then_third_258",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "deferred-then-third",
+      "398",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpcoskii7n",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_deferred_then_third_259",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "deferred-then-third",
+      "399",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmp7gzejy1l",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_deferred_then_third_260",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "deferred-then-third",
+      "400",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmp3hcmdo96",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_deferred_then_third_261",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "deferred-then-third",
+      "401",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpzemi2t5w",
+      "394"
+    ],
+    "rc": -1,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_deferred_then_third_262",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "deferred-then-third",
+      "402",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpblfo3myf",
+      "394"
+    ],
+    "rc": -1,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_deferred_then_third_263",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "deferred-then-third",
+      "403",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpls0km15d",
+      "394"
+    ],
+    "rc": -1,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_deferred_then_third_264",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "deferred-then-third",
+      "404",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpk1uinyea",
+      "394"
+    ],
+    "rc": -1,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_deferred_then_third_265",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "deferred-then-third",
+      "405",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpuifiwvhi",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_popen_fail_0",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "popen-fail",
+      "0",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpb94ln09r",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_popen_ok_0",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "popen-ok",
+      "0",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpqgxhyetj",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_254",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "394",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmp7k51q0d7",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_255",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "395",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpn_04y6oq",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_256",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "396",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmp4mnbxzvk",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_257",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "397",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmp42f3aqow",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_258",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "398",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpmk54txgc",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_259",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "399",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpwv4q3_hk",
+      "394"
+    ],
+    "rc": 0,
+    "stdout": "RAISED GateError CANCELLED: cancelled by signal 15 (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-help\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_260",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "400",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpq6zkfdh4",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_261",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "401",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpi8apo7o5",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_262",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "402",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpn3_zjz5e",
+      "394"
+    ],
+    "rc": 0,
+    "stdout": "RAISED GateError CANCELLED: cancelled by signal 15 (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-help\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_263",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "403",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpf4_ki4sa",
+      "394"
+    ],
+    "rc": 0,
+    "stdout": "RAISED GateError CANCELLED: cancelled by signal 15 (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-help\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_264",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "404",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpvrv9eem5",
+      "394"
+    ],
+    "rc": 0,
+    "stdout": "RAISED GateError CANCELLED: cancelled by signal 15 (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-help\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_second_at_line_265",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "second-at-line",
+      "405",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmp9i0nw7k2",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_two_real_at_line_258",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "two-real-at-line",
+      "398",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmprkt0r6wy",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_h2_two_real_at_line_265",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/h2.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "two-real-at-line",
+      "405",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpd5cuojcz",
+      "394"
+    ],
+    "rc": -15,
+    "stdout": "",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_claude_n1",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/n1.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/clang-bolt-helper.py",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/regression109-114-final-scratch/tmpdivckrh1/n1.log"
+    ],
+    "rc": 0,
+    "stdout": "returned; SIGCHLD now 0\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\n"
+  },
+  {
+    "test": "__main__.Regression.test_codex_review_probe",
+    "argv": [
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/external/adapted/codex_check_review.py"
+    ],
+    "rc": 0,
+    "stdout": "{\"test\": \"H2_first\", \"helper_rc\": 143, \"child_status\": \"already reaped by helper\"}\n{\"test\": \"H2_second\", \"helper_rc\": -15, \"child_status\": -9}\n{\"test\": \"H2_finally_second\", \"helper_rc\": -1, \"child_status\": -9}\n{\"test\": \"H2_finally_third\", \"helper_rc\": -1, \"child_status\": -9}\n{\"test\": \"H2_failure_second\", \"helper_rc\": -15, \"child_status\": null}\n{\"test\": \"H1_success\", \"exception\": null, \"restored_IGN\": true, \"direct_children_reaped\": true}\n{\"test\": \"H1_error\", \"exception\": \"GateError\", \"restored_IGN\": true, \"direct_children_reaped\": true}\n{\"test\": \"H1_timeout\", \"exception\": \"GateError\", \"restored_IGN\": true, \"direct_children_reaped\": true}\n{\"test\": \"H1_SystemExit\", \"exception\": \"SystemExit\", \"restored_IGN\": true, \"direct_children_reaped\": true}\n{\"test\": \"H1_KeyboardInterrupt\", \"exception\": \"KeyboardInterrupt\", \"restored_IGN\": true, \"direct_children_reaped\": true}\nNATIVE_ARCHIVES_STARTUP {\"architecture_parameters\": {\"CFLAGS\": null, \"CXXFLAGS\": null}, \"signals\": {\"SIGTERM\": \"default\", \"SIGINT\": \"default\", \"SIGHUP\": \"default\"}}\nNATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL\n{\"test\": \"H5_argparse\", \"exception\": \"SystemExit\", \"restored_IGN\": true}\nNATIVE_ARCHIVES_STARTUP {\"architecture_parameters\": {\"CFLAGS\": null, \"CXXFLAGS\": null}, \"signals\": {\"SIGTERM\": \"default\", \"SIGINT\": \"default\", \"SIGHUP\": \"default\"}}\nNATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL\n{\"test\": \"H5_success\", \"exception\": null, \"restored_IGN\": true}\nNATIVE_ARCHIVES_STARTUP {\"architecture_parameters\": {\"CFLAGS\": null, \"CXXFLAGS\": null}, \"signals\": {\"SIGTERM\": \"default\", \"SIGINT\": \"default\", \"SIGHUP\": \"default\"}}\nNATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL\n{\"test\": \"H5_error\", \"exception\": \"RuntimeError\", \"restored_IGN\": true}\nNATIVE_ARCHIVES_STARTUP {\"architecture_parameters\": {\"CFLAGS\": null, \"CXXFLAGS\": null}, \"signals\": {\"SIGTERM\": \"default\", \"SIGINT\": \"default\", \"SIGHUP\": \"default\"}}\nNATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL\n{\"test\": \"H5_SystemExit\", \"exception\": \"SystemExit\", \"restored_IGN\": true}\nNATIVE_ARCHIVES_STARTUP {\"architecture_parameters\": {\"CFLAGS\": null, \"CXXFLAGS\": null}, \"signals\": {\"SIGTERM\": \"default\", \"SIGINT\": \"default\", \"SIGHUP\": \"default\"}}\nNATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL\n{\"test\": \"H5_KeyboardInterrupt\", \"exception\": \"KeyboardInterrupt\", \"restored_IGN\": true}\n{\"test\": \"N1_bolt\", \"passed\": true}\nNATIVE_ARCHIVES_STARTUP {\"architecture_parameters\": {\"CFLAGS\": null, \"CXXFLAGS\": null}, \"signals\": {\"SIGTERM\": \"default\", \"SIGINT\": \"default\", \"SIGHUP\": \"default\"}}\nNATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL\n{\"test\": \"N1_native\", \"passed\": true}\n{\"test\": \"H4_duplicate\", \"thin\": false, \"first_empty\": true, \"verdict\": \"duplicate GNU ar long-name table\"}\n{\"test\": \"H4_duplicate\", \"thin\": false, \"first_empty\": false, \"verdict\": \"duplicate GNU ar long-name table\"}\n{\"test\": \"H4_valid\", \"thin\": false, \"table_empty\": true, \"members\": 0}\n{\"test\": \"H4_valid\", \"thin\": false, \"table_empty\": false, \"members\": 1}\n{\"test\": \"H4_duplicate\", \"thin\": true, \"first_empty\": true, \"verdict\": \"duplicate GNU ar long-name table\"}\n{\"test\": \"H4_duplicate\", \"thin\": true, \"first_empty\": false, \"verdict\": \"duplicate GNU ar long-name table\"}\n{\"test\": \"H4_valid\", \"thin\": true, \"table_empty\": true, \"members\": 0}\n{\"test\": \"H4_valid\", \"thin\": true, \"table_empty\": false, \"members\": 1}\n{\"test\": \"H3_release\", \"value\": {\"required\": false}}\n{\"test\": \"H3_debug\", \"required\": true}\n{\"test\": \"successful_leader_descendant\", \"call_rejected\": true, \"descendant_status\": -9}\n",
+    "stderr": "SESSION_KILL_MODE=pidfd\nusage: native [-h] --root ROOT --build BUILD --evidence EVIDENCE --arch\n              {x86_64} --debug-info {yes,no} --compiler COMPILER\n              --disassembler DISASSEMBLER --nm NM [--jobs JOBS]\n              [--address-space-bytes ADDRESS_SPACE_BYTES]\nnative: error: the following arguments are required: --root, --build, --evidence, --arch, --debug-info, --compiler, --disassembler, --nm\n"
+  },
+  {
+    "test": "__main__.Regression.test_codex_review_probe",
+    "codex_rows": [
+      {
+        "test": "H2_first",
+        "helper_rc": 143,
+        "child_status": "already reaped by helper"
+      },
+      {
+        "test": "H2_second",
+        "helper_rc": -15,
+        "child_status": -9
+      },
+      {
+        "test": "H2_finally_second",
+        "helper_rc": -1,
+        "child_status": -9
+      },
+      {
+        "test": "H2_finally_third",
+        "helper_rc": -1,
+        "child_status": -9
+      },
+      {
+        "test": "H2_failure_second",
+        "helper_rc": -15,
+        "child_status": null
+      },
+      {
+        "test": "H1_success",
+        "exception": null,
+        "restored_IGN": true,
+        "direct_children_reaped": true
+      },
+      {
+        "test": "H1_error",
+        "exception": "GateError",
+        "restored_IGN": true,
+        "direct_children_reaped": true
+      },
+      {
+        "test": "H1_timeout",
+        "exception": "GateError",
+        "restored_IGN": true,
+        "direct_children_reaped": true
+      },
+      {
+        "test": "H1_SystemExit",
+        "exception": "SystemExit",
+        "restored_IGN": true,
+        "direct_children_reaped": true
+      },
+      {
+        "test": "H1_KeyboardInterrupt",
+        "exception": "KeyboardInterrupt",
+        "restored_IGN": true,
+        "direct_children_reaped": true
+      },
+      {
+        "test": "H5_argparse",
+        "exception": "SystemExit",
+        "restored_IGN": true
+      },
+      {
+        "test": "H5_success",
+        "exception": null,
+        "restored_IGN": true
+      },
+      {
+        "test": "H5_error",
+        "exception": "RuntimeError",
+        "restored_IGN": true
+      },
+      {
+        "test": "H5_SystemExit",
+        "exception": "SystemExit",
+        "restored_IGN": true
+      },
+      {
+        "test": "H5_KeyboardInterrupt",
+        "exception": "KeyboardInterrupt",
+        "restored_IGN": true
+      },
+      {
+        "test": "N1_bolt",
+        "passed": true
+      },
+      {
+        "test": "N1_native",
+        "passed": true
+      },
+      {
+        "test": "H4_duplicate",
+        "thin": false,
+        "first_empty": true,
+        "verdict": "duplicate GNU ar long-name table"
+      },
+      {
+        "test": "H4_duplicate",
+        "thin": false,
+        "first_empty": false,
+        "verdict": "duplicate GNU ar long-name table"
+      },
+      {
+        "test": "H4_valid",
+        "thin": false,
+        "table_empty": true,
+        "members": 0
+      },
+      {
+        "test": "H4_valid",
+        "thin": false,
+        "table_empty": false,
+        "members": 1
+      },
+      {
+        "test": "H4_duplicate",
+        "thin": true,
+        "first_empty": true,
+        "verdict": "duplicate GNU ar long-name table"
+      },
+      {
+        "test": "H4_duplicate",
+        "thin": true,
+        "first_empty": false,
+        "verdict": "duplicate GNU ar long-name table"
+      },
+      {
+        "test": "H4_valid",
+        "thin": true,
+        "table_empty": true,
+        "members": 0
+      },
+      {
+        "test": "H4_valid",
+        "thin": true,
+        "table_empty": false,
+        "members": 1
+      },
+      {
+        "test": "H3_release",
+        "value": {
+          "required": false
+        }
+      },
+      {
+        "test": "H3_debug",
+        "required": true
+      },
+      {
+        "test": "successful_leader_descendant",
+        "call_rejected": true,
+        "descendant_status": -9
+      }
+    ]
+  }
+]

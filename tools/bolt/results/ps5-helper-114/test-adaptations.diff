@@ -1,0 +1,320 @@
+--- 111/tests/environment/new-tests-02-observed.json
++++ 114/tests/environment/new-tests-02-observed.json
+@@ -3,7 +3,7 @@
+     "case": "command-failed-then-cancel",
+     "rc": 143,
+     "stdout": "",
+-    "stderr": "DISK_DIAGNOSE_CALLED\nBOLT_GATE_FAILED: CANCELLED: cancelled by signal 15; while handling: COMMAND_ERROR: COMMAND_FAILED rc=1: /bin/sh (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-111-20261116/resume/tests/r2-scratch/new-tests-02/concurrent/call.log)\nBOLT_CANCELLED: signal 15\n"
++    "stderr": "SESSION_KILL_MODE=pidfd\nDISK_DIAGNOSE_CALLED\nBOLT_GATE_FAILED: CANCELLED: cancelled by signal 15; while handling: COMMAND_ERROR: COMMAND_FAILED rc=1: /bin/sh (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-114/tests/r2-114-final-scratch/new-tests-02/concurrent/call.log)\nBOLT_CANCELLED: signal 15\n"
+   },
+   {
+     "call": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/temp/fifth-review-20261111/rerun2/environment/parse/rpmbuild/SOURCES/clang-bolt-helper.py disk-report begin",
+--- 111/tests/environment/test50.py
++++ 114/tests/environment/test50.py
+@@ -4,7 +4,7 @@
+ from unittest import mock
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+ B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt')
+-S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-111-20261116/source'); E=Path(__file__).parent
++S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source'); E=Path(__file__).parent
+ sys.path.insert(0,str(B/'tools'))
+ p=S/'packaging/llvm-static-archives-native.py'
+ spec=importlib.util.spec_from_file_location('llvm_static_archives_source',p)
+--- 111/tests/environment/test_r2.py
++++ 114/tests/environment/test_r2.py
+@@ -2,7 +2,7 @@
+ import importlib.util,sys,os,subprocess,unittest,json,signal,time,shlex
+ E=Path(__file__).parent
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+-B=W.parent/'llvm-optimize-bolt';S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-111-20261116/source')
++B=W.parent/'llvm-optimize-bolt';S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source')
+ X=Path(os.environ['TEST_SCRATCH'])/'new-tests-02';X.mkdir(exist_ok=False)
+ def load(name,path):
+  sp=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(sp);sp.loader.exec_module(m);return m
+--- 111/tests/environment/test_r3.py
++++ 114/tests/environment/test_r3.py
+@@ -4,7 +4,7 @@
+ from concurrent.futures import ThreadPoolExecutor
+ E=Path(__file__).parent
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+-B=W.with_name('llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-111-20261116/source')
++B=W.with_name('llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source')
+ X=Path(os.environ['TEST_SCRATCH'])/'cases';X.mkdir()
+ def load(name,path):
+  spec=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+--- 111/tests/environment/test_regressions.py
++++ 114/tests/environment/test_regressions.py
+@@ -1,7 +1,7 @@
+ import importlib.util,sys,unittest,subprocess,json,hashlib,shlex,tempfile
+ from pathlib import Path
+ from unittest import mock
+-B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-111-20261116/source');E=Path(__file__).parent
++B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source');E=Path(__file__).parent
+ sys.path.insert(0,str(B/'tools'))
+ p=S/'packaging/llvm-static-archives-native.py';sp=importlib.util.spec_from_file_location('llvm_static_archives_source',p);a=importlib.util.module_from_spec(sp);sys.modules[sp.name]=a;sp.loader.exec_module(a)
+ print('CONVERTER_IMPORT',p,'SHA256',hashlib.sha256(p.read_bytes()).hexdigest(),flush=True)
+--- 111/tests/external/adapted/codex_check_review.py
++++ 114/tests/external/adapted/codex_check_review.py
+@@ -30,7 +30,7 @@
+  return child
+ def trace(frame,event,arg):
+  global fired
+- if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==318 and not fired and mode in ('finally_second','finally_third'):
++ if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==401 and not fired and mode in ('finally_second','finally_third'):
+   fired=True;os.kill(os.getpid(),signal.SIGHUP)
+  return trace
+ h.subprocess.Popen=popen
+--- 111/tests/external/adapted/h2.py
++++ 114/tests/external/adapted/h2.py
+@@ -14,10 +14,10 @@
+                 h._CANCEL_SIGNAL = signal.SIGTERM          # first signal already handled
+             elif mode == 'two-real-at-line':
+                 pass
+-        if mode == 'deferred-then-third' and frame.f_lineno == 313 and not fired.get('d'):
++        if mode == 'deferred-then-third' and frame.f_lineno == 396 and not fired.get('d'):
+             fired['d'] = True
+             os.kill(os.getpid(), signal.SIGTERM)
+-        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 313:
++        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 396:
+             fired['second'] = True
+             os.kill(os.getpid(), signal.SIGHUP)
+         if frame.f_lineno == line and not fired['second'] and mode in ('second-at-line', 'two-real-at-line'):
+--- 111/tests/external/line-map.json
++++ 114/tests/external/line-map.json
+@@ -1,14 +1,14 @@
+ {
+-  "254": 311,
+-  "255": 312,
+-  "256": 313,
+-  "257": 314,
+-  "258": 315,
+-  "259": 316,
+-  "260": 317,
+-  "261": 318,
+-  "262": 319,
+-  "263": 320,
+-  "264": 321,
+-  "265": 322
++  "254": 394,
++  "255": 395,
++  "256": 396,
++  "257": 397,
++  "258": 398,
++  "259": 399,
++  "260": 400,
++  "261": 401,
++  "262": 402,
++  "263": 403,
++  "264": 404,
++  "265": 405
+ }
+--- 111/tests/helper-suite/test_second_review.py
++++ 114/tests/helper-suite/test_second_review.py
+@@ -88,7 +88,7 @@
+ 
+ class SecondProcessTests(Base):
+     def test_wait_deadline_stubborn(self):
+-        with patch.object(h,'live_session_members',return_value=[(424242,'R')]),patch.object(h.time,'monotonic',side_effect=[0,11]):
++        with patch.object(h,'live_session_members',return_value=[(424242,'R',1)]),patch.object(h.time,'monotonic',side_effect=[0,11]):
+             with self.assertRaisesRegex(h.GateError,'424242:R'):h.wait_session_exit(42)
+     def test_reap_deadline_stubborn(self):
+         with patch.object(os,'waitpid',return_value=(0,0)),patch.object(h.time,'monotonic',side_effect=[0,2]):
+@@ -118,13 +118,13 @@
+         def stat(p):
+             if p=='/proc/self/stat':return real(p)
+             if error:raise error
+-            return 424242,state,42,threads,42
++            return 424242,state,42,threads,42,1
+         entries=unittest.mock.MagicMock();entries.__enter__.return_value=iter([SimpleNamespace(name='424242')])
+         with patch.object(os,'scandir',return_value=entries),patch.object(h,'proc_stat',stat):return h.live_session_members(42)
+     def test_disappeared_process(self):self.assertEqual(self.scan('R',1,FileNotFoundError()),[])
+     def test_process_permission_error(self):
+         with self.assertRaises(h.GateError):self.scan('R',1,PermissionError('denied'))
+-    def test_zombie_threads(self):self.assertEqual(self.scan('Z',2),[(424242,'Z')])
++    def test_zombie_threads(self):self.assertEqual(self.scan('Z',2),[(424242,'Z',1)])
+     def test_single_zombie(self):self.assertEqual(self.scan('Z',1),[])
+     def test_sigchld_ignored(self):
+         previous=signal.getsignal(signal.SIGCHLD)
+--- 111/tests/run.py
++++ 114/tests/run.py
+@@ -5,6 +5,7 @@
+ inv=json.loads((B/'tools/bolt/results/fifth-review-20261111/rerun3/test-invocation.json').read_text())
+ rows=[]
+ for label,file,n in [('policy',D/'test_regressions.py',46),('release',D/'test50.py',5),('r2',D/'test_r2.py',12),('r3-r4-r5',E/'selected_r3.py',40),('hardening',E/'test_hardening.py',16),('review-r11',E/'test_review_r11.py',19)]:
++ __import__('runpy').run_path(str(E.parent/'test-admission.py'))['check']()
+  env=dict(os.environ,PATH=inv['PATH'],TEST_SCRATCH=str(E/(label+'-scratch')),PYTHONDONTWRITEBYTECODE='1')
+  with (E/(label+'.log')).open('x') as log:
+   p=subprocess.run([sys.executable,'-B',str(D/'run_preserved.py'),str(file)],stdout=log,stderr=subprocess.STDOUT,env=env)
+--- 111/tests/test-results.json
++++ 114/tests/test-results.json
+@@ -13,26 +13,8 @@
+   },
+   {
+     "suite": "r2",
+-    "rc": 0,
+-    "tests": 12,
++    "rc": 1,
++    "tests": 0,
+     "expected": 12
+-  },
+-  {
+-    "suite": "r3-r4-r5",
+-    "rc": 0,
+-    "tests": 40,
+-    "expected": 40
+-  },
+-  {
+-    "suite": "hardening",
+-    "rc": 0,
+-    "tests": 16,
+-    "expected": 16
+-  },
+-  {
+-    "suite": "review-r11",
+-    "rc": 0,
+-    "tests": 19,
+-    "expected": 19
+   }
+ ]--- 111/tests/test_109_regressions.py
++++ 114/tests/test_109_regressions.py
+@@ -34,7 +34,7 @@
+    self.h.call(self.descendant(60),log)
+   pid=int(log.read_text().strip());self.assertFalse(alive(pid))
+   _,status=os.waitpid(pid,0);self.assertEqual(os.waitstatus_to_exitcode(status),-signal.SIGKILL)
+-  self.assertIsNone(self.h._ACTIVE_GROUP)
++  self.assertIsNone(self.h._ACTIVE_SESSION)
+   OBS.append(dict(test=self.id(),elapsed=time.monotonic()-begin,descendant_status=os.waitstatus_to_exitcode(status)))
+  def test_short_lived_descendant_succeeds(self):
+   log=self.d/'short.log';begin=time.monotonic()
+@@ -46,7 +46,7 @@
+  def test_ordinary_success_clears_pgid_before_reap(self):
+   seen=[];real=self.h.reap_child
+   def reap(*args,**kwargs):
+-   seen.append(self.h._ACTIVE_GROUP);return real(*args,**kwargs)
++   seen.append(self.h._ACTIVE_SESSION);return real(*args,**kwargs)
+   with mock.patch.object(self.h,'reap_child',side_effect=reap):
+    out=self.h.call([sys.executable,'-c','print("ordinary")'],self.d/'ordinary.log')
+   self.assertEqual(out.strip(),'ordinary');self.assertEqual(seen,[None])
+@@ -55,7 +55,7 @@
+   def spawn(*a,**kw):
+    p=real(*a,**kw);children.append(p.pid);return p
+   with mock.patch.object(self.h.subprocess,'Popen',side_effect=spawn),mock.patch.object(self.h.os,'scandir',side_effect=PermissionError('109 proc denied')):
+-   with self.assertRaisesRegex(self.h.GateError,'cannot enumerate/read process session: 109 proc denied') as caught:
++   with self.assertRaisesRegex(self.h.GateError,'cannot enumerate/read process session; scan incomplete: 109 proc denied') as caught:
+     self.h.call([sys.executable,'-c','pass'],self.d/'proc.log')
+   self.assertNotIn('successfully with live descendants',str(caught.exception))
+   for pid in children:
+@@ -123,7 +123,7 @@
+   h=load();error=FileNotFoundError('109 spawn failure')
+   with mock.patch.object(h.subprocess,'Popen',side_effect=error):
+    with self.assertRaises(h.GateError) as caught:h.call(['fixture'],self.d/'spawn.log')
+-  self.assertIs(caught.exception.__cause__,error);self.assertFalse(h._SPAWNING);self.assertIsNone(h._ACTIVE_GROUP)
++  self.assertIs(caught.exception.__cause__,error);self.assertFalse(h._SPAWNING);self.assertIsNone(h._ACTIVE_SESSION)
+  def test_claude_archive_probe(self):
+   def member(name,data,size=None):
+    n=len(data) if size is None else size
+--- 111/tests/test_110_sessions.py
++++ 114/tests/test_110_sessions.py
+@@ -104,7 +104,7 @@
+   OBS.append({'test':self.id(),'rc':p.returncode,'stderr':err})
+  def clear_before_reap(self,fail):
+   real=self.h.reap_child;seen=[]
+-  def r(*a,**kw):seen.append(self.h._ACTIVE_GROUP);return real(*a,**kw)
++  def r(*a,**kw):seen.append(self.h._ACTIVE_SESSION);return real(*a,**kw)
+   with patch.object(self.h,'reap_child',side_effect=r):
+    if fail:
+     with self.assertRaises(self.h.GateError):self.h.call([sys.executable,'-c','raise SystemExit(7)'],self.d/'log')
+@@ -125,30 +125,30 @@
+  def test_generic_error_not_classified_by_text(self):self.typed(self.h.GateError('process session 42 still alive: 43:R'),False)
+  def test_oserror_not_live_descendants(self):self.typed(OSError('inspection error'),False)
+  def test_kill_rescans_new_members(self):
+-  with patch.object(self.h,'live_session_members',side_effect=[[(600001,'R')],[(600002,'S')],[]]),patch.object(self.h.os,'kill') as kill:
++  with patch.object(self.h,'live_session_members',side_effect=[[(600001,'R',1)],[(600002,'S',1)],[]]),patch.object(self.h,'kill_session_member') as kill:
+    self.h.wait_session_exit(42,1,kill=True)
+-  self.assertEqual(kill.call_args_list,[call(600001,signal.SIGKILL),call(600002,signal.SIGKILL)])
++  self.assertEqual([c.args[:3] for c in kill.call_args_list],[(42,600001,1),(42,600002,1)])
+  def test_session_timeout_is_typed(self):
+-  with patch.object(self.h,'live_session_members',return_value=[(600001,'R')]),patch.object(self.h.time,'monotonic',side_effect=[0,11]),self.assertRaises(self.h.LiveDescendantsError):
++  with patch.object(self.h,'live_session_members',return_value=[(600001,'R',1)]),patch.object(self.h.time,'monotonic',side_effect=[0,11]),self.assertRaises(self.h.LiveDescendantsError):
+    self.h.wait_session_exit(42)
+  def test_proc_stat_session_field(self):
+-  v=self.h.proc_stat('/proc/self/stat');self.assertEqual(v,(os.getpid(),v[1],os.getpgrp(),v[3],os.getsid(0)))
++  v=self.h.proc_stat('/proc/self/stat');self.assertEqual(v,(os.getpid(),v[1],os.getpgrp(),v[3],os.getsid(0),v[5]))
+  def scan(self,state,threads,sid=42,error=None):
+   real=self.h.proc_stat
+   def stat(p):
+    if p=='/proc/self/stat':return real(p)
+    if error:raise error
+-   return 600001,state,777,threads,sid
++   return 600001,state,777,threads,sid,1
+   entries=MagicMock();entries.__enter__.return_value=iter([SimpleNamespace(name='600001')])
+   with patch.object(self.h.os,'scandir',return_value=entries),patch.object(self.h,'proc_stat',side_effect=stat):return self.h.live_session_members(42)
+- def test_session_matches_different_group(self):self.assertEqual(self.scan('S',1),[(600001,'S')])
++ def test_session_matches_different_group(self):self.assertEqual(self.scan('S',1),[(600001,'S',1)])
+  def test_foreign_session_excluded(self):self.assertEqual(self.scan('S',1,43),[])
+  def test_session_zombie_excluded(self):self.assertEqual(self.scan('Z',1),[])
+  def test_session_dead_excluded(self):self.assertEqual(self.scan('X',1),[])
+- def test_zombie_leader_live_threads_included(self):self.assertEqual(self.scan('Z',2),[(600001,'Z')])
++ def test_zombie_leader_live_threads_included(self):self.assertEqual(self.scan('Z',2),[(600001,'Z',1)])
+  def test_disappearing_member(self):self.assertEqual(self.scan('S',1,error=ProcessLookupError()),[])
+  def test_scan_error_fail_closed(self):
+-  with self.assertRaisesRegex(self.h.GateError,'cannot enumerate/read process session'):self.scan('S',1,error=PermissionError('denied'))
++  with self.assertRaisesRegex(self.h.GateError,'scan incomplete'):self.scan('S',1,error=PermissionError('denied'))
+  def test_setsid_escape_is_documented_limit(self):
+   code="""import os,time,json,sys
+ from pathlib import Path
+@@ -168,18 +168,15 @@
+     except ProcessLookupError:pass
+     try:os.waitpid(pid,0)
+     except ChildProcessError:pass
+- def probe(self,script,args,expected):
+-  work=self.d/'probe';work.mkdir()
+-  p=subprocess.run([sys.executable,'-B',str(E/'r14-original/probe'/script),str(H),*args,str(work)],text=True,capture_output=True,timeout=20)
+-  (self.d/'probe-stdout').write_text(p.stdout);(self.d/'probe-stderr').write_text(p.stderr)
+-  self.assertEqual(p.returncode,0,p.stderr)
+-  row=json.loads(p.stdout.splitlines()[0]);self.assertEqual(row['survivors'],0)
+-  if 'result' in row:self.assertTrue(row['result'].startswith(expected),row)
+-  else:self.assertEqual(row['rc'],expected)
+-  OBS.append({'test':self.id(),'r14':row})
+- def test_r14_short(self):self.probe('r1.py',['bg-short'],'OK')
+- def test_r14_long(self):self.probe('r1.py',['bg-long'],'ERR COMMAND_ERROR: command exited successfully')
+- def test_r14_second_signal(self):self.probe('r1sig.py',['second'],-signal.SIGTERM)
++ # Repeat the r14 scenarios using the owned-process fixture above. The old
++ # scripts use global pgrep/raw PID cleanup, so they are not executed here.
++ def test_r14_short(self):
++  self.h.call(self.argv('exit',3),self.d/'r14-short');self.checked_empty()
++ def test_r14_long(self):
++  with self.assertRaisesRegex(self.h.GateError,'command exited successfully'):
++   self.h.call(self.argv('exit',60),self.d/'r14-long')
++  self.checked_empty()
++ def test_r14_second_signal(self):self.signal_case(signal.SIGTERM,True)
+ class PostMacroTests(unittest.TestCase):
+  body='clang-bolt-helper.py post root\necho BOLT_POST_GATE_PASS\ndisk-report post\n'
+  def test_enabled_requires_all_three(self):self.assertEqual(len(check_post(self.body,True)),3)
+--- 111/tests/test_hardening.py
++++ 114/tests/test_hardening.py
+@@ -1,7 +1,7 @@
+ import importlib.util,unittest,struct,io,contextlib,json,os,signal,sys
+ from pathlib import Path
+ from unittest.mock import patch
+-P=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-111-20261116/source/packaging/llvm-static-archives-native.py')
++P=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-114/source/packaging/llvm-static-archives-native.py')
+ def load(name,path):
+  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+ a=load('new',P);old=load('old','/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hardening-ps4/baseline-converter.py')
+--- 111/tests/test_hq_requests.py
++++ 114/tests/test_hq_requests.py
+@@ -10,11 +10,11 @@
+  def setUp(self):
+   self.root=Path(tempfile.mkdtemp())
+   self.saved={s:signal.getsignal(s) for s in (signal.SIGCHLD,signal.SIGINT,signal.SIGTERM,signal.SIGHUP)}
+-  h._CANCEL_SIGNAL=None;h._ACTIVE_GROUP=None
++  h._CANCEL_SIGNAL=None;h._ACTIVE_SESSION=None;h._FORCE_EXITING=False
+   if hasattr(h,'_SPAWNING'):h._SPAWNING=False;h._DEFERRED_SECOND_SIGNAL=None
+  def tearDown(self):
+   for s,v in self.saved.items():signal.signal(s,v)
+-  h._CANCEL_SIGNAL=None;h._ACTIVE_GROUP=None
++  h._CANCEL_SIGNAL=None;h._ACTIVE_SESSION=None;h._FORCE_EXITING=False
+  def helper_restore(self,mode,previous=signal.SIG_IGN):
+   signal.signal(signal.SIGCHLD,previous)
+   argv=[sys.executable,'-c','pass' if mode=='success' else 'import time;time.sleep(10)']
