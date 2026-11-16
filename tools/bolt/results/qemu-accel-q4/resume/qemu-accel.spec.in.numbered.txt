@@ -1,0 +1,737 @@
+1: #
+2: # spec file for package qemu-accel-ARCH, where ARCH = armv7l, armv7hl or aarch64
+3: #
+4: # Copyright (c) 2012 SUSE LINUX Products GmbH, Nuernberg, Germany.
+5: # Copyright (c) 2015 Tizen
+6: #
+7: # All modifications and additions to the file contributed by third parties
+8: # remain the property of their copyright owners, unless otherwise agreed
+9: # upon. The license for this file, and modifications and additions to the
+10: # file, is the same license as for the pristine package itself (unless the
+11: # license for the pristine package is not an Open Source License, in which
+12: # case the license is the MIT License). An "Open Source License" is a
+13: # license that conforms to the Open Source Definition (Version 1.9)
+14: # published by the Open Source Initiative.
+15: 
+16: # Please submit bugfixes or comments via http://bugs.tizen.org/
+17: #
+18: 
+19: 
+20: # arm
+21: %define target_cpu %{cross}
+22: %define target_abi %{?armv7l:eabi}%{?armv7hl:eabihf}
+23: %define target_arch %{target_cpu}-tizen-linux-gnu%{?target_abi}
+24: %define libdir %{_prefix}/lib%{?aarch64:64}%{?riscv64:64}
+25: 
+26: #disable strip debug info due to patchelf + armv7hl bug
+27: %{?armv7hl:
+28: %define _rpm_strip_disable 1
+29: }
+30: 
+31: # default path in qemu
+32: %define emul_path /emul
+33: 
+34: Name:           qemu-accel
+35: Version:        0.4
+36: Release:        0
+37: AutoReqProv:    off
+38: BuildRequires:  gcc-%{cross}
+39: BuildRequires:  binutils-%{cross}
+40: BuildRequires:  gcc-fortran
+41: #BuildRequires:  expect
+42: BuildRequires:  fdupes
+43: BuildRequires:  gettext-runtime
+44: BuildRequires:  gettext-tools
+45: BuildRequires:  m4
+46: # required for xxd
+47: BuildRequires:  vim
+48: BuildRequires:  patchelf
+49: BuildRequires:  elfutils
+50: BuildRequires:  libxslt-tools
+51: BuildRequires:  cmake
+52: BuildRequires:  gawk
+53: BuildRequires:  libstdc++
+54: BuildRequires:  python libpython
+55: BuildRequires:  python-xml
+56: BuildRequires:  python-magic
+57: BuildRequires:  python-rpm
+58: BuildRequires:  python3-rpm
+59: BuildRequires:  python-ply
+60: BuildRequires:  file
+61: BuildRequires:  libasan
+62: %ifarch x86_64
+63: BuildRequires:  liblsan
+64: %endif
+65: BuildRequires:  icecream
+66: BuildRequires:  libunwind
+67: BuildRequires:  libuuid
+68: BuildRequires:  clang
+69: BuildRequires:  pbzip2
+70: BuildRequires:  python3
+71: BuildRequires:  python3-base
+72: BuildRequires:  glibc-accel-ldso
+73: BuildRequires:  diffutils
+74: BuildRequires:  libabigail
+75: 
+76: # required for LLVM gold plugin
+77: BuildRequires:  llvm-devel
+78: # do not comapre with old rpms
+79: #!BuildIgnore:  build-compare
+80: 
+81: Summary:        Native binaries for speeding up cross compile
+82: License:        GPL-2.0
+83: Group:          Development/Cross Compilation
+84: ExclusiveArch:  x86_64
+85: 
+86: %description
+87: This package is used in %{cross} architecture builds using qemu to speed up builds
+88: with native binaries.
+89: This should not be installed on systems, it is just intended for qemu environments.
+90: 
+91: %package -n python-accel
+92: AutoReqProv: off
+93: Requires: qemu-accel
+94: Version: %{version}
+95: Release: %{release}
+96: Summary: Binaries for python acceleration
+97: License:        GPL-2.0
+98: Group:          Development/Cross Compilation
+99: 
+100: %description -n python-accel
+101: This package is used in qemu-accel to accelerate python.
+102: 
+103: %post -n python-accel
+104: ldconfig
+105: 
+106: %package -n clang-accel
+107: AutoReqProv: off
+108: Requires: qemu-accel
+109: Version: %{version}
+110: Release: %{release}
+111: Summary: Binaries for clang acceleration
+112: License:        GPL-2.0
+113: Group:          Development/Cross Compilation
+114: Requires: qemu-accel
+115: 
+116: %description -n clang-accel
+117: This package is used in qemu-accel to accelerate clang compiler.
+118: 
+119: %post -n clang-accel
+120: 
+121: %prep
+122: 
+123: %build
+124: %if 0%{?asan} || 0%{?ubsan} || 0%{?hwasan}
+125: %gcc_unforce_options
+126: %endif
+127: 
+128: %install
+129: set +x
+130: # gcc version major.minor.patch
+131: gcc_version=`gcc --version | sed -ne '1s/[^0-9]*\(\([0-9]\.\?\)*\).*/\1/p'`
+132: # Find cross-gcc install directory, like:
+133: # - /usr/lib/gcc/armv7l-tizen-linux-gnueabi/6.2.1/ for armv7l,
+134: # - /usr/lib64/gcc/aarch64-tizen-linux-gnu/6.2.1/ for aarch64
+135: gcc_install_dir="$(%{target_arch}-gcc -print-file-name=)"
+136: 
+137: # just like it is determided in python.spec
+138: host_python="python$(python2 --version 2>&1 | sed -ne '1s/.* //p' | head -c 3)"
+139: host_python3="python$(python3 --version | sed -ne '1s/.* //p' | sed -e 's/^\(3\.[0-9]\+\).*/\1/')"
+140: 
+141: # Emul path inside buildroot for installation
+142: buildroot_emul_path=%{buildroot}%{emul_path}
+143: 
+144: # Collect all shared objects from glibc and libgcc
+145: # excluding RTLD since it's processed in another way later
+146: for lib in $(rpm -ql glibc) \
+147:  $(rpm -ql libgcc)
+148: do
+149:  if echo "$lib" | grep -E '\.so(\.[[:digit:]]+)?$' > /dev/null && ! echo "$lib" | grep -q '/ld-'; then
+150:    binaries="$binaries $lib"
+151:  fi
+152: done
+153: 
+154: %ifarch %ix86
+155:   LD="%{_libdir}/ld-linux.so.2"
+156: %endif
+157: %ifarch x86_64
+158:   LD="%{_libdir}/ld-linux-x86-64.so.2"
+159: %endif
+160: 
+161: # Disable bash acceleration for armv7hl due to corruption
+162: %{?!armv7hl:
+163:   BASH_EXECUTABLE=%{_bindir}/bash
+164:   DASH_EXECUTABLE=%{_bindir}/dash
+165: }
+166: 
+167: for executable in %{emul_path}$LD \
+168:    $BASH_EXECUTABLE \
+169:    $DASH_EXECUTABLE \
+170:    %{_bindir}/rpm \
+171:    %{_bindir}/rpm2cpio \
+172:    %{_bindir}/rpmdb \
+173:    %{_bindir}/rpmkeys \
+174:    %{_bindir}/rpmqpack \
+175:    %{_bindir}/rpmbuild \
+176:    %{_bindir}/rpmsign \
+177:    %{_bindir}/rpmspec \
+178:    %{_bindir}/rpm2archive \
+179:    %{_libdir}/rpm-plugins/ima.so \
+180:    %{_libdir}/rpm-plugins/prioreset.so \
+181:    %{_libdir}/rpm-plugins/syslog.so \
+182:    %{_libdir}/libdb-4.8.so \
+183:    %{_libdir}/libdb_cxx-4.8.so \
+184:    %{_bindir}/tar \
+185:    %{_bindir}/gzip \
+186:    %{_bindir}/bzip2 \
+187:    %{_bindir}/xz \
+188:    %{_bindir}/xzdec \
+189:    %{_bindir}/pbzip2 \
+190:    %{_bindir}/grep \
+191:    %{_bindir}/sed \
+192:    %{_libdir}/libnssdbm3.so \
+193:    %{_libdir}/libsoftokn3.so \
+194:    %{_libdir}/libfreebl3.so \
+195:    %{_libdir}/lib*san.so* \
+196:    %{_libdir}/libssl.so* \
+197:    %{_libdir}/libcrypto.so* \
+198:    %{_bindir}/basename \
+199:    %{_bindir}/cat \
+200:    %{_bindir}/chmod \
+201:    %{_bindir}/chown \
+202:    %{_bindir}/cp \
+203:    %{_bindir}/cut \
+204:    %{_bindir}/date \
+205:    %{_bindir}/dirname \
+206:    %{_bindir}/env \
+207:    %{_bindir}/expr \
+208:    %{_bindir}/false \
+209:    %{_bindir}/id \
+210:    %{_bindir}/install \
+211:    %{_bindir}/ln \
+212:    %{_bindir}/md5sum \
+213:    %{_bindir}/mkdir \
+214:    %{_bindir}/mktemp \
+215:    %{_bindir}/mv \
+216:    %{_bindir}/printf \
+217:    %{_bindir}/pwd \
+218:    %{_bindir}/realpath \
+219:    %{_bindir}/rm \
+220:    %{_bindir}/rmdir \
+221:    %{_bindir}/seq \
+222:    %{_bindir}/sha256sum \
+223:    %{_bindir}/sleep \
+224:    %{_bindir}/sort \
+225:    %{_bindir}/stat \
+226:    %{_bindir}/tail \
+227:    %{_bindir}/tee \
+228:    %{_bindir}/test \
+229:    %{_bindir}/touch \
+230:    %{_bindir}/tr \
+231:    %{_bindir}/true \
+232:    %{_bindir}/uniq \
+233:    %{_bindir}/wc \
+234:    %{_bindir}/which \
+235:    %{_bindir}/msgexec \
+236:    %{_bindir}/msgfmt \
+237:    %{_bindir}/msgcat \
+238:    %{_bindir}/msgmerge \
+239:    %{_bindir}/make \
+240:    %{_bindir}/m4 \
+241:    %{_bindir}/awk \
+242:    %{_bindir}/gawk \
+243:    %{_bindir}/patch \
+244:    %{_bindir}/diff \
+245:    %{_bindir}/echo \
+246:    %{_bindir}/head \
+247:    %{_bindir}/eu-addr2line \
+248:    %{_bindir}/eu-ar \
+249:    %{_bindir}/eu-elfclassify \
+250:    %{_bindir}/eu-elfcmp \
+251:    %{_bindir}/eu-elfcompress \
+252:    %{_bindir}/eu-elflint \
+253:    %{_bindir}/eu-findtextrel \
+254:    %{_bindir}/eu-nm \
+255:    %{_bindir}/eu-objdump \
+256:    %{_bindir}/eu-ranlib \
+257:    %{_bindir}/eu-readelf \
+258:    %{_bindir}/eu-size \
+259:    %{_bindir}/eu-stack \
+260:    %{_bindir}/eu-strings \
+261:    %{_bindir}/eu-strip \
+262:    %{_bindir}/eu-unstrip \
+263:    %{_bindir}/xsltproc \
+264:    %{_bindir}/ccmake \
+265:    %{_bindir}/cmake \
+266:    %{_bindir}/cpack \
+267:    %{_bindir}/ctest \
+268:    %{_bindir}/%{target_arch}-addr2line \
+269:    %{_bindir}/%{target_arch}-ar \
+270:    %{_bindir}/%{target_arch}-as \
+271:    %{_bindir}/%{target_arch}-c++filt \
+272:    %{_bindir}/%{target_arch}-elfedit \
+273:    %{_bindir}/%{target_arch}-gprof \
+274:    %{_bindir}/%{target_arch}-ld \
+275:    %{_bindir}/%{target_arch}-ld.bfd \
+276:    %{_bindir}/%{target_arch}-nm \
+277:    %{_bindir}/%{target_arch}-objcopy \
+278:    %{_bindir}/%{target_arch}-objdump \
+279:    %{_bindir}/%{target_arch}-ranlib \
+280:    %{_bindir}/%{target_arch}-readelf \
+281:    %{_bindir}/%{target_arch}-size \
+282:    %{_bindir}/%{target_arch}-strings \
+283:    %{_bindir}/%{target_arch}-strip \
+284:    %{_bindir}/%{target_arch}-c++ \
+285:    %{_bindir}/%{target_arch}-g++ \
+286:    %{_bindir}/%{target_arch}-cpp \
+287:    %{_bindir}/%{target_arch}-gcc \
+288:    %{_bindir}/%{target_arch}-gcc-ar \
+289:    %{_bindir}/%{target_arch}-gcc-nm \
+290:    %{_bindir}/%{target_arch}-gcc-ranlib \
+291:    %{_bindir}/%{target_arch}-gcov \
+292:    %{_bindir}/%{target_arch}-gfortran \
+293:    ${gcc_install_dir}cc1 \
+294:    ${gcc_install_dir}cc1plus \
+295:    ${gcc_install_dir}collect2 \
+296:    ${gcc_install_dir}lto1 \
+297:    ${gcc_install_dir}lto-wrapper \
+298:    ${gcc_install_dir}liblto_plugin.so* \
+299:    ${gcc_install_dir}f951 \
+300:    %{_bindir}/file \
+301:    %{_bindir}/icecc \
+302:    %{_bindir}/icerun \
+303:    %{_bindir}/find \
+304:    %{_bindir}/xargs \
+305:    %{_bindir}/readlink \
+306:    %{_bindir}/ls \
+307:    %{_bindir}/cpio \
+308:    %{_rpmconfigdir}/debugedit \
+309:    %{_rpmconfigdir}/*deps \
+310:    %{_libdir}/libunwind*.so* \
+311:    %{_libdir}/libuuid*.so* \
+312:    %{_bindir}/localedef \
+313:    %{_bindir}/abidw \
+314:    %{_bindir}/abidiff \
+315:    %{_bindir}/abicompat \
+316:    %{_bindir}/abipkgdiff \
+317:    %{_bindir}/kmidiff
+318: do
+319:   binaries="$binaries $executable"
+320: done
+321: 
+322: # Add architecture-specific binaries (dwp and ld.gold are not available for riscv64)
+323: %{?!riscv64:
+324: for executable in %{_bindir}/%{target_arch}-dwp \
+325:    %{_bindir}/%{target_arch}-ld.gold
+326: do
+327:   binaries="$binaries $executable"
+328: done
+329: }
+330: 
+331: prepare_package_list() {
+332:   local bins=""
+333:   local name=$1
+334:   shift
+335:   local executables="$@"
+336:   echo "Setting up $name for $executables"
+337:   ## Prepare the clang binaries separately
+338:   for executable in $executables; do
+339:     bins="$bins $executable `ldd $executable 2>/dev/null | sed -n 's,.*=> \(/[^ ]*\) .*,\1,p'`"
+340:   done
+341: 
+342:   for b in $(echo "$bins" | tr ' ' '\n' | sort -u); do
+343:     local orig_file=$(readlink -f $b)
+344:     bins="$bins $orig_file"
+345:     if ! echo "$b" | grep -q '/\.\./'; then
+346:         # Ignore relative paths
+347:         echo $b >> $name.list
+348:     fi
+349:     echo $orig_file >> $name.list
+350:   done
+351: 
+352:   ## Store the resulting list for packaging, setting up the right prefix, removing duplication of %emul_path if one exists
+353:   cat $name.list | \
+354:       sed -e 's|^|%{emul_path}|;s| |\n%{emul_path}|g' | \
+355:       grep -v "%{emul_path}%{emul_path}" | \
+356:       sort -u > %{_sourcedir}/$name-accel.list
+357:   binaries=$(echo "$binaries $bins" | tr ' ' '\n' | sort -u)
+358: }
+359: 
+360: prepare_package_list all \
+361:   $binaries
+362: 
+363: prepare_package_list clang \
+364:   %{_bindir}/clang-* \
+365:   %{_bindir}/clang++ \
+366:   %{_bindir}/opt \
+367:   %{_bindir}/lli \
+368:   %{_bindir}/llc \
+369:   %{_bindir}/llvm-* \
+370:   %{_bindir}/lld \
+371:   %{_bindir}/ld.lld \
+372:   %{_libdir}/libLTO.so* \
+373:   %{_libdir}/LLVMgold.so*
+374: 
+375: prepare_package_list python \
+376:   %{_bindir}/${host_python} \
+377:   %{_libdir}/${host_python}/lib-dynload/*.so \
+378:   %{_libdir}/${host_python}/site-packages/*/*.so
+379: 
+380: prepare_package_list python3 \
+381:   %{_bindir}/${host_python3} \
+382:   %{_libdir}/${host_python3}/lib-dynload/*.so \
+383:   %{_libdir}/${host_python3}/site-packages/*/*.so
+384: 
+385: ## dump list of binaries and list of packages
+386: echo "### Binaries accelerated ###"
+387: echo $binaries | sed -e 's/[^ ]*\///g;s/[^ ]*.so[^ ]* \?//g'
+388: echo "### Packages used ###"
+389: rpm -qf $binaries | grep -v "not owned" | sed -e "s/-[0-9].*//g" | sort -u
+390: echo ""
+391: 
+392: patch_binary() {
+393:   local binary=$1
+394:   local rtld=$2
+395:   # We don't need to accelerate shell scripts
+396:   local filetype=`file --brief $binary`
+397:   if echo "$filetype" | grep -q '^POSIX shell script'; then
+398:     return
+399:   fi
+400: 
+401:   local outfile=${buildroot_emul_path}$binary
+402:   if ! test -e "$binary"; then
+403:     echo "WARNING: File not found, ignoring"
+404:     return
+405:   fi
+406:   if test -f "$outfile"; then
+407:     echo "WARNING: File exists, ignoring"
+408:     return
+409:   fi
+410:   mkdir -p ${outfile%/*}
+411:   cp -aL $binary $outfile
+412:   [ "$binary" = "$rtld" ] && return
+413:   [ "$binary" = "%{emul_path}$rtld" ] && return
+414: 
+415:   # not all binaries have an .interp section
+416:   if patchelf --print-interpreter $outfile 1>/dev/null 2>/dev/null; then
+417:     patchelf --set-interpreter %{emul_path}$rtld $outfile
+418:   fi
+419: 
+420:   # Only patch RUNPATH if one exists and is absolute
+421:   local rpath=$(readelf -d "$outfile" | sed -e '/RUNPATH/{s~.*\[\(.*\)\]~\1~;n};d')
+422:   if [ -n "$rpath" ]; then
+423:     first_char=$(echo "$rpath" | cut -c1)
+424:     if [ "$first_char" = "/" ]; then
+425:       patchelf --set-rpath "%{emul_path}%{_libdir}" $outfile
+426:     fi
+427:   fi
+428: }
+429: 
+430: # Process all binaries directly (parallel jobs with simple file-based coordination)
+431: for binary in $binaries; do
+432:     patch_binary "$binary" "$LD" &
+433: done
+434: wait
+435: 
+436: # Remove the toybox binary itself from /emul, but keep accelerated copies
+437: # (cat, rm, mkdir, etc.). toybox is a multi-call binary; on the target
+438: # system uname is a symlink to toybox. If /emul has a native toybox,
+439: # uname -a returns the host architecture instead of the target arch.
+440: rm -f "${buildroot_emul_path}%{_bindir}/toybox"
+441: sed -i "\|^%{emul_path}%{_bindir}/toybox$|d" %{_sourcedir}/all-accel.list 2>/dev/null
+442: 
+443: set -x
+444: 
+445: %{?multilib:
+446: # Detect name of current ld.so. E.g. ld-linux.so.2
+447: cross_ld_symlink=$(basename `rpm -ql glibc-32bit | grep -E 'ld-linux\.so$'`)
+448: 
+449: # Patch all 32bit binaries to use the right ld.so though symlink
+450: mkdir -p ${buildroot_emul_path}%{_prefix}/lib
+451: mkdir -p ${buildroot_emul_path}/lib
+452: for f in $(rpm -ql glibc-32bit) \
+453:   $(rpm -ql libgcc-32bit)
+454: do
+455:  fdir=$(dirname $f)
+456:  [ ! -d ${buildroot_emul_path}/$fdir ] && mkdir -p ${buildroot_emul_path}/$fdir
+457:  cp -a $f ${buildroot_emul_path}/$f
+458:  echo "%{emul_path}$f" >> %{_sourcedir}/multilib-accel.list
+459: done
+460: 
+461: # Now we have to change the ld.so name to prevent name clashing in armv7l repos
+462: i686_libdir="%{emul_path}/lib"
+463: 
+464: # 1. Rename the actual ld.so binary
+465: cross_ld_so=$(find %{buildroot}${i686_libdir} -name 'ld-*.so.2' -printf '%f')
+466: new_cross_ld_so=$(echo ${cross_ld_so} | sed -e 's,\.so,-i686.so,')
+467: mv %{buildroot}${i686_libdir}/${cross_ld_so} %{buildroot}${i686_libdir}/${new_cross_ld_so}
+468: sed -e "s|${cross_ld_so}|${new_cross_ld_so}|" -i %{_sourcedir}/multilib-accel.list
+469: 
+470: # 2. Force the symlink to point the right file.
+471: ln -sf %{emul_path}/lib/${new_cross_ld_so} %{buildroot}${i686_libdir}/${cross_ld_symlink}
+472: echo "${i686_libdir}/${cross_ld_symlink}" >> %{_sourcedir}/multilib-accel.list
+473: 
+474: # create symlinks for libgcc-32bit
+475: # libgcc-32bit library is placed under ${gcc_install_dir}32/ not just /lib for 32bit
+476: # Process lib*.so files only, we expect that licenses are already in the
+477: # multilib-accel.list.
+478: for f in $(rpm -ql libgcc-32bit | grep "\/lib[^\/]*\.so.*")
+479: do
+480:   filename=$(basename $f)
+481:   ln -sf %{emul_path}/$f %{buildroot}${i686_libdir}/${filename}
+482:   echo "${i686_libdir}/${filename}" >> %{_sourcedir}/multilib-accel.list
+483: done
+484: }
+485: 
+486: # create symlinks for bash
+487: ln -s usr/bin "${buildroot_emul_path}/bin"
+488: ln -sf bash "${buildroot_emul_path}%{_bindir}/sh"
+489: echo '%{emul_path}%{_bindir}/sh' >> %{_sourcedir}/all-accel.list
+490: 
+491: mv ${buildroot_emul_path}/%{_lib}/* ${buildroot_emul_path}%{_libdir}/
+492: rm -rf ${buildroot_emul_path}/%{_lib}
+493: ln -sf usr/%{_lib} ${buildroot_emul_path}/%{_lib}
+494: %{?multilib:
+495: mv ${buildroot_emul_path}/lib/* ${buildroot_emul_path}%{_prefix}/lib/
+496: rm -rf ${buildroot_emul_path}/lib
+497: ln -sf usr/lib ${buildroot_emul_path}/lib
+498: sed -e 's|%{emul_path}/lib|%{emul_path}/usr/lib|' -i %{_sourcedir}/multilib-accel.list
+499: }
+500: 
+501: # rename binutils binaries
+502: for binary in addr2line ar as c++filt%{!?riscv64: dwp} elfedit gprof ld ld.bfd%{!?riscv64: ld.gold} nm objcopy objdump ranlib readelf size strings strip
+503: do
+504:   mv ${buildroot_emul_path}%{_bindir}/%{target_arch}-$binary ${buildroot_emul_path}%{_bindir}/$binary
+505:   sed -e "\|%{emul_path}%{_bindir}/%{target_arch}-$binary|d" -i %{_sourcedir}/all-accel.list
+506:   echo "%{emul_path}%{_bindir}/$binary" >> %{_sourcedir}/all-accel.list
+507: done
+508: 
+509: mkdir -p ${buildroot_emul_path}/%{_prefix}/%{target_arch}/bin
+510: for binary in ar as ld ld.bfd%{!?riscv64: ld.gold} nm objcopy objdump ranlib strip; do
+511:   ln -sf %{emul_path}%{_bindir}/$binary ${buildroot_emul_path}%{_prefix}/%{target_arch}/bin/$binary
+512:   echo "%{emul_path}%{_bindir}/$binary" >> %{_sourcedir}/all-accel.list
+513:   echo "%{emul_path}%{_prefix}/%{target_arch}/bin/$binary" >> %{_sourcedir}/all-accel.list
+514: done
+515: 
+516: # create symlinks for python
+517: mv ${buildroot_emul_path}%{_bindir}/${host_python} ${buildroot_emul_path}%{_bindir}/${host_python}-orig
+518: cat > ${buildroot_emul_path}%{_bindir}/${host_python} << EOF
+519: #!/bin/bash
+520: if [ -z "\$PYTHONPATH" ]; then
+521:   export PYTHONPATH="%{libdir}/${host_python}"
+522: else
+523:   export PYTHONPATH+=":%{libdir}/${host_python}"
+524: fi
+525: export PYTHONHOME="%{emul_path}%{_prefix}"
+526: %{emul_path}%{_bindir}/${host_python}-orig "\$@"
+527: EOF
+528: chmod +x ${buildroot_emul_path}%{_bindir}/${host_python}
+529: 
+530: ln -s ${host_python} ${buildroot_emul_path}%{_bindir}/python
+531: ln -s ${host_python} ${buildroot_emul_path}%{_libdir}/python
+532: 
+533: # create symlinks for python3
+534: mv ${buildroot_emul_path}%{_bindir}/${host_python3} ${buildroot_emul_path}%{_bindir}/${host_python3}-orig
+535: cat > ${buildroot_emul_path}%{_bindir}/${host_python3} << EOF
+536: #!/bin/bash
+537: if [ -z "\$PYTHONPATH" ]; then
+538:   export PYTHONPATH="%{libdir}/${host_python3}"
+539: else
+540:   export PYTHONPATH+=":%{libdir}/${host_python3}"
+541: fi
+542: export PYTHONHOME="%{emul_path}%{_prefix}"
+543: export LD_LIBRARY_PATH="%{emul_path}%{_libdir}:$LD_LIBRARY_PATH"
+544: %{emul_path}%{_bindir}/${host_python3}-orig "\$@"
+545: EOF
+546: chmod +x ${buildroot_emul_path}%{_bindir}/${host_python3}
+547: 
+548: ln -s ${host_python3} ${buildroot_emul_path}%{_bindir}/python3
+549: ln -s ${host_python3} ${buildroot_emul_path}%{_libdir}/python3
+550: 
+551: #create symlinks for Scons & ply
+552: #scons>=4.4.0 version now is python3 code
+553: mkdir -p ${buildroot_emul_path}%{libdir}/${host_python3}/site-packages
+554: ln -sf %{libdir}/${host_python3}/site-packages/SCons ${buildroot_emul_path}%{libdir}/${host_python3}/site-packages/SCons
+555: py3_version=$(python3 --version | sed -ne '1s/.* //p' | sed -e 's/^\(3\.[0-9]\+\).*/\1/')
+556: ln -sf %{libdir}/${host_python3}/site-packages/SCons-4.4.0-py${py3_version}.egg-info  ${buildroot_emul_path}%{libdir}/${host_python3}/site-packages/SCons-4.4.0-py${py3_version}.egg-info
+557: echo "%{libdir}/${host_python3}/site-packages/SCons" >> python.list
+558: echo "%{libdir}/${host_python3}/site-packages/SCons-4.4.0-py${py3_version}.egg-info" >> python.list
+559: 
+560: mkdir -p ${buildroot_emul_path}%{libdir}/${host_python}/site-packages
+561: ln -sf %{libdir}/${host_python}/site-packages/ply ${buildroot_emul_path}%{libdir}/${host_python}/site-packages/ply
+562: echo "%{libdir}/${host_python}/site-packages/ply" >> python.list
+563: 
+564: mkdir -p ${buildroot_emul_path}%{_libdir}/${host_python}/site-packages/rpm/
+565: mkdir -p ${buildroot_emul_path}%{_libdir}/${host_python3}/site-packages/rpm/
+566: mkdir -p ${buildroot_emul_path}%{_libdir}/${host_python}/encodings/
+567: cp %{_libdir}/${host_python}/site-packages/rpm/*.py ${buildroot_emul_path}%{_libdir}/${host_python}/site-packages/rpm/
+568: cp %{_libdir}/${host_python3}/site-packages/rpm/*.py ${buildroot_emul_path}%{_libdir}/${host_python3}/site-packages/rpm/
+569: cp %{_libdir}/${host_python}/*.py ${buildroot_emul_path}%{_libdir}/${host_python}/
+570: cp %{_libdir}/${host_python}/encodings/*.py ${buildroot_emul_path}%{_libdir}/${host_python}/encodings/
+571: cp -r %{_libdir}/${host_python3} ${buildroot_emul_path}%{_libdir}/
+572: find ${buildroot_emul_path}%{_libdir}/${host_python3} -name *.pyc -exec rm {} \;
+573: # Skip directories to not glob all inside them during #files processing
+574: find %{buildroot} ! -type d -name 'python*' | sed -e "s|${buildroot_emul_path}||" | tee -a python.list
+575: 
+576: # rename gcc binaries
+577: for bin in c++ g++ gcc gfortran cpp gcc-ar gcc-nm gcc-ranlib gcov
+578: do
+579:   mv ${buildroot_emul_path}%{_bindir}/%{target_arch}-$bin ${buildroot_emul_path}%{_bindir}/$bin
+580:   ln -s $bin ${buildroot_emul_path}%{_bindir}/%{target_arch}-$bin
+581:   echo "%{emul_path}%{_bindir}/$bin" >> %{_sourcedir}/all-accel.list
+582: done
+583: ln -s gcc ${buildroot_emul_path}/%{_bindir}/cc
+584: echo '%{emul_path}%{_bindir}/cc' >> %{_sourcedir}/all-accel.list
+585: 
+586: # rpmbuild when generating 'requires' tag for gobject-introspection binaries
+587: # selects (64-bit) suffix for libs based on ${HOSTTYPE} bash variable
+588: # so we replace x86_64 to armv7l to avoid bogus dependencies
+589: %ifarch x86_64
+590: %{?armv7l:
+591: sed -i -e "s/x86_64/armv7l/g" ${buildroot_emul_path}%{_bindir}/bash
+592: }
+593: %endif
+594: 
+595: # Default Tizen gcc build dir, must be synchronized with linaro-gcc spec
+596: # definition. Expected to be 'home/abuild/rpmbuild/BUILD/gcc-${version}/obj/'
+597: gcc_build_dir=%{_builddir}/gcc-${gcc_version}/obj
+598: 
+599: # create symlinks for gcc build (CC_FOR_TARGET)
+600: mkdir -p ${buildroot_emul_path}${gcc_build_dir}/gcc
+601: for binary in as cpp gcc-ar gcc-nm gcc-ranlib gcov nm
+602: do
+603:   ln -sf %{emul_path}%{_bindir}/${binary} ${buildroot_emul_path}${gcc_build_dir}/gcc/${binary}
+604:   echo "%{emul_path}${gcc_build_dir}/gcc/${binary}" >> %{_sourcedir}/all-accel.list
+605: done
+606: for binary in cc1 cc1plus collect2 lto1 lto-wrapper f951
+607: do
+608:   ln -sf %{emul_path}${gcc_install_dir}${binary} ${buildroot_emul_path}${gcc_build_dir}/gcc/${binary}
+609:   echo "%{emul_path}${gcc_build_dir}/gcc/${binary}" >> %{_sourcedir}/all-accel.list
+610: done
+611: ln -sf %{emul_path}%{_bindir}/gcc ${buildroot_emul_path}${gcc_build_dir}/gcc/xgcc
+612: ln -sf %{emul_path}%{_bindir}/g++ ${buildroot_emul_path}${gcc_build_dir}/gcc/xg++
+613: echo "%{emul_path}${gcc_build_dir}/gcc/xgcc" >> %{_sourcedir}/all-accel.list
+614: echo "%{emul_path}${gcc_build_dir}/gcc/xg++" >> %{_sourcedir}/all-accel.list
+615: 
+616: # support /lib/cpp
+617: ln -sf %{emul_path}%{_bindir}/cpp ${buildroot_emul_path}/usr/lib/cpp
+618: echo '%{emul_path}/usr/lib/cpp' >> %{_sourcedir}/all-accel.list
+619: 
+620: # generate baselibs.conf for current architecture to prevent rpm overwriting in download repo
+621: echo  %{cross}
+622: cat > %{_sourcedir}/baselibs_prologue << EOF
+623: arch i686 targets %{cross}:%{cross}
+624: arch i686 targets %{cross}:x86-%{cross}
+625: arch x86_64 targets %{cross}:%{cross}
+626: arch x86_64 targets %{cross}:x86_64-%{cross}
+627: EOF
+628: cat %{_sourcedir}/baselibs_prologue %{_sourcedir}/baselibs_body > %{_sourcedir}/baselibs.conf
+629: 
+630: # By default this is ${gcc_install_dir}/liblto_plugin.so
+631: target_liblto_plugin="$(%{target_arch}-gcc -print-file-name=liblto_plugin.so)"
+632: # update baselibs.conf, overwrite LTO plugin
+633: sed -e "s,#PLUGIN_POSTIN#,if [ -d $(dirname ${target_liblto_plugin}) ]; then\"\n  post \" mv ${target_liblto_plugin} ${target_liblto_plugin}_backup \&\& ln -sf %{emul_path}${target_liblto_plugin} ${target_liblto_plugin}\"\n  post \"fi," -i %{_sourcedir}/baselibs.conf
+634: sed -e "s,#PLUGIN_POSTUN#,mv ${target_liblto_plugin}_backup ${target_liblto_plugin}," -i %{_sourcedir}/baselibs.conf
+635: 
+636: # Use /usr/lib for cross clang libdir on armv7l architecture
+637: %{?armv7l:
+638: awk '/post "/ && !x {print "  post \"echo export\\ CLANG_NO_LIBDIR_SUFFIX=1 >> /etc/profile\""; print $0; x=1;next} 1' %{_sourcedir}/baselibs.conf > baselibs_updated && mv baselibs_updated %{_sourcedir}/baselibs.conf
+639: }
+640: 
+641: %{?multilib:
+642: awk '/post "/ && !x {print "  post \"echo '%{emul_path}/lib' >> /etc/ld.so.conf\"\n"; print $0; x=1;next} 1' %{_sourcedir}/baselibs.conf > baselibs_updated && mv baselibs_updated %{_sourcedir}/baselibs.conf
+643: }
+644: 
+645: # Remove the ld-$VERSION.so to prevent name clashing with native ld.so
+646: find ${buildroot_emul_path}%{_libdir} -name 'ld-*.so' -delete
+647: sed -e '\|%{emul_path}%{_libdir}/ld-[[:digit:]].*\.so|d' -i %{_sourcedir}/all-accel.list
+648: 
+649: # allow build of baselibs.conf
+650: sed -e "/targettype %{cross} block!/d" -i %{_sourcedir}/baselibs.conf
+651: 
+652: # Various clang{,++}-* files in the original clang package are
+653: # symlinks to clang-<major version>. prepare_package_list() above
+654: # causes those files to be separate copies in ${builldroot_emul_path}.
+655: # This recreates the original symlink structure in /emul
+656: clang_major=`%{_bindir}/clang --version | sed -ne 's/^.*[cC]lang version\s\+\([[:digit:]]\+\).*$/\1/p'`
+657: clang="clang-$clang_major"
+658: emul_bin="${buildroot_emul_path}%{_bindir}"
+659: for file in $emul_bin/clang-* $emul_bin/clang++; do
+660:     if [ "$file" = "$emul_bin/$clang" ]; then
+661:         continue
+662:     fi
+663:     if cmp "$file" "$emul_bin/$clang"; then
+664:         rm "$file"
+665:         ln -s $clang "$file"
+666:     fi
+667: done
+668: 
+669: # Plain clang binary is not copied by "prepare_package_list clang"
+670: # call. We've just added it as symlink and now need to add it to the
+671: # future rpm file list
+672: ln -s $clang "$emul_bin/clang"
+673: echo "%{_bindir}/clang" >> clang.list
+674: 
+675: # Create target-triple symlinks and add them to file list
+676: for bin in clang clang++; do
+677:     ln -s $bin "$emul_bin/%{target_arch}-$bin"
+678:     echo "%{_bindir}/%{target_arch}-$bin" >> clang.list
+679: done
+680: 
+681: ## Prepare file lists for packages
+682: # Change libdir to handle symlinks right
+683: find . %{_sourcedir} -name '*.list' -exec sed -e 's|%{emul_path}/%{_lib}|%{emul_path}%{_libdir}|' -i {} \;
+684: # Join native and multilib lists
+685: cat %{_sourcedir}/all-accel.list %{?multilib:%{_sourcedir}/multilib-accel.list} | sort -u > %{_sourcedir}/qemu-accel.list
+686: 
+687: ## python-accel
+688: # Generate list of all python files
+689: find %{buildroot} -name '*.py' | sed -e "s|${buildroot_emul_path}||" >> python.list
+690: # Generate list of all python3 files
+691: find ${buildroot_emul_path}%{_libdir}/${host_python3} -type f | sed -e "s|${buildroot_emul_path}||" >> python.list
+692: # Add python3 dependant libraries
+693: for library in ffi gdbm ncursesw panelw python3 tinfow; do
+694:   find ${buildroot_emul_path}%{_libdir} -name "lib${library}.*" | sed -e "s|${buildroot_emul_path}||" >> python.list
+695: done
+696: sed -e 's|^|%{emul_path}|;s|%{emul_path}/%{_lib}|%{emul_path}%{_libdir}|' python.list | sort -u > python-full.list
+697: # Remove common files from python-accel
+698: comm -13 %{_sourcedir}/qemu-accel.list python-full.list | sort -u > %{_sourcedir}/python-accel.list
+699: 
+700: ## clang-accel
+701: # Prepare clang files list
+702: sed -e 's|^|%{emul_path}|;s|%{emul_path}/%{_lib}|%{emul_path}%{_libdir}|' clang.list | sort -u > clang-full.list
+703: # Remove common files from clang-accel
+704: comm -13 %{_sourcedir}/qemu-accel.list clang-full.list > %{_sourcedir}/clang-accel.list
+705: 
+706: #Fix build error with rpm 4.14.1:#Not a directory
+707: # Add symlinks to qemu-accel packaging
+708: echo '%{emul_path}/bin' >> %{_sourcedir}/qemu-accel.list
+709: echo '%{emul_path}/%{_lib}' >> %{_sourcedir}/qemu-accel.list
+710: %{?multilib:echo '%{emul_path}/lib' >> %{_sourcedir}/qemu-accel.list}
+711: 
+712: mv ${buildroot_emul_path}%{emul_path}$LD ${buildroot_emul_path}$LD
+713: rm -rf ${buildroot_emul_path}%{emul_path}
+714: 
+715: %fdupes %{buildroot}
+716: %filter_provides_in %{emul_path}
+717: 
+718: %post
+719: ldconfig
+720: 
+721: %postun
+722: ldconfig
+723: 
+724: %postun -n python-accel
+725: ldconfig
+726: 
+727: %files -f %{_sourcedir}/qemu-accel.list
+728: %defattr(-,root,root)
+729: %exclude %{emul_path}%{py_libdir}/*
+730: 
+731: %files -n python-accel -f %{_sourcedir}/python-accel.list
+732: %defattr(-,root,root)
+733: 
+734: %files -n clang-accel -f %{_sourcedir}/clang-accel.list
+735: %defattr(-,root,root)
+736: 
+737: %changelog

@@ -1,0 +1,30 @@
+
+qemu-accel
+  targettype aarch64 block!
+  targettype armv7l block!
+  targettype riscv64 block!
+  targettype 32bit block!
+  autoreqprov off
+  +/
+  requires "gcc"
+  config -/pkg-config$
+  post "#PLUGIN_POSTIN#"
+  postun "#PLUGIN_POSTUN#"
+
+python-accel
+  targettype aarch64 block!
+  targettype armv7l block!
+  targettype riscv64 block!
+  targettype 32bit block!
+  autoreqprov off
+  +/
+  post "#PYTHON_POSTIN#"
+
+clang-accel
+  targettype aarch64 block!
+  targettype armv7l block!
+  targettype riscv64 block!
+  targettype 32bit block!
+  autoreqprov off
+  +/
+  post "#CLANG_POSTIN#"

@@ -1594,3 +1594,13 @@ FINAL-replies-for-user.md只更新H1/H2/Q6并过对外门禁，旧版-v1保留�
 ## 2026-11-16：108号 qemu-accel Q4（STOP）
 
 指定HTTPS克隆要求密码，rc128；没有新建凭据或切换协议。HEAD未取得，逻辑分析、RPM大小/setup比较及新Q4草稿均NOT RUN。交付脚本JS定界符错误修正一次后仍失败，第二次准备错误STOP；仅保存原始输出及停止记录。无构建/QB/Gerrit写入。见[108号](108_qemu_accel_q4.md)。
+
+## 2026-11-16：108号续，qemu-accel Q4 已整理
+
+按用户授权改用现有 SSH BatchMode，qemu-accel tizen_base 克隆成功，HEAD d1efa2a638768b7083a1e6572bdfbba7340df7bf。此前 HTTPS 缺少密码不再作为停止原因，历史 STOP 原文保留。
+
+[108号续报告](108_qemu_accel_q4.md)与[Q4 英文回复草稿](../../tools/bolt/results/qemu-accel-q4/resume/Q4-for-user.txt)已完成；仅供用户发布，未写 Gerrit。accel 通过 ldd 收集共享库，Part 1 仍会带入 libLLVM/libclang-cpp；相对38号保留的静态基线，LLVM文件集合的按路径regular大小由2,748,086,080降至624,565,496 B（−77.27%）。这不是最终accel RPM大小，也不是仅切换Part 1的受控A/B；完整系统库、公共清单扣除、patchelf及最终硬链接分配未模拟。已有旧发布RPM的clang是动态链接，另列表，不与静态基线混淆。
+
+Toolchain保留ARM日志仍安装clang-accel 0.4-1.1，不能证明使用新LLVM重建accel后的setup变化；完整新accel包大小及新setup时间为UNKNOWN。QB1226850是fea0fe46产物，不是今天PS5的同一源码身份。QB的BOLT区间330s、post15s、最大范围磁盘快照5,028,364,288 B，范围与连续峰值/整根磁盘不同，详见报告。
+
+本次只读分析用受限串行服务（4GiB/swap0/CPU200/Nice19/IOidle），内存峰值381,513,728 B，无OOM；一次文档查找路径准备错误已修正并保留原文/diff，无新增STOP。未构建、未访问QB、未运行BOLT、未改LLVM或其他项目；尚待实际新accel产物和受控setup测量。

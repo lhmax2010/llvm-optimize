@@ -1,0 +1,53 @@
+133: 
+134: %ifarch riscv64
+135: Target: riscv64-tizen-linux
+136: %endif
+137: 
+138: ########## cross build ##########
+139: 
+140: %define build_hostarch x86_64
+141: Macros:
+142: %build_hostarch x86_64
+143: :Macros
+144: 
+145: %ifarch riscv64 %arm armv7l armv7hl aarch64
+146: Hostarch: x86_64
+147: # cross build support for the build hosts
+148: Preinstall: qemu-linux-user-%{build_hostarch}-cross
+149: Runscripts: qemu-linux-user-%{build_hostarch}-cross
+150: Keep: qemu-linux-user-%{build_hostarch}-cross
+151: Macros:
+152: %qemu_user_space_build 1
+153: :Macros
+154: %endif
+155: 
+156: %ifarch armv7l
+157: Preinstall: qemu-accel-%{build_hostarch}-armv7l
+158: Runscripts: qemu-accel-%{build_hostarch}-armv7l
+159: Preinstall: libmount libblkid libuuid
+160: %endif
+161: 
+162: %ifarch armv7hl
+163: Preinstall: qemu-accel-%{build_hostarch}-armv7hl
+164: Runscripts: qemu-accel-%{build_hostarch}-armv7hl
+165: Preinstall: libmount libblkid libuuid
+166: %endif
+167: 
+168: %ifarch aarch64
+169: Preinstall: qemu-accel-%{build_hostarch}-aarch64
+170: Runscripts: qemu-accel-%{build_hostarch}-aarch64
+171: Preinstall: libmount libblkid libuuid
+172: %endif # aarch64
+173: 
+174: %ifarch riscv64
+175: Preinstall: qemu-accel-%{build_hostarch}-riscv64
+176: Runscripts: qemu-accel-%{build_hostarch}-riscv64
+177: Preinstall: libmount libblkid libuuid
+180: Substitute: python-accel-armv7l-cross-arm python-accel-%{build_hostarch}-armv7l
+181: Substitute: python-accel-armv7hl-cross-arm python-accel-%{build_hostarch}-armv7hl
+182: Substitute: python-accel-aarch64-cross-aarch64 python-accel-%{build_hostarch}-aarch64
+183: Substitute: python-accel-riscv64-cross-riscv64 python-accel-%{build_hostarch}-riscv64
+185: Substitute: clang-accel-armv7l-cross-arm clang-accel-%{build_hostarch}-armv7l
+186: Substitute: clang-accel-armv7hl-cross-arm clang-accel-%{build_hostarch}-armv7hl
+187: Substitute: clang-accel-aarch64-cross-aarch64 clang-accel-%{build_hostarch}-aarch64
+188: Substitute: clang-accel-riscv64-cross-riscv64 clang-accel-%{build_hostarch}-riscv64

@@ -1,0 +1,125 @@
+1: # 38 LLVM 包 x86_64 打包改用 llvm-strip
+2: 
+3: 日期：2026-10-09（Asia/Shanghai）。本次续接 `834f9aab34e2a495f1f53940096992d41cd19d4e`。
+4: docs/25–37 保持原文；非静态库文件的对照始终为 docs/35 的 N，不以本次新产物自比。
+5: 原 `834f9aa` 因磁盘准入停止的记录仍是有效历史事实：当时未构建、未改 spec。
+6: 本次按用户新增的保全与清理授权解除空间阻塞，执行一次正常 `%build/%install/打包` 增量续跑。
+7: 
+8: **结果：PASS，补丁已具备本轮要求的评审证据。** 一次增量续跑产出 22 个 RPM；225 个开发归档与 45 个 compiler-rt 归档通过新门禁，
+9: 非静态库文件与 docs/35 的 N 零差异。270 次 llvm-strip 全部退出 0。
+10: 七项宿主归档消费者，以及宿主/Tizen 的 bfd/lld sanitizer、profile、builtins 消费者全部通过。
+11: 仅生成供用户 review 的独立 format-patch，未推 Gerrit。原件保全、清理、构建、验收和提交身份分列如下。
+12: 
+13: ## 0. 范围、身份与独占
+14: 
+15: 用户确认归档修复已上传 Gerrit 356627 patchset 2，提交前缀 `67619ec8bbba`、父提交 `cb67996861d0`。
+16: 本任务只验证 LLVM 包、只限 x86_64 的 `%__strip` 替换，拟作为归档转换修复之后的独立 change；
+17: 平台已全量切换 LLVM 编译作为用户前提使用。未修改 W/llvm 原件、gbs_llvm.conf、转换 Source 或任何优化/并发参数。
+18: 
+19: | 别名 | 路径 |
+20: | --- | --- |
+21: | W | `/home/linhao/Toolchain/development/llvm-optimize` |
+22: | E0 | `W/temp/llvm-strip-x86_64-20261009`，原磁盘 STOP 与宏链证据 |
+23: | E | `E0/continue-20261009`，本次续跑证据；以下无前缀文件相对 E |
+24: | C | `W/temp/archive-fix-v2-final-20261009/continue-20261009`，docs/35 证据 |
+25: | E34 / E36 | `W/temp/archive-fix-v2-build-20260929` / `W/temp/archive-fix-tizen-consumers-20261009` |
+26: | S | `W/temp/llvm-archivefix-trial`，隔离的 archive-fix-trial 分支 |
+27: | Rnew | `W/temp/gbs-root-x86_64-archivefix-v2` |
+28: | R | `Rnew/local/BUILD-ROOTS/scratch.x86_64.0` |
+29: | B | `R/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build` |
+30: | N | `W/temp/toolchain-archivefix-v2-final`，docs/35 非静态库对照，保留 |
+31: | H | `W/temp/archive-index-fix-rpm-20260923/baseline-rpm-extract`，docs/13 compiler-rt 对照，保留 |
+32: | N38 | `W/temp/toolchain-llvm-strip`，本次新 RPM 解包目标 |
+33: | 保全 RPM | `W/temp/archive-fix-v2-final-20261009/rpms-docs35` |
+34: 
+35: 开场主仓库干净，无本项目竞争构建进程。用 O_EXCL 获取 `Rnew/.llvm-optimize-exclusive.lock`，
+36: session=`llvm-strip-continue-851a7c5278ff49f8a659d394da53a136`、持锁 PID=477369。
+37: 证据：`processes-start.json`、`lock-acquired.json`、`identity-result.json`、`protected-start.json`。
+38: 复核 docs/35 22 个 RPM SHA/大小全部一致；N 的 17,689 个路径的类型、模式、大小、内容 SHA/链接目标一致，额外非目录路径 0。
+39: `prepare-resume.json` 对照 C 的 `final-integrity.json`，核验已登记的 CMakeCache/build.ninja/Ninja 状态及关键 ELF，没有读取隔离旧混合根。
+40: 
+41: ### 0.1 原 RPM 的 rename 保全
+42: 
+43: 先对 R 的 22 个 RPM 及一个 SRPM 记录路径、字节、设备、inode、SHA，再用 `os.rename` 移至同文件系统的 `rpms-docs35`。
+44: 23 个文件全部设备号 2049、移动前后 inode 与 SHA 相同，没有复制再删除；22 个二进制包摘要全部与 docs/35 附录 A 一致。
+45: 这些文件不参与本次构建覆盖；N 与 C/new-rpm-repo 也保留。
+46: 
+47: **SRPM 证据边界：** docs/35 附录 A 只登记 22 个二进制包，没有历史 SRPM SHA。
+48: 因此只能确认该原根 SRPM 的移动前后摘要和 inode 不变，并对应历史日志的写出位置，不能冒称与不存在的历史 SHA 比较通过。
+49: 它为 340,919,240 B，SHA256 `2e944e3d34b11620a2307d4df3416e98aeb28912e22f957edbe67bd22982a21d`，inode=23122923。
+50: 完整逐文件证据：`preserved-rpms.json`。
+51: 
+52: ### 0.2 按授权清理至 75 GiB 即停
+53: 
+54: 原 `834f9aa` 时 `/home` 可用 50.800056 GiB；允许的 SSD 独立安装树不在同一文件系统，cache 全回收上界也仅 50.816586 GiB，原停止正确。
+55: 本次保全后、删除前可用 54,568,103,936 B。只执行新增清单第 1 类：旧 `W/temp/toolchain-archivefix` 解包的大载荷。
+56: 删除前该目录有 16,436 个文件，逻辑 49,672,070,325 B、分配 49,707,630,592 B。
+57: 实际删除 16,392 个载荷文件；按“保留所有日志/脚本/文本”的总原则留下 44 个文本/脚本，故目录仍有小体积保留内容。
+58: 逐项路径、大小、文件数、删除清单和 df 见 `cleanup-1-manifest.json`、`cleanup-1-summary.json`、`df-after-cleanup-1.log`。
+59: 
+60: 删除后可用 **104,280,035,328 B（97.118 GiB）**，已达到 75 GiB，立即停止清理。
+61: 未执行第 2/3 类，未删除 Rnew cache、SSD 独立安装树、N、H、保全 RPM、docs/35–37/Base repo、docs/30 两测试根或隔离根。
+62: `cleanup-result.json`：`completed_categories=[1]`、`target75_reached=true`、`disk_admission_pass=true`。
+63: 
+64: ### 0.3 试验 spec 和精确认证
+65: 
+66: S HEAD/分支保持 `f111162e94aa48ed367c9d2c039456c70e7160ae` / `archive-fix-trial`。
+67: S 与根内导出 spec 均只在开头加入下列三行；完整 diff 为 `trial-three-lines.diff`、`exported-three-lines.diff`。
+68: 
+69: ```diff
+70: +%ifarch x86_64
+71: +%define __strip %{_bindir}/llvm-strip
+72: +%endif
+73: ```
+74: 
+75: | 文件 | 改前 SHA256 | 改后 SHA256 |
+76: | --- | --- | --- |
+77: | S/packaging/llvm.spec | `6a91a0bf3d8d2044473662b65ed3d32d4696a697ccd52200d983ce4334aeafdf` | `4711c7f61798f34d5e581df9436681af00c3d9e88cb6d9c74db31183cd6556b8` |
+78: | R/home/abuild/rpmbuild/SOURCES/llvm.spec | `91f684691eb35af52b1a9f2a2cba478f88dbfd8a48b4c2281dac6144d71d3bd0` | `901ea3f6332e890b84287d3cee466763f32ddda811bb6375d89142b5ab8aa4bb` |
+79: 
+80: Source SHA 始终 `6bd0546a63bd50151296a366ce0e7c688d774e91a36015ba194227e4ca092557`。
+81: W 原 spec SHA 始终 `95887b2d060b38d5ef8f56936f7481a03d131f9d26432180a68e02ec95f0dda5`，
+82: gbs_llvm.conf 始终 `a3fea7732532db26c11b88407464e0274a6d8b4277623364fe16b6980181b03f`。
+83: 
+84: 私有 `E/llvm-strip-trial-fingerprint.json` 精确绑定本次三个新增宏行及原 Source；续跑包装器只在自身进程中指定这个登记文件。
+85: 仓库的 GNU-strip archive-fix 指纹没有改，不能用它直接放行当前 S。
+86: 正例为本次精确配置；修改 ninja_jobs、normalized_spec_sha256、source_files 三个负例分别被拒绝，见 `trial-fingerprint-tests.json`。
+87: 保留 18 GiB、6/6/2 与其余原 CMake 参数，不通过扩大通用认证范围来绕过门禁。
+88: 
+89: ## 1. `%__strip` 的实际影响面
+90: 
+91: 只读宏链原文及带行号文件在 E0；递归检索得到 201 条引用，其中 65 个其他/本架构 platform 定义各 3 条，不能全视为当前生效路径。
+92: 
+93: | R 内文件:行 | 当前开 debuginfo 时的作用 |
+94: | --- | --- |
+95: | `usr/lib/rpm/macros:83` | 默认 `%__strip /bin/strip`；解析本试验 spec 后由三行宏覆盖 |
+96: | `usr/lib/rpm/platform/x86_64-linux/macros:72–74` | 默认三条 strip 调用；Tizen 宏随后重定义 |
+97: | `usr/lib/rpm/tizen/macros:34–38` | 有效 strip-install-post（此路径为 ../tizen_macros 软链接） |
+98: | `usr/lib/rpm/tizen/macros:35` | brp-strip 在 `!__debug_package` 下才运行，本配置不运行 |
+99: | `usr/lib/rpm/tizen/macros:36` | brp-strip-static-archive 传入 `%__strip`，唯一实际使用点 |
+100: | `usr/lib/rpm/tizen/macros:37` | brp-strip-comment-note 已注释 |
+101: | `usr/lib/rpm/tizen/macros:40–46、53–60` | compress、strip 链、python-hardlink、find-docs；debug 阶段先执行且独立 |
+102: | `usr/lib/rpm/macros:182–196` | find-debuginfo 接 `_smp_mflags`，不接 `%__strip` |
+103: | `usr/lib/rpm/find-debuginfo.sh:269、275、277–280` | 当前 STRIP_DEFAULT_PACKAGE 未设置，选择 elfutils eu-strip；binutils 后备分支同样不读 `%__strip` |
+104: | `usr/lib/rpm/brp-strip-static-archive:7、15–20` | 首参取 STRIP，扫描非 debug 目录中的 ar，逐个 `$STRIP -g`；没有聚合逐档退出码 |
+105: 
+106: 根内工具归属原始输出：
+107: 
+108: ```text
+109: /usr/bin/eu-strip                         elfutils-0.189-1.10.x86_64
+110: /usr/bin/llvm-strip                       llvm-22.1.8-1.6.x86_64
+111: /usr/lib/rpm/find-debuginfo.sh             rpm-build-4.14.1.1-1.4.x86_64
+112: /usr/lib/rpm/brp-strip-static-archive      rpm-build-4.14.1.1-1.4.x86_64
+113: ```
+114: 
+115: 证据 E0/`all-strip-macro-references.stdout`、`macro-query.stdout`、`macro-inputs.json`、`*.numbered.txt`。
+116: 结论限定本 LLVM spec、当前 Tizen 宏链及开启 debuginfo 的配置，不外推到其他包或关闭 debuginfo。
+117: 为独立证明每档 exit0，在 R/home/abuild/llvm-strip-audit-20261009 私有目录放宿主 strace 与其 loader/依赖，
+118: 先 `/bin/true` 探针验证，再只跟踪 `execve,exit_group`。未给构建根安装软件包，也未改宿主配置；tracer 子进程仍正常执行 Tizen ELF。
+119: `tracer-probe.json`、`rpm-exec-exit.trace` 保存工具身份及实际后处理调用，不能只拿 rpmbuild 总退出码代替逐档状态。
+120: 
+121: ## 2. 一次增量续跑的方法与配置
+122: 
+123: 入口为 `E/resume_once.py`，实际通过 `gbs chroot --root R` 以 abuild 执行以下命令（未重新做 %prep）：
+124: 
+125: ```sh

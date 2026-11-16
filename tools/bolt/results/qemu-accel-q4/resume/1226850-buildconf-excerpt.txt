@@ -1,0 +1,61 @@
+200: 
+201: %ifarch riscv64
+202: Target: riscv64-tizen-linux
+203: %endif
+204: 
+205: ########## cross build ##########
+206: 
+207: %define build_hostarch x86_64
+208: Macros:
+209: %build_hostarch x86_64
+210: :Macros
+211: 
+212: %ifarch riscv64 %arm armv7l armv7hl aarch64
+213: Hostarch: x86_64
+214: # cross build support for the build hosts
+215: Preinstall: qemu-linux-user-%{build_hostarch}-cross
+216: Runscripts: qemu-linux-user-%{build_hostarch}-cross
+217: Keep: qemu-linux-user-%{build_hostarch}-cross
+218: Macros:
+219: %qemu_user_space_build 1
+220: :Macros
+221: %endif
+222: 
+223: %ifarch armv7l
+224: Preinstall: qemu-accel-%{build_hostarch}-armv7l
+225: Runscripts: qemu-accel-%{build_hostarch}-armv7l
+226: Preinstall: clang-accel-%{build_hostarch}-armv7l
+227: Runscripts: clang-accel-%{build_hostarch}-armv7l
+228: Preinstall: libmount libblkid libuuid
+229: %endif
+230: 
+231: %ifarch armv7hl
+232: Preinstall: qemu-accel-%{build_hostarch}-armv7hl
+233: Runscripts: qemu-accel-%{build_hostarch}-armv7hl
+234: Preinstall: clang-accel-%{build_hostarch}-armv7hl
+235: Runscripts: clang-accel-%{build_hostarch}-armv7hl
+236: Preinstall: libmount libblkid libuuid
+237: %endif
+238: 
+239: %ifarch aarch64
+240: Preinstall: qemu-accel-%{build_hostarch}-aarch64
+241: Runscripts: qemu-accel-%{build_hostarch}-aarch64
+242: Preinstall: clang-accel-%{build_hostarch}-aarch64
+243: Runscripts: clang-accel-%{build_hostarch}-aarch64
+244: Preinstall: libmount libblkid libuuid
+245: %endif # aarch64
+246: 
+247: %ifarch riscv64
+248: Preinstall: qemu-accel-%{build_hostarch}-riscv64
+249: Runscripts: qemu-accel-%{build_hostarch}-riscv64
+250: Preinstall: clang-accel-%{build_hostarch}-riscv64
+251: Runscripts: clang-accel-%{build_hostarch}-riscv64
+252: Preinstall: libmount libblkid libuuid
+255: Substitute: python-accel-armv7l-cross-arm python-accel-%{build_hostarch}-armv7l
+256: Substitute: python-accel-armv7hl-cross-arm python-accel-%{build_hostarch}-armv7hl
+257: Substitute: python-accel-aarch64-cross-aarch64 python-accel-%{build_hostarch}-aarch64
+258: Substitute: python-accel-riscv64-cross-riscv64 python-accel-%{build_hostarch}-riscv64
+260: Substitute: clang-accel-armv7l-cross-arm clang-accel-%{build_hostarch}-armv7l
+261: Substitute: clang-accel-armv7hl-cross-arm clang-accel-%{build_hostarch}-armv7hl
+262: Substitute: clang-accel-aarch64-cross-aarch64 clang-accel-%{build_hostarch}-aarch64
+263: Substitute: clang-accel-riscv64-cross-riscv64 clang-accel-%{build_hostarch}-riscv64
