@@ -1555,3 +1555,10 @@ sandbox已按lease从121b4c23bcd6a9a30b0e277c30e5dc17af3e8521推到a061f4e415a89
 ### 2026-11-16：107号评审原文归档
 
 PS5两份、361624三份独立评审及一份共享文件残留，共6份原文已原样复制，源文件保留，大小/SHA256和逐字节核对见各目录107-collection.json。共享残留external-review.md与tools/bolt/results/review-361624/claude-code-external-review.md的SHA256相同。只归档，不修改评审文字、不发布Gerrit文本；缺失文件数：0。
+
+### 2026-11-16：109号关闭优化开关与R1（STOP，未推）
+
+基底a061f4e4、父61ef5d31核对通过。先写开关设计，再在新独立游离工作树temp/ps5-final-109-20261116/source修改llvm.spec与helper；未创建新提交。总开关llvm_speedup、hybrid_link单项及现有clang_bolt的有效宏使用了平台RPM4.14.1不支持的expr，默认x86展开报parse error / bad %if condition（第81行），属于产品spec兼容性失败，STOP，不按准备错误豁免、不改后重跑。
+
+R1及注释草案保留但未验证；567既有项、本轮新增回归、其余展开均NOT RUN。sandbox只读仍a061f4e415a895412516ffe076084f407f2d70a8，没有推送；FINAL回复未更新。D3两项延后保持不变。两份外部评审及原探针路径已读，目录均存在但未适配运行。
+详见[109号](109_ps5_final_candidate.md)、[证据](../../tools/bolt/results/ps5-final-109-20261116/RAW_LINKS.md)。

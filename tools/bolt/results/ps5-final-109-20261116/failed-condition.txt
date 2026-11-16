@@ -1,0 +1,24 @@
+1: # Quickbuild sandbox: x86_64 BOLT is on by default; other architectures unchanged.
+2: %bcond_without llvm_speedup
+3: %bcond_without hybrid_link
+4: %ifarch x86_64
+5: %bcond_without clang_bolt
+6: %else
+7: %bcond_with clang_bolt
+8: %endif
+9: %global llvm_hybrid_enabled %{expr:%{with llvm_speedup} && %{with hybrid_link}}
+10: %global llvm_bolt_enabled %{expr:%{with llvm_speedup} && %{with clang_bolt}}
+11: 
+12: %define keepstatic 1
+73: BuildRequires: patchelf
+74: BuildRequires: binutils-devel
+75: BuildRequires: libxml2-devel
+76: %if 0%{llvm_release_build}
+77: BuildRequires: sed
+78: %endif
+79: BuildRequires: ninja
+80: %ifarch x86_64
+81: %if %{llvm_bolt_enabled}
+82: BuildRequires: python3 >= 3.9
+83: BuildRequires: xz elfutils
+84: %endif

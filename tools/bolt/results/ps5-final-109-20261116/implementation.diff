@@ -1,0 +1,138 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index cf531695c971..5b98800208e3 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -249,6 +249,11 @@ def call(argv, log, cwd=None, timeout=300):
+               'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+         with log.open('wb') as output:
+             check_cancel()
++            # All child processes must be started through call(): it resets
++            # SIGCHLD and reaps children itself; an inherited SIG_IGN would
++            # otherwise turn failed exit codes into 0.
++            # Signal handlers must not raise while _SPAWNING is set; otherwise
++            # the forked child would be unknown to call() and could be orphaned.
+             # Publish the PGID before honoring a deferred second signal.
+             # Do not block signals across exec or use preexec_fn.
+             _SPAWNING = True
+@@ -266,9 +271,17 @@ def call(argv, log, cwd=None, timeout=300):
+             if rc != 0:
+                 primary = 'COMMAND_ERROR: COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
+                 raise GateError(primary)
++            try:
++                wait_group_exit(process.pid, 10)
++            except GateError as error:
++                if str(error).startswith('process group %d still alive:' % process.pid):
++                    primary = ('COMMAND_ERROR: command exited successfully with live descendants: '+
++                               str(error))
++                    raise GateError(primary) from error
++                raise
++            _ACTIVE_GROUP = None
+             require(reap_child(process) == rc, 'child exit status changed while reaping')
+             reaped = True
+-            _ACTIVE_GROUP = None
+         text = log.read_text(errors='replace')
+         metadata = log.with_suffix(log.suffix+'.argv.json')
+         invocation = json.loads(metadata.read_text())
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 6a66edebc78c..801c77e68e69 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -1,9 +1,13 @@
+ # Quickbuild sandbox: x86_64 BOLT is on by default; other architectures unchanged.
++%bcond_without llvm_speedup
++%bcond_without hybrid_link
+ %ifarch x86_64
+ %bcond_without clang_bolt
+ %else
+ %bcond_with clang_bolt
+ %endif
++%global llvm_hybrid_enabled %{expr:%{with llvm_speedup} && %{with hybrid_link}}
++%global llvm_bolt_enabled %{expr:%{with llvm_speedup} && %{with clang_bolt}}
+ 
+ %define keepstatic 1
+ 
+@@ -74,7 +78,7 @@ BuildRequires: sed
+ %endif
+ BuildRequires: ninja
+ %ifarch x86_64
+-%if %{with clang_bolt}
++%if %{llvm_bolt_enabled}
+ BuildRequires: python3 >= 3.9
+ BuildRequires: xz elfutils
+ %endif
+@@ -403,11 +407,16 @@ cmake \
+     -DLLVM_BUILD_LLVM_DYLIB=ON \
+     -DCLANG_BUILD_CLANG_DYLIB=ON \
+ %ifarch x86_64
++%if %{llvm_hybrid_enabled}
+     -DLLVM_LINK_LLVM_DYLIB=ON \
+     -DCLANG_LINK_CLANG_DYLIB=ON \
+     -DTIZEN_HYBRID_LINK=ON \
+     -DBUILD_SHARED_LIBS=OFF \
+     -DLLVM_TOOL_LLVM_DRIVER_BUILD=OFF \
++%else
++    -DLLVM_LINK_LLVM_DYLIB=OFF \
++    -DCLANG_LINK_CLANG_DYLIB=OFF \
++%endif
+ %else
+ %if %{defined _toolchain}
+     -DLLVM_LINK_LLVM_DYLIB=ON \
+@@ -518,7 +527,7 @@ cmake \
+ 
+ # Full build using ninja (already in build/ directory after cd build)
+ %ifarch x86_64
+-%if %{with clang_bolt}
++%if %{llvm_bolt_enabled}
+ ninja -d keeprsp -j %{mlgo_build_jobs} || exit 1
+ %else
+ ninja -j %{mlgo_build_jobs}
+@@ -527,6 +536,7 @@ ninja -j %{mlgo_build_jobs}
+ ninja -j %{mlgo_build_jobs}
+ %endif
+ %ifarch x86_64
++%if %{llvm_hybrid_enabled}
+ # These drivers must retain component linkage even when BOLT is disabled.
+ for hybrid_tool in bin/clang-22 bin/lld bin/llvm-ar bin/llvm-tblgen bin/clang-tblgen bin/lldb-tblgen bin/llvm-config bin/llvm-exegesis; do
+     if ! test -f "$hybrid_tool"; then
+@@ -554,12 +564,13 @@ EOF_HYBRID_DYNAMIC
+ done
+ echo TIZEN_HYBRID_LINK_OK
+ %endif
++%endif
+ 
+ %install
+ cd build
+ cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
+ %ifarch x86_64
+-%if %{with clang_bolt}
++%if %{llvm_bolt_enabled}
+ 
+ # Reject debug-named buildroots before any BOLT action.
+ # Keep the ordinary install and BOLT payload under the same platform debug-path policy.
+@@ -711,7 +722,7 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+-%if %{with clang_bolt}
++%if %{llvm_bolt_enabled}
+     --jobs 4 --address-space-bytes 4294967296 || bolt_status_exit $?
+ %else
+     --jobs 4 --address-space-bytes 4294967296 || exit 1
+@@ -719,7 +730,7 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+ %endif
+ 
+ %ifarch x86_64
+-%if %{with clang_bolt}
++%if %{llvm_bolt_enabled}
+ # Candidate is fully stripped before the one unchanged platform post-processing chain.
+ python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
+   "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || bolt_status_exit $?
+@@ -958,7 +969,7 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %files -n python-clang
+ %{python3_sitelib}/clang
+ %ifarch x86_64
+-%if %{with clang_bolt}
++%if %{llvm_bolt_enabled}
+ 
+ %global __bolt_original_spec_install_post %{__spec_install_post}
+ %define __spec_install_post \
