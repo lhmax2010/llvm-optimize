@@ -1,0 +1,55 @@
+139: 
+140: |阶段|秒|日志行/时间或字段|
+141: |---|---:|---|
+142: |CMake配置|42|L637 [175s] → L3206 [217s]|
+143: |普通Ninja编译（含重叠链接）|3896|L3207 [217s] → L10928 [4113s]|
+144: |普通安装至BOLT begin|191|L11292 [4114s] → L16872 [4305s]|
+145: |BOLT begin至compare-root结束（含各子阶段）|749|L16872 [4305s] → L24098 [5054s]|
+146: |BOLT重新配置|10|L16920 [4452s] → L18871 [4462s]|
+147: |BOLT工具构建|124|L23131 [4464s] → L23477 [4588s]|
+148: |BOLT pipeline总窗口|348|L24082 [4588s] → L24090 [4936s]|
+149: |compare-root门禁|117|L24095 [4937s] → L24098 [5054s]|
+150: |cache-release|4|L24099 [5054s] → L24101 [5058s]|
+151: |静态库转换|1984|L24122 [5060s] → L24574 [7044s]|
+152: |find-debuginfo开始至post门禁前的平台后处理|376|L24577 [7047s] → L25161 [7423s]|
+153: |BOLT post门禁|24|L25161 [7423s] → L25165 [7447s]|
+154: |RPM文件处理至最后Wrote|406|L25170 [7450s] → L25639 [7856s]|
+155: |BOLT重新链接|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+156: |reference strip|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+157: |candidate strip|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+158: |BOLT rewrite|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+159: |RUNPATH调整|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+160: |tiny门禁|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+161: |security门禁|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+162: |real gate prestrip|19.599657|L24083，BOLT_REAL_GATE_PASS.seconds|
+163: |debug symbols门禁|3.347537|L24084，BOLT_DEBUG_SYMBOLS_PASS.seconds|
+164: |debuglink门禁|1.933019|L24086，BOLT_DEBUGLINK_PASS.debuglink_seconds|
+165: |real gate preinstall|22.819021|L24087，BOLT_REAL_GATE_PASS.seconds|
+166: |real gate post|7.158449|L25162，BOLT_REAL_GATE_PASS.seconds|
+567: |CMake配置|42|L733 [32s] → L3302 [74s]|
+568: |普通Ninja编译（含重叠链接）|4199|L3303 [74s] → L11024 [4273s]|
+569: |普通安装至BOLT begin|34|L11388 [4273s] → L16968 [4307s]|
+570: |BOLT begin至compare-root结束（含各子阶段）|330|L16968 [4307s] → L24194 [4637s]|
+571: |BOLT重新配置|10|L17016 [4327s] → L18967 [4337s]|
+572: |BOLT工具构建|141|L23227 [4339s] → L23573 [4480s]|
+573: |BOLT pipeline总窗口|128|L24178 [4481s] → L24186 [4609s]|
+574: |compare-root门禁|28|L24191 [4609s] → L24194 [4637s]|
+575: |cache-release|2|L24195 [4637s] → L24197 [4639s]|
+576: |静态库转换|4055|L24218 [4639s] → L24670 [8694s]|
+577: |find-debuginfo开始至post门禁前的平台后处理|127|L24673 [8695s] → L25265 [8822s]|
+578: |BOLT post门禁|15|L25265 [8822s] → L25269 [8837s]|
+579: |RPM文件处理至最后Wrote|294|L25274 [8839s] → L25743 [9133s]|
+580: |BOLT重新链接|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+581: |reference strip|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+582: |candidate strip|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+583: |BOLT rewrite|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+584: |RUNPATH调整|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+585: |tiny门禁|UNKNOWN|no isolated start/end in preserved command logs; no inference from adjacent stdout gaps|
+607: BOLT有限作用域的已记录磁盘量（不是整个根的分层du；每个数对应原始 BOLT_DISK_REPORT 行）：
+608: 
+609: |阶段|GBS s / 行 / 记录时间|work B|tool_objects B|tool_executable B|tool_library合计 B|cache正分配delta B|
+610: |---|---|---:|---:|---:|---:|---:|
+611: |begin|4307 / L16968 / 2026-11-11T22:55:27.647634+08:00|0|0|0|UNKNOWN|UNKNOWN|
+612: |tool-built|4481 / L24176 / 2026-11-11T22:58:21.527453+08:00|1995583488|146677760|566865920|146665472|1233010688|
+613: |pipeline|4609 / L24189 / 2026-11-11T23:00:29.873969+08:00|2935140352|146677760|566870016|146665472|1233010688|
+614: |post|8837 / L25272 / 2026-11-12T00:10:57.832461+08:00|3089846272|146677760|566870016|146665472|0|

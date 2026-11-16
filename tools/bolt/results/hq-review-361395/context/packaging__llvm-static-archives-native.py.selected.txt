@@ -1,0 +1,152 @@
+130:             if stored_size < 0 or stored_size > len(data)-pos:
+131:                 raise ValueError('ar member outside file')
+132:             if name == '//':
+133:                 longnames = data[pos:pos+size]
+134:             elif name in ('/', '/SYM64/'):
+135:                 tables.append((name, data[pos:pos+size]))
+136:             else:
+137:                 raw_members.append(dict(header_offset=start, raw_name=name, offset=pos,
+138:                                         size=size, mtime=header[16:28].decode().strip()))
+139:             pos += stored_size + stored_size % 2
+140:             if pos > len(data):
+141:                 raise ValueError('missing ar member alignment byte')
+142:         members, offsets, native_map, occurrences = [], {}, [], Counter()
+143:         for m in raw_members:
+144:             name, off, size = m.pop('raw_name'), m['offset'], m['size']
+145:             if name.startswith('#1/'):
+146:                 n = ar_decimal(name[3:])
+147:                 if not 0 <= n <= size:
+148:                     raise ValueError('invalid BSD long name length')
+149:                 name = data[off:off+n].rstrip(b'\0').decode('utf-8', 'surrogateescape'); off += n; size -= n
+150:             elif name.startswith('/'):
+151:                 n = ar_decimal(name[1:])
+152:                 if not 0 <= n < len(longnames):
+153:                     raise ValueError('GNU long name offset outside table')
+154:                 if n and longnames[n-1:n] != b'\n':
+155:                     raise ValueError('GNU long name offset inside entry')
+156:                 end = longnames.find(b'/\n', n)
+157:                 if end < 0:
+158:                     raise ValueError('invalid GNU long name')
+805:     def save():
+806:         atomic_json(output/'summary.json', summary)
+807:     save()
+808:     old_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
+809:     for sig, handler in old_handlers.items():
+810:         if handler != signal.SIG_IGN:
+811:             signal.signal(sig, command.interrupted)
+812:     try:
+813:         summary['tools'] = validate_tools(build, Path(compiler), Path(disassembler), Path(nm), command, output)
+814:         print('NATIVE_ARCHIVES_TOOLS', json.dumps({
+815:             'tool_versions': summary['tools']['tool_versions'],
+816:             'tool_directory': summary['tools']['tool_directory']}), flush=True)
+817:         archives = [(archive, validate_archive(archive)) for archive in sorted(root.rglob('*.a'))]
+818:         summary['scanned_archives'] = len(archives)
+819:         summary['native_archives_skipped'] = sum(not data['bitcode'] for archive, data in archives)
+820:         # Preserved native members retain their bytes, including any debug sections.
+821:         summary['native_members_preserved'] = sum(data['machine'] for archive, data in archives)
+822:         for archive, before in archives:
+823:             command.check()
+824:             if not before['bitcode']:
+825:                 continue
+826:             rel = archive.relative_to(root)
+827:             work = output/'members'/rel
+828:             work.mkdir(parents=True)
+829:             atomic_json(work/'before.json', before)
+830:             paths = []
+831:             with archive.open('rb') as stream:
+832:                 for member in before['members']:
+833:                     if Path(member['name']).name != member['name'] or member['name'] in ('.', '..'):
+834:                         raise ValueError('unsafe archive member name')
+939:             if cancelled:
+940:                 raise RuntimeError(summary['reason'])
+941:         finally:
+942:             for sig, handler in old_handlers.items():
+943:                 signal.signal(sig, handler)
+944: 
+945: 
+946: def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+947:             address_space_bytes=4*1024**3, debug_info=None):
+948:     root, output = Path(root).resolve(), Path(output).resolve()
+949:     command = Commands(address_space_bytes)
+950:     old_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
+951:     for sig, handler in old_handlers.items():
+952:         if handler != signal.SIG_IGN:
+953:             signal.signal(sig, command.interrupted)
+954:     result = None
+955:     try:
+956:         print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
+957:         result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command, debug_info)
+958:         command.check()
+959:         result['status'] = 'INSTALLING'
+960:         atomic_json(output/'summary.json', result)
+961:         for record in result['archives']:
+962:             command.check()
+963:             destination, candidate = root/record['path'], output/'archives'/record['path']
+964:             if sha(destination) != record['before_sha256'] or sha(candidate) != record['after_sha256']:
+965:                 raise ValueError('archive identity changed before atomic installation')
+966:             atomic_install(candidate, destination, record['after_sha256'])
+967:             record['installed'] = True
+968:             atomic_json(output/'summary.json', result)
+969:             print('NATIVE_ARCHIVE_INSTALLED', json.dumps({k:v for k,v in record.items() if k!='results'}), flush=True)
+970:         command.check()
+971:         cleanup_evidence(output)
+972:         result.update(status='PASS', install_finished=time.time(), large_files_deleted=True)
+973:         atomic_json(output/'summary.json', result)
+974:         if not result['archives']:
+975:             print('NATIVE_ARCHIVES_SKIP all archives already native', flush=True)
+976:         command.check()
+983:             atomic_json(output/'summary.json', result)
+984:         raise
+985:     finally:
+986:         for sig, handler in old_handlers.items():
+987:             signal.signal(sig, handler)
+988: 
+989: 
+990: def install_main():
+991:     global _CANCEL_SIGNAL
+992:     _CANCEL_SIGNAL = None
+993:     if signal.getsignal(signal.SIGCHLD) != signal.SIG_DFL:
+994:         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+995:         print('NATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL', flush=True)
+996:     parser = argparse.ArgumentParser(description='Convert certified x86_64 ThinLTO archives before standard RPM stripping')
+997:     parser.add_argument('--root', type=Path, required=True)
+998:     parser.add_argument('--build', type=Path, required=True)
+999:     parser.add_argument('--evidence', type=Path, required=True)
+1000:     parser.add_argument('--arch', choices=['x86_64'], required=True)
+1001:     parser.add_argument('--debug-info', choices=['yes', 'no'], required=True)
+1002:     parser.add_argument('--compiler', type=Path, required=True)
+1003:     parser.add_argument('--disassembler', type=Path, required=True)
+1004:     parser.add_argument('--nm', type=Path, required=True)
+1005:     parser.add_argument('--jobs', type=int, default=4)
+1006:     parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
+1007:     args = parser.parse_args()
+1008:     def record_cancel(sig, frame):
+1009:         global _CANCEL_SIGNAL
+1010:         _CANCEL_SIGNAL = sig
+1011:     signals = (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)
+1012:     old_handlers = {sig: signal.getsignal(sig) for sig in signals}
+1013:     for sig, handler in old_handlers.items():
+1014:         if handler != signal.SIG_IGN:
+1015:             signal.signal(sig, record_cancel)
+1016:     failure = None
+1017:     try:
+1018:         install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+1019:                 args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info)
+1020:     except BaseException:
+1021:         failure = sys.exc_info()
+1022:     finally:
+1023:         for sig, handler in old_handlers.items():
+1024:             signal.signal(sig, handler)
+1025:     if _CANCEL_SIGNAL is not None:
+1026:         if failure is not None:
+1027:             traceback.print_exception(*failure)
+1028:         else:
+1029:             print('NATIVE_ARCHIVES_CANCELLED after completion', flush=True)
+1030:         return 128 + _CANCEL_SIGNAL
+1031:     if failure is not None:
+1032:         raise failure[1].with_traceback(failure[2])
+1033:     return 0
+1034: 
+1035: 
+1036: if __name__ == '__main__':
+1037:     raise SystemExit(install_main())

@@ -1,0 +1,25 @@
+34: | 可选诊断吞掉取消 | cli 返回 128+signal；bolt_optional 对 129/130/143 退出整个脚本，其他非零返回 0。只改五处可选调用，失败分支中随后 exit 1 的诊断不动。 |
+52: | 两配置完整展开 | 12/12 | [parse-03/expansion-summary.json](../../tools/bolt/results/rebase-359934-20261106-r2/parse-03/expansion-summary.json) |
+56: 五个可选调用点分别为 disk-report begin、tool-built、pipeline、cache-release、post。探针从实际 Tizen RPM 展开的函数和调用行构造 /bin/sh -e 脚本，只向 helper 发三种信号：15 个组合退出码均为 143/129/130，后续标记均不执行；5 个普通 rc=1 组合均继续。
+57: post 宏通过测试副本追加 %check 调用 __spec_install_post 展开，发布 spec 不加测试段。命令 rc=1 后清理期间 SIGTERM 的并发例同时保留 COMMAND_FAILED/CANCELLED 并调用磁盘诊断。二次信号及子孙进程清理既有测试继续通过。
+61: | 取消测试笼统 nonzero 或 rc=1 | SIGHUP=129、SIGINT=130、SIGTERM=143；纯 Python SIGTERM 从 1 改为 143 | 取消不能被 spec 可选诊断吞掉 |
+67: | 普通 rpmspec -P 已可见第 5 个调用 | 测试副本追加 %check 调用 __spec_install_post，实际展开后取第 5 行 | 宏默认不执行；发布 spec 未加测试段 |
+72: ## 4. 导出与展开逐处比较
+80: - 两配置的 ARM 展开逐字节相同，diff 为空。
+81: - x86 BOLT on 仅 expected-dropped 字面赋值/注释、空调试序列描述、bolt_optional 定义和五处可选调用有变化。
+83: - 每项按精确允许片段还原后与旧版逐字节相同，全部 *-unexpected.diff 为空。源码末尾 post 宏另有实际展开探针。
+188: | 整包一致 | 本轮不作此结论；完成 export、展开、解析 | 新完整构建及逐包/成员比较和平台后处理实测 |
+382:  # The x86_64 policy is the certified Toolchain command (QB 1215143).
+411: +bolt_optional() {
+415: +    bolt_optional_rc=$?
+416: +    case $bolt_optional_rc in
+417: +      129|130|143) exit "$bolt_optional_rc" ;;
+428: +bolt_optional python3 -B %{SOURCE1201} disk-report begin
+437: +bolt_optional python3 -B %{SOURCE1201} disk-report tool-built
+445: +bolt_optional python3 -B %{SOURCE1201} disk-report pipeline
+454: +bolt_optional python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK"
+463: +    bolt_optional python3 -B %{SOURCE1201} disk-report post
+519: ### 10.2 回归和展开
+528: |T/D 完整 spec 展开|12/12，与 5a27edb4 全部逐字节相同|parse/expansion-summary.json 及全部 stdout / 空 diff|
+530: 总计 407 项通过。既有测试预期没有改变；70 号测试副本只替换新临时目录。新增用例对同一 KeyError 分别运行旧/新 helper：取消后的旧版 rc=1，新版 SIGHUP=129、SIGINT=130、SIGTERM=143，stderr 都含 traceback 和 KeyError；未取消的新旧均 rc=1、仍重新抛出，诊断保持调用。traceback 的文件名/源码行号不同不作为行为差异。
+532: 展开用 70 号相同的 Tizen rpm/loader、Toolchain build.conf e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945 和 Base-Dev 8ace286a5f98f2e02a79be275a64c22a86ea2b0034174c1e293381e181ce3f6a；每配置覆盖 x86 debug/release × BOLT on/off、armv7l、aarch64。源码 spec 本身也逐字节未变。只做展开，不做 export 或构建。

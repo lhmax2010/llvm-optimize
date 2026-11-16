@@ -1,0 +1,79 @@
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -1064,7 +1064,7 @@
+             except OSError: pass
+         raise
+ 
+-def debugfiles_gate(ordinary, identity):
++def debugfiles_gate(debugfiles_list, identity):
+     if 'debug_file' not in identity:
+         return {'required': False}
+     # find-debuginfo.sh writes this default list in the RPM build directory.
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -1067,8 +1067,8 @@
+ def debugfiles_gate(debugfiles_list, identity):
+     if 'debug_file' not in identity:
+         return {'required': False}
+-    # find-debuginfo.sh writes this default list in the RPM build directory.
+-    path = Path(ordinary).parent.parent.parent/'debugfiles.list'
++    require(debugfiles_list is not None, 'debugfiles list path is required')
++    path = Path(debugfiles_list)
+     require(path.is_file(), 'debugfiles list missing: '+str(path))
+     lines = path.read_text().splitlines()
+     expected = '/'+DEBUG_INSTALL_PATH
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -1077,7 +1077,7 @@
+     return {'required': True, 'path': str(path), 'sha256': digest(path), 'listed': expected}
+ 
+ 
+-def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
++def post_gate(root, state, ordinary, candidate_work, resource_dir=None, debugfiles_list=None):
+     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
+     entity = root/'usr/bin/clang-22'; require(digest(entity) == state['installed_sha256'], 'clang changed during RPM post-processing')
+     for change in state['alias_changes']:
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -1099,7 +1099,7 @@
+         # Platform find-debuginfo skips files already carrying a debuglink.
+         # Both payload SHAs must survive its original, single post chain.
+         debug['find_debuginfo_skip_basis'] = 'preinstalled debuglink; clang and debug SHAs unchanged'
+-        debug['package_list'] = debugfiles_gate(ordinary, state['identity'])
++        debug['package_list'] = debugfiles_gate(debugfiles_list, state['identity'])
+     no_bolt_products(root)
+     security = security_compare(ordinary, str(entity), ignore_paths=True)
+     baseline = Path(ordinary).parent/'installed-baseline.json'
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -1853,7 +1853,7 @@
+     s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
+     s=sub.add_parser('compare-root');s.add_argument('root');s.add_argument('baseline');s.add_argument('after')
+     s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
+-    s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
++    s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir');s.add_argument('--debugfiles-list',required=True)
+     s=sub.add_parser('disk-report');s.add_argument('stage',choices=['begin','tool-built','pipeline','post']);s.add_argument('--build');s.add_argument('--work');s.add_argument('--root')
+     s=sub.add_parser('disk-diagnose');s.add_argument('step');s.add_argument('log');s.add_argument('--build');s.add_argument('--work');s.add_argument('--root')
+     s=sub.add_parser('run-step');s.add_argument('step');s.add_argument('log');s.add_argument('--output');s.add_argument('--success-marker');s.add_argument('argv',nargs=argparse.REMAINDER)
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -1912,7 +1912,7 @@
+         install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()),announce=True,identity_path=a.identity);return
+     elif a.cmd=='post':
+         result=post_gate(a.root,json.loads(Path(a.state).read_text()),a.ordinary,a.work,
+-                         a.resource_dir);save(Path(a.work)/'post-result.json',result)
++                         a.resource_dir,a.debugfiles_list);save(Path(a.work)/'post-result.json',result)
+     print(json.dumps(result,ensure_ascii=False),flush=True)
+ 
+ def cli():
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -963,7 +963,7 @@
+ %global __bolt_original_spec_install_post %{__spec_install_post}
+ %define __spec_install_post \
+     %{__bolt_original_spec_install_post} \
+-    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || bolt_status_exit $? \
++    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" --debugfiles-list "%{_builddir}/%{buildsubdir}/debugfiles.list" || bolt_status_exit $? \
+     echo BOLT_POST_GATE_PASS \
+     bolt_optional python3 -B %{SOURCE1201} disk-report post
+ %endif

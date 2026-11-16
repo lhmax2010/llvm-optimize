@@ -1,0 +1,21 @@
+123:             if len(header) != 60 or header[58:60] != b'`\n':
+124:                 raise ValueError(f'invalid ar header at {pos}')
+125:             if not re.fullmatch(rb'[0-9]+ *', header[48:58]):
+126:                 raise ValueError('invalid ar member size field')
+127:             name = header[:16].decode('ascii').rstrip(); size = int(header[48:58]); pos += 60
+128:             special = name in ('/', '//', '/SYM64/')
+129:             stored_size = size if not thin or special else (ar_decimal(name[3:]) if name.startswith('#1/') else 0)
+130:             if stored_size < 0 or stored_size > len(data)-pos:
+131:                 raise ValueError('ar member outside file')
+132:             if name == '//':
+133:                 longnames = data[pos:pos+size]
+134:             elif name in ('/', '/SYM64/'):
+135:                 tables.append((name, data[pos:pos+size]))
+136:             else:
+137:                 raw_members.append(dict(header_offset=start, raw_name=name, offset=pos,
+138:                                         size=size, mtime=header[16:28].decode().strip()))
+139:             pos += stored_size + stored_size % 2
+140:             if pos > len(data):
+141:                 raise ValueError('missing ar member alignment byte')
+142:         members, offsets, native_map, occurrences = [], {}, [], Counter()
+143:         for m in raw_members:

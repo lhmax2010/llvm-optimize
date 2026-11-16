@@ -1,0 +1,307 @@
+60: %endif
+61: 
+62: 
+63: %{!?mlgo_build_jobs: %define mlgo_build_jobs 6}
+64: %{!?mlgo_verify_configure_only: %define mlgo_verify_configure_only 0}
+65: # binutils-devel below also supplies readelf for the hybrid linkage assertion.
+66: BuildRequires: cmake
+67: BuildRequires: python3
+68: BuildRequires: python3-devel
+69: BuildRequires: patchelf
+70: BuildRequires: binutils-devel
+71: BuildRequires: libxml2-devel
+72: %if 0%{llvm_release_build}
+73: BuildRequires: sed
+74: %endif
+75: BuildRequires: ninja
+76: %ifarch x86_64
+77: %if %{with clang_bolt}
+78: BuildRequires: python3 >= 3.9
+79: BuildRequires: xz elfutils
+80: %endif
+81: %endif
+82: 
+83: %if %{undefined _toolchain}
+84: %ifarch x86_64
+85: BuildRequires: clang, llvm, libllvm
+86: %{!?_toolchain: %define _toolchain clang}
+87: %endif
+88: %endif
+89: 
+90: 
+91: Requires: libllvm = %{version}-%{release}
+92: 
+93: %description
+94: LLVM is a compiler infrastructure designed for compile-time, link-time, runtime,
+95: and idle-time optimization of programs from arbitrary programming languages.
+96: LLVM is written in C++ and has been developed since 2000 at the University of
+97: Illinois and Apple. It currently supports compilation of C and C++ programs,
+98: using front-ends derived from GCC 4.0.1. A new front-end for the C family of
+99: languages is in development. The compiler infrastructure
+100: includes mirror sets of programming tools as well as libraries with equivalent
+372:     -DCMAKE_C_FLAGS="$CFLAGS" \
+373:     -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
+374: %if %{defined _toolchain}
+375:     -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+376:     -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+377:     -DLLVM_USE_LINKER=lld \
+378:     -DLLVM_ENABLE_LTO=Thin \
+379:     -DCMAKE_RANLIB=%{_bindir}/llvm-ranlib \
+380:     -DCMAKE_AR=%{_bindir}/llvm-ar \
+381: %endif
+382:     -DLLVM_ENABLE_ASSERTIONS=No \
+383:     -DLLVM_ENABLE_RTTI=ON \
+384: %ifarch x86_64 i686
+385:     -DCMAKE_BUILD_TYPE=Release \
+386:     -DLLVM_TARGETS_TO_BUILD='X86;ARM;AArch64;BPF' \
+387: %endif
+388: %ifarch armv7l
+389:     -DCMAKE_BUILD_TYPE=MinSizeRel \
+390:     -DLLVM_TARGETS_TO_BUILD='ARM;BPF' \
+391:     -DLLVM_TARGET_ARCH="ARM" \
+392: %endif
+393: %ifarch aarch64
+394:     -DCMAKE_BUILD_TYPE=Release \
+395:     -DLLVM_TARGETS_TO_BUILD='AArch64;BPF' \
+396:     -DLLVM_TARGET_ARCH="AArch64" \
+397: %endif
+398: %ifarch riscv64
+399:     -DCMAKE_BUILD_TYPE=Release \
+400:     -DLLVM_TARGETS_TO_BUILD='RISCV;BPF' \
+404:     -DCLANG_BUILD_CLANG_DYLIB=ON \
+405: %ifarch x86_64
+406:     -DLLVM_LINK_LLVM_DYLIB=ON \
+407:     -DCLANG_LINK_CLANG_DYLIB=ON \
+408:     -DTIZEN_HYBRID_LINK=ON \
+409:     -DBUILD_SHARED_LIBS=OFF \
+410:     -DLLVM_TOOL_LLVM_DRIVER_BUILD=OFF \
+411: %else
+412: %if %{defined _toolchain}
+413:     -DLLVM_LINK_LLVM_DYLIB=ON \
+414:     -DCLANG_LINK_CLANG_DYLIB=ON \
+415: %endif
+416: %endif
+417:     -DLLVM_ENABLE_PROJECTS="clang;lldb;clang-tools-extra;lld;compiler-rt;openmp" \
+418:     -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
+419:     -DLLVM_BUILD_EXAMPLES=OFF \
+420:     -DLLVM_INCLUDE_EXAMPLES=OFF \
+421:     -DLLVM_BUILD_TESTS=OFF \
+422:     -DLLVM_INCLUDE_TESTS=OFF \
+423:     -DLLVM_ENABLE_DOXYGEN=OFF \
+424:     -DLLVM_BUILD_DOCS=OFF \
+425:     -DLLVM_INCLUDE_DOCS=OFF \
+426:     -DLLVM_OPTIMIZED_TABLEGEN=ON \
+427:     -DCMAKE_INSTALL_PREFIX=%{_prefix} \
+428:     -DLLVM_LIBDIR_SUFFIX=`echo %{_lib} | sed s/lib//g` \
+429:     -DCLANG_RESOURCE_DIR="../%{_lib}/clang/%{llvm_version}" \
+430:     -DLLVM_BINUTILS_INCDIR=/usr/include \
+431:     -DLLVM_PARALLEL_COMPILE_JOBS=6 \
+432:     -DLLVM_PARALLEL_LINK_JOBS=2 \
+433: %if %{with mlgo}
+434: %ifarch armv7l aarch64 x86_64
+435:     -DTENSORFLOW_AOT_PATH="${MLGO_AOT_DIR}/mlgo_sysroot" \
+436:     -DLLVM_MLGO_EXPORT_TF_XLA_RUNTIME=OFF \
+437:     -DLLVM_MLGO_EMBED_TF_XLA_RUNTIME_OBJECTS="${MLGO_RUNTIME_OBJECTS}" \
+438:     -DLLVM_OVERRIDE_MODEL_HEADER_INLINERSIZEMODEL="${MLGO_AOT_DIR}/InlinerSizeModel.h" \
+439:     -DLLVM_OVERRIDE_MODEL_OBJECT_INLINERSIZEMODEL="${MLGO_AOT_DIR}/InlinerSizeModel.o" \
+516:   exit 86
+517: %endif
+518: 
+519: # Full build using ninja (already in build/ directory after cd build)
+520: %ifarch x86_64
+521: %if %{with clang_bolt}
+522: ninja -d keeprsp -j %{mlgo_build_jobs} || exit 1
+523: %else
+524: ninja -j %{mlgo_build_jobs}
+525: %endif
+526: %else
+527: ninja -j %{mlgo_build_jobs}
+528: %endif
+529: %ifarch x86_64
+530: # These drivers must retain component linkage even when BOLT is disabled.
+531: for hybrid_tool in bin/clang-22 bin/lld bin/llvm-ar bin/llvm-tblgen bin/clang-tblgen bin/lldb-tblgen bin/llvm-config bin/llvm-exegesis; do
+532:     if ! test -f "$hybrid_tool"; then
+533:         case "$hybrid_tool" in
+534:             bin/clang-22|bin/lld|bin/llvm-ar)
+535:                 echo "TIZEN_HYBRID_LINK_FAILED missing $hybrid_tool" >&2; exit 1 ;;
+536:             *) echo "TIZEN_HYBRID_LINK_SKIP $hybrid_tool"; continue ;;
+537:         esac
+538:     fi
+539:     hybrid_dynamic=$(LC_ALL=C readelf -dW "$hybrid_tool") || {
+540:         echo "TIZEN_HYBRID_LINK_FAILED readelf: $hybrid_tool" >&2; exit 1;
+541:     }
+542:     if LC_ALL=C grep -E '\(NEEDED\).*\[(libLLVM[^]]*\.so|libclang-cpp[^]]*\.so)' <<EOF_HYBRID_DYNAMIC
+543: $hybrid_dynamic
+544: EOF_HYBRID_DYNAMIC
+545:     then
+546:         echo "TIZEN_HYBRID_LINK_FAILED shared LLVM/Clang dependency: $hybrid_tool" >&2
+547:         exit 1
+548:     else
+549:         hybrid_grep_status=$?
+550:         test "$hybrid_grep_status" = 1 || {
+551:             echo "TIZEN_HYBRID_LINK_FAILED grep status=$hybrid_grep_status: $hybrid_tool" >&2; exit 1;
+552:         }
+572: BOLT_PROFILE_SOURCE="%{SOURCE1200}"
+573: export BOLT_BUILD BOLT_WORK BOLT_INSTALL_ROOT BOLT_PROFILE_SOURCE
+574: bolt_fail() {
+575:   python3 -B %{SOURCE1201} disk-diagnose "$1" "$2" || bolt_status_exit $?
+576:   exit 1
+577: }
+578: bolt_status_exit() {
+579:   case "$1" in
+580:     129|130|143) exit "$1" ;;
+581:     *) exit 1 ;;
+582:   esac
+583: }
+584: bolt_checked() {
+585:   bolt_stage=$1
+586:   bolt_log=$2
+587:   shift 2
+588:   if bolt_output=$("$@" 2>&1); then
+589:     printf '%%s\n' "$bolt_output" || bolt_fail "$bolt_stage-output" -
+590:   else
+591:     bolt_status=$?
+592:     printf '%%s\n' "$bolt_output" || true
+593:     case "$bolt_status" in
+594:       129|130|143) exit "$bolt_status" ;;
+595:     esac
+596:     printf '%%s\n' "$bolt_output" | python3 -B %{SOURCE1201} disk-diagnose "$bolt_stage" /dev/stdin || bolt_status_exit $?
+597:     exit 1
+598:   fi
+599: }
+600: bolt_optional() {
+601:   if "$@"; then
+602:     return 0
+603:   else
+604:     bolt_optional_rc=$?
+605:     case $bolt_optional_rc in
+606:       129|130|143) exit "$bolt_optional_rc" ;;
+607:       *) return 0 ;;
+608:     esac
+609:   fi
+610: }
+611: bolt_step() {
+612:   bolt_stage=$1
+613:   shift
+614:   bolt_checked "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" python3 -B %{SOURCE1201} run-step "$bolt_stage" "$BOLT_WORK/$bolt_stage.log" -- "$@"
+615: }
+616: bolt_optional python3 -B %{SOURCE1201} disk-report begin
+617: echo "BOLT_BUILDROOT_OK %{buildroot}"
+618: python3 -B %{SOURCE1201} preflight || bolt_status_exit $?
+619: python3 -B %{SOURCE1201} certified || bolt_status_exit $?
+620: if [ -r /proc/self/stat ]; then echo BOLT_PROC_OK; else echo BOLT_PROC_MISSING; fi
+621: # One relink: emit-relocs, then LLVM strip-debug, BOLT and full strip.
+622: # The handed-off build owns its original ThinLTO cache; do not duplicate it.
+623: mkdir -p "$BOLT_WORK" || exit 1
+624: # File-list baseline is the actual ordinary CMake install, not a name whitelist.
+625: python3 -B %{SOURCE1201} installed-baseline "%{buildroot}" "$BOLT_WORK/installed-baseline.json" || bolt_status_exit $?
+626: python3 -B %{SOURCE1201} snapshot "%{buildroot}" "$BOLT_WORK/install-before.json" || bolt_status_exit $?
+627: bolt_step manifest-copy cp install_manifest.txt "$BOLT_WORK/install-manifest-before.txt"
+628: bolt_step ordinary-copy cp -p bin/clang-22 "$BOLT_WORK/ordinary-clang-22"
+629: bolt_checked link-command "$BOLT_WORK/link-command.log" python3 -B %{SOURCE1201} run-step link-command "$BOLT_WORK/link-command.log" --output "$BOLT_WORK/link.original" -- ninja -t commands -s bin/clang-22
+630: python3 -B %{SOURCE1201} unpack %{SOURCE1200} "$BOLT_WORK/profile.fdata" || bolt_status_exit $?
+631: bolt_step configure cmake -S ../llvm -B . \
+632:   '-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt' \
+633:   -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \
+634:   -DBOLT_INCLUDE_TESTS=OFF -DBOLT_TARGETS_TO_BUILD=X86
+635: # Only certified BOLT tasks and the paired configure-refreshed TF anchor.
+636: bolt_step dry-run-begin /bin/echo BOLT_TOOL_DRY_RUN_BEGIN
+637: # LC_ALL=C applies only to this ninja invocation.
+638: bolt_checked tool-dry-run "$BOLT_WORK/tool-dry-run.log" python3 -B %{SOURCE1201} run-step tool-dry-run "$BOLT_WORK/tool-dry-run.log" --output "$BOLT_WORK/tool-dry-run.txt" -- env LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -n llvm-bolt
+639: bolt_step dry-run-end /bin/echo BOLT_TOOL_DRY_RUN_END
+640: python3 -B %{SOURCE1201} tool-plan "$BOLT_WORK/tool-dry-run.txt" > "$BOLT_WORK/tool-plan.json" || bolt_status_exit $?
+641: cat "$BOLT_WORK/tool-plan.json"
+642: python3 -B %{SOURCE1201} tool-prepare "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-before.json" || bolt_status_exit $?
+643: # LC_ALL=C applies only to this ninja invocation.
+644: bolt_checked tool-build "$BOLT_WORK/tool-build.txt" python3 -B %{SOURCE1201} run-step tool-build "$BOLT_WORK/tool-build.txt" --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C NINJA_STATUS='[%%f/%%t] ' ninja -j %{mlgo_build_jobs} llvm-bolt
+645: python3 -B %{SOURCE1201} tool-verify "$PWD" "$BOLT_WORK/tool-plan.json" "$BOLT_WORK/tool-build.txt" \
+646:   "$BOLT_WORK/tool-before.json" "$BOLT_WORK/tool-build-verification.json" || bolt_status_exit $?
+647: cat "$BOLT_WORK/tool-build-verification.json"
+648: bolt_optional python3 -B %{SOURCE1201} disk-report tool-built
+649: %if %{llvm_release_build}
+650: python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" || bolt_status_exit $?
+651: %else
+652: python3 -B %{SOURCE1201} pipeline "$PWD" "$BOLT_WORK" "$PWD/bin/llvm-bolt" --debug-symbols || bolt_status_exit $?
+653: %endif
+654: echo BOLT_PIPELINE_PASS
+655: bolt_optional python3 -B %{SOURCE1201} disk-report pipeline
+656: # BOLT configuration/build/rewrite must not change the ordinary installation.
+657: # Do not reinstall: that would add BOLT libraries, unregistered aliases and exports.
+658: python3 -B %{SOURCE1201} compare-root "%{buildroot}" "$BOLT_WORK/install-before.json" \
+659:   "$BOLT_WORK/install-after-pipeline.json" || bolt_status_exit $?
+660: echo BOLT_COMPARE_ROOT_PASS
+661: # No subsequent step consumes this ThinLTO cache.
+662: # Release it only inside the enabled x86_64 BOLT block.
+663: bolt_optional python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK"
+664: # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
+665: %endif
+666: %endif
+667: ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
+668: 
+669: ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
+670: ln -sf clang++ %{buildroot}%{_prefix}/bin/%{_host}-clang++
+671: # Use host triple and resource dir by default via <lang>.cfg
+672: cat >> %{buildroot}/%{_prefix}/bin/clang.cfg << EOF
+673: -target %{_host}
+674: -resource-dir %{_prefix}/%{_lib}/clang/%{llvm_version}
+675: EOF
+676: ln -sf clang.cfg %{buildroot}/%{_prefix}/bin/clang++.cfg
+677: 
+678: # copy lldb for sdk
+679: mkdir -p %{buildroot}%{sdk_bin_dir}
+680: mkdir -p %{buildroot}%{sdk_lib_dir}
+681: 
+682: mv %{buildroot}%{_prefix}/bin/lldb %{buildroot}%{sdk_bin_dir}
+683: mv %{buildroot}%{_prefix}/bin/lldb-argdumper %{buildroot}%{sdk_bin_dir}
+684: mv %{buildroot}%{_prefix}/bin/lldb-server %{buildroot}%{sdk_bin_dir}
+685: 
+686: ln -sf %{sdk_bin_dir}/lldb %{buildroot}%{_prefix}/bin/
+687: 
+688: cp -P %{buildroot}%{_libdir}/liblldb.so* %{buildroot}%{sdk_lib_dir}/
+712:     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+713:     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+714: %if %{with clang_bolt}
+715:     --jobs 4 --address-space-bytes 4294967296 || bolt_status_exit $?
+716: %else
+717:     --jobs 4 --address-space-bytes 4294967296 || exit 1
+718: %endif
+719: %endif
+720: 
+721: %ifarch x86_64
+722: %if %{with clang_bolt}
+723: # Candidate is fully stripped before the one unchanged platform post-processing chain.
+724: python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
+725:   "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || bolt_status_exit $?
+726: 
+727: %endif
+728: %endif
+729: %post -n clang -p /sbin/ldconfig
+730: %postun -n clang -p /sbin/ldconfig
+731: 
+732: %post -n lldb
+733: echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /root/.lldbinit
+734: 
+735: %files
+736: %manifest %{name}.manifest
+737: %defattr(-,root,root,-)
+738: %{_prefix}/bin/analyze-build
+739: %{_prefix}/bin/bugpoint
+740: %{_prefix}/bin/clang-linker-wrapper
+741: %{_prefix}/bin/clang-offload-packager
+742: %{_prefix}/bin/clang-repl
+743: %{_prefix}/bin/intercept-build
+744: %{_prefix}/bin/llc
+745: %{_prefix}/bin/lld
+746: %{_prefix}/bin/ld.lld
+747: %{_prefix}/bin/ld64.lld
+748: %{_prefix}/bin/lld-link
+749: %{_prefix}/bin/wasm-ld
+750: %{_prefix}/bin/lli
+963: %global __bolt_original_spec_install_post %{__spec_install_post}
+964: %define __spec_install_post \
+965:     %{__bolt_original_spec_install_post} \
+966:     python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || bolt_status_exit $? \
+967:     echo BOLT_POST_GATE_PASS \
+968:     bolt_optional python3 -B %{SOURCE1201} disk-report post
+969: %endif
+970: %endif

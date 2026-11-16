@@ -1,0 +1,155 @@
+188: _ACTIVE_GROUP = None
+189: 
+190: 
+191: def record_cancel(signum, frame):
+192:     global _CANCEL_SIGNAL
+193:     if _CANCEL_SIGNAL is not None:
+194:         # Kill the active descendant group before honoring an immediate second
+195:         # signal. The leader stays unreaped until call() has cleaned its group.
+196:         if _ACTIVE_GROUP is not None:
+197:             try: os.killpg(_ACTIVE_GROUP, signal.SIGKILL)
+198:             except ProcessLookupError: pass
+199:         # This second-signal path terminates by signal; original handlers are not restored.
+200:         signal.signal(signum, signal.SIG_DFL)
+201:         os.kill(os.getpid(), signum)
+202:         return
+203:     _CANCEL_SIGNAL = signum
+204: 
+205: 
+206: def check_cancel():
+207:     if _CANCEL_SIGNAL is not None:
+208:         raise GateError('CANCELLED: cancelled by signal %s' % _CANCEL_SIGNAL,
+209:                         cancel_originated=True)
+210: 
+211: 
+212: def peek_child_exit(process, timeout):
+213:     deadline = time.monotonic()+timeout if timeout is not None else None
+214:     while True:
+215:         check_cancel()
+216:         status = os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOHANG | os.WNOWAIT)
+1049:             except OSError: pass
+1050:         raise
+1051: 
+1052: def debugfiles_gate(ordinary, identity):
+1053:     if 'debug_file' not in identity:
+1054:         return {'required': False}
+1055:     # find-debuginfo.sh writes this default list in the RPM build directory.
+1056:     path = Path(ordinary).parent.parent.parent/'debugfiles.list'
+1057:     require(path.is_file(), 'debugfiles list missing: '+str(path))
+1058:     lines = path.read_text().splitlines()
+1059:     expected = '/'+DEBUG_INSTALL_PATH
+1060:     require(any(line.strip() in (expected, '.'+expected) for line in lines),
+1061:             'debugfiles list omits '+expected+': '+str(path))
+1062:     return {'required': True, 'path': str(path), 'sha256': digest(path), 'listed': expected}
+1063: 
+1064: 
+1065: def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
+1066:     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
+1067:     entity = root/'usr/bin/clang-22'; require(digest(entity) == state['installed_sha256'], 'clang changed during RPM post-processing')
+1068:     for change in state['alias_changes']:
+1069:         p = root/change['path']
+1070:         require(p.is_symlink() and os.readlink(p) == 'clang-22' and rooted_resolve(root,p) == entity,
+1071:                 'alias stale or not normalized: '+str(p))
+1072:     e = ELF(entity)
+1073:     try:
+1074:         elf = e.audit(final=True)
+1075:     finally:
+1076:         e.close()
+1077:     require(digest(entity) == state['identity']['after_sha256'], 'final installed SHA differs from stripped candidate')
+1078:     debug = None
+1079:     if 'debug_file' in state['identity']:
+1080:         path = root/DEBUG_INSTALL_PATH
+1081:         require(rooted_resolve(root, path) == path, 'post debug install path traverses symlink')
+1082:         debug = verify_debug_identity(state['identity'], entity, path)
+1083:         require(stat.S_IMODE(path.stat().st_mode) == 0o644, 'post debug file mode differs')
+1084:         # Platform find-debuginfo skips files already carrying a debuglink.
+1085:         # Both payload SHAs must survive its original, single post chain.
+1086:         debug['find_debuginfo_skip_basis'] = 'preinstalled debuglink; clang and debug SHAs unchanged'
+1087:         debug['package_list'] = debugfiles_gate(ordinary, state['identity'])
+1088:     no_bolt_products(root)
+1089:     security = security_compare(ordinary, str(entity), ignore_paths=True)
+1090:     baseline = Path(ordinary).parent/'installed-baseline.json'
+1091:     if 'installed_baseline_sha256' in state['identity']:
+1092:         require(digest(baseline) == state['identity']['installed_baseline_sha256'], 'installed-baseline SHA changed')
+1093:     installed = installed_security(baseline, entity)
+1094:     rows = tiny_gate(ordinary, str(entity), candidate_work, resource_dir)
+1095:     real = real_gate(ordinary, str(entity), Path(ordinary).parent.parent,
+1096:                      Path(candidate_work)/'real', resource_dir)
+1097:     return {'sha_unchanged': True, 'aliases_pass': True, 'elf': elf, 'tiny': rows,
+1098:             'strip_identity_pass': True, 'security': security, 'installed_security': installed, 'real': real, 'debug': debug}
+1099: 
+1100: def certified_version(text):
+1101:     lines = re.findall(r'^\s*(LLVM version[^\n]*)$', text, re.M)
+1102:     require(lines == [CERTIFIED['bolt_version']], 'uncertified BOLT tool version actual=%s expected=%s; remedy: update certified constants and recertify, or disable with --without clang_bolt / bcond_with' % (lines, CERTIFIED['bolt_version']))
+1103:     return lines[0]
+1104: 
+1105: def no_bolt_products(root):
+1106:     root = Path(root).absolute()
+1107:     for name in ('llvm-bolt', 'perf2bolt', 'llvm-boltdiff', 'merge-fdata'):
+1108:         path = root/'usr/bin'/name
+1109:         require(not path.exists() and not path.is_symlink(), 'BOLT tool in buildroot: '+str(path))
+1110:     tokens = (b'LLVMBOLT', b'llvm-bolt', b'perf2bolt', b'llvm-boltdiff', b'merge-fdata')
+1111:     # Reuse fail-closed inventory traversal without hashing package payloads.
+1112:     files = inventory(root, hash_files=False)['files']
+1838:     s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
+1839:     s=sub.add_parser('compare-root');s.add_argument('root');s.add_argument('baseline');s.add_argument('after')
+1840:     s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
+1841:     s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
+1842:     s=sub.add_parser('disk-report');s.add_argument('stage',choices=['begin','tool-built','pipeline','post']);s.add_argument('--build');s.add_argument('--work');s.add_argument('--root')
+1843:     s=sub.add_parser('disk-diagnose');s.add_argument('step');s.add_argument('log');s.add_argument('--build');s.add_argument('--work');s.add_argument('--root')
+1844:     s=sub.add_parser('run-step');s.add_argument('step');s.add_argument('log');s.add_argument('--output');s.add_argument('--success-marker');s.add_argument('argv',nargs=argparse.REMAINDER)
+1845:     a=p.parse_args()
+1846:     _DISK_CONTEXT.clear()
+1847:     _DISK_CONTEXT['step']=getattr(a,'step',a.cmd)
+1848:     if a.cmd=='pipeline': _DISK_CONTEXT.update(build=a.build,work=a.work)
+1849:     elif a.cmd=='install': _DISK_CONTEXT.update(root=a.root)
+1850:     elif a.cmd=='cache-copy':
+1851:         try:
+1852:             cache_paths=re.findall(r'--thinlto-cache-dir=([^\s]+)',Path(a.edge).read_text())
+1853:             if len(cache_paths)==1:_DISK_CONTEXT.update(copy_source=cache_paths[0],copy_destination=a.destination)
+1854:         except OSError:pass
+1855:     if a.cmd=='cache-release':
+1856:         cache_release(a.build,a.work);return
+1857:     if a.cmd in ('disk-report','disk-diagnose'):
+1858:         try:
+1859:             if a.cmd=='disk-report':disk_report(a.stage,a.build,a.work,a.root)
+1860:             else:disk_diagnose(a.step,a.log,build=a.build,work=a.work,root=a.root)
+1861:         except Exception:pass
+1862:         return
+1863:     if a.cmd=='run-step':
+1864:         # REMAINDER begins after step/log: parse optional output flags explicitly.
+1865:         args=list(a.argv);output=a.output;marker=a.success_marker
+1866:         while args and args[0].startswith('--') and args[0]!='--':
+1896:     elif a.cmd=='install':
+1897:         install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()),announce=True,identity_path=a.identity);return
+1898:     elif a.cmd=='post':
+1899:         result=post_gate(a.root,json.loads(Path(a.state).read_text()),a.ordinary,a.work,
+1900:                          a.resource_dir);save(Path(a.work)/'post-result.json',result)
+1901:     print(json.dumps(result,ensure_ascii=False),flush=True)
+1902: 
+1903: def cli():
+1904:     global _CANCEL_SIGNAL
+1905:     previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)}
+1906:     _CANCEL_SIGNAL = None
+1907:     result, failure = 0, None
+1908:     for sig, handler in previous.items():
+1909:         if handler != signal.SIG_IGN:
+1910:             signal.signal(sig, record_cancel)
+1911:     try:
+1912:         try:
+1913:             main()
+1914:         except (GateError, OSError, ValueError, lzma.LZMAError) as error:
+1915:             step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+1916:             log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+1917:             diagnose_safely(step,log,error)
+1918:             print('BOLT_GATE_FAILED: '+str(error),file=sys.stderr)
+1919:             result = 1
+1920:         except Exception as error:
+1921:             step = _DISK_CONTEXT.get('step') or (sys.argv[1] if len(sys.argv)>1 else 'helper')
+1922:             log = getattr(error,'bolt_log',None) or os.environ.get('BOLT_STEP_LOG','-')
+1923:             diagnose_safely(step,log,error)
+1924:             print('BOLT_GATE_FAILED: unexpected %s: %s' % (type(error).__name__, error), file=sys.stderr)
+1925:             raise
+1926:     except BaseException:
+1927:         failure = sys.exc_info()
+1928:     finally:

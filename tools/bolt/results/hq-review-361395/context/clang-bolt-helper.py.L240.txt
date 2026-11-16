@@ -1,0 +1,21 @@
+230:         require(time.monotonic() < deadline, 'leader %d was not reaped before deadline' % process.pid)
+231:         time.sleep(.01)
+232: 
+233: def call(argv, log, cwd=None, timeout=300):
+234:     global _ACTIVE_GROUP
+235:     log = Path(log); log.parent.mkdir(parents=True, exist_ok=True)
+236:     process = None; reaped = False; primary = None
+237:     try:
+238:         previous = signal.getsignal(signal.SIGCHLD)
+239:         if previous != signal.SIG_DFL:
+240:             signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+241:         save(log.with_suffix(log.suffix+'.argv.json'),
+242:              {'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None,
+243:               'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+244:         with log.open('wb') as output:
+245:             check_cancel()
+246:             # A microsecond-scale window exists between Popen and _ACTIVE_GROUP:
+247:             # a second signal here may leave the new process group uncleaned.
+248:             # Do not use preexec_fn: it risks deadlock in multithreaded programs.
+249:             process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
+250:                                        stderr=subprocess.STDOUT, start_new_session=True)

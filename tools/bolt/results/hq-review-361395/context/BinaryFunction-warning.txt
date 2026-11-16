@@ -1,0 +1,47 @@
+1401:         const bool IsCondBranch = MIB->isConditionalBranch(Instruction);
+1402:         MCSymbol *TargetSymbol = nullptr;
+1403: 
+1404:         if (IsUnsupported)
+1405:           if (auto *TargetFunc =
+1406:                   BC.getBinaryFunctionContainingAddress(TargetAddress))
+1407:             TargetFunc->setIgnored();
+1408: 
+1409:         if (IsCall && TargetAddress == getAddress()) {
+1410:           // A recursive call. Calls to internal blocks are handled by
+1411:           // ValidateInternalCalls pass.
+1412:           TargetSymbol = getSymbol();
+1413:         } else {
+1414:           // Create either local label or external symbol.
+1415:           if (containsAddress(TargetAddress)) {
+1416:             TargetSymbol = getOrCreateLocalLabel(TargetAddress);
+1417:           } else {
+1418:             if (TargetAddress == getAddress() + getSize() &&
+1419:                 TargetAddress < getAddress() + getMaxSize() &&
+1420:                 !(BC.isAArch64() &&
+1421:                   BC.handleAArch64Veneer(TargetAddress, /*MatchOnly*/ true))) {
+1422:               // Result of __builtin_unreachable().
+1423:               errs() << "BOLT-WARNING: jump past end detected at 0x"
+1424:                      << Twine::utohexstr(AbsoluteInstrAddr) << " in function "
+1425:                      << *this << " : replacing with nop.\n";
+1426:               BC.MIB->createNoop(Instruction);
+1427:               if (IsCondBranch) {
+1428:                 // Register branch offset for profile validation.
+1429:                 IgnoredBranches.emplace_back(Offset, Offset + Size);
+1430:               }
+1431:               goto add_instruction;
+1432:             }
+1433:             // May update Instruction and IsCall
+1434:             TargetSymbol = handleExternalReference(Instruction, Size, Offset,
+1435:                                                    TargetAddress, IsCall);
+1436:           }
+1437:         }
+1438: 
+1439:         if (!IsCall) {
+1440:           // Add taken branch info.
+1441:           TakenBranches.emplace_back(Offset, TargetAddress - getAddress());
+1442:         }
+1443:         BC.MIB->replaceBranchTarget(Instruction, TargetSymbol, &*Ctx);
+1444: 
+1445:         // Mark CTC.
+1446:         if (IsCondBranch && IsCall)
+1447:           MIB->setConditionalTailCall(Instruction, TargetAddress);

@@ -1,0 +1,21 @@
+984:         raise
+985:     finally:
+986:         for sig, handler in old_handlers.items():
+987:             signal.signal(sig, handler)
+988: 
+989: 
+990: def install_main():
+991:     global _CANCEL_SIGNAL
+992:     _CANCEL_SIGNAL = None
+993:     if signal.getsignal(signal.SIGCHLD) != signal.SIG_DFL:
+994:         signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+995:         print('NATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL', flush=True)
+996:     parser = argparse.ArgumentParser(description='Convert certified x86_64 ThinLTO archives before standard RPM stripping')
+997:     parser.add_argument('--root', type=Path, required=True)
+998:     parser.add_argument('--build', type=Path, required=True)
+999:     parser.add_argument('--evidence', type=Path, required=True)
+1000:     parser.add_argument('--arch', choices=['x86_64'], required=True)
+1001:     parser.add_argument('--debug-info', choices=['yes', 'no'], required=True)
+1002:     parser.add_argument('--compiler', type=Path, required=True)
+1003:     parser.add_argument('--disassembler', type=Path, required=True)
+1004:     parser.add_argument('--nm', type=Path, required=True)

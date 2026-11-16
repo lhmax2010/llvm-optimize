@@ -1,0 +1,86 @@
+{
+  "new_message_count": 1,
+  "new_inline_count": 5,
+  "analysis_item_count": 11,
+  "required_changes": 5,
+  "conditional_extra_change": "Q3 only if approved",
+  "rows": [
+    {
+      "id": "H1",
+      "type": "要求修改",
+      "modification": "是",
+      "part": "Part 2 / helper",
+      "validation": "新增default/ignored/custom处理器的成功与失败恢复、waitid/waitpid不丢退出码、子孙清理；合并下一轮QB及本地T/D验证。真实转换重放不是本条单独的必要证明，但与H4/H5及Part4一起运行。"
+    },
+    {
+      "id": "H2",
+      "type": "要求修改",
+      "modification": "是（实现方式需裁决）",
+      "part": "Part 2 / helper",
+      "validation": "确定性注入Popen返回前/后、PGID登记前/后的一次/二次TERM/INT/HUP；验证进程组无遗留、129/130/143、继承忽略不变、子掩码不变、Popen抛异常与重复调用。两条备选路线不要同时混入。合并构建验证不足以替代这些竞态夹具。"
+    },
+    {
+      "id": "H3",
+      "type": "要求修改",
+      "modification": "是",
+      "part": "Part 2 / helper + spec",
+      "validation": "真实不同深度ordinary路径、显式清单成功/缺失/缺项、debug与release、CRC/SHA负例；12组展开+平台5项解析，ARM/BOLT-off保持；同一轮T/D构建及安装LLDB核对。"
+    },
+    {
+      "id": "H4",
+      "type": "要求修改",
+      "modification": "是",
+      "part": "Part 3 + Part 4 / converter",
+      "validation": "普通/thin档双表拒绝、空第一表+第二表拒绝、零表和单表合法；复用全部转换器测试，夜间按已批准资源做450发货档检查和原bitcode重新转换比较，覆盖3853成员及10个debug档；不可把已native归档简单扫描冒称重新转换。"
+    },
+    {
+      "id": "H5",
+      "type": "要求修改",
+      "modification": "是",
+      "part": "Part 3 + Part 4 / converter",
+      "validation": "default/ignored/custom恢复，--help/坏参数/校验失败/转换失败/取消；SIGCHLD忽略继承时仍正常reap，无僵尸/漏收；与H4合并真实转换重放，再合并完整构建。"
+    },
+    {
+      "id": "Q1",
+      "type": "问题/澄清",
+      "modification": "否",
+      "part": "Part 2",
+      "validation": "不需单独新QB；H3改参数后在合并的一轮验证中再次核对post链、退出码及列表。"
+    },
+    {
+      "id": "Q2",
+      "type": "问题/澄清",
+      "modification": "否（不建议按警告文本盲加门禁）",
+      "part": "上游BOLT + Part 2门禁",
+      "validation": "不因这条澄清重构建；若后续改变警告处理，必须重新真实BOLT/产物验证，另行资源审批。"
+    },
+    {
+      "id": "Q3",
+      "type": "问题/澄清（并行策略待裁决）",
+      "modification": "暂不纳入；可选第6项待裁决",
+      "part": "spec的既有构建调度",
+      "validation": "若改变，新增宏展开覆盖未定义/显式覆盖/平台值及合法数值，先报内存预算；完整构建需监视ThinLTO链接峰值。一次构建不能同时证明多个不同-j的性能。"
+    },
+    {
+      "id": "Q4",
+      "type": "问题/澄清（数据请求）",
+      "modification": "否；需补测数据",
+      "part": "Part 1/2验证资料",
+      "validation": "一次QB/本地构建批次可增加采样，但若accel包由独立流水线生成，还需该流水线产物和setup记录；不能承诺仅LLVM构建就覆盖。"
+    },
+    {
+      "id": "Q5",
+      "type": "问题/澄清",
+      "modification": "否（现有证据未发现重复定义）",
+      "part": "Part 1 / CMake",
+      "validation": "同轮构建确认clang NEEDED/link edge/导出符号；最小插件载入与预期plugin依赖，若需验证LLVM_EXPORT_SYMBOLS_FOR_PLUGINS=ON非当前配置，另行范围批准。"
+    },
+    {
+      "id": "Q6",
+      "type": "问题/澄清（纠正回退范围）",
+      "modification": "否",
+      "part": "Part 2开关 vs Part 1/3/4",
+      "validation": "保留BOLT on/off、ARM展开测试；若用户要求整包回退等价，需指定确切tree并独立完整比较。"
+    }
+  ]
+}

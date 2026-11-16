@@ -1,0 +1,45 @@
+18: 
+19: 只读git对象fea0fe464d56e17f2c7588c557bfffd9f6ac352b。未读取3ee2d847，也未fetch。完整源码保存于source/，行号对应原文件，不是文档行号。
+20: 
+21: ### 2.1 jump-past-end
+22: 
+23: [BinaryFunction.cpp](../../tools/bolt/results/night-87-20261114/source/bolt_lib_Core_BinaryFunction.cpp) L1391–1431：
+24: 
+25: - 已反汇编指令被识别为branch或call，并且evaluateBranch能解析目标。
+26: - 递归调用到函数入口有单独路径；本告警位于目标不在containsAddress范围内的外部目标分支。
+27: - TargetAddress恰等于getAddress()+getSize()，且小于getAddress()+getMaxSize()。
+28: - 排除AArch64 veneer匹配；本次输入ELF为x86_64，函数名称中AArch64不改变ELF架构。
+29: - 源码注释是“Result of __builtin_unreachable().”；随后createNoop替换MC指令。
+30: - 若原指令为条件跳转，将(Offset, Offset+Size)加入IgnoredBranches，用于profile validation；无条件跳转不加入此表。
+31: - goto add_instruction跳过后续外部引用处理/TakenBranches登记及replaceBranchTarget。源码注释不等于任意输入的可达性证明。
+32: 
+33: 关键原文：
+34: 
+35: ~~~cpp
+36: if (TargetAddress == getAddress() + getSize() &&
+37:     TargetAddress < getAddress() + getMaxSize() &&
+38:     !(BC.isAArch64() &&
+39:       BC.handleAArch64Veneer(TargetAddress, /*MatchOnly*/ true))) {
+40:   // Result of __builtin_unreachable().
+41:   errs() << "BOLT-WARNING: jump past end detected at 0x"
+42:          << Twine::utohexstr(AbsoluteInstrAddr) << " in function "
+43:          << *this << " : replacing with nop.\n";
+44:   BC.MIB->createNoop(Instruction);
+45:   if (IsCondBranch) {
+46:     // Register branch offset for profile validation.
+47:     IgnoredBranches.emplace_back(Offset, Offset + Size);
+48:   }
+49:   goto add_instruction;
+50: }
+51: ~~~
+52: 
+53: ### 2.2 relocation计数与开关
+54: 
+55: [RewriteInstance.cpp](../../tools/bolt/results/night-87-20261114/source/bolt_lib_Rewrite_RewriteInstance.cpp)：
+56: L2659–2675输出NumFailedRelocations汇总；L2911–2918仅在analyzeRelocation返回false时递增。
+57: 该函数L2479–2480唯一false路径是!Relocation::isSupported(RType)。其余支持类型的值一致性有assert，不计为这里的false。
+58: [Relocation.cpp](../../tools/bolt/results/night-87-20261114/source/bolt_lib_Core_Relocation.cpp) L33–54列x86支持类型，L719–729按架构分派。
+59: 
+60: 筛选链完整原文在RewriteInstance.cpp L2829–2903：重定位节自身非ALLOC；目标节ALLOC；排除.plt/.rela.plt/.got.plt/.eh_frame/.gcc_except_table；skipRelocationType；x86 converted-bit归一化；x86 TLS跳过；已有动态重定位地址跳过。2804是经这些筛选后不支持的记录数，不是全部ELF重定位数，也不能凭汇总定位具体类型或符号。
+61: 
+62: L2913–2916逐条offset/type-name输出包在LLVM_DEBUG中，L2830–2845可打印重定位节和目标节上下文；DEBUG_TYPE为L69的“bolt”。对应开关为-debug-only=bolt，**前提是工具编入LLVM_DEBUG支持**。失败分支尚未取得SymbolName，符号归属仍需原ELF交叉映射。

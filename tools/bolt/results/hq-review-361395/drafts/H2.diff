@@ -1,0 +1,79 @@
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -186,6 +186,8 @@
+ 
+ _CANCEL_SIGNAL = None
+ _ACTIVE_GROUP = None
++_SPAWNING = False
++_DEFERRED_SECOND_SIGNAL = None
+ 
+ 
+ def record_cancel(signum, frame):
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -191,8 +191,12 @@
+ 
+ 
+ def record_cancel(signum, frame):
+-    global _CANCEL_SIGNAL
++    global _CANCEL_SIGNAL, _DEFERRED_SECOND_SIGNAL
+     if _CANCEL_SIGNAL is not None:
++        if _SPAWNING:
++            if _DEFERRED_SECOND_SIGNAL is None:
++                _DEFERRED_SECOND_SIGNAL = signum
++            return
+         # Kill the active descendant group before honoring an immediate second
+         # signal. The leader stays unreaped until call() has cleaned its group.
+         if _ACTIVE_GROUP is not None:
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -237,7 +237,7 @@
+         time.sleep(.01)
+ 
+ def call(argv, log, cwd=None, timeout=300):
+-    global _ACTIVE_GROUP
++    global _ACTIVE_GROUP, _SPAWNING, _DEFERRED_SECOND_SIGNAL
+     log = Path(log); log.parent.mkdir(parents=True, exist_ok=True)
+     process = None; reaped = False; primary = None
+     previous = signal.getsignal(signal.SIGCHLD)
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -249,12 +249,19 @@
+               'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+         with log.open('wb') as output:
+             check_cancel()
+-            # A microsecond-scale window exists between Popen and _ACTIVE_GROUP:
+-            # a second signal here may leave the new process group uncleaned.
+-            # Do not use preexec_fn: it risks deadlock in multithreaded programs.
+-            process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
+-                                       stderr=subprocess.STDOUT, start_new_session=True)
+-            _ACTIVE_GROUP = process.pid
++            # Publish the PGID before honoring a deferred second signal.
++            # Do not block signals across exec or use preexec_fn.
++            _SPAWNING = True
++            try:
++                process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
++                                           stderr=subprocess.STDOUT, start_new_session=True)
++                _ACTIVE_GROUP = process.pid
++            finally:
++                _SPAWNING = False
++                if _DEFERRED_SECOND_SIGNAL is not None:
++                    pending = _DEFERRED_SECOND_SIGNAL
++                    _DEFERRED_SECOND_SIGNAL = None
++                    record_cancel(pending, None)
+             rc = peek_child_exit(process, timeout)
+             if rc != 0:
+                 primary = 'COMMAND_ERROR: COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -1916,7 +1916,9 @@
+     print(json.dumps(result,ensure_ascii=False),flush=True)
+ 
+ def cli():
+-    global _CANCEL_SIGNAL
++    global _CANCEL_SIGNAL, _SPAWNING, _DEFERRED_SECOND_SIGNAL
++    _SPAWNING = False
++    _DEFERRED_SECOND_SIGNAL = None
+     previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)}
+     _CANCEL_SIGNAL = None
+     result, failure = 0, None

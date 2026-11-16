@@ -1,0 +1,123 @@
+{
+  "H1": {
+    "title": "helper 的 SIGCHLD 恢复",
+    "kind": "要求修改",
+    "modify": "是",
+    "part": "Part 2 / helper",
+    "point": "call()将SIGCHLD改为默认后不恢复。",
+    "reason": "PS3 helper L238–240确有重置，L296–297 finally仅清_ACTIVE_GROUP；cli仅恢复TERM/INT/HUP。应接受恢复要求。但“持续到剩余整个build”需限定：signal.signal只能改变当前Python进程，不能修改父RPM shell；当前CLI退出后不存在跨shell持续影响。对同进程后续调用和库式使用仍是缺口。",
+    "plan": "H1.diff：在try前保存旧SIGCHLD，在现有finally中于进程组清理/回收后恢复。必须覆盖成功、命令失败、超时、取消；不应在仍需waitpid时提前恢复SIG_IGN。",
+    "overlap": "PS4没有修复；与F1日志分类不重叠。",
+    "validation": "新增default/ignored/custom处理器的成功与失败恢复、waitid/waitpid不丢退出码、子孙清理；合并下一轮QB及本地T/D验证。真实转换重放不是本条单独的必要证明，但与H4/H5及Part4一起运行。"
+  },
+  "H2": {
+    "title": "Popen 至进程组登记的信号窗口",
+    "kind": "要求修改",
+    "modify": "是（实现方式需裁决）",
+    "part": "Part 2 / helper",
+    "point": "Popen与_ACTIVE_GROUP赋值之间有取消竞态。",
+    "reason": "PS3 L191–203首次信号只记录，peek_child_exit会check_cancel，因此通常首次信号仍能进入清理；危险的是该窗口的第二次信号：_ACTIVE_GROUP尚空便终止helper。HQ指出的窗口真实存在。不能只在父线程pthread_sigmask后Popen再解屏蔽：子进程会继承阻塞掩码，父端恢复不等于子端恢复；preexec_fn又有已知多线程死锁风险。",
+    "plan": "H2.diff给出不改变子进程信号掩码的候选：仅在spawn临界区记录第二信号，登记PGID后立即交还原二次信号终止路径；Popen失败也必须退出临界区。它改变“第二信号严格立即”的边界，需要PM批准，未当作验证过的实现。若HQ坚持pthread_sigmask，须另设计并验证exec前恢复子掩码的启动机制，不能直接采用单侧屏蔽。",
+    "overlap": "PS4未解决。设计此前将阻塞信号日志延后；本条是进程创建正确性，不应误认为新增日志已经处理。",
+    "validation": "确定性注入Popen返回前/后、PGID登记前/后的一次/二次TERM/INT/HUP；验证进程组无遗留、129/130/143、继承忽略不变、子掩码不变、Popen抛异常与重复调用。两条备选路线不要同时混入。合并构建验证不足以替代这些竞态夹具。"
+  },
+  "H3": {
+    "title": "显式传入 debugfiles.list",
+    "kind": "要求修改",
+    "modify": "是",
+    "part": "Part 2 / helper + spec",
+    "point": "不应从ordinary路径的父层数推导RPM清单位置。",
+    "reason": "PS3 L1056确实依赖parent.parent.parent；需要显式路径。HQ所谓“只检查presence/string match”只描述debugfiles_gate这一子门禁；post_gate L1067/1077–1087另外核对可执行文件SHA、debug identity/CRC、模式及符号关联，因此不是完全没有内容检查。成员列表检查仍是打包清单要求，不能删掉。",
+    "plan": "H3.diff：post CLI增加--debugfiles-list；spec传%{_builddir}/%{buildsubdir}/debugfiles.list；逐层传至debugfiles_gate。保留原成员断言与所有现有identity门禁；release无debug_file时仍不要求文件存在。",
+    "overlap": "PS4未修改helper/spec；无逻辑冲突。",
+    "validation": "真实不同深度ordinary路径、显式清单成功/缺失/缺项、debug与release、CRC/SHA负例；12组展开+平台5项解析，ARM/BOLT-off保持；同一轮T/D构建及安装LLDB核对。"
+  },
+  "H4": {
+    "title": "拒绝第二张 GNU 长文件名表",
+    "kind": "要求修改",
+    "modify": "是",
+    "part": "Part 3 + Part 4 / converter",
+    "point": "第二个//表会覆盖第一个，后续offset解析错误地统一使用最后一张表。",
+    "reason": "PS3 inspect L120初始化longnames，L132–133无重复判断，L143之后才解析全部raw_members；因此第二张表可能改变早先成员的名字解析。应显式拒绝重复。不能仅if longnames判断，因为第一张表为空也必须算已出现。",
+    "plan": "H4.diff：新增seen_longnames=False；遇到//先检查标记、拒绝第二张，再存内容。GNU普通/thin档均适用。",
+    "overlap": "PS4的Chdr、TLSDESC零宽、RELR检查未涉及ar表；与现有加固直接叠加，不改变合法单表输入输出。",
+    "validation": "普通/thin档双表拒绝、空第一表+第二表拒绝、零表和单表合法；复用全部转换器测试，夜间按已批准资源做450发货档检查和原bitcode重新转换比较，覆盖3853成员及10个debug档；不可把已native归档简单扫描冒称重新转换。"
+  },
+  "H5": {
+    "title": "converter 的 SIGCHLD 恢复",
+    "kind": "要求修改",
+    "modify": "是",
+    "part": "Part 3 + Part 4 / converter",
+    "point": "install_main中的SIGCHLD重置没有恢复。",
+    "reason": "PS3 L993–995确有重置，L1022–1024只恢复TERM/INT/HUP；install/convert自己的finally也没有恢复SIGCHLD。范围同H1：进程内缺口，不是修改RPM父shell。恢复必须覆盖parse_args的SystemExit、工具校验和转换异常，不应仅放在现有install的try内部。",
+    "plan": "H5.diff：将原解析/转换主体置于内部函数，外层install_main保留启动日志/取消初始化，并用try/finally包住SIGCHLD重置到全部退出路径。保留PS4的日志格式、信号分类、null和输出失败处理。",
+    "overlap": "PS4尚未解决；同install_main附近有新增log_startup_context，需要手工核对顺序，不得丢失F1–F3。本草案以8ec86c3e为基底，已保留这些行。",
+    "validation": "default/ignored/custom恢复，--help/坏参数/校验失败/转换失败/取消；SIGCHLD忽略继承时仍正常reap，无僵尸/漏收；与H4合并真实转换重放，再合并完整构建。"
+  },
+  "Q1": {
+    "title": "post门禁与shell函数作用域",
+    "kind": "问题/澄清",
+    "modify": "否",
+    "part": "Part 2",
+    "point": "确认QB post通过以及函数能在RPM post宏中使用。",
+    "reason": "本次直接读已保存QB1226850日志：L25269 BOLT_POST_GATE_PASS；L25270调用bolt_optional，L25272为post BOLT_DISK_REPORT。spec L578/600在%install定义函数，L963–968将post文本追加至同一个install脚本，不是另开shell。成功日志直接证明optional可用，不能冒充执行了仅失败才用的bolt_status_exit；70号实际展开的/bin/sh -e信号夹具覆盖退出码传播。",
+    "plan": "无产品diff；回复给出原文与作用域解释。",
+    "overlap": "PS4没有改变这些定义。",
+    "validation": "不需单独新QB；H3改参数后在合并的一轮验证中再次核对post链、退出码及列表。"
+  },
+  "Q2": {
+    "title": "jump-past-end nop警告",
+    "kind": "问题/澄清",
+    "modify": "否（不建议按警告文本盲加门禁）",
+    "part": "上游BOLT + Part 2门禁",
+    "point": "helper哪里处理警告，是否可以称为benign。",
+    "reason": "处理在PS3的bolt/lib/Core/BinaryFunction.cpp L1418–1431：目标等于函数末端且小于MaxSize，排除AArch64 veneer，注释Result of __builtin_unreachable，createNoop；条件跳转登记IgnoredBranches。helper记录日志和做既有门禁，不自己改nop。87号原2A/8B在99号已更新为5A/5B，剩余控制流未全部闭合；不能概括“所有警告都无害”。94号TLS检查与这些jump-past-end不是同一证明，不得互相替代。",
+    "plan": "无产品diff；先解释上游行为和证明边界。若HQ要求禁止该模式，需单独设计裁决，会导致已验证输入失败，不能悄悄扩大门禁。",
+    "overlap": "PS4不涉及BOLT改写。",
+    "validation": "不因这条澄清重构建；若后续改变警告处理，必须重新真实BOLT/产物验证，另行资源审批。"
+  },
+  "Q3": {
+    "title": "mlgo_build_jobs是否继承外层-j",
+    "kind": "问题/澄清（并行策略待裁决）",
+    "modify": "暂不纳入；可选第6项待裁决",
+    "part": "spec的既有构建调度",
+    "point": "宏默认6可能让QB外层20/32没有传入。",
+    "reason": "已证实：QB1226850 L3303和74T L3207均为ninja -d keeprsp -j 6；spec L63/522/644分别默认值、普通Ninja和BOLT工具Ninja显式用该宏。父13c3e223也已有默认6与ninja -j mlgo_build_jobs，非本系列新引入。不能推断QB全局选项如何传递，但本次保存日志足够否定它在该构建已自动覆盖宏。",
+    "plan": "先回复事实。是否接平台_smp宏、显式定义mlgo_build_jobs或继续保守默认由PM/HQ决定；未经裁决不列为必改项，不擅自把6调到20/32。决定后再给准确平台宏diff，不能凭名字假定可用。",
+    "overlap": "PS4不涉及并行度。",
+    "validation": "若改变，新增宏展开覆盖未定义/显式覆盖/平台值及合法数值，先报内存预算；完整构建需监视ThinLTO链接峰值。一次构建不能同时证明多个不同-j的性能。"
+  },
+  "Q4": {
+    "title": "clang-accel体积、setup时间与BOLT资源",
+    "kind": "问题/澄清（数据请求）",
+    "modify": "否；需补测数据",
+    "part": "Part 1/2验证资料",
+    "point": "请求加速包实际解包体积、buildroot setup耗时和BOLT时间/磁盘。",
+    "reason": "已保存QB1226850的BOLT begin至compare-root为330s，后续post门禁15s；最大已记录BOLT作用域快照5,028,364,288B，不是连续峰值，也不是根总量。74T对应749s和24s；根du最大成功样本67,924,271,104B，32次du超时。各来源不可混比。现有clang-accel搜索只找到历史包/模型及身份限制，没有当前混合链接实际accel包的解包size和同口径setup测量；两项UNKNOWN，不把clang大小或rpm安装间隔顶替。未访问SRC-Nanjing/llvm#29，不能替HQ定义其测量口径。",
+    "plan": "无产品diff。请HQ/用户明确accel包版本、目标架构、软硬链接计数、setup起止是否含依赖下载/安装；在下一轮计划内构建/加速包生成中补采，不今天测。",
+    "overlap": "PS4不改变当前测量缺口。",
+    "validation": "一次QB/本地构建批次可增加采样，但若accel包由独立流水线生成，还需该流水线产物和setup记录；不能承诺仅LLVM构建就覆盖。"
+  },
+  "Q5": {
+    "title": "plugin导出与混合链接重复符号",
+    "kind": "问题/澄清",
+    "modify": "否（现有证据未发现重复定义）",
+    "part": "Part 1 / CMake",
+    "point": "export_executable_symbols_for_plugins是否把动态/静态LLVM重复链接。",
+    "reason": "74T/D CMakeCache均CLANG_PLUGIN_SUPPORT=ON、LLVM_ENABLE_PLUGINS=ON、LLVM_EXPORT_SYMBOLS_FOR_PLUGINS=OFF。AddLLVM L1455调用export_executable_symbols，当前实际走L1439–1443 ENABLE_EXPORTS；它不是再添加一份LLVM。两边build.ninja L92065有--export-dynamic，L92066为组件静态档，无libLLVM.so/libclang-cpp.so。TIZEN_STATIC_LLVM使clang保持组件链接。不能由此保证任意外部plugin自己再链接一份LLVM时的ODR/ABI行为；未运行任意plugin载入。",
+    "plan": "无代码diff；解释导出与引入库是两件事。建议下一轮补一个正确链接方式的最小plugin载入用例，不为了未知冲突关闭插件。",
+    "overlap": "PS4不涉及CMake链接。",
+    "validation": "同轮构建确认clang NEEDED/link edge/导出符号；最小插件载入与预期plugin依赖，若需验证LLVM_EXPORT_SYMBOLS_FOR_PLUGINS=ON非当前配置，另行范围批准。"
+  },
+  "Q6": {
+    "title": "关闭BOLT是否恢复pre-PS3",
+    "kind": "问题/澄清（纠正回退范围）",
+    "modify": "否",
+    "part": "Part 2开关 vs Part 1/3/4",
+    "point": "一行bcond回退是否恢复以前完整产物。",
+    "reason": "否。开关关闭Part2 BOLT流水线，Part1混合链接、Part3固定flags/native转换仍启用；合入后Part4加固也仍在。PS2本身还有BOLT，故“关闭BOLT=pre-PS3”尤其不能成立。101五项解析证明开关可解析/隐藏BOLT步骤，不证明完整旧产物逐字节相同。",
+    "plan": "无产品diff；回复明确关闭BOLT只是局部回退，完整回退需选定旧revision或逐Part撤销。若要求一开关撤全部属于新设计，须裁决。",
+    "overlap": "PS4保持同样开关边界。",
+    "validation": "保留BOLT on/off、ARM展开测试；若用户要求整包回退等价，需指定确切tree并独立完整比较。"
+  }
+}

@@ -1,0 +1,21 @@
+1046:     except BaseException:
+1047:         for path in [tmp]+[link for link,_ in staged]+([debug_tmp] if debug_tmp is not None else []):
+1048:             try: path.unlink()
+1049:             except OSError: pass
+1050:         raise
+1051: 
+1052: def debugfiles_gate(ordinary, identity):
+1053:     if 'debug_file' not in identity:
+1054:         return {'required': False}
+1055:     # find-debuginfo.sh writes this default list in the RPM build directory.
+1056:     path = Path(ordinary).parent.parent.parent/'debugfiles.list'
+1057:     require(path.is_file(), 'debugfiles list missing: '+str(path))
+1058:     lines = path.read_text().splitlines()
+1059:     expected = '/'+DEBUG_INSTALL_PATH
+1060:     require(any(line.strip() in (expected, '.'+expected) for line in lines),
+1061:             'debugfiles list omits '+expected+': '+str(path))
+1062:     return {'required': True, 'path': str(path), 'sha256': digest(path), 'listed': expected}
+1063: 
+1064: 
+1065: def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
+1066:     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')

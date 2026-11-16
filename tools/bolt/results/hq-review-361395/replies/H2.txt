@@ -1,0 +1,1 @@
+Agreed; the process group must be registered before a second cancellation can terminate the helper. This will be addressed in the next patch set. A parent-only pthread_sigmask wrapper would also pass the blocked mask to the child, so the fix must preserve the child's original signal mask and retain group cleanup on cancellation and spawn failure.

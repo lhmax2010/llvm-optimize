@@ -1,0 +1,78 @@
+1032: 
+1033: # Proposed Tizen hybrid linkage: keep the default shared interface, but
+1034: # provide component dependencies to an explicitly opted-in final consumer.
+1035: function(tizen_hybrid_llvm_interface name)
+1036:   if(NOT TIZEN_HYBRID_LINK OR NOT LLVM_LINK_LLVM_DYLIB OR NOT TARGET ${name})
+1037:     return()
+1038:   endif()
+1039:   get_target_property(kind ${name} TYPE)
+1040:   if(NOT kind STREQUAL "STATIC_LIBRARY")
+1041:     return()
+1042:   endif()
+1043:   get_target_property(iface ${name} INTERFACE_LINK_LIBRARIES)
+1044:   if(NOT "LLVM" IN_LIST iface)
+1045:     # Some components explicitly disable the dylib already (e.g. clangSupport).
+1046:     return()
+1047:   endif()
+1048:   cmake_parse_arguments(H "" ""
+1049:     "LINK_COMPONENTS;LINK_LIBS;DEPENDS;OBJLIBS;ADDITIONAL_HEADERS" ${ARGN})
+1050:   llvm_map_components_to_libnames(components ${H_LINK_COMPONENTS} ${LLVM_LINK_COMPONENTS})
+1051:   if(NOT components)
+1052:     message(FATAL_ERROR
+1053:       "${name}: empty LLVM component interface; declare LINK_COMPONENTS or disable TIZEN_HYBRID_LINK")
+1054:   endif()
+1055:   set(static_consumer "$<BOOL:$<TARGET_PROPERTY:TIZEN_STATIC_LLVM>>")
+1056:   set(replacement "$<$<NOT:${static_consumer}>:LLVM>")
+1057:   foreach(component IN LISTS components)
+1058:     list(APPEND replacement "$<${static_consumer}:${component}>")
+1059:   endforeach()
+1060:   set(result)
+1061:   foreach(dep IN LISTS iface)
+1062:     if(dep STREQUAL "LLVM")
+1063:       list(APPEND result ${replacement})
+1064:     else()
+1065:       list(APPEND result "${dep}")
+1066:     endif()
+1067:   endforeach()
+1068:   set_property(TARGET ${name} PROPERTY INTERFACE_LINK_LIBRARIES "${result}")
+1069: endfunction()
+1070: 
+1071: macro(add_llvm_executable name)
+1072:   cmake_parse_arguments(ARG
+1073:     "DISABLE_LLVM_LINK_LLVM_DYLIB;IGNORE_EXTERNALIZE_DEBUGINFO;NO_INSTALL_RPATH;SUPPORT_PLUGINS;EXPORT_SYMBOLS"
+1074:     "ENTITLEMENTS;BUNDLE_PATH"
+1075:     ""
+1076:     ${ARGN})
+1077:   generate_llvm_objects(${name} ${ARG_UNPARSED_ARGUMENTS})
+1078:   add_windows_version_resource_file(ALL_FILES ${ALL_FILES})
+1079: 
+1080:   if(XCODE)
+1452: endfunction()
+1453: 
+1454: # Export symbols if LLVM plugins are enabled.
+1455: function(export_executable_symbols_for_plugins target)
+1456:   if(LLVM_ENABLE_PLUGINS OR LLVM_EXPORT_SYMBOLS_FOR_PLUGINS)
+1457:     export_executable_symbols(${target})
+1458:   endif()
+1459: endfunction()
+1460: 
+1461: if(NOT LLVM_TOOLCHAIN_TOOLS)
+1462:   set (LLVM_TOOLCHAIN_TOOLS
+1463:     llvm-ar
+1464:     llvm-cov
+1465:     llvm-cxxfilt
+1466:     llvm-dlltool
+1467:     llvm-dwp
+1468:     llvm-ranlib
+1469:     llvm-lib
+1470:     llvm-mca
+1471:     llvm-ml
+1472:     llvm-ml64
+1473:     llvm-nm
+1474:     llvm-objcopy
+1475:     llvm-objdump
+1476:     llvm-pdbutil
+1477:     llvm-rc
+1478:     llvm-readobj
+1479:     llvm-size
+1480:     llvm-strings

@@ -1,0 +1,38 @@
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -1031,13 +1031,7 @@
+         pass
+ 
+ 
+-def install_main():
+-    global _CANCEL_SIGNAL
+-    _CANCEL_SIGNAL = None
+-    log_startup_context()
+-    if signal.getsignal(signal.SIGCHLD) != signal.SIG_DFL:
+-        signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+-        print('NATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL', flush=True)
++def _install_main():
+     parser = argparse.ArgumentParser(description='Convert certified x86_64 ThinLTO archives before standard RPM stripping')
+     parser.add_argument('--root', type=Path, required=True)
+     parser.add_argument('--build', type=Path, required=True)
+@@ -1078,5 +1072,20 @@
+     return 0
+ 
+ 
++def install_main():
++    global _CANCEL_SIGNAL
++    _CANCEL_SIGNAL = None
++    log_startup_context()
++    previous = signal.getsignal(signal.SIGCHLD)
++    try:
++        if previous != signal.SIG_DFL:
++            signal.signal(signal.SIGCHLD, signal.SIG_DFL)
++            print('NATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL', flush=True)
++        return _install_main()
++    finally:
++        if previous != signal.SIG_DFL:
++            signal.signal(signal.SIGCHLD, previous)
++
++
+ if __name__ == '__main__':
+     raise SystemExit(install_main())

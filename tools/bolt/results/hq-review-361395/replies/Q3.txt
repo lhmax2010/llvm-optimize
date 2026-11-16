@@ -1,0 +1,1 @@
+The saved build log confirms ninja -d keeprsp -j 6. The spec uses mlgo_build_jobs, whose fallback is 6; the outer build job setting did not override that define in this build. The BOLT tool build uses the same define. Changing the job policy requires a separate decision about linker memory and the platform's parallelism macro; it is not already inherited automatically.

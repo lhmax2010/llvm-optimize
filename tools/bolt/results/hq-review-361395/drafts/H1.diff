@@ -1,0 +1,24 @@
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -234,8 +234,8 @@
+     global _ACTIVE_GROUP
+     log = Path(log); log.parent.mkdir(parents=True, exist_ok=True)
+     process = None; reaped = False; primary = None
+-    try:
+-        previous = signal.getsignal(signal.SIGCHLD)
++    previous = signal.getsignal(signal.SIGCHLD)
++    try:
+         if previous != signal.SIG_DFL:
+             signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+         save(log.with_suffix(log.suffix+'.argv.json'),
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -295,6 +295,8 @@
+         raise failure from error
+     finally:
+         _ACTIVE_GROUP = None
++        if previous != signal.SIG_DFL:
++            signal.signal(signal.SIGCHLD, previous)
+ 
+ def profile_unpack(source, output):
+     output = Path(output)

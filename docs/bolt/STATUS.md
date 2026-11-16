@@ -1496,3 +1496,12 @@ sandbox已从b0c1732c以明确lease更新为 `121b4c23bcd6a9a30b0e277c30e5dc17af
 本地PS4 `8ec86c3ecb0c03889674ba7490064ff82ba63033`，父13c3e223，同tree；说明Part4及总述、单组trailer和对外门禁PASS。两次gbs export只含90号三类允许差异，五项配对解析全PASS；PS4未上传。转换器在%install，固定CFLAGS导出在%build；同install日志没有CFLAGS/CXXFLAGS导出，平台install宏不调用set_build_flags，实际继承值不能由现有日志证明，记UNKNOWN；spec未改。
 
 4GiB/swap0/CPU200%/Nice19/idle串行服务，看门狗未触发；PS4导出比较触顶424次、OOM0，原文保留。未构建、未重放、未运行BOLT、未访问QB或干预其他项目。99号b0实物证明不冒称新tree重放；102夜间另行验证。本次STOP无；步骤1读取query元数据而非stdout的准备错误修正一次，作废结果保留。
+
+
+## 2026-11-16：103号HQ评审意见只读分析
+
+[103号](103_hq_review_analysis.md)：361395仍NEW/PS3，HQ Dongkyun Son新增Code-Review+1总评（6问）+5条inline，11分析项。建议5项代码修复：helper SIGCHLD恢复、Popen/PGID取消窗口、显式debugfiles.list、拒绝重复GNU长名表、converter SIGCHLD所有退出路径恢复；当前PS4均未解决。无产品修改/新提交/构建/QB访问/LLVM远端推送/Gerrit回复。
+
+事实：QB1226850保存日志post门禁通过且optional可用；普通Ninja实际-j6，父PS10已是该默认；关闭BOLT不回退Part1/3/4；plugin配置实际导出clang符号但不混入libLLVM.so/libclang-cpp.so。当前accel包解包size/setup时间UNKNOWN，BOLT记录330s主窗口+15s后post、最大已记录作用域5,028,364,288B，不称连续峰值。BOLT告警归因已为99号5A/5B，不称全部无害。
+
+11份英文草稿通过对外门禁，未发布。H2临界区延后二次信号候选与Q3并行策略需PM裁决；建议冻结合并5项+PS4后，一轮QB(T/D各3架构)+一轮本地T/D并补定向测试/真实转换，当前不执行。REST404且无已有HTTP凭据，inline时间/线程/unresolved UNKNOWN，SSH原文完整保留；没有STOP。草案生成器位置假设准备错误修正1次，原文/diff留存。
