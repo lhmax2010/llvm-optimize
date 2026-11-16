@@ -1,0 +1,45 @@
+--- 109-derived-parser
++++ 110-parser
+@@ -1,6 +1,7 @@
+ 
+ from pathlib import Path
+ import subprocess,os,json,re,datetime,hashlib,difflib,shlex
++from post_macro_gate import check_post
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=Path(str(W)+'-bolt');E=Path(__file__).parent
+ S=W/'temp/ps5-session-110-20261116/source'
+ R=W/'temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0'
+@@ -29,6 +30,16 @@
+  opts=sum((['--define','_without_'+x+' 1'] for x in without),[])
+  text=run(label+'-expanded',loader+[str(R/'usr/bin/rpmspec'),'-P',*common,*opts,str(spec)])
+  run(label+'-nobuild',loader+[str(R/'usr/bin/rpmbuild'),'-bp','--nodeps','--nobuild',*common,*opts,str(spec)])
++ # rpm -P omits the implicit install-post hook: explicitly expand it in
++ # a temporary verification section and inspect that body, not the main text.
++ probe=P/(label+'-post-probe.spec')
++ probe.write_text(spec.read_text()+'\n%verifyscript\n# POST_PROBE_BEGIN\n%{__spec_install_post}\n# POST_PROBE_END\n')
++ expanded=run(label+'-post-probe',loader+[str(R/'usr/bin/rpmspec'),'-P',*common,*opts,str(probe)])
++ body=expanded.split('# POST_PROBE_BEGIN\n',1)[1].split('# POST_PROBE_END',1)[0]
++ expected=(label!='parent' and arch=='x86_64' and not rollback and
++           not any(x in without for x in ('llvm_speedup','clang_bolt')))
++ counts=check_post(body,expected)
++ (P/(label+'-post-result.json')).write_text(json.dumps({'enabled':expected,'counts':counts,'body':body},indent=2))
+  return text
+ def cmake(text):
+  lines=text.splitlines();i=next(i for i,l in enumerate(lines) if l.strip()=='cmake \\')
+@@ -49,7 +60,7 @@
+  old_blanks=len(old)-len(old_body)
+  new_blanks=len(new)-len(new_body)
+  added_blanks=new_blanks-old_blanks
+- accepted_macro_prefix=(old_body==new_body and 0<=added_blanks<=12)
++ accepted_macro_prefix=(old_body==new_body and added_blanks==0)
+  d='' if accepted_macro_prefix else rawdiff
+  row={'case':'default-'+arch,'PASS':accepted_macro_prefix,
+       'byte_identical':not rawdiff,'baseline_leading_blank_lines':old_blanks,
+@@ -77,7 +88,7 @@
+   row['cmake_argv_equals_parent']=a==b;row['PASS'] &= a==b
+   row['hybrid_assertion_absent']='TIZEN_HYBRID_LINK_OK' not in text
+   row['PASS'] &= row['hybrid_assertion_absent']
+- if not bolt:row['PASS'] &= not any(x in text for x in ['BOLT_PIPELINE_PASS','BOLT_POST_GATE_PASS','BOLT_WORK='])
++ if not bolt:row['PASS'] &= not any(x in text for x in ['BOLT_PIPELINE_PASS','BOLT_WORK='])
+  row['fixed_flags_retained']='TIZEN_LLVM_FIXED_FLAGS' in text;row['PASS'] &= row['fixed_flags_retained']
+  rows.append(row);(E/'parse-result.json').write_text(json.dumps(rows,indent=2));print(row,flush=True)
+  if not row['PASS']:raise RuntimeError('STOP switch combination mismatch: '+label)

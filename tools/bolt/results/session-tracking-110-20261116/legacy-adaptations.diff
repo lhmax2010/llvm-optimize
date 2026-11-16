@@ -1,0 +1,249 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/environment/new-tests-02-observed.json
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/environment/new-tests-02-observed.json
+@@ -3,7 +3,7 @@
+     "case": "command-failed-then-cancel",
+     "rc": 143,
+     "stdout": "",
+-    "stderr": "DISK_DIAGNOSE_CALLED\nBOLT_GATE_FAILED: CANCELLED: cancelled by signal 15; while handling: COMMAND_ERROR: COMMAND_FAILED rc=1: /bin/sh (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/r2-scratch/new-tests-02/concurrent/call.log)\nBOLT_CANCELLED: signal 15\n"
++    "stderr": "DISK_DIAGNOSE_CALLED\nBOLT_GATE_FAILED: CANCELLED: cancelled by signal 15; while handling: COMMAND_ERROR: COMMAND_FAILED rc=1: /bin/sh (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/r2-scratch/new-tests-02/concurrent/call.log)\nBOLT_CANCELLED: signal 15\n"
+   },
+   {
+     "call": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/temp/fifth-review-20261111/rerun2/environment/parse/rpmbuild/SOURCES/clang-bolt-helper.py disk-report begin",
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/environment/run_preserved.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/environment/run_preserved.py
+@@ -3,7 +3,7 @@
+ _original_runner=unittest.TextTestRunner
+ class StopOnFailure(_original_runner):
+  def __init__(self,*args,**kwargs):
+-  kwargs["failfast"]=False
++  kwargs["failfast"]=True
+   super().__init__(*args,**kwargs)
+ unittest.TextTestRunner=StopOnFailure
+ scratch=Path(os.environ['TEST_SCRATCH']);scratch.mkdir(exist_ok=False)
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/environment/test50.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/environment/test50.py
+@@ -4,7 +4,7 @@
+ from unittest import mock
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+ B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt')
+-S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-109-20261116/source'); E=Path(__file__).parent
++S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-session-110-20261116/source'); E=Path(__file__).parent
+ sys.path.insert(0,str(B/'tools'))
+ p=S/'packaging/llvm-static-archives-native.py'
+ spec=importlib.util.spec_from_file_location('llvm_static_archives_source',p)
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/environment/test_r2.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/environment/test_r2.py
+@@ -2,7 +2,7 @@
+ import importlib.util,sys,os,subprocess,unittest,json,signal,time,shlex
+ E=Path(__file__).parent
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+-B=W.parent/'llvm-optimize-bolt';S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-109-20261116/source')
++B=W.parent/'llvm-optimize-bolt';S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-session-110-20261116/source')
+ X=Path(os.environ['TEST_SCRATCH'])/'new-tests-02';X.mkdir(exist_ok=False)
+ def load(name,path):
+  sp=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(sp);sp.loader.exec_module(m);return m
+@@ -110,12 +110,12 @@
+   script.write_text("""from pathlib import Path
+ import importlib.util,sys,time
+ sp=importlib.util.spec_from_file_location('h',HELPER);h=importlib.util.module_from_spec(sp);sp.loader.exec_module(h)
+-original=h.wait_group_exit
++original=h.wait_session_exit
+ def cleanup(*args,**kw):
+  Path(READY).write_text('ready')
+  while h._CANCEL_SIGNAL is None:time.sleep(.01)
+  return original(*args,**kw)
+-h.wait_group_exit=cleanup
++h.wait_session_exit=cleanup
+ def diagnose(*args,**kw):print('DISK_DIAGNOSE_CALLED',file=sys.stderr)
+ h.disk_diagnose=diagnose
+ h.main=lambda:h.call(['/bin/sh','-c','exit 1'],LOG)
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/environment/test_r3.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/environment/test_r3.py
+@@ -4,7 +4,7 @@
+ from concurrent.futures import ThreadPoolExecutor
+ E=Path(__file__).parent
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+-B=W.with_name('llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-109-20261116/source')
++B=W.with_name('llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-session-110-20261116/source')
+ X=Path(os.environ['TEST_SCRATCH'])/'cases';X.mkdir()
+ def load(name,path):
+  spec=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/environment/test_regressions.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/environment/test_regressions.py
+@@ -1,7 +1,7 @@
+ import importlib.util,sys,unittest,subprocess,json,hashlib,shlex,tempfile
+ from pathlib import Path
+ from unittest import mock
+-B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-109-20261116/source');E=Path(__file__).parent
++B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-session-110-20261116/source');E=Path(__file__).parent
+ sys.path.insert(0,str(B/'tools'))
+ p=S/'packaging/llvm-static-archives-native.py';sp=importlib.util.spec_from_file_location('llvm_static_archives_source',p);a=importlib.util.module_from_spec(sp);sys.modules[sp.name]=a;sp.loader.exec_module(a)
+ print('CONVERTER_IMPORT',p,'SHA256',hashlib.sha256(p.read_bytes()).hexdigest(),flush=True)
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/helper-suite/test_fifth_review.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/helper-suite/test_fifth_review.py
+@@ -96,12 +96,12 @@
+   original()
+  h.check_cancel=check
+ elif phase=='cleanup':
+- original=h.wait_group_exit
++ original=h.wait_session_exit
+  def cleanup(*a,**kw):
+   ready.write_text('cleanup')
+   time.sleep(.3)
+   return original(*a,**kw)
+- h.wait_group_exit=cleanup
++ h.wait_session_exit=cleanup
+  original_peek=h.peek_child_exit
+  def peek(process,timeout):
+   while not all(p.exists() and p.stat().st_size for p in (Path(heartbeat),Path(heartbeat+'.child'))): time.sleep(.01)
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/helper-suite/test_review_robustness.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/helper-suite/test_review_robustness.py
+@@ -20,11 +20,11 @@
+             self.assertIn(state,(None,'Z','X'),str(pid))
+         size=heartbeat.stat().st_size;time.sleep(.15);self.assertEqual(heartbeat.stat().st_size,size)
+     def test_stubborn_member_reports_pid_and_original_error(self):
+-        with patch.object(h,'wait_group_exit',side_effect=h.GateError('424242:R')):
++        with patch.object(h,'wait_session_exit',side_effect=h.GateError('424242:R')):
+             with self.assertRaisesRegex(h.GateError,r'COMMAND_FAILED rc=7.*see.*cleanup error.*424242:R'):
+                 h.call(['/bin/sh','-c','exit 7'],self.d/'stubborn.log')
+     def test_zombie_and_absent_group_exit(self):
+-        with patch.object(h,'live_group_members',return_value=[]):h.wait_group_exit(424242)
++        with patch.object(h,'live_session_members',return_value=[]):h.wait_session_exit(424242)
+     def test_exception_kills_group_and_reports_log(self):
+         with patch.object(h,'peek_child_exit',side_effect=OSError('injected wait error')),self.assertRaisesRegex(h.GateError,'COMMAND_ERROR.*injected wait error.*see'):
+             h.call(['/bin/sh','-c','sleep 60'],self.d/'exception.log')
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/helper-suite/test_second_review.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/helper-suite/test_second_review.py
+@@ -88,8 +88,8 @@
+ 
+ class SecondProcessTests(Base):
+     def test_wait_deadline_stubborn(self):
+-        with patch.object(h,'live_group_members',return_value=[(424242,'R')]),patch.object(h.time,'monotonic',side_effect=[0,11]):
+-            with self.assertRaisesRegex(h.GateError,'424242:R'):h.wait_group_exit(42)
++        with patch.object(h,'live_session_members',return_value=[(424242,'R')]),patch.object(h.time,'monotonic',side_effect=[0,11]):
++            with self.assertRaisesRegex(h.GateError,'424242:R'):h.wait_session_exit(42)
+     def test_reap_deadline_stubborn(self):
+         with patch.object(os,'waitpid',return_value=(0,0)),patch.object(h.time,'monotonic',side_effect=[0,2]):
+             with self.assertRaisesRegex(h.GateError,'leader 424242'):h.reap_child(SimpleNamespace(pid=424242))
+@@ -110,17 +110,17 @@
+             try:h.call(['/bin/sh','-c','exit 0'],self.d/'log')
+             finally:kill.assert_not_called()
+     def test_proc_enumeration_error(self):
+-        with patch.object(os,'scandir',side_effect=PermissionError('denied')),self.assertRaisesRegex(h.GateError,'cannot enumerate/read'):h.live_group_members(42)
++        with patch.object(os,'scandir',side_effect=PermissionError('denied')),self.assertRaisesRegex(h.GateError,'cannot enumerate/read'):h.live_session_members(42)
+     def test_self_pid_mismatch(self):
+-        with patch.object(h,'proc_stat',return_value=(os.getpid()+1,'R',42,1)),self.assertRaisesRegex(h.GateError,'PID namespace mismatch'):h.live_group_members(42)
++        with patch.object(h,'proc_stat',return_value=(os.getpid()+1,'R',42,1,42)),self.assertRaisesRegex(h.GateError,'PID namespace mismatch'):h.live_session_members(42)
+     def scan(self,state,threads,error=None):
+         real=h.proc_stat
+         def stat(p):
+             if p=='/proc/self/stat':return real(p)
+             if error:raise error
+-            return 424242,state,42,threads
++            return 424242,state,42,threads,42
+         entries=unittest.mock.MagicMock();entries.__enter__.return_value=iter([SimpleNamespace(name='424242')])
+-        with patch.object(os,'scandir',return_value=entries),patch.object(h,'proc_stat',stat):return h.live_group_members(42)
++        with patch.object(os,'scandir',return_value=entries),patch.object(h,'proc_stat',stat):return h.live_session_members(42)
+     def test_disappeared_process(self):self.assertEqual(self.scan('R',1,FileNotFoundError()),[])
+     def test_process_permission_error(self):
+         with self.assertRaises(h.GateError):self.scan('R',1,PermissionError('denied'))
+@@ -135,7 +135,7 @@
+             self.assertTrue(json.loads((self.d/'ignored.log.argv.json').read_text())['SIGCHLD_reset_to_default'])
+         finally:signal.signal(signal.SIGCHLD,previous)
+     def test_original_error_before_cleanup(self):
+-        with patch.object(h,'peek_child_exit',side_effect=OSError('ORIGINAL')),patch.object(h,'wait_group_exit',side_effect=h.GateError('CLEANUP')):
++        with patch.object(h,'peek_child_exit',side_effect=OSError('ORIGINAL')),patch.object(h,'wait_session_exit',side_effect=h.GateError('CLEANUP')):
+             with self.assertRaisesRegex(h.GateError,'^COMMAND_ERROR: ORIGINAL.*cleanup error: CLEANUP'):h.call(['/bin/sh','-c','sleep 60'],self.d/'order.log')
+     def test_base_exceptions_preserved(self):
+         for error in (KeyboardInterrupt(),SystemExit(31)):
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/helper-suite/test_sixth_review.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/helper-suite/test_sixth_review.py
+@@ -74,10 +74,10 @@
+ from pathlib import Path
+ s=importlib.util.spec_from_file_location('h',sys.argv[1]);h=importlib.util.module_from_spec(s);s.loader.exec_module(h)
+ ready=Path(sys.argv[2]);log=ready.with_suffix('.log')
+-original=h.wait_group_exit
++original=h.wait_session_exit
+ def cleanup(*a,**kw):
+  ready.write_text(str(a[0]));time.sleep(3);return original(*a,**kw)
+-h.wait_group_exit=cleanup
++h.wait_session_exit=cleanup
+ h.main=lambda:h.call(['/bin/sh','-c','sleep 30 & wait'],log)
+ sys.exit(h.cli())
+ """
+@@ -91,7 +91,7 @@
+                 if ready.exists():break
+                 time.sleep(.01)
+             self.assertTrue(ready.exists());group=int(ready.read_text());p.send_signal(signal.SIGTERM);p.communicate(timeout=5)
+-            self.assertEqual(p.returncode,-signal.SIGTERM);h.wait_group_exit(group,3)
++            self.assertEqual(p.returncode,-signal.SIGTERM);h.wait_session_exit(group,3)
+         finally:
+             if p.poll() is None:p.kill();p.wait()
+ 
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/run.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/run.py
+@@ -12,4 +12,4 @@
+  row=dict(suite=label,rc=p.returncode,tests=int(counts[-1]) if counts else 0,expected=n)
+  rows.append(row);(E/'test-results.json').write_text(json.dumps(rows,indent=2))
+  print(row,flush=True)
+- if p.returncode:print(txt[-5000:],flush=True)
++ if p.returncode:print(txt[-5000:],flush=True);sys.exit(1)
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/test_109_regressions.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/test_109_regressions.py
+@@ -55,7 +55,7 @@
+   def spawn(*a,**kw):
+    p=real(*a,**kw);children.append(p.pid);return p
+   with mock.patch.object(self.h.subprocess,'Popen',side_effect=spawn),mock.patch.object(self.h.os,'scandir',side_effect=PermissionError('109 proc denied')):
+-   with self.assertRaisesRegex(self.h.GateError,'cannot enumerate/read process group: 109 proc denied') as caught:
++   with self.assertRaisesRegex(self.h.GateError,'cannot enumerate/read process session: 109 proc denied') as caught:
+     self.h.call([sys.executable,'-c','pass'],self.d/'proc.log')
+   self.assertNotIn('successfully with live descendants',str(caught.exception))
+   for pid in children:
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/test_hardening.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/test_hardening.py
+@@ -1,7 +1,7 @@
+ import importlib.util,unittest,struct,io,contextlib,json,os,signal,sys
+ from pathlib import Path
+ from unittest.mock import patch
+-P=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-109-20261116/source/packaging/llvm-static-archives-native.py')
++P=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-session-110-20261116/source/packaging/llvm-static-archives-native.py')
+ def load(name,path):
+  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+ a=load('new',P);old=load('old','/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hardening-ps4/baseline-converter.py')
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-final-109-20261116/resume2/tests/test_hq_requests.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/session-tracking-110-20261116/tests/test_hq_requests.py
+@@ -59,7 +59,7 @@
+   def terminate(pid,sig):
+    events.append(('terminate',pid,sig))
+    raise SystemExit(128+sig)
+-  with patch.object(h.subprocess,'Popen',side_effect=popen),patch.object(h.os,'kill',side_effect=terminate),patch.object(h.os,'killpg',side_effect=lambda p,s:events.append(('killpg',p,s))),patch.object(h,'wait_group_exit'),patch.object(h,'reap_child',return_value=-9),patch.object(h,'peek_child_exit',side_effect=lambda *args:h.check_cancel()):
++  with patch.object(h.subprocess,'Popen',side_effect=popen),patch.object(h.os,'kill',side_effect=terminate),patch.object(h.os,'killpg',side_effect=lambda p,s:events.append(('killpg',p,s))),patch.object(h,'wait_session_exit'),patch.object(h,'reap_child',return_value=-9),patch.object(h,'peek_child_exit',side_effect=lambda *args:h.check_cancel()):
+    with self.assertRaises(BaseException):h.call(['fixture'],self.root/'log')
+   self.assertIn('after-signals',events)
+   if second:self.assertTrue(any(isinstance(e,tuple) and e[0]=='terminate' for e in events))
+--- h2.py
++++ h2.py-110
+@@ -14,10 +14,10 @@
+                 h._CANCEL_SIGNAL = signal.SIGTERM          # first signal already handled
+             elif mode == 'two-real-at-line':
+                 pass
+-        if mode == 'deferred-then-third' and frame.f_lineno == 261 and not fired.get('d'):
++        if mode == 'deferred-then-third' and frame.f_lineno == 313 and not fired.get('d'):
+             fired['d'] = True
+             os.kill(os.getpid(), signal.SIGTERM)
+-        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 261:
++        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 313:
+             fired['second'] = True
+             os.kill(os.getpid(), signal.SIGHUP)
+         if frame.f_lineno == line and not fired['second'] and mode in ('second-at-line', 'two-real-at-line'):
+--- codex_check_review.py
++++ codex_check_review.py-110
+@@ -30,7 +30,7 @@
+  return child
+ def trace(frame,event,arg):
+  global fired
+- if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==266 and not fired and mode in ('finally_second','finally_third'):
++ if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==318 and not fired and mode in ('finally_second','finally_third'):
+   fired=True;os.kill(os.getpid(),signal.SIGHUP)
+  return trace
+ h.subprocess.Popen=popen

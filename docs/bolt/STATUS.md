@@ -1604,3 +1604,11 @@ FINAL-replies-for-user.md只更新H1/H2/Q6并过对外门禁，旧版-v1保留�
 Toolchain保留ARM日志仍安装clang-accel 0.4-1.1，不能证明使用新LLVM重建accel后的setup变化；完整新accel包大小及新setup时间为UNKNOWN。QB1226850是fea0fe46产物，不是今天PS5的同一源码身份。QB的BOLT区间330s、post15s、最大范围磁盘快照5,028,364,288 B，范围与连续峰值/整根磁盘不同，详见报告。
 
 本次只读分析用受限串行服务（4GiB/swap0/CPU200/Nice19/IOidle），内存峰值381,513,728 B，无OOM；一次文档查找路径准备错误已修正并保留原文/diff，无新增STOP。未构建、未访问QB、未运行BOLT、未改LLVM或其他项目；尚待实际新accel产物和受控setup测量。
+
+## 2026-11-16：110号 session 跟踪（交付准备STOP，未推sandbox）
+
+两份PS5-final评审原样归档并先推c34ae595。F1–F4已完成：helper以session跟踪/重复清理，失败回收前清活动身份，R1专用异常；测试显式展开post宏。spec不改。647/647测试、8组解析通过，默认三架构与92775bc3逐字节相同。
+
+本地单个累积候选56902c58ba8fc2d3a4216e69ed3acb3d2cb6f8a3，tree4b528fcbb1dfbd782d091c791e270e56ca6addf3，父61ef5d31；独立游离树干净。sandbox仍92775bc36de729106b502c4e5967a5af0e4f4033，未推送。setsid逃离仍为已知限制，其他评审项延后。
+
+第一次测试文件shell引号准备错误已修正；全量通过并生成候选后，报告JS模板中的Markdown反引号触发第二次SyntaxError，按规则STOP，未修正/重跑，只交付现有证据及停止报告。无产品FAIL、OOM或看门狗触发。候选待PM阅读评审后授权，不自动推sandbox。详见[110号](110_session_tracking.md)。

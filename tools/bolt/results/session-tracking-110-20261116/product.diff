@@ -1,0 +1,156 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 5b98800208e3..cb841b445c1b 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -110,6 +110,9 @@ class GateError(RuntimeError):
+         super().__init__(message)
+         self.cancel_originated = cancel_originated
+ 
++class LiveDescendantsError(GateError):
++    """Live descendants remained after the drain deadline."""
++
+ def require(ok, message):
+     if not ok:
+         raise GateError(message)
+@@ -152,7 +155,7 @@ def proc_stat(path):
+         pid = int(text.split(' ', 1)[0])
+         fields = text.rsplit(')', 1)[1].split()
+         require(len(fields) >= 18, 'short process stat: '+str(path))
+-        return pid, fields[0], int(fields[2]), int(fields[17])
++        return pid, fields[0], int(fields[2]), int(fields[17]), int(fields[3])
+     except (ValueError, IndexError) as error:
+         raise GateError('malformed process stat: '+str(path)) from error
+ 
+@@ -165,7 +168,7 @@ def live_group_members(group):
+                 if not entry.name.isdecimal():
+                     continue
+                 try:
+-                    pid, state, pgrp, threads = proc_stat('/proc/'+entry.name+'/stat')
++                    pid, state, pgrp, threads, session = proc_stat('/proc/'+entry.name+'/stat')
+                 except (FileNotFoundError, ProcessLookupError):
+                     continue
+                 if pgrp == group and (state not in ('Z', 'X') or threads > 1):
+@@ -184,8 +187,57 @@ def wait_group_exit(group, timeout=10):
+                 (group, ', '.join('%d:%s' % item for item in members)))
+         time.sleep(.02)
+ 
++def live_session_members(sid):
++    require(proc_stat('/proc/self/stat')[0] == os.getpid(), 'PID namespace mismatch in /proc/self/stat')
++    members = []
++    try:
++        with os.scandir('/proc') as entries:
++            for entry in entries:
++                if not entry.name.isdecimal():
++                    continue
++                try:
++                    pid, state, pgrp, threads, session = proc_stat('/proc/'+entry.name+'/stat')
++                except (FileNotFoundError, ProcessLookupError):
++                    continue
++                if session == sid and (state not in ('Z', 'X') or threads > 1):
++                    members.append((pid, state))
++    except OSError as error:
++        raise GateError('cannot enumerate/read process session: '+str(error)) from error
++    return sorted(members)
++
++
++def wait_session_exit(sid, timeout=10, *, kill=False):
++    # The unreaped session leader pins the SID. Descendants that call setsid()
++    # themselves escape this session and are outside this tracking model.
++    deadline = time.monotonic()+timeout
++    while True:
++        members = live_session_members(sid)
++        if not members:
++            return
++        if kill:
++            # A job may have its own process group (e.g. ninja 1.13 jobs).
++            # Scan again after killing to catch forks during the previous scan.
++            for pid, state in members:
++                try:
++                    os.kill(pid, signal.SIGKILL)
++                except ProcessLookupError:
++                    pass
++        if time.monotonic() >= deadline:
++            raise LiveDescendantsError('process session %d still alive: %s' %
++                                       (sid, ', '.join('%d:%s' % item for item in members)))
++        time.sleep(.02)
++
++
++def kill_session(sid, timeout=10):
++    # Kill the leader's group even if a subsequent /proc scan fails.
++    try:
++        os.killpg(sid, signal.SIGKILL)
++    except ProcessLookupError:
++        pass
++    wait_session_exit(sid, timeout, kill=True)
++
+ _CANCEL_SIGNAL = None
+-_ACTIVE_GROUP = None
++_ACTIVE_GROUP = None  # SID of the unreaped leader; name retained for callers.
+ _SPAWNING = False
+ _DEFERRED_SECOND_SIGNAL = None
+ 
+@@ -197,11 +249,11 @@ def record_cancel(signum, frame):
+             if _DEFERRED_SECOND_SIGNAL is None:
+                 _DEFERRED_SECOND_SIGNAL = signum
+             return
+-        # Kill the active descendant group before honoring an immediate second
+-        # signal. The leader stays unreaped until call() has cleaned its group.
++        # Kill the active session before honoring an immediate second signal.
++        # Bound the rescan so an unkillable member cannot delay termination.
+         if _ACTIVE_GROUP is not None:
+-            try: os.killpg(_ACTIVE_GROUP, signal.SIGKILL)
+-            except ProcessLookupError: pass
++            try: kill_session(_ACTIVE_GROUP, 1)
++            except Exception: pass
+         # This second-signal path terminates by signal; original handlers are not restored.
+         signal.signal(signum, signal.SIG_DFL)
+         os.kill(os.getpid(), signum)
+@@ -254,7 +306,7 @@ def call(argv, log, cwd=None, timeout=300):
+             # otherwise turn failed exit codes into 0.
+             # Signal handlers must not raise while _SPAWNING is set; otherwise
+             # the forked child would be unknown to call() and could be orphaned.
+-            # Publish the PGID before honoring a deferred second signal.
++            # Publish the SID before honoring a deferred second signal.
+             # Do not block signals across exec or use preexec_fn.
+             _SPAWNING = True
+             try:
+@@ -272,13 +324,11 @@ def call(argv, log, cwd=None, timeout=300):
+                 primary = 'COMMAND_ERROR: COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
+                 raise GateError(primary)
+             try:
+-                wait_group_exit(process.pid, 10)
+-            except GateError as error:
+-                if str(error).startswith('process group %d still alive:' % process.pid):
+-                    primary = ('COMMAND_ERROR: command exited successfully with live descendants: '+
+-                               str(error))
+-                    raise GateError(primary) from error
+-                raise
++                wait_session_exit(process.pid, 10)
++            except LiveDescendantsError as error:
++                primary = ('COMMAND_ERROR: command exited successfully with live descendants: '+
++                           str(error))
++                raise GateError(primary) from error
+             _ACTIVE_GROUP = None
+             require(reap_child(process) == rc, 'child exit status changed while reaping')
+             reaped = True
+@@ -294,17 +344,12 @@ def call(argv, log, cwd=None, timeout=300):
+                        ('TIMEOUT: ' if isinstance(error, subprocess.TimeoutExpired) else 'COMMAND_ERROR: ')+str(error))
+         cleanup = []
+         if process is not None and not reaped:
+-            # Keep the un-reaped leader as a PGID anchor until group cleanup ends.
++            # Keep the unreaped leader as a SID anchor until session cleanup ends.
+             try:
+-                os.killpg(process.pid, signal.SIGKILL)
+-            except ProcessLookupError:
+-                pass
+-            except Exception as failure:
+-                cleanup.append(str(failure))
+-            try:
+-                wait_group_exit(process.pid, 10)
++                kill_session(process.pid, 10)
+             except Exception as failure:
+                 cleanup.append(str(failure))
++            _ACTIVE_GROUP = None
+             try:
+                 reap_child(process, 1)
+             except Exception as failure:
