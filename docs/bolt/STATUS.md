@@ -1590,3 +1590,7 @@ tree534550c983f19fee4a89427e18c92533c62854f4，父61ef5d31。
 FINAL-replies-for-user.md只更新H1/H2/Q6并过对外门禁，旧版-v1保留，均未发布。
 未构建、未访问QB、未重放实物、未操作另一项目；看门狗未触发、OOM0。
 原两次STOP保留；本续跑PASS。详见[109号§7](109_ps5_final_candidate.md)。
+
+## 2026-11-16：108号 qemu-accel Q4（STOP）
+
+指定HTTPS克隆要求密码，rc128；没有新建凭据或切换协议。HEAD未取得，逻辑分析、RPM大小/setup比较及新Q4草稿均NOT RUN。交付脚本JS定界符错误修正一次后仍失败，第二次准备错误STOP；仅保存原始输出及停止记录。无构建/QB/Gerrit写入。见[108号](108_qemu_accel_q4.md)。
