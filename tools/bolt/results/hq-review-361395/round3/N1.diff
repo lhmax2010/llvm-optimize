@@ -1,0 +1,26 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 2da963eed299..cf531695c971 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -308,7 +308,7 @@ def call(argv, log, cwd=None, timeout=300):
+         raise failure from error
+     finally:
+         _ACTIVE_GROUP = None
+-        if previous != signal.SIG_DFL:
++        if previous is not None and previous != signal.SIG_DFL:
+             signal.signal(signal.SIGCHLD, previous)
+ 
+ def profile_unpack(source, output):
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index 0b587cb5a533..c2f74bfe2d01 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -1083,7 +1083,7 @@ def install_main():
+             print('NATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL', flush=True)
+         return _install_main()
+     finally:
+-        if previous != signal.SIG_DFL:
++        if previous is not None and previous != signal.SIG_DFL:
+             signal.signal(signal.SIGCHLD, previous)
+ 
+ 

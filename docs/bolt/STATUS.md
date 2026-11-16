@@ -1516,3 +1516,12 @@ sandbox已从b0c1732c以明确lease更新为 `121b4c23bcd6a9a30b0e277c30e5dc17af
 
 候选不是已放行PS5；102与旧本地PS4继续暂缓。无Gerrit写入、sandbox推送、QB访问或完整构建。12份英文回复仅草稿。待PM裁决父门禁/导出修正及补验后，再继续候选和361624试合并。
 详见[104号](104_hq_patch_review_merge.md)、[证据索引](../../tools/bolt/results/hq-review-361395/round2/RAW_LINKS.md)。
+
+## 2026-11-16：105号PS5候选与native导出（STOP，未推sandbox）
+
+PM R1复核通过：tizen_base仍61ef5d31，与13c3e223同tree；PS4/PS3同tree b2e8af24。105候选a061f4e415a895412516ffe076084f407f2d70a8，tree 8d08d49a1c70ebb06118d8d84734c695e24e6d32，父61ef5d31；只在104候选上补N1两处恢复条件，说明不变。全部567/567通过（561+6）。
+
+R3(b) STOP：native导出的169029个非packaging文件，169022与Git blob相同，7不同（.git_archival的export-subst以及6个LF/CRLF测试文件）；没有自行豁免。R3(c)–(e)、sandbox推送、FINAL回复与361624后续核对均NOT RUN。sandbox本次只读仍121b4c23，无写操作。102及完整构建继续不启动。
+
+一次比较脚本NUL转义准备错误已保存并修正，真实7差异按门禁停止。停止交付时另有README.md不存在的路径错误原文留存，未据此再跑门禁。资源4GiB/swap0/CPU200%/Nice19/idle；峰值4GiB、max1166、OOM0，看门狗未触发。
+详见[105号](105_ps5_candidate_replies_361624.md)。本任务及以后不在Gerrit写任何内容，评论和回复由用户本人发布；本次未生成可发布的FINAL文件。

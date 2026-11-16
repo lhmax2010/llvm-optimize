@@ -1,0 +1,216 @@
+/usr/lib/python3/dist-packages/gbp/scripts/buildpackage_rpm.py
+283:         update_patch_series(repo, spec, upstream_tree, export_treeish, options)
+284:     except (GitRepositoryError, GbpError) as err:
+285:         raise GbpAutoGenerateError(str(err))
+286: 
+287: 
+288: def is_native(repo, options):
+289:     """Determine whether a package is native or non-native"""
+290:     if options.native.is_auto():
+291:         if repo.has_branch(options.upstream_branch):
+292:             return False
+293:         # Check remotes, too
+294:         for remote_branch in repo.get_remote_branches():
+295:             remote, branch = remote_branch.split('/', 1)
+296:             if branch == options.upstream_branch:
+297:                 gbp.log.debug("Found upstream branch '%s' from remote '%s'" %
+298:                                (remote, branch))
+299:                 return False
+300:         return True
+301: 
+302:     return options.native.is_on()
+303: 
+304: 
+305: def setup_builder(options, builder_args):
+306:     """setup everything to use git-pbuilder"""
+307:     if options.builder.startswith('rpmbuild'):
+308:         if len(builder_args) == 0:
+309:             builder_args.append('-ba')
+310:         builder_args.extend(['--define "_topdir %s"' % os.path.abspath(options.export_dir),
+311:                              '--define "_builddir %%_topdir/%s"' % options.build_dir,
+
+/usr/lib/python3/dist-packages/gbp/scripts/buildpackage_rpm.py
+285:         raise GbpAutoGenerateError(str(err))
+286: 
+287: 
+288: def is_native(repo, options):
+289:     """Determine whether a package is native or non-native"""
+290:     if options.native.is_auto():
+291:         if repo.has_branch(options.upstream_branch):
+292:             return False
+293:         # Check remotes, too
+294:         for remote_branch in repo.get_remote_branches():
+295:             remote, branch = remote_branch.split('/', 1)
+296:             if branch == options.upstream_branch:
+297:                 gbp.log.debug("Found upstream branch '%s' from remote '%s'" %
+298:                                (remote, branch))
+299:                 return False
+300:         return True
+301: 
+302:     return options.native.is_on()
+303: 
+304: 
+305: def setup_builder(options, builder_args):
+306:     """setup everything to use git-pbuilder"""
+307:     if options.builder.startswith('rpmbuild'):
+308:         if len(builder_args) == 0:
+309:             builder_args.append('-ba')
+310:         builder_args.extend(['--define "_topdir %s"' % os.path.abspath(options.export_dir),
+311:                              '--define "_builddir %%_topdir/%s"' % options.build_dir,
+312:                              '--define "_rpmdir %%_topdir/%s"' % options.rpm_dir,
+313:                              '--define "_sourcedir %%_topdir/%s"' % options.source_dir,
+
+/usr/lib/python3/dist-packages/gbp/scripts/buildpackage_rpm.py
+297:                 gbp.log.debug("Found upstream branch '%s' from remote '%s'" %
+298:                                (remote, branch))
+299:                 return False
+300:         return True
+301: 
+302:     return options.native.is_on()
+303: 
+304: 
+305: def setup_builder(options, builder_args):
+306:     """setup everything to use git-pbuilder"""
+307:     if options.builder.startswith('rpmbuild'):
+308:         if len(builder_args) == 0:
+309:             builder_args.append('-ba')
+310:         builder_args.extend(['--define "_topdir %s"' % os.path.abspath(options.export_dir),
+311:                              '--define "_builddir %%_topdir/%s"' % options.build_dir,
+312:                              '--define "_rpmdir %%_topdir/%s"' % options.rpm_dir,
+313:                              '--define "_sourcedir %%_topdir/%s"' % options.source_dir,
+314:                              '--define "_specdir %%_topdir/%s"' % options.spec_dir,
+315:                              '--define "_srcrpmdir %%_topdir/%s"' % options.srpm_dir,
+316:                              '--define "_buildrootdir %%_topdir/%s"' % options.buildroot_dir])
+317:     elif options.builder.startswith('osc'):
+318:         builder_args.insert(0, 'build')
+319:         options.source_dir = ''
+320:         options.spec_dir = ''
+321: 
+322: 
+323: def update_tag_str_fields(fields, tag_format_str, repo, commit_info):
+324:     """Update string format fields for packaging tag"""
+325:     fields['nowtime'] = datetime.now().strftime(RpmPkgPolicy.tag_timestamp_format)
+
+/usr/lib/python3/dist-packages/gbp/scripts/import_srpm.py
+359:             upstream = upstream.unpack(dirs['origsrc'], options.filters)
+360:         else:
+361:             upstream = None
+362: 
+363:         tag_format = [(options.upstream_tag, "Upstream"),
+364:                    (options.packaging_tag, options.vendor)][options.native]
+365:         tag_str_fields = dict(spec.version, vendor=options.vendor)
+366:         tag = repo.version_to_tag(tag_format[0], tag_str_fields)
+367: 
+368:         if repo.find_version(options.packaging_tag, tag_str_fields):
+369:             gbp.log.warn("Version %s already imported." %
+370:                          RpmPkgPolicy.compose_full_version(spec.version))
+371:             if options.allow_same_version:
+372:                 gbp.log.info("Moving tag of version '%s' since import forced" %
+373:                         RpmPkgPolicy.compose_full_version(spec.version))
+374:                 move_tag_stamp(repo, options.packaging_tag, tag_str_fields)
+375:             else:
+376:                 raise SkipImport
+377: 
+378:         if is_empty:
+379:             options.create_missing_branches = True
+380: 
+381:         # Determine author and committer info, currently same info is used
+382:         # for both upstream sources and packaging files
+383:         author = None
+384:         if spec.packager:
+385:             match = re.match(r'(?P<name>.*[^ ])\s*<(?P<email>\S*)>',
+386:                              spec.packager.strip())
+387:             if match:
+
+/usr/lib/python3/dist-packages/gbp/scripts/import_srpm.py
+397:             if not upstream_commit:
+398:                 gbp.log.info("Tag %s not found, importing %s upstream sources"
+399:                              % (tag, tag_format[1]))
+400: 
+401:                 branch = [options.upstream_branch,
+402:                           options.packaging_branch][options.native]
+403:                 if not repo.has_branch(branch):
+404:                     if options.create_missing_branches:
+405:                         gbp.log.info("Will create missing branch '%s'" %
+406:                                      branch)
+407:                     else:
+408:                         gbp.log.err(no_upstream_branch_msg % branch + "\n"
+409:                             "Also check the --create-missing-branches option.")
+410:                         raise GbpError
+411: 
+412:                 msg = "%s version %s" % (tag_format[1], spec.upstreamversion)
+413:                 if options.vcs_tag:
+414:                     parents = [repo.rev_parse("%s^{}" % options.vcs_tag)]
+415:                 else:
+416:                     parents = None
+417:                 upstream_commit = repo.commit_dir(upstream.unpacked,
+418:                                                   "Imported %s" % msg,
+419:                                                   branch,
+420:                                                   other_parents=parents,
+421:                                                   author=author,
+422:                                                   committer=committer,
+423:                                                   create_missing_branch=options.create_missing_branches)
+424:                 repo.create_tag(name=tag,
+425:                                 msg=msg,
+
+/usr/lib/python3/dist-packages/gbp/scripts/import_srpm.py
+425:                                 msg=msg,
+426:                                 commit=upstream_commit,
+427:                                 sign=options.sign_tags,
+428:                                 keyid=options.keyid)
+429: 
+430:                 if not options.native:
+431:                     if options.pristine_tar:
+432:                         archive_fmt = parse_archive_filename(orig_tarball)[1]
+433:                         if archive_fmt == 'tar':
+434:                             repo.pristine_tar.commit(orig_tarball,
+435:                                                     'refs/heads/%s' %
+436:                                                      options.upstream_branch)
+437:                         else:
+438:                             gbp.log.warn('Ignoring pristine-tar, %s archives '
+439:                                          'not supported' % archive_fmt)
+440:         else:
+441:             gbp.log.info("No orig source archive imported")
+442: 
+443:         # Import packaging files. For native packages we assume that also
+444:         # packaging files are found in the source tarball
+445:         if not options.native or not upstream:
+446:             gbp.log.info("Importing packaging files")
+447:             branch = options.packaging_branch
+448:             if not repo.has_branch(branch):
+449:                 if options.create_missing_branches:
+450:                     gbp.log.info("Will create missing branch '%s'" % branch)
+451:                 else:
+452:                     gbp.log.err(no_packaging_branch_msg % branch + "\n"
+453:                                 "Also check the --create-missing-branches "
+
+/usr/lib/python3/dist-packages/gbp/scripts/import_srpm.py
+440:         else:
+441:             gbp.log.info("No orig source archive imported")
+442: 
+443:         # Import packaging files. For native packages we assume that also
+444:         # packaging files are found in the source tarball
+445:         if not options.native or not upstream:
+446:             gbp.log.info("Importing packaging files")
+447:             branch = options.packaging_branch
+448:             if not repo.has_branch(branch):
+449:                 if options.create_missing_branches:
+450:                     gbp.log.info("Will create missing branch '%s'" % branch)
+451:                 else:
+452:                     gbp.log.err(no_packaging_branch_msg % branch + "\n"
+453:                                 "Also check the --create-missing-branches "
+454:                                 "option.")
+455:                     raise GbpError
+456: 
+457:             tag_str_fields = dict(spec.version, vendor=options.vendor)
+458:             tag = repo.version_to_tag(options.packaging_tag, tag_str_fields)
+459:             msg = "%s release %s" % (options.vendor,
+460:                          RpmPkgPolicy.compose_full_version(spec.version))
+461: 
+462:             if options.orphan_packaging or not upstream:
+463:                 commit = repo.commit_dir(dirs['packaging_base'],
+464:                                              "Imported %s" % msg,
+465:                                              branch,
+466:                                              author=author,
+467:                                              committer=committer,
+468:                                              create_missing_branch=options.create_missing_branches)
