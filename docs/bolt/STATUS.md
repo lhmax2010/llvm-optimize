@@ -1551,3 +1551,7 @@ sandbox已按lease从121b4c23bcd6a9a30b0e277c30e5dc17af3e8521推到a061f4e415a89
 交付脚本JS模板引用错误修正一次，原文保留，未重跑产品。107材料尚未提供，用户表示好了通知；未启动107。本次无QB、RPM/LLVM目标构建、Gerrit评论或refs/for操作。详见[105号§8](105_ps5_candidate_replies_361624.md)、[续三证据](../../tools/bolt/results/hq-review-361395/round3/resume3/RAW_LINKS.md)。
 
 105续三交付补记：额外ASCII断言误拒英文标题破折号，构成第二次准备错误，按规则STOP；未改草稿/断言、未重跑，只提交现有证据。该错误不改变已完成的sandbox推送、R3(a–e)和候选身份。原文见resume3/delivery-second-STOP.txt。
+
+### 2026-11-16：107号评审原文归档
+
+PS5两份、361624三份独立评审及一份共享文件残留，共6份原文已原样复制，源文件保留，大小/SHA256和逐字节核对见各目录107-collection.json。共享残留external-review.md与tools/bolt/results/review-361624/claude-code-external-review.md的SHA256相同。只归档，不修改评审文字、不发布Gerrit文本；缺失文件数：0。
