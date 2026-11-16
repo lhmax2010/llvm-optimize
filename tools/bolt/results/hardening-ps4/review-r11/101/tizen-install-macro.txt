@@ -1,0 +1,32 @@
+220: %package isu \
+221: Summary: ISU Package configuration \
+222: AutoReqProv: 0\
+223: %description isu\
+224: This package provides ISU configuration for package %{name}.\
+225: %files isu -f isu.list\
+226: %defattr(-,root,root,-)\
+227: %{nil}
+228: 
+229: %__spec_build_pre\
+230: %{___build_pre}\
+231: %{set_build_flags};\
+232: %{nil}
+233: 
+234: %__spec_install_pre\
+235: %{___build_pre}\
+236: %{?_enable_binutils_strip:export STRIP_DEFAULT_PACKAGE="binutils"}\
+237: %__rm -rf "$RPM_BUILD_ROOT"\
+238: %__mkdir_p "$RPM_BUILD_ROOT"\
+239: %{nil}
+240: 
+241: %__spec_clean_pre\
+242: %{___build_pre}\
+243: %__rm -rf "$RPM_BUILD_ROOT"\
+244: %{nil}
+245: 
+246: %find_lang      %{_rpmconfigdir}/find-lang.sh %{buildroot}
+247: %find_docs      %{_rpmconfigdir}/tizen/find-docs.sh %{buildroot}
+248: 
+249: 
+250: 
+251: #==============================================================================

@@ -1,0 +1,53 @@
+330: CFLAGS=$TIZEN_LLVM_RESULT
+331: tizen_llvm_normalized_c=$TIZEN_LLVM_NORMALIZED
+332: tizen_llvm_dropped_c=$TIZEN_LLVM_DROPPED
+333: tizen_llvm_unreviewed_c=$TIZEN_LLVM_UNREVIEWED
+334: tizen_llvm_flags CXXFLAGS "$CXXFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
+335: CXXFLAGS=$TIZEN_LLVM_RESULT
+336: tizen_llvm_normalized_cxx=$TIZEN_LLVM_NORMALIZED
+337: tizen_llvm_dropped_cxx=$TIZEN_LLVM_DROPPED
+338: tizen_llvm_unreviewed_cxx=$TIZEN_LLVM_UNREVIEWED
+339: tizen_llvm_flags LDFLAGS "$LDFLAGS" "$TIZEN_LLVM_RELEASE" || exit 1
+340: LDFLAGS=$TIZEN_LLVM_RESULT
+341: printf 'TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_normalized_c" "$tizen_llvm_normalized_cxx" "$TIZEN_LLVM_NORMALIZED"
+342: printf 'TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_dropped_c" "$tizen_llvm_dropped_cxx" "$TIZEN_LLVM_DROPPED"
+343: tizen_llvm_report_warnings "$tizen_llvm_unreviewed_c" "$tizen_llvm_unreviewed_cxx" "$TIZEN_LLVM_UNREVIEWED"
+344: export CFLAGS CXXFLAGS LDFLAGS
+345: # END TIZEN_LLVM_FIXED_FLAGS
+346: %endif
+690: # Install the clang python bits
+691: mkdir -p %{buildroot}%{python3_sitelib}
+692: cp -a ../clang/bindings/python/clang %{buildroot}%{python3_sitelib}/
+693: 
+694: rm -rf %{buildroot}%{_libdir}/debug/*
+695: rm -rf %{buildroot}/usr/lib/libear/*
+696: rm -rf %{buildroot}/usr/lib/libscanbuild/*
+697: 
+698: %ifarch x86_64
+699: # Run after compilation has finished; these workers do not overlap build jobs.
+700: # Preserve the standard RPM post-processing, including archive strip -g.
+701: rm -rf "%{_builddir}/%{buildsubdir}/build/native-archive-conversion"
+702: python3 %{SOURCE1005} --root "%{buildroot}" \
+703:     --build "%{_builddir}/%{buildsubdir}/build" \
+704:     --evidence "%{_builddir}/%{buildsubdir}/build/native-archive-conversion" \
+705:     --arch x86_64 \
+706: %if %{llvm_release_build}
+707:     --debug-info no \
+708: %else
+709:     --debug-info yes \
+710: %endif
+711:     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+712:     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+713:     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+714: %if %{with clang_bolt}
+715:     --jobs 4 --address-space-bytes 4294967296 || bolt_status_exit $?
+716: %else
+717:     --jobs 4 --address-space-bytes 4294967296 || exit 1
+718: %endif
+719: %endif
+720: 
+721: %ifarch x86_64
+722: %if %{with clang_bolt}
+723: # Candidate is fully stripped before the one unchanged platform post-processing chain.
+724: python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
+725:   "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || bolt_status_exit $?

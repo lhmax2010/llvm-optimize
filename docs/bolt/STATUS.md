@@ -1485,3 +1485,14 @@ PM定性：93号FAIL为固定data16判据的覆盖缺口，不是已发现错误
 步骤5 PASS：b0c1732c的450发货归档/7728 ELF成员复核无新增拒绝；另用保全原始输入完成225个T归档全部3853转换+11原生，逐归档与逐成员SHA均与发货T相同（含78号10个大debug归档）。D做全量ELF检查，不冒称重新代码生成。全量实物证明已完成；本任务仍不触发QB。12GiB/swap0/CPU400%/jobs2，含准备2516.5s，cgroup峰11222745088B，无OOM，看门狗未触发；共享锁仅持有本任务重放期间。sandbox无新观测/推送，最近已知b0不变于本任务操作。
 
 99 已结束 2026-11-14T07:17:19.589999-08:00 1=STOP 2=PASS 3=PASS 4=PASS 5=PASS
+
+
+## 2026-11-16：101号评审修正与PS4本地准备
+
+100号取消，由101白天轻量和102夜间任务替代。[101号](101_review_fixes_ps4_prep.md)PASS：只改F1–F5，三项ELF检查逻辑不变。两份评审原文大小/SHA全匹配并原样入库；其余五类建议延后。PM允许96新增测试按F1/F3改变诊断约定，本次只调整unset断言为None/None。原119+新增19=138/138 PASS，已知ProcessLookupError竞态未出现、零重跑。
+
+sandbox已从b0c1732c以明确lease更新为 `121b4c23bcd6a9a30b0e277c30e5dc17af3e8521` / tree `8097a7986fd835abc415b8651d0405358c6c22f0`，父PS3ecb2dec7；未推Gerrit。361395只读仍NEW/PS3，新增可见记录仅用户自身Code-Review+1 Verified+1；评审人增量因旧名单缺失UNKNOWN。
+
+本地PS4 `8ec86c3ecb0c03889674ba7490064ff82ba63033`，父13c3e223，同tree；说明Part4及总述、单组trailer和对外门禁PASS。两次gbs export只含90号三类允许差异，五项配对解析全PASS；PS4未上传。转换器在%install，固定CFLAGS导出在%build；同install日志没有CFLAGS/CXXFLAGS导出，平台install宏不调用set_build_flags，实际继承值不能由现有日志证明，记UNKNOWN；spec未改。
+
+4GiB/swap0/CPU200%/Nice19/idle串行服务，看门狗未触发；PS4导出比较触顶424次、OOM0，原文保留。未构建、未重放、未运行BOLT、未访问QB或干预其他项目。99号b0实物证明不冒称新tree重放；102夜间另行验证。本次STOP无；步骤1读取query元数据而非stdout的准备错误修正一次，作废结果保留。

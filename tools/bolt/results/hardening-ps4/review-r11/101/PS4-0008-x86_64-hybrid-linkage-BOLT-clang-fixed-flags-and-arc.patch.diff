@@ -1,0 +1,32 @@
+--- /home/linhao/Toolchain/development/llvm-optimize/temp/review-r11-101-exports/hardening/0008-x86_64-hybrid-linkage-BOLT-clang-fixed-flags-and-arc.patch
++++ /home/linhao/Toolchain/development/llvm-optimize/temp/review-r11-101-exports/PS4/0008-x86_64-hybrid-linkage-BOLT-clang-fixed-flags-and-arc.patch
+@@ -6,6 +6,7 @@
+ x86_64 flags and declared archive debug mode in one packaging change.
+ Preserve the reviewed implementation and its controls; the component
+ descriptions below remain unchanged.
++Add native archive structural checks and optional startup diagnostics.
+ 
+ [Part 1] cmake: use hybrid LLVM linkage on x86_64
+ 
+@@ -223,6 +224,21 @@
+ replay and adopted checks; adds the declared debug-info mode with a
+ per-member consistency check.
+ 
++[Part 4] packaging: harden the native archive converter
++
++Validate compressed section headers before using their declared sizes
++as relocation bounds. Accept the known zlib and zstd types and require
++zero or power-of-two alignment.
++
++Require zero-width relocation markers other than R_X86_64_NONE to lie
++inside their target section, and explicitly reject RELR sections in
++archive members.
++
++Log inherited architecture options and signal handler states at startup;
++output failures are ignored. Keep malformed diagnostic environment flags
++nonfatal, and preserve the existing conversion commands, summary fields
++and log lines.
++
+ Signed-off-by: Hao Lin <hao.lin@samsung.com>
+ Change-Id: I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06
+ ---

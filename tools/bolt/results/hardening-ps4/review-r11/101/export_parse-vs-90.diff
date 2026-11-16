@@ -1,0 +1,38 @@
+--- 90/gates.py
++++ 101/export_parse.py
+@@ -1,7 +1,7 @@
+ from pathlib import Path
+ import subprocess,json,re,os,hashlib,difflib,datetime
+ B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');W=B.parent/'llvm-optimize';E=Path(__file__).resolve().parent
+-N=W/'temp/single-change-20261114/source';X=N.parent
++N=W/'temp/hardening-ps4-20261114/source';X=W/'temp/review-r11-101-exports'
+ R=W/'temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0'
+ M=B/'tools/bolt/results/fifth-review-20261111/rerun4/parse'
+ def now():return datetime.datetime.now().astimezone().isoformat(timespec='seconds')
+@@ -91,16 +91,13 @@
+  print(label,'5 paired parses PASS',flush=True)
+ 
+ if __name__=='__main__':
+- try:
+-  pa,pb=compare('PS3',X/'export-old',X/'export-PS3')
+-  parse_pair('PS3',X/'export-old',X/'export-PS3',pa,pb)
+-  for label,rev in [('PS2','d0b2e82aa90b11251a13b67d890642bf2fa6f66c'),('old-PS2','bde009d1197a09f7b7b76382a0166e03c841bdb9')]:
+-   out=X/('export90-'+label);assert not out.exists()
+-   run(label+'-export',['gbs','export','--commit',rev,'--outdir',str(out),'--outdir-directly',str(N)])
+-  pa,pb=compare('PS2',X/'export90-old-PS2',X/'export90-PS2')
+-  parse_pair('PS2',X/'export90-old-PS2',X/'export90-PS2',pa,pb)
+-  (E/'local-gates-PASS.json').write_text(json.dumps({'PASS':True,'time':now(),'export_pairs':2,'paired_parse_cases':10},indent=2)+'\n')
+-  print('90步骤1本地核对 已结束',now(),'status=PASS',flush=True)
+- except Exception:
+-  print('90步骤1本地核对 已结束',now(),'status=STOP',flush=True)
+-  raise
++ X.mkdir(exist_ok=False)
++ candidate=json.loads((E/'hardening-commit.json').read_text())['sha']
++ ps4=json.loads((E/'PS4-identity.json').read_text())['sha']
++ for label,rev in [('hardening',candidate),('PS4',ps4)]:
++  out=X/label
++  run(label+'-export',['gbs','export','--commit',rev,'--outdir',str(out),'--outdir-directly',str(N)])
++ pa,pb=compare('PS4',X/'hardening',X/'PS4')
++ parse_pair('PS4',X/'hardening',X/'PS4',pa,pb)
++ (E/'export-parse-PASS.json').write_text(json.dumps(dict(PASS=True,time=now(),paired_cases=5),indent=2)+'\n')
++ print('101步骤4 已结束',now(),'status=PASS',flush=True)

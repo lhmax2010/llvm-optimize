@@ -1,0 +1,13 @@
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index c44edc8353b1..e1d8bc8f3e50 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -1012,7 +1012,7 @@ def log_startup_context():
+     for name in ('SIGTERM', 'SIGINT', 'SIGHUP'):
+         handler = signal.getsignal(getattr(signal, name))
+         inherited[name] = ('ignored' if handler == signal.SIG_IGN else
+-                                             'default' if handler == signal.SIG_DFL else 'handler')
++                           'default' if handler == signal.SIG_DFL else 'handler')
+     print('NATIVE_ARCHIVES_STARTUP', json.dumps({
+         'architecture_parameters': architecture, 'signals': inherited}), flush=True)
+ 

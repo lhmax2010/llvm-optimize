@@ -1,0 +1,66 @@
+51: Source1002: mlgo_arm_model.tar.gz
+52: Source1003: mlgo_aarch_model.tar.gz
+53: Source1004: mlgo_x86_model.tar.gz
+54: Source1005: llvm-static-archives-native.py
+55: Source1200: clang-bolt-v2.fdata.xz
+56: Source1201: clang-bolt-helper.py
+57: 
+58: %ifarch x86_64
+59: BuildRequires: util-linux
+60: %endif
+61: 
+195: %endif
+196: %endif
+197: 
+198: %build
+199: %if 0%{llvm_release_build}
+200: # Not to build debug info
+201: RELCFLAGS=$(echo $CFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+202: export CFLAGS=${RELCFLAGS}
+203: RELCXXFLAGS=$(echo $CXXFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+204: export CXXFLAGS=${RELCXXFLAGS}
+205: RELFFLAGS=$(echo $FFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\)|dwarf-[[:digit:]]\\?* *g')
+199: %if 0%{llvm_release_build}
+200: # Not to build debug info
+201: RELCFLAGS=$(echo $CFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+202: export CFLAGS=${RELCFLAGS}
+203: RELCXXFLAGS=$(echo $CXXFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+204: export CXXFLAGS=${RELCXXFLAGS}
+205: RELFFLAGS=$(echo $FFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\)|dwarf-[[:digit:]]\\?* *g')
+206: export FFLAGS=${RELFFLAGS}
+207: %endif
+208: 
+209: cp %{SOURCE1001} .
+201: RELCFLAGS=$(echo $CFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+202: export CFLAGS=${RELCFLAGS}
+203: RELCXXFLAGS=$(echo $CXXFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\|dwarf-[[:digit:]]\)\?* *g')
+204: export CXXFLAGS=${RELCXXFLAGS}
+205: RELFFLAGS=$(echo $FFLAGS | sed -e 's*\(^\|[[:space:]]\)-g\([[:digit:]]\+\|gdb\)|dwarf-[[:digit:]]\\?* *g')
+206: export FFLAGS=${RELFFLAGS}
+207: %endif
+208: 
+209: cp %{SOURCE1001} .
+210: %{?asan:%gcc_unforce_options}
+211: 
+341: printf 'TIZEN_LLVM_NORMALIZED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_normalized_c" "$tizen_llvm_normalized_cxx" "$TIZEN_LLVM_NORMALIZED"
+342: printf 'TIZEN_LLVM_DROPPED_FLAGS CFLAGS=[%%s] CXXFLAGS=[%%s] LDFLAGS=[%%s]\n' "$tizen_llvm_dropped_c" "$tizen_llvm_dropped_cxx" "$TIZEN_LLVM_DROPPED"
+343: tizen_llvm_report_warnings "$tizen_llvm_unreviewed_c" "$tizen_llvm_unreviewed_cxx" "$TIZEN_LLVM_UNREVIEWED"
+344: export CFLAGS CXXFLAGS LDFLAGS
+345: # END TIZEN_LLVM_FIXED_FLAGS
+346: %endif
+347: 
+348: # Set up MLGO AOT model paths from bundled verify assets
+349: %if %{with mlgo}
+350: MLGO_AOT_DIR="$PWD/mlgo_verify_assets"
+351: MLGO_BUILD_DIR="$PWD/build"
+555: echo TIZEN_HYBRID_LINK_OK
+556: %endif
+557: 
+558: %install
+559: cd build
+560: cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
+561: %ifarch x86_64
+562: %if %{with clang_bolt}
+563: 
+564: # Reject debug-named buildroots before any BOLT action.
+565: # Keep the ordinary install and BOLT payload under the same platform debug-path policy.

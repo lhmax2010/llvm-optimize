@@ -1,0 +1,45 @@
+--- b0c1732c/converter.py
++++ 101/converter.py
+@@ -508,7 +508,7 @@
+         if target[2] & 0x800:  # SHF_COMPRESSED: offsets use uncompressed size.
+             if target[5] < 24 or target[4] + 24 > len(data):
+                 raise ValueError('short compressed ELF section header')
+-            compression, reserved, limit, alignment = struct.unpack_from('<IIQQ', data, target[4])
++            compression, _reserved, limit, alignment = struct.unpack_from('<IIQQ', data, target[4])
+             if compression not in (1, 2):  # ELFCOMPRESS_ZLIB / ELFCOMPRESS_ZSTD
+                 raise ValueError('unsupported ELF compression type: '+str(compression))
+             if alignment and alignment & (alignment - 1):
+@@ -998,8 +998,12 @@
+     """Report exported target options and Python's inherited signal handlers."""
+     architecture = {}
+     for name in ('CFLAGS', 'CXXFLAGS'):
++        value = os.environ.get(name)
++        if value is None:
++            architecture[name] = None
++            continue
+         try:
+-            tokens = shlex.split(os.environ.get(name, ''))
++            tokens = shlex.split(value)
+         except ValueError as error:
+             # Diagnostics must not change conversion of already recorded IR.
+             architecture[name] = {'parse_error': str(error)}
+@@ -1011,10 +1015,16 @@
+     inherited = {}
+     for name in ('SIGTERM', 'SIGINT', 'SIGHUP'):
+         handler = signal.getsignal(getattr(signal, name))
++        # Python installs default_int_handler for an inherited default SIGINT.
+         inherited[name] = ('ignored' if handler == signal.SIG_IGN else
+-                                             'default' if handler == signal.SIG_DFL else 'handler')
+-    print('NATIVE_ARCHIVES_STARTUP', json.dumps({
+-        'architecture_parameters': architecture, 'signals': inherited}), flush=True)
++                           'default' if handler in (signal.SIG_DFL, signal.default_int_handler) else
++                           'non-python' if handler is None else 'handler')
++    try:
++        print('NATIVE_ARCHIVES_STARTUP', json.dumps({
++            'architecture_parameters': architecture, 'signals': inherited}), flush=True)
++    except (OSError, ValueError):
++        # Optional diagnostic: unavailable output must not stop conversion.
++        pass
+ 
+ 
+ def install_main():
