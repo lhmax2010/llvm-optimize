@@ -1,0 +1,18 @@
+{
+  "status": "STOP",
+  "step": "105/5c(1)",
+  "time": "2026-11-16T07:08:45.187674-08:00",
+  "reason": "361624 in-tree CMake source-list failure; no repair or retry",
+  "raw": "CMake Error at cmake/modules/LLVMProcessSources.cmake:113 (message):\n  Found erroneous configuration for source file X86BoltMnemonicTables.cpp\n\n  LLVM's build system enforces that all source files are added to a build\n  target, that exactly one build target exists in each directory, and that\n  this target lists all files in that directory.  If you want multiple\n  targets in the same directory, add PARTIAL_SOURCES_INTENDED to the target\n  specification, though it is discouraged.\n\n  Please update\n  /home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-105-20261116/trial-361624/bolt/lib/Target/X86/CMakeLists.txt\n\n\nCall Stack (most recent call first):\n  cmake/modules/LLVMProcessSources.cmake:59 (llvm_check_source_file_list)\n  cmake/modules/AddLLVM.cmake:519 (llvm_process_sources)\n  cmake/modules/AddLLVM.cmake:925 (llvm_add_library)\n  /home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-105-20261116/trial-361624/bolt/lib/Target/X86/CMakeLists.txt:31 (add_llvm_library)\n\n\n",
+  "candidate": "a061f4e415a895412516ffe076084f407f2d70a8",
+  "sandbox_already_pushed": true,
+  "other_observations": "Full log also contains platform cmake subprocess OPENSSL_3.2.0 diagnostics. Not repaired, because the independently evidenced source-list gate already failed.",
+  "not_run": [
+    "with-361624 ninja -t commands (no generated build graph)",
+    "tool-plan execution probe",
+    "find-debuginfo/build-id detailed inference",
+    "RPM libLLVM nm -D export verification",
+    "remaining 361624 review completion",
+    "107 (materials not provided)"
+  ]
+}

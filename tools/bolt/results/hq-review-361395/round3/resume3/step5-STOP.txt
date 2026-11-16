@@ -1,0 +1,22 @@
+STOP 105/5c(1): 361624 in-tree CMake source-list failure; no repair or retry
+CMake Error at cmake/modules/LLVMProcessSources.cmake:113 (message):
+  Found erroneous configuration for source file X86BoltMnemonicTables.cpp
+
+  LLVM's build system enforces that all source files are added to a build
+  target, that exactly one build target exists in each directory, and that
+  this target lists all files in that directory.  If you want multiple
+  targets in the same directory, add PARTIAL_SOURCES_INTENDED to the target
+  specification, though it is discouraged.
+
+  Please update
+  /home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-105-20261116/trial-361624/bolt/lib/Target/X86/CMakeLists.txt
+
+
+Call Stack (most recent call first):
+  cmake/modules/LLVMProcessSources.cmake:59 (llvm_check_source_file_list)
+  cmake/modules/AddLLVM.cmake:519 (llvm_process_sources)
+  cmake/modules/AddLLVM.cmake:925 (llvm_add_library)
+  /home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-105-20261116/trial-361624/bolt/lib/Target/X86/CMakeLists.txt:31 (add_llvm_library)
+
+
+已结束 2026-11-16T07:08:45.187674-08:00 status=STOP

@@ -1,0 +1,132 @@
+{
+  "H1/N1": {
+    "file": "packaging/clang-bolt-helper.py",
+    "locations": [
+      {
+        "line": 239,
+        "text": "def call(argv, log, cwd=None, timeout=300):"
+      },
+      {
+        "line": 243,
+        "text": "    previous = signal.getsignal(signal.SIGCHLD)"
+      },
+      {
+        "line": 311,
+        "text": "        if previous is not None and previous != signal.SIG_DFL:"
+      }
+    ]
+  },
+  "H2": {
+    "file": "packaging/clang-bolt-helper.py",
+    "locations": [
+      {
+        "line": 190,
+        "text": "_DEFERRED_SECOND_SIGNAL = None"
+      },
+      {
+        "line": 193,
+        "text": "def record_cancel(signum, frame):"
+      },
+      {
+        "line": 194,
+        "text": "    global _CANCEL_SIGNAL, _DEFERRED_SECOND_SIGNAL"
+      },
+      {
+        "line": 197,
+        "text": "            if _DEFERRED_SECOND_SIGNAL is None:"
+      },
+      {
+        "line": 198,
+        "text": "                _DEFERRED_SECOND_SIGNAL = signum"
+      },
+      {
+        "line": 240,
+        "text": "    global _ACTIVE_GROUP, _SPAWNING, _DEFERRED_SECOND_SIGNAL"
+      },
+      {
+        "line": 254,
+        "text": "            _SPAWNING = True"
+      },
+      {
+        "line": 261,
+        "text": "                if _DEFERRED_SECOND_SIGNAL is not None:"
+      },
+      {
+        "line": 262,
+        "text": "                    pending = _DEFERRED_SECOND_SIGNAL"
+      },
+      {
+        "line": 263,
+        "text": "                    _DEFERRED_SECOND_SIGNAL = None"
+      },
+      {
+        "line": 1919,
+        "text": "    global _CANCEL_SIGNAL, _SPAWNING, _DEFERRED_SECOND_SIGNAL"
+      },
+      {
+        "line": 1921,
+        "text": "    _DEFERRED_SECOND_SIGNAL = None"
+      }
+    ]
+  },
+  "H3-helper": {
+    "file": "packaging/clang-bolt-helper.py",
+    "locations": [
+      {
+        "line": 1067,
+        "text": "def debugfiles_gate(debugfiles_list, identity):"
+      },
+      {
+        "line": 1080,
+        "text": "def post_gate(root, state, ordinary, candidate_work, resource_dir=None, debugfiles_list=None):"
+      },
+      {
+        "line": 1856,
+        "text": "    s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir');s.add_argument('--debugfiles-list',required=True)"
+      }
+    ]
+  },
+  "H3-spec": {
+    "file": "packaging/llvm.spec",
+    "locations": [
+      {
+        "line": 966,
+        "text": "    python3 -B %{SOURCE1201} post \"%{buildroot}\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate\" --resource-dir \"%{buildroot}%{_libdir}/clang/%{llvm_version}\" --debugfiles-list \"%{_builddir}/%{buildsubdir}/debugfiles.list\" || bolt_status_exit $? \\"
+      }
+    ]
+  },
+  "H4": {
+    "file": "packaging/llvm-static-archives-native.py",
+    "locations": [
+      {
+        "line": 121,
+        "text": "        seen_longnames = False"
+      },
+      {
+        "line": 134,
+        "text": "                if seen_longnames:"
+      },
+      {
+        "line": 136,
+        "text": "                seen_longnames = True"
+      }
+    ]
+  },
+  "H5/N1": {
+    "file": "packaging/llvm-static-archives-native.py",
+    "locations": [
+      {
+        "line": 1034,
+        "text": "def _install_main():"
+      },
+      {
+        "line": 1075,
+        "text": "def install_main():"
+      },
+      {
+        "line": 1086,
+        "text": "        if previous is not None and previous != signal.SIG_DFL:"
+      }
+    ]
+  }
+}

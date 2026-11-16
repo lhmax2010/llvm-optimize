@@ -1,0 +1,144 @@
+bolt/lib/Target/X86/CMakeLists.txt
+1: set(LLVM_LINK_COMPONENTS
+2:   MC
+3:   MCDisassembler
+4:   Support
+5:   X86Desc
+6:   )
+7: 
+8: if(BOLT_BUILT_STANDALONE)
+9:   set(LLVM_TARGET_DEFINITIONS ${LLVM_MAIN_SRC_DIR}/lib/Target/X86/X86.td)
+10:   list(APPEND LLVM_TABLEGEN_FLAGS -I ${LLVM_MAIN_SRC_DIR}/lib/Target/X86)
+11:   tablegen(LLVM X86GenInstrInfo.inc -gen-instr-info -instr-info-expand-mi-operand-info=0)
+12:   tablegen(LLVM X86GenMnemonicTables.inc -gen-x86-mnemonic-tables -asmwriternum=1)
+13:   tablegen(LLVM X86GenRegisterInfo.inc -gen-register-info)
+14:   tablegen(LLVM X86GenSubtargetInfo.inc -gen-subtarget)
+15: 
+16:   add_public_tablegen_target(X86CommonTableGen)
+17:   include_directories(${CMAKE_CURRENT_BINARY_DIR})
+18: endif()
+19: 
+20: set(LLVMBOLT_TARGET_X86_SOURCES
+21:   X86MCPlusBuilder.cpp
+22:   X86MCSymbolizer.cpp
+23:   )
+24: # The standalone mirror TU needs generated .inc files that only exist when
+25: # this bolt is configured standalone (see tablegen() calls above); upstream
+26: # LLVMX86Desc already provides these symbols in whole-LLVM builds.
+27: if(BOLT_BUILT_STANDALONE)
+28:   list(APPEND LLVMBOLT_TARGET_X86_SOURCES X86BoltMnemonicTables.cpp)
+29: endif()
+30: 
+31: add_llvm_library(LLVMBOLTTargetX86
+32:   ${LLVMBOLT_TARGET_X86_SOURCES}
+33: 
+34:   NO_EXPORT
+35: 
+36:   DEPENDS
+37:   X86CommonTableGen
+38:   )
+39: 
+40: # The installed LLVM may not provide llvm::X86::isNOP & friends (they are
+41: # compiled into LLVMX86Desc upstream); build them into this target instead.
+42: # Must run after add_llvm_library().
+43: if(BOLT_BUILT_STANDALONE)
+44:   target_compile_definitions(LLVMBOLTTargetX86 PRIVATE BOLT_STANDALONE_X86_TABLES=1)
+45: endif()
+46: 
+47: target_link_libraries(LLVMBOLTTargetX86 PRIVATE LLVMBOLTCore LLVMBOLTUtils)
+48: 
+49: include_directories(
+50:   ${LLVM_MAIN_SRC_DIR}/lib/Target/X86
+51:   ${LLVM_BINARY_DIR}/lib/Target/X86
+52:   )
+
+
+llvm/cmake/modules/LLVMProcessSources.cmake
+70:   set( ${OUT_VAR} ${sources} PARENT_SCOPE )
+71: endfunction(llvm_process_sources)
+72: 
+73: 
+74: function(llvm_check_source_file_list)
+75:   cmake_parse_arguments(ARG "" "SOURCE_DIR" "" ${ARGN})
+76:   foreach(l ${ARG_UNPARSED_ARGUMENTS})
+77:       get_filename_component(fp ${l} REALPATH)
+78:       list(APPEND listed ${fp})
+79:   endforeach()
+80: 
+81:   if(ARG_SOURCE_DIR)
+82:     file(GLOB globbed
+83:          "${ARG_SOURCE_DIR}/*.c" "${ARG_SOURCE_DIR}/*.cpp")
+84:   else()
+85:     file(GLOB globbed *.c *.cpp)
+86:   endif()
+87: 
+88:   set_property(DIRECTORY APPEND PROPERTY LLVM_SOURCE_FILES ${listed})
+89:   if (ARG_PARTIAL_SOURCES_INTENDED) # llvm_process_source's scope
+90:     return()
+91:   endif()
+92:   get_directory_property(listed LLVM_SOURCE_FILES)
+93: 
+94:   foreach(g ${globbed})
+95:     get_filename_component(fn ${g} NAME)
+96:     if(ARG_SOURCE_DIR)
+97:       set(entry "${g}")
+98:     else()
+99:       set(entry "${fn}")
+100:     endif()
+101:     get_filename_component(gp ${g} REALPATH)
+102: 
+103:     # Don't reject hidden files. Some editors create backups in the
+104:     # same directory as the file.
+105:     if (NOT "${fn}" MATCHES "^\\.")
+106:       if(NOT ${entry} IN_LIST LLVM_OPTIONAL_SOURCES)
+107:         if(NOT ${gp} IN_LIST listed)
+108:           if(ARG_SOURCE_DIR)
+109:               set(fn_relative "${ARG_SOURCE_DIR}/${fn}")
+110:           else()
+111:               set(fn_relative "${fn}")
+112:           endif()
+113:           message(SEND_ERROR "Found erroneous configuration for source file ${fn_relative}
+114: LLVM's build system enforces that all source files are added to a build target, \
+115: that exactly one build target exists in each directory, \
+116: and that this target lists all files in that directory. \
+117: If you want multiple targets in the same directory, add \
+118: PARTIAL_SOURCES_INTENDED to the target specification, though it is discouraged.
+119: Please update ${CMAKE_CURRENT_LIST_FILE}\n")
+120:         endif()
+
+
+bolt/tools/driver/CMakeLists.txt
+1: set(LLVM_LINK_COMPONENTS
+2:   ${BOLT_TARGETS_TO_BUILD}
+3:   MC
+4:   Object
+5:   Support
+6:   )
+7: 
+8: if (BOLT_ENABLE_RUNTIME)
+9:   set(BOLT_DRIVER_DEPS "bolt_rt")
+10: else()
+11:   set(BOLT_DRIVER_DEPS "")
+12: endif()
+13: 
+14: add_bolt_tool(llvm-bolt
+15:   llvm-bolt.cpp
+16: 
+17: 
+18:   DEPENDS
+19:   ${BOLT_DRIVER_DEPS}
+20:   )
+21: 
+22: target_link_libraries(llvm-bolt
+23:   PRIVATE
+24:   LLVMBOLTProfile
+25:   LLVMBOLTRewrite
+26:   LLVMBOLTUtils
+27:   )
+28: 
+29: add_bolt_tool_symlink(perf2bolt llvm-bolt)
+30: add_bolt_tool_symlink(llvm-boltdiff llvm-bolt)
+31: 
+32: add_dependencies(bolt llvm-bolt)
+33: 
+34: include_directories(${BOLT_SOURCE_DIR}/lib)

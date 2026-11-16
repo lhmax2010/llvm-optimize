@@ -1539,3 +1539,15 @@ PM额外授权一次R3(c)准备修正：已在无外层Git的/var/tmp新目录�
 新os.walk清单脚本漏记dirs中的目录符号链接symlink2，误报old=None。原链接实际存在、目标real及SHA与native tar相同，属于我的准备错误，不判产品失败。按“此后再出现准备错误即STOP”，未修正/重跑，原脚本和现场保留。
 
 a061f4e4不变且干净，567/567沿用，R3(b) E1/E2 PASS保留。R3(d/e)、sandbox、FINAL回复、361624后续及107均未运行；没有Gerrit写入、QB访问或构建。详见[105号§7](105_ps5_candidate_replies_361624.md)、[续二证据](../../tools/bolt/results/hq-review-361395/round3/resume2/RAW_LINKS.md)。
+
+### 2026-11-16：105号续三（sandbox已推，361624配置STOP）
+
+PM裁决R3(c) PASS：169029路径只有.git_archival各自export-subst、清单漏掉但实际相同的目录symlink2；8补丁实际应用及反向dry-run通过。不重跑清单，原STOP保留。R3(a–e)均完成：d保留完整spec diff，e native五项解析5/5通过（Patch0项、全部Source存在）；567/567按授权沿用。
+
+sandbox已按lease从121b4c23bcd6a9a30b0e277c30e5dc17af3e8521推到a061f4e415a895412516ffe076084f407f2d70a8，并ls-remote确认。候选tree8d08d49a1c70ebb06118d8d84734c695e24e6d32，父61ef5d31，源码干净；没有上传PS5至Gerrit。FINAL英文回复和中文代码对照已生成，未发布，用户本人发布。
+
+361624 da885208只在独立树试cherry-pick，packaging/llvm.spec冲突保留未提交。未叠加侧CMake与ninja命令查询通过，llvm-bolt不含libLLVM.so；叠加侧因X86BoltMnemonicTables.cpp仅standalone列入目标、未登记可选源而配置失败，STOP，不修HQ代码、不重试。日志中平台cmake子进程OpenSSL装载诊断也原样保留。后续tool-plan、build-id详细核实、nm-D尚未执行，不能称361624完整评审完成。
+
+交付脚本JS模板引用错误修正一次，原文保留，未重跑产品。107材料尚未提供，用户表示好了通知；未启动107。本次无QB、RPM/LLVM目标构建、Gerrit评论或refs/for操作。详见[105号§8](105_ps5_candidate_replies_361624.md)、[续三证据](../../tools/bolt/results/hq-review-361395/round3/resume3/RAW_LINKS.md)。
+
+105续三交付补记：额外ASCII断言误拒英文标题破折号，构成第二次准备错误，按规则STOP；未改草稿/断言、未重跑，只提交现有证据。该错误不改变已完成的sandbox推送、R3(a–e)和候选身份。原文见resume3/delivery-second-STOP.txt。

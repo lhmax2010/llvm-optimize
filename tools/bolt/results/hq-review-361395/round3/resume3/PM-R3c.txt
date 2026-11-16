@@ -1,0 +1,6 @@
+PM 已核对 resume2 的证据（R3c-raw-differences.json、symlink-inventory-error.json、两份 archival 原文）：
+- 169,029 个路径中只有2处原始差异；
+- clang/bindings/python/.git_archival.txt：属于 E1，两侧分别是对各自归档提交（ca7933e4 与 e9f16ee3）展开的结果；
+- lldb/.../symlink2：PS3 树中确实存在该目录符号链接（lexists=true、is_symlink=true），只是清单脚本没有记录；native 侧为同一个指向 real 的链接。
+- 8个补丁全部实际应用，并通过反向 dry-run。
+结论：R3(c) PASS（PM 裁决，依据上述证据）。不需要修改或重跑清单脚本；在报告中照录本裁决。

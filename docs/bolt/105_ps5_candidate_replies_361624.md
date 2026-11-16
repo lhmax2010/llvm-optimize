@@ -1,5 +1,7 @@
 # 105：PS5 候选、导出核对与停止记录
 
+> **105续三最新状态：sandbox 已为 a061f4e415a895412516ffe076084f407f2d70a8。R3(a–e)通过（c由PM裁决）；567/567沿用；FINAL回复已生成、未发布。361624试合并的树内CMake配置失败，按规则STOP；未完成项目见§8.4。下方§1–7为原停止记录，全部保留。**
+
 > 105号续二最新状态：R3(b)已按PM裁决通过；R3(c)的8个补丁实际应用及反向dry-run全部通过，但新的清单脚本漏记目录符号链接，按“再有准备错误即STOP”停止，未推sandbox。见文末§7，历史STOP原文保留。
 
 结论：**STOP，未推 sandbox，未做任何 Gerrit 写操作。** R1 通过，N1 两处修正完成，全部 567/567 测试通过。R3(b) 全量比较发现 7 个 native tarball 文件与候选 Git blob 内容不同；其余 169,022 个相同。没有自行豁免 export-subst 或换行差异。R3(c)–(e)、回复文件和 361624 后续评审均未运行。
@@ -241,3 +243,105 @@ R3(d)、R3(e)、sandbox推送、FINAL回复/中文说明、361624后续评审未
 [资源](../../tools/bolt/results/hq-review-361395/round3/resume2/resources.json)、[看门狗采样](../../tools/bolt/results/hq-review-361395/round3/resume2/watchdog-observed.txt)：4GiB/swap0/CPU200%/Nice19/idle，OOM0，看门狗未触发，没有提高资源上限。
 
 105续二 已结束 2026-11-16T06:42:24-08:00 status=STOP
+
+
+## 8. 105号续三：导出通过、sandbox已推；361624配置STOP
+
+### 8.1 R3(c) PM裁决（原文）
+
+PM 已核对 resume2 的证据（R3c-raw-differences.json、symlink-inventory-error.json、两份 archival 原文）：
+- 169,029 个路径中只有2处原始差异；
+- clang/bindings/python/.git_archival.txt：属于 E1，两侧分别是对各自归档提交（ca7933e4 与 e9f16ee3）展开的结果；
+- lldb/.../symlink2：PS3 树中确实存在该目录符号链接（lexists=true、is_symlink=true），只是清单脚本没有记录；native 侧为同一个指向 real 的链接。
+- 8个补丁全部实际应用，并通过反向 dry-run。
+结论：R3(c) PASS（PM 裁决，依据上述证据）。不需要修改或重跑清单脚本；在报告中照录本裁决。
+
+没有修改或重跑resume2清单脚本。候选仍为a061f4e415a895412516ffe076084f407f2d70a8，
+tree为8d08d49a1c70ebb06118d8d84734c695e24e6d32，父61ef5d31；工作树干净，
+沿用已完成的567/567，不再生成提交。
+
+### 8.2 R3(d)/(e)与推送
+
+| 项目 | 当前结论 |
+|---|---|
+| R3(a) | PASS，先前GBS原文说明native模式，未重导出 |
+| R3(b) | PASS，先前7文件逐项E1/E2证据沿用 |
+| R3(c) | PASS，以上PM裁决，原始2差异与原STOP保留 |
+| R3(d) | PASS，完整spec差异保存；PS3→PS4为VCS及生成Patch/%patch删除；PS4→候选为VCS及批准的H3显式debugfiles.list参数 |
+| R3(e) | PASS，x86_64开/关、armv7l、aarch64、一行bcond回退，5/5 |
+| sandbox | PASS，121b4c23→a061f4e4，带准确lease且ls-remote核对 |
+| FINAL回复 | PASS，5条inline+Q1–Q6，英文门禁通过，未发布 |
+| 361624 | PARTIAL/STOP，spec冲突保留，树内配置出现source-list错误 |
+| 107 | 未开始，用户称材料尚未就绪，等通知 |
+
+native模式5项均Patch count=0，无残留%patch，Source全部存在。
+平台rpmbuild -bp --nodeps --nobuild及rpmspec解析均rc=0，只有x86-on启用BOLT；
+没有运行RPM构建。原文与展开见[五项结果](../../tools/bolt/results/hq-review-361395/round3/resume3/five-parse-result.json)，
+4份完整spec diff见[证据索引](../../tools/bolt/results/hq-review-361395/round3/resume3/RAW_LINKS.md)。
+
+推送命令：
+
+```sh
+git push --force-with-lease=refs/heads/sandbox/lhmax2025/bolt_pgo:121b4c23bcd6a9a30b0e277c30e5dc17af3e8521 ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm a061f4e415a895412516ffe076084f407f2d70a8:refs/heads/sandbox/lhmax2025/bolt_pgo
+```
+
+SSH BatchMode，推送前tizen_base仍61ef5d31。远端返回rc=0，仅提示标题超过50字符，
+不是拒绝；不改用户固定的提交。推送后远端为a061f4e415a895412516ffe076084f407f2d70a8。
+[命令与原文](../../tools/bolt/results/hq-review-361395/round3/resume3/sandbox-push.stderr)、
+[前后SHA](../../tools/bolt/results/hq-review-361395/round3/resume3/sandbox-result.json)。
+没有推refs/for、回复、评论、投票；未访问QB。
+
+### 8.3 用户回复文件
+
+- [FINAL-replies-for-user.md](../../tools/bolt/results/hq-review-361395/round2/replies/FINAL-replies-for-user.md)：先5条PS3行内位置及原文第一句，再Q1–Q6；next patch set明确指PS5。
+- [中文代码对照](../../tools/bolt/results/hq-review-361395/round2/replies/FINAL-replies-code-map-zh.md)：a061f4e4具体位置，供用户追问时核对。
+- H2说明暂存第二次信号及未采用pthread_sigmask的原因；H1/H5含N1；Q2按5A/5B、不称全部无害；Q3另change；Q5最小插件验证。
+- [门禁](../../tools/bolt/results/hq-review-361395/round3/resume3/final-replies-gate.json)通过。只是文件，所有发布由用户本人执行。
+
+### 8.4 361624：已证明的停止点
+
+完整父提交/diff、HQ合入后改接评论、影响表、配置限制与未运行项见
+[部分评审](../../tools/bolt/results/hq-review-361395/round3/resume3/361624-review-partial.md)。
+试cherry-pick到独立游离工作树，只有packaging/llvm.spec冲突；未解决、未提交。
+未叠加侧CMake成功、ninja查询一条最终链接命令且不含libLLVM.so；
+叠加侧配置失败，原文：
+
+```text
+CMake Error at cmake/modules/LLVMProcessSources.cmake:113 (message):
+  Found erroneous configuration for source file X86BoltMnemonicTables.cpp
+
+  LLVM's build system enforces that all source files are added to a build
+  target, that exactly one build target exists in each directory, and that
+  this target lists all files in that directory.  If you want multiple
+  targets in the same directory, add PARTIAL_SOURCES_INTENDED to the target
+  specification, though it is discouraged.
+
+  Please update
+  /home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-105-20261116/trial-361624/bolt/lib/Target/X86/CMakeLists.txt
+
+
+Call Stack (most recent call first):
+  cmake/modules/LLVMProcessSources.cmake:59 (llvm_check_source_file_list)
+  cmake/modules/AddLLVM.cmake:519 (llvm_process_sources)
+  cmake/modules/AddLLVM.cmake:925 (llvm_add_library)
+  /home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-105-20261116/trial-361624/bolt/lib/Target/X86/CMakeLists.txt:31 (add_llvm_library)
+
+
+```
+
+新cpp只在BOLT_BUILT_STANDALONE时加入目标，未列LLVM_OPTIONAL_SOURCES，
+触发LLVMProcessSources完整性检查。未修补HQ代码或重试；不能声称已证明最终共享链接命令。
+原日志还含平台cmake子进程OPENSSL_3.2.0装载报错，一并保留。
+后续tool-plan执行、find-debuginfo/build-id详细核实、nm-D导出符号核实均NOT RUN；
+不会把这些缺口写成通过。[STOP原文](../../tools/bolt/results/hq-review-361395/round3/resume3/step5-STOP.txt)。
+[英文部分草稿](../../tools/bolt/results/hq-review-361395/round3/resume3/361624-review-for-user.partial.md)未发布。
+
+本次读取旧导出/测试/PM证据、PS5源码、361624完整diff、HQ既存评论、试合并与配置输出；
+没有重跑567测试、R3(c)清单或实际构建；未读取新的QB数据，未触碰其他项目。
+停止报告生成时JS模板中的未转义反引号触发SyntaxError，命令尚未执行；
+使用本次一次准备修正，仅修交付脚本引用方式，不重跑配置。原文和修正说明见
+delivery-preparation-error.txt、delivery-preparation-fix.diff（编排层差异，不冒称磁盘旧脚本）。
+资源4GiB/swap0/CPU200%/Nice19/idle串行，峰值2,220,883,968 B，
+max/OOM/oom_kill均0；看门狗快照无低于6GiB样本。
+
+交付补记：新增的ASCII断言把英文标题的U+2014破折号拒绝，发生第二次准备错误；未修改草稿、未修断言、未重跑。原英文/禁止引用门禁结果保留，新检查不能称通过。只保全现有证据并提交停止报告。原文见[delivery-second-STOP.txt](../../tools/bolt/results/hq-review-361395/round3/resume3/delivery-second-STOP.txt)。
