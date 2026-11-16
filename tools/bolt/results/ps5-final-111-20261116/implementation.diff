@@ -1,0 +1,39 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index cb841b445c1b..2ad38975b10d 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -302,8 +302,8 @@ def call(argv, log, cwd=None, timeout=300):
+         with log.open('wb') as output:
+             check_cancel()
+             # All child processes must be started through call(): it resets
+-            # SIGCHLD and reaps children itself; an inherited SIG_IGN would
+-            # otherwise turn failed exit codes into 0.
++            # SIGCHLD and reaps children itself; an inherited SIG_IGN can
++            # otherwise discard exit status and defeat reliable failure reporting.
+             # Signal handlers must not raise while _SPAWNING is set; otherwise
+             # the forked child would be unknown to call() and could be orphaned.
+             # Publish the SID before honoring a deferred second signal.
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 43f0f5d2e6aa..ce6284ae26e5 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -86,8 +86,8 @@ BuildRequires: sed
+ %endif
+ BuildRequires: ninja
+ %ifarch x86_64
+-%if %{llvm_bolt_enabled}
+ BuildRequires: python3 >= 3.9
++%if %{llvm_bolt_enabled}
+ BuildRequires: xz elfutils
+ %endif
+ %endif
+@@ -422,6 +422,9 @@ cmake \
+     -DBUILD_SHARED_LIBS=OFF \
+     -DLLVM_TOOL_LLVM_DRIVER_BUILD=OFF \
+ %else
++    -DTIZEN_HYBRID_LINK=OFF \
++    -UBUILD_SHARED_LIBS \
++    -ULLVM_TOOL_LLVM_DRIVER_BUILD \
+     -DLLVM_LINK_LLVM_DYLIB=OFF \
+     -DCLANG_LINK_CLANG_DYLIB=OFF \
+ %endif

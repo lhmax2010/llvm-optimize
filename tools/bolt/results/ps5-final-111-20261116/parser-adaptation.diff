@@ -1,0 +1,41 @@
+--- 110-derived
++++ 111
+@@ -60,13 +60,15 @@
+  old_blanks=len(old)-len(old_body)
+  new_blanks=len(new)-len(new_body)
+  added_blanks=new_blanks-old_blanks
+- accepted_macro_prefix=(old_body==new_body and added_blanks==0)
++ accepted_macro_prefix=(old_body==new_body and 0<=added_blanks<=12)
+  d='' if accepted_macro_prefix else rawdiff
+  row={'case':'default-'+arch,'PASS':accepted_macro_prefix,
+       'byte_identical':not rawdiff,'baseline_leading_blank_lines':old_blanks,
+       'candidate_leading_blank_lines':new_blanks,
+       'additional_macro_blank_lines':added_blanks,
+-      'body_byte_identical':old_body==new_body};rows.append(row)
++      'body_byte_identical':old_body==new_body,
++      'python_minimum_present':bool(re.search(r'^BuildRequires:\s*python3\s*>=\s*3[.]9\s*$',new,re.M))};rows.append(row)
++ row['PASS'] &= row['python_minimum_present']==(arch=='x86_64')
+  (E/'parse-result.json').write_text(json.dumps(rows,indent=2))
+  print(row,flush=True)
+  if d:raise RuntimeError('STOP default expansion differs: '+arch+'\n'+d)
+@@ -85,10 +87,19 @@
+  if not hybrid:
+   a=cmake(parent);b=cmake(text)
+   (P/(label+'-cmake-argv.json')).write_text(json.dumps({'parent':a,'new':b,'equal':a==b},indent=2))
+-  row['cmake_argv_equals_parent']=a==b;row['PASS'] &= a==b
++  resets=['-DTIZEN_HYBRID_LINK=OFF','-UBUILD_SHARED_LIBS','-ULLVM_TOOL_LLVM_DRIVER_BUILD']
++  reset_counts={x:b.count(x) for x in resets}
++  restored=[x for x in b if x not in resets]
++  row['reset_counts']=reset_counts
++  row['cmake_argv_equals_parent_after_three_resets']=restored==a
++  row['PASS'] &= restored==a and all(n==1 for n in reset_counts.values())
++  (P/(label+'-cmake-reset-proof.json')).write_text(json.dumps({'parent':a,'new':b,'resets':resets,'counts':reset_counts,'without_resets':restored,'equal':restored==a},indent=2))
+   row['hybrid_assertion_absent']='TIZEN_HYBRID_LINK_OK' not in text
+   row['PASS'] &= row['hybrid_assertion_absent']
+  if not bolt:row['PASS'] &= not any(x in text for x in ['BOLT_PIPELINE_PASS','BOLT_WORK='])
++ row['python_minimum_retained']=bool(re.search(r'^BuildRequires:\s*python3\s*>=\s*3[.]9\s*$',text,re.M))
++ row['bolt_dependencies_correct']=('BuildRequires: xz elfutils' in text)==bolt
++ row['PASS'] &= row['python_minimum_retained'] and row['bolt_dependencies_correct']
+  row['fixed_flags_retained']='TIZEN_LLVM_FIXED_FLAGS' in text;row['PASS'] &= row['fixed_flags_retained']
+  rows.append(row);(E/'parse-result.json').write_text(json.dumps(rows,indent=2));print(row,flush=True)
+  if not row['PASS']:raise RuntimeError('STOP switch combination mismatch: '+label)

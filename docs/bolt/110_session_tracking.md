@@ -1,3 +1,5 @@
+> 111号已按已有证据补全本报告，见文末。原110号交付STOP原文保留；未重跑110号测试。
+
 # 110：session 跟踪（交付准备第二次错误 STOP）
 
 **STOP：完整报告生成遇到第二次准备错误，按规则未修正或重跑。产品修改、测试、本地候选已完成，未推sandbox。**
@@ -48,3 +50,44 @@
 [raw索引](../../tools/bolt/results/session-tracking-110-20261116/RAW_LINKS.md)。
 
 110 已结束 2026-11-16T09:43:26-08:00 status=STOP（交付准备错误；产品647/647）
+
+## 111号补全：110号已有证据的完整对照
+
+本节按111号授权照录110号现有证据，不重新运行110号测试，不改变原STOP记录。
+110号候选56902c58及647/647通过是原有事实；当时停止的是完整报告生成流程，
+不是产品门禁。下面补足逐项测试和接口变更的可追溯说明。
+
+| 项目 | 110号已执行的核对 | 结果 |
+|---|---|---|
+| F1 /proc SID | proc_stat读取session；跨进程组、同SID的5个进程（3个PGID） | 正确纳入；其他SID排除 |
+| F1失败/超时 | leader非零退出或超时，重复扫描并杀session成员 | 原错误保留，所有记录的成员不再存活 |
+| F1信号 | TERM/INT/HUP的第一次取消与第二次信号，各一个跨组场景 | 第一次143/130/129；第二次按相应信号终止；全部session成员清理 |
+| F1成功等待 | 长期跨组后代、短期跨组后代 | 长期等至少10秒后R1失败并清理；短期约2秒自行结束后成功 |
+| F1并发成员 | 下一次扫描才出现的新PID | 重新扫描发现并SIGKILL，不只处理第一次快照 |
+| F1边界 | Z/X、Z且多线程、记录消失、权限错误 | 与既有存活规则一致；不可读fail closed |
+| F1 setsid | 故意逃离SID的夹具 | helper未跟踪该PID；作为已知限制记录，由测试自身清理，不算产品清理成功 |
+| F2 | 成功/失败两条路径观察reap_child入口 | _ACTIVE_GROUP均已为None |
+| F3 | 专用异常改文案；普通GateError仿旧超时文字；OSError | 只按类型识别R1；其他错误仍失败，不误分类 |
+| F4 | 显式展开install-post宏，6个检查器正反例 | 开启时post/PASS/disk各一次；关闭时均为零；缺失、重复或关闭仍含post均拒绝 |
+| r14 | 原始r1.py短期/长期后代，r1sig.py二次信号 | 三例survivors=0 |
+
+完整35项逐条输出、原PID/PGID/SID记录、既有612项结果均已在原证据中：
+- [35项输出](../../tools/bolt/results/session-tracking-110-20261116/sessions110-output.txt)
+- [会话与r14观察](../../tools/bolt/results/session-tracking-110-20261116/session-observations.json)
+- [45项回归观察](../../tools/bolt/results/session-tracking-110-20261116/regression109-observations.json)
+- [567项逐套件结果](../../tools/bolt/results/session-tracking-110-20261116/test-results.json)
+- [宏展开和解析目录索引](../../tools/bolt/results/session-tracking-110-20261116/RAW_LINKS.md)
+
+实现保留旧live_group_members/wait_group_exit函数以兼容既有调用者；产品call的
+正常等待、失败清理和第二信号路径改用session API。_ACTIVE_GROUP保留变量名，
+含义改为尚未回收leader的SID。普通session清理截止10秒，紧急第二信号重扫截止1秒；
+不可杀或扫描异常不构成完整清理保证。setsid逃离不在本模型内，没有声称cgroup隔离。
+原spawn临界区、暂存第二信号、SIGCHLD恢复和转换器实现未改变。
+
+测试适配仅迁移mock接口/假记录SID、对应错误名称及同一语句的断点行号；
+新负例保证类型判断与post宏检查可实际失败。原始评审和探针文件保持原样，
+r14的session原型只作参考；没有以原型替代产品，也没有运行r14的ninja构建。
+
+默认三架构展开与92775bc3包括前导空行都相同；8组平台RPM4.14解析全通过。
+这些证据不证明hybrid关闭/BOLT开启的实际构建，也不证明本候选的整包字节身份。
+110号没有推sandbox：结束远端仍92775bc3。后续产品工作由111号另行记录。

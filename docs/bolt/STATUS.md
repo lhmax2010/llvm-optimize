@@ -1612,3 +1612,11 @@ Toolchain保留ARM日志仍安装clang-accel 0.4-1.1，不能证明使用新LLVM
 本地单个累积候选56902c58ba8fc2d3a4216e69ed3acb3d2cb6f8a3，tree4b528fcbb1dfbd782d091c791e270e56ca6addf3，父61ef5d31；独立游离树干净。sandbox仍92775bc36de729106b502c4e5967a5af0e4f4033，未推送。setsid逃离仍为已知限制，其他评审项延后。
 
 第一次测试文件shell引号准备错误已修正；全量通过并生成候选后，报告JS模板中的Markdown反引号触发第二次SyntaxError，按规则STOP，未修正/重跑，只交付现有证据及停止报告。无产品FAIL、OOM或看门狗触发。候选待PM阅读评审后授权，不自动推sandbox。详见[110号](110_session_tracking.md)。
+
+## 2026-11-16：111号 P1/P2/S2（展开差异STOP，未推）
+
+110号报告已按已有647/647及session证据补全，未为补文档重跑，旧STOP保留。111号从56902c58在新独立游离树temp/ps5-final-111-20261116/source实施P1三个复位参数、P2 python最低版本移出BOLT条件、S2注释；helper AST不变，两文件未提交。
+
+默认x86_64相对a061f4e4除允许的12个前导空行外，P2把python3 >= 3.9前一条空行移到后面，正文不再逐字节相同。按PM明确门禁STOP，不按语义相同豁免。ARM/其余组合、647+新增测试、新候选、sandbox和Q6更新均未执行；本轮unittest 0项，准备修正0次。sandbox前后仍92775bc36de729106b502c4e5967a5af0e4f4033。
+
+未构建/访问QB/写Gerrit；OOM0，看门狗未触发。第一个信号在排空期间的响应优化及hybrid关/BOLT开实际构建认证继续延后。详见[111号](111_ps5_final_fixes.md)。
