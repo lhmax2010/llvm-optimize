@@ -93,3 +93,26 @@ MemAvailable低于6GiB停止自身的看门狗已启用，现场未触发；没�
 [全部证据索引](../../tools/bolt/results/ps5-final-109-20261116/RAW_LINKS.md)。
 
 本次只读核对失败原因后停止，没有修正产品、没有重跑。
+
+## 6. 109号续：RPM兼容块已替换，第二次准备错误STOP
+
+PM授权把expr定义替换为明确的0/1派生宏块；已逐字采用，其余产品位置不改。
+[授权替换diff](../../tools/bolt/results/ps5-final-109-20261116/resume/rpm414-authorized-fix.diff)、
+[八处使用点的x86_64条件核对](../../tools/bolt/results/ps5-final-109-20261116/resume/effective-macro-guards.json)。
+设计不变：总开关、两个独立单项，Part3/4不受影响。
+
+默认x86_64候选已能被RPM解析，首次比较仅显示开头新增12个空行，
+对应2个bcond与10行派生宏块。原比较脚本未实现PM授权的宏块例外，因此使用本次一次准备修正：
+仅拟匹配12个新增前导换行，之后仍逐字节比较；不做全局空白归一化。
+原错误与修正diff均保存，新结果写parse-rerun，没有覆盖parse中的首轮结果。
+
+但修正脚本把换行写成了字面反斜杠+n，第二次比较再次误报相同的12个空行。
+这是我的第二次准备错误，不是新产品差异。按PM规则立即STOP，未修正、未重跑。
+[错误代码与原文](../../tools/bolt/results/ps5-final-109-20261116/resume/second-preparation-STOP.txt)、
+[准备修正diff](../../tools/bolt/results/ps5-final-109-20261116/resume/preparation-fix.diff)。
+
+当前状态：默认展开比较未完成；ARM、关闭总开关与父cmake参数比较、单项组合、五项解析、
+567项+R1+评审回归均未完成/未运行（本续跑unittest 0项）。未生成新LLVM提交，
+原a061f4e4工作树未改，新独立工作树保留未提交修改；未推sandbox，未更新回复文件。
+只读远端结果见sandbox-readonly.stdout，仍a061f4e415a895412516ffe076084f407f2d70a8。
+没有Gerrit写入、构建、QB访问或对另一项目的操作。只保全现场和交付停止报告。

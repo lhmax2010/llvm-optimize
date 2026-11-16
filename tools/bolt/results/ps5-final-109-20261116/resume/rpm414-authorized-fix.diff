@@ -1,0 +1,21 @@
+--- before
++++ after
+@@ -6,8 +6,16 @@
+ %else
+ %bcond_with clang_bolt
+ %endif
+-%global llvm_hybrid_enabled %{expr:%{with llvm_speedup} && %{with hybrid_link}}
+-%global llvm_bolt_enabled %{expr:%{with llvm_speedup} && %{with clang_bolt}}
++%global llvm_hybrid_enabled 0
++%global llvm_bolt_enabled 0
++%if %{with llvm_speedup}
++%if %{with hybrid_link}
++%global llvm_hybrid_enabled 1
++%endif
++%if %{with clang_bolt}
++%global llvm_bolt_enabled 1
++%endif
++%endif
+ 
+ %define keepstatic 1
+ 

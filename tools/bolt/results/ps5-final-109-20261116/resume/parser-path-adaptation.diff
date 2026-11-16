@@ -1,0 +1,19 @@
+--- original
++++ resume
+@@ -41,14 +41,14 @@
+  diff=''.join(difflib.unified_diff(a.splitlines(True),b.splitlines(True),'baseline','candidate'))
+  (P/(label+'.diff')).write_text(diff);return diff
+ for arch in ['x86_64','armv7l','aarch64']:
+- old=expand('old-'+arch,E/'baseline-spec.txt',arch)
++ old=expand('old-'+arch,E.parent/'baseline-spec.txt',arch)
+  new=expand('default-'+arch,S/'packaging/llvm.spec',arch)
+  d=difference('default-'+arch,old,new)
+  row={'case':'default-'+arch,'PASS':not d,'byte_identical':not d};rows.append(row)
+  (E/'parse-result.json').write_text(json.dumps(rows,indent=2))
+  print(row,flush=True)
+  if d:raise RuntimeError('STOP default expansion differs: '+arch+'\n'+d)
+-parent=expand('parent',E/'parent-spec.txt')
++parent=expand('parent',E.parent/'parent-spec.txt')
+ for label,opts,rollback,hybrid,bolt in [
+  ('total-off',['llvm_speedup'],False,False,False),
+  ('hybrid-off',['hybrid_link'],False,False,True),
