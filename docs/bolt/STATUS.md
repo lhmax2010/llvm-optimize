@@ -1636,3 +1636,5 @@ Q6 FINAL已更新并保留-v2：关的是hybrid/BOLT，ThinLTO/MLGO、固定参�
 ## 2026-11-16：102+112启动检查
 
 102步骤1准备STOP：systemd默认工作目录导致STATUS相对路径失效，修正后又遇README.md缺失/rg不可用，按每步一次准备修正限额停止。未开始产品检查，不判H2产品失败。依赖的步骤2、3、6跳过；112步骤5因没有步骤2的新T产物跳过。独立步骤4等待24GiB内存准入及其他条件，截止2026-11-18 08:30 Asia/Shanghai。当前仅轻量读盘点和停止报告，无构建、重放、BOLT、QB或Gerrit写入。见[102号](102_ps5_night_validation.md)。
+
+112进度补记：三个Downloads输入已只读核对大小/SHA，全部符合；尚未复制、应用补丁或配置。最近MemAvailable约16GiB，未达24GiB，等待服务持续每30分钟检查；截止前不提前记SKIPPED。步骤5因102步骤2无新T产物已跳过。见[112号等待记录](112_361624_combined_validation.md)。
