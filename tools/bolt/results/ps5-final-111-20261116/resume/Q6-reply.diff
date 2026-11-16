@@ -1,0 +1,22 @@
+--- FINAL-v2
++++ FINAL-current
+@@ -54,8 +54,16 @@
+ 
+ ## Q6 — Disabling the optimizations
+ 
+-Done in PS5. The llvm_speedup switch is enabled by default. Setting it to disabled with --without llvm_speedup disables both hybrid linkage (Part 1) and the BOLT pipeline (Part 2), restoring the parent linking configuration and ordinary clang. The installed AddLLVM.cmake and AddClang.cmake texts still include the conditional support, so this does not restore the entire parent tree.
++Done in PS5. The llvm_speedup switch is enabled by default. Disabling it turns off hybrid linkage (Part 1) and the BOLT pipeline (Part 2), restoring the parent linking configuration and ordinary clang. ThinLTO/MLGO, fixed compilation flags and native archive conversion remain enabled. The fixed flags filter project options that clang does not accept; the converter and its safety checks remain independent of the two switches. The installed AddLLVM.cmake and AddClang.cmake texts still contain the conditional hybrid support, so disabling the switch does not restore the entire parent tree.
+ 
+-Part 3 remains enabled to keep the fixed compilation flags and archive policy, including filtering project options that clang does not accept. Part 4 remains enabled because its converter checks protect input validity independently of either optimization.
++In the project's build configuration, add this in the Macros: section:
+ 
+-The independent switches are hybrid_link and clang_bolt: --without hybrid_link disables only hybrid linkage, and --without clang_bolt disables only BOLT. BOLT can remain enabled with hybrid linkage disabled. Disabling llvm_speedup overrides both individual switches.
++    %_without_llvm_speedup 1
++
++For a local GBS build, use:
++
++    gbs build --define '_without_llvm_speedup 1'
++
++To restore the default, remove the macro definition. Setting it to 0 does not restore the default: the presence of the _without_ macro disables the feature.
++
++The individual switches are hybrid_link and clang_bolt. Define _without_hybrid_link or _without_clang_bolt in the same way to disable that part alone. Disabling llvm_speedup overrides both individual switches. The hybrid-linkage-off/BOLT-on combination is supported by the configuration but has not yet been certified by an actual build.

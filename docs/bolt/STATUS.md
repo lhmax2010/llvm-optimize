@@ -1620,3 +1620,14 @@ Toolchain保留ARM日志仍安装clang-accel 0.4-1.1，不能证明使用新LLVM
 默认x86_64相对a061f4e4除允许的12个前导空行外，P2把python3 >= 3.9前一条空行移到后面，正文不再逐字节相同。按PM明确门禁STOP，不按语义相同豁免。ARM/其余组合、647+新增测试、新候选、sandbox和Q6更新均未执行；本轮unittest 0项，准备修正0次。sandbox前后仍92775bc36de729106b502c4e5967a5af0e4f4033。
 
 未构建/访问QB/写Gerrit；OOM0，看门狗未触发。第一个信号在排空期间的响应优化及hybrid关/BOLT开实际构建认证继续延后。详见[111号](111_ps5_final_fixes.md)。
+
+
+## 2026-11-16：111号续（PASS，sandbox已更新）
+
+PM裁决原P2空行位置变化PASS；从本任务起，默认RPM展开双方删除全部空行后逐字节比较，必须记录空行数量和位置/原始diff，不豁免非空内容。产品P1/P2/S2未再修改；三架构默认展开均通过，空行130→142（x86）、129→141（两ARM）。
+
+新单个累积候选/sandbox=378f8d5c94aeadd2a8618d04ad39a531529c726c，tree=ad3898ff67a65939778d3831090d4270ac771879，父61ef5d31。647项既有+14项P1/P2/S2与8组合检查共661/661重新运行通过；原五项平台解析通过。总关的主cmake argv相对父提交仅多P1三个复位参数，固定参数块保留；python3 >= 3.9在全部x86组合保留，xz/elfutils仍仅BOLT需要。严格以92775bc3为lease推送一次，ls-remote确认。
+
+Q6 FINAL已更新并保留-v2：关的是hybrid/BOLT，ThinLTO/MLGO、固定参数和转换器仍开；Macros:部分写%_without_llvm_speedup 1，或gbs build --define '_without_llvm_speedup 1'；恢复需删除宏，不能设0。hybrid关/BOLT开实际构建认证继续延后，排空期间首信号响应等延后项不改。回复仅草稿，未在Gerrit发布。110报告补全已完成，历史STOP保留。
+
+无新增STOP或准备修正，无OOM/看门狗触发；未构建/QB/重放/BOLT/操作另一项目。详见[111号续](111_ps5_final_fixes.md)及[本轮证据](../../tools/bolt/results/ps5-final-111-20261116/resume/README.md)。

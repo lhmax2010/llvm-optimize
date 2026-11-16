@@ -1,0 +1,31 @@
+--- 111-original
++++ 111-resume
+@@ -55,18 +55,18 @@
+  old=expand('old-'+arch,E/'baseline-spec.txt',arch)
+  new=expand('default-'+arch,S/'packaging/llvm.spec',arch)
+  rawdiff=difference('default-'+arch,old,new)
+- old_body=old.lstrip(chr(10))
+- new_body=new.lstrip(chr(10))
+- old_blanks=len(old)-len(old_body)
+- new_blanks=len(new)-len(new_body)
+- added_blanks=new_blanks-old_blanks
+- accepted_macro_prefix=(old_body==new_body and 0<=added_blanks<=12)
++ old_lines=old.splitlines(True);new_lines=new.splitlines(True)
++ old_blanks=[i+1 for i,x in enumerate(old_lines) if not x.strip()]
++ new_blanks=[i+1 for i,x in enumerate(new_lines) if not x.strip()]
++ old_body=''.join(x for x in old_lines if x.strip())
++ new_body=''.join(x for x in new_lines if x.strip())
++ accepted_macro_prefix=old_body==new_body
+  d='' if accepted_macro_prefix else rawdiff
+  row={'case':'default-'+arch,'PASS':accepted_macro_prefix,
+-      'byte_identical':not rawdiff,'baseline_leading_blank_lines':old_blanks,
+-      'candidate_leading_blank_lines':new_blanks,
+-      'additional_macro_blank_lines':added_blanks,
+-      'body_byte_identical':old_body==new_body,
++      'byte_identical':not rawdiff,'baseline_blank_line_positions':old_blanks,
++      'candidate_blank_line_positions':new_blanks,
++      'baseline_blank_count':len(old_blanks),'candidate_blank_count':len(new_blanks),
++      'nonblank_byte_identical':old_body==new_body,
+       'python_minimum_present':bool(re.search(r'^BuildRequires:\s*python3\s*>=\s*3[.]9\s*$',new,re.M))};rows.append(row)
+  row['PASS'] &= row['python_minimum_present']==(arch=='x86_64')
+  (E/'parse-result.json').write_text(json.dumps(rows,indent=2))
