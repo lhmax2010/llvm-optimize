@@ -1631,3 +1631,8 @@ PM裁决原P2空行位置变化PASS；从本任务起，默认RPM展开双方删
 Q6 FINAL已更新并保留-v2：关的是hybrid/BOLT，ThinLTO/MLGO、固定参数和转换器仍开；Macros:部分写%_without_llvm_speedup 1，或gbs build --define '_without_llvm_speedup 1'；恢复需删除宏，不能设0。hybrid关/BOLT开实际构建认证继续延后，排空期间首信号响应等延后项不改。回复仅草稿，未在Gerrit发布。110报告补全已完成，历史STOP保留。
 
 无新增STOP或准备修正，无OOM/看门狗触发；未构建/QB/重放/BOLT/操作另一项目。详见[111号续](111_ps5_final_fixes.md)及[本轮证据](../../tools/bolt/results/ps5-final-111-20261116/resume/README.md)。
+
+
+## 2026-11-16：102+112启动检查
+
+102步骤1准备STOP：systemd默认工作目录导致STATUS相对路径失效，修正后又遇README.md缺失/rg不可用，按每步一次准备修正限额停止。未开始产品检查，不判H2产品失败。依赖的步骤2、3、6跳过；112步骤5因没有步骤2的新T产物跳过。独立步骤4等待24GiB内存准入及其他条件，截止2026-11-18 08:30 Asia/Shanghai。当前仅轻量读盘点和停止报告，无构建、重放、BOLT、QB或Gerrit写入。见[102号](102_ps5_night_validation.md)。
