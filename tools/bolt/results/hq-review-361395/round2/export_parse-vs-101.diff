@@ -1,0 +1,69 @@
+--- 101/export_parse.py
++++ 104/export_parse.py
+@@ -1,7 +1,7 @@
+ from pathlib import Path
+ import subprocess,json,re,os,hashlib,difflib,datetime
+ B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');W=B.parent/'llvm-optimize';E=Path(__file__).resolve().parent
+-N=W/'temp/hardening-ps4-20261114/source';X=W/'temp/review-r11-101-exports'
++N=W/'temp/hq-review-104-20261116/candidate';X=W/'temp/hq-review-104-20261116/exports'
+ R=W/'temp/review-20261103/config-root/local/BUILD-ROOTS/scratch.x86_64.0'
+ M=B/'tools/bolt/results/fifth-review-20261111/rerun4/parse'
+ def now():return datetime.datetime.now().astimezone().isoformat(timespec='seconds')
+@@ -82,6 +82,11 @@
+    norm=norm.replace(str(src),'EXPORT_SOURCE').replace(str(P/side),'PARSE_TOPDIR')
+    if side=='new':
+     norm=''.join(line.replace(newpatch,oldpatch) if re.match(r'^Patch7\s*:',line) or line.strip()=='# '+newpatch else line for line in norm.splitlines(True))
++   if side=='new':
++    removed=re.findall(r' --debugfiles-list "[^"]+/debugfiles.list"',norm)
++    (E/(tag+'-explicit-list.json')).write_text(json.dumps(removed))
++    assert len(removed)<=1,(tag,removed)
++    norm=re.sub(r' --debugfiles-list "[^"]+/debugfiles.list"','',norm)
+    outputs[side]=norm
+    results.append({'case':case,'side':side,'patches':patchlines,'nobuild_rc':0,'parse_rc':0})
+   diff=''.join(difflib.unified_diff(outputs['old'].splitlines(True),outputs['new'].splitlines(True),fromfile='old-normalized',tofile='new-normalized'))
+@@ -90,14 +95,36 @@
+  (E/(label+'-five-parse-summary.json')).write_text(json.dumps({'PASS':True,'paired_cases':5,'parses':results,'normalization':'VCS metadata already checked by export gate; _sourcedir/_topdir execution paths; only Patch7 filename in expanded program'},indent=2)+'\n')
+  print(label,'5 paired parses PASS',flush=True)
+ 
++
+ if __name__=='__main__':
+  X.mkdir(exist_ok=False)
+- candidate=json.loads((E/'hardening-commit.json').read_text())['sha']
+- ps4=json.loads((E/'PS4-identity.json').read_text())['sha']
+- for label,rev in [('hardening',candidate),('PS4',ps4)]:
+-  out=X/label
+-  run(label+'-export',['gbs','export','--commit',rev,'--outdir',str(out),'--outdir-directly',str(N)])
+- pa,pb=compare('PS4',X/'hardening',X/'PS4')
+- parse_pair('PS4',X/'hardening',X/'PS4',pa,pb)
+- (E/'export-parse-PASS.json').write_text(json.dumps(dict(PASS=True,time=now(),paired_cases=5),indent=2)+'\n')
+- print('101步骤4 已结束',now(),'status=PASS',flush=True)
++ rev=json.loads((E/'candidate-identity.json').read_text())['sha']
++ for label,commit in [('HQ','e9f16ee3c078f9a5ae563ee01e52ace27b28da4d'),('candidate',rev)]:
++  run(label+'-export',['gbs','export','--commit',commit,'--outdir',str(X/label),'--outdir-directly',str(N)])
++ a=X/'HQ';b=X/'candidate'
++ pa=next(a.glob('0008-*.patch'));pb=next(b.glob('0008-*.patch'))
++ assert {p.name for p in a.iterdir()}=={p.name for p in b.iterdir()}
++ rows=[]
++ for f in sorted(a.iterdir()):
++  other=b/f.name;aa=f.read_bytes();bb=other.read_bytes();kind='identical'
++  if aa!=bb:
++   if f.name in ['llvm.spec','libcxx-runtimes.spec']:
++    def norm(x):
++     x=re.sub(r'^VCS\s*:.*$', 'VCS: ID',x,flags=re.M)
++     return x.replace(' --debugfiles-list "%{_builddir}/%{buildsubdir}/debugfiles.list"','')
++    assert norm(aa.decode())==norm(bb.decode()),('unexpected spec',f.name)
++    kind='VCS + approved H3 explicit debugfiles.list (llvm.spec only)'
++   elif f.name in ['clang-bolt-helper.py','llvm-static-archives-native.py']:
++    for commit,payload in [('e9f16ee3',aa),(rev,bb)]:
++     obj=subprocess.check_output(['git','-C',str(N),'show',commit+':packaging/'+f.name])
++     assert payload==obj,(f.name,commit,'export object mismatch')
++    kind='exact reviewed Git source objects'
++   elif f.name==pa.name:
++    assert aa[aa.index(b'diff --git '):]==bb[bb.index(b'diff --git '):]
++    kind='message only; code body identical'
++   else:raise AssertionError(('unexpected export difference',f.name))
++   (E/('export-'+f.name+'.diff')).write_text(''.join(difflib.unified_diff(aa.decode().splitlines(True),bb.decode().splitlines(True),fromfile='HQ/'+f.name,tofile='candidate/'+f.name)))
++  rows.append({'file':f.name,'old_sha256':digest(f),'new_sha256':digest(other),'category':kind,'bytes':other.stat().st_size})
++ (E/'export-comparison.json').write_text(json.dumps({'PASS':True,'rows':rows},indent=2))
++ parse_pair('HQ-candidate',a,b,pa.name,pb.name)
++ print('104导出与五项解析 已结束',now(),'status=PASS',flush=True)

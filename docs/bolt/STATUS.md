@@ -1505,3 +1505,14 @@ sandbox已从b0c1732c以明确lease更新为 `121b4c23bcd6a9a30b0e277c30e5dc17af
 事实：QB1226850保存日志post门禁通过且optional可用；普通Ninja实际-j6，父PS10已是该默认；关闭BOLT不回退Part1/3/4；plugin配置实际导出clang符号但不混入libLLVM.so/libclang-cpp.so。当前accel包解包size/setup时间UNKNOWN，BOLT记录330s主窗口+15s后post、最大已记录作用域5,028,364,288B，不称连续峰值。BOLT告警归因已为99号5A/5B，不称全部无害。
 
 11份英文草稿通过对外门禁，未发布。H2临界区延后二次信号候选与Q3并行策略需PM裁决；建议冻结合并5项+PS4后，一轮QB(T/D各3架构)+一轮本地T/D并补定向测试/真实转换，当前不执行。REST404且无已有HTTP凭据，inline时间/线程/unresolved UNKNOWN，SSH原文完整保留；没有STOP。草案生成器位置假设准备错误修正1次，原文/diff留存。
+
+## 2026-11-16：104号 HQ补丁与候选（STOP，未推LLVM）
+
+361395 PS4=e9f16ee3，父61ef5d31；PS3=ecb2dec7，父13c3e223。tree均b2e8af24，说明相同，但用户补充要求父提交也相同，故STOP，不自行依据Gerrit NO_CHANGE豁免。新增评论指向361624/da885208（WIP后续工具拆包），只读评审，未并入；后授权试合并因门禁STOP未执行。
+
+补充到达前，已在独立工作树生成累积候选3a1b0e2970d6ba4d09d7c357379723158a78ac56，tree50ff47dd6b712f4aab83e7825993a2a97cba8f07，父61ef5d31；内容为HQ PS4+Part4+PM批准H1–H5，不用pthread_sigmask。候选最终138+30+393=561/561通过；helper旧SIGCHLD期望按H1新约定修改一条并全量重跑，原FAIL保留。HQ旧适用套件102/103（/proc ProcessLookupError），helper393/393，定向7/30，原始失败未改HQ。
+
+导出比较另有STOP：两次gbs export rc0但为native archive，无0008，比较驱动StopIteration，五项解析NOT RUN。一次定向脚本转义准备修正已用，未自行调整导出环境。看门狗存在早期采样缺口，现场无OOM，不能称全程监测通过。
+
+候选不是已放行PS5；102与旧本地PS4继续暂缓。无Gerrit写入、sandbox推送、QB访问或完整构建。12份英文回复仅草稿。待PM裁决父门禁/导出修正及补验后，再继续候选和361624试合并。
+详见[104号](104_hq_patch_review_merge.md)、[证据索引](../../tools/bolt/results/hq-review-361395/round2/RAW_LINKS.md)。

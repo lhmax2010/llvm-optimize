@@ -1,0 +1,278 @@
+test_H1_cancel (__main__.Requests.test_H1_cancel) ... FAIL
+test_H1_command_failure (__main__.Requests.test_H1_command_failure) ... FAIL
+test_H1_keyboardinterrupt (__main__.Requests.test_H1_keyboardinterrupt) ... FAIL
+test_H1_popen_failure (__main__.Requests.test_H1_popen_failure) ... FAIL
+test_H1_success_handler (__main__.Requests.test_H1_success_handler) ... FAIL
+test_H1_success_ignored (__main__.Requests.test_H1_success_ignored) ... FAIL
+test_H1_systemexit (__main__.Requests.test_H1_systemexit) ... FAIL
+test_H1_timeout (__main__.Requests.test_H1_timeout) ... FAIL
+test_H2_child_signal_mask_unchanged (__main__.Requests.test_H2_child_signal_mask_unchanged) ... ok
+test_H2_first_signal_spawn_success (__main__.Requests.test_H2_first_signal_spawn_success) ... ok
+test_H2_second_signal_spawn_failure (__main__.Requests.test_H2_second_signal_spawn_failure) ... FAIL
+test_H2_second_signal_spawn_success (__main__.Requests.test_H2_second_signal_spawn_success) ... FAIL
+test_H3_explicit_list_nonstandard_layout (__main__.Requests.test_H3_explicit_list_nonstandard_layout) ... ERROR
+test_H3_missing_list (__main__.Requests.test_H3_missing_list) ... ok
+test_H3_release_no_list_required_by_gate (__main__.Requests.test_H3_release_no_list_required_by_gate) ... ok
+test_H3_spec_explicit_list (__main__.Requests.test_H3_spec_explicit_list) ... FAIL
+test_H3_wrong_member (__main__.Requests.test_H3_wrong_member) ... ok
+test_H4_empty_first_table_rejected (__main__.Requests.test_H4_empty_first_table_rejected) ... FAIL
+test_H4_second_nonempty_table_rejected (__main__.Requests.test_H4_second_nonempty_table_rejected) ... FAIL
+test_H4_single_empty_table_accepted (__main__.Requests.test_H4_single_empty_table_accepted) ... ok
+test_H4_valid_longname_resolves (__main__.Requests.test_H4_valid_longname_resolves) ... ok
+test_H5_cancel (__main__.Requests.test_H5_cancel) ... FAIL
+test_H5_failure (__main__.Requests.test_H5_failure) ... FAIL
+test_H5_handler (__main__.Requests.test_H5_handler) ... FAIL
+test_H5_help (__main__.Requests.test_H5_help) ... FAIL
+test_H5_keyboardinterrupt (__main__.Requests.test_H5_keyboardinterrupt) ... FAIL
+test_H5_parse_error (__main__.Requests.test_H5_parse_error) ... FAIL
+test_H5_success (__main__.Requests.test_H5_success) ... FAIL
+test_H5_systemexit (__main__.Requests.test_H5_systemexit) ... FAIL
+test_H5_timeout (__main__.Requests.test_H5_timeout) ... FAIL
+
+======================================================================
+ERROR: test_H3_explicit_list_nonstandard_layout (__main__.Requests.test_H3_explicit_list_nonstandard_layout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 82, in test_H3_explicit_list_nonstandard_layout
+    r=h.debugfiles_gate(str(p),{'debug_file':{}})
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-104-20261116/361395-ps4/packaging/clang-bolt-helper.py", line 1057, in debugfiles_gate
+    require(path.is_file(), 'debugfiles list missing: '+str(path))
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-104-20261116/361395-ps4/packaging/clang-bolt-helper.py", line 115, in require
+    raise GateError(message)
+helper104.GateError: debugfiles list missing: /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/hq-tests/debugfiles.list
+
+======================================================================
+FAIL: test_H1_cancel (__main__.Requests.test_H1_cancel)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 42, in test_H1_cancel
+    def test_H1_cancel(self):self.helper_restore('cancel')
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 37, in helper_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H1_command_failure (__main__.Requests.test_H1_command_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 40, in test_H1_command_failure
+    def test_H1_command_failure(self):self.helper_restore('failure')
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 37, in helper_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H1_keyboardinterrupt (__main__.Requests.test_H1_keyboardinterrupt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 44, in test_H1_keyboardinterrupt
+    def test_H1_keyboardinterrupt(self):self.helper_restore('keyboard')
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 37, in helper_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H1_popen_failure (__main__.Requests.test_H1_popen_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 48, in test_H1_popen_failure
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),signal.SIG_IGN)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H1_success_handler (__main__.Requests.test_H1_success_handler)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 39, in test_H1_success_handler
+    def test_H1_success_handler(self):self.helper_restore('success',lambda *_:None)
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 37, in helper_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <function Requests.test_H1_success_handler.<locals>.<lambda> at 0x7a8022b89580>
+
+======================================================================
+FAIL: test_H1_success_ignored (__main__.Requests.test_H1_success_ignored)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 38, in test_H1_success_ignored
+    def test_H1_success_ignored(self):self.helper_restore('success')
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 37, in helper_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H1_systemexit (__main__.Requests.test_H1_systemexit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 43, in test_H1_systemexit
+    def test_H1_systemexit(self):self.helper_restore('systemexit')
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 37, in helper_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H1_timeout (__main__.Requests.test_H1_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 41, in test_H1_timeout
+    def test_H1_timeout(self):self.helper_restore('timeout')
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 37, in helper_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H2_second_signal_spawn_failure (__main__.Requests.test_H2_second_signal_spawn_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 71, in test_H2_second_signal_spawn_failure
+    def test_H2_second_signal_spawn_failure(self):self.spawn_case(failed=True)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 64, in spawn_case
+    self.assertIn('after-signals',events)
+AssertionError: 'after-signals' not found in ['inside', ('terminate', 445154, <Signals.SIGINT: 2>)]
+
+======================================================================
+FAIL: test_H2_second_signal_spawn_success (__main__.Requests.test_H2_second_signal_spawn_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 70, in test_H2_second_signal_spawn_success
+    def test_H2_second_signal_spawn_success(self):self.spawn_case()
+                                                  ^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 64, in spawn_case
+    self.assertIn('after-signals',events)
+AssertionError: 'after-signals' not found in ['inside', ('terminate', 445154, <Signals.SIGINT: 2>)]
+
+======================================================================
+FAIL: test_H3_spec_explicit_list (__main__.Requests.test_H3_spec_explicit_list)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 94, in test_H3_spec_explicit_list
+    self.assertIn('--debugfiles-list "%{_builddir}/%{buildsubdir}/debugfiles.list"',line)
+AssertionError: '--debugfiles-list "%{_builddir}/%{buildsubdir}/debugfiles.list"' not found in '    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || bolt_status_exit $? \\'
+
+======================================================================
+FAIL: test_H4_empty_first_table_rejected (__main__.Requests.test_H4_empty_first_table_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 106, in test_H4_empty_first_table_rejected
+    with self.assertRaisesRegex(ValueError,'duplicate.*long-name'):a.inspect(p)
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_H4_second_nonempty_table_rejected (__main__.Requests.test_H4_second_nonempty_table_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 101, in test_H4_second_nonempty_table_rejected
+    with self.assertRaisesRegex(ValueError,'duplicate.*long-name'):a.inspect(p)
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_H5_cancel (__main__.Requests.test_H5_cancel)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 141, in test_H5_cancel
+    def test_H5_cancel(self):self.converter_restore('cancel')
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 132, in converter_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H5_failure (__main__.Requests.test_H5_failure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 137, in test_H5_failure
+    def test_H5_failure(self):self.converter_restore('failure')
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 132, in converter_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H5_handler (__main__.Requests.test_H5_handler)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 134, in test_H5_handler
+    def test_H5_handler(self):self.converter_restore('success',lambda *_:None)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 132, in converter_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <function Requests.test_H5_handler.<locals>.<lambda> at 0x7a8022b88f40>
+
+======================================================================
+FAIL: test_H5_help (__main__.Requests.test_H5_help)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 135, in test_H5_help
+    def test_H5_help(self):self.converter_restore('help')
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 132, in converter_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H5_keyboardinterrupt (__main__.Requests.test_H5_keyboardinterrupt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 140, in test_H5_keyboardinterrupt
+    def test_H5_keyboardinterrupt(self):self.converter_restore('keyboard')
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 132, in converter_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H5_parse_error (__main__.Requests.test_H5_parse_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 136, in test_H5_parse_error
+    def test_H5_parse_error(self):self.converter_restore('parse')
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 132, in converter_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H5_success (__main__.Requests.test_H5_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 133, in test_H5_success
+    def test_H5_success(self):self.converter_restore('success')
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 132, in converter_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H5_systemexit (__main__.Requests.test_H5_systemexit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 139, in test_H5_systemexit
+    def test_H5_systemexit(self):self.converter_restore('systemexit')
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 132, in converter_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+======================================================================
+FAIL: test_H5_timeout (__main__.Requests.test_H5_timeout)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 138, in test_H5_timeout
+    def test_H5_timeout(self):self.converter_restore('timeout')
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hq-review-361395/round2/test_hq_requests.py", line 132, in converter_restore
+    self.assertEqual(signal.getsignal(signal.SIGCHLD),previous)
+AssertionError: <Handlers.SIG_DFL: 0> != <Handlers.SIG_IGN: 1>
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.579s
+
+FAILED (failures=22, errors=1)

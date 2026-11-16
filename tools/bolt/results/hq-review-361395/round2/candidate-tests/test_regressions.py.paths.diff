@@ -1,0 +1,11 @@
+--- hq-input
++++ candidate-input
+@@ -1,7 +1,7 @@
+ import importlib.util,sys,unittest,subprocess,json,hashlib,shlex,tempfile
+ from pathlib import Path
+ from unittest import mock
+-B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-104-20261116/361395-ps4');E=Path(__file__).parent
++B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-104-20261116/candidate');E=Path(__file__).parent
+ sys.path.insert(0,str(B/'tools'))
+ p=S/'packaging/llvm-static-archives-native.py';sp=importlib.util.spec_from_file_location('llvm_static_archives_source',p);a=importlib.util.module_from_spec(sp);sys.modules[sp.name]=a;sp.loader.exec_module(a)
+ print('CONVERTER_IMPORT',p,'SHA256',hashlib.sha256(p.read_bytes()).hexdigest(),flush=True)

@@ -1,0 +1,1 @@
+Agreed; the next patch set will defer a second cancellation only while spawning, publish the process-group ID, and then handle it immediately. The spawn-exception path is covered too. We will not use parent-side pthread_sigmask: a blocked mask is inherited across fork/exec and would block TERM, INT and HUP in the child. The fix keeps the child mask unchanged.

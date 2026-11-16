@@ -1,0 +1,31 @@
+--- original
++++ explicit-path-api
+@@ -43,22 +43,22 @@
+     def setUp(self):
+         super().setUp();self.ordinary=self.d/'build/clang-bolt/ordinary';self.list=self.d/'debugfiles.list'
+     def test_present(self):
+-        self.list.write_text('/'+h.DEBUG_INSTALL_PATH+'\n');self.assertTrue(h.debugfiles_gate(self.ordinary,{'debug_file':{}})['required'])
++        self.list.write_text('/'+h.DEBUG_INSTALL_PATH+'\n');self.assertTrue(h.debugfiles_gate(self.list,{'debug_file':{}})['required'])
+     def test_dot_prefix(self):
+-        self.list.write_text('./'+h.DEBUG_INSTALL_PATH+'\n');self.assertTrue(h.debugfiles_gate(self.ordinary,{'debug_file':{}})['required'])
++        self.list.write_text('./'+h.DEBUG_INSTALL_PATH+'\n');self.assertTrue(h.debugfiles_gate(self.list,{'debug_file':{}})['required'])
+     def test_absent_entry(self):
+         self.list.write_text('/usr/lib/debug/other\n')
+-        with self.assertRaisesRegex(h.GateError,'omits'):h.debugfiles_gate(self.ordinary,{'debug_file':{}})
++        with self.assertRaisesRegex(h.GateError,'omits'):h.debugfiles_gate(self.list,{'debug_file':{}})
+     def test_missing_list(self):
+-        with self.assertRaisesRegex(h.GateError,'missing'):h.debugfiles_gate(self.ordinary,{'debug_file':{}})
+-    def test_release_skip(self):self.assertFalse(h.debugfiles_gate(self.ordinary,{})['required'])
++        with self.assertRaisesRegex(h.GateError,'missing'):h.debugfiles_gate(self.list,{'debug_file':{}})
++    def test_release_skip(self):self.assertFalse(h.debugfiles_gate(self.list,{})['required'])
+ 
+ 
+ class CliReviewTests(Base):
+     def test_unexpected_post_key(self):
+         root=self.d/'root';(root/'usr/bin').mkdir(parents=True);(root/'usr/bin/clang-22').write_bytes(b'fixture')
+         state=self.d/'state.json';state.write_text('{}')
+-        p=subprocess.run([sys.executable,'-B',h.__file__,'post',str(root),str(state),'ordinary',str(self.d/'post')],capture_output=True,text=True)
++        p=subprocess.run([sys.executable,'-B',h.__file__,'post',str(root),str(state),'ordinary',str(self.d/'post'),'--debugfiles-list',str(self.d/'debugfiles.list')],capture_output=True,text=True)
+         self.assertNotEqual(p.returncode,0);self.assertIn('BOLT_GATE_FAILED: unexpected KeyError:',p.stderr);self.assertIn('Traceback',p.stderr)
+     def test_restore_handlers(self):
+         old={s:signal.getsignal(s) for s in (signal.SIGTERM,signal.SIGHUP)}

@@ -1,0 +1,65 @@
+--- HQ-PS4
++++ candidate
+@@ -3,7 +3,8 @@
+ Combine hybrid LLVM linkage, the guarded BOLT clang pipeline, fixed
+ x86_64 flags and declared archive debug mode in one packaging change.
+ Preserve the reviewed implementation and its controls; the component
+-descriptions below remain unchanged.
++descriptions below retain their reviewed scope. Add archive hardening
++and address signal, archive and post-check review.
+ 
+ [Part 1] cmake: use hybrid LLVM linkage on x86_64
+ 
+@@ -135,15 +136,15 @@
+ the debuglink, with identical generated object files.
+ 
+ Handle SIGTERM, SIGHUP and SIGINT cooperatively and clean up the command
+-process group before exiting; a second signal terminates immediately.
+-Check Python work and late cancellation before reporting success, and
+-decide the exit status only after the original signal handlers are
+-restored: exit with 128+signal (129/130/143) after cancellation.
+-Required BOLT steps, disk diagnosis after a failure, optional disk
+-reports and cache release all pass those statuses through to the RPM
+-build instead of reporting a gate failure. Signals ignored by the caller
+-stay ignored. Label cancellation separately from command errors and
+-timeouts.
++process group before exiting; a second signal is deferred only until the
++new process group is registered, then terminates immediately. Check
++Python work and late cancellation before reporting success, and decide
++the exit status only after the original signal handlers are restored:
++exit with 128+signal (129/130/143) after cancellation. Required BOLT
++steps, disk diagnosis after a failure, optional disk reports and cache
++release all pass those statuses through to the RPM build instead of
++reporting a gate failure. Signals ignored by the caller stay ignored.
++Label cancellation separately from command errors and timeouts.
+ 
+ Freeze all ELF bytes outside the original RUNPATH/RPATH string ranges
+ during path repair. Across strip-all and debuglink, compare all ELF and
+@@ -221,5 +222,27 @@
+ replay and adopted checks; adds the declared debug-info mode with a
+ per-member consistency check.
+ 
++[Part 4] packaging: harden the native archive converter
++
++Validate compressed section headers before using their declared sizes
++as relocation bounds. Accept the known zlib and zstd types and require
++zero or power-of-two alignment.
++
++Require zero-width relocation markers other than R_X86_64_NONE to lie
++inside their target section, and explicitly reject RELR sections in
++archive members.
++
++Log inherited architecture options and signal handler states at startup;
++output failures are ignored. Keep malformed diagnostic environment flags
++nonfatal, and preserve the existing conversion commands, summary fields
++and log lines.
++
++Restore SIGCHLD after helper child cleanup and after every converter
++entry-point exit, including argument parsing. Keep the child signal mask
++unchanged while publishing the process-group ID. Reject a second GNU
++archive long-name table, including an empty first table. Pass the RPM
++debugfiles.list path explicitly and retain the installed identity
++checks.
++
+ Signed-off-by: Hao Lin <hao.lin@samsung.com>
+ Change-Id: I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06

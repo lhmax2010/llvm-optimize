@@ -1,0 +1,26 @@
+--- 103
++++ 104
+@@ -70,5 +70,23 @@
+       "username": "dkson95"
+     },
+     "message": "Patch Set 3: Code-Review+1\n\n(5 comments)\n\nCode-Review +1 on PS3 (ecb2dec) from a build-time and packaging review.\n\nInline comments cover the signal-handling and archive-parser items I consider major. Questions and concerns:\n1. Please confirm QB 1226850 log shows BOLT_POST_GATE_PASS, and that bolt_status_exit / bolt_optional (llvm.spec:578, 600) are in scope inside __spec_install_post (llvm.spec:966).\n2. The BOLT 'jump past end' nop warning: I could not find where it is handled in clang-bolt-helper.py. Is it benign?\n3. mlgo_build_jobs defaults to 6 (llvm.spec:63). Does QuickBuild's -j20/-j32 reach this define? Otherwise the LLVM build runs at -j6.\n4. For issue SRC-Nanjing/llvm#29, please share clang-accel unpacked size and buildroot setup time after hybrid linking (Part 1), plus BOLT stage time and peak disk usage.\n5. With CLANG_PLUGIN_SUPPORT enabled, does export_executable_symbols_for_plugins(clang) (clang/tools/driver/CMakeLists.txt:94) interact with hybrid linking and cause duplicate symbols?\n6. Please confirm that switching bcond_without clang_bolt to bcond_with restores the pre-PS3 build result."
++  },
++  {
++    "timestamp": 1794829674,
++    "reviewer": {
++      "name": "Lin Hao",
++      "email": "hao.lin@samsung.com",
++      "username": "lhmax2025"
++    },
++    "message": "Patch Set 4: Patch Set 3 was rebased on behalf of Lin Hao <hao.lin@samsung.com>\n\nCopied Votes:\n* Code-Review+1 (copy condition: \"**changekind:NO_CHANGE** OR is:MIN\")\n* Verified+1 (copy condition: \"**changekind:NO_CHANGE**\")\n"
++  },
++  {
++    "timestamp": 1794830680,
++    "reviewer": {
++      "name": "Dongkyun Son",
++      "email": "dongkyun.s@samsung.com",
++      "username": "dkson95"
++    },
++    "message": "Patch Set 4: Code-Review+1\n\n(1 comment)"
+   }
+ ]

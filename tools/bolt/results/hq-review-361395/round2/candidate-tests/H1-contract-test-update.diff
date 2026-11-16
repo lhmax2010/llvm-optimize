@@ -1,0 +1,11 @@
+--- prior-contract
++++ PM-H1-restoration-contract
+@@ -131,7 +131,7 @@
+         try:
+             signal.signal(signal.SIGCHLD,signal.SIG_IGN)
+             with self.assertRaisesRegex(h.GateError,'^COMMAND_ERROR: COMMAND_FAILED rc=7:'):h.call(['/bin/sh','-c','exit 7'],self.d/'ignored.log')
+-            self.assertEqual(signal.getsignal(signal.SIGCHLD),signal.SIG_DFL)
++            self.assertEqual(signal.getsignal(signal.SIGCHLD),signal.SIG_IGN)
+             self.assertTrue(json.loads((self.d/'ignored.log.argv.json').read_text())['SIGCHLD_reset_to_default'])
+         finally:signal.signal(signal.SIGCHLD,previous)
+     def test_original_error_before_cleanup(self):

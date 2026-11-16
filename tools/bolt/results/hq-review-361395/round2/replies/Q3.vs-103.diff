@@ -1,0 +1,5 @@
+--- 103/Q3.txt
++++ 104/Q3.txt
+@@ -1 +1 @@
+-The saved build log confirms ninja -d keeprsp -j 6. The spec uses mlgo_build_jobs, whose fallback is 6; the outer build job setting did not override that define in this build. The BOLT tool build uses the same define. Changing the job policy requires a separate decision about linker memory and the platform's parallelism macro; it is not already inherited automatically.
++The saved build log confirms ninja -d keeprsp -j 6. The fallback mlgo_build_jobs=6 already exists in the parent commit; the outer job setting did not override it in this build. We will keep that policy in this series because changing ThinLTO concurrency affects linker memory. If needed, we can evaluate parallelism separately in another change.

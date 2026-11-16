@@ -1,0 +1,201 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 0c101ec17d97..2da963eed299 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -186,11 +186,17 @@ def wait_group_exit(group, timeout=10):
+ 
+ _CANCEL_SIGNAL = None
+ _ACTIVE_GROUP = None
++_SPAWNING = False
++_DEFERRED_SECOND_SIGNAL = None
+ 
+ 
+ def record_cancel(signum, frame):
+-    global _CANCEL_SIGNAL
++    global _CANCEL_SIGNAL, _DEFERRED_SECOND_SIGNAL
+     if _CANCEL_SIGNAL is not None:
++        if _SPAWNING:
++            if _DEFERRED_SECOND_SIGNAL is None:
++                _DEFERRED_SECOND_SIGNAL = signum
++            return
+         # Kill the active descendant group before honoring an immediate second
+         # signal. The leader stays unreaped until call() has cleaned its group.
+         if _ACTIVE_GROUP is not None:
+@@ -231,11 +237,11 @@ def reap_child(process, timeout=1):
+         time.sleep(.01)
+ 
+ def call(argv, log, cwd=None, timeout=300):
+-    global _ACTIVE_GROUP
++    global _ACTIVE_GROUP, _SPAWNING, _DEFERRED_SECOND_SIGNAL
+     log = Path(log); log.parent.mkdir(parents=True, exist_ok=True)
+     process = None; reaped = False; primary = None
++    previous = signal.getsignal(signal.SIGCHLD)
+     try:
+-        previous = signal.getsignal(signal.SIGCHLD)
+         if previous != signal.SIG_DFL:
+             signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+         save(log.with_suffix(log.suffix+'.argv.json'),
+@@ -243,12 +249,19 @@ def call(argv, log, cwd=None, timeout=300):
+               'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+         with log.open('wb') as output:
+             check_cancel()
+-            # A microsecond-scale window exists between Popen and _ACTIVE_GROUP:
+-            # a second signal here may leave the new process group uncleaned.
+-            # Do not use preexec_fn: it risks deadlock in multithreaded programs.
+-            process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
+-                                       stderr=subprocess.STDOUT, start_new_session=True)
+-            _ACTIVE_GROUP = process.pid
++            # Publish the PGID before honoring a deferred second signal.
++            # Do not block signals across exec or use preexec_fn.
++            _SPAWNING = True
++            try:
++                process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,
++                                           stderr=subprocess.STDOUT, start_new_session=True)
++                _ACTIVE_GROUP = process.pid
++            finally:
++                _SPAWNING = False
++                if _DEFERRED_SECOND_SIGNAL is not None:
++                    pending = _DEFERRED_SECOND_SIGNAL
++                    _DEFERRED_SECOND_SIGNAL = None
++                    record_cancel(pending, None)
+             rc = peek_child_exit(process, timeout)
+             if rc != 0:
+                 primary = 'COMMAND_ERROR: COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
+@@ -295,6 +308,8 @@ def call(argv, log, cwd=None, timeout=300):
+         raise failure from error
+     finally:
+         _ACTIVE_GROUP = None
++        if previous != signal.SIG_DFL:
++            signal.signal(signal.SIGCHLD, previous)
+ 
+ def profile_unpack(source, output):
+     output = Path(output)
+@@ -1049,11 +1064,11 @@ def install_candidate(root, candidate, state, identity, announce=False, identity
+             except OSError: pass
+         raise
+ 
+-def debugfiles_gate(ordinary, identity):
++def debugfiles_gate(debugfiles_list, identity):
+     if 'debug_file' not in identity:
+         return {'required': False}
+-    # find-debuginfo.sh writes this default list in the RPM build directory.
+-    path = Path(ordinary).parent.parent.parent/'debugfiles.list'
++    require(debugfiles_list is not None, 'debugfiles list path is required')
++    path = Path(debugfiles_list)
+     require(path.is_file(), 'debugfiles list missing: '+str(path))
+     lines = path.read_text().splitlines()
+     expected = '/'+DEBUG_INSTALL_PATH
+@@ -1062,7 +1077,7 @@ def debugfiles_gate(ordinary, identity):
+     return {'required': True, 'path': str(path), 'sha256': digest(path), 'listed': expected}
+ 
+ 
+-def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
++def post_gate(root, state, ordinary, candidate_work, resource_dir=None, debugfiles_list=None):
+     root = Path(root).absolute(); require('debug' not in str(root).lower(), 'buildroot absolute path contains debug')
+     entity = root/'usr/bin/clang-22'; require(digest(entity) == state['installed_sha256'], 'clang changed during RPM post-processing')
+     for change in state['alias_changes']:
+@@ -1084,7 +1099,7 @@ def post_gate(root, state, ordinary, candidate_work, resource_dir=None):
+         # Platform find-debuginfo skips files already carrying a debuglink.
+         # Both payload SHAs must survive its original, single post chain.
+         debug['find_debuginfo_skip_basis'] = 'preinstalled debuglink; clang and debug SHAs unchanged'
+-        debug['package_list'] = debugfiles_gate(ordinary, state['identity'])
++        debug['package_list'] = debugfiles_gate(debugfiles_list, state['identity'])
+     no_bolt_products(root)
+     security = security_compare(ordinary, str(entity), ignore_paths=True)
+     baseline = Path(ordinary).parent/'installed-baseline.json'
+@@ -1838,7 +1853,7 @@ def main():
+     s=sub.add_parser('snapshot');s.add_argument('root');s.add_argument('output')
+     s=sub.add_parser('compare-root');s.add_argument('root');s.add_argument('baseline');s.add_argument('after')
+     s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
+-    s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir')
++    s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir');s.add_argument('--debugfiles-list',required=True)
+     s=sub.add_parser('disk-report');s.add_argument('stage',choices=['begin','tool-built','pipeline','post']);s.add_argument('--build');s.add_argument('--work');s.add_argument('--root')
+     s=sub.add_parser('disk-diagnose');s.add_argument('step');s.add_argument('log');s.add_argument('--build');s.add_argument('--work');s.add_argument('--root')
+     s=sub.add_parser('run-step');s.add_argument('step');s.add_argument('log');s.add_argument('--output');s.add_argument('--success-marker');s.add_argument('argv',nargs=argparse.REMAINDER)
+@@ -1897,11 +1912,13 @@ def main():
+         install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()),announce=True,identity_path=a.identity);return
+     elif a.cmd=='post':
+         result=post_gate(a.root,json.loads(Path(a.state).read_text()),a.ordinary,a.work,
+-                         a.resource_dir);save(Path(a.work)/'post-result.json',result)
++                         a.resource_dir,a.debugfiles_list);save(Path(a.work)/'post-result.json',result)
+     print(json.dumps(result,ensure_ascii=False),flush=True)
+ 
+ def cli():
+-    global _CANCEL_SIGNAL
++    global _CANCEL_SIGNAL, _SPAWNING, _DEFERRED_SECOND_SIGNAL
++    _SPAWNING = False
++    _DEFERRED_SECOND_SIGNAL = None
+     previous = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT)}
+     _CANCEL_SIGNAL = None
+     result, failure = 0, None
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index 400c062e2a1e..0b587cb5a533 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -118,6 +118,7 @@ def inspect(path):
+             raise ValueError(f'not an archive: {path}')
+         thin = magic == b'!<thin>\n'
+         pos, longnames, raw_members, tables = 8, b'', [], []
++        seen_longnames = False
+         while pos < len(data):
+             start = pos; header = data[pos:pos+60]
+             if len(header) != 60 or header[58:60] != b'`\n':
+@@ -130,6 +131,9 @@ def inspect(path):
+             if stored_size < 0 or stored_size > len(data)-pos:
+                 raise ValueError('ar member outside file')
+             if name == '//':
++                if seen_longnames:
++                    raise ValueError('duplicate GNU ar long-name table')
++                seen_longnames = True
+                 longnames = data[pos:pos+size]
+             elif name in ('/', '/SYM64/'):
+                 tables.append((name, data[pos:pos+size]))
+@@ -1027,13 +1031,7 @@ def log_startup_context():
+         pass
+ 
+ 
+-def install_main():
+-    global _CANCEL_SIGNAL
+-    _CANCEL_SIGNAL = None
+-    log_startup_context()
+-    if signal.getsignal(signal.SIGCHLD) != signal.SIG_DFL:
+-        signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+-        print('NATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL', flush=True)
++def _install_main():
+     parser = argparse.ArgumentParser(description='Convert certified x86_64 ThinLTO archives before standard RPM stripping')
+     parser.add_argument('--root', type=Path, required=True)
+     parser.add_argument('--build', type=Path, required=True)
+@@ -1074,5 +1072,20 @@ def install_main():
+     return 0
+ 
+ 
++def install_main():
++    global _CANCEL_SIGNAL
++    _CANCEL_SIGNAL = None
++    log_startup_context()
++    previous = signal.getsignal(signal.SIGCHLD)
++    try:
++        if previous != signal.SIG_DFL:
++            signal.signal(signal.SIGCHLD, signal.SIG_DFL)
++            print('NATIVE_ARCHIVES_SIGCHLD_RESET inherited handler -> SIG_DFL', flush=True)
++        return _install_main()
++    finally:
++        if previous != signal.SIG_DFL:
++            signal.signal(signal.SIGCHLD, previous)
++
++
+ if __name__ == '__main__':
+     raise SystemExit(install_main())
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 5a10febabbb3..6a66edebc78c 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -963,7 +963,7 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %global __bolt_original_spec_install_post %{__spec_install_post}
+ %define __spec_install_post \
+     %{__bolt_original_spec_install_post} \
+-    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || bolt_status_exit $? \
++    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" --debugfiles-list "%{_builddir}/%{buildsubdir}/debugfiles.list" || bolt_status_exit $? \
+     echo BOLT_POST_GATE_PASS \
+     bolt_optional python3 -B %{SOURCE1201} disk-report post
+ %endif

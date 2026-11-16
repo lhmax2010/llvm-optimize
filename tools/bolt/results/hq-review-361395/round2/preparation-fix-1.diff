@@ -1,0 +1,52 @@
+--- initial
++++ corrected
+@@ -93,39 +93,23 @@
+   line=next(l for l in spec.splitlines() if '%{SOURCE1201} post ' in l)
+   self.assertIn('--debugfiles-list "%{_builddir}/%{buildsubdir}/debugfiles.list"',line)
+  def ar_header(self,name,data):
+-  return f'{name:<16}{0:<12}{0:<6}{0:<6}{100644:<8}{len(data):<10}'.encode()+b'`
+-'+data+(b'
+-' if len(data)%2 else b'')
++  return f'{name:<16}{0:<12}{0:<6}{0:<6}{100644:<8}{len(data):<10}'.encode()+bytes([96,10])+data+(bytes([10]) if len(data)%2 else b'')
+  def test_H4_second_nonempty_table_rejected(self):
+-  for magic in (b'!<arch>
+-',b'!<thin>
+-'):
+-   p=self.root/('normal' if magic==b'!<arch>
+-' else 'thin')
+-   p.write_bytes(magic+self.ar_header('//',b'a/
+-')+self.ar_header('//',b'b/
+-'))
++  for magic in (b'!<arch>'+bytes([10]),b'!<thin>'+bytes([10])):
++   p=self.root/('normal' if magic.startswith(b'!<arch>') else 'thin')
++   p.write_bytes(magic+self.ar_header('//',b'a/'+bytes([10]))+self.ar_header('//',b'b/'+bytes([10])))
+    with self.assertRaisesRegex(ValueError,'duplicate.*long-name'):a.inspect(p)
+  def test_H4_empty_first_table_rejected(self):
+-  for magic in (b'!<arch>
+-',b'!<thin>
+-'):
+-   p=self.root/('normal' if magic==b'!<arch>
+-' else 'thin')
+-   p.write_bytes(magic+self.ar_header('//',b'')+self.ar_header('//',b'b/
+-'))
++  for magic in (b'!<arch>'+bytes([10]),b'!<thin>'+bytes([10])):
++   p=self.root/('normal' if magic.startswith(b'!<arch>') else 'thin')
++   p.write_bytes(magic+self.ar_header('//',b'')+self.ar_header('//',b'b/'+bytes([10])))
+    with self.assertRaisesRegex(ValueError,'duplicate.*long-name'):a.inspect(p)
+  def test_H4_single_empty_table_accepted(self):
+-  for magic in (b'!<arch>
+-',b'!<thin>
+-'):
+-   p=self.root/('normal' if magic==b'!<arch>
+-' else 'thin');p.write_bytes(magic+self.ar_header('//',b''))
++  for magic in (b'!<arch>'+bytes([10]),b'!<thin>'+bytes([10])):
++   p=self.root/('normal' if magic.startswith(b'!<arch>') else 'thin');p.write_bytes(magic+self.ar_header('//',b''))
+    self.assertEqual(a.inspect(p)['members'],[])
+  def test_H4_valid_longname_resolves(self):
+-  p=self.root/'valid.a';p.write_bytes(b'!<arch>
+-'+self.ar_header('//',b'long-member.o/
+-')+self.ar_header('/0',b'BCÀÞ'))
++  p=self.root/'valid.a';p.write_bytes(b'!<arch>'+bytes([10])+self.ar_header('//',b'long-member.o/'+bytes([10]))+self.ar_header('/0',bytes.fromhex('4243c0de')))
+   self.assertEqual(a.inspect(p)['members'][0]['name'],'long-member.o')
+  def converter_restore(self,mode,previous=signal.SIG_IGN):
+   signal.signal(signal.SIGCHLD,previous)

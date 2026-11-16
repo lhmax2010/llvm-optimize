@@ -1,0 +1,11 @@
+--- 
++++ 
+@@ -3,7 +3,7 @@
+ _original_runner=unittest.TextTestRunner
+ class StopOnFailure(_original_runner):
+  def __init__(self,*args,**kwargs):
+-  kwargs["failfast"]=True
++  kwargs["failfast"]=False
+   super().__init__(*args,**kwargs)
+ unittest.TextTestRunner=StopOnFailure
+ scratch=Path(os.environ['TEST_SCRATCH']);scratch.mkdir(exist_ok=False)
