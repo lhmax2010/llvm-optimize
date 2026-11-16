@@ -1,0 +1,11 @@
+--- 105/run-tests.py
++++ 109/run-legacy.py
+@@ -1,7 +1,7 @@
+ import os,sys,subprocess,json,re,datetime
+ from pathlib import Path
+ E=Path(__file__).parent;T=E/'tests';B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt')
+-S=json.loads((E/'candidate.json').read_text())['source']
++S='/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-109-20261116/source'
+ inv=json.loads((B/'tools/bolt/results/fifth-review-20261111/rerun3/test-invocation.json').read_text())
+ env=dict(os.environ,PATH=inv['PATH'],PRODUCT_SOURCE=S,PYTHONDONTWRITEBYTECODE='1')
+ rows=[]

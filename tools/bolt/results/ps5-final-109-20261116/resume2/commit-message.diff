@@ -1,0 +1,24 @@
+--- a061f4e4
++++ 109
+@@ -40,6 +40,9 @@
+ so the llvm-devel and clang payloads on armv7l and aarch64 carry the
+ new text. TIZEN_HYBRID_LINK is set only by the x86_64 recipe; elsewhere
+ the new function returns at once and the generated build is unchanged.
++
++Use llvm_speedup to disable both hybrid linkage and BOLT; hybrid_link
++controls hybrid linkage alone.
+ 
+ [Part 2] packaging: optimize x86_64 clang with BOLT
+ 
+@@ -153,6 +156,11 @@
+ clang-22.debug in debug-mode post checks. Bound each run-step command to
+ 14400 seconds. Without cancellation, unexpected helper exceptions keep
+ a diagnostic and traceback and are re-raised.
++
++Use llvm_speedup to disable BOLT and hybrid linkage together, or use
++clang_bolt to disable only the BOLT pipeline.
++A command that exits successfully but leaves live group members after a
++10-second wait fails the step and triggers process-group cleanup.
+ 
+ [Part 3] packaging: fix x86 LLVM flags and archive mode
+ 

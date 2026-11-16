@@ -1,0 +1,56 @@
+--- h2.py:original
++++ h2.py:adapted
+@@ -14,10 +14,10 @@
+                 h._CANCEL_SIGNAL = signal.SIGTERM          # first signal already handled
+             elif mode == 'two-real-at-line':
+                 pass
+-        if mode == 'deferred-then-third' and frame.f_lineno == 256 and not fired.get('d'):
++        if mode == 'deferred-then-third' and frame.f_lineno == 261 and not fired.get('d'):
+             fired['d'] = True
+             os.kill(os.getpid(), signal.SIGTERM)
+-        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 256:
++        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 261:
+             fired['second'] = True
+             os.kill(os.getpid(), signal.SIGHUP)
+         if frame.f_lineno == line and not fired['second'] and mode in ('second-at-line', 'two-real-at-line'):
+--- codex:original
++++ codex:adapted
+@@ -1,7 +1,7 @@
+ import ctypes, importlib.util, os, signal, subprocess, sys, time, json
+ from pathlib import Path
+ from unittest import mock
+-BASE=Path(__file__).parent
++BASE=Path(os.environ['CODEX_SCRATCH'])
+ 
+ def load(name,file):
+  s=importlib.util.spec_from_file_location(name,BASE/file);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+@@ -30,7 +30,7 @@
+  return child
+ def trace(frame,event,arg):
+  global fired
+- if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==261 and not fired and mode in ('finally_second','finally_third'):
++ if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==266 and not fired and mode in ('finally_second','finally_third'):
+   fired=True;os.kill(os.getpid(),signal.SIGHUP)
+  return trace
+ h.subprocess.Popen=popen
+@@ -124,10 +124,16 @@
+ result('H3_debug',required=h.debugfiles_gate(lst,{'debug_file':{}})['required'])
+ # Existing successful-leader descendant escape, caught and cleaned by this test.
+ code='import os,time\np=os.fork()\nif p: print(p,flush=True);os._exit(0)\ntime.sleep(30)\n'
+-log=BASE/'orphan.log';h.call([sys.executable,'-c',code],log)
+-pid=int(log.read_text().strip());state=Path(f'/proc/{pid}/stat').read_text().rsplit(')',1)[1].split()[0]
+-result('successful_leader_descendant',call_returned_success=True,descendant_pid=pid,descendant_state=state)
+-os.kill(pid,signal.SIGKILL);os.waitpid(pid,0)
++log=BASE/'orphan.log'
++try:
++ h.call([sys.executable,'-c',code],log)
++ raise AssertionError('R1 must reject a successful leader with live descendants')
++except h.GateError as error:
++ assert 'command exited successfully with live descendants' in str(error),str(error)
++pid=int(log.read_text().strip())
++_,status=os.waitpid(pid,0)
++assert os.waitstatus_to_exitcode(status)==-signal.SIGKILL,status
++result('successful_leader_descendant',call_rejected=True,descendant_status=os.waitstatus_to_exitcode(status))
+ # Reap any adopted grandchildren from shell timeout/interrupt cases.
+ while True:
+  try:

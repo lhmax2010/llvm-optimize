@@ -1,0 +1,55 @@
+--- test_hardening.py:old
++++ test_hardening.py:new
+@@ -1,7 +1,7 @@
+ import importlib.util,unittest,struct,io,contextlib,json,os,signal,sys
+ from pathlib import Path
+ from unittest.mock import patch
+-P=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-105-20261116/source/packaging/llvm-static-archives-native.py')
++P=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-109-20261116/source/packaging/llvm-static-archives-native.py')
+ def load(name,path):
+  s=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(s);s.loader.exec_module(m);return m
+ a=load('new',P);old=load('old','/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/hardening-ps4/baseline-converter.py')
+--- environment/test50.py:old
++++ environment/test50.py:new
+@@ -4,7 +4,7 @@
+ from unittest import mock
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+ B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt')
+-S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-105-20261116/source'); E=Path(__file__).parent
++S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-109-20261116/source'); E=Path(__file__).parent
+ sys.path.insert(0,str(B/'tools'))
+ p=S/'packaging/llvm-static-archives-native.py'
+ spec=importlib.util.spec_from_file_location('llvm_static_archives_source',p)
+--- environment/test_regressions.py:old
++++ environment/test_regressions.py:new
+@@ -1,7 +1,7 @@
+ import importlib.util,sys,unittest,subprocess,json,hashlib,shlex,tempfile
+ from pathlib import Path
+ from unittest import mock
+-B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-105-20261116/source');E=Path(__file__).parent
++B=Path('/home/linhao/Toolchain/development/llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-109-20261116/source');E=Path(__file__).parent
+ sys.path.insert(0,str(B/'tools'))
+ p=S/'packaging/llvm-static-archives-native.py';sp=importlib.util.spec_from_file_location('llvm_static_archives_source',p);a=importlib.util.module_from_spec(sp);sys.modules[sp.name]=a;sp.loader.exec_module(a)
+ print('CONVERTER_IMPORT',p,'SHA256',hashlib.sha256(p.read_bytes()).hexdigest(),flush=True)
+--- environment/test_r2.py:old
++++ environment/test_r2.py:new
+@@ -2,7 +2,7 @@
+ import importlib.util,sys,os,subprocess,unittest,json,signal,time,shlex
+ E=Path(__file__).parent
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+-B=W.parent/'llvm-optimize-bolt';S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-105-20261116/source')
++B=W.parent/'llvm-optimize-bolt';S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-109-20261116/source')
+ X=Path(os.environ['TEST_SCRATCH'])/'new-tests-02';X.mkdir(exist_ok=False)
+ def load(name,path):
+  sp=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(sp);sp.loader.exec_module(m);return m
+--- environment/test_r3.py:old
++++ environment/test_r3.py:new
+@@ -4,7 +4,7 @@
+ from concurrent.futures import ThreadPoolExecutor
+ E=Path(__file__).parent
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+-B=W.with_name('llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/hq-review-105-20261116/source')
++B=W.with_name('llvm-optimize-bolt');S=Path('/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-final-109-20261116/source')
+ X=Path(os.environ['TEST_SCRATCH'])/'cases';X.mkdir()
+ def load(name,path):
+  spec=importlib.util.spec_from_file_location(name,path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m);return m
