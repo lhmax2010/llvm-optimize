@@ -1525,3 +1525,10 @@ R3(b) STOP：native导出的169029个非packaging文件，169022与Git blob相�
 
 一次比较脚本NUL转义准备错误已保存并修正，真实7差异按门禁停止。停止交付时另有README.md不存在的路径错误原文留存，未据此再跑门禁。资源4GiB/swap0/CPU200%/Nice19/idle；峰值4GiB、max1166、OOM0，看门狗未触发。
 详见[105号](105_ps5_candidate_replies_361624.md)。本任务及以后不在Gerrit写任何内容，评论和回复由用户本人发布；本次未生成可发布的FINAL文件。
+
+### 2026-11-16：105号续（R3(b) PASS，R3(c)准备STOP）
+
+PM批准native导出的E1 export-subst与E2 CRLF两类例外，仅限原7文件。逐个git check-attr与内容核对全PASS：1个E1展开对应a061f4e4元数据，6个E2 eol=crlf且去CR后与Git blob相同。README.md路径错误按PM澄清不再计STOP，旧记录保留。
+
+R3(c)新准备脚本在W/temp overlay内调用git apply，向上识别证据仓库后把8个补丁全部Skipped（29行），rc仍0；输入未打补丁，比较结果无效，不是产品失败。前次105的一次准备修正机会已使用，本次没有再修正/重跑，按STOP交付。候选a061f4e415a895412516ffe076084f407f2d70a8不变、干净；567/567按授权沿用。R3(d/e)、推sandbox、FINAL回复和361624后续均未运行。无Gerrit写操作、构建或QB访问。
+详见[105号§6](105_ps5_candidate_replies_361624.md)、[续跑证据](../../tools/bolt/results/hq-review-361395/round3/resume/RAW_LINKS.md)。

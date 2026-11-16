@@ -1,5 +1,7 @@
 # 105：PS5 候选、导出核对与停止记录
 
+> 105号续最新状态：PM E1/E2 裁决后，R3(b) 的7项已全部通过。R3(c) 因本次补丁应用准备脚本错误停止，未推 sandbox；详见文末“6. 105号续”。下文原始 STOP 保留。
+
 结论：**STOP，未推 sandbox，未做任何 Gerrit 写操作。** R1 通过，N1 两处修正完成，全部 567/567 测试通过。R3(b) 全量比较发现 7 个 native tarball 文件与候选 Git blob 内容不同；其余 169,022 个相同。没有自行豁免 export-subst 或换行差异。R3(c)–(e)、回复文件和 361624 后续评审均未运行。
 
 | 项目 | 结果 |
@@ -109,3 +111,73 @@ STOP后只读交付清单脚本另遇路径错误（没有重新跑任何门禁�
 未读/未执行：新QB、构建、真实输入重放、Gerrit评论写入/refs-for，PS3补丁重新应用及R3(c)比较、两种spec差异与五项解析、361624试合并/CMake/nm、FINAL回复文件。没有干预另一项目。
 
 105 已结束 2026-11-16T06:02:48-08:00 status=STOP
+
+## 6. 105号续：E1/E2 放行与 R3(c) 准备 STOP
+
+本次结论：**R3(b) PASS；R3(c) STOP（准备脚本错误），不判产品失败。** 本地候选仍为 a061f4e415a895412516ffe076084f407f2d70a8，工作树干净；567/567 原测试结果按用户授权沿用，未重新生成候选或重复测试。没有推 sandbox、refs/for 或 Gerrit 文本。
+
+### 6.1 PM 裁决与重新判定
+
+原 R3(b) 的7个差异仅允许两类：
+- E1：git check-attr export-subst 为set，且$Format占位符展开能逐字对应导出提交的信息。
+- E2：git check-attr eol/text表明应导出CRLF，去掉CR后与Git blob逐字相同。
+除此7项再有差异仍STOP。原 README.md 交付路径错误按PM裁定为准备错误，已澄清，不再作为STOP理由；原记录不删。
+
+使用 git check-attr --cached，读取候选索引内的属性，避免 sparse checkout 缺少目录内.gitattributes 影响检查；候选HEAD和干净状态独立复核。
+[重新判定JSON](../../tools/bolt/results/hq-review-361395/round3/resume/R3b-reclassification.json)、[候选复核](../../tools/bolt/results/hq-review-361395/round3/resume/candidate-recheck.json)。
+
+| 文件 | 类别 | 核对 | 证据 |
+|---|---|---|---|
+| clang/bindings/python/.git_archival.txt | E1 | export-subst=set；三个展开值逐字吻合 | [check-attr 原文](../../tools/bolt/results/hq-review-361395/round3/resume/01-.git_archival.txt.check-attr.txt) |
+| lld/test/wasm/Inputs/libstub.so | E2 | eol=crlf；去掉CR后逐字吻合 | [check-attr 原文](../../tools/bolt/results/hq-review-361395/round3/resume/02-libstub.so.check-attr.txt) |
+| llvm/test/MC/AsmParser/preserve-comments-crlf.s | E2 | eol=crlf；去掉CR后逐字吻合 | [check-attr 原文](../../tools/bolt/results/hq-review-361395/round3/resume/03-preserve-comments-crlf.s.check-attr.txt) |
+| llvm/test/tools/llvm-mca/X86/directives-handle-crlf.s | E2 | eol=crlf；去掉CR后逐字吻合 | [check-attr 原文](../../tools/bolt/results/hq-review-361395/round3/resume/04-directives-handle-crlf.s.check-attr.txt) |
+| llvm/test/tools/split-file/Inputs/basic-aa.crlf | E2 | eol=crlf；去掉CR后逐字吻合 | [check-attr 原文](../../tools/bolt/results/hq-review-361395/round3/resume/05-basic-aa.crlf.check-attr.txt) |
+| llvm/test/tools/split-file/Inputs/basic-bb.crlf | E2 | eol=crlf；去掉CR后逐字吻合 | [check-attr 原文](../../tools/bolt/results/hq-review-361395/round3/resume/06-basic-bb.crlf.check-attr.txt) |
+| llvm/test/tools/split-file/basic.crlf.test | E2 | eol=crlf；去掉CR后逐字吻合 | [check-attr 原文](../../tools/bolt/results/hq-review-361395/round3/resume/07-basic.crlf.test.check-attr.txt) |
+
+E1三个值：%H=a061f4e415a895412516ffe076084f407f2d70a8；%cI=2026-11-16T05:49:18-08:00；describe-name=llvmorg-14-init-170502-ga061f4e415a8。将这些值代入Git blob中的$Format占位符后，与tar内容逐字相同。没有放宽到任意身份替换。
+其余169022个文件沿用上次完整逐文件比较的相同结论，没有新例外。
+
+105续R3(b) 已结束 2026-11-16T06:20:24.659929-08:00 status=PASS。
+
+### 6.2 R3(c) 首次准备错误与停止
+
+新脚本[compare_export_modes.py](../../tools/bolt/results/hq-review-361395/round3/resume/compare_export_modes.py)从89号保留的PS3上游tar流式读入全部文件，仅把8个补丁涉及的源文件复制到新的overlay目录，计划应用补丁后与104号PS4 native tar逐文件比较。
+但overlay位于W/temp下。git apply向上发现了W的证据仓库，以子目录过滤规则跳过补丁；每次仍返回0。本脚本只检查返回码，没有检查Skipped诊断，随后对未打补丁的内容做了比较，这是我的准备错误。
+[发现的外层仓库](../../tools/bolt/results/hq-review-361395/round3/resume/R3c-discovered-repository.txt)、[八次诊断与无效比较记录](../../tools/bolt/results/hq-review-361395/round3/resume/R3c-invalid-comparison.json)。
+
+8个补丁的stderr共29行Skipped patch。首条与最后一组示例原文：
+
+    Skipped patch 'clang/include/clang/Config/config.h.cmake'.
+    Skipped patch 'clang/cmake/modules/AddClang.cmake'.
+    Skipped patch 'clang/tools/driver/CMakeLists.txt'.
+    Skipped patch 'lld/cmake/modules/AddLLD.cmake'.
+    Skipped patch 'lld/tools/lld/CMakeLists.txt'.
+    Skipped patch 'llvm/cmake/modules/AddLLVM.cmake'.
+    Skipped patch 'llvm/tools/llvm-ar/CMakeLists.txt'.
+
+随后首个断言：
+
+    AssertionError: ('R3c unexpected difference', {'path': 'clang/cmake/modules/AddClang.cmake', 'old': ('file', 7989, 'ce8e9a0d4ed08c4ffc57195c5eab04b3510e65143ea17f32c1d44173fbceed87'), 'new': ('file', 8036, 'cc505b09c2856008843c430269fb989648090bdcfd1048ab1c2ca16d2c499480'), 'identical': False})
+
+[完整 traceback](../../tools/bolt/results/hq-review-361395/round3/resume/R3c-first-error.txt)。无效输入比较的28项差异不能作为产品差异，也不能作为R3(c)通过的证据。没有把错误结果按E1/E2豁免。
+
+105号前次已使用一次NUL转义准备修正机会；此次续跑未明确重置次数，因此不自行再次改脚本、重新应用或重跑。保留原始脚本、stderr、结果和现场。完整无效清单压缩后9485080字节，已入库；另登记[路径/大小/SHA](../../tools/bolt/results/hq-review-361395/round3/resume/R3c-local-manifest.json)，小型差异和全部诊断已入库。
+
+STOP原文：
+
+    STOP R3(c) preparation: git apply discovered the outer llvm-optimize repository and skipped all eight patches with exit code 0. The comparison input was not patched. The prior 105 preparation-correction allowance was already used; no correction or retry performed. No sandbox push.
+
+105续R3(c) 已结束 2026-11-16T06:23:50.299018-08:00 status=STOP。
+
+### 6.3 后续状态与资源
+
+R3(d)、R3(e)、sandbox推送、FINAL-replies-for-user.md与中文对照、361624试合并/配置/nm/评审均NOT RUN。本次未重新查询sandbox；上次只读观测为121b4c23，无本任务写操作。
+
+已读：前次105候选/完整清单/7处原文，候选索引属性和提交元数据，PS3的8个补丁与上游tar、PS4 native tar，补丁stderr和Git仓库发现结果。
+未读/未执行：QB/Gerrit、本次五项spec解析、361624后续核实；未构建。
+
+受限串行服务MemoryMax4GiB、swap0、CPU200%、Nice19、IOidle。首次非交互bootstrap服务立即正常退出、没有运行分析；随后交互服务运行分析与持续30秒看门狗。[资源原文](../../tools/bolt/results/hq-review-361395/round3/resume/resources.json)、[看门狗](../../tools/bolt/results/hq-review-361395/round3/resume/watchdog-observed.txt)。OOM0，看门狗未触发，未调高限制或干预其他项目。
+
+105续 已结束 2026-11-16T06:25:06-08:00 status=STOP
