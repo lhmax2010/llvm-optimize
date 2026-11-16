@@ -1,6 +1,6 @@
 # 105：PS5 候选、导出核对与停止记录
 
-> 105号续最新状态：PM E1/E2 裁决后，R3(b) 的7项已全部通过。R3(c) 因本次补丁应用准备脚本错误停止，未推 sandbox；详见文末“6. 105号续”。下文原始 STOP 保留。
+> 105号续二最新状态：R3(b)已按PM裁决通过；R3(c)的8个补丁实际应用及反向dry-run全部通过，但新的清单脚本漏记目录符号链接，按“再有准备错误即STOP”停止，未推sandbox。见文末§7，历史STOP原文保留。
 
 结论：**STOP，未推 sandbox，未做任何 Gerrit 写操作。** R1 通过，N1 两处修正完成，全部 567/567 测试通过。R3(b) 全量比较发现 7 个 native tarball 文件与候选 Git blob 内容不同；其余 169,022 个相同。没有自行豁免 export-subst 或换行差异。R3(c)–(e)、回复文件和 361624 后续评审均未运行。
 
@@ -181,3 +181,63 @@ R3(d)、R3(e)、sandbox推送、FINAL-replies-for-user.md与中文对照、36162
 受限串行服务MemoryMax4GiB、swap0、CPU200%、Nice19、IOidle。首次非交互bootstrap服务立即正常退出、没有运行分析；随后交互服务运行分析与持续30秒看门狗。[资源原文](../../tools/bolt/results/hq-review-361395/round3/resume/resources.json)、[看门狗](../../tools/bolt/results/hq-review-361395/round3/resume/watchdog-observed.txt)。OOM0，看门狗未触发，未调高限制或干预其他项目。
 
 105续 已结束 2026-11-16T06:25:06-08:00 status=STOP
+
+## 7. 105号续二：实际应用补丁通过，清单准备 STOP
+
+结论：**STOP，未推 sandbox。** 用户授权修正外层Git仓库发现问题后，已在/var/tmp的新临时目录完整解包上游tar，8个补丁应用、修改文件数核对和8次反向dry-run全部通过。但后续os.walk清单遗漏一个指向目录的符号链接；这是新准备错误，不能判产品失败，也未继续修改或重跑。
+
+### 7.1 授权修正和防静默跳过
+
+解包根目录：/var/tmp/task105-r3c-sf_6b3k0/llvm-22.1.8。
+解包前后git rev-parse --show-toplevel均失败，确认没有外层Git仓库。[原文](../../tools/bolt/results/hq-review-361395/round3/resume2/outside-git.stderr)。
+使用GNU patch 2.7.6，实际命令：
+patch -p1 --forward --batch --no-backup-if-mismatch -i <补丁>。
+每次要求rc=0，stdout中的patching file列表与git apply --numstat所列路径逐项一致，且不能包含Skipped、FAILED、Reversed。
+8个补丁全部应用后，在最终树上逐个运行patch -p1 --reverse --dry-run --batch -i <补丁>，均rc=0，checking file列表也与diffstat一致。没有实际反向修改树。
+[脚本](../../tools/bolt/results/hq-review-361395/round3/resume2/compare_export_modes.py)、[相对前次修正diff](../../tools/bolt/results/hq-review-361395/round3/resume2/preparation-fix.diff)、[应用/反向完整JSON](../../tools/bolt/results/hq-review-361395/round3/resume2/patch-application.json)。
+
+| 补丁 | diffstat文件数 | 实际修改文件数 | 反向dry-run | 原文 |
+|---|---:|---:|---|---|
+| 0001 | 6 | 6 | PASS | [应用](../../tools/bolt/results/hq-review-361395/round3/resume2/patch-0001.stdout) / [反向](../../tools/bolt/results/hq-review-361395/round3/resume2/reverse-0001.stdout) |
+| 0002 | 1 | 1 | PASS | [应用](../../tools/bolt/results/hq-review-361395/round3/resume2/patch-0002.stdout) / [反向](../../tools/bolt/results/hq-review-361395/round3/resume2/reverse-0002.stdout) |
+| 0003 | 1 | 1 | PASS | [应用](../../tools/bolt/results/hq-review-361395/round3/resume2/patch-0003.stdout) / [反向](../../tools/bolt/results/hq-review-361395/round3/resume2/reverse-0003.stdout) |
+| 0004 | 3 | 3 | PASS | [应用](../../tools/bolt/results/hq-review-361395/round3/resume2/patch-0004.stdout) / [反向](../../tools/bolt/results/hq-review-361395/round3/resume2/reverse-0004.stdout) |
+| 0005 | 2 | 2 | PASS | [应用](../../tools/bolt/results/hq-review-361395/round3/resume2/patch-0005.stdout) / [反向](../../tools/bolt/results/hq-review-361395/round3/resume2/reverse-0005.stdout) |
+| 0006 | 1 | 1 | PASS | [应用](../../tools/bolt/results/hq-review-361395/round3/resume2/patch-0006.stdout) / [反向](../../tools/bolt/results/hq-review-361395/round3/resume2/reverse-0006.stdout) |
+| 0007 | 9 | 9 | PASS | [应用](../../tools/bolt/results/hq-review-361395/round3/resume2/patch-0007.stdout) / [反向](../../tools/bolt/results/hq-review-361395/round3/resume2/reverse-0007.stdout) |
+| 0008 | 6 | 6 | PASS | [应用](../../tools/bolt/results/hq-review-361395/round3/resume2/patch-0008.stdout) / [反向](../../tools/bolt/results/hq-review-361395/round3/resume2/reverse-0008.stdout) |
+
+共29次文件修改记录；重复路径按各补丁分别计数，不把事件总数冒称独立文件数。
+
+### 7.2 新准备错误
+
+PS3解包树清单使用os.walk遍历时只处理files，没有把dirs中的符号链接纳入清单。实际存在的链接因此被记录为old=None：
+
+    lldb/test/API/functionalities/breakpoint/breakpoint_with_realpath_and_source_map/symlink2
+
+只读lstat/readlink核实：该项存在，是指向目录的符号链接，目标字符串为real（4字节），SHA256为aa33996d60e89311b4d1a920dae03c6d7fa3ae1956c52662e273aad4683e577f，与PS4 native tar记录完全相同。
+[原始比较差异](../../tools/bolt/results/hq-review-361395/round3/resume2/R3c-raw-differences.json)、[实际链接证据](../../tools/bolt/results/hq-review-361395/round3/resume2/symlink-inventory-error.json)、[完整首次traceback](../../tools/bolt/results/hq-review-361395/round3/resume2/first-error.txt)。
+原始比较仅列出.git_archival.txt和该链接两项；本次没有修改清单、重新执行比较或把无效比较标为PASS。
+
+原始断言：
+
+    AssertionError: ('new unexpected difference', {'path': 'lldb/test/API/functionalities/breakpoint/breakpoint_with_realpath_and_source_map/symlink2', 'old': None, 'new': ('symlink', 4, 'aa33996d60e89311b4d1a920dae03c6d7fa3ae1956c52662e273aad4683e577f'), 'identical': False})
+
+STOP原文：
+
+    STOP R3(c) preparation: the os.walk manifest loop omitted symlinks to directories from the extracted PS3 tree. All eight patches were applied and passed reverse dry-run, but the manifest comparison is invalid. No further preparation correction or retry was made; sandbox push and later steps were not run.
+
+105续二R3(c) 已结束 2026-11-16T06:41:16.671507-08:00 status=STOP。
+
+### 7.3 范围与剩余工作
+
+候选仍为a061f4e415a895412516ffe076084f407f2d70a8，tree 8d08d49a1c70ebb06118d8d84734c695e24e6d32，工作树干净。[复核](../../tools/bolt/results/hq-review-361395/round3/resume2/candidate-recheck.json)。
+按授权沿用567/567测试结果，不重新生成候选。R3(b)的E1/E2通过结论保留。
+R3(d)、R3(e)、sandbox推送、FINAL回复/中文说明、361624后续评审未运行；105没有完成，因此没有进入用户要求“完成后”执行的107。
+本次没有查询或写入Gerrit、推LLVM分支、访问QB或构建，也没有改历史目录。新解包目录与全部日志保留。
+
+已读：PS3历史导出tar、0001–0008、PS4 native tar、候选Git对象、补丁应用与反向诊断、目录链接原始元数据。
+未执行：重新跑567测试、后续五项解析、361624配置/试合并/nm、对外回复发布。
+[资源](../../tools/bolt/results/hq-review-361395/round3/resume2/resources.json)、[看门狗采样](../../tools/bolt/results/hq-review-361395/round3/resume2/watchdog-observed.txt)：4GiB/swap0/CPU200%/Nice19/idle，OOM0，看门狗未触发，没有提高资源上限。
+
+105续二 已结束 2026-11-16T06:42:24-08:00 status=STOP

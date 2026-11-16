@@ -1532,3 +1532,10 @@ PM批准native导出的E1 export-subst与E2 CRLF两类例外，仅限原7文件�
 
 R3(c)新准备脚本在W/temp overlay内调用git apply，向上识别证据仓库后把8个补丁全部Skipped（29行），rc仍0；输入未打补丁，比较结果无效，不是产品失败。前次105的一次准备修正机会已使用，本次没有再修正/重跑，按STOP交付。候选a061f4e415a895412516ffe076084f407f2d70a8不变、干净；567/567按授权沿用。R3(d/e)、推sandbox、FINAL回复和361624后续均未运行。无Gerrit写操作、构建或QB访问。
 详见[105号§6](105_ps5_candidate_replies_361624.md)、[续跑证据](../../tools/bolt/results/hq-review-361395/round3/resume/RAW_LINKS.md)。
+
+### 2026-11-16：105号续二（补丁应用/反向通过，清单准备STOP）
+
+PM额外授权一次R3(c)准备修正：已在无外层Git的/var/tmp新目录解包，patch实际应用0001–0008，29次修改记录逐补丁与diffstat一致；8个反向dry-run全PASS。
+新os.walk清单脚本漏记dirs中的目录符号链接symlink2，误报old=None。原链接实际存在、目标real及SHA与native tar相同，属于我的准备错误，不判产品失败。按“此后再出现准备错误即STOP”，未修正/重跑，原脚本和现场保留。
+
+a061f4e4不变且干净，567/567沿用，R3(b) E1/E2 PASS保留。R3(d/e)、sandbox、FINAL回复、361624后续及107均未运行；没有Gerrit写入、QB访问或构建。详见[105号§7](105_ps5_candidate_replies_361624.md)、[续二证据](../../tools/bolt/results/hq-review-361395/round3/resume2/RAW_LINKS.md)。
