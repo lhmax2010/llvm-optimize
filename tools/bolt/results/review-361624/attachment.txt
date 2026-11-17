@@ -1,0 +1,41 @@
+Hi,
+
+Thank you for asking us to review 361624. We reviewed it as users of the tool packages: our AutoFDO / instrumented PGO / BOLT workflow for Tizen packages (FFmpeg and GStreamer first) on Raspberry Pi 4 (armv7l) and Raspberry Pi 5 (aarch64). All profile processing and BOLT rewriting run on the x86_64 build host; the boards only run the workload and record perf samples.
+
+The full review (autofdo-bolt-agent-review.md) and a suggested follow-up patch (361624-suggested-fix-v3.patch) are attached.
+
+Summary: acceptable for our use with changes. The standalone bolt package is useful and in the right place for us, and llvm-profgen correctly stays in the llvm package. None of the points below blocks the AutoFDO part of our workflow.
+
+Requested changes (all implemented in the attached patch):
+1. Withdraw armv7l BOLT and the armv7l LLVM_TARGETS_TO_BUILD expansion together. BOLT cannot rewrite 32-bit ARM binaries, and with only ARM;BPF the BOLT configure step stops with "BOLT_TARGETS_TO_BUILD is empty", so the two must go together. If another consumer needs them, please name it in the commit message.
+2. Set BOLT_TARGETS_TO_BUILD per architecture (x86_64: X86;AArch64, aarch64: AArch64) and check the registered targets after the build. A single X86;AArch64 setting would make the aarch64 configure fail.
+3. Pin bolt to its LLVM provider: BuildRequires = %{version}, and bolt Requires: libllvm = %{version}, plus a build-time check that llvm, llvm-devel, llvm-static-devel, libllvm and libomp share one Version-Release. Please do not use %{version}-%{release} here: in this separate spec it expands to the tools package's release (22.1.8-1), not libllvm's (22.1.8-4.1), and bolt would not install.
+4. Remove the new Requires: python3 on llvm. scan-build and the analyzer wrappers are Perl, scan-view calls python, and the python3 modules (libscanbuild) are deleted in install, so it makes no tool work. Through the buildconf Support: clang llvm-devel it would also add python3 to every build root that lacks it, on every architecture.
+5. Derive LLVM_LIBDIR_SUFFIX from %{_lib}, as llvm.spec does.
+6. Keep the distribution LDFLAGS. The explicit CMAKE_EXE_LINKER_FLAGS / CMAKE_SHARED_LINKER_FLAGS replace them, so the BOLT tools lose -z relro, --as-needed and --gc-sections. The patch prepends $LDFLAGS to the build-id flag.
+7. Correct the debug comment: the debug files go to bolt-debuginfo (sources to llvm-tools-subpkgs-debugsource), and find-debuginfo.sh runs from __debug_install_post.
+
+Questions:
+- The three Obsoletes (clang-analyzer, llvm-xray, llvm-prof-tools) name packages that do not exist in the parent commit. Were they ever published? If not, they can be dropped.
+- What is BuildRequires: compiler-rt needed for? bolt_rt is built freestanding, and the runtime Requires: compiler-rt is not needed by the built package.
+- What is the intended support for i586 and riscv64? The patch limits the package to x86_64 and aarch64; riscv64 is excluded as a scope choice, not for lack of BOLT support. In the snapshots we checked, nothing published depends on bolt.
+- Could the change be split into (a) build-ID linker flags, (b) the standalone BOLT package with its dylib and X86 helper changes, (c) package moves and Obsoletes, (d) the MLGO and DESTDIR fixes? The build-ID part is valuable on its own.
+- If the suggestions are adopted, the commit message lines about armv7l BOLT and the python3 Requires need updating.
+- Please document how to use the aarch64 libbolt_rt_instr.a from an x86_64 host (-runtime-instrumentation-lib).
+
+Verification of the suggested patch: applied with git am on top of da885208 and built llvm-tools-subpkgs.spec for x86_64 with GBS, using the frozen repositories of the released LLVM 22.1.8-4.1 and Tizen's normal build environment.
+- GBS exit 0, about 11 minutes, peak memory 5.0 GiB (two parallel jobs).
+- Provider check passed (all at 22.1.8-4.1); llvm-bolt --version lists aarch64 and x86-64.
+- bolt contains the seven tools and both runtime archives, and requires libllvm = 22.1.8 and libLLVM.so.22.1(LLVM_22.1), not compiler-rt.
+- Distribution CFLAGS/CXXFLAGS and LDFLAGS are in the CMake cache; all five executables have GNU_RELRO; ldd is clean.
+- Five executable/debug build-ID pairs match; the debug files contain the BOLT compile units, and debugsource contains the BOLT sources.
+- The built llvm-bolt rewrote minimal static AArch64 and x86_64 ELF files in relocation mode; the rewritten x86_64 program returns the same exit code.
+Not verified: an aarch64 build, a full llvm.spec build (the patch only restores the parent armv7l target list and removes a runtime dependency there), OBS behaviour, and BOLT on a real workload.
+
+The patch's author line is a placeholder; please take the content into your own commit as you see fit.
+
+Separately from this change, two requests for later:
+- Build clang with -DENABLE_LINKER_BUILD_ID=ON, as its own change with platform-wide notice, so packages linked through clang get a build ID without per-package spec edits.
+- We would like to take our llvm-profgen IP-sample series (sandbox/lhmax2025/afdo_profgen, tip c8942ae1; llvm-profgen sources, tests and documentation only) into the llvm source at a regular LLVM release.
+
+Thanks!

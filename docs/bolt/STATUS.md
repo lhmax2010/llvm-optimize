@@ -1640,3 +1640,9 @@ Q6 FINAL已更新并保留-v2：关的是hybrid/BOLT，ThinLTO/MLGO、固定参�
 112进度补记：三个Downloads输入已只读核对大小/SHA，全部符合；尚未复制、应用补丁或配置。最近MemAvailable约16GiB，未达24GiB，等待服务持续每30分钟检查；截止前不提前记SKIPPED。步骤5因102步骤2无新T产物已跳过。见[112号等待记录](112_361624_combined_validation.md)。
 
 112等待进度 2026-11-16T19:36:34.922566-08:00：累计17次准入检查，最近可用内存约15.2GiB，24GiB线始终未满足；无指定重进程、无看门狗触发。未开始步骤4；12GiB轻量准入建议未获批准，原24GiB规则不变。完整观察已追加112号，截止仍为2026-11-18 08:30 Asia/Shanghai。
+
+## 2026-11-17：102+112最终停止记录
+
+用户明确批准仅步骤4将MemAvailable门槛改为12GiB，其余限制不变。112完成三输入SHA核对/归档、361624 PS1只读fetch、独立游离树git am及两spec改动范围核对；仅补丁应用提交61d821ab，尚非综合C1。第一次旧对象库查H2触发自动fetch，修正为114本地对象库；随后错误读取C1/bolt/CMakeLists.txt，第二次准备错误STOP。未实施A1–A4/F6、未生成I、未配置/构建，不判产品失败。
+
+最终：102步骤1 STOP、2/3/6 SKIPPED；112步骤4 STOP、5 SKIPPED。已核对H2=b06ee2ac/tree02a70362/父61ef5d31，没有改H2、LLVM分支或任何LLVM远端。看门狗未触发、OOM0；归档/局部应用现场保留。无STARTUP/SESSION/Q5/关闭优化实物结果、无C1完整diff或配置/bolt包结论。详见[102](102_ps5_night_validation.md)、[112](112_361624_combined_validation.md)。

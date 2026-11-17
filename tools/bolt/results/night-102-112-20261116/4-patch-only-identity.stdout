@@ -1,0 +1,14 @@
+61d821ab2a090d4d36995fd55a1631724fc29dae
+6f66f01452df352ab4711e7c22fb68edaecca4ae
+da885208aeb52f55c448ff46873d242346727522
+packaging: suggested follow-up for 361624 (standalone BOLT pinning, per-arch targets, no armv7l BOLT, no python3 Requires)
+
+- llvm-tools-subpkgs: build bolt for x86_64 and aarch64 only; per-arch
+  BOLT targets; pin LLVM providers to the package version and check that
+  they share one Version-Release in the build root; derive the libdir
+  suffix from the architecture; check the registered BOLT targets.
+- Keep the distribution LDFLAGS when adding the build-id linker flag.
+- llvm.spec: armv7l LLVM targets back to ARM;BPF; drop the new runtime
+  Requires: python3 (scan-build is Perl, the python3 analyzer modules are
+  removed in install).
+

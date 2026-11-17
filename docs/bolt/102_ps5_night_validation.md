@@ -26,3 +26,9 @@
 已读附件完整任务、STATUS尾部和长期规则相关行、用户服务列表、/proc/meminfo、df。未读H2产品内容、未访问QB/Gerrit、未操作另一项目目录/锁/进程。
 
 证据：[状态](../../tools/bolt/results/night-102-112-20261116/state.json)、[第一次错误](../../tools/bolt/results/night-102-112-20261116/preflight-first-error.txt)、[第二次错误](../../tools/bolt/results/night-102-112-20261116/preflight-second-error.txt)、[修正记录](../../tools/bolt/results/night-102-112-20261116/preparation-correction.diff)。
+
+## 本轮最终收尾
+
+112步骤4在用户批准12GiB准入后完成归档和建议补丁应用，但第二次准备错误STOP；本任务不再等待截止时间。102步骤1 STOP，步骤2/3/6 SKIPPED；112步骤4 STOP、步骤5 SKIPPED。所有新产品验证仍未运行，未生成STARTUP/SESSION_KILL_MODE原文、Q5插件结果、关闭总开关构建结果或新RPM比较。
+
+112已只读核对H2提交/tree/父身份，详见[112号](112_361624_combined_validation.md)。不把身份核对视为真实输入重放通过。完整状态及结束行见[最终状态](../../tools/bolt/results/night-102-112-20261116/final-state.json)、[结束行](../../tools/bolt/results/night-102-112-20261116/end-lines.txt)。原始停止与等待记录保留。
