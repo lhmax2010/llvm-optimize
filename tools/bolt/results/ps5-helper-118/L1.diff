@@ -1,0 +1,24 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index fac3b4122b56..98f208b2da09 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -453,8 +453,8 @@ def call(argv, log, cwd=None, timeout=300):
+                            str(error))
+                 raise GateError(primary) from error
+             # Retire scan/kill authority before a reap can release the SID.
+-            session_retired = True
+             _ACTIVE_SESSION = None
++            session_retired = True
+             require(reap_child(process) == rc, 'child exit status changed while reaping')
+             reaped = True
+         text = log.read_text(errors='replace')
+@@ -475,8 +475,8 @@ def call(argv, log, cwd=None, timeout=300):
+                     kill_session(process.pid, 10)
+                 except Exception as failure:
+                     cleanup.append(str(failure))
+-            session_retired = True
+             _ACTIVE_SESSION = None
++            session_retired = True
+             if process.returncode is None:
+                 try:
+                     reap_child(process, 1)

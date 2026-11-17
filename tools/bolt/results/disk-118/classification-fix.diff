@@ -1,0 +1,44 @@
+--- classify.py
++++ classify-v2.py
+@@ -2,8 +2,9 @@
+ import json,datetime
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize');B=W.with_name('llvm-optimize-bolt');E=B/'tools/bolt/results/disk-118'
+ rows=json.loads((E/'measurements-combined.json').read_text())
+-old=[json.loads(l) for l in (B/'tools/bolt/results/disk-cleanup-20261114/inventory.jsonl').read_text().splitlines()]
+-oldkeep=[x['path'] for x in old if x.get('category')=='C']
++old=[json.loads(l) for l in (B/'tools/bolt/results/disk-cleanup-20261114/inventory-v2.jsonl').read_text().splitlines()]
++# Protect workspace containers themselves, not every temp child by inheritance.
++oldkeep=[x['path'] for x in old if x.get('category')=='C' and x['path'] not in (str(W),str(B),str(W/'temp'))]
+ candidates={
+  str(W/'temp/combined-112-20261116'):'112准备停止后保留的补丁试应用工作树；112已发布patch-only diff和提交身份；按本任务明确列入过期工作树候选。删除前须另获批准并保全Git工作树登记。',
+  str(W/'temp/rebase-359934-20261106-r2/rehearsal'):'已结束的旧入口演练输出，69/72号已发布；不包含其兄弟source目录。',
+@@ -35,16 +36,16 @@
+ assert not missing,missing
+ items.sort(key=lambda x:x['bytes'] or 0,reverse=True)
+ total=sum(x['bytes'] or 0 for x in items)
+-(E/'delete-candidates.txt').write_text(''.join(x['path']+'\t'+str(x['bytes'])+'\t'+x['basis']+'\n' for x in items))
+-(E/'inventory.jsonl').write_text(''.join(json.dumps(r,ensure_ascii=False)+'\n' for r in rows))
+-(E/'protected-locations.json').write_text(json.dumps([{'path':p,'exists':Path(p).exists(),'classification':'必须保留'} for p in protected],ensure_ascii=False,indent=2)+'\n')
++(E/'delete-candidates-v2.txt').write_text(''.join(x['path']+'\t'+str(x['bytes'])+'\t'+x['basis']+'\n' for x in items))
++(E/'inventory-v2.jsonl').write_text(''.join(json.dumps(r,ensure_ascii=False)+'\n' for r in rows))
++(E/'protected-locations-v2.json').write_text(json.dumps([{'path':p,'exists':Path(p).exists(),'classification':'必须保留'} for p in protected],ensure_ascii=False,indent=2)+'\n')
+ # Top 30 are measured directory entries, with containment explicitly displayed;
+ # a second non-overlapping top-level table is provided for practical planning.
+ rank=sorted([r for r in rows if r['bytes'] is not None],key=lambda r:r['bytes'],reverse=True)
+ top=[r for r in rank if Path(r['path']).parent==W/'temp' or r['path']==str(B) or Path(r['path']).parent==W][:30]
+ df=json.loads((E/'df.json').read_text())
+ summary={'df':df,'candidate_bytes_observed':total,'candidate_count':len(items),'directory_records':len(rows),'root_W_total':'UNKNOWN: 900s timeout','home_abuild_exists':Path('/home/abuild').exists(),'other_project_directories_traversed':False,'top30_nonoverlapping':top,'top30_all':rank[:30]}
+-(E/'summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n')
++(E/'summary-v2.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n')
+ fmt=lambda r:f"| {r['path']} | {r['bytes']/1024**3:.3f} | {r['mtime']} | {r['category']} | {r['basis']} |\n"
+ text='# 118 A：磁盘清点（只读，测量有缺口）\n\n'
+ text+=f"**/home 可用 {df['available']:,}B（{df['available']/1024**3:.2f}GiB）；总量 {df['total']:,}B，已用 {df['used']:,}B。列出 {len(items)} 个非重叠删除候选，已测占用合计 {total:,}B（{total/1024**3:.2f}GiB）。没有删除任何文件。**\n\n"
+@@ -53,7 +54,7 @@
+ text+='## 不重叠主要位置前30\n\n| 绝对路径 | GiB | 目录mtime（非递归最后改动） | 分类 | 依据 |\n|---|---:|---|---|---|\n'+''.join(fmt(r) for r in top)
+ text+='\n## 全部已测目录前30（包含父子关系，禁止累加）\n\n| 绝对路径 | GiB | 目录mtime | 分类 | 依据 |\n|---|---:|---|---|---|\n'+''.join(fmt(r) for r in rank[:30])
+ text+='\n## 可删除候选\n\n| 绝对路径 | GiB | 目录mtime | 分类 | 依据 |\n|---|---:|---|---|---|\n'+''.join(fmt(r) for r in items)
+-text+='\n[完整逐目录分类](../../tools/bolt/results/disk-118/inventory.jsonl)、[删除候选原文](../../tools/bolt/results/disk-118/delete-candidates.txt)、[测量总结](../../tools/bolt/results/disk-118/summary.json)、[初始du状态](../../tools/bolt/results/disk-118/measurement-errors.json)。B下载的新RPM会另附容量补记，不把后来下载计入本次时点。\n'
++text+='\n[完整逐目录分类](../../tools/bolt/results/disk-118/inventory-v2.jsonl)、[删除候选原文](../../tools/bolt/results/disk-118/delete-candidates-v2.txt)、[测量总结](../../tools/bolt/results/disk-118/summary-v2.json)、[初始du状态](../../tools/bolt/results/disk-118/measurement-errors.json)。B下载的新RPM会另附容量补记，不把后来下载计入本次时点。\n'
+ text+='\nA 已结束 '+datetime.datetime.now().astimezone().isoformat()+' status=PARTIAL（测量缺口；只读清单已交付）\n'
+ (B/'docs/bolt/118_disk_audit.md').write_text(text)
+ print('candidate bytes',total,'count',len(items),'top10',[(r['path'],r['bytes']) for r in top[:10]])

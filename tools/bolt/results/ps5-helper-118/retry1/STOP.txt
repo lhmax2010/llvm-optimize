@@ -1,0 +1,47 @@
+FAIL: test_success_with_live_descendant_fails_and_cleans (__main__.R1.test_success_with_live_descendant_fails_and_cleans)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-118/source/packaging/clang-bolt-helper.py", line 298, in wait_session_exit
+    members = live_session_members(sid, deadline)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-118/source/packaging/clang-bolt-helper.py", line 236, in live_session_members
+    session_deadline(deadline, members)
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-118/source/packaging/clang-bolt-helper.py", line 204, in session_deadline
+    raise SessionDeadlineError(
+h109.SessionDeadlineError: session deadline expired; scan incomplete; last observed members: 
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-118/source/packaging/clang-bolt-helper.py", line 451, in call
+    wait_session_exit(process.pid, 10)
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-118/source/packaging/clang-bolt-helper.py", line 303, in wait_session_exit
+    expired()
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-118/source/packaging/clang-bolt-helper.py", line 287, in expired
+    raise SessionInspectionError(
+h109.SessionInspectionError: could not verify that the session is empty; last observed snapshot: 672932:python3 (S); errors: session deadline expired; scan incomplete; last observed members: 
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-118/source/packaging/clang-bolt-helper.py", line 454, in call
+    raise GateError(primary) from error
+h109.GateError: COMMAND_ERROR: command exited successfully; could not verify that the session is empty; last observed snapshot: 672932:python3 (S); errors: session deadline expired; scan incomplete; last observed members: 
+
+The above exception was the direct cause of the following exception:
+
+h109.GateError: COMMAND_ERROR: command exited successfully; could not verify that the session is empty; last observed snapshot: 672932:python3 (S); errors: session deadline expired; scan incomplete; last observed members:  (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/retry1/tests/regression109-118-scratch/tmp6zatadyi/live.log)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/retry1/tests/test_109_regressions.py", line 33, in test_success_with_live_descendant_fails_and_cleans
+    with self.assertRaisesRegex(self.h.GateError,'COMMAND_ERROR: command exited successfully with live descendants'):
+AssertionError: "COMMAND_ERROR: command exited successfully with live descendants" does not match "COMMAND_ERROR: command exited successfully; could not verify that the session is empty; last observed snapshot: 672932:python3 (S); errors: session deadline expired; scan incomplete; last observed members:  (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/retry1/tests/regression109-118-scratch/tmp6zatadyi/live.log)"
+
+----------------------------------------------------------------------
+Ran 4 tests in 32.684s
+
+FAILED (failures=1)
+
+已结束 2026-11-16T23:51:04.476321-08:00 D STOP; no H3, no sandbox push

@@ -1,0 +1,23 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index bbb97728b91f..6abd7061218f 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -257,8 +257,8 @@ def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+     # Deadlines are cooperative; an individual kernel operation can overrun.
+     if deadline is None:
+         deadline = time.monotonic()+timeout
++    errors = []
+     while True:
+-        errors = []
+         deadline_error = None
+         try:
+             members = live_session_members(sid, deadline)
+@@ -280,7 +280,7 @@ def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+                     break
+                 except PermissionError as error:
+                     errors.append('PID %d: %s' % (pid, error))
+-        if errors:
++        if errors and (not members or time.monotonic() >= deadline or deadline_error is not None):
+             if deadline_error is not None:
+                 raise SessionDeadlineError("; ".join(errors), members)
+             raise GateError('session cleanup/check failed: '+'; '.join(errors)+

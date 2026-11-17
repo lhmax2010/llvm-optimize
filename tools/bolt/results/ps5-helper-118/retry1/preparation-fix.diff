@@ -1,0 +1,46 @@
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/tests/helper-suite/test_second_review.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/retry1/tests/helper-suite/test_second_review.py
+@@ -88,8 +88,11 @@
+ 
+ class SecondProcessTests(Base):
+     def test_wait_deadline_stubborn(self):
+-        with patch.object(h,'live_session_members',return_value=[(424242,'R',1)]),patch.object(h.time,'monotonic',side_effect=[0,11]):
+-            with self.assertRaisesRegex(h.GateError,'424242:R'):h.wait_session_exit(42)
++        clock=[0]
++        def observed(*args):clock[0]=11;return [(424242,'R',1)]
++        with patch.object(h,'live_session_members',side_effect=observed),patch.object(h.time,'monotonic',side_effect=lambda:clock[0]):
++            with self.assertRaisesRegex(h.GateError,r'424242:.*\(R\)'):h.wait_session_exit(42)
++
+     def test_reap_deadline_stubborn(self):
+         with patch.object(os,'waitpid',return_value=(0,0)),patch.object(h.time,'monotonic',side_effect=[0,2]):
+             with self.assertRaisesRegex(h.GateError,'leader 424242'):h.reap_child(SimpleNamespace(pid=424242))
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/tests/helper-suite/test_second_review.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/retry1/tests/helper-suite/test_second_review.py
+@@ -94,8 +94,11 @@
+             with self.assertRaisesRegex(h.GateError,r'424242:.*\(R\)'):h.wait_session_exit(42)
+ 
+     def test_reap_deadline_stubborn(self):
+-        with patch.object(os,'waitpid',return_value=(0,0)),patch.object(h.time,'monotonic',side_effect=[0,2]):
++        clock=[0]
++        def waitpid(*args):clock[0]=2;return (0,0)
++        with patch.object(os,'waitpid',side_effect=waitpid),patch.object(h.time,'monotonic',side_effect=lambda:clock[0]):
+             with self.assertRaisesRegex(h.GateError,'leader 424242'):h.reap_child(SimpleNamespace(pid=424242))
++
+     def test_nonzero_live_grandchild(self):
+         pidfile=self.d/'pid'
+         code='import os,subprocess,sys\np=subprocess.Popen([sys.executable,"-c","import time;time.sleep(60)"])\nopen('+repr(str(pidfile))+',"w").write(str(p.pid))\nsys.exit(7)'
+--- /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/tests/test_110_sessions.py
++++ /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/retry1/tests/test_110_sessions.py
+@@ -129,8 +129,11 @@
+    self.h.wait_session_exit(42,1,kill=True)
+   self.assertEqual([c.args[:3] for c in kill.call_args_list],[(42,600001,1),(42,600002,1)])
+  def test_session_timeout_is_typed(self):
+-  with patch.object(self.h,'live_session_members',return_value=[(600001,'R',1)]),patch.object(self.h.time,'monotonic',side_effect=[0,11]),self.assertRaises(self.h.LiveDescendantsError):
++  clock=[0]
++  def observed(*args):clock[0]=11;return [(600001,'R',1)]
++  with patch.object(self.h,'live_session_members',side_effect=observed),patch.object(self.h.time,'monotonic',side_effect=lambda:clock[0]),self.assertRaises(self.h.LiveDescendantsError):
+    self.h.wait_session_exit(42)
++
+  def test_proc_stat_session_field(self):
+   v=self.h.proc_stat('/proc/self/stat');self.assertEqual(v,(os.getpid(),v[1],os.getpgrp(),v[3],os.getsid(0),v[5]))
+  def scan(self,state,threads,sid=42,error=None):

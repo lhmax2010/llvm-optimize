@@ -1,0 +1,31 @@
+From: Pavel Kudrevatykh <p.kudrevatyh@partner.samsung.com>
+Date: Mon, 18 Aug 2025 19:07:40 +0300
+Subject: Fix armv7l build when compiler is clang
+
+By default, compiler_rt for armv7l is built with flag -mfloat-abi=soft.
+In prjconfig we specify flag -mfloat-abi=softfp.
+For gcc this doesn't cause problems, but for clang it causes error "no fp registers".
+Also, libraries of compiler_rt are built for arm and armv4t, which is redundant.
+
+Change arch and flags for arm.
+Define correctly CMAKE_ASM_FLAGS.
+
+Change-Id: Ic3dd8c37054a106262171d6a82fe00911ef45245
+(cherry picked from commit 9b5cb26fefe3e6ec60be09d298f388ea5f75595e)
+---
+ compiler-rt/cmake/base-config-ix.cmake | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/compiler-rt/cmake/base-config-ix.cmake b/compiler-rt/cmake/base-config-ix.cmake
+index 37dfa5534dfe..b90fec62723c 100644
+--- a/compiler-rt/cmake/base-config-ix.cmake
++++ b/compiler-rt/cmake/base-config-ix.cmake
+@@ -273,7 +273,7 @@ macro(test_targets)
+       test_target_arch(nvptx64 "" "--nvptx64-nvidia-cuda" "-nogpulib" "-flto"
+                        "-fconvergent-functions" "-c")
+     elseif("${COMPILER_RT_DEFAULT_TARGET_ARCH}" MATCHES "arm")
+-      if(WIN32)
++      if(WIN32 OR "${COMPILER_RT_DEFAULT_TARGET_TRIPLE}" MATCHES ".*-tizen-.*")
+         test_target_arch(arm "" "" "")
+       else()
+         test_target_arch(armv4t "" "-march=armv4t" "-mfloat-abi=soft")

@@ -1,0 +1,27 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 98f208b2da09..12b42cef7c21 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -179,6 +179,7 @@ def session_kill_mode():
+     global _SESSION_KILL_MODE
+     if _SESSION_KILL_MODE is None:
+         mode = 'pidfd'
++        probe_errno = None
+         try:
+             fd = os.pidfd_open(os.getpid(), 0)
+             try:
+@@ -188,10 +189,12 @@ def session_kill_mode():
+         except AttributeError:
+             mode = 'fallback-recheck'
+         except OSError as error:
+-            if error.errno not in (errno.ENOSYS, errno.EPERM):
++            if error.errno not in (errno.ENOSYS, errno.EPERM, errno.EACCES):
+                 raise
+             mode = 'fallback-recheck'
+-        print('SESSION_KILL_MODE='+mode, file=sys.stderr, flush=True)
++            probe_errno = error.errno
++        suffix = ' errno='+errno.errorcode.get(probe_errno, str(probe_errno)) if probe_errno is not None else ''
++        print('SESSION_KILL_MODE='+mode+suffix, file=sys.stderr, flush=True)
+         _SESSION_KILL_MODE = mode
+     return _SESSION_KILL_MODE
+ 

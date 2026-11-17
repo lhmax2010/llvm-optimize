@@ -1,0 +1,33 @@
+From: Khem Raj <khem.raj@oss.qualcomm.com>
+Date: Mon, 27 Apr 2026 00:35:24 -0700
+Subject: libcxxabi: declare __gnu_unwind_frame in cxa_personality (#189787)
+
+ARM EHABI builds of libcxxabi fail with clang-22+ because
+cxa_personality.cpp calls __gnu_unwind_frame without a visible
+declaration, triggering:
+
+  error: use of undeclared identifier '__gnu_unwind_frame'
+
+Add an extern "C" forward declaration before the EHABI unwind helper so
+the source compiles correctly.
+Change-Id: Ib28e3abd3650821a8ad839c73358b47dedced448
+Signed-off-by: Khem Raj <khem.raj@oss.qualcomm.com>
+GitOrigin-RevId: 8119f1854948b50358bbfaea08f207f51970f06c
+Source: https://llvm.googlesource.com/llvm-project/libcxxabi/+/9ec73b8fbfe9ce60ecfd08b6dd692cf9d7a10eec
+---
+ libcxxabi/src/cxa_personality.cpp | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/libcxxabi/src/cxa_personality.cpp b/libcxxabi/src/cxa_personality.cpp
+index 77b2eb53af0e..28208194edb3 100644
+--- a/libcxxabi/src/cxa_personality.cpp
++++ b/libcxxabi/src/cxa_personality.cpp
+@@ -1125,6 +1125,8 @@ __gxx_personality_seh0(PEXCEPTION_RECORD ms_exc, void *this_frame,
+ 
+ #else
+ 
++extern "C" _Unwind_Reason_Code __gnu_unwind_frame(_Unwind_Exception*, _Unwind_Context*);
++
+ // Helper function to unwind one frame.
+ // ARM EHABI 7.3 and 7.4: If the personality function returns _URC_CONTINUE_UNWIND, the
+ // personality routine should update the virtual register set (VRS) according to the

@@ -1,0 +1,53 @@
+From: Konstantin Baladurin <k.baladurin@samsung.com>
+Date: Mon, 15 Apr 2019 20:36:54 +0300
+Subject: clang: add support for LLVM gold plugin in case of accelerated
+ environment
+
+Change-Id: I5e29abefacef0f25e44cf4d3f030a8ba762586d2
+---
+ clang/include/clang/Driver/Driver.h        | 4 ++++
+ clang/lib/Driver/Driver.cpp                | 2 ++
+ clang/lib/Driver/ToolChains/CommonArgs.cpp | 2 +-
+ 3 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/clang/include/clang/Driver/Driver.h b/clang/include/clang/Driver/Driver.h
+index b7bd1bc8aab4..1dbbe9e81f7a 100644
+--- a/clang/include/clang/Driver/Driver.h
++++ b/clang/include/clang/Driver/Driver.h
+@@ -179,6 +179,10 @@ public:
+   /// command line.
+   std::string Dir;
+ 
++  /// The real path the driver executable was in, as invoked from the
++  /// command line. It differs from Dir in case of accelerated environment.
++  std::string RealDir;
++
+   /// The original path to the clang executable.
+   std::string ClangExecutable;
+ 
+diff --git a/clang/lib/Driver/Driver.cpp b/clang/lib/Driver/Driver.cpp
+index 109bfd55923e..db4d3e5e7772 100644
+--- a/clang/lib/Driver/Driver.cpp
++++ b/clang/lib/Driver/Driver.cpp
+@@ -186,6 +186,8 @@ Driver::Driver(StringRef ClangExecutable, StringRef TargetTriple,
+   if (!this->VFS)
+     this->VFS = llvm::vfs::getRealFileSystem();
+ 
++  RealDir = llvm::sys::path::parent_path(ClangExecutable);
++
+ // Skip /emul if we work in accelerated environment
+ #define QEMU_ACCEL_DIR "/emul"
+   if (ClangExecutable.substr(0, sizeof(QEMU_ACCEL_DIR) - 1) == QEMU_ACCEL_DIR)
+diff --git a/clang/lib/Driver/ToolChains/CommonArgs.cpp b/clang/lib/Driver/ToolChains/CommonArgs.cpp
+index 10a1a412eea0..cd77f43b5937 100644
+--- a/clang/lib/Driver/ToolChains/CommonArgs.cpp
++++ b/clang/lib/Driver/ToolChains/CommonArgs.cpp
+@@ -1029,7 +1029,7 @@ void tools::addLTOOptions(const ToolChain &ToolChain, const ArgList &Args,
+ #endif
+ 
+     SmallString<1024> Plugin;
+-    llvm::sys::path::native(Twine(D.Dir) +
++    llvm::sys::path::native(Twine(D.RealDir) +
+                                 "/../" CLANG_INSTALL_LIBDIR_BASENAME +
+                                 PluginName + Suffix,
+                             Plugin);

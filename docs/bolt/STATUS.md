@@ -1646,3 +1646,17 @@ Q6 FINAL已更新并保留-v2：关的是hybrid/BOLT，ThinLTO/MLGO、固定参�
 用户明确批准仅步骤4将MemAvailable门槛改为12GiB，其余限制不变。112完成三输入SHA核对/归档、361624 PS1只读fetch、独立游离树git am及两spec改动范围核对；仅补丁应用提交61d821ab，尚非综合C1。第一次旧对象库查H2触发自动fetch，修正为114本地对象库；随后错误读取C1/bolt/CMakeLists.txt，第二次准备错误STOP。未实施A1–A4/F6、未生成I、未配置/构建，不判产品失败。
 
 最终：102步骤1 STOP、2/3/6 SKIPPED；112步骤4 STOP、5 SKIPPED。已核对H2=b06ee2ac/tree02a70362/父61ef5d31，没有改H2、LLVM分支或任何LLVM远端。看门狗未触发、OOM0；归档/局部应用现场保留。无STARTUP/SESSION/Q5/关闭优化实物结果、无C1完整diff或配置/bolt包结论。详见[102](102_ps5_night_validation.md)、[112](112_361624_combined_validation.md)。
+
+## 2026-11-17：118号（A STOP / B PASS / C PASS / D STOP）
+
+A保留磁盘实测与6个暂定候选，观测合计94,678,958,080 B；du/权限有缺口，分类容器继承错误及一次修正的输入路径错误导致STOP，不删除。原始分类列不可作为最终判定。最终/home可用104457097216 B。
+
+B：1231417/1231418确认H2 b06ee2ac，六架构成功，102/102二进制载荷与1226850/51相同。源码helper/转换器/spec及补丁重组已对Git归类；实际SESSION_KILL_MODE均pidfd，STARTUP CFLAGS/CXXFLAGS为null。公开日志无内部jump-past-end明细，不推断告警消失。
+
+C：新QB私有clang成功载入未链接LLVM/clang库的插件，打印alpha/beta/main。loader准备修正一次，原文保留。
+
+D：6个helper工作提交，末端9e562a062ca48114e5a7e220e6778f44a3f133ea，不是H3。新19/19通过；完整重跑624项中623通过、1失败。旧109真实回归要求with live descendants，实际扫描到期输出could not verify并保留PID/comm。首次固定时钟序列准备错误修正一次，最终FAIL不再修正。剩余90项、Claude探针、H3生成和sandbox查询/推送未运行。
+
+见[磁盘](118_disk_audit.md)、[QB](118_qb_1231417_1231418.md)、[插件](118_plugin_load.md)、[helper及STOP](118_helper_fixes.md)。未构建RPM、未写Gerrit、未删除。E首次长字符串工具编排SyntaxError修正为独立Python脚本，未涉及产品。
+
+118号E补记：日志分析JSON压缩后仍30,478,003 B，触发10MB断言，属于E第二次准备错误，停止完整打包。只收尾提交现有小文件证据与STOP；原JSON/gzip留本地，无重试。详见[交付STOP](118_delivery_stop.md)。

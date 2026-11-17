@@ -1,0 +1,132 @@
+From: Slava Barinov <v.barinov@samsung.com>
+Date: Thu, 2 Sep 2021 23:51:42 +0300
+Subject: Add support for Tizen toolchain vendor
+
+Port of
+ebf1682d714e4b6c1487ea0e136cf7c1ec30f46d
+8845ba7f79513b7e362fed80bb57b708352ddbbd
+
+Change-Id: I67d99460b74711b120843505c9663036d7ee4ccb
+Signed-off-by: Slava Barinov <v.barinov@samsung.com>
+Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+---
+ clang/include/clang/Config/config.h.cmake | 3 +++
+ clang/lib/Driver/Driver.cpp               | 5 +++++
+ clang/lib/Driver/ToolChains/Linux.cpp     | 3 ++-
+ clang/lib/Options/OptionUtils.cpp         | 5 ++++-
+ llvm/include/llvm/TargetParser/Triple.h   | 3 ++-
+ llvm/lib/TargetParser/Triple.cpp          | 3 +++
+ 6 files changed, 19 insertions(+), 3 deletions(-)
+
+diff --git a/clang/include/clang/Config/config.h.cmake b/clang/include/clang/Config/config.h.cmake
+index 00c352b458c3..0e7107a1964e 100644
+--- a/clang/include/clang/Config/config.h.cmake
++++ b/clang/include/clang/Config/config.h.cmake
+@@ -32,6 +32,9 @@
+ /* Default architecture for SystemZ. */
+ #define CLANG_SYSTEMZ_DEFAULT_ARCH "${CLANG_SYSTEMZ_DEFAULT_ARCH}"
+ 
++/* Multilib suffix for libdir. */
++#define CLANG_LIBDIR_SUFFIX "${CLANG_LIBDIR_SUFFIX}"
++
+ /* Multilib basename for libdir. */
+ #define CLANG_INSTALL_LIBDIR_BASENAME "${CLANG_INSTALL_LIBDIR_BASENAME}"
+ 
+diff --git a/clang/lib/Driver/Driver.cpp b/clang/lib/Driver/Driver.cpp
+index eb3f9cbea284..109bfd55923e 100644
+--- a/clang/lib/Driver/Driver.cpp
++++ b/clang/lib/Driver/Driver.cpp
+@@ -186,6 +186,11 @@ Driver::Driver(StringRef ClangExecutable, StringRef TargetTriple,
+   if (!this->VFS)
+     this->VFS = llvm::vfs::getRealFileSystem();
+ 
++// Skip /emul if we work in accelerated environment
++#define QEMU_ACCEL_DIR "/emul"
++  if (ClangExecutable.substr(0, sizeof(QEMU_ACCEL_DIR) - 1) == QEMU_ACCEL_DIR)
++    ClangExecutable = ClangExecutable.drop_front(sizeof(QEMU_ACCEL_DIR) - 1);
++
+   Name = std::string(llvm::sys::path::filename(ClangExecutable));
+   Dir = std::string(llvm::sys::path::parent_path(ClangExecutable));
+ 
+diff --git a/clang/lib/Driver/ToolChains/Linux.cpp b/clang/lib/Driver/ToolChains/Linux.cpp
+index d525b417b4ea..8a8a755a136c 100644
+--- a/clang/lib/Driver/ToolChains/Linux.cpp
++++ b/clang/lib/Driver/ToolChains/Linux.cpp
+@@ -813,6 +813,7 @@ void Linux::addLibStdCxxIncludePaths(const llvm::opt::ArgList &DriverArgs,
+     return;
+ 
+   StringRef LibDir = GCCInstallation.getParentLibPath();
++  const StringRef InstallDir = GCCInstallation.getInstallPath();
+   const Multilib &Multilib = GCCInstallation.getMultilib();
+   const GCCVersion &Version = GCCInstallation.getVersion();
+ 
+@@ -822,7 +823,7 @@ void Linux::addLibStdCxxIncludePaths(const llvm::opt::ArgList &DriverArgs,
+       LibDir.str() + "/../" + TripleStr.str() + "/include/c++/" + Version.Text,
+       // Freescale SDK C++ headers are directly in <sysroot>/usr/include/c++,
+       // without a subdirectory corresponding to the gcc version.
+-      LibDir.str() + "/../include/c++",
++      LibDir.str() + "/../include/c++", InstallDir.str() + "/include/c++",
+       // Cray's gcc installation puts headers under "g++" without a
+       // version suffix.
+       LibDir.str() + "/../include/g++",
+diff --git a/clang/lib/Options/OptionUtils.cpp b/clang/lib/Options/OptionUtils.cpp
+index e5aefa012f67..6dcbdb631205 100644
+--- a/clang/lib/Options/OptionUtils.cpp
++++ b/clang/lib/Options/OptionUtils.cpp
+@@ -15,6 +15,7 @@
+ #include "llvm/Option/ArgList.h"
+ #include "llvm/Support/FileSystem.h"
+ #include "llvm/Support/Path.h"
++#include <cstdlib> // ::getenv
+ 
+ using namespace clang;
+ using namespace llvm::opt;
+@@ -229,10 +230,12 @@ std::string clang::GetResourcesPath(StringRef BinaryPath) {
+     // With a static-library build of libclang, LibClangPath will contain the
+     // path of the embedding binary, which for LLVM binaries will be in bin/.
+     // ../lib gets us to lib/ in both cases.
++    const char *NO_LIBDIR_SUFFIX = std::getenv("CLANG_NO_LIBDIR_SUFFIX");
++    StringRef ClangLibdirSuffix(NO_LIBDIR_SUFFIX ? "" : CLANG_LIBDIR_SUFFIX);
+     P = llvm::sys::path::parent_path(Dir);
+     // This search path is also created in the COFF driver of lld, so any
+     // changes here also needs to happen in lld/COFF/Driver.cpp
+-    llvm::sys::path::append(P, CLANG_INSTALL_LIBDIR_BASENAME, "clang",
++    llvm::sys::path::append(P, Twine("lib") + ClangLibdirSuffix, "clang",
+                             CLANG_VERSION_MAJOR_STRING);
+   }
+ 
+diff --git a/llvm/include/llvm/TargetParser/Triple.h b/llvm/include/llvm/TargetParser/Triple.h
+index 9c83abeeb3b1..4a3f8bbac59a 100644
+--- a/llvm/include/llvm/TargetParser/Triple.h
++++ b/llvm/include/llvm/TargetParser/Triple.h
+@@ -203,7 +203,8 @@ public:
+     OpenEmbedded,
+     Intel,
+     Meta,
+-    LastVendorType = Meta
++    Tizen,
++    LastVendorType = Tizen
+   };
+   enum OSType {
+     UnknownOS,
+diff --git a/llvm/lib/TargetParser/Triple.cpp b/llvm/lib/TargetParser/Triple.cpp
+index a4f9dd42c0fe..67a8cc4a983b 100644
+--- a/llvm/lib/TargetParser/Triple.cpp
++++ b/llvm/lib/TargetParser/Triple.cpp
+@@ -283,6 +283,8 @@ StringRef Triple::getVendorTypeName(VendorType Kind) {
+   case SUSE: return "suse";
+   case Meta:
+     return "meta";
++  case Tizen:
++    return "tizen";
+   }
+ 
+   llvm_unreachable("Invalid VendorType!");
+@@ -703,6 +705,7 @@ static Triple::VendorType parseVendor(StringRef VendorName) {
+       .Case("oe", Triple::OpenEmbedded)
+       .Case("intel", Triple::Intel)
+       .Case("meta", Triple::Meta)
++      .Case("tizen", Triple::Tizen)
+       .Default(Triple::UnknownVendor);
+ }
+ 

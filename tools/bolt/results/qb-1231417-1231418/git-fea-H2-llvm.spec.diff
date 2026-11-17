@@ -1,0 +1,121 @@
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 5a10febabbb3..ce6284ae26e5 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -1,9 +1,21 @@
+ # Quickbuild sandbox: x86_64 BOLT is on by default; other architectures unchanged.
++%bcond_without llvm_speedup
++%bcond_without hybrid_link
+ %ifarch x86_64
+ %bcond_without clang_bolt
+ %else
+ %bcond_with clang_bolt
+ %endif
++%global llvm_hybrid_enabled 0
++%global llvm_bolt_enabled 0
++%if %{with llvm_speedup}
++%if %{with hybrid_link}
++%global llvm_hybrid_enabled 1
++%endif
++%if %{with clang_bolt}
++%global llvm_bolt_enabled 1
++%endif
++%endif
+ 
+ %define keepstatic 1
+ 
+@@ -74,8 +86,8 @@ BuildRequires: sed
+ %endif
+ BuildRequires: ninja
+ %ifarch x86_64
+-%if %{with clang_bolt}
+ BuildRequires: python3 >= 3.9
++%if %{llvm_bolt_enabled}
+ BuildRequires: xz elfutils
+ %endif
+ %endif
+@@ -403,11 +415,19 @@ cmake \
+     -DLLVM_BUILD_LLVM_DYLIB=ON \
+     -DCLANG_BUILD_CLANG_DYLIB=ON \
+ %ifarch x86_64
++%if %{llvm_hybrid_enabled}
+     -DLLVM_LINK_LLVM_DYLIB=ON \
+     -DCLANG_LINK_CLANG_DYLIB=ON \
+     -DTIZEN_HYBRID_LINK=ON \
+     -DBUILD_SHARED_LIBS=OFF \
+     -DLLVM_TOOL_LLVM_DRIVER_BUILD=OFF \
++%else
++    -DTIZEN_HYBRID_LINK=OFF \
++    -UBUILD_SHARED_LIBS \
++    -ULLVM_TOOL_LLVM_DRIVER_BUILD \
++    -DLLVM_LINK_LLVM_DYLIB=OFF \
++    -DCLANG_LINK_CLANG_DYLIB=OFF \
++%endif
+ %else
+ %if %{defined _toolchain}
+     -DLLVM_LINK_LLVM_DYLIB=ON \
+@@ -518,7 +538,7 @@ cmake \
+ 
+ # Full build using ninja (already in build/ directory after cd build)
+ %ifarch x86_64
+-%if %{with clang_bolt}
++%if %{llvm_bolt_enabled}
+ ninja -d keeprsp -j %{mlgo_build_jobs} || exit 1
+ %else
+ ninja -j %{mlgo_build_jobs}
+@@ -527,6 +547,7 @@ ninja -j %{mlgo_build_jobs}
+ ninja -j %{mlgo_build_jobs}
+ %endif
+ %ifarch x86_64
++%if %{llvm_hybrid_enabled}
+ # These drivers must retain component linkage even when BOLT is disabled.
+ for hybrid_tool in bin/clang-22 bin/lld bin/llvm-ar bin/llvm-tblgen bin/clang-tblgen bin/lldb-tblgen bin/llvm-config bin/llvm-exegesis; do
+     if ! test -f "$hybrid_tool"; then
+@@ -554,12 +575,13 @@ EOF_HYBRID_DYNAMIC
+ done
+ echo TIZEN_HYBRID_LINK_OK
+ %endif
++%endif
+ 
+ %install
+ cd build
+ cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
+ %ifarch x86_64
+-%if %{with clang_bolt}
++%if %{llvm_bolt_enabled}
+ 
+ # Reject debug-named buildroots before any BOLT action.
+ # Keep the ordinary install and BOLT payload under the same platform debug-path policy.
+@@ -711,7 +733,7 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+     --compiler "%{_builddir}/%{buildsubdir}/build/bin/clang-22" \
+     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+-%if %{with clang_bolt}
++%if %{llvm_bolt_enabled}
+     --jobs 4 --address-space-bytes 4294967296 || bolt_status_exit $?
+ %else
+     --jobs 4 --address-space-bytes 4294967296 || exit 1
+@@ -719,7 +741,7 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+ %endif
+ 
+ %ifarch x86_64
+-%if %{with clang_bolt}
++%if %{llvm_bolt_enabled}
+ # Candidate is fully stripped before the one unchanged platform post-processing chain.
+ python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
+   "$BOLT_WORK/install-state.json" "$BOLT_WORK/identity.json" || bolt_status_exit $?
+@@ -958,12 +980,12 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %files -n python-clang
+ %{python3_sitelib}/clang
+ %ifarch x86_64
+-%if %{with clang_bolt}
++%if %{llvm_bolt_enabled}
+ 
+ %global __bolt_original_spec_install_post %{__spec_install_post}
+ %define __spec_install_post \
+     %{__bolt_original_spec_install_post} \
+-    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" || bolt_status_exit $? \
++    python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" --debugfiles-list "%{_builddir}/%{buildsubdir}/debugfiles.list" || bolt_status_exit $? \
+     echo BOLT_POST_GATE_PASS \
+     bolt_optional python3 -B %{SOURCE1201} disk-report post
+ %endif

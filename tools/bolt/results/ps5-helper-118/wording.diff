@@ -1,0 +1,12 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 12b42cef7c21..5130afcf6291 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -371,6 +371,7 @@ def record_cancel(signum, frame):
+                 _FORCE_EXITING = True
+                 # Best effort, once only. Another signal abandons this pass
+                 # and terminates immediately, without restarting its budget.
++                # This forced-exit cleanup is best effort, not containment.
+                 if _ACTIVE_SESSION is not None:
+                     try: kill_session(_ACTIVE_SESSION, 1)
+                     except Exception: pass

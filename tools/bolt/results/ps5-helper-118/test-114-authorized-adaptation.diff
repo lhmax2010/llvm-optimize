@@ -1,0 +1,80 @@
+--- 114/test_114.py
++++ 118/test_114.py
+@@ -139,7 +139,7 @@
+         h=self.h;output=io.StringIO()
+         with patch.object(h.os,'pidfd_open',side_effect=error),contextlib.redirect_stderr(output):
+             self.assertEqual(h.session_kill_mode(),'fallback-recheck');self.assertEqual(h.session_kill_mode(),'fallback-recheck')
+-        self.assertEqual(output.getvalue(),'SESSION_KILL_MODE=fallback-recheck\n')
++        self.assertEqual(output.getvalue(),'SESSION_KILL_MODE=fallback-recheck'+(' errno='+errno.errorcode[error.errno] if isinstance(error,OSError) else '')+'\n')
+     def test_pidfd_absent_logged_fallback(self):self.mode(AttributeError('missing'))
+     def test_pidfd_enosys_logged_fallback(self):self.mode(OSError(errno.ENOSYS,'unsupported'))
+     def test_pidfd_eperm_logged_fallback(self):self.mode(PermissionError(errno.EPERM,'denied'))
+@@ -175,9 +175,9 @@
+ 
+     def test_permission_member_does_not_stop_next(self):
+         h=self.h
+-        with patch.object(h,'live_session_members',return_value=[(31,'R',1),(32,'S',2)]),patch.object(h,'kill_session_member',side_effect=[PermissionError('denied 31'),None]) as kill:
++        with patch.object(h,'live_session_members',side_effect=[[(31,'R',1),(32,'S',2)],[(31,'R',1),(32,'S',2)],[]]),patch.object(h,'kill_session_member',side_effect=[PermissionError('denied 31'),None,None,None]) as kill:
+             with self.assertRaisesRegex(h.GateError,'denied 31'):h.wait_session_exit(42,1,kill=True)
+-        self.assertEqual([c.args[1] for c in kill.call_args_list],[31,32])
++        self.assertEqual([c.args[1] for c in kill.call_args_list],[31,32,31,32])
+ 
+     def test_missing_member_does_not_stop_next(self):
+         h=self.h
+@@ -217,27 +217,45 @@
+         with a,b:self.assertEqual(h.live_session_members(42),[])
+ 
+     def test_deadline_partial_scan_never_empty_success(self):
+-        h=self.h;a,b=self.scan_context({31:(31,'R',31,1,42,1),32:(32,'R',32,1,42,2)})
+-        with a,b,patch.object(h.time,'monotonic',side_effect=[0,0,2]),self.assertRaisesRegex(h.SessionDeadlineError,'scan incomplete') as caught:
+-            h.live_session_members(42,1)
++        h=self.h; clock=[0]
++        a,b=self.scan_context({31:(31,'R',31,1,42,1),32:(32,'R',32,1,42,2)})
++        with a,b:
++            original=h.proc_stat.side_effect
++            def stat(path):
++                result=original(path)
++                if path=='/proc/31/stat':clock[0]=2
++                return result
++            h.proc_stat.side_effect=stat
++            with patch.object(h.time,'monotonic',side_effect=lambda:clock[0]),self.assertRaisesRegex(h.SessionDeadlineError,'scan incomplete') as caught:
++                h.live_session_members(42,1)
+         self.assertEqual(caught.exception.members,[(31,'R',1)])
+ 
++
+     def test_deadline_after_empty_scan_fails(self):
+-        h=self.h;a,b=self.scan_context({})
+-        with a,b,patch.object(h.time,'monotonic',side_effect=[0,2]),self.assertRaisesRegex(h.GateError,'scan incomplete'):
+-            h.live_session_members(42,1)
++        h=self.h;clock=[0];a,b=self.scan_context({})
++        def entries():
++            clock[0]=2
++            yield from ()
++        with a,b,patch.object(h.time,'monotonic',side_effect=lambda:clock[0]):
++            h.os.scandir.return_value.__enter__.return_value=entries()
++            with self.assertRaisesRegex(h.GateError,'scan incomplete'):h.live_session_members(42,1)
++
+ 
+     def test_deadline_checked_between_kills(self):
+-        h=self.h
+-        with patch.object(h,'live_session_members',return_value=[(31,'R',1),(32,'R',2)]),patch.object(h.time,'monotonic',side_effect=[0,0,2]),patch.object(h,'kill_session_member') as kill:
+-            with self.assertRaisesRegex(h.GateError,'scan incomplete'):h.wait_session_exit(42,1,kill=True)
++        h=self.h;clock=[0]
++        def kill_one(*args):clock[0]=2
++        with patch.object(h,'live_session_members',return_value=[(31,'R',1),(32,'R',2)]),patch.object(h.time,'monotonic',side_effect=lambda:clock[0]),patch.object(h,'kill_session_member',side_effect=kill_one) as kill:
++            with self.assertRaisesRegex(h.GateError,'deadline'):h.wait_session_exit(42,1,kill=True)
+         self.assertEqual(kill.call_count,1)
+ 
++
+     def test_deadline_after_pidfd_read_no_signal(self):
+-        h=self.h;h._SESSION_KILL_MODE='pidfd'
+-        with patch.object(h.os,'pidfd_open',return_value=71),patch.object(h.os,'close') as close,patch.object(h,'proc_stat',return_value=(31,'R',31,1,42,1)),patch.object(h.time,'monotonic',side_effect=[0,2]),patch.object(h.signal,'pidfd_send_signal') as send:
++        h=self.h;h._SESSION_KILL_MODE='pidfd';clock=[0]
++        def stat(*args):clock[0]=2;return (31,'R',31,1,42,1)
++        with patch.object(h.os,'pidfd_open',return_value=71),patch.object(h.os,'close') as close,patch.object(h,'proc_stat',side_effect=stat),patch.object(h.time,'monotonic',side_effect=lambda:clock[0]),patch.object(h.signal,'pidfd_send_signal') as send:
+             with self.assertRaises(h.SessionDeadlineError):h.kill_session_member(42,31,1,1)
+         send.assert_not_called();close.assert_called_once_with(71)
++
+ 
+     def test_group_kill_and_wait_share_absolute_deadline(self):
+         h=self.h

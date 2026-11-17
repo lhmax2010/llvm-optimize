@@ -1,0 +1,28 @@
+From: =?utf-8?q?=C5=81ukasz_Stelmach?= <l.stelmach@samsung.com>
+Date: Wed, 26 Apr 2023 12:53:28 +0200
+Subject: Link libclang_rt.asan.so against libatomic when necessary
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+To build libclang_rt.asan.so on RISC-V it is required to link it against
+libatomic.
+
+Change-Id: Iafdc20fc8ecffeeaa289e03b01267bbabdd48a9e
+Signed-off-by: Łukasz Stelmach <l.stelmach@samsung.com>
+---
+ compiler-rt/lib/asan/CMakeLists.txt | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/compiler-rt/lib/asan/CMakeLists.txt b/compiler-rt/lib/asan/CMakeLists.txt
+index 232bb2574a77..254032d26f43 100644
+--- a/compiler-rt/lib/asan/CMakeLists.txt
++++ b/compiler-rt/lib/asan/CMakeLists.txt
+@@ -161,6 +161,7 @@ append_list_if(COMPILER_RT_HAS_LIBM m ASAN_DYNAMIC_LIBS)
+ append_list_if(COMPILER_RT_HAS_LIBPTHREAD pthread ASAN_DYNAMIC_LIBS)
+ append_list_if(COMPILER_RT_HAS_LIBLOG log ASAN_DYNAMIC_LIBS)
+ append_list_if(MINGW "${MINGW_LIBRARIES}" ASAN_DYNAMIC_LIBS)
++list(APPEND ASAN_DYNAMIC_LIBS ${LLVM_ATOMIC_LIB})
+ 
+ # Compile ASan sources into an object library.
+ 

@@ -1,0 +1,33 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 6abd7061218f..20808473a97d 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -235,10 +235,11 @@ def live_session_members(sid, deadline=None):
+                     continue
+                 try:
+                     pid, state, pgrp, threads, session, starttime = proc_stat('/proc/'+entry.name+'/stat')
+-                except (FileNotFoundError, ProcessLookupError):
+-                    continue
+-                except PermissionError as error:
+-                    denied.append('%s: %s' % (entry.name, error))
++                except OSError as error:
++                    if isinstance(error, (FileNotFoundError, ProcessLookupError)) or error.errno == errno.ESRCH:
++                        continue
++                    denied.append('PID %s errno=%s: %s' %
++                                  (entry.name, errno.errorcode.get(error.errno, error.errno), error))
+                     continue
+                 if session == sid and (state not in ('Z', 'X') or threads > 1):
+                     members.append((pid, state, starttime))
+@@ -278,7 +279,11 @@ def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+                 except SessionInspectionError as error:
+                     errors.append(str(error))
+                     break
+-                except PermissionError as error:
++                except OSError as error:
++                    if error.errno != errno.ESRCH:
++                        errors.append('PID %d errno=%s: %s' %
++                                      (pid, errno.errorcode.get(error.errno, error.errno), error))
++                except GateError as error:
+                     errors.append('PID %d: %s' % (pid, error))
+         if errors and (not members or time.monotonic() >= deadline or deadline_error is not None):
+             if deadline_error is not None:
