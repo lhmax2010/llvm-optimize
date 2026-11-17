@@ -1,0 +1,20 @@
+test_cleanup_error_is_failure (__main__.Hardening.test_cleanup_error_is_failure) ... SESSION_KILL_MODE=pidfd
+ok
+test_deadline_after_empty_scan_fails (__main__.Hardening.test_deadline_after_empty_scan_fails) ... FAIL
+
+======================================================================
+FAIL: test_deadline_after_empty_scan_fails (__main__.Hardening.test_deadline_after_empty_scan_fails)
+----------------------------------------------------------------------
+helper114.SessionDeadlineError: session deadline expired; last observed members: 
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-123/tests/test_114.py", line 241, in test_deadline_after_empty_scan_fails
+    with self.assertRaisesRegex(h.GateError,'scan incomplete'):h.live_session_members(42,1)
+AssertionError: "scan incomplete" does not match "session deadline expired; last observed members: "
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.080s
+
+FAILED (failures=1)

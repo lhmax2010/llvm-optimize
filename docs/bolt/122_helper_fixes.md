@@ -100,3 +100,84 @@ FAILED (failures=1)
 日志被.gitignore排除或文件超过10MB时只留本地；路径/大小/SHA见[local-only-files.json](../../tools/bolt/results/ps5-helper-122/local-only-files.json)，不因此STOP。[全部测试调用](../../tools/bolt/results/ps5-helper-122/test-invocation.json)、[结果](../../tools/bolt/results/ps5-helper-122/test-results.json)、[六提交](../../tools/bolt/results/ps5-helper-122/work-commits.json)、[最终状态](../../tools/bolt/results/ps5-helper-122/final-state.json)。
 
 已结束 2026-11-17T06:17:24.288332-08:00 D tests STOP
+
+
+## 123 续做
+
+**结论：STOP，未生成H4、未推sandbox。N2已撤销，保持H3的fail-closed策略；保留新增11/11与118的19/19通过。旧114断言仍要求scan incomplete，与本次保留的中性deadline文本冲突，按规则停止。计划733项，实际40项39通过1失败，剩余693未运行。**
+
+### N2撤销与最终处理清单
+
+在task122-session-review上用git revert撤销`c2e34724e42ed3b1f28aa173e0c345ae29e3b0cc`，得到工作提交`3cdf92b648687f0aa7412318d6be495cf1b1994f`。不输出SESSION_TRANSIENT_ERRORS_RECOVERED；历史检查/清理错误仍导致失败。仅从123测试副本移除122为N2新增的4个测试及其公共方法，122历史文件不删除。
+
+|编号/来源|最终处理|验证状态|
+|---|---|---|
+|D1 / N4 名称：Codex/Claude|保留scan-time comm，formatter无额外I/O|新增名称及括号测试通过；119原PID:python断言通过|
+|N4 长度：Claude|保留最多20个成员和+N more|两项截断测试通过|
+|N4 措辞：Claude|保留cleanup/drain两种阶段|两项通过|
+|D2 / N1：Codex/Claude|保留中性deadline和member read errors|新kill-pass/部分扫描/EIO/EMFILE测试通过；旧114文字断言FAIL|
+|N2：Claude|**策略确认：保持fail-closed，不修改**；撤销122策略提交|118的permission、errno matrix等19项全部通过|
+|N3：Claude|保留持续扫描错误约两个预算的注释|不修改预算，无单独计时认证|
+|此前R1/R2、R3/L2、L1、EACCES：两份复审|保持H3已接受实现|本次118、119、120套件通过，后续既有套件未完成|
+|pidfd进程级EMFILE；不静默降级：Claude|保持已知限制，不增加裸PID回退|本次探针未运行|
+|malformed stat GateError、/proc/self读取失败：两份报告|保留fail-closed，不扩展错误类型范围|未新增验证|
+|首信号等待响应、setsid逃逸、不可杀死成员、fallback竞争、单操作预算超时：两份报告|保留限制，不声称强隔离或硬实时保证|未新增认证|
+|formatter覆盖、真实/mock层次：两份测试章节|保留11项新测试：2混合真实进程、9纯mock|11/11通过，不冒称全为实物测试|
+|Python3.9/worker资格、未评审产品范围：复审范围说明|不扩大本次工作，不构建或访问QB|未运行|
+
+[撤销原文](../../tools/bolt/results/ps5-helper-123/revert.stdout)、[移除N2测试diff](../../tools/bolt/results/ps5-helper-123/removed-n2-tests.diff)、[工作状态](../../tools/bolt/results/ps5-helper-123/work-state.json)。其余五项对应122工作提交不变，见上一节六提交表。
+
+### 测试结果与STOP
+
+既有断言未改，旧顶层测试文件逐字节核对见[legacy-test-equality.json](../../tools/bolt/results/ps5-helper-123/legacy-test-equality.json)。全部从头运行，没有沿用122的PASS。
+
+|套件|计划|执行|结果|
+|---|---:|---:|---|
+|review122-retained|11|11|PASS|
+|review120|2|2|PASS|
+|review119|6|6|PASS|
+|review118|19|19|PASS|
+|review114|34|2|1 PASS / 1 FAIL|
+
+新测试中的混合真实进程两项为：名称扫描后退出且无额外I/O、第二信号真实自终止且运行真实formatter；其余9项mock。全部只管理自有进程。
+
+```text
+test_cleanup_error_is_failure (__main__.Hardening.test_cleanup_error_is_failure) ... SESSION_KILL_MODE=pidfd
+ok
+test_deadline_after_empty_scan_fails (__main__.Hardening.test_deadline_after_empty_scan_fails) ... FAIL
+
+======================================================================
+FAIL: test_deadline_after_empty_scan_fails (__main__.Hardening.test_deadline_after_empty_scan_fails)
+----------------------------------------------------------------------
+helper114.SessionDeadlineError: session deadline expired; last observed members: 
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-123/tests/test_114.py", line 241, in test_deadline_after_empty_scan_fails
+    with self.assertRaisesRegex(h.GateError,'scan incomplete'):h.live_session_members(42,1)
+AssertionError: "scan incomplete" does not match "session deadline expired; last observed members: "
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.080s
+
+FAILED (failures=1)
+```
+
+`session_deadline()`按PM要求去掉scan incomplete，但未修改的114测试仍以该词匹配。异常类型仍为SessionDeadlineError，测试因文字匹配失败。未修断言、未继续运行；其余693项（含114剩余32项、其后套件）未运行。是否更新这项旧诊断契约需PM裁决。
+
+### H4、探针与sandbox
+
+H4未生成。工作末端`3cdf92b648687f0aa7412318d6be495cf1b1994f`仅为撤销N2后的未认证工作链。H3→工作差异`19	15	packaging/clang-bolt-helper.py`，仅helper，不能称为已认证H3→H4差异。
+
+测试FAIL后，probe-120阅读/运行、H4合成与sandbox推送均NOT RUN。停止后只读sandbox：`db7ac04bd2b854b144f6e5c5fcf3a0aa9645c01e	refs/heads/sandbox/lhmax2025/bolt_pgo`，查询rc=0。没有Gerrit写操作、没有refs/for。
+
+[未认证helper.diff](../../tools/bolt/results/ps5-helper-123/helper.diff)、[STOP原文](../../tools/bolt/results/ps5-helper-123/STOP.txt)、[测试调用](../../tools/bolt/results/ps5-helper-123/test-invocation.json)、[测试结果](../../tools/bolt/results/ps5-helper-123/test-results.json)、[sandbox原文](../../tools/bolt/results/ps5-helper-123/sandbox-read.stdout)。
+
+### 资源与归档
+
+串行用户服务4GiB/swap0/CPU200%/Nice19/IO idle；无准入等待或资源轮询，无OOM，无准备错误修正。未碰120-N编排脚本、另一项目目录/进程/锁，未构建、未访问QB。本轮读取122工作提交及测试、H3差异和停止结果；两份复审依据122已全文读取的原文，处理清单如上。
+
+日志受gitignore排除或文件超过10MB时仅留本地，其路径/大小/SHA见[local-only-files.json](../../tools/bolt/results/ps5-helper-123/local-only-files.json)，不因此停止。
+
+已结束 2026-11-17T07:08:23.852586-08:00 D tests STOP
