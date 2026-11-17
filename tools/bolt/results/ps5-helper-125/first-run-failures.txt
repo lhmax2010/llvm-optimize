@@ -1,0 +1,58 @@
+test_deadline_member_list_twenty_limit (__main__.Review122.test_deadline_member_list_twenty_limit)
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/tests/test_122.py", line 63, in test_deadline_member_list_twenty_limit
+    self.assertEqual(str(e.exception).count(':worker'),20);self.assertIn('+5 more',str(e.exception))
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 20
+
+
+test_snapshot_twenty_limit (__main__.Review122.test_snapshot_twenty_limit)
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/tests/test_122.py", line 59, in test_snapshot_twenty_limit
+    self.assertEqual(msg.count(':worker'),20);self.assertTrue(msg.endswith('+5 more'));self.assertNotIn('20:worker',msg)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 20
+
+
+test_stat_name_parentheses (__main__.Review122.test_stat_name_parentheses)
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/tests/test_122.py", line 29, in test_stat_name_parentheses
+    self.assertEqual(v[-1],'name (with) parens')
+AssertionError: 30091311 != 'name (with) parens'
+
+
+test_member_read_eio_continues (__main__.Review122.test_member_read_eio_continues)
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/tests/test_122.py", line 54, in test_member_read_eio_continues
+    def test_member_read_eio_continues(self):self.member_error(errno.EIO)
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/tests/test_122.py", line 52, in member_error
+    with self.assertRaises(h.SessionInspectionError) as e:h.live_session_members(42)
+                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-122/source/packaging/clang-bolt-helper.py", line 251, in live_session_members
+    pid, state, pgrp, threads, session, starttime = st
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: too many values to unpack (expected 6)
+
+
+test_member_read_emfile_continues (__main__.Review122.test_member_read_emfile_continues)
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/tests/test_122.py", line 55, in test_member_read_emfile_continues
+    def test_member_read_emfile_continues(self):self.member_error(errno.EMFILE)
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/tests/test_122.py", line 52, in member_error
+    with self.assertRaises(h.SessionInspectionError) as e:h.live_session_members(42)
+                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-122/source/packaging/clang-bolt-helper.py", line 251, in live_session_members
+    pid, state, pgrp, threads, session, starttime = st
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: too many values to unpack (expected 6)
+
+
+test_real_scan_names_survive_exit_without_comm_reads (__main__.Review122.test_real_scan_names_survive_exit_without_comm_reads)
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/tests/test_122.py", line 18, in test_real_scan_names_survive_exit_without_comm_reads
+    self.assertEqual([x[0] for x in members],[p.pid]);self.assertTrue(members[0][3].startswith('python'))
+                                                                      ~~~~~~~~~~^^^
+IndexError: tuple index out of range
+

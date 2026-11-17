@@ -1,0 +1,358 @@
+[
+  {
+    "scenario": "bg-short",
+    "runner_rc": 0,
+    "total_s": 3.34,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 3.18, \"result\": \"OK\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "OK",
+    "actual_kind": "OK",
+    "PASS": true
+  },
+  {
+    "scenario": "bg-long",
+    "runner_rc": 0,
+    "total_s": 10.16,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 10.13, \"result\": \"ERR COMMAND_ERROR: command exited successfully with live descendants: process session 961724 drain deadline; last observed members (last complete scan): 961725:sleep (S) (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/bg-long/bg-long.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "ERR COMMAND_ERROR",
+    "actual_kind": "ERR COMMAND_ERROR",
+    "PASS": true
+  },
+  {
+    "scenario": "first-wait",
+    "runner_rc": 0,
+    "total_s": 10.67,
+    "signals_at": [
+      1.0
+    ],
+    "runner_out": "{\"call_s\": 10.64, \"result\": \"ERR CANCELLED: cancelled by signal 15; while handling: COMMAND_ERROR: command exited successfully with live descendants: process session 962802 drain deadline; last observed members (last complete scan): 962803:sleep (S) (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/first-wait/first-wait.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "ERR CANCELLED",
+    "actual_kind": "ERR CANCELLED",
+    "PASS": true
+  },
+  {
+    "scenario": "second-wait",
+    "runner_rc": -15,
+    "total_s": 2.01,
+    "signals_at": [
+      1.0,
+      2.0
+    ],
+    "runner_out": "",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "signal:-15",
+    "actual_kind": "signal:-15",
+    "PASS": true
+  },
+  {
+    "scenario": "ninja-straggler",
+    "runner_rc": 0,
+    "total_s": 10.8,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 10.77, \"result\": \"ERR COMMAND_ERROR: command exited successfully with live descendants: process session 963022 drain deadline; last observed members (last complete scan): 963025:sleep (S) (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/ninja-straggler/ninja-straggler.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "ERR COMMAND_ERROR",
+    "actual_kind": "ERR COMMAND_ERROR",
+    "PASS": true
+  },
+  {
+    "scenario": "ninja-timeout",
+    "runner_rc": 0,
+    "total_s": 2.16,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 2.13, \"result\": \"ERR TIMEOUT: Command '963399' timed out after 2 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/ninja-timeout/ninja-timeout.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "ERR TIMEOUT",
+    "actual_kind": "ERR TIMEOUT",
+    "PASS": true
+  },
+  {
+    "scenario": "fallback-ninja-timeout",
+    "runner_rc": 0,
+    "total_s": 2.15,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 2.11, \"result\": \"ERR TIMEOUT: Command '964826' timed out after 2 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/fallback-ninja-timeout/fallback-ninja-timeout.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=fallback-recheck"
+    ],
+    "err_tail": "SESSION_KILL_MODE=fallback-recheck",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "ERR TIMEOUT",
+    "actual_kind": "ERR TIMEOUT",
+    "PASS": true
+  },
+  {
+    "scenario": "eperm-delay",
+    "runner_rc": 0,
+    "total_s": 11.36,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 11.33, \"result\": \"ERR TIMEOUT: Command '965525' timed out after 1 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/eperm-delay/eperm-delay.log); cleanup error: process session 965525 cleanup deadline; last observed members (last complete scan): 965528:python3 (S); errors: PID 965528 errno=EPERM: [Errno 1] Operation not permitted (injected)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 1,
+    "survivor_detail": [
+      [
+        965528,
+        "S",
+        965528,
+        965525
+      ]
+    ],
+    "expected_kind": "ERR TIMEOUT",
+    "actual_kind": "ERR TIMEOUT",
+    "PASS": true
+  },
+  {
+    "scenario": "emfile",
+    "runner_rc": 0,
+    "total_s": 11.07,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 11.04, \"result\": \"ERR TIMEOUT: Command '968177' timed out after 1 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/emfile/emfile.log); cleanup error: process session 968177 cleanup deadline; last observed members (last complete scan): 968180:python3 (S); errors: PID 968180 errno=EMFILE: [Errno 24] Too many open files (injected)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 1,
+    "survivor_detail": [
+      [
+        968180,
+        "S",
+        968180,
+        968177
+      ]
+    ],
+    "expected_kind": "ERR TIMEOUT",
+    "actual_kind": "ERR TIMEOUT",
+    "PASS": true
+  },
+  {
+    "scenario": "emfile-all",
+    "runner_rc": 0,
+    "total_s": 11.13,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 11.09, \"result\": \"ERR TIMEOUT: Command '968784' timed out after 1 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/emfile-all/emfile-all.log); cleanup error: process session 968784 cleanup deadline; last observed members (last complete scan): 968787:python3 (S); final scan incomplete; errors: PID 968787 errno=EMFILE: [Errno 24] Too many open files (injected); session deadline expired; scan incomplete; last observed members: \", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 1,
+    "survivor_detail": [
+      [
+        968787,
+        "S",
+        968787,
+        968784
+      ]
+    ],
+    "expected_kind": "ERR TIMEOUT",
+    "actual_kind": "ERR TIMEOUT",
+    "PASS": true
+  },
+  {
+    "scenario": "unkillable-delay",
+    "runner_rc": 0,
+    "total_s": 11.28,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 11.24, \"result\": \"ERR TIMEOUT: Command '969442' timed out after 1 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/unkillable-delay/unkillable-delay.log); cleanup error: process session 969442 cleanup deadline; last observed members (last complete scan): 969445:python3 (S)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 1,
+    "survivor_detail": [
+      [
+        969445,
+        "S",
+        969445,
+        969442
+      ]
+    ],
+    "expected_kind": "ERR TIMEOUT",
+    "actual_kind": "ERR TIMEOUT",
+    "PASS": true
+  },
+  {
+    "scenario": "hammer-unkillable",
+    "runner_rc": -15,
+    "total_s": 1.4,
+    "signals_at": [
+      0.5,
+      0.8,
+      1.1
+    ],
+    "runner_out": "",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 1,
+    "survivor_detail": [
+      [
+        969677,
+        "S",
+        969677,
+        969674
+      ]
+    ],
+    "expected_kind": "signal:-15",
+    "actual_kind": "signal:-15",
+    "PASS": true
+  },
+  {
+    "scenario": "second-cleanup-unkillable",
+    "runner_rc": -15,
+    "total_s": 3.0,
+    "signals_at": [
+      0.5,
+      2.0
+    ],
+    "runner_out": "",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 1,
+    "survivor_detail": [
+      [
+        969747,
+        "S",
+        969747,
+        969744
+      ]
+    ],
+    "expected_kind": "signal:-15",
+    "actual_kind": "signal:-15",
+    "PASS": true
+  },
+  {
+    "scenario": "fallback-adv",
+    "runner_rc": 0,
+    "total_s": 1.16,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 1.12, \"result\": \"ERR TIMEOUT: Command '969883' timed out after 1 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/fallback-adv/fallback-adv.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=fallback-recheck"
+    ],
+    "err_tail": "SESSION_KILL_MODE=fallback-recheck",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "ERR TIMEOUT",
+    "actual_kind": "ERR TIMEOUT",
+    "PASS": true
+  },
+  {
+    "scenario": "eacces-probe",
+    "runner_rc": 0,
+    "total_s": 0.14,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 0.11, \"result\": \"OK\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=fallback-recheck errno=EACCES"
+    ],
+    "err_tail": "SESSION_KILL_MODE=fallback-recheck errno=EACCES",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "OK",
+    "actual_kind": "OK",
+    "PASS": true
+  },
+  {
+    "scenario": "einval-probe",
+    "runner_rc": 0,
+    "total_s": 0.03,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 0.0, \"result\": \"ERR COMMAND_ERROR: [Errno 22] Invalid argument (injected) (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/einval-probe/einval-probe.log)\", \"sigchld_restored\": true}",
+    "mode_line": [],
+    "err_tail": "",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "ERR COMMAND_ERROR",
+    "actual_kind": "ERR COMMAND_ERROR",
+    "PASS": true
+  },
+  {
+    "scenario": "transient-scan",
+    "runner_rc": 0,
+    "total_s": 0.65,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 0.61, \"result\": \"ERR COMMAND_ERROR: session cleanup/check failed; last observed members (last complete scan): 969965:sleep (S); errors: scan incomplete; member read errors: PID 969959 errno=EACCES: [Errno 13] Permission denied (injected) (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/transient-scan/transient-scan.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "ERR COMMAND_ERROR",
+    "actual_kind": "ERR COMMAND_ERROR",
+    "PASS": true
+  },
+  {
+    "scenario": "persistent-scan",
+    "runner_rc": 0,
+    "total_s": 20.09,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 20.06, \"result\": \"ERR COMMAND_ERROR: command exited successfully; could not verify that the session is empty; partial observations: ; errors: scan incomplete; member read errors: PID 969987 errno=EACCES: [Errno 13] Permission denied (injected) (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/persistent-scan/persistent-scan.log); cleanup error: could not verify that the session is empty; partial observations: ; errors: scan incomplete; member read errors: PID 969987 errno=EACCES: [Errno 13] Permission denied (injected)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "ERR COMMAND_ERROR",
+    "actual_kind": "ERR COMMAND_ERROR",
+    "PASS": true
+  },
+  {
+    "scenario": "kill-deadline-msg",
+    "runner_rc": 0,
+    "total_s": 1.09,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 1.06, \"result\": \"ERR TIMEOUT: Command '971898' timed out after 1 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-125/probes/work/kill-deadline-msg/kill-deadline-msg.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "err_tail": "SESSION_KILL_MODE=pidfd",
+    "survivors": 0,
+    "survivor_detail": [],
+    "expected_kind": "ERR TIMEOUT",
+    "actual_kind": "ERR TIMEOUT",
+    "PASS": true
+  }
+]

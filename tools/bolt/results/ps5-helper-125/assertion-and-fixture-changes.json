@@ -1,0 +1,156 @@
+[
+  {
+    "phase": "PM明确授权的阶段文字修正",
+    "file": "tests/test_122.py",
+    "old_lines": [
+      42,
+      42
+    ],
+    "new_lines": [
+      42,
+      42
+    ],
+    "old": "  msg=self.deadline(kill=True);self.assertIn('errors: session deadline expired;',msg);self.assertNotIn('scan incomplete',msg);self.assertNotIn('final scan incomplete',msg)",
+    "new": "  msg=self.deadline(kill=True);self.assertIn('errors: session deadline expired while signalling;',msg);self.assertNotIn('scan incomplete',msg);self.assertNotIn('final scan incomplete',msg)"
+  },
+  {
+    "phase": "一次新夹具修正：名称改为附加属性",
+    "file": "tests/test_122.py",
+    "old_lines": [
+      9,
+      8
+    ],
+    "new_lines": [
+      9,
+      10
+    ],
+    "old": "",
+    "new": " def named(self,values,comm):\n  result=self.h._StatTuple(values);result.comm=comm;return result"
+  },
+  {
+    "phase": "一次新夹具修正：名称改为附加属性",
+    "file": "tests/test_122.py",
+    "old_lines": [
+      18,
+      18
+    ],
+    "new_lines": [
+      20,
+      20
+    ],
+    "old": "   self.assertEqual([x[0] for x in members],[p.pid]);self.assertTrue(members[0][3].startswith('python'))",
+    "new": "   self.assertEqual([x[0] for x in members],[p.pid]);self.assertTrue(members[0].comm.startswith('python'))"
+  },
+  {
+    "phase": "一次新夹具修正：名称改为附加属性",
+    "file": "tests/test_122.py",
+    "old_lines": [
+      22,
+      22
+    ],
+    "new_lines": [
+      24,
+      24
+    ],
+    "old": "   self.assertIn(str(p.pid)+':'+members[0][3],text)",
+    "new": "   self.assertIn(str(p.pid)+':'+members[0].comm,text)"
+  },
+  {
+    "phase": "一次新夹具修正：名称改为附加属性",
+    "file": "tests/test_122.py",
+    "old_lines": [
+      29,
+      29
+    ],
+    "new_lines": [
+      31,
+      31
+    ],
+    "old": "  self.assertEqual(v[-1],'name (with) parens')",
+    "new": "  self.assertEqual(v.comm,'name (with) parens')"
+  },
+  {
+    "phase": "一次新夹具修正：名称改为附加属性",
+    "file": "tests/test_122.py",
+    "old_lines": [
+      31,
+      31
+    ],
+    "new_lines": [
+      33,
+      33
+    ],
+    "old": "  h=self.h;clock=[0.];calls=[0];members=[(31,'S',1,'first'),(32,'S',2,'second')]",
+    "new": "  h=self.h;clock=[0.];calls=[0];members=[self.named((31,'S',1),'first'),self.named((32,'S',2),'second')]"
+  },
+  {
+    "phase": "一次新夹具修正：名称改为附加属性",
+    "file": "tests/test_122.py",
+    "old_lines": [
+      48,
+      48
+    ],
+    "new_lines": [
+      50,
+      50
+    ],
+    "old": "   if path=='/proc/self/stat':return (os.getpid(),'S',1,1,1,1,'self')",
+    "new": "   if path=='/proc/self/stat':return self.named((os.getpid(),'S',1,1,1,1),'self')"
+  },
+  {
+    "phase": "一次新夹具修正：名称改为附加属性",
+    "file": "tests/test_122.py",
+    "old_lines": [
+      50,
+      50
+    ],
+    "new_lines": [
+      52,
+      52
+    ],
+    "old": "   return (32,'S',32,1,42,2,'worker')",
+    "new": "   return self.named((32,'S',32,1,42,2),'worker')"
+  },
+  {
+    "phase": "一次新夹具修正：名称改为附加属性",
+    "file": "tests/test_122.py",
+    "old_lines": [
+      53,
+      53
+    ],
+    "new_lines": [
+      55,
+      55
+    ],
+    "old": "  self.assertIn('/proc/32/stat',seen);self.assertEqual(e.exception.members,[(32,'S',2,'worker')]);self.assertIn('member read errors: PID 31 errno='+errno.errorcode[code],str(e.exception))",
+    "new": "  self.assertIn('/proc/32/stat',seen);self.assertEqual(e.exception.members,[(32,'S',2)]);self.assertEqual(e.exception.members[0].comm,'worker');self.assertIn('member read errors: PID 31 errno='+errno.errorcode[code],str(e.exception))"
+  },
+  {
+    "phase": "一次新夹具修正：名称改为附加属性",
+    "file": "tests/test_122.py",
+    "old_lines": [
+      57,
+      57
+    ],
+    "new_lines": [
+      59,
+      59
+    ],
+    "old": "  members=[(i,'S',1,'worker') for i in range(25)]",
+    "new": "  members=[self.named((i,'S',1),'worker') for i in range(25)]"
+  },
+  {
+    "phase": "一次新夹具修正：名称改为附加属性",
+    "file": "tests/test_122.py",
+    "old_lines": [
+      62,
+      62
+    ],
+    "new_lines": [
+      64,
+      64
+    ],
+    "old": "   with self.assertRaises(self.h.SessionDeadlineError) as e:self.h.session_deadline(1,[(i,'S',1,'worker') for i in range(25)])",
+    "new": "   with self.assertRaises(self.h.SessionDeadlineError) as e:self.h.session_deadline(1,[self.named((i,'S',1),'worker') for i in range(25)])"
+  }
+]

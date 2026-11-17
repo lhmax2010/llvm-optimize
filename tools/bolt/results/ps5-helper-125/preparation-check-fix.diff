@@ -1,0 +1,7 @@
+--- delivery-check-before.py
++++ delivery-check-after.py
+@@ -1 +1,3 @@
+-subprocess.run(['git', '-C', str(B), 'diff', '--cached', '--check'], check=True)
++subprocess.run(['git', '-C', S, 'diff', '--check', H3, H4], check=True)
++subprocess.run(['git', '-C', str(B), 'diff', '--cached', '--check', '--', 'docs/bolt/122_helper_fixes.md', 'docs/bolt/STATUS.md'], check=True)
++# Archived verbatim evidence: preserve bytes; do not lint as product changes.

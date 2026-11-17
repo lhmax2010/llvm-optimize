@@ -1,0 +1,57 @@
+--- 124/helper
++++ 125/helper
+@@ -161,6 +161,10 @@
+ def save(path, value):
+     atomic_text(path, json.dumps(value, ensure_ascii=False, indent=2)+'\n')
+ 
++class _StatTuple(tuple):
++    """Preserve positional contracts while retaining scan-time diagnostics."""
++
++
+ def proc_stat(path):
+     text = Path(path).read_text()
+     try:
+@@ -168,7 +172,10 @@
+         comm = text.split('(', 1)[1].rsplit(')', 1)[0]
+         fields = text.rsplit(')', 1)[1].split()
+         require(len(fields) >= 20, 'short process stat: '+str(path))
+-        return pid, fields[0], int(fields[2]), int(fields[17]), int(fields[3]), int(fields[19]), comm
++        result = _StatTuple((pid, fields[0], int(fields[2]), int(fields[17]),
++                             int(fields[3]), int(fields[19])))
++        result.comm = comm
++        return result
+     except (ValueError, IndexError) as error:
+         raise GateError('malformed process stat: '+str(path)) from error
+ 
+@@ -240,7 +247,8 @@
+                 if not entry.name.isdecimal():
+                     continue
+                 try:
+-                    pid, state, pgrp, threads, session, starttime, comm = proc_stat('/proc/'+entry.name+'/stat')
++                    st = proc_stat('/proc/'+entry.name+'/stat')
++                    pid, state, pgrp, threads, session, starttime = st
+                 except OSError as error:
+                     if isinstance(error, (FileNotFoundError, ProcessLookupError)) or error.errno == errno.ESRCH:
+                         continue
+@@ -248,7 +256,9 @@
+                                   (entry.name, errno.errorcode.get(error.errno, error.errno), error))
+                     continue
+                 if session == sid and (state not in ('Z', 'X') or threads > 1):
+-                    members.append((pid, state, starttime, comm))
++                    member = _StatTuple((pid, state, starttime))
++                    member.comm = getattr(st, 'comm', None)
++                    members.append(member)
+     except OSError as error:
+         raise SessionInspectionError('cannot enumerate/read process session; scan incomplete: '+str(error), members) from error
+     session_deadline(deadline, members)
+@@ -262,7 +272,9 @@
+     observed = []
+     for member in members[:20]:
+         pid, state, starttime = member[:3]
+-        comm = member[3] if len(member) > 3 else '?'
++        comm = getattr(member, 'comm', None)
++        if comm is None:
++            comm = '?'
+         observed.append('%d:%s (%s)' % (pid, comm, state))
+     if len(members) > 20:
+         observed.append('+%d more' % (len(members)-20))

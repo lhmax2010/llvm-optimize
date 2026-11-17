@@ -1,0 +1,63 @@
+--- run1/tests/test_122.py
++++ run2/tests/test_122.py
+@@ -6,6 +6,8 @@
+  s=importlib.util.spec_from_file_location('h122',H);h=importlib.util.module_from_spec(s);s.loader.exec_module(h);return h
+ class Review122(unittest.TestCase):
+  def setUp(self):self.h=load()
++ def named(self,values,comm):
++  result=self.h._StatTuple(values);result.comm=comm;return result
+  def test_real_scan_names_survive_exit_without_comm_reads(self):
+   p=subprocess.Popen([sys.executable,'-u','-c','import time;print("ready",flush=True);time.sleep(30)'],start_new_session=True,stdout=subprocess.PIPE,text=True)
+   try:
+@@ -15,20 +17,20 @@
+     self.assertFalse(str(path).endswith('/comm'))
+     return real(path,*a,**k)
+    with patch.object(Path,'read_text',read):members=self.h.live_session_members(p.pid)
+-   self.assertEqual([x[0] for x in members],[p.pid]);self.assertTrue(members[0][3].startswith('python'))
++   self.assertEqual([x[0] for x in members],[p.pid]);self.assertTrue(members[0].comm.startswith('python'))
+    p.kill();p.wait(timeout=5)
+    with patch.object(Path,'read_text',side_effect=AssertionError('format I/O')):
+     text=self.h.session_snapshot(members)
+-   self.assertIn(str(p.pid)+':'+members[0][3],text)
++   self.assertIn(str(p.pid)+':'+members[0].comm,text)
+   finally:
+    if p.poll() is None:p.kill()
+    p.wait(timeout=5);p.stdout.close()
+  def test_stat_name_parentheses(self):
+   text=Path('/proc/self/stat').read_text();tail=text.rsplit(')',1)[1]
+   with patch.object(Path,'read_text',return_value=str(os.getpid())+' (name (with) parens)'+tail):v=self.h.proc_stat('/proc/self/stat')
+-  self.assertEqual(v[-1],'name (with) parens')
++  self.assertEqual(v.comm,'name (with) parens')
+  def deadline(self,kill=False,partial=False):
+-  h=self.h;clock=[0.];calls=[0];members=[(31,'S',1,'first'),(32,'S',2,'second')]
++  h=self.h;clock=[0.];calls=[0];members=[self.named((31,'S',1),'first'),self.named((32,'S',2),'second')]
+   def scan(*a):
+    calls[0]+=1
+    if partial and calls[0]>1:clock[0]=2.;raise h.SessionDeadlineError('session deadline expired; last observed members: ',[])
+@@ -45,21 +47,21 @@
+   h=self.h;seen=[];context=MagicMock();context.__enter__.return_value=iter([types.SimpleNamespace(name='31'),types.SimpleNamespace(name='32')])
+   def stat(path):
+    seen.append(path)
+-   if path=='/proc/self/stat':return (os.getpid(),'S',1,1,1,1,'self')
++   if path=='/proc/self/stat':return self.named((os.getpid(),'S',1,1,1,1),'self')
+    if path=='/proc/31/stat':raise OSError(code,'injected read error')
+-   return (32,'S',32,1,42,2,'worker')
++   return self.named((32,'S',32,1,42,2),'worker')
+   with patch.object(h.os,'scandir',return_value=context),patch.object(h,'proc_stat',side_effect=stat):
+    with self.assertRaises(h.SessionInspectionError) as e:h.live_session_members(42)
+-  self.assertIn('/proc/32/stat',seen);self.assertEqual(e.exception.members,[(32,'S',2,'worker')]);self.assertIn('member read errors: PID 31 errno='+errno.errorcode[code],str(e.exception))
++  self.assertIn('/proc/32/stat',seen);self.assertEqual(e.exception.members,[(32,'S',2)]);self.assertEqual(e.exception.members[0].comm,'worker');self.assertIn('member read errors: PID 31 errno='+errno.errorcode[code],str(e.exception))
+  def test_member_read_eio_continues(self):self.member_error(errno.EIO)
+  def test_member_read_emfile_continues(self):self.member_error(errno.EMFILE)
+  def test_snapshot_twenty_limit(self):
+-  members=[(i,'S',1,'worker') for i in range(25)]
++  members=[self.named((i,'S',1),'worker') for i in range(25)]
+   with patch.object(Path,'read_text',side_effect=AssertionError('format I/O')):msg=self.h.session_snapshot(members)
+   self.assertEqual(msg.count(':worker'),20);self.assertTrue(msg.endswith('+5 more'));self.assertNotIn('20:worker',msg)
+  def test_deadline_member_list_twenty_limit(self):
+   with patch.object(self.h.time,'monotonic',return_value=2):
+-   with self.assertRaises(self.h.SessionDeadlineError) as e:self.h.session_deadline(1,[(i,'S',1,'worker') for i in range(25)])
++   with self.assertRaises(self.h.SessionDeadlineError) as e:self.h.session_deadline(1,[self.named((i,'S',1),'worker') for i in range(25)])
+   self.assertEqual(str(e.exception).count(':worker'),20);self.assertIn('+5 more',str(e.exception))
+  def test_drain_wording(self):self.assertIn('drain deadline;',self.deadline())
+  def test_cleanup_wording(self):self.assertIn('cleanup deadline;',self.deadline(kill=True))

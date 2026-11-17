@@ -1,0 +1,13 @@
+{
+  "start": 462,
+  "files": [
+    {
+      "path": "tests/external/adapted/h2.py",
+      "diff": "--- old coordinate\n+++ new coordinate\n@@ -14,10 +14,10 @@\n                 h._CANCEL_SIGNAL = signal.SIGTERM          # first signal already handled\n             elif mode == 'two-real-at-line':\n                 pass\n-        if mode == 'deferred-then-third' and frame.f_lineno == 452 and not fired.get('d'):\n+        if mode == 'deferred-then-third' and frame.f_lineno == 464 and not fired.get('d'):\n             fired['d'] = True\n             os.kill(os.getpid(), signal.SIGTERM)\n-        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 452:\n+        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 464:\n             fired['second'] = True\n             os.kill(os.getpid(), signal.SIGHUP)\n         if frame.f_lineno == line and not fired['second'] and mode in ('second-at-line', 'two-real-at-line'):\n"
+    },
+    {
+      "path": "tests/external/adapted/codex_check_review.py",
+      "diff": "--- old coordinate\n+++ new coordinate\n@@ -30,7 +30,7 @@\n  return child\n def trace(frame,event,arg):\n  global fired\n- if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==457 and not fired and mode in ('finally_second','finally_third'):\n+ if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==469 and not fired and mode in ('finally_second','finally_third'):\n   fired=True;os.kill(os.getpid(),signal.SIGHUP)\n  return trace\n h.subprocess.Popen=popen\n"
+    }
+  ]
+}

@@ -1688,3 +1688,8 @@ H3上六个独立helper工作提交，末端f47f0ad8d7bad4b30ca777a2c10ebce367ea
 ## 2026-11-17：124号（STOP，首轮全部失败已分类）
 
 扫描/发信号deadline已分阶段，工作提交5c6d9a2951840220a41fc9891cec1731ab7bcf66（非H4）。首轮完整覆盖735项：724通过、11失败/错误；a=0、b=1个新文字断言、c=10个proc_stat六/七字段接口/夹具结构不兼容。按c停止，无断言修改、无第二轮、无probe-120/H4/sandbox推送。N2保持fail-closed。一次采集器准备修正：unittest.main入口未禁fail-fast，保留初次2项输出并完整补齐11项；首轮实际737次执行含2项重复。sandbox只读仍H3，无120-N或Gerrit写操作。详见[124续做](122_helper_fixes.md#124-续做)。
+
+
+## 2026-11-17：125号（PASS，H4已推sandbox）
+
+H4=7a7bc17467d4c5da9763e86e3c74a123b3ff0df2，tree=472c872afe958f464112d22b6304cde006fcbf98，父61ef5d31，说明与H3逐字节相同，仅helper +37/-19。proc_stat/成员恢复6/3元素，comm改为tuple附加属性；保留阶段诊断、member read errors、20上限与fail-closed。首轮739项733通过、6个(b)类122新夹具失败，既有722全通过；授权一次属性夹具适配后第二轮739/739。19个归档探针符合预期。H3 lease推送成功且ls-remote一致，无STOP；交付一次准备修正：空白检查误覆盖原样证据，保留原文后限定为产品diff/文档；未操作120-N或Gerrit评审。见[125续做](122_helper_fixes.md#125-续做)。

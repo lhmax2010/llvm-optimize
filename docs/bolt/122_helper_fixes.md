@@ -275,3 +275,105 @@ H4未生成。工作末端`3cdf92b648687f0aa7412318d6be495cf1b1994f`仅为撤销
 
 已结束 2026-11-17T07:21:21.166304-08:00 first run initial pass completed total=726
 已结束 2026-11-17T07:21:37.398701-08:00 first-run completion tests=11
+
+
+## 125 续做
+
+**结论：PASS。H4 `7a7bc17467d4c5da9763e86e3c74a123b3ff0df2` 已推 sandbox，ls-remote 一致。首轮完整739项：733通过、3 FAIL与3 ERROR，全部为(b)类122新夹具仍把名称放进元组元素；(a)=0、(c)=0。一次授权的新夹具修正后，第二轮从头739/739通过。19项归档探针全部符合预期。本轮无STOP。122–124的停止原文保留。**
+
+### 实现、身份与远端
+
+`_StatTuple(tuple)`不带`__slots__`。`proc_stat()`保留H3的6元素，在同一次stat读取中解析第二字段comm并设置属性；`live_session_members()`返回带comm属性的3元素成员。普通tuple的解包、长度、相等、排序、hash保持兼容。`session_snapshot()`只读属性，无名称时为`?`，不额外读取procfs。
+
+保留：扫描阶段deadline含`scan incomplete`；发信号阶段含`while signalling`且不误报扫描中断；实际中断的扫描仍附`final scan incomplete`；`member read errors`、cleanup/drain、20成员及`+N more`、N3两预算注释。N2为**策略确认：保持fail-closed，不修改**，没有SESSION_TRANSIENT_ERRORS_RECOVERED。
+
+本轮工作提交`77cdadbc7eb788959e2a3ce0ceb7a7ade9ad1f1f`。最终H4是单提交，父`61ef5d31ca91025c414c748477bef0c64ddfa67c`，tree `472c872afe958f464112d22b6304cde006fcbf98`；Change-Id不变，提交说明与H3逐字节相同。H4与测试过的工作树一致；相对H3仅helper **+37/-19（增删56行）**，spec及其他所有文件不变。
+
+[实现diff](../../tools/bolt/results/ps5-helper-125/tuple-attribute.diff)、[H3→H4最终diff](../../tools/bolt/results/ps5-helper-125/helper.diff)、[身份核对](../../tools/bolt/results/ps5-helper-125/candidate.json)、[提交说明](../../tools/bolt/results/ps5-helper-125/h4-message.txt)。
+
+sandbox使用H3 lease：`db7ac04bd2b854b144f6e5c5fcf3a0aa9645c01e` → `7a7bc17467d4c5da9763e86e3c74a123b3ff0df2`。完整地址`ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm`，ref `refs/heads/sandbox/lhmax2025/bolt_pgo`；SSH BatchMode，推送一次成功，未推refs/for。远端提示继承的标题超过50字符；按本任务要求不改H3说明，未拒绝推送。
+
+[推送命令](../../tools/bolt/results/ps5-helper-125/sandbox-push.command)、[远端原文](../../tools/bolt/results/ps5-helper-125/sandbox-push.stderr)、[之前](../../tools/bolt/results/ps5-helper-125/sandbox-before.stdout)、[之后](../../tools/bolt/results/ps5-helper-125/sandbox-after.stdout)。
+
+### 两轮全套测试、分类与全部断言修改
+
+739＝722既有＋122保留11＋124新增2＋125新增4。每轮所有套件都跑完，没有遇到首个失败就停止，没有复用先前PASS。全部既有722项的断言保持原样；外部trace探针只随源码行号调整坐标，场景和断言不改。
+
+|套件|数量|第一轮|第二轮|
+|---|---:|---|---|
+|review125|4|PASS|PASS|
+|review124|2|PASS|PASS|
+|review122-retained|11|5 PASS / 3 FAIL / 3 ERROR|PASS|
+|review120|2|PASS|PASS|
+|review119|6|PASS|PASS|
+|review118|19|PASS|PASS|
+|review114|34|PASS|PASS|
+|policy|46|PASS|PASS|
+|release|5|PASS|PASS|
+|r2|12|PASS|PASS|
+|r3-r4-r5|40|PASS|PASS|
+|hardening|16|PASS|PASS|
+|review-r11|19|PASS|PASS|
+|helper|393|PASS|PASS|
+|targeted|30|PASS|PASS|
+|N1|6|PASS|PASS|
+|regression109|45|PASS|PASS|
+|sessions110|35|PASS|PASS|
+|P1-P2-S2|14|PASS|PASS|
+
+第一轮6项均在122新测试：
+- `test_real_scan_names_survive_exit_without_comm_reads`仍读取member[3]，IndexError；改读member.comm，仍验证扫描后进程退出、名称保留且无额外I/O。
+- `test_stat_name_parentheses`仍把最后元素当名称；改读v.comm，括号名称期望不变。
+- `test_member_read_eio_continues`、`test_member_read_emfile_continues`模拟7元素stat，导致解包错误；改为6元素附comm属性。成员仍核对相同PID/state/starttime，并单独核对comm，PID/errno断言不变。
+- `test_snapshot_twenty_limit`、`test_deadline_member_list_twenty_limit`模拟4元素成员；改为3元素附comm属性，20条与+5 more的断言不变。
+
+一次新夹具纠正同时更新这些测试共用的deadline成员工厂，使用同样属性契约；无产品代码修正。交付阶段有一次准备脚本修正，见下文。125新增4项覆盖6/3元素解包与普通tuple相等、属性、sort/hash、普通tuple的`?`及无额外I/O。保留/新增17项中4项真实或混合自有进程/procfs、13项mock/合成（4:13）；探针另计，不合并为测试总数。
+
+另有**运行前PM已明确授权**的122文字断言1处：`test_complete_scan_signal_deadline_entire_message`原第42行 `errors: session deadline expired;` → `errors: session deadline expired while signalling;`，原因是完整扫描后的发信号阶段；另外两个not-in断言未改。所有断言和夹具变更的旧/新行号及原文均见下列JSON/diff；没有修改118之前的断言，也未修改119的PID:python断言。
+
+[首轮汇总](../../tools/bolt/results/ps5-helper-125/first-run-summary.json)、[全部失败及分类](../../tools/bolt/results/ps5-helper-125/first-run-failures.json)、[traceback原文](../../tools/bolt/results/ps5-helper-125/first-run-failures.txt)、[第二轮结果](../../tools/bolt/results/ps5-helper-125/run2/test-results.json)、[第二轮失败清单（空）](../../tools/bolt/results/ps5-helper-125/run2/failure-list.json)、[断言及夹具逐处清单](../../tools/bolt/results/ps5-helper-125/assertion-and-fixture-changes.json)、[授权文字diff](../../tools/bolt/results/ps5-helper-125/authorized-text-assertion.diff)、[一次新夹具修正diff](../../tools/bolt/results/ps5-helper-125/new-fixture-correction.diff)、[测试源码差异](../../tools/bolt/results/ps5-helper-125/test-source-differences.json)、[trace坐标](../../tools/bolt/results/ps5-helper-125/trace-coordinate-adaptation.json)、[真实/mock口径](../../tools/bolt/results/ps5-helper-125/test-kinds.json)。
+
+### 探针
+
+完整阅读归档probe-120的harness.py与runner.py：harness作为subreaper，只通过持有的Popen发信号，并用pidfd清理其自身未回收子进程；helper只操作自己启动的session。原样复制脚本，用74号只读根的loader运行ninja 1.13.1；Ninja仅执行sleep/shell测试，不构建产品。
+
+按归档results.jsonl中实际登记的19个场景逐一执行，19/19符合基线的结果类别、退出码、信号模式、SIGCHLD恢复及交还harness的残留数。普通/正常取消/超时场景无残留；6个注入不可杀/EPERM/EMFILE场景各留1个设计内故障成员，由harness用其持有的pidfd清理。transient-scan仍失败，验证N2未采用；persistent-scan仍失败，约两个预算。第二信号和门闩场景符合预期。
+
+复审正文说运行过22个H3探针，但入库results.jsonl仅19条，本次明确只复跑这19条；未冒称22条，也未新增全进程EMFILE探针或H2比较。
+
+[安全审阅](../../tools/bolt/results/ps5-helper-125/probes/ownership-review.json)、[结果原文](../../tools/bolt/results/ps5-helper-125/probes/results.json)、[驱动](../../tools/bolt/results/ps5-helper-125/probes/run_probes.py)、[工具身份](../../tools/bolt/results/ps5-helper-125/probes/tool.json)。
+
+### 两份复审全部发现的最终处理清单
+
+|编号/来源|最终处理|本轮证据|
+|---|---|---|
+|D1 / N4名称（Codex/Claude）|同次stat扫描取得comm，附加属性，不改6/3元素形状，snapshot无I/O|125新增4项、122名称测试、119原断言与全部旧tuple夹具通过|
+|N4长度（Claude）|最多20成员，余数+N more|两项截断测试通过|
+|N4措辞（Claude）|kill=True cleanup，kill=False drain|两项测试通过；故障探针记录实际消息|
+|D2 / N1（Codex/Claude）|扫描与signalling分别描述；member read errors保留PID/errno|124两阶段＋122全消息/EIO/EMFILE测试通过|
+|N2（Claude）|策略确认：保持fail-closed，不修改|原722项通过；transient-scan仍COMMAND_ERROR|
+|N3（Claude）|仅注释持续错误约两个截止预算，不改预算|persistent-scan失败，实际时长见探针JSON|
+|原R1/R2、R3/L2、L1、EACCES（两份）|保留H3已闭合行为|118/119/120、regression109、110与19探针通过|
+|进程级EMFILE、禁止静默fallback（Claude）|保留限制，不增加运行时裸PID回退|单成员故障探针通过；全进程EMFILE未新增运行|
+|malformed stat、/proc/self读取失败（两份）|保持fail-closed，不扩展恢复范围|既有套件通过；不声称所有procfs错误可重试|
+|首取消等待、setsid逃逸、不可杀死成员、fallback竞争、单内核操作超预算（两份）|限制保留，不声称强隔离/硬实时|仅既有覆盖和本次19探针，不扩大承诺|
+|formatter/kill-pass缺口、真实/mock层次（两份测试章节）|真实formatter与阶段测试覆盖，并明确分层|新增/保留17项4:13；全套739项，不冒称均为实物测试|
+|Python3.9、实际worker pidfd/fallback资格、未审产品范围|不扩大本任务|未作Python3.9/QB/完整构建认证|
+
+### 资源、读取范围和未运行项
+
+各worker串行systemd用户服务，MemoryMax=4G、MemorySwapMax=0、CPUQuota=200%、Nice19、IOSchedulingClass=idle；无准入等待/资源轮询，无OOM。未操作120-N或另一项目的目录、进程、锁；没有构建LLVM/RPM、访问QB、Gerrit评审写入或refs/for推送。
+
+读取：124工作实现和测试、H3对象、两份120复审全文、19条历史探针结果、探针源码、本轮两轮完整结果、父链/tree/message和sandbox引用。没有读取另一项目材料；未做实物转换重放、完整构建或新QB。
+
+日志被gitignore排除或大于10MB时仅本地保存，路径/大小/SHA见[local-only-files.json](../../tools/bolt/results/ps5-helper-125/local-only-files.json)，不因此STOP。[交付文件清单](../../tools/bolt/results/ps5-helper-125/publication-files.json)。本次STOP原文：无。历史122–124 STOP保持原文。
+
+已结束 2026-11-17T07:58:45.294246-08:00 first full run completed total=739
+
+已结束 2026-11-17T08:02:36.288479-08:00 second full run completed total=739
+
+已结束 2026-11-17T08:05:32.317852-08:00 probes=PASS count=19
+
+已结束 2026-11-17T08:06:45.171033-08:00 sandbox=PASS
+
+交付准备修正一次：全暂存区`git diff --check`错误覆盖原样patch、RPM展开及归档探针，因原有空白返回2；不是产品门禁失败。保留[首次错误](../../tools/bolt/results/ps5-helper-125/preparation-error.txt)及[同一暂存区完整原文](../../tools/bolt/results/ps5-helper-125/preparation-first-check.stdout)，仅将检查限于H3→H4产品diff及新文档，两项通过。原始证据不做空白清洗。[检查修正diff](../../tools/bolt/results/ps5-helper-125/preparation-check-fix.diff)、[修正结果](../../tools/bolt/results/ps5-helper-125/preparation-fix-result.json)。一次授权准备修正已用，无第二次错误；产品、测试、sandbox结果均保持不变。

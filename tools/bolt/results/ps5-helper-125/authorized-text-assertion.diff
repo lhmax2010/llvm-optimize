@@ -1,0 +1,11 @@
+--- 124/test_122.py
++++ 125/test_122.py
+@@ -39,7 +39,7 @@
+    with self.assertRaises(h.LiveDescendantsError) as e:h.wait_session_exit(42,1,kill=kill)
+   return str(e.exception)
+  def test_complete_scan_signal_deadline_entire_message(self):
+-  msg=self.deadline(kill=True);self.assertIn('errors: session deadline expired;',msg);self.assertNotIn('scan incomplete',msg);self.assertNotIn('final scan incomplete',msg)
++  msg=self.deadline(kill=True);self.assertIn('errors: session deadline expired while signalling;',msg);self.assertNotIn('scan incomplete',msg);self.assertNotIn('final scan incomplete',msg)
+  def test_scan_interrupted_after_complete(self):self.assertIn('final scan incomplete',self.deadline(partial=True))
+  def member_error(self,code):
+   h=self.h;seen=[];context=MagicMock();context.__enter__.return_value=iter([types.SimpleNamespace(name='31'),types.SimpleNamespace(name='32')])
