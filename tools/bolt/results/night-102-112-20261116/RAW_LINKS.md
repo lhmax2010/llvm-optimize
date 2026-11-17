@@ -66,3 +66,5 @@
 - [tools/bolt/results/review-361624/361624-suggested-fix-v3.patch](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review-361624/361624-suggested-fix-v3.patch)
 - [tools/bolt/results/review-361624/attachment.txt](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review-361624/attachment.txt)
 - [tools/bolt/results/review-361624/autofdo-bolt-agent-review.md](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/review-361624/autofdo-bolt-agent-review.md)
+- [交付资源快照](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/night-102-112-20261116/step4-delivery-resource-snapshot.json)
+- [暂存文件清单](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/bolt-v4/tools/bolt/results/night-102-112-20261116/staged-files-final.txt)

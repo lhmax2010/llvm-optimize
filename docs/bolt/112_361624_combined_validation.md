@@ -77,3 +77,5 @@ FileNotFoundError: [Errno 2] No such file or directory: '/home/linhao/Toolchain/
 累计17次准入观察，均未满足24GiB内存线；最近MemAvailable=16273952768 B，/home可用=114081792000 B，指定重进程=0。看门狗未触发。三个输入SHA已匹配，但未复制、fetch、应用补丁或配置。询问是否仅将轻量步骤4的内存准入线改为12GiB，尚未收到批准；继续按24GiB等待至原截止时间，不把沉默当成批准。
 
 [准入观察](../../tools/bolt/results/night-102-112-20261116/admission-20261116T193634.json)；[看门狗观察](../../tools/bolt/results/night-102-112-20261116/watchdog-20261116T193634.json)。
+
+最终交付采样 2026-11-16T21:18:02.827097-08:00：memory.peak=952078336B，memory.events原文见[交付资源记录](../../tools/bolt/results/night-102-112-20261116/step4-delivery-resource-snapshot.json)，OOM和看门狗触发均为0。此采样在最后记录提交及服务退出之前，不冒称覆盖退出后的数值。
