@@ -21,3 +21,10 @@
 [输入身份](../../tools/bolt/results/night-102-112-20261116/step4-input-preflight-sha.json)、[资源观察快照](../../tools/bolt/results/night-102-112-20261116/admission-snapshot.jsonl)、[看门狗快照](../../tools/bolt/results/night-102-112-20261116/watchdog-snapshot.jsonl)。
 
 最近一次观察：2026-11-16T13:14:50.628431-08:00，MemAvailable=17197260800 B，/home可用=114082066432 B，指定重进程=0。
+
+
+### 等待进度 2026-11-16T19:36:34.922566-08:00
+
+累计17次准入观察，均未满足24GiB内存线；最近MemAvailable=16273952768 B，/home可用=114081792000 B，指定重进程=0。看门狗未触发。三个输入SHA已匹配，但未复制、fetch、应用补丁或配置。询问是否仅将轻量步骤4的内存准入线改为12GiB，尚未收到批准；继续按24GiB等待至原截止时间，不把沉默当成批准。
+
+[准入观察](../../tools/bolt/results/night-102-112-20261116/admission-20261116T193634.json)；[看门狗观察](../../tools/bolt/results/night-102-112-20261116/watchdog-20261116T193634.json)。
