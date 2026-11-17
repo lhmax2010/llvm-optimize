@@ -1,0 +1,30 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 4277413d9a7e..15fe8c35f780 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -166,7 +166,7 @@ class _StatTuple(tuple):
+ 
+ 
+ def proc_stat(path):
+-    text = Path(path).read_text()
++    text = Path(path).read_bytes().decode('utf-8', errors='surrogateescape')
+     try:
+         pid = int(text.split(' ', 1)[0])
+         comm = text.split('(', 1)[1].rsplit(')', 1)[0]
+@@ -275,6 +275,7 @@ def session_snapshot(members):
+         comm = getattr(member, 'comm', None)
+         if comm is None:
+             comm = '?'
++        comm = comm.encode('utf-8', 'surrogateescape').decode('utf-8', 'replace')
+         observed.append('%d:%s (%s)' % (pid, comm, state))
+     if len(members) > 20:
+         observed.append('+%d more' % (len(members)-20))
+@@ -492,7 +493,7 @@ def call(argv, log, cwd=None, timeout=300):
+             reaped = True
+         text = log.read_text(errors='replace')
+         metadata = log.with_suffix(log.suffix+'.argv.json')
+-        invocation = json.loads(metadata.read_text())
++        invocation = json.loads(metadata.read_bytes().decode('utf-8', errors='surrogateescape'))
+         save(metadata, dict(invocation,completed=True,rc=0))
+         return text
+     except BaseException as error:

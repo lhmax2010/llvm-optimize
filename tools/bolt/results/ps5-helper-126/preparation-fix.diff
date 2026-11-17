@@ -1,0 +1,7 @@
+--- delivery-check-before.py
++++ delivery-check-after.py
+@@ -1,2 +1,3 @@
+-staged = git('diff', '--cached', '--name-only').decode().splitlines()
++staged = git('diff', '--cached', '--no-renames', '--name-only').decode().splitlines()
+ assert {old_path, new_path} <= set(staged)
++assert git('show', 'HEAD:'+old_path) == git('show', ':'+new_path)

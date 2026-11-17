@@ -1,0 +1,50 @@
+{
+  "tests": 6,
+  "failures": 0,
+  "errors": 0,
+  "PASS": true,
+  "observations": [
+    {
+      "case": "complete_next",
+      "kind": "mixed-real-process-controlled-scan",
+      "message": "process session 993958 drain deadline; last observed members (last complete scan): 993958:python3 (S)",
+      "scans": 1,
+      "owned_pid": 993958
+    },
+    {
+      "case": "complete_partial",
+      "kind": "mixed-real-process-controlled-scan",
+      "message": "process session 993959 drain deadline; last observed members (last complete scan): 993959:python3 (S); final scan incomplete; errors: deadline during scan",
+      "scans": 2,
+      "owned_pid": 993959
+    },
+    {
+      "case": "first_empty",
+      "kind": "mock",
+      "message": "could not verify that the session is empty; partial observations: ; errors: deadline during scan",
+      "scans": 1,
+      "owned_pid": null
+    },
+    {
+      "case": "first_member",
+      "kind": "mixed-real-process-controlled-scan",
+      "message": "could not verify that the session is empty; partial observations: 993960:python3 (S); errors: deadline during scan",
+      "scans": 1,
+      "owned_pid": 993960
+    },
+    {
+      "case": "kill_wrapper",
+      "kind": "mixed-real-process-controlled-scan",
+      "message": "process session 993961 cleanup deadline; last observed members (last complete scan): 993961:python3 (S); final scan incomplete; errors: deadline during scan",
+      "scans": 2,
+      "owned_pid": 993961
+    },
+    {
+      "case": "member_error",
+      "kind": "mixed-real-process-controlled-scan",
+      "message": "process session 993962 cleanup deadline; last observed members (last complete scan): 993962:python3 (S); errors: PID 993962 errno=EMFILE: [Errno 24] member injected",
+      "scans": 1,
+      "owned_pid": 993962
+    }
+  ]
+}

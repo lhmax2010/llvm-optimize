@@ -1,0 +1,11 @@
+--- run1/tests/test_122.py
++++ run2/tests/test_122.py
+@@ -27,7 +27,7 @@
+    p.wait(timeout=5);p.stdout.close()
+  def test_stat_name_parentheses(self):
+   text=Path('/proc/self/stat').read_text();tail=text.rsplit(')',1)[1]
+-  with patch.object(Path,'read_text',return_value=str(os.getpid())+' (name (with) parens)'+tail):v=self.h.proc_stat('/proc/self/stat')
++  with patch.object(Path,'read_bytes',return_value=(str(os.getpid())+' (name (with) parens)'+tail).encode('utf-8')):v=self.h.proc_stat('/proc/self/stat')
+   self.assertEqual(v.comm,'name (with) parens')
+  def deadline(self,kill=False,partial=False):
+   h=self.h;clock=[0.];calls=[0];members=[self.named((31,'S',1),'first'),self.named((32,'S',2),'second')]

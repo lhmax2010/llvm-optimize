@@ -1,0 +1,27 @@
+[
+  {
+    "run": "first",
+    "file": "tests/external/adapted/codex_check_review.py",
+    "diff": "--- 125/run2/tests/external/adapted/codex_check_review.py\n+++ 126/first/tests/external/adapted/codex_check_review.py\n@@ -30,7 +30,7 @@\n  return child\n def trace(frame,event,arg):\n  global fired\n- if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==469 and not fired and mode in ('finally_second','finally_third'):\n+ if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==470 and not fired and mode in ('finally_second','finally_third'):\n   fired=True;os.kill(os.getpid(),signal.SIGHUP)\n  return trace\n h.subprocess.Popen=popen\n"
+  },
+  {
+    "run": "second",
+    "file": "tests/external/adapted/codex_check_review.py",
+    "diff": "--- 125/run2/tests/external/adapted/codex_check_review.py\n+++ 126/second/tests/external/adapted/codex_check_review.py\n@@ -30,7 +30,7 @@\n  return child\n def trace(frame,event,arg):\n  global fired\n- if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==469 and not fired and mode in ('finally_second','finally_third'):\n+ if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==470 and not fired and mode in ('finally_second','finally_third'):\n   fired=True;os.kill(os.getpid(),signal.SIGHUP)\n  return trace\n h.subprocess.Popen=popen\n"
+  },
+  {
+    "run": "first",
+    "file": "tests/external/adapted/h2.py",
+    "diff": "--- 125/run2/tests/external/adapted/h2.py\n+++ 126/first/tests/external/adapted/h2.py\n@@ -14,10 +14,10 @@\n                 h._CANCEL_SIGNAL = signal.SIGTERM          # first signal already handled\n             elif mode == 'two-real-at-line':\n                 pass\n-        if mode == 'deferred-then-third' and frame.f_lineno == 464 and not fired.get('d'):\n+        if mode == 'deferred-then-third' and frame.f_lineno == 465 and not fired.get('d'):\n             fired['d'] = True\n             os.kill(os.getpid(), signal.SIGTERM)\n-        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 464:\n+        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 465:\n             fired['second'] = True\n             os.kill(os.getpid(), signal.SIGHUP)\n         if frame.f_lineno == line and not fired['second'] and mode in ('second-at-line', 'two-real-at-line'):\n"
+  },
+  {
+    "run": "second",
+    "file": "tests/external/adapted/h2.py",
+    "diff": "--- 125/run2/tests/external/adapted/h2.py\n+++ 126/second/tests/external/adapted/h2.py\n@@ -14,10 +14,10 @@\n                 h._CANCEL_SIGNAL = signal.SIGTERM          # first signal already handled\n             elif mode == 'two-real-at-line':\n                 pass\n-        if mode == 'deferred-then-third' and frame.f_lineno == 464 and not fired.get('d'):\n+        if mode == 'deferred-then-third' and frame.f_lineno == 465 and not fired.get('d'):\n             fired['d'] = True\n             os.kill(os.getpid(), signal.SIGTERM)\n-        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 464:\n+        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 465:\n             fired['second'] = True\n             os.kill(os.getpid(), signal.SIGHUP)\n         if frame.f_lineno == line and not fired['second'] and mode in ('second-at-line', 'two-real-at-line'):\n"
+  },
+  {
+    "run": "second",
+    "file": "tests/test_122.py",
+    "diff": "--- 125/run2/tests/test_122.py\n+++ 126/second/tests/test_122.py\n@@ -27,7 +27,7 @@\n    p.wait(timeout=5);p.stdout.close()\n  def test_stat_name_parentheses(self):\n   text=Path('/proc/self/stat').read_text();tail=text.rsplit(')',1)[1]\n-  with patch.object(Path,'read_text',return_value=str(os.getpid())+' (name (with) parens)'+tail):v=self.h.proc_stat('/proc/self/stat')\n+  with patch.object(Path,'read_bytes',return_value=(str(os.getpid())+' (name (with) parens)'+tail).encode('utf-8')):v=self.h.proc_stat('/proc/self/stat')\n   self.assertEqual(v.comm,'name (with) parens')\n  def deadline(self,kill=False,partial=False):\n   h=self.h;clock=[0.];calls=[0];members=[self.named((31,'S',1),'first'),self.named((32,'S',2),'second')]\n"
+  }
+]

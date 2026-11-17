@@ -1,0 +1,11 @@
+{
+  "correction_passes": 1,
+  "category": "b",
+  "file": "run2/tests/test_122.py",
+  "line": 30,
+  "old": "with patch.object(Path,'read_text',return_value=str(os.getpid())+' (name (with) parens)'+tail)",
+  "new": "with patch.object(Path,'read_bytes',return_value=(str(os.getpid())+' (name (with) parens)'+tail).encode('utf-8'))",
+  "reason": "测试注入点跟随已授权的read_bytes接口；输入内容和全部断言不变",
+  "assertions_changed": false,
+  "product_changed_after_first_run": false
+}

@@ -1,0 +1,43 @@
+{
+  "modified": [
+    {
+      "H4_line": 169,
+      "function": "proc_stat",
+      "before": "Path(path).read_text()",
+      "after": "Path(path).read_bytes().decode('utf-8', errors='surrogateescape')",
+      "proc_callers": [
+        "live_session_members self and entries",
+        "kill_session_member pidfd and fallback recheck"
+      ]
+    },
+    {
+      "H4_line": 495,
+      "function": "call",
+      "before": "metadata.read_text()",
+      "after": "metadata.read_bytes().decode('utf-8', errors='surrogateescape')"
+    }
+  ],
+  "display": {
+    "H4_line": 278,
+    "function": "session_snapshot",
+    "conversion": "comm.encode('utf-8', 'surrogateescape').decode('utf-8', 'replace')"
+  },
+  "already_tolerant": [
+    {
+      "H4_line": 493,
+      "function": "call",
+      "read": "log.read_text(errors='replace')"
+    },
+    {
+      "H4_line": 1666,
+      "function": "failure log reporting",
+      "read": "Path(log).read_text(errors='replace')"
+    },
+    {
+      "H4_line": 1883,
+      "function": "failure log reporting",
+      "read": "Path(log).read_text(errors='replace')"
+    }
+  ],
+  "outside_process_control": "Other ELF/build/config/package text and JSON readers retained; no /proc text reader outside proc_stat found."
+}

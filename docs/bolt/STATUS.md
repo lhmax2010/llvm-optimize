@@ -1693,3 +1693,8 @@ H3上六个独立helper工作提交，末端f47f0ad8d7bad4b30ca777a2c10ebce367ea
 ## 2026-11-17：125号（PASS，H4已推sandbox）
 
 H4=7a7bc17467d4c5da9763e86e3c74a123b3ff0df2，tree=472c872afe958f464112d22b6304cde006fcbf98，父61ef5d31，说明与H3逐字节相同，仅helper +37/-19。proc_stat/成员恢复6/3元素，comm改为tuple附加属性；保留阶段诊断、member read errors、20上限与fail-closed。首轮739项733通过、6个(b)类122新夹具失败，既有722全通过；授权一次属性夹具适配后第二轮739/739。19个归档探针符合预期。H3 lease推送成功且ls-remote一致，无STOP；交付一次准备修正：空白检查误覆盖原样证据，保留原文后限定为产品diff/文档；未操作120-N或Gerrit评审。见[125续做](122_helper_fixes.md#125-续做)。
+
+
+## 2026-11-17：126号（PASS，H5已推sandbox）
+
+H5=ed922413c19b01d07e0ec6547771267f40ab5469，tree=66aa08d9e6717b904a0eb390096d908fea1109c0，父61ef5d31，说明与H4逐字节相同，仅helper +3/-2。proc_stat及call元数据改为read_bytes+surrogateescape，comm显示用replace；6/3元组与fail-closed不变。Codex125无新正确性问题，风格项跟进；Claude非UTF8导致清理中断已修。复审先独立归档推送eb9855aa；首轮743项742通过、1个(b)类新夹具patch接口失败，一次纠正且断言未改，第二轮743/743通过；r18探针通过、包装器剩余清理0。125旧test_122已重命名pre-correction并加README。H4 lease推送并ls-remote核对，无STOP；交付一次准备修正：清单对Git R100源路径的判断修正为no-renames及字节核对；未操作120-N或Gerrit评审。见[126号](126_helper_utf8.md)。
