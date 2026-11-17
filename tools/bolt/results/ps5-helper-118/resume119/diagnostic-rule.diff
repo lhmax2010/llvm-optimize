@@ -1,0 +1,68 @@
+--- 118/helper.py
++++ 119/helper.py
+@@ -276,35 +276,46 @@
+     errors = {}
+     last_observed = []
+     snapshot = ''
++    partial_snapshot = ''
+     complete = False
++
++    def observation_detail():
++        # Historical observations are diagnostic only, never kill authority
++        # or a claim that the observed processes are still alive now.
++        if last_observed:
++            return ('last observed members (last complete scan): '+snapshot+
++                    ('; final scan incomplete' if not complete else ''))
++        return 'partial observations: '+partial_snapshot
+ 
+     def expired():
+         detail = '; errors: '+'; '.join(errors) if errors else ''
+-        if complete and last_observed:
++        if last_observed:
+             raise LiveDescendantsError(
+-                'process session %d still alive at deadline; last observed members: %s%s' %
+-                (sid, snapshot, detail))
++                'process session %d drain deadline; %s%s' %
++                (sid, observation_detail(), detail))
+         raise SessionInspectionError(
+-            'could not verify that the session is empty; last observed snapshot: %s%s' %
+-            (snapshot, detail), last_observed)
++            'could not verify that the session is empty; %s%s' %
++            (observation_detail(), detail), [])
+ 
+     while True:
+         # Do not enter a new scan with an already exhausted budget. A completed
+         # observation remains diagnostic evidence, not fresh kill authority.
++        complete = False
+         if time.monotonic() >= deadline:
+             expired()
+-        complete = False
+         try:
+             members = live_session_members(sid, deadline)
+         except SessionInspectionError as error:
+             errors[str(error)] = None
+             members = error.members
++            partial_snapshot = session_snapshot(members) if members else ''
+             if isinstance(error, SessionDeadlineError):
+                 expired()
+         else:
+             complete = True
+-            last_observed = list(members)
+-            snapshot = session_snapshot(members)
++            if members:
++                last_observed = list(members)
++                snapshot = session_snapshot(members)
+         if kill:
+             # Retry errored members on later scans, and handle newly forked
+             # members. Never switch signaling mode after the capability probe.
+@@ -325,8 +336,8 @@
+                     errors['PID %d: %s' % (pid, error)] = None
+         if complete and not members:
+             if errors:
+-                raise GateError('session cleanup/check failed: '+'; '.join(errors)+
+-                                '; last observed snapshot: '+snapshot)
++                raise GateError('session cleanup/check failed; '+observation_detail()+
++                                '; errors: '+'; '.join(errors))
+             return
+         if time.monotonic() >= deadline:
+             expired()

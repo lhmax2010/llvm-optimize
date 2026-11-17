@@ -1,0 +1,191 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index bbb97728b91f..920941dcfe68 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -179,6 +179,7 @@ def session_kill_mode():
+     global _SESSION_KILL_MODE
+     if _SESSION_KILL_MODE is None:
+         mode = 'pidfd'
++        probe_errno = None
+         try:
+             fd = os.pidfd_open(os.getpid(), 0)
+             try:
+@@ -188,10 +189,12 @@ def session_kill_mode():
+         except AttributeError:
+             mode = 'fallback-recheck'
+         except OSError as error:
+-            if error.errno not in (errno.ENOSYS, errno.EPERM):
++            if error.errno not in (errno.ENOSYS, errno.EPERM, errno.EACCES):
+                 raise
+             mode = 'fallback-recheck'
+-        print('SESSION_KILL_MODE='+mode, file=sys.stderr, flush=True)
++            probe_errno = error.errno
++        suffix = ' errno='+errno.errorcode.get(probe_errno, str(probe_errno)) if probe_errno is not None else ''
++        print('SESSION_KILL_MODE='+mode+suffix, file=sys.stderr, flush=True)
+         _SESSION_KILL_MODE = mode
+     return _SESSION_KILL_MODE
+ 
+@@ -235,10 +238,11 @@ def live_session_members(sid, deadline=None):
+                     continue
+                 try:
+                     pid, state, pgrp, threads, session, starttime = proc_stat('/proc/'+entry.name+'/stat')
+-                except (FileNotFoundError, ProcessLookupError):
+-                    continue
+-                except PermissionError as error:
+-                    denied.append('%s: %s' % (entry.name, error))
++                except OSError as error:
++                    if isinstance(error, (FileNotFoundError, ProcessLookupError)) or error.errno == errno.ESRCH:
++                        continue
++                    denied.append('PID %s errno=%s: %s' %
++                                  (entry.name, errno.errorcode.get(error.errno, error.errno), error))
+                     continue
+                 if session == sid and (state not in ('Z', 'X') or threads > 1):
+                     members.append((pid, state, starttime))
+@@ -250,6 +254,18 @@ def live_session_members(sid, deadline=None):
+     return sorted(members)
+ 
+ 
++def session_snapshot(members):
++    """Describe a complete observation for diagnostics, never for signaling."""
++    observed = []
++    for pid, state, starttime in members:
++        try:
++            comm = Path('/proc/%d/comm' % pid).read_text(errors='replace').strip()
++        except OSError:
++            comm = '?'
++        observed.append('%d:%s (%s)' % (pid, comm, state))
++    return ', '.join(observed)
++
++
+ def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+     # The unreaped session leader pins the SID. Descendants that call setsid()
+     # themselves escape this session and are outside this tracking model.
+@@ -257,39 +273,74 @@ def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+     # Deadlines are cooperative; an individual kernel operation can overrun.
+     if deadline is None:
+         deadline = time.monotonic()+timeout
++    errors = {}
++    last_observed = []
++    snapshot = ''
++    partial_snapshot = ''
++    complete = False
++
++    def observation_detail():
++        # Historical observations are diagnostic only, never kill authority
++        # or a claim that the observed processes are still alive now.
++        if last_observed:
++            return ('last observed members (last complete scan): '+snapshot+
++                    ('; final scan incomplete' if not complete else ''))
++        return 'partial observations: '+partial_snapshot
++
++    def expired():
++        detail = '; errors: '+'; '.join(errors) if errors else ''
++        if last_observed:
++            raise LiveDescendantsError(
++                'process session %d drain deadline; %s%s' %
++                (sid, observation_detail(), detail))
++        raise SessionInspectionError(
++            'could not verify that the session is empty; %s%s' %
++            (observation_detail(), detail), [])
++
+     while True:
+-        errors = []
+-        deadline_error = None
++        # Do not enter a new scan with an already exhausted budget. A completed
++        # observation remains diagnostic evidence, not fresh kill authority.
++        complete = False
++        if time.monotonic() >= deadline:
++            expired()
+         try:
+             members = live_session_members(sid, deadline)
+         except SessionInspectionError as error:
+-            errors.append(str(error))
++            errors[str(error)] = None
+             members = error.members
++            partial_snapshot = session_snapshot(members) if members else ''
+             if isinstance(error, SessionDeadlineError):
+-                deadline_error = error
++                expired()
++        else:
++            complete = True
++            if members:
++                last_observed = list(members)
++                snapshot = session_snapshot(members)
+         if kill:
+-            # Keep processing other members after a denied signal or lost PID.
++            # Retry errored members on later scans, and handle newly forked
++            # members. Never switch signaling mode after the capability probe.
+             for pid, state, starttime in members:
+                 try:
+                     session_deadline(deadline, members)
+                     kill_session_member(sid, pid, starttime, deadline)
+                 except (FileNotFoundError, ProcessLookupError):
+                     pass
+-                except SessionInspectionError as error:
+-                    errors.append(str(error))
+-                    break
+-                except PermissionError as error:
+-                    errors.append('PID %d: %s' % (pid, error))
+-        if errors:
+-            if deadline_error is not None:
+-                raise SessionDeadlineError("; ".join(errors), members)
+-            raise GateError('session cleanup/check failed: '+'; '.join(errors)+
+-                            '; last observed members: '+repr(members))
+-        if not members:
++                except SessionDeadlineError as error:
++                    errors[str(error)] = None
++                    expired()
++                except OSError as error:
++                    if error.errno != errno.ESRCH:
++                        errors['PID %d errno=%s: %s' %
++                               (pid, errno.errorcode.get(error.errno, error.errno), error)] = None
++                except GateError as error:
++                    errors['PID %d: %s' % (pid, error)] = None
++        if complete and not members:
++            if errors:
++                raise GateError('session cleanup/check failed; '+observation_detail()+
++                                '; errors: '+'; '.join(errors))
+             return
+         if time.monotonic() >= deadline:
+-            raise LiveDescendantsError('process session %d deadline expired; scan incomplete; last observed members: %s' %
+-                                       (sid, ', '.join('%d:%s' % item[:2] for item in members)))
++            expired()
+         time.sleep(min(.02, max(0, deadline-time.monotonic())))
+ 
+ 
+@@ -331,6 +382,7 @@ def record_cancel(signum, frame):
+                 _FORCE_EXITING = True
+                 # Best effort, once only. Another signal abandons this pass
+                 # and terminates immediately, without restarting its budget.
++                # This forced-exit cleanup is best effort, not containment.
+                 if _ACTIVE_SESSION is not None:
+                     try: kill_session(_ACTIVE_SESSION, 1)
+                     except Exception: pass
+@@ -408,13 +460,16 @@ def call(argv, log, cwd=None, timeout=300):
+                 raise GateError(primary)
+             try:
+                 wait_session_exit(process.pid, 10)
++            except SessionInspectionError as error:
++                primary = 'COMMAND_ERROR: command exited successfully; '+str(error)
++                raise GateError(primary) from error
+             except LiveDescendantsError as error:
+                 primary = ('COMMAND_ERROR: command exited successfully with live descendants: '+
+                            str(error))
+                 raise GateError(primary) from error
+             # Retire scan/kill authority before a reap can release the SID.
+-            session_retired = True
+             _ACTIVE_SESSION = None
++            session_retired = True
+             require(reap_child(process) == rc, 'child exit status changed while reaping')
+             reaped = True
+         text = log.read_text(errors='replace')
+@@ -435,8 +490,8 @@ def call(argv, log, cwd=None, timeout=300):
+                     kill_session(process.pid, 10)
+                 except Exception as failure:
+                     cleanup.append(str(failure))
+-            session_retired = True
+             _ACTIVE_SESSION = None
++            session_retired = True
+             if process.returncode is None:
+                 try:
+                     reap_child(process, 1)

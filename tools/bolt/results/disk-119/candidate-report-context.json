@@ -1,0 +1,547 @@
+[
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 18,
+    "text": "# No subsequent step consumes this ThinLTO cache.\n# Release it only inside the enabled x86_64 BOLT block.\npython3 -B %{SOURCE1201} cache-release \"$PWD\" \"$BOLT_WORK\"\n```\n\n普通构建、基线安装、Source1005、平台 post 链、四次 disk-report 均未改。源码全文 diff、完整 helper/spec、结构检查见本页证据目录。"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 25,
+    "text": "## 2. helper 行为\n\n新命令先调用 `replay_script` 验证 link.original 的完整格式及唯一绝对缓存路径规则；再要求 realpath 与 build/lto.cache 相同、路径为实际目录且不是软链接。否则输出 skipped 并返回 0。删除前 disk_entries 统计普通文件数和实际 allocated bytes（含目录）；rmtree 成功输出 removed、耗时，并原子保存 cache-release.json。部分删除失败输出 partial 和可读剩余文件数（统计失败时为 unknown）。记录文件写入失败仅报告 record-unavailable，不改变成功退出约定；参数用法错误由 argparse 返回 2。\n\ndisk-report / disk-diagnose 未修改：缓存缺失时 disk_entries 返回空集合，正增量为 0，净变化允许为负数。原因仍取自失败 errno/日志，缺失缓存本身不是磁盘失败。新增测试验证了释放后的非磁盘诊断和真正 ENOSPC 诊断。\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 46,
+    "text": "同时记录外层 GBS 根与独立 chroot 根：普通用户外层 du 对 usr/share/upgrade、var/cache/ldconfig、root 有权限盲区，错误原样保留；补充以既有 sudo chroot 权限在本次新 chroot 内执行 du -sx -B1 /，完整根读数单独存档，不把盲区读数称为完整值。三个盲区初次各12,288字节。普通 sudo du 未授权，没有绕过或改权限。\n\n修订 spec 的解析使用新基线根中的 RPM，专用 /home/abuild/cache-release-parse 仅存两份小 spec；不执行其安装或构建，不影响基线源码。此验证小目录包含两份小spec，约60KiB，计入采样；与产品构建输入分离。\n\n## 5. 准备性修正\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 63,
+    "text": "| 项目 | 结果 |\n|---|---|\n| cache-release 实现、精确 spec 改动范围 | PASS |\n| 全部本地测试 | 299/299 PASS，新增10 |\n| 新提交 gbs export / Tizen RPM 五项解析 | PASS / 5/5 PASS |\n| 第一轮 9e5675f 完整构建 | 未完成：普通 LLVM 链接阶段暂停后，内存准入等待超时 |"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 71,
+    "text": "| 构建白名单、compare-root、post 实物门禁 | NOT RUN，本次未到这些阶段 |\n| 两轮 candidate SHA / RPM 文件清单及文件 SHA 比较 | NOT RUN，无完整第一轮产物 |\n| cache-release 的真实构建 removed 原文 | 无，本次只有夹具执行，不能冒充真实构建证据 |\n| 整轮峰值及后处理占用降幅 | 未知，不能推算成已测结果 |\n\n### 6.1 执行与停止经过"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 118,
+    "text": "## 7. 当时继续工作的条件与边界\n\n第一轮尚未完成，不能删除其根来腾空间。新根位于 `W/temp/bolt-v4-20261022-cache-release/baseline-root`，下一次续跑需重新满足本地资源准入；本轮到等待上限后已停止，没有通过重启来重置等待期限。第二轮仍须相同固定快照/宏条件，先保全第一轮所有RPM、candidate、identity与四次报告，再执行修订轮并逐文件比较。源码修改不能视为已经完成两轮实物认证。\n\n## 8. 首次停止时的原始证据\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 122,
+    "text": "## 8. 首次停止时的原始证据\n\n目录：[`tools/bolt/results/cache-release-20261022/`](../../tools/bolt/results/cache-release-20261022/)。源码、测试、解析为已完成材料；构建运行及停止记录已保存；见partial-measurement.json、timeline.tsv、各段完整压缩日志与JSONL。没有删除历史目录或任何真实构建缓存。\n\n原始RPM生成脚本保留4处行末空白，原始iostat保留EOF空行；git diff --check对此给出提示，未改写原文以消除提示。排除这两份原始证据后的文档/脚本差异检查通过；110份归档证据SHA复核通过，详见delivery-checks.json。\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 154,
+    "text": "第一轮rpmbuild退出0，当前续跑段15095.144秒；这不是整轮从零开始的时间，之前的编译段、内存暂停和环境差异仍见第6、9节。所有真实门禁通过：113项工具计划与执行、TF归档身份、重链/BOLT/strip、安全属性、两次pipeline tiny、compare-root、候选原子安装、平台链后的post tiny/SHA/别名检查。最终产生22个二进制RPM和1个源码RPM。\n\n候选SHA `4ec07159aeb4f9300361b95955db05bfca06ece5b748796b28e9b8965145fff9`，与历史候选逐字节相同。当前普通clang SHA为`06c940726269210ce3655e17366820a080bfe236a3adc24622958e6a6709e309`，并非历史7df0ff90；基线已有此差异，不能归因于尚未运行的cache-release。新固定快照/构建续跑与历史条件不同，未对普通二进制差异做进一步逐节归因。新树llvm-bolt SHA为`0ecdff6172f7fffb08d30f3865976ca15dc8708c3a1ef9fe0d2a543059996f75`。匹配N=23592、M=144032、S=0、U=1、Q=383，R=0.0042385%，S/N=0，双门禁PASS。\n\n| 阶段 | 本次续跑日志秒数 |\n|---|---:|"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 204,
+    "text": "第二轮从开始即MemoryMax=infinity、swap0，不设内存准入或运行中低内存停止；nice15/idle IO和共享锁规则不变。前两段持锁3201.526、3200.788秒，均先确认冻结后释放，约一秒后重新取锁并恢复；没有重启构建。与首轮分段恢复及16→20GiB→无上限的资源历史不同，不能把两轮耗时差全部归因于缓存释放。\n\n完整根目前最高采样173872345088B（161.93GiB），已开始普通安装；不是整轮峰值。ThinLTO临时文件消失导致的du rc1逐条保留，最终完整峰值只采用rc0记录。尚未运行cache-release、未生成第二轮candidate/RPM。只读定位脚本时一次rg搜索误遍历新根的proc并报权限错误；没有产品操作或输入变化，随后改为限定深度的查找，见lookup-note.json。\n\n本次中间归档一次使用相对脚本路径，systemd-run工作目录为/home/linhao而非调用目录，启动即rc2；改为绝对路径后归档成功。未影响产品构建，原文见archive-launch-correction.json。\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 220,
+    "text": "```\n\ncache-release.json状态removed。释放约91.438GiB，随后完整根采样132,480,196,608B（123.382GiB）；此时Source1005刚开始，不能把前后单点差直接称为最终峰值降幅。第二轮截至此时完整根最高采样231,374,397,440B，发生在pipeline期间；待整轮结束再判定整轮峰值、阶段降幅和RPM差异。第三段持锁3200.754秒后正常冻结/释放/恢复；未因内存等待。\n\n只读进度显示脚本修正了重复拼接-root导致未显示Source1005计数的问题；不涉及产品输入或采样。tool-verify.json只读查找未命中后按目录清单定位tool-build-verification.json；原始说明在monitor-corrections.json。\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 226,
+    "text": "### 12.1 首轮续跑残留的占用混杂因素\n\n只读对比两轮build树文件大小（排除缓存/BOLT工作区/转换工作区）发现首轮独有两个普通链接临时文件：bin/bugpoint.tmpb222052和lib64/liblldb.so.22.1.8.tmpe4ea0a7，mtime均在此前被中断的首轮链接阶段。逻辑大小合计2,657,653,320B，实际allocated bytes合计2,216,964,096B（约2.065GiB）。保留原件不删除，最终实测峰值差须单列这一混杂因素，不可全部归因于cache-release。原文在build-size-differences.json与baseline-linker-temporary-residue.json。\n\nCMakeCache只读diff另存cmake-cache-comparison.diff：首轮恢复配置留下C/CXX编译器相对名与UNINITIALIZED类型，第二轮首次配置记录/bin绝对名及STRING；AR/RANLIB路径相同，仅缓存类型/注释不同。两轮实际ordinary/relink/tool/candidate SHA均一致，但仍保留该配置历史差异，不宣称缓存文件逐字节相同。\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 242,
+    "text": "整轮完整chroot观测峰值 **224.718 → 215.484GiB**，实测差 **9.233GiB**。首轮峰值在静态库转换产物安装阶段，第二轮峰值提前到缓存释放之前的BOLT pipeline。首轮另有2.065GiB中断链接残留；扣除这个已知因素后的峰值改善**估算**为7.169GiB。不是第三轮受控实测，仍有续跑历史和采样差异。\n\n真实cache-release删除47,717个文件、98,180,882,432B（91.438GiB），耗时29.205秒。因此不能说“整轮峰值下降91GiB”：释放前的高占用仍然发生，主要收益在随后的转换、后处理和打包。\n\n| 阶段完整扫描的最高读数 | 首轮GiB | 第二轮GiB | 首轮减第二轮GiB |\n|---|---:|---:|---:|"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 297,
+    "text": "| python-clang-22.1.8-1.x86_64.rpm | 3 | 载荷文件SHA相同 | 0 |\n\n共有271个归档完整SHA不同；逐成员原始差异及仅归一ar头时间戳后的SHA见archive-differences.json。两轮平台脚本都调用brp-strip-static-archive /bin/strip，脚本原文执行strip -g。归档时间字段分别落在04:54:59–04:55:24与09:16:02–09:16:36（CST），与各自后处理时刻对应；判断为平台归档时间元数据差异，不是cache-release改变成员代码。\n\n\n源码RPM按预期与二进制载荷分开："
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 307,
+    "text": "| llvm.spec | sha256, size |\n\n源码包仅helper和spec两个文件的内容/大小不同。helper与各自源码完全匹配；导出spec的差异精确为三行cache-release改动及GBS自动生成的VCS提交号。源码tar、profile、Source1005、七个补丁及其他源码载荷均相同（文件mtime另列）。具体SHA见source-differences.json，不把源码包预期更新称作二进制包回归。\n\n源码仍为d20e873b2c7dfac10fab9235e2b781dad08dc4c7，父67619ec8bbbac7238a6cfc33a481ccfbcd12206f，作者/提交者/Signed-off-by均Hao Lin。spec SHA为64bff4b4f6a9587a28ba2b2663ce05b61a4c391bb59d9120beb2845cce488f1f，helper SHA为516bf4189415bed604eac2e74049ab2b148690c79b3fea4e420e3617527630f5。299测试与gbs export后的五项Tizen RPM解析认证沿用同一未改源码提交的已通过结果；构建期间没有再改生产文件。\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 321,
+    "text": "### 13.4 钉提交原始证据\n\n- [双轮测量比较与公式](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/measurement-comparison.json)\n- [第二轮完整结果与资源](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/completed-revised-summary.json)\n- [两轮候选/ordinary/工具SHA](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/binary-identities.json)\n- [逐包逐路径RPM差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-comparison.json)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 322,
+    "text": "\n- [双轮测量比较与公式](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/measurement-comparison.json)\n- [第二轮完整结果与资源](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/completed-revised-summary.json)\n- [两轮候选/ordinary/工具SHA](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/binary-identities.json)\n- [逐包逐路径RPM差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-comparison.json)\n- [归档成员与时间头差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/archive-differences.json)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 323,
+    "text": "- [双轮测量比较与公式](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/measurement-comparison.json)\n- [第二轮完整结果与资源](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/completed-revised-summary.json)\n- [两轮候选/ordinary/工具SHA](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/binary-identities.json)\n- [逐包逐路径RPM差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-comparison.json)\n- [归档成员与时间头差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/archive-differences.json)\n- [源码RPM差异归因](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/source-differences.json)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 324,
+    "text": "- [第二轮完整结果与资源](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/completed-revised-summary.json)\n- [两轮候选/ordinary/工具SHA](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/binary-identities.json)\n- [逐包逐路径RPM差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-comparison.json)\n- [归档成员与时间头差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/archive-differences.json)\n- [源码RPM差异归因](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/source-differences.json)\n- [RPM比较完整结果](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/product-comparison-summary.json)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 325,
+    "text": "- [两轮候选/ordinary/工具SHA](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/binary-identities.json)\n- [逐包逐路径RPM差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-comparison.json)\n- [归档成员与时间头差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/archive-differences.json)\n- [源码RPM差异归因](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/source-differences.json)\n- [RPM比较完整结果](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/product-comparison-summary.json)\n- [首轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/baseline-rpm-headers.json)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 326,
+    "text": "- [逐包逐路径RPM差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-comparison.json)\n- [归档成员与时间头差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/archive-differences.json)\n- [源码RPM差异归因](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/source-differences.json)\n- [RPM比较完整结果](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/product-comparison-summary.json)\n- [首轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/baseline-rpm-headers.json)\n- [第二轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/revised-rpm-headers.json)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 327,
+    "text": "- [归档成员与时间头差异](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/archive-differences.json)\n- [源码RPM差异归因](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/source-differences.json)\n- [RPM比较完整结果](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/product-comparison-summary.json)\n- [首轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/baseline-rpm-headers.json)\n- [第二轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/revised-rpm-headers.json)\n- [225归档转换比较](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/archive-conversion-comparison.json)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 328,
+    "text": "- [源码RPM差异归因](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-difference-analysis/source-differences.json)\n- [RPM比较完整结果](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/product-comparison-summary.json)\n- [首轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/baseline-rpm-headers.json)\n- [第二轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/revised-rpm-headers.json)\n- [225归档转换比较](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/archive-conversion-comparison.json)\n- [真实缓存释放](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/cache-release.json)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 329,
+    "text": "- [RPM比较完整结果](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/product-comparison-summary.json)\n- [首轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/baseline-rpm-headers.json)\n- [第二轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/revised-rpm-headers.json)\n- [225归档转换比较](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/archive-conversion-comparison.json)\n- [真实缓存释放](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/cache-release.json)\n- [post尾检](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/post-gate/post-result.json)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 330,
+    "text": "- [首轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/baseline-rpm-headers.json)\n- [第二轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/revised-rpm-headers.json)\n- [225归档转换比较](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/archive-conversion-comparison.json)\n- [真实缓存释放](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/cache-release.json)\n- [post尾检](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/post-gate/post-result.json)\n- [带行号时间线](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/timeline-final.tsv)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 331,
+    "text": "- [第二轮RPM头字段](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/rpm-validation/revised-rpm-headers.json)\n- [225归档转换比较](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/archive-conversion-comparison.json)\n- [真实缓存释放](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/cache-release.json)\n- [post尾检](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/post-gate/post-result.json)\n- [带行号时间线](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/timeline-final.tsv)\n- [第二轮完整日志](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/rpm-build.log.gz)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 332,
+    "text": "- [225归档转换比较](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/archive-conversion-comparison.json)\n- [真实缓存释放](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/cache-release.json)\n- [post尾检](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/post-gate/post-result.json)\n- [带行号时间线](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/timeline-final.tsv)\n- [第二轮完整日志](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/rpm-build.log.gz)\n- [第二轮完整根du](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/du-root-complete.jsonl)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 333,
+    "text": "- [真实缓存释放](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/cache-release.json)\n- [post尾检](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/post-gate/post-result.json)\n- [带行号时间线](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/timeline-final.tsv)\n- [第二轮完整日志](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/rpm-build.log.gz)\n- [第二轮完整根du](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/du-root-complete.jsonl)\n- [证据SHA索引](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/build-evidence-provenance.json)"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 334,
+    "text": "- [post尾检](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-evidence/bolt-work/post-gate/post-result.json)\n- [带行号时间线](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/timeline-final.tsv)\n- [第二轮完整日志](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/rpm-build.log.gz)\n- [第二轮完整根du](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/du-root-complete.jsonl)\n- [证据SHA索引](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/build-evidence-provenance.json)\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 335,
+    "text": "- [带行号时间线](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/timeline-final.tsv)\n- [第二轮完整日志](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/rpm-build.log.gz)\n- [第二轮完整根du](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/du-root-complete.jsonl)\n- [证据SHA索引](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/build-evidence-provenance.json)\n\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 336,
+    "text": "- [第二轮完整日志](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/rpm-build.log.gz)\n- [第二轮完整根du](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/revised-run/du-root-complete.jsonl)\n- [证据SHA索引](https://raw.githubusercontent.com/lhmax2010/llvm-optimize/f4a39a5dc70f66f9e8ba0559d418af5dbe472a68/tools/bolt/results/cache-release-20261022/build-evidence-provenance.json)\n\n\n## 14. 2026-10-23：异常兜底修复前的挂载检查停止"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 343,
+    "text": "用户要求先确认首轮 `baseline-root/proc` 无占用，再正常卸载；仍被占用时立即停止，不结束占用进程。本次 19:17（Asia/Shanghai）检查未满足该前提。\n\n完整路径：`/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0/proc`。\n\n`lsof -nP <路径>` 返回 0，原文：\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 353,
+    "text": "```\n\n上方仅为可读性缩写路径；[原始输出](../../tools/bolt/results/cache-release-exception-20261023/mount-prechecks.json)保存完整路径。`fuser -v <路径>` 同样返回 0，显示 `linhao 202760 f.... code`；`findmnt -M <路径>` 确认 proc 挂载仍在。直接读取 `/proc/202760/fd/48`、`49` 的链接也确认相同占用，见 [句柄证据](../../tools/bolt/results/cache-release-exception-20261023/proc-holders.json)。\n\n| 项目 | 结果 |\n|---|---|"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 366,
+    "text": "\n\n## 15. 2026-10-23：懒卸载、cache-release 异常兜底修复与 sandbox 更新\n\n用户明确授权仅对首轮 baseline-root 下的 proc 挂载使用懒卸载，挂载结果不阻塞源码修复与推送。`findmnt -rn -o TARGET,SOURCE,FSTYPE` 检查该根只剩一个 `none proc` 挂载；执行：\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 371,
+    "text": "\n```sh\nsudo -n /usr/sbin/chroot /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/baseline-root/local/BUILD-ROOTS/scratch.x86_64.0 /bin/umount -l /proc\n```\n\n返回 0，stdout/stderr 均为空。复查该根下挂载表为空；这是从挂载表脱离，不宣称 VS Code 已关闭原句柄。没有结束任何进程、修改 VS Code 配置或删除构建根。完整命令与过滤后的 findmnt 原文见 [mount.json](../../tools/bolt/results/cache-release-fix-20261023/mount.json)。"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 374,
+    "text": "```\n\n返回 0，stdout/stderr 均为空。复查该根下挂载表为空；这是从挂载表脱离，不宣称 VS Code 已关闭原句柄。没有结束任何进程、修改 VS Code 配置或删除构建根。完整命令与过滤后的 findmnt 原文见 [mount.json](../../tools/bolt/results/cache-release-fix-20261023/mount.json)。\n\n### 15.1 限定修复与认证\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 380,
+    "text": "从 `d20e873b2c7dfac10fab9235e2b781dad08dc4c7` amend，源码差异只有 `packaging/clang-bolt-helper.py` 中的两处：`cache_release` 外层异常改为 `except Exception`；在 `original.strip()[5:-5]` 上方补充去掉 CMake Ninja `: && ` / ` && :`、与 replay_script 一致的注释。第三处为证据仓库新增的 IndexError 测试，不随 Source 发布。测试注入 replay_script 抛出 IndexError，确认 CLI 返回 0、打印 skipped、JSON status/reason 正确且缓存未删除。\n\n- [源码完整 diff](../../tools/bolt/results/cache-release-fix-20261023/source.diff)：只改上述函数，2 行新增、1 行删除。\n- [范围与身份核对](../../tools/bolt/results/cache-release-fix-20261023/verification.json)：spec 逐字节相同，其他 helper 顶层节点/函数 AST 相同；提交说明、父提交、Change-Id 不变。\n- 全部 **300 项 PASS**（原 299 + IndexError 1）；[stdout](../../tools/bolt/results/cache-release-fix-20261023/tests.stdout)、[stderr](../../tools/bolt/results/cache-release-fix-20261023/tests.stderr)，`Ran 300 tests in 3.957s` / `OK`。\n- 新提交 [GBS export](../../tools/bolt/results/cache-release-fix-20261023/export.json) 返回 0；[导出文件 SHA](../../tools/bolt/results/cache-release-fix-20261023/export-files.json)、[导出 spec](../../tools/bolt/results/cache-release-fix-20261023/exported-llvm.spec)。"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 381,
+    "text": "\n- [源码完整 diff](../../tools/bolt/results/cache-release-fix-20261023/source.diff)：只改上述函数，2 行新增、1 行删除。\n- [范围与身份核对](../../tools/bolt/results/cache-release-fix-20261023/verification.json)：spec 逐字节相同，其他 helper 顶层节点/函数 AST 相同；提交说明、父提交、Change-Id 不变。\n- 全部 **300 项 PASS**（原 299 + IndexError 1）；[stdout](../../tools/bolt/results/cache-release-fix-20261023/tests.stdout)、[stderr](../../tools/bolt/results/cache-release-fix-20261023/tests.stderr)，`Ran 300 tests in 3.957s` / `OK`。\n- 新提交 [GBS export](../../tools/bolt/results/cache-release-fix-20261023/export.json) 返回 0；[导出文件 SHA](../../tools/bolt/results/cache-release-fix-20261023/export-files.json)、[导出 spec](../../tools/bolt/results/cache-release-fix-20261023/exported-llvm.spec)。\n- Tizen `rpm/rpm-build 4.14.1.1-1.7`，在首轮根中新建专用解析目录，使用 `rpmbuild -bp --nodeps --nobuild` 和 `rpmspec -P`，未执行构建或历史树 cmake/ninja，无需重新挂载 proc。"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 382,
+    "text": "- [源码完整 diff](../../tools/bolt/results/cache-release-fix-20261023/source.diff)：只改上述函数，2 行新增、1 行删除。\n- [范围与身份核对](../../tools/bolt/results/cache-release-fix-20261023/verification.json)：spec 逐字节相同，其他 helper 顶层节点/函数 AST 相同；提交说明、父提交、Change-Id 不变。\n- 全部 **300 项 PASS**（原 299 + IndexError 1）；[stdout](../../tools/bolt/results/cache-release-fix-20261023/tests.stdout)、[stderr](../../tools/bolt/results/cache-release-fix-20261023/tests.stderr)，`Ran 300 tests in 3.957s` / `OK`。\n- 新提交 [GBS export](../../tools/bolt/results/cache-release-fix-20261023/export.json) 返回 0；[导出文件 SHA](../../tools/bolt/results/cache-release-fix-20261023/export-files.json)、[导出 spec](../../tools/bolt/results/cache-release-fix-20261023/exported-llvm.spec)。\n- Tizen `rpm/rpm-build 4.14.1.1-1.7`，在首轮根中新建专用解析目录，使用 `rpmbuild -bp --nodeps --nobuild` 和 `rpmspec -P`，未执行构建或历史树 cmake/ninja，无需重新挂载 proc。\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 383,
+    "text": "- [范围与身份核对](../../tools/bolt/results/cache-release-fix-20261023/verification.json)：spec 逐字节相同，其他 helper 顶层节点/函数 AST 相同；提交说明、父提交、Change-Id 不变。\n- 全部 **300 项 PASS**（原 299 + IndexError 1）；[stdout](../../tools/bolt/results/cache-release-fix-20261023/tests.stdout)、[stderr](../../tools/bolt/results/cache-release-fix-20261023/tests.stderr)，`Ran 300 tests in 3.957s` / `OK`。\n- 新提交 [GBS export](../../tools/bolt/results/cache-release-fix-20261023/export.json) 返回 0；[导出文件 SHA](../../tools/bolt/results/cache-release-fix-20261023/export-files.json)、[导出 spec](../../tools/bolt/results/cache-release-fix-20261023/exported-llvm.spec)。\n- Tizen `rpm/rpm-build 4.14.1.1-1.7`，在首轮根中新建专用解析目录，使用 `rpmbuild -bp --nodeps --nobuild` 和 `rpmspec -P`，未执行构建或历史树 cmake/ninja，无需重新挂载 proc。\n\n| 解析模式 | rpmbuild / rpmspec 退出码 | Patch0–6 | 结果 |"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 394,
+    "text": "| aarch64 | 0 / 0 | 7 项 | PASS |\n\n完整 [五项命令与结果](../../tools/bolt/results/cache-release-fix-20261023/five-parse/matrix.json)，各次 stdout/stderr 在同目录。成功路径未改，按本轮授权不重跑完整构建；第13节双轮构建、candidate 与 RPM 比较结论继续有效，不冒充本提交重新构建。\n\n### 15.2 源码与推送\n"
+  },
+  {
+    "report": "docs/bolt/32_cache_release.md",
+    "line": 422,
+    "text": "```\n\n[推送完整记录](../../tools/bolt/results/cache-release-fix-20261023/sandbox-push.json)、[推前](../../tools/bolt/results/cache-release-fix-20261023/remote-before.json)、[推后](../../tools/bolt/results/cache-release-fix-20261023/remote-after.json)。推后远端精确等于新源提交。没有创建分支，没有推 refs/for，没有操作 QB。QB 软件包：`platform/upstream/llvm@3d3b4bf564fd8edec793e49e6de75b5fa7007d16`，由用户启动。"
+  },
+  {
+    "report": "docs/bolt/43_debuginfo_symbols.md",
+    "line": 19,
+    "text": "| 作者、提交者、Signed-off-by | `Hao Lin <hao.lin@samsung.com>` |\n\n源工作树仍为 `W/temp/debuglink-tb20261026/source`，detached HEAD；没有创建分支。使用 `git -c user.name=\"Hao Lin\" -c user.email=\"hao.lin@samsung.com\" commit --amend --reset-author`，未改全局配置。最终源码工作树干净。\n\n检查发现原 569d734d 无条件调用符号分离和 debuglink，不满足本轮“发布模式不生成”的要求。按“缺项先补”的授权，增加 `pipeline --debug-symbols`（默认关闭），spec 仅在 `llvm_release_build=0` 的已有 x86+BOLT 分支传入；release 仍用原 pipeline 调用。安装/post 已按 identity 是否有 `debug_file` 分支，无需改写。提交说明补充 debug/release 范围。\n"
+  },
+  {
+    "report": "docs/bolt/43_debuginfo_symbols.md",
+    "line": 248,
+    "text": "\n```sh\ngbs -c /home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261021-disk-footprint/gbs_llvm_qb1202084.conf build   -A x86_64   -B /home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-20261028/full-20261029/gbs-root   -c 3ee2d84719e4bd358c0b2366161f70f2eb788313 --threads=30   --define \"jobs 8\" --define \"_smp_mflags -j8\"   --define \"_costomized_smp_mflags -j20\"   --baselibs --style=tar --spec llvm.spec   /home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source\n```\n\n没有 `--short-circuit` 或 `--noprep`。配置仍为固定Toolchain `20261013.024319` packages/debug，build.conf SHA为 `e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945`。GBS版本2.1.0。"
+  },
+  {
+    "report": "docs/bolt/43_debuginfo_symbols.md",
+    "line": 348,
+    "text": "|---|---|---|---|\n| 源码提交 | f308fe08… | 3ee2d847… | 用户指定提交替换 |\n| 源码路径 | oldtext-final-20261027/source | debuglink-tb20261026/source | 路径替换，原工作树只读 |\n| `-B` | oldtext-final-20261027/gbs-root | D/gbs-driver | 路径替换，采用37号已有驱动布局 |\n| export、root、日志、结果 | 39号各自目录 | D下对应目录，文本结果在D/evidence | 路径替换；保留所有历史目录 |\n| config / build.conf | 旧Toolchain 20261013.024319 | **同一文件、同一快照** | 无变化；build.conf SHA e5187fd758a663eec273a434090aaab9f8e32f80a036e3bca2cf0352dd286945 |"
+  },
+  {
+    "report": "docs/bolt/43_debuginfo_symbols.md",
+    "line": 461,
+    "text": "| 符号分离 | L23480 `BOLT_DEBUG_SYMBOLS_PASS`；301873 个符号、18828 个冷函数，24 个地址抽查含 main 和 cold 均可解析 |\n| debuglink / CRC | L23482 `BOLT_DEBUGLINK_PASS`；文件名 clang-22.debug、CRC32 1776780033 |\n| cache-release | L23494：`BOLT_CACHE_RELEASE removed path=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache files=13162 allocated_bytes=21622665216 seconds=13.765561442996841` |\n| Source1005 | L23965：`NATIVE_ARCHIVES_END 1793382646.6468675 PASS 225` |\n| post | L24554 的结果含 `\"sha_unchanged\": true`；L24556 `BOLT_POST_GATE_PASS`，两个文件的 identity 与 RPM 载荷 SHA 再次吻合 |\n| Build-ID | 最终 candidate 与 39 号基线都没有 `.note.gnu.build-id`，按用户裁决 PASS；L24921 的符号文件 Missing build-id warning 是实情，不声称生成了 build-id 链接 |"
+  },
+  {
+    "report": "docs/bolt/43_debuginfo_symbols.md",
+    "line": 1071,
+    "text": "### 14.1 推送前只读核对\n\n源码工作树为 `W/temp/debuglink-tb20261026/source`。`git status --porcelain=v1 --untracked-files=all`退出0、输出为空，已跟踪及未跟踪状态均干净。完整身份和原提交说明保存于source-identity.stdout，核对结果：\n\n| 项目 | 实际值 | 判定 |\n|---|---|---|"
+  },
+  {
+    "report": "docs/bolt/51_second_review_fixes.md",
+    "line": 175,
+    "text": "\n```text\norigin\t/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source (fetch)\norigin\t/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source (push)\n```\n"
+  },
+  {
+    "report": "docs/bolt/51_second_review_fixes.md",
+    "line": 176,
+    "text": "```text\norigin\t/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source (fetch)\norigin\t/home/linhao/Toolchain/development/llvm-optimize/temp/debuglink-tb20261026/source (push)\n```\n\n执行的查询："
+  },
+  {
+    "report": "docs/bolt/51_second_review_fixes.md",
+    "line": 282,
+    "text": "| `llvm-strip-alternative-20260929` | 9.642 | 2026-09-29T21:43:34 |  llvm-strip；替代strip证据；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:98 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `llvm-strip-x86_64-20261009` | 9.473 | 2026-10-09T18:56:09 |  llvm-strip；llvm-strip打包证据；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:99 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `arm-archive-stage1-c-newrepo-20261010` | 9.236 | 2026-10-10T12:23:45 |  ARM/archive fix；C1 导出/原仓库证据；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:100 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `archive-followup-review-20261014` | 9.090 | 2026-10-14T16:18:28 |  archive fix；归档后续评审/上传核对；；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:101 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `bolt-on-hybrid-20261024` | 7.854 | 2026-10-26T18:49:40 |  先保全未有同SHA副本的RPM/关键文件，再删除此构建根；root系统目录需另行授权sudo ；文档33、34、37；38_temp_cleanup_inventory.md:47 | products、perf-runtime 和保全 RPM 是后续包/性能对照；二进制未随 GitHub 文本证据发布。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `hybrid-sandbox-20261019` | 5.663 | 2026-10-19T13:59:49 |  hybrid；hybrid发布；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:110 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+  },
+  {
+    "report": "docs/bolt/51_second_review_fixes.md",
+    "line": 289,
+    "text": "| `hybrid-link-20261015` | 5.338 | 2026-10-15T20:16:03 |  hybrid；hybrid；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:111 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `llvm-optimize-intranet-20261020` | 5.069 | 2026-10-20T21:22:42 |  hybrid；可续传；文档38（或下列路径引用）；38_temp_cleanup_inventory.md:113 | 含源码仓库/工作树；未证明未发布提交和产物均有独立副本，不整目录删除。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `bolt-v4-20261022-cache-release` | UNKNOWN | 2026-10-26T21:51:27 |  先保全未有同SHA副本的RPM/关键文件，再删除此构建根；root系统目录需另行授权sudo ；文档32、34、38；38_temp_cleanup_inventory.md:44 | baseline/revised-products、preserved-before-delete 是已认证静态版本原件；根已清理不代表剩余 products 可删。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `debuglink-20261028` | UNKNOWN | 2026-10-30T23:45:54 | debuglink-20261028；文档43、47、51；47_pgo_resource_experiment.md:8 | full-20261030/products、原始转换成员、llvm-profdata/runtime 仍供身份验证和 PGO 使用；GitHub 只发布报告/哈希等证据。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `debuglink-tb20261026` | UNKNOWN | 2026-10-28T20:53:39 | debuglink-tb20261026；文档45、47；43_debuginfo_symbols.md:19 | 受保护原源码工作区，PGO 启动输入；不得清理整个父目录。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `final-20261103` | UNKNOWN | 2026-11-03T12:04:05 | final-20261103；文档50、51；50_project_flag_independence.md:13 | configs/build.conf 和未来启动入口依赖仍需使用；只可另行评估已结束 rehearsal/gbs-root 子目录，不能整删父目录。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+  },
+  {
+    "report": "docs/bolt/51_second_review_fixes.md",
+    "line": 291,
+    "text": "| `bolt-v4-20261022-cache-release` | UNKNOWN | 2026-10-26T21:51:27 |  先保全未有同SHA副本的RPM/关键文件，再删除此构建根；root系统目录需另行授权sudo ；文档32、34、38；38_temp_cleanup_inventory.md:44 | baseline/revised-products、preserved-before-delete 是已认证静态版本原件；根已清理不代表剩余 products 可删。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `debuglink-20261028` | UNKNOWN | 2026-10-30T23:45:54 | debuglink-20261028；文档43、47、51；47_pgo_resource_experiment.md:8 | full-20261030/products、原始转换成员、llvm-profdata/runtime 仍供身份验证和 PGO 使用；GitHub 只发布报告/哈希等证据。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `debuglink-tb20261026` | UNKNOWN | 2026-10-28T20:53:39 | debuglink-tb20261026；文档45、47；43_debuginfo_symbols.md:19 | 受保护原源码工作区，PGO 启动输入；不得清理整个父目录。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `final-20261103` | UNKNOWN | 2026-11-03T12:04:05 | final-20261103；文档50、51；50_project_flag_independence.md:13 | configs/build.conf 和未来启动入口依赖仍需使用；只可另行评估已结束 rehearsal/gbs-root 子目录，不能整删父目录。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `gbs-root-x86_64-archivefix-v2` | UNKNOWN | 2026-10-19T14:41:08 |  docs38的22RPM仍在gbs-root-x86_64-archivefix-v2/.../rpmbuild/RPMS/x86_64；不把它们说成67619ec8新构建 ；文档24、31、38；38_temp_cleanup_inventory.md:56 | 静态库修复历史根和受保护原始 RPM 组；不把后来的包冒充新基线。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `oldtext-final-20261027` | UNKNOWN | 2026-10-28T01:56:17 | oldtext-final-20261027；文档39、41、42、43；41_crash_localization_probe.md:21 | 已认证 products/符号实验输入；本轮 lsof 还看到 VS Code 打开文件。 本轮有进程打开文件，不建议删除。 存在挂载引用，不处理。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+  },
+  {
+    "report": "docs/bolt/51_second_review_fixes.md",
+    "line": 306,
+    "text": "|---|---:|---|---|---|\n| `archive-index-fix-rpm-20260923` | 50.906 | 2026-09-23T23:15:49 |  archive fix；H 唯一 RPM 解包基线；；文档38（历史盘点）；38_temp_cleanup_inventory.md:77 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `arm-archive-tls-thumb-20261010` | 30.505 | 2026-10-10T18:23:59 |  ARM/archive fix；ARM Thumb/TLS与全量转换；；文档38（历史盘点）；38_temp_cleanup_inventory.md:85 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `review-round4-20261012` | 25.811 | 2026-10-12T23:54:49 |  archive fix；四路转换评审4及停止证据；；文档38（历史盘点）；38_temp_cleanup_inventory.md:87 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `archive-fix-rebind-20260923` | 22.625 | 2026-09-23T15:21:46 |  archive fix；旧profile重绑定/归档试验；；文档38（历史盘点）；38_temp_cleanup_inventory.md:88 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `gbs-root-x86_64-archivefix` | 13.630† | 2026-09-27T21:59:30 |  docs38的22RPM仍在gbs-root-x86_64-archivefix-v2/.../rpmbuild/RPMS/x86_64；不把它们说成67619ec8新构建 ；文档38（历史盘点）；38_temp_cleanup_inventory.md:56 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+  },
+  {
+    "report": "docs/bolt/51_second_review_fixes.md",
+    "line": 310,
+    "text": "| `archive-fix-rebind-20260923` | 22.625 | 2026-09-23T15:21:46 |  archive fix；旧profile重绑定/归档试验；；文档38（历史盘点）；38_temp_cleanup_inventory.md:88 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `gbs-root-x86_64-archivefix` | 13.630† | 2026-09-27T21:59:30 |  docs38的22RPM仍在gbs-root-x86_64-archivefix-v2/.../rpmbuild/RPMS/x86_64；不把它们说成67619ec8新构建 ；文档38（历史盘点）；38_temp_cleanup_inventory.md:56 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `arm-archive-stage1-20261010` | 11.923 | 2026-10-10T11:01:54 |  ARM/archive fix；ARM阶段1/x86转换输入；；文档38（历史盘点）；38_temp_cleanup_inventory.md:94 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `archive-fix-v2-build-20260929` | 11.661 | 2026-10-08T22:05:47 |  archive fix；v2续跑/恢复证据；；文档38（历史盘点）；38_temp_cleanup_inventory.md:95 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `static-native-conversion-20260924` | 6.307 | 2026-09-24T01:18:43 |  archive fix；早期转换失败证据；；文档38（历史盘点）；38_temp_cleanup_inventory.md:107 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |\n| `toolchain-hybrid-trial` | 5.754 | 2026-09-22T21:54:54 |  hybrid；隔离旧混合载荷；；文档38（历史盘点）；38_temp_cleanup_inventory.md:108 | 旧主线/归档/实验现场：未证明唯一证据和二进制都有可恢复副本；保留原件，由用户判断用途是否结束。 未逐SHA确认唯一性，不能据此删除未发布资产。 |"
+  },
+  {
+    "report": "docs/bolt/55_night_revalidation.md",
+    "line": 58,
+    "text": "真实文件副本测试：增加一个合法 linker 标识、增大 `.comment` 并更新必要节偏移 PASS；\n改 `.symtab` 一字节 FAIL；改 `.text` 一字节 FAIL；加入非标识 `.comment` 字符串 FAIL。\n文件保留在 `W/temp/night-revalidation-20261104-tests-05/`。\n\nT 最终 clang 对认证版的额外例外仅 `.gnu_debuglink` 末尾 CRC32 四字节：\n文件名仍为 clang-22.debug，CRC 必须与本次符号文件一致，且符号文件对认证版也必须按上述规则 PASS。"
+  },
+  {
+    "report": "docs/bolt/55_night_revalidation.md",
+    "line": 281,
+    "text": "|ordinary-install|328.0|14991839232|UNKNOWN|60357607424|182599786496|\n|BOLT|1469.0|16283660288|9931661312|70485561344|163517423616|\n|cache-release|9.0|3716710400|UNKNOWN|UNKNOWN|163959148544|\n|archive-conversion|2544.0|10596343808|UNKNOWN|55093010432|160152088576|\n|platform-post|700.0|7375040512|UNKNOWN|47143387136|162207100928|\n|packaging|292.0|10014306304|UNKNOWN|42598031360|163214110720|"
+  },
+  {
+    "report": "docs/bolt/55_night_revalidation.md",
+    "line": 295,
+    "text": "|ordinary-install|7.0|8221478912|UNKNOWN|11666124800|155975380992|\n|BOLT|216.0|14474072064|9931550720|14148202496|152322973696|\n|cache-release|1.0|UNKNOWN|UNKNOWN|UNKNOWN|UNKNOWN|\n|archive-conversion|1285.0|4375175168|UNKNOWN|13821210624|141622312960|\n|platform-post|49.0|3521880064|UNKNOWN|12963184640|141829160960|\n|packaging|85.0|6626312192|UNKNOWN|13444767744|140572217344|"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 78,
+    "text": "构建目录细分：完整du原文见[deep-sizes.json](../../tools/bolt/results/disk-review-group2-20261105/deep-sizes.json)。A的build/bin为46,543,589,376 B、build/lib64为14,953,287,680 B；B分别为48,569,888,768 B和14,804,201,472 B。A的lto.cache已不存在，B现存仅17,752,064 B；当前大户主要是工具二进制及构建对象，不能套用旧缓存97GB的估算。\n\n## 4. C1：`arm-archive-tls-thumb-20261010`\n\nARM TLS/Thumb修复和两架构全量转换/消费者实验；210/212档转换及原消费者/strip证据是后续回归对照。\n出处：main/docs/40_arm_archive_conversion_stage1.md:2051–2209、2490–2578；main/docs/49_x86_build_resume_result.md:262–284。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 138,
+    "text": "可读文件317,904；RPM路径0；发现Git仓库0。扫描错误：无\n\n全部RPM与副本核对：[rpm.tsv](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-tls-thumb-20261010/rpm.tsv)；工具/profile/products等关键资产：[assets.tsv](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-tls-thumb-20261010/assets.tsv)；全部文件元数据：[files.jsonl.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-tls-thumb-20261010/files.jsonl.gz)。\n\nRPM本次SHA已取得0/0；UNKNOWN 0；0个路径找到其他同SHA位置（包括同目录的其他名字，不等于可释放独立数据块）。未查到副本或超时的原包全部保留。\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 144,
+    "text": "可读范围未发现Git仓库；若本节有权限盲区，不据此宣称盲区也没有仓库。\n\n顶层关键文本/脚本149份，其中0份找到Git跟踪的同名同SHA副本；其余不推断已归档，一律纳入保留清单。逐文件路径/大小/SHA：[small-evidence.json](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-tls-thumb-20261010/small-evidence.json)。\n\n当前引用检索：脚本1处；55–63号文档0处。\n逐条位置与原文：[reference-index.md](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-tls-thumb-20261010/reference-index.md)。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 147,
+    "text": "\n当前引用检索：脚本1处；55–63号文档0处。\n逐条位置与原文：[reference-index.md](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-tls-thumb-20261010/reference-index.md)。\n\n**结论：必须保留。** 保留ARM输入、完整已认证转换结果及消费者/strip证据，作为其他重复档的保留对照。不能因离线通过便删除未完成根内认证所需输入。\n建议保留：[arm-archive-tls-thumb-20261010/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-tls-thumb-20261010/retain-files.tsv.gz)逐路径列出，30.505 GiB (32,754,786,304 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-tls-thumb-20261010/suggested-files.tsv.gz)，共0条；预计释放文件块 **0.000 GiB (0 B)**。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 150,
+    "text": "\n**结论：必须保留。** 保留ARM输入、完整已认证转换结果及消费者/strip证据，作为其他重复档的保留对照。不能因离线通过便删除未完成根内认证所需输入。\n建议保留：[arm-archive-tls-thumb-20261010/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-tls-thumb-20261010/retain-files.tsv.gz)逐路径列出，30.505 GiB (32,754,786,304 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-tls-thumb-20261010/suggested-files.tsv.gz)，共0条；预计释放文件块 **0.000 GiB (0 B)**。\n\n## 5. C2：`arm-source-root-probes-20261010`\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 194,
+    "text": "候选边界/原因（文件级重复项完整列表在recommendation.json）：\n\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 195,
+    "text": "\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 196,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 197,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 198,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 199,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a\n- 其余486条逐文件列于[recommendation.json](../../tools/bolt/results/disk-review-group2-20261105/arm-source-root-probes-20261010/recommendation.json)；不能扩展为删除整个父目录。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 200,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a\n- 其余486条逐文件列于[recommendation.json](../../tools/bolt/results/disk-review-group2-20261105/arm-source-root-probes-20261010/recommendation.json)；不能扩展为删除整个父目录。\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 201,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-source-root-probes-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a\n- 其余486条逐文件列于[recommendation.json](../../tools/bolt/results/disk-review-group2-20261105/arm-source-root-probes-20261010/recommendation.json)；不能扩展为删除整个父目录。\n\n## 6. C3：`arm-archive-stage1-20261010`"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 204,
+    "text": "- 其余486条逐文件列于[recommendation.json](../../tools/bolt/results/disk-review-group2-20261105/arm-source-root-probes-20261010/recommendation.json)；不能扩展为删除整个父目录。\n\n## 6. C3：`arm-archive-stage1-20261010`\n\nARM第一阶段的x86不变性回归；225归档转换PASS，ARM环境阶段随后独立推进。\n出处：main/docs/40_arm_archive_conversion_stage1.md:55–118；main/docs/46_review_round3_package.md:20。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 222,
+    "text": "可读文件67,828；RPM路径0；发现Git仓库0。扫描错误：无\n\n全部RPM与副本核对：[rpm.tsv](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/rpm.tsv)；工具/profile/products等关键资产：[assets.tsv](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/assets.tsv)；全部文件元数据：[files.jsonl.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/files.jsonl.gz)。\n\nRPM本次SHA已取得0/0；UNKNOWN 0；0个路径找到其他同SHA位置（包括同目录的其他名字，不等于可释放独立数据块）。未查到副本或超时的原包全部保留。\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 228,
+    "text": "可读范围未发现Git仓库；若本节有权限盲区，不据此宣称盲区也没有仓库。\n\n顶层关键文本/脚本30份，其中0份找到Git跟踪的同名同SHA副本；其余不推断已归档，一律纳入保留清单。逐文件路径/大小/SHA：[small-evidence.json](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/small-evidence.json)。\n\n当前引用检索：脚本1处；55–63号文档0处。\n逐条位置与原文：[reference-index.md](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/reference-index.md)。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 231,
+    "text": "\n当前引用检索：脚本1处；55–63号文档0处。\n逐条位置与原文：[reference-index.md](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/reference-index.md)。\n\n**结论：瘦身。** 仅建议移除已逐文件SHA证实等于C1的归档副本；x86原始输入及全部文本证据保留。\n建议保留：[arm-archive-stage1-20261010/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/retain-files.tsv.gz)逐路径列出，5.957 GiB (6,396,665,856 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/suggested-files.tsv.gz)，共215条；预计释放文件块 **5.966 GiB (6,406,057,984 B)**。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 234,
+    "text": "\n**结论：瘦身。** 仅建议移除已逐文件SHA证实等于C1的归档副本；x86原始输入及全部文本证据保留。\n建议保留：[arm-archive-stage1-20261010/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/retain-files.tsv.gz)逐路径列出，5.957 GiB (6,396,665,856 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/suggested-files.tsv.gz)，共215条；预计释放文件块 **5.966 GiB (6,406,057,984 B)**。\n\n候选边界/原因（文件级重复项完整列表在recommendation.json）：\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 238,
+    "text": "候选边界/原因（文件级重复项完整列表在recommendation.json）：\n\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Desc.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 239,
+    "text": "\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Desc.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 240,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64AsmParser.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Desc.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 241,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64CodeGen.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Desc.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMABI.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 242,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Desc.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Desc.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMABI.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMARMAsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 243,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Disassembler.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMABI.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMARMAsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a\n- 其余207条逐文件列于[recommendation.json](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/recommendation.json)；不能扩展为删除整个父目录。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 244,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Info.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Info.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMABI.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMARMAsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a\n- 其余207条逐文件列于[recommendation.json](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/recommendation.json)；不能扩展为删除整个父目录。\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 245,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMAArch64Utils.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMAArch64Utils.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMABI.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMARMAsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a\n- 其余207条逐文件列于[recommendation.json](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/recommendation.json)；不能扩展为删除整个父目录。\n\n## 7. C4：`arm-archive-stage1-c-newrepo-20261010`"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 246,
+    "text": "- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMABI.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMABI.a\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-20261010/x86-conversion/archives/usr/lib64/libLLVMARMAsmParser.a`：same-SHA duplicate; retained /home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-tls-thumb-20261010/x86-final-conversion/archives/usr/lib64/libLLVMARMAsmParser.a\n- 其余207条逐文件列于[recommendation.json](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/recommendation.json)；不能扩展为删除整个父目录。\n\n## 7. C4：`arm-archive-stage1-c-newrepo-20261010`\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 248,
+    "text": "- 其余207条逐文件列于[recommendation.json](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-20261010/recommendation.json)；不能扩展为删除整个父目录。\n\n## 7. C4：`arm-archive-stage1-c-newrepo-20261010`\n\nC0新根路由/极小包、C1原源码导出与accel输入；两个C0通过，旧导出校验错误保留，后续标准构建在其他根继续。\n出处：main/docs/40_arm_archive_conversion_stage1.md:627–844。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 274,
+    "text": "可读文件169,476；RPM路径2；发现Git仓库3。扫描错误：无\n\n全部RPM与副本核对：[rpm.tsv](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/rpm.tsv)；工具/profile/products等关键资产：[assets.tsv](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/assets.tsv)；全部文件元数据：[files.jsonl.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/files.jsonl.gz)。\n\nRPM本次SHA已取得2/2；UNKNOWN 0；0个路径找到其他同SHA位置（包括同目录的其他名字，不等于可释放独立数据块）。未查到副本或超时的原包全部保留。\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 280,
+    "text": "|仓库|HEAD|未发布候选/远端核对|stash|tracked改动|\n|---|---|---|---|---|\n|`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c0-package-aarch64`|`a6f4fe4b364800d93d97dea3dce19d568eb2ca98`|1（无远端/未证实已发布，须保留）|无|无|\n|`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c1-export-repository`|`cb67996861d070d68fec2b4c623eed7d20ba2e23`|0（Gerrit可见refs排除后）|无|无|\n|`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c0-package-armv7l`|`e9a6aa0671aee170424abed1cf6319c2d2977c5c`|1（无远端/未证实已发布，须保留）|无|无|\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 281,
+    "text": "|---|---|---|---|---|\n|`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c0-package-aarch64`|`a6f4fe4b364800d93d97dea3dce19d568eb2ca98`|1（无远端/未证实已发布，须保留）|无|无|\n|`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c1-export-repository`|`cb67996861d070d68fec2b4c623eed7d20ba2e23`|0（Gerrit可见refs排除后）|无|无|\n|`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c0-package-armv7l`|`e9a6aa0671aee170424abed1cf6319c2d2977c5c`|1（无远端/未证实已发布，须保留）|无|无|\n\n顶层关键文本/脚本41份，其中0份找到Git跟踪的同名同SHA副本；其余不推断已归档，一律纳入保留清单。逐文件路径/大小/SHA：[small-evidence.json](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/small-evidence.json)。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 282,
+    "text": "|`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c0-package-aarch64`|`a6f4fe4b364800d93d97dea3dce19d568eb2ca98`|1（无远端/未证实已发布，须保留）|无|无|\n|`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c1-export-repository`|`cb67996861d070d68fec2b4c623eed7d20ba2e23`|0（Gerrit可见refs排除后）|无|无|\n|`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c0-package-armv7l`|`e9a6aa0671aee170424abed1cf6319c2d2977c5c`|1（无远端/未证实已发布，须保留）|无|无|\n\n顶层关键文本/脚本41份，其中0份找到Git跟踪的同名同SHA副本；其余不推断已归档，一律纳入保留清单。逐文件路径/大小/SHA：[small-evidence.json](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/small-evidence.json)。\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 284,
+    "text": "|`/home/linhao/Toolchain/development/llvm-optimize/temp/arm-archive-stage1-c-newrepo-20261010/c0-package-armv7l`|`e9a6aa0671aee170424abed1cf6319c2d2977c5c`|1（无远端/未证实已发布，须保留）|无|无|\n\n顶层关键文本/脚本41份，其中0份找到Git跟踪的同名同SHA副本；其余不推断已归档，一律纳入保留清单。逐文件路径/大小/SHA：[small-evidence.json](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/small-evidence.json)。\n\n当前引用检索：脚本1处；55–63号文档0处。\n逐条位置与原文：[reference-index.md](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/reference-index.md)。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 287,
+    "text": "\n当前引用检索：脚本1处；55–63号文档0处。\n逐条位置与原文：[reference-index.md](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/reference-index.md)。\n\n**结论：必须保留。** 两个C0最小包各有无远端的本地提交，需先保全源码；accel/导出/buildconfig仍是重搭ARM环境的输入，本轮不移动或导出备份。\n建议保留：[arm-archive-stage1-c-newrepo-20261010/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/retain-files.tsv.gz)逐路径列出，9.236 GiB (9,917,100,032 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/suggested-files.tsv.gz)，共0条；预计释放文件块 **0.000 GiB (0 B)**。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 290,
+    "text": "\n**结论：必须保留。** 两个C0最小包各有无远端的本地提交，需先保全源码；accel/导出/buildconfig仍是重搭ARM环境的输入，本轮不移动或导出备份。\n建议保留：[arm-archive-stage1-c-newrepo-20261010/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/retain-files.tsv.gz)逐路径列出，9.236 GiB (9,917,100,032 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/suggested-files.tsv.gz)，共0条；预计释放文件块 **0.000 GiB (0 B)**。\n\n## 8. C5：`arm-archive-standard-build-20261010`\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 292,
+    "text": "建议保留：[arm-archive-stage1-c-newrepo-20261010/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/retain-files.tsv.gz)逐路径列出，9.236 GiB (9,917,100,032 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-stage1-c-newrepo-20261010/suggested-files.tsv.gz)，共0条；预计释放文件块 **0.000 GiB (0 B)**。\n\n## 8. C5：`arm-archive-standard-build-20261010`\n\nARM32标准-bc构建、bitcode/原生成员普查及首次转换停止现场；后续TLS/Thumb方案在C1目录完成复验。\n出处：main/docs/40_arm_archive_conversion_stage1.md:1170–1242。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 318,
+    "text": "可读文件4,444；RPM路径0；发现Git仓库0。扫描错误：无\n\n全部RPM与副本核对：[rpm.tsv](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/rpm.tsv)；工具/profile/products等关键资产：[assets.tsv](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/assets.tsv)；全部文件元数据：[files.jsonl.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/files.jsonl.gz)。\n\nRPM本次SHA已取得0/0；UNKNOWN 0；0个路径找到其他同SHA位置（包括同目录的其他名字，不等于可释放独立数据块）。未查到副本或超时的原包全部保留。\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 324,
+    "text": "可读范围未发现Git仓库；若本节有权限盲区，不据此宣称盲区也没有仓库。\n\n顶层关键文本/脚本69份，其中0份找到Git跟踪的同名同SHA副本；其余不推断已归档，一律纳入保留清单。逐文件路径/大小/SHA：[small-evidence.json](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/small-evidence.json)。\n\n当前引用检索：脚本0处；55–63号文档0处。该两类均无。\n逐条位置与原文：[reference-index.md](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/reference-index.md)。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 327,
+    "text": "\n当前引用检索：脚本0处；55–63号文档0处。该两类均无。\n逐条位置与原文：[reference-index.md](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/reference-index.md)。\n\n**结论：必须保留。** 唯一的ARM32原始输入、首次失败对象与标准构建日志仍用于ARM待办，保留。\n建议保留：[arm-archive-standard-build-20261010/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/retain-files.tsv.gz)逐路径列出，4.738 GiB (5,087,920,128 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/suggested-files.tsv.gz)，共0条；预计释放文件块 **0.000 GiB (0 B)**。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 330,
+    "text": "\n**结论：必须保留。** 唯一的ARM32原始输入、首次失败对象与标准构建日志仍用于ARM待办，保留。\n建议保留：[arm-archive-standard-build-20261010/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/retain-files.tsv.gz)逐路径列出，4.738 GiB (5,087,920,128 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/suggested-files.tsv.gz)，共0条；预计释放文件块 **0.000 GiB (0 B)**。\n\n## 9. D：`bolt-v4-20261022-cache-release`\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 332,
+    "text": "建议保留：[arm-archive-standard-build-20261010/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/retain-files.tsv.gz)逐路径列出，4.738 GiB (5,087,920,128 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/arm-archive-standard-build-20261010/suggested-files.tsv.gz)，共0条；预计释放文件块 **0.000 GiB (0 B)**。\n\n## 9. D：`bolt-v4-20261022-cache-release`\n\n两轮ThinLTO cache-release完整构建；32号记录两轮candidate和RPM验证。两个GBS根已按38号后续清理，本目录主要是两套products及保全/报告。\n出处：docs/bolt/32_cache_release.md；docs/bolt/38_temp_cleanup_inventory.md:121–143及第9节。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 334,
+    "text": "## 9. D：`bolt-v4-20261022-cache-release`\n\n两轮ThinLTO cache-release完整构建；32号记录两轮candidate和RPM验证。两个GBS根已按38号后续清理，本目录主要是两套products及保全/报告。\n出处：docs/bolt/32_cache_release.md；docs/bolt/38_temp_cleanup_inventory.md:121–143及第9节。\n\n当前du：**26.140 GiB (28,067,635,200 B)**；本目录遍历无权限错误。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 372,
+    "text": "可读文件57,343；RPM路径290；发现Git仓库0。扫描错误：无\n\n全部RPM与副本核对：[rpm.tsv](../../tools/bolt/results/disk-review-group2-20261105/bolt-v4-20261022-cache-release/rpm.tsv)；工具/profile/products等关键资产：[assets.tsv](../../tools/bolt/results/disk-review-group2-20261105/bolt-v4-20261022-cache-release/assets.tsv)；全部文件元数据：[files.jsonl.gz](../../tools/bolt/results/disk-review-group2-20261105/bolt-v4-20261022-cache-release/files.jsonl.gz)。\n\nRPM本次SHA已取得289/290；UNKNOWN 1；244个路径找到其他同SHA位置（包括同目录的其他名字，不等于可释放独立数据块）。未查到副本或超时的原包全部保留。\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 378,
+    "text": "可读范围未发现Git仓库；若本节有权限盲区，不据此宣称盲区也没有仓库。\n\n顶层关键文本/脚本45份，其中42份找到Git跟踪的同名同SHA副本；其余不推断已归档，一律纳入保留清单。逐文件路径/大小/SHA：[small-evidence.json](../../tools/bolt/results/disk-review-group2-20261105/bolt-v4-20261022-cache-release/small-evidence.json)。\n\n当前引用检索：脚本17处；55–63号文档0处。\n逐条位置与原文：[reference-index.md](../../tools/bolt/results/disk-review-group2-20261105/bolt-v4-20261022-cache-release/reference-index.md)。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 381,
+    "text": "\n当前引用检索：脚本17处；55–63号文档0处。\n逐条位置与原文：[reference-index.md](../../tools/bolt/results/disk-review-group2-20261105/bolt-v4-20261022-cache-release/reference-index.md)。\n\n**结论：瘦身。** 保留baseline-products、revised-products、preserved-before-delete及全部报告/配置；只建议移除从原RPM提取的rpm-difference-analysis/baseline与revised，保留同级差异JSON。\n建议保留：[bolt-v4-20261022-cache-release/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/bolt-v4-20261022-cache-release/retain-files.tsv.gz)逐路径列出，25.099 GiB (26,949,812,224 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/bolt-v4-20261022-cache-release/suggested-files.tsv.gz)，共540条；预计释放文件块 **1.041 GiB (1,117,822,976 B)**。"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 384,
+    "text": "\n**结论：瘦身。** 保留baseline-products、revised-products、preserved-before-delete及全部报告/配置；只建议移除从原RPM提取的rpm-difference-analysis/baseline与revised，保留同级差异JSON。\n建议保留：[bolt-v4-20261022-cache-release/retain-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/bolt-v4-20261022-cache-release/retain-files.tsv.gz)逐路径列出，25.099 GiB (26,949,812,224 B)（与本节du相同盲区口径）。建议移除文件清单：[suggested-files.tsv.gz](../../tools/bolt/results/disk-review-group2-20261105/bolt-v4-20261022-cache-release/suggested-files.tsv.gz)，共540条；预计释放文件块 **1.041 GiB (1,117,822,976 B)**。\n\n候选边界/原因（文件级重复项完整列表在recommendation.json）：\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 388,
+    "text": "候选边界/原因（文件级重复项完整列表在recommendation.json）：\n\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/rpm-difference-analysis/baseline`：32号提取脚本逐文件从保留的原始RPM解出；保留同级JSON报告\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/rpm-difference-analysis/revised`：32号提取脚本逐文件从保留的原始RPM解出；保留同级JSON报告\n\n## 10. E1：`crash-fix-probe-20261028`"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 389,
+    "text": "\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/rpm-difference-analysis/baseline`：32号提取脚本逐文件从保留的原始RPM解出；保留同级JSON报告\n- `/home/linhao/Toolchain/development/llvm-optimize/temp/bolt-v4-20261022-cache-release/rpm-difference-analysis/revised`：32号提取脚本逐文件从保留的原始RPM解出；保留同级JSON报告\n\n## 10. E1：`crash-fix-probe-20261028`\n"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 616,
+    "text": "|`gbs-root-x86_64-debuginfo-j4-v2`|84.157†|必须保留|整根：普通clang、工具、27 RPM及证据；84.157†|0.000|先消除权限盲区并另做工具/产物保全？|\n|`gbs-root-x86_64-archivefix-v2`|79.287†|必须保留|整根：工具、154 RPM及证据；79.287†|0.000|先消除权限盲区并另做原RPM保全？|\n|`arm-archive-tls-thumb-20261010`|30.505|必须保留|整目录：ARM输入、认证转换及消费者；30.505|0.000|是否继续ARM根内认证？|\n|`arm-source-root-probes-20261010`|18.378|瘦身|members/summary、探针及未核对归档；6.440|11.938|是否删除已核对的494份重复档？|\n|`arm-archive-stage1-20261010`|11.923|瘦身|x86-input、全部报告及未核对归档；5.957|5.966|是否删除已核对的215份重复档？|\n|`arm-archive-stage1-c-newrepo-20261010`|9.236|必须保留|两本地探针仓库、导出与accel输入；9.236|0.000|是否先备份两个本地探针提交？|"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 618,
+    "text": "|`arm-archive-tls-thumb-20261010`|30.505|必须保留|整目录：ARM输入、认证转换及消费者；30.505|0.000|是否继续ARM根内认证？|\n|`arm-source-root-probes-20261010`|18.378|瘦身|members/summary、探针及未核对归档；6.440|11.938|是否删除已核对的494份重复档？|\n|`arm-archive-stage1-20261010`|11.923|瘦身|x86-input、全部报告及未核对归档；5.957|5.966|是否删除已核对的215份重复档？|\n|`arm-archive-stage1-c-newrepo-20261010`|9.236|必须保留|两本地探针仓库、导出与accel输入；9.236|0.000|是否先备份两个本地探针提交？|\n|`arm-archive-standard-build-20261010`|4.738|必须保留|ARM32输入、失败对象及日志；4.738|0.000|是否继续ARM根内认证？|\n|`bolt-v4-20261022-cache-release`|26.140|瘦身|两套products、preserved和报告；25.099|1.041|是否仅删除两份解包副本？|"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 619,
+    "text": "|`arm-source-root-probes-20261010`|18.378|瘦身|members/summary、探针及未核对归档；6.440|11.938|是否删除已核对的494份重复档？|\n|`arm-archive-stage1-20261010`|11.923|瘦身|x86-input、全部报告及未核对归档；5.957|5.966|是否删除已核对的215份重复档？|\n|`arm-archive-stage1-c-newrepo-20261010`|9.236|必须保留|两本地探针仓库、导出与accel输入；9.236|0.000|是否先备份两个本地探针提交？|\n|`arm-archive-standard-build-20261010`|4.738|必须保留|ARM32输入、失败对象及日志；4.738|0.000|是否继续ARM根内认证？|\n|`bolt-v4-20261022-cache-release`|26.140|瘦身|两套products、preserved和报告；25.099|1.041|是否仅删除两份解包副本？|\n|`crash-fix-probe-20261028`|11.055|必须保留|全部复现矩阵、符号文件及运行库；11.055|0.000|缺陷定位关闭前是否另做最小复现保全？|"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 620,
+    "text": "|`arm-archive-stage1-20261010`|11.923|瘦身|x86-input、全部报告及未核对归档；5.957|5.966|是否删除已核对的215份重复档？|\n|`arm-archive-stage1-c-newrepo-20261010`|9.236|必须保留|两本地探针仓库、导出与accel输入；9.236|0.000|是否先备份两个本地探针提交？|\n|`arm-archive-standard-build-20261010`|4.738|必须保留|ARM32输入、失败对象及日志；4.738|0.000|是否继续ARM根内认证？|\n|`bolt-v4-20261022-cache-release`|26.140|瘦身|两套products、preserved和报告；25.099|1.041|是否仅删除两份解包副本？|\n|`crash-fix-probe-20261028`|11.055|必须保留|全部复现矩阵、符号文件及运行库；11.055|0.000|缺陷定位关闭前是否另做最小复现保全？|\n|`crash-probe-20261028`|2.359|瘦身|clang.symbols、ref对象和全部报告；0.274|2.086|是否按清单删重复二进制/对象？|"
+  },
+  {
+    "report": "docs/bolt/65_disk_review_group2.md",
+    "line": 621,
+    "text": "|`arm-archive-stage1-c-newrepo-20261010`|9.236|必须保留|两本地探针仓库、导出与accel输入；9.236|0.000|是否先备份两个本地探针提交？|\n|`arm-archive-standard-build-20261010`|4.738|必须保留|ARM32输入、失败对象及日志；4.738|0.000|是否继续ARM根内认证？|\n|`bolt-v4-20261022-cache-release`|26.140|瘦身|两套products、preserved和报告；25.099|1.041|是否仅删除两份解包副本？|\n|`crash-fix-probe-20261028`|11.055|必须保留|全部复现矩阵、符号文件及运行库；11.055|0.000|缺陷定位关闭前是否另做最小复现保全？|\n|`crash-probe-20261028`|2.359|瘦身|clang.symbols、ref对象和全部报告；0.274|2.086|是否按清单删重复二进制/对象？|\n|`archive-fix-v2-final-20261009`|10.339|必须保留|45 RPM、两探针仓库及报告；10.339|0.000|是否先备份本地探针并另盘RPM？|"
+  }
+]

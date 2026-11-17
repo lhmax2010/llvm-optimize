@@ -1,0 +1,27 @@
+test_ESRCH_after_real_pidfd_open (__main__.Review118.test_ESRCH_after_real_pidfd_open) ... ok
+test_L1_failure_before_retirement_store (__main__.Review118.test_L1_failure_before_retirement_store) ... SESSION_KILL_MODE=pidfd
+ok
+test_L1_success_before_retirement_store (__main__.Review118.test_L1_success_before_retirement_store) ... SESSION_KILL_MODE=pidfd
+ok
+test_L2_incomplete_empty_keeps_previous (__main__.Review118.test_L2_incomplete_empty_keeps_previous) ... ok
+test_L2_timed_out_empty_keeps_previous (__main__.Review118.test_L2_timed_out_empty_keeps_previous) ... ok
+test_R1_permission_rescan_fork_real (__main__.Review118.test_R1_permission_rescan_fork_real) ... ok
+test_R2_emfile_rescan_real (__main__.Review118.test_R2_emfile_rescan_real) ... ok
+test_R2_enomem_rescan_real (__main__.Review118.test_R2_enomem_rescan_real) ... ok
+test_R3_complete_snapshot_has_pid_comm (__main__.Review118.test_R3_complete_snapshot_has_pid_comm) ... FAIL
+
+======================================================================
+FAIL: test_R3_complete_snapshot_has_pid_comm (__main__.Review118.test_R3_complete_snapshot_has_pid_comm)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/resume119/tests/test_118.py", line 61, in test_R3_complete_snapshot_has_pid_comm
+    e=self.diagnostic('complete');self.assertIsInstance(e,self.h.LiveDescendantsError);self.assertIn('99999999:worker',str(e));self.assertNotIn('scan incomplete',str(e))
+                                                                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'scan incomplete' unexpectedly found in 'process session 42 drain deadline; last observed members (last complete scan): 99999999:worker (S); final scan incomplete'
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.504s
+
+FAILED (failures=1)
+
+D 已结束 2026-11-17T00:20:15.394137-08:00 status=STOP

@@ -69,3 +69,57 @@ errors: session deadline expired; scan incomplete; last observed members: ..."
 剩余109回归41项、110会话35项、P1/P2/S2解析14项未运行；H3累积提交、最终message/tree门禁、sandbox查询/推送未执行。未构建RPM、运行BOLT或实物重放、写Gerrit。helper.diff是H2到未认证工作末端，不是已认证H3。
 
 D 已结束 2026-11-16T23:57:17.923381-08:00 status=STOP
+
+## 119 续做
+
+结论：**STOP；未生成H3，未推sandbox。** 新增6项全部通过，118套件执行到第9项失败。完整计划720=695+19+6，本次实际15项、14通过、1失败，剩余705未运行。先前的通过结果没有沿用。
+
+### 诊断实现与测试准备
+
+按PM裁决修改wait_session_exit：历史完整扫描观察独立于最后扫描是否完整；有完整非空观察时抛LiveDescendantsError并保留last observed members (last complete scan)，最后扫描不完整时附final scan incomplete；无完整观察时报告could not verify及实际partial observations。成员错误仍汇总。kill_session及call失败路径沿用同一格式；历史快照不用于杀进程或判断当前存活。实现位置：{"wait_session_exit": 269, "kill_session": 347, "call": 424, "observation_detail": 282, "expired": 290}。
+
+工作分支仍task118-session-review，HEAD仍9e562a06，修改未提交；仅helper工作文件改变。H2到当前未认证工作内容diff为+81/-26，见resume119/helper-vs-b06ee2ac.diff；不是H2→H3认证diff。
+
+新测试6项：5项使用真实自有Popen进程、受控扫描/时钟或错误注入（83.3%）；1项纯mock空扫描（16.7%）；不称这些为无mock的全真实场景。包括完整→下一轮截止、完整→中途空扫描截止、首次部分成员/空观察、成员错误、kill_session同规则。全部6项PASS，原文review119-119.log及review119-result.json。
+
+118的3条诊断预期按本次明确裁决调整；regression109/110文件断言逐字节保留。spawn探针仅根据未改语句位置更新行号，旧映射已失效；适配diff入库。P1/P2解析输入从114已保存输入复制；新测试环境独立，不覆盖118结果。准备修正次数0（运行前正常适配）。
+
+### STOP 原文
+
+```text
+test_ESRCH_after_real_pidfd_open (__main__.Review118.test_ESRCH_after_real_pidfd_open) ... ok
+test_L1_failure_before_retirement_store (__main__.Review118.test_L1_failure_before_retirement_store) ... SESSION_KILL_MODE=pidfd
+ok
+test_L1_success_before_retirement_store (__main__.Review118.test_L1_success_before_retirement_store) ... SESSION_KILL_MODE=pidfd
+ok
+test_L2_incomplete_empty_keeps_previous (__main__.Review118.test_L2_incomplete_empty_keeps_previous) ... ok
+test_L2_timed_out_empty_keeps_previous (__main__.Review118.test_L2_timed_out_empty_keeps_previous) ... ok
+test_R1_permission_rescan_fork_real (__main__.Review118.test_R1_permission_rescan_fork_real) ... ok
+test_R2_emfile_rescan_real (__main__.Review118.test_R2_emfile_rescan_real) ... ok
+test_R2_enomem_rescan_real (__main__.Review118.test_R2_enomem_rescan_real) ... ok
+test_R3_complete_snapshot_has_pid_comm (__main__.Review118.test_R3_complete_snapshot_has_pid_comm) ... FAIL
+
+======================================================================
+FAIL: test_R3_complete_snapshot_has_pid_comm (__main__.Review118.test_R3_complete_snapshot_has_pid_comm)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/resume119/tests/test_118.py", line 61, in test_R3_complete_snapshot_has_pid_comm
+    e=self.diagnostic('complete');self.assertIsInstance(e,self.h.LiveDescendantsError);self.assertIn('99999999:worker',str(e));self.assertNotIn('scan incomplete',str(e))
+                                                                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'scan incomplete' unexpectedly found in 'process session 42 drain deadline; last observed members (last complete scan): 99999999:worker (S); final scan incomplete'
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.504s
+
+FAILED (failures=1)
+
+D 已结束 2026-11-17T00:20:15.394137-08:00 status=STOP
+```
+
+触发点：在下一轮入口将complete标为False后截止，报告保留完整观察并附final scan incomplete；118的test_R3_complete_snapshot_has_pid_comm仍断言不得包含scan incomplete。本任务D3规定任何失败STOP，因此未再修正产品或断言、未重跑，不自行裁决豁免。
+
+### 未执行与现场
+
+695既有套件尚未启动；118剩余10项未跑。regression109/110/P1-P2解析均未运行，不能声称118的原失败已验证修复。已阅读Claude harness.py/runner.py，确认subreaper、自有Popen/pidfd收尾边界；按失败停止，未运行探针。H3累积提交、message/tree最终门禁、sandbox推送均未执行。A只读远端引用用于清理可达性盘点，不是D推送。
+
+D 已结束 2026-11-17T00:19:09.164592-08:00 status=STOP
