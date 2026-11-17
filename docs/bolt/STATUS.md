@@ -1666,3 +1666,10 @@ D：6个helper工作提交，末端9e562a062ca48114e5a7e220e6778f44a3f133ea，�
 D按PM新诊断规则修改118工作分支，新增6/6通过；118第9项因final scan incomplete断言FAIL，实际15项14通过1失败，剩余705未跑。未生成H3、未推sandbox，工作内容未提交，唯一helper差异+81/-26。详见[118的119续做](118_helper_fixes.md#119-续做)。
 
 A重新扫描166个一级目录；250候选删除241、跳过9。16,601文件/链接先保全SHA，Git工作树/保护目录均保留。/home可用104394362880→206063710208 B，净增94.69 GiB，最终191.91 GiB。deleted-repo-backup仍98,026,516,480 B，26bundle原样保留；部分提交未证明当前引用覆盖。详见[119磁盘清理](119_disk_cleanup.md)。
+
+
+## 2026-11-17：120-D（产品PASS，交付检查STOP）
+
+722/722测试和12探针符合预期。H3/sandbox=db7ac04bd2b854b144f6e5c5fcf3a0aa9645c01e，tree=63c8b4fc9602eb743f5a5abaa46445c90d79e579，父61ef5d31，说明与H2逐字节相同，仅helper +81/-26；H2 lease推送并ls-remote确认。原task118分支未改写。一次准备路径修正后，交付脚本把生成的observed JSON误当不变输入，第二次准备错误STOP；不修改/重跑该检查，收尾提交现有结果和停止报告。无产品FAIL、无OOM、无Gerrit写操作。见[120续做](118_helper_fixes.md#120-续做)。
+
+120-D收尾：*.log被证据仓库忽略，初次add返回1，不改规则/force-add重试；仅已暂存小文件与停止报告发布，原始日志本地路径/大小/SHA已登记。产品和sandbox均PASS不变。

@@ -1,0 +1,50 @@
+--- 119/helper
++++ 120/helper
+@@ -277,14 +277,14 @@
+     last_observed = []
+     snapshot = ''
+     partial_snapshot = ''
+-    complete = False
++    final_scan_incomplete = False
+ 
+     def observation_detail():
+         # Historical observations are diagnostic only, never kill authority
+         # or a claim that the observed processes are still alive now.
+         if last_observed:
+             return ('last observed members (last complete scan): '+snapshot+
+-                    ('; final scan incomplete' if not complete else ''))
++                    ('; final scan incomplete' if final_scan_incomplete else ''))
+         return 'partial observations: '+partial_snapshot
+ 
+     def expired():
+@@ -300,19 +300,19 @@
+     while True:
+         # Do not enter a new scan with an already exhausted budget. A completed
+         # observation remains diagnostic evidence, not fresh kill authority.
+-        complete = False
+         if time.monotonic() >= deadline:
+             expired()
+         try:
+             members = live_session_members(sid, deadline)
+         except SessionInspectionError as error:
++            final_scan_incomplete = True
+             errors[str(error)] = None
+             members = error.members
+             partial_snapshot = session_snapshot(members) if members else ''
+             if isinstance(error, SessionDeadlineError):
+                 expired()
+         else:
+-            complete = True
++            final_scan_incomplete = False
+             if members:
+                 last_observed = list(members)
+                 snapshot = session_snapshot(members)
+@@ -334,7 +334,7 @@
+                                (pid, errno.errorcode.get(error.errno, error.errno), error)] = None
+                 except GateError as error:
+                     errors['PID %d: %s' % (pid, error)] = None
+-        if complete and not members:
++        if not final_scan_incomplete and not members:
+             if errors:
+                 raise GateError('session cleanup/check failed; '+observation_detail()+
+                                 '; errors: '+'; '.join(errors))

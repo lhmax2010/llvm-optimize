@@ -1,0 +1,193 @@
+[
+  {
+    "scenario": "bg-short",
+    "runner_rc": 0,
+    "total_s": 3.37,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 3.16, \"result\": \"OK\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "survivors": 0,
+    "survivor_detail": []
+  },
+  {
+    "scenario": "bg-long",
+    "runner_rc": 0,
+    "total_s": 10.19,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 10.16, \"result\": \"ERR COMMAND_ERROR: command exited successfully with live descendants: process session 748793 drain deadline; last observed members (last complete scan): 748794:sleep (S); final scan incomplete; errors: session deadline expired; scan incomplete; last observed members:  (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/resume120/probes/work/bg-long/bg-long.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "survivors": 0,
+    "survivor_detail": []
+  },
+  {
+    "scenario": "first-wait",
+    "runner_rc": 0,
+    "total_s": 10.12,
+    "signals_at": [
+      1.0
+    ],
+    "runner_out": "{\"call_s\": 10.08, \"result\": \"ERR CANCELLED: cancelled by signal 15; while handling: COMMAND_ERROR: command exited successfully with live descendants: process session 748939 drain deadline; last observed members (last complete scan): 748940:sleep (S); final scan incomplete; errors: session deadline expired; scan incomplete; last observed members:  (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/resume1\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "survivors": 0,
+    "survivor_detail": []
+  },
+  {
+    "scenario": "second-wait",
+    "runner_rc": -15,
+    "total_s": 2.04,
+    "signals_at": [
+      1.0,
+      2.0
+    ],
+    "runner_out": "",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "survivors": 0,
+    "survivor_detail": []
+  },
+  {
+    "scenario": "ninja-straggler",
+    "runner_rc": 0,
+    "total_s": 10.18,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 10.15, \"result\": \"ERR COMMAND_ERROR: command exited successfully with live descendants: process session 749063 drain deadline; last observed members (last complete scan): 749066:sleep (S) (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/resume120/probes/work/ninja-straggler/ninja-straggler.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "survivors": 0,
+    "survivor_detail": []
+  },
+  {
+    "scenario": "ninja-timeout",
+    "runner_rc": 0,
+    "total_s": 2.23,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 2.19, \"result\": \"ERR TIMEOUT: Command '749188' timed out after 2 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/resume120/probes/work/ninja-timeout/ninja-timeout.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "survivors": 0,
+    "survivor_detail": []
+  },
+  {
+    "scenario": "fallback-ninja-timeout",
+    "runner_rc": 0,
+    "total_s": 2.2,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 2.17, \"result\": \"ERR TIMEOUT: Command '749226' timed out after 2 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/resume120/probes/work/fallback-ninja-timeout/fallback-ninja-timeout.log)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=fallback-recheck"
+    ],
+    "survivors": 0,
+    "survivor_detail": []
+  },
+  {
+    "scenario": "eperm-delay",
+    "runner_rc": 0,
+    "total_s": 11.26,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 11.23, \"result\": \"ERR TIMEOUT: Command '749262' timed out after 1 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/resume120/probes/work/eperm-delay/eperm-delay.log); cleanup error: process session 749262 drain deadline; last observed members (last complete scan): 749265:python3 (S); errors: PID 749265 errno=EPERM: [Errno 1] Operation not permitted (injected)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "survivors": 1,
+    "survivor_detail": [
+      [
+        749265,
+        "S",
+        749265,
+        749262
+      ]
+    ]
+  },
+  {
+    "scenario": "emfile",
+    "runner_rc": 0,
+    "total_s": 11.07,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 11.04, \"result\": \"ERR TIMEOUT: Command '749404' timed out after 1 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/resume120/probes/work/emfile/emfile.log); cleanup error: process session 749404 drain deadline; last observed members (last complete scan): 749407:python3 (S); final scan incomplete; errors: PID 749407 errno=EMFILE: [Errno 24] Too many open files (injected); session dead\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "survivors": 1,
+    "survivor_detail": [
+      [
+        749407,
+        "S",
+        749407,
+        749404
+      ]
+    ]
+  },
+  {
+    "scenario": "unkillable-delay",
+    "runner_rc": 0,
+    "total_s": 11.39,
+    "signals_at": [],
+    "runner_out": "{\"call_s\": 11.35, \"result\": \"ERR TIMEOUT: Command '749539' timed out after 1 seconds (see /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/resume120/probes/work/unkillable-delay/unkillable-delay.log); cleanup error: process session 749539 drain deadline; last observed members (last complete scan): 749542:python3 (S)\", \"sigchld_restored\": true}",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "survivors": 1,
+    "survivor_detail": [
+      [
+        749542,
+        "S",
+        749542,
+        749539
+      ]
+    ]
+  },
+  {
+    "scenario": "hammer-unkillable",
+    "runner_rc": -15,
+    "total_s": 1.4,
+    "signals_at": [
+      0.5,
+      0.8,
+      1.1
+    ],
+    "runner_out": "",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "survivors": 1,
+    "survivor_detail": [
+      [
+        749740,
+        "S",
+        749740,
+        749737
+      ]
+    ]
+  },
+  {
+    "scenario": "second-cleanup-unkillable",
+    "runner_rc": -15,
+    "total_s": 3.0,
+    "signals_at": [
+      0.5,
+      2.0
+    ],
+    "runner_out": "",
+    "mode_line": [
+      "SESSION_KILL_MODE=pidfd"
+    ],
+    "survivors": 1,
+    "survivor_detail": [
+      [
+        749786,
+        "S",
+        749786,
+        749783
+      ]
+    ]
+  }
+]

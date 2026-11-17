@@ -123,3 +123,97 @@ D 已结束 2026-11-17T00:20:15.394137-08:00 status=STOP
 695既有套件尚未启动；118剩余10项未跑。regression109/110/P1-P2解析均未运行，不能声称118的原失败已验证修复。已阅读Claude harness.py/runner.py，确认subreaper、自有Popen/pidfd收尾边界；按失败停止，未运行探针。H3累积提交、message/tree最终门禁、sandbox推送均未执行。A只读远端引用用于清理可达性盘点，不是D推送。
 
 D 已结束 2026-11-17T00:19:09.164592-08:00 status=STOP
+
+
+## 120 续做
+
+**产品验证与推送 PASS；完整交付检查 STOP。722/722测试通过，12个Claude探针符合预期；H3已推sandbox并核对。交付时第二次准备错误停止，不回退已验证的产品，也不修改/重跑失败的交付检查。118/119原记录保留。**
+
+### 实现与H3
+
+`wait_session_exit()`第269行起，以 `final_scan_incomplete` 代替旧complete诊断状态；只在扫描异常分支置位、完整扫描后清除，轮间截止不改变标志。历史完整快照仅作诊断，成员错误继续汇总，未完成任何完整扫描仍报告could not verify/partial observations。
+
+- H2：`b06ee2ac62085748b1b137523582c989ac78184e`
+- H3：`db7ac04bd2b854b144f6e5c5fcf3a0aa9645c01e`
+- tree：`63c8b4fc9602eb743f5a5abaa46445c90d79e579`
+- parent：`61ef5d31ca91025c414c748477bef0c64ddfa67c`
+- H3为单提交；说明与H2原始commit message逐字节相同，Change-Id I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06不变。
+- H2→H3仅helper，+81/-26，增删107行；spec及全部其他文件相同。通过独立临时index和commit-tree生成，原task118-session-review分支未改写，工作文件对应认证helper。
+
+[本次修正](../../tools/bolt/results/ps5-helper-118/resume120/implementation.diff)、[最终helper.diff](../../tools/bolt/results/ps5-helper-118/resume120/helper.diff)、[身份核对](../../tools/bolt/results/ps5-helper-118/resume120/candidate.json)、[说明原文](../../tools/bolt/results/ps5-helper-118/resume120/commit-message.txt)。
+
+### 全量测试
+
+722＝既有695＋118新增19＋119新增6＋120新增2，全部从头执行；没有复用旧通过结果。未修改既有、118或119测试断言；新增2项为mock时钟/扫描边界用例，严格核对轮间截止不附incomplete、扫描中途截止附incomplete。119停止用例test_R3_complete_snapshot_has_pid_comm、118停止用例test_success_with_live_descendant_fails_and_cleans均通过。
+
+|套件|实际数|结果|
+|---|---:|---|
+|review120|2|PASS|
+|review119|6|PASS|
+|review118|19|PASS|
+|review114|34|PASS|
+|policy|46|PASS|
+|release|5|PASS|
+|r2|12|PASS|
+|r3-r4-r5|40|PASS|
+|hardening|16|PASS|
+|review-r11|19|PASS|
+|helper|393|PASS|
+|targeted|30|PASS|
+|N1|6|PASS|
+|regression109|45|PASS|
+|sessions110|35|PASS|
+|P1-P2-S2|14|PASS|
+
+P1/P2/S2含8组开关实际平台解析和post宏检查。所有套件串行于4G/swap0/CPU200%/Nice19/IO idle服务，运行3min3.750s，无OOM；未构建LLVM/RPM。
+
+[调用清单](../../tools/bolt/results/ps5-helper-118/resume120/test-invocation.json)、[结果](../../tools/bolt/results/ps5-helper-118/resume120/test-results.json)、[两项新测试](../../tools/bolt/results/ps5-helper-118/resume120/tests/test_120.py)；完整逐套件日志在同目录`*-120.log`。
+
+### Claude探针
+
+harness.py和runner.py全文阅读后原样复制：subreaper只清理自身未回收后代，pidfd固定身份，Popen信号只发给自有runner。使用74号Toolchain保留根Ninja1.13.1及其loader；只运行sleep/Python夹具，不做产品构建。
+
+|场景|runner rc|秒|harness兜底清理数|
+|---|---:|---:|---:|
+|bg-short|0|3.37|0|
+|bg-long|0|10.19|0|
+|first-wait|0|10.12|0|
+|second-wait|-15|2.04|0|
+|ninja-straggler|0|10.18|0|
+|ninja-timeout|0|2.23|0|
+|fallback-ninja-timeout|0|2.2|0|
+|eperm-delay|0|11.26|1|
+|emfile|0|11.07|1|
+|unkillable-delay|0|11.39|1|
+|hammer-unkillable|-15|1.4|1|
+|second-cleanup-unkillable|-15|3.0|1|
+
+普通场景残留0；五个故障注入场景各1个被模拟为不可杀死/拒绝访问的成员，harness随后清理并回收，符合设计预期。三个连续信号场景runner=-15；其余均记录预期OK/ERR和SIGCHLD恢复。探针不计入722。原harness截断runner文本，保留原输出而不宣称摘要包含全部诊断。
+
+[探针结果](../../tools/bolt/results/ps5-helper-118/resume120/probes/results.json)、[判定](../../tools/bolt/results/ps5-helper-118/resume120/probes/verdict.json)、[所有权审阅](../../tools/bolt/results/ps5-helper-118/resume120/probes/ownership-review.md)、[工具身份](../../tools/bolt/results/ps5-helper-118/resume120/probes/tool.json)。
+
+### sandbox与准备STOP
+
+前：`b06ee2ac62085748b1b137523582c989ac78184e`；后：`db7ac04bd2b854b144f6e5c5fcf3a0aa9645c01e`。SSH BatchMode、H2 lease，仅推refs/heads/sandbox/lhmax2025/bolt_pgo一次，ls-remote确认。远端仅提示继承标题超过50字符；保留要求的说明原文，未推refs/for或发布Gerrit文本。
+
+[命令](../../tools/bolt/results/ps5-helper-118/resume120/sandbox-command.txt)、[远端原文](../../tools/bolt/results/ps5-helper-118/resume120/sandbox-push.stderr)、[前](../../tools/bolt/results/ps5-helper-118/resume120/sandbox-before.stdout)、[后](../../tools/bolt/results/ps5-helper-118/resume120/sandbox-after.stdout)。
+
+第一次准备修正：Ninja定位递归glob范围过宽，主动停止仅本任务查找服务后改固定路径；12个探针完成。第二次：交付不变检查错误覆盖了会被测试写入的new-tests-02-observed.json，触发断言。并非产品测试失败，但准备修正额度已用，故不修正/重跑该检查，完整不可变文件核对未完成。只收尾保存现有证据及停止报告。
+
+```text
+Traceback (most recent call last):
+  File "<stdin>", line 9, in <module>
+AssertionError: /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-118/resume120/tests/environment/new-tests-02-observed.json
+Finished with result: exit-code
+Main processes terminated with: code=exited/status=1
+```
+
+[STOP原文](../../tools/bolt/results/ps5-helper-118/resume120/STOP.txt)、[准备记录](../../tools/bolt/results/ps5-helper-118/resume120/preparation-correction.txt)、[失败检查](../../tools/bolt/results/ps5-helper-118/resume120/delivery-failed-check.py)。
+
+读取：118/119源码和套件、114Claude评审和探针、74保留工具、H2 Git身份及sandbox引用。未读QB、未重放真实归档、未完整构建、未操作另一项目目录/进程/锁。超过10MB证据仅本地保留，见large-local-files.json。
+
+已结束 2026-11-17T01:46:46.165715-08:00 D tests PASS total=722
+已结束 2026-11-17T01:51:59.489421-08:00 D4 probes completed 12
+已结束 2026-11-17T01:53:19.199070-08:00 D5 PASS
+
+交付收尾补记：原git add因仓库忽略*.log返回1，未使用-f或修改忽略规则重试。已暂存的报告、结果JSON、helper.diff、探针stdout/stderr等正常提交；28份原始.log仅本地保留，其路径/大小/SHA见[local-only-logs.json](../../tools/bolt/results/ps5-helper-118/resume120/local-only-logs.json)。[暂存停止原文](../../tools/bolt/results/ps5-helper-118/resume120/STOP-add.txt)。上文日志位置指本地证据目录，不代表全部已发布。

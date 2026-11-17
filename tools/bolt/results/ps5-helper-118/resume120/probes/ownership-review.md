@@ -1,0 +1,1 @@
+harness.py 与 runner.py 已全文阅读并原样复制。harness 以 PR_SET_CHILD_SUBREAPER 收养本次 runner 后代；只向自己 Popen 子进程发送信号，只经 pidfd 清理 PPid 为自身的未回收子进程。runner 只创建本次 sleep/Python/ninja 夹具；故障代理仅命中带本 runner 标记的成员。不按名称清理，不向其他项目进程发信号。
