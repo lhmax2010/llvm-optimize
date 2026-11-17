@@ -1,0 +1,10 @@
+--- first collector
++++ fixed collector
+@@ -11,6 +11,7 @@
+   Path(os.environ['TEST_DETAILS']).write_text(json.dumps(details,indent=2)+'\n')
+   return result
+ unittest.TextTestRunner=CollectAllResults
++unittest.runner.TextTestRunner=CollectAllResults
+ scratch=Path(os.environ['TEST_SCRATCH']);scratch.mkdir(exist_ok=False)
+ keep=scratch/'retained-cleanup';keep.mkdir()
+ tempfile.tempdir=str(scratch)

@@ -1,0 +1,22 @@
+--- previous wrapper
++++ collect-all wrapper
+@@ -1,11 +1,16 @@
+ from pathlib import Path
+ import tempfile,shutil,runpy,sys,json,os,unittest
+ _original_runner=unittest.TextTestRunner
+-class StopOnFailure(_original_runner):
++class CollectAllResults(_original_runner):
+  def __init__(self,*args,**kwargs):
+-  kwargs["failfast"]=True
++  kwargs["failfast"]=False
+   super().__init__(*args,**kwargs)
+-unittest.TextTestRunner=StopOnFailure
++ def run(self,test):
++  result=super().run(test)
++  details={'tests':result.testsRun,'failures':[{'test':str(t),'traceback':tb} for t,tb in result.failures],'errors':[{'test':str(t),'traceback':tb} for t,tb in result.errors],'skipped':[(str(t),why) for t,why in result.skipped],'PASS':result.wasSuccessful()}
++  Path(os.environ['TEST_DETAILS']).write_text(json.dumps(details,indent=2)+'\n')
++  return result
++unittest.TextTestRunner=CollectAllResults
+ scratch=Path(os.environ['TEST_SCRATCH']);scratch.mkdir(exist_ok=False)
+ keep=scratch/'retained-cleanup';keep.mkdir()
+ tempfile.tempdir=str(scratch)

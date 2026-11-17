@@ -1,0 +1,143 @@
+review122-retained / test_complete_scan_signal_deadline_entire_message (__main__.Review122.test_complete_scan_signal_deadline_entire_message) / category=b
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_122.py", line 42, in test_complete_scan_signal_deadline_entire_message
+    msg=self.deadline(kill=True);self.assertIn('errors: session deadline expired;',msg);self.assertNotIn('scan incomplete',msg);self.assertNotIn('final scan incomplete',msg)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'errors: session deadline expired;' not found in 'process session 42 cleanup deadline; last observed members (last complete scan): 31:first (S), 32:second (S); errors: session deadline expired while signalling; last observed members: 31:first (S), 32:second (S)'
+
+
+review114 / test_deadline_partial_scan_never_empty_success (__main__.Hardening.test_deadline_partial_scan_never_empty_success) / category=c
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_114.py", line 230, in test_deadline_partial_scan_never_empty_success
+    h.live_session_members(42,1)
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-122/source/packaging/clang-bolt-helper.py", line 243, in live_session_members
+    pid, state, pgrp, threads, session, starttime, comm = proc_stat('/proc/'+entry.name+'/stat')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 7, got 6)
+
+
+review114 / test_scan_permission_retains_other_members_and_fails (__main__.Hardening.test_scan_permission_retains_other_members_and_fails) / category=c
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_114.py", line 205, in test_scan_permission_retains_other_members_and_fails
+    with a,b,self.assertRaises(h.SessionInspectionError) as caught:h.live_session_members(42)
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-122/source/packaging/clang-bolt-helper.py", line 243, in live_session_members
+    pid, state, pgrp, threads, session, starttime, comm = proc_stat('/proc/'+entry.name+'/stat')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 7, got 6)
+
+
+helper / test_single_zombie (test_second_review.SecondProcessTests.test_single_zombie) / category=c
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/helper-suite/test_second_review.py", line 134, in test_single_zombie
+    def test_single_zombie(self):self.assertEqual(self.scan('Z',1),[])
+                                                  ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/helper-suite/test_second_review.py", line 129, in scan
+    with patch.object(os,'scandir',return_value=entries),patch.object(h,'proc_stat',stat):return h.live_session_members(42)
+                                                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-122/source/packaging/clang-bolt-helper.py", line 243, in live_session_members
+    pid, state, pgrp, threads, session, starttime, comm = proc_stat('/proc/'+entry.name+'/stat')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 7, got 6)
+
+
+helper / test_zombie_threads (test_second_review.SecondProcessTests.test_zombie_threads) / category=c
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/helper-suite/test_second_review.py", line 133, in test_zombie_threads
+    def test_zombie_threads(self):self.assertEqual(self.scan('Z',2),[(424242,'Z',1)])
+                                                   ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/helper-suite/test_second_review.py", line 129, in scan
+    with patch.object(os,'scandir',return_value=entries),patch.object(h,'proc_stat',stat):return h.live_session_members(42)
+                                                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-122/source/packaging/clang-bolt-helper.py", line 243, in live_session_members
+    pid, state, pgrp, threads, session, starttime, comm = proc_stat('/proc/'+entry.name+'/stat')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 7, got 6)
+
+
+sessions110 / test_proc_stat_session_field (__main__.SessionTests.test_proc_stat_session_field) / category=c
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_110_sessions.py", line 138, in test_proc_stat_session_field
+    v=self.h.proc_stat('/proc/self/stat');self.assertEqual(v,(os.getpid(),v[1],os.getpgrp(),v[3],os.getsid(0),v[5]))
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Tuples differ: (921168, 'R', 919260, 1, 919260, 29881168, 'python3') != (921168, 'R', 919260, 1, 919260, 29881168)
+
+First tuple contains 1 additional elements.
+First extra element 6:
+'python3'
+
+- (921168, 'R', 919260, 1, 919260, 29881168, 'python3')
+?                                          -----------
+
++ (921168, 'R', 919260, 1, 919260, 29881168)
+
+
+sessions110 / test_foreign_session_excluded (__main__.SessionTests.test_foreign_session_excluded) / category=c
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_110_sessions.py", line 148, in test_foreign_session_excluded
+    def test_foreign_session_excluded(self):self.assertEqual(self.scan('S',1,43),[])
+                                                             ^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_110_sessions.py", line 146, in scan
+    with patch.object(self.h.os,'scandir',return_value=entries),patch.object(self.h,'proc_stat',side_effect=stat):return self.h.live_session_members(42)
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-122/source/packaging/clang-bolt-helper.py", line 243, in live_session_members
+    pid, state, pgrp, threads, session, starttime, comm = proc_stat('/proc/'+entry.name+'/stat')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 7, got 6)
+
+
+sessions110 / test_session_dead_excluded (__main__.SessionTests.test_session_dead_excluded) / category=c
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_110_sessions.py", line 150, in test_session_dead_excluded
+    def test_session_dead_excluded(self):self.assertEqual(self.scan('X',1),[])
+                                                          ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_110_sessions.py", line 146, in scan
+    with patch.object(self.h.os,'scandir',return_value=entries),patch.object(self.h,'proc_stat',side_effect=stat):return self.h.live_session_members(42)
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-122/source/packaging/clang-bolt-helper.py", line 243, in live_session_members
+    pid, state, pgrp, threads, session, starttime, comm = proc_stat('/proc/'+entry.name+'/stat')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 7, got 6)
+
+
+sessions110 / test_session_matches_different_group (__main__.SessionTests.test_session_matches_different_group) / category=c
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_110_sessions.py", line 147, in test_session_matches_different_group
+    def test_session_matches_different_group(self):self.assertEqual(self.scan('S',1),[(600001,'S',1)])
+                                                                    ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_110_sessions.py", line 146, in scan
+    with patch.object(self.h.os,'scandir',return_value=entries),patch.object(self.h,'proc_stat',side_effect=stat):return self.h.live_session_members(42)
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-122/source/packaging/clang-bolt-helper.py", line 243, in live_session_members
+    pid, state, pgrp, threads, session, starttime, comm = proc_stat('/proc/'+entry.name+'/stat')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 7, got 6)
+
+
+sessions110 / test_session_zombie_excluded (__main__.SessionTests.test_session_zombie_excluded) / category=c
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_110_sessions.py", line 149, in test_session_zombie_excluded
+    def test_session_zombie_excluded(self):self.assertEqual(self.scan('Z',1),[])
+                                                            ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_110_sessions.py", line 146, in scan
+    with patch.object(self.h.os,'scandir',return_value=entries),patch.object(self.h,'proc_stat',side_effect=stat):return self.h.live_session_members(42)
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-122/source/packaging/clang-bolt-helper.py", line 243, in live_session_members
+    pid, state, pgrp, threads, session, starttime, comm = proc_stat('/proc/'+entry.name+'/stat')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 7, got 6)
+
+
+sessions110 / test_zombie_leader_live_threads_included (__main__.SessionTests.test_zombie_leader_live_threads_included) / category=c
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_110_sessions.py", line 151, in test_zombie_leader_live_threads_included
+    def test_zombie_leader_live_threads_included(self):self.assertEqual(self.scan('Z',2),[(600001,'Z',1)])
+                                                                        ^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-124/tests/test_110_sessions.py", line 146, in scan
+    with patch.object(self.h.os,'scandir',return_value=entries),patch.object(self.h,'proc_stat',side_effect=stat):return self.h.live_session_members(42)
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-122/source/packaging/clang-bolt-helper.py", line 243, in live_session_members
+    pid, state, pgrp, threads, session, starttime, comm = proc_stat('/proc/'+entry.name+'/stat')
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: not enough values to unpack (expected 7, got 6)
+

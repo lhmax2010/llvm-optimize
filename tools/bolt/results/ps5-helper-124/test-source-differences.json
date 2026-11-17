@@ -1,0 +1,272 @@
+[
+  {
+    "path": "post_macro_gate.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "test_p1p2.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/environment/baseline-llvm-static-archives-native.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/environment/run_preserved.py",
+    "identical": false,
+    "diff": "--- 123\n+++ 124\n@@ -1,11 +1,17 @@\n from pathlib import Path\n import tempfile,shutil,runpy,sys,json,os,unittest\n _original_runner=unittest.TextTestRunner\n-class StopOnFailure(_original_runner):\n+class CollectAllResults(_original_runner):\n  def __init__(self,*args,**kwargs):\n-  kwargs[\"failfast\"]=True\n+  kwargs[\"failfast\"]=False\n   super().__init__(*args,**kwargs)\n-unittest.TextTestRunner=StopOnFailure\n+ def run(self,test):\n+  result=super().run(test)\n+  details={'tests':result.testsRun,'failures':[{'test':str(t),'traceback':tb} for t,tb in result.failures],'errors':[{'test':str(t),'traceback':tb} for t,tb in result.errors],'skipped':[(str(t),why) for t,why in result.skipped],'PASS':result.wasSuccessful()}\n+  Path(os.environ['TEST_DETAILS']).write_text(json.dumps(details,indent=2)+'\\n')\n+  return result\n+unittest.TextTestRunner=CollectAllResults\n+unittest.runner.TextTestRunner=CollectAllResults\n scratch=Path(os.environ['TEST_SCRATCH']);scratch.mkdir(exist_ok=False)\n keep=scratch/'retained-cleanup';keep.mkdir()\n tempfile.tempdir=str(scratch)\n"
+  },
+  {
+    "path": "tests/environment/test50.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/environment/test_r2.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/environment/test_r3.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/environment/test_regressions.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/external/adapted/codex_check_review.py",
+    "identical": false,
+    "diff": "--- 123\n+++ 124\n@@ -30,7 +30,7 @@\n  return child\n def trace(frame,event,arg):\n  global fired\n- if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==453 and not fired and mode in ('finally_second','finally_third'):\n+ if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==457 and not fired and mode in ('finally_second','finally_third'):\n   fired=True;os.kill(os.getpid(),signal.SIGHUP)\n  return trace\n h.subprocess.Popen=popen\n"
+  },
+  {
+    "path": "tests/external/adapted/h1.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/external/adapted/h2.py",
+    "identical": false,
+    "diff": "--- 123\n+++ 124\n@@ -14,10 +14,10 @@\n                 h._CANCEL_SIGNAL = signal.SIGTERM          # first signal already handled\n             elif mode == 'two-real-at-line':\n                 pass\n-        if mode == 'deferred-then-third' and frame.f_lineno == 448 and not fired.get('d'):\n+        if mode == 'deferred-then-third' and frame.f_lineno == 452 and not fired.get('d'):\n             fired['d'] = True\n             os.kill(os.getpid(), signal.SIGTERM)\n-        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 448:\n+        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 452:\n             fired['second'] = True\n             os.kill(os.getpid(), signal.SIGHUP)\n         if frame.f_lineno == line and not fired['second'] and mode in ('second-at-line', 'two-real-at-line'):\n"
+  },
+  {
+    "path": "tests/external/adapted/h4b.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/external/adapted/mask.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/external/adapted/n1.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/external/original/codex_check_review.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/external/original/h1.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/external/original/h2.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/external/original/h4b.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/external/original/mask.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/external/original/n1.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/external/original/run_h2.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/run_review_tests.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_bolt_helper.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_cache_release.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_debuglink_modes.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_debuglink_symbols.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_disk_diagnostics.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_fifth_review.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_fourth_review.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_fourth_review_b.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_historical_prune.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_hybrid_review.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_review_robustness.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_review_tool_plan.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_runpath_improvements.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_second_review.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_security_properties.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_sixth_review.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/helper-suite/test_third_review.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/owned_scenario.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/run.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/seccomp_scenario.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/selected_r3.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/test_109_regressions.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/test_110_sessions.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/test_114.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/test_118.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/test_119.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/test_120.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/test_122.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/test_hardening.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/test_hq_requests.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/test_n1.py",
+    "identical": true,
+    "diff": ""
+  },
+  {
+    "path": "tests/test_review_r11.py",
+    "identical": true,
+    "diff": ""
+  }
+]

@@ -1,0 +1,46 @@
+--- 123/helper
++++ 124/helper
+@@ -200,27 +200,29 @@
+     return _SESSION_KILL_MODE
+ 
+ 
+-def session_deadline(deadline, members):
++def session_deadline(deadline, members, *, phase='scan'):
+     if deadline is not None and time.monotonic() >= deadline:
+         raise SessionDeadlineError(
+-            'session deadline expired; last observed members: '+
++            ('session deadline expired; scan incomplete; last observed members: '
++             if phase == 'scan' else
++             'session deadline expired while signalling; last observed members: ')+
+             session_snapshot(members), members)
+ 
+ 
+ def kill_session_member(sid, pid, starttime, deadline=None):
+-    session_deadline(deadline, [(pid, '?', starttime)])
++    session_deadline(deadline, [(pid, '?', starttime)], phase='signalling')
+     if session_kill_mode() == 'pidfd':
+         fd = os.pidfd_open(pid, 0)
+         try:
+             current = proc_stat('/proc/%d/stat' % pid)
+-            session_deadline(deadline, [(pid, current[1], starttime)])
++            session_deadline(deadline, [(pid, current[1], starttime)], phase='signalling')
+             if current[4] == sid:
+                 signal.pidfd_send_signal(fd, signal.SIGKILL, None, 0)
+         finally:
+             os.close(fd)
+     else:
+         current = proc_stat('/proc/%d/stat' % pid)
+-        session_deadline(deadline, [(pid, current[1], starttime)])
++        session_deadline(deadline, [(pid, current[1], starttime)], phase='signalling')
+         if current[4] == sid and current[5] == starttime:
+             # This only narrows the check-to-kill race; unlike pidfd it does
+             # not guarantee process identity across the final numeric lookup.
+@@ -323,7 +325,7 @@
+             for member in members:
+                 pid, state, starttime = member[:3]
+                 try:
+-                    session_deadline(deadline, members)
++                    session_deadline(deadline, members, phase='signalling')
+                     kill_session_member(sid, pid, starttime, deadline)
+                 except (FileNotFoundError, ProcessLookupError):
+                     pass

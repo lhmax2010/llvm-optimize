@@ -181,3 +181,97 @@ H4未生成。工作末端`3cdf92b648687f0aa7412318d6be495cf1b1994f`仅为撤销
 日志受gitignore排除或文件超过10MB时仅留本地，其路径/大小/SHA见[local-only-files.json](../../tools/bolt/results/ps5-helper-123/local-only-files.json)，不因此停止。
 
 已结束 2026-11-17T07:08:23.852586-08:00 D tests STOP
+
+
+## 124 续做
+
+**结论：STOP。首轮完整覆盖735项，724通过、11项失败/错误。分类(a)0项、(b)1项、(c)10项；(c)是proc_stat/成员元组接口与旧夹具不兼容，超出文字修改授权，故不修改断言、不运行第二轮、不生成H4、不推sandbox。所有套件均已跑至结束。**
+
+### 阶段实现与未认证工作链
+
+`session_deadline(deadline, members, *, phase='scan')`：扫描调用保留`session deadline expired; scan incomplete; last observed members: ...`；kill_session_member及wait_session_exit逐成员发信号前的调用显式传入`phase='signalling'`，输出`session deadline expired while signalling; last observed members: ...`。扫描中断时仍由wait_session_exit附final scan incomplete，完整扫描后的signal阶段不附。
+
+工作提交`5c6d9a2951840220a41fc9891cec1731ab7bcf66`，tree `0a92c37b67f8d169590a11c7b51f8a5276101d62`，基于123工作分支继续，不是H4。H3→当前工作仅helper **+26/-20**（增删46行），spec与其他文件未改。[本次phase diff](../../tools/bolt/results/ps5-helper-124/phase-implementation.diff)、[未认证helper.diff](../../tools/bolt/results/ps5-helper-124/helper.diff)。
+
+### 首轮全部结果及采集修正
+
+计划735＝722既有＋122保留11＋124新增2。本次2个新增阶段测试全部通过。新增部分合计13项：2项混合真实自有进程测试、11项纯mock；结果12通过、1项新测试文字断言失败。
+
+|套件|计划|完成|FAIL|ERROR|结论|
+|---|---:|---:|---:|---:|---|
+|review124|2|2|0|0|PASS|
+|review122-retained|11|11|1|0|FAIL|
+|review120|2|2|0|0|PASS|
+|review119|6|6|0|0|PASS|
+|review118|19|19|0|0|PASS|
+|review114|34|34|0|2|FAIL|
+|policy|46|46|0|0|PASS|
+|release|5|5|0|0|PASS|
+|r2|12|12|0|0|PASS|
+|r3-r4-r5|40|40|0|0|PASS|
+|hardening|16|16|0|0|PASS|
+|review-r11|19|19|0|0|PASS|
+|helper|393|393|0|2|FAIL|
+|targeted|30|30|0|0|PASS|
+|N1|6|6|0|0|PASS|
+|regression109|45|45|0|0|PASS|
+|sessions110|35|35|1|5|FAIL|
+|P1-P2-S2|14|14|0|0|PASS|
+
+一次准备修正：首个采集器只覆盖unittest.TextTestRunner，unittest.main经unittest.runner.TextTestRunner绕过了它，导致122保留套件首次只跑2项。其他套件继续到结束后，将两个入口统一为不fail-fast的采集器，仅完整补跑该11项套件；首次2项输出不覆盖。首轮唯一用例735，实际执行次数737（2项重复），未将补齐11项冒称第二轮全套。部分原本全部通过的unittest.main套件没有独立details.json，按完整.log中的Ran/OK计数。
+
+[采集器diff](../../tools/bolt/results/ps5-helper-124/runner-collect-all.diff)、[首次问题](../../tools/bolt/results/ps5-helper-124/preparation-error.txt)、[修正diff](../../tools/bolt/results/ps5-helper-124/preparation-fix.diff)、[补齐原文结果](../../tools/bolt/results/ps5-helper-124/run1-completion/details.json)、[首轮汇总](../../tools/bolt/results/ps5-helper-124/first-run-summary.json)。
+
+### 全部失败分类与断言清单
+
+(a)既有文字断言：0个实际失败。123停止的test_deadline_after_empty_scan_fails本次扫描文字保留后已通过。
+
+(b)122新用例1项：test_complete_scan_signal_deadline_entire_message第42行仍匹配`errors: session deadline expired;`，本次真实异常为`errors: session deadline expired while signalling;`。属于允许的新测试文字适配，但由于同时存在(c)，本次未应用修改。
+
+(c)10项：9个ERROR为`ValueError: not enough values to unpack (expected 7, got 6)`，旧mock proc_stat仍返回6字段；另1个FAIL为真实/proc/self/stat返回带comm的7字段而旧断言要求6字段。涉及成员扫描输入/输出结构，不能仅修改被断言的字符串，按规则STOP。不是已证明的错误进程信号事件；也不能据此宣称新接口已经兼容认证。
+
+|套件|用例|类别|
+|---|---|---|
+|review122-retained|test_complete_scan_signal_deadline_entire_message (__main__.Review122.test_complete_scan_signal_deadline_entire_message)|b|
+|review114|test_deadline_partial_scan_never_empty_success (__main__.Hardening.test_deadline_partial_scan_never_empty_success)|c|
+|review114|test_scan_permission_retains_other_members_and_fails (__main__.Hardening.test_scan_permission_retains_other_members_and_fails)|c|
+|helper|test_single_zombie (test_second_review.SecondProcessTests.test_single_zombie)|c|
+|helper|test_zombie_threads (test_second_review.SecondProcessTests.test_zombie_threads)|c|
+|sessions110|test_proc_stat_session_field (__main__.SessionTests.test_proc_stat_session_field)|c|
+|sessions110|test_foreign_session_excluded (__main__.SessionTests.test_foreign_session_excluded)|c|
+|sessions110|test_session_dead_excluded (__main__.SessionTests.test_session_dead_excluded)|c|
+|sessions110|test_session_matches_different_group (__main__.SessionTests.test_session_matches_different_group)|c|
+|sessions110|test_session_zombie_excluded (__main__.SessionTests.test_session_zombie_excluded)|c|
+|sessions110|test_zombie_leader_live_threads_included (__main__.SessionTests.test_zombie_leader_live_threads_included)|c|
+
+**断言修改清单为空。** 没有修改任何旧/新断言，也没有在分类后修产品代码或重跑。准备时仅更新了外部探针的trace行号坐标以对应当前相同spawn语句、关闭fail-fast、增加结果采集；均有独立diff，场景和断言不变。
+
+[全部失败及分类JSON](../../tools/bolt/results/ps5-helper-124/first-run-failures.json)、[易读清单](../../tools/bolt/results/ps5-helper-124/failure-classification.md)、[全部原始traceback](../../tools/bolt/results/ps5-helper-124/STOP.txt)、[断言清单](../../tools/bolt/results/ps5-helper-124/assertion-changes.json)、[测试源码差异](../../tools/bolt/results/ps5-helper-124/test-source-differences.json)、[trace坐标适配](../../tools/bolt/results/ps5-helper-124/trace-coordinate-adaptation.json)。
+
+### 两份复审全部发现的最终处理
+
+|编号/来源|最终处理|当前证据|
+|---|---|---|
+|D1 / N4名称（Codex/Claude）|保留stat扫描时comm、snapshot无额外I/O|新名称测试及119的PID:python通过；旧6字段接口有10项未解决，未认证|
+|N4长度（Claude）|保留20项上限和+N more|新截断测试通过|
+|N4措辞（Claude）|保留cleanup/drain|新两项通过|
+|D2 / N1（Codex/Claude）|按本轮PM决定区分scan/signalling；member read errors保留|124新两项通过；122文字断言1项待适配，未修改|
+|N2（Claude）|策略确认：保持fail-closed，不修改；不输出SESSION_TRANSIENT_ERRORS_RECOVERED|118全部19项通过|
+|N3（Claude）|保留约两个截止预算注释，不改预算|不新增单独耗时认证|
+|原R1/R2、R3/L2、L1、EACCES闭合项（两份）|保持H3行为|118/119/120、regression109等通过；不能覆盖未通过接口测试|
+|进程级EMFILE、禁止静默fallback（Claude）|已知限制保留|未运行probe-120|
+|malformed stat、/proc/self读取失败（两份）|保留fail-closed、未扩大错误恢复范围|未新增认证|
+|首取消响应、setsid逃逸、不可杀死成员、fallback竞争、单次内核操作超预算（两份）|保留限制，不声称强隔离或硬实时|未新增资格结论|
+|formatter及kill-pass缺口、真实/mock层次（两份测试章节）|新测试覆盖，按证据层次报告|13新增中12通过、1文字断言失败|
+|Python3.9、worker pidfd/fallback资格及未审产品范围（两份范围说明）|不扩大本次工作|没有构建、QB或实物重放|
+
+### H4、探针、远端和未运行项
+
+第二轮全套NOT RUN（因(c)立即STOP）；probe-120安全阅读与执行、H4合成/身份验证、sandbox推送均NOT RUN。H4完整SHA不存在。停止后只读sandbox=`db7ac04bd2b854b144f6e5c5fcf3a0aa9645c01e	refs/heads/sandbox/lhmax2025/bolt_pgo`，rc=0。
+
+[最终状态](../../tools/bolt/results/ps5-helper-124/final-state.json)、[远端原文](../../tools/bolt/results/ps5-helper-124/sandbox-read.stdout)。未操作120-N、另一项目目录/进程/锁；未写Gerrit、未推refs/for，未构建LLVM/RPM或访问QB。资源4GiB/swap0/CPU200%/Nice19/IO idle，串行；无准入等待或资源轮询，无OOM。
+
+读取：123实现和测试、122/123已有复审处理记录、本轮全部套件结果、H3差异和sandbox引用。未运行项目如上。所有超10MB/忽略日志仅本地保留，路径、大小和SHA见[local-only-files.json](../../tools/bolt/results/ps5-helper-124/local-only-files.json)，不因此STOP。
+
+已结束 2026-11-17T07:21:21.166304-08:00 first run initial pass completed total=726
+已结束 2026-11-17T07:21:37.398701-08:00 first-run completion tests=11

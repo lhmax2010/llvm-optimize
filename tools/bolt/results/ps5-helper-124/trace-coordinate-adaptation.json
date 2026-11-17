@@ -1,0 +1,15 @@
+[
+  {
+    "file": "tests/external/line-map.json",
+    "old": "{\n  \"254\": 446,\n  \"255\": 447,\n  \"256\": 448,\n  \"257\": 449,\n  \"258\": 450,\n  \"259\": 451,\n  \"260\": 452,\n  \"261\": 453,\n  \"262\": 454,\n  \"263\": 455,\n  \"264\": 456,\n  \"265\": 457\n}\n",
+    "new": "{\n  \"254\": 450,\n  \"255\": 451,\n  \"256\": 452,\n  \"257\": 453,\n  \"258\": 454,\n  \"259\": 455,\n  \"260\": 456,\n  \"261\": 457,\n  \"262\": 458,\n  \"263\": 459,\n  \"264\": 460,\n  \"265\": 461\n}\n"
+  },
+  {
+    "file": "tests/external/adapted/h2.py",
+    "diff": "--- old coordinate\n+++ new coordinate\n@@ -14,10 +14,10 @@\n                 h._CANCEL_SIGNAL = signal.SIGTERM          # first signal already handled\n             elif mode == 'two-real-at-line':\n                 pass\n-        if mode == 'deferred-then-third' and frame.f_lineno == 448 and not fired.get('d'):\n+        if mode == 'deferred-then-third' and frame.f_lineno == 452 and not fired.get('d'):\n             fired['d'] = True\n             os.kill(os.getpid(), signal.SIGTERM)\n-        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 448:\n+        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 452:\n             fired['second'] = True\n             os.kill(os.getpid(), signal.SIGHUP)\n         if frame.f_lineno == line and not fired['second'] and mode in ('second-at-line', 'two-real-at-line'):\n"
+  },
+  {
+    "file": "tests/external/adapted/codex_check_review.py",
+    "diff": "--- old coordinate\n+++ new coordinate\n@@ -30,7 +30,7 @@\n  return child\n def trace(frame,event,arg):\n  global fired\n- if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==453 and not fired and mode in ('finally_second','finally_third'):\n+ if event=='line' and frame.f_code.co_name=='call' and frame.f_lineno==457 and not fired and mode in ('finally_second','finally_third'):\n   fired=True;os.kill(os.getpid(),signal.SIGHUP)\n  return trace\n h.subprocess.Popen=popen\n"
+  }
+]
