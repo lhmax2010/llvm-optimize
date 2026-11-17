@@ -1673,3 +1673,8 @@ A重新扫描166个一级目录；250候选删除241、跳过9。16,601文件/�
 722/722测试和12探针符合预期。H3/sandbox=db7ac04bd2b854b144f6e5c5fcf3a0aa9645c01e，tree=63c8b4fc9602eb743f5a5abaa46445c90d79e579，父61ef5d31，说明与H2逐字节相同，仅helper +81/-26；H2 lease推送并ls-remote确认。原task118分支未改写。一次准备路径修正后，交付脚本把生成的observed JSON误当不变输入，第二次准备错误STOP；不修改/重跑该检查，收尾提交现有结果和停止报告。无产品FAIL、无OOM、无Gerrit写操作。见[120续做](118_helper_fixes.md#120-续做)。
 
 120-D收尾：*.log被证据仓库忽略，初次add返回1，不改规则/force-add重试；仅已暂存小文件与停止报告发布，原始日志本地路径/大小/SHA已登记。产品和sandbox均PASS不变。
+
+
+## 2026-11-17：122号（STOP，未生成H4）
+
+H3上六个独立helper工作提交，末端f47f0ad8d7bad4b30ca777a2c10ebce367ea790a（未认证）。新增15/15、120两项、119六项通过；118第6项permission真实夹具FAIL，实际29项28通过1失败，708未运行。新N2最终验证干净返回成功，与旧owned_scenario要求permission仍报错冲突；旧断言不改，停止。H4、后续探针和sandbox推送未运行；只读sandbox仍为H3。准备初始化错误修正一次，无OOM，不操作120-N。详见[122号](122_helper_fixes.md)。

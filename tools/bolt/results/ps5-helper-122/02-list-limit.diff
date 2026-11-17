@@ -1,0 +1,27 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 314fdcd05c89..36fa10a1a96e 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -204,7 +204,7 @@ def session_deadline(deadline, members):
+     if deadline is not None and time.monotonic() >= deadline:
+         raise SessionDeadlineError(
+             'session deadline expired; scan incomplete; last observed members: '+
+-            ', '.join('%d:%s' % item[:2] for item in members), members)
++            session_snapshot(members), members)
+ 
+ 
+ def kill_session_member(sid, pid, starttime, deadline=None):
+@@ -258,10 +258,12 @@ def live_session_members(sid, deadline=None):
+ def session_snapshot(members):
+     """Format scan-time names without I/O; never use them for signaling."""
+     observed = []
+-    for member in members:
++    for member in members[:20]:
+         pid, state, starttime = member[:3]
+         comm = member[3] if len(member) > 3 else '?'
+         observed.append('%d:%s (%s)' % (pid, comm, state))
++    if len(members) > 20:
++        observed.append('+%d more' % (len(members)-20))
+     return ', '.join(observed)
+ 
+ 

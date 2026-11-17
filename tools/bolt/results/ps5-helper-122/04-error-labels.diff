@@ -1,0 +1,22 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 19b276110b6a..62e725638a41 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -203,7 +203,7 @@ def session_kill_mode():
+ def session_deadline(deadline, members):
+     if deadline is not None and time.monotonic() >= deadline:
+         raise SessionDeadlineError(
+-            'session deadline expired; scan incomplete; last observed members: '+
++            'session deadline expired; last observed members: '+
+             session_snapshot(members), members)
+ 
+ 
+@@ -251,7 +251,7 @@ def live_session_members(sid, deadline=None):
+         raise SessionInspectionError('cannot enumerate/read process session; scan incomplete: '+str(error), members) from error
+     session_deadline(deadline, members)
+     if denied:
+-        raise SessionInspectionError('scan incomplete; permission denied: '+'; '.join(denied), members)
++        raise SessionInspectionError('scan incomplete; member read errors: '+'; '.join(denied), members)
+     return sorted(members)
+ 
+ 

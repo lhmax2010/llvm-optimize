@@ -1,0 +1,13 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index c1c96537a760..88d9cb79feb4 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -462,6 +462,8 @@ def call(argv, log, cwd=None, timeout=300):
+             if rc != 0:
+                 primary = 'COMMAND_ERROR: COMMAND_FAILED rc=%d: %s' % (rc, argv[0])
+                 raise GateError(primary)
++            # Persistent scan errors can consume both the drain and cleanup
++            # budgets, approximately two deadline budgets before returning.
+             try:
+                 wait_session_exit(process.pid, 10)
+             except SessionInspectionError as error:

@@ -1,0 +1,31 @@
+test_ESRCH_after_real_pidfd_open (__main__.Review118.test_ESRCH_after_real_pidfd_open) ... ok
+test_L1_failure_before_retirement_store (__main__.Review118.test_L1_failure_before_retirement_store) ... SESSION_KILL_MODE=pidfd
+ok
+test_L1_success_before_retirement_store (__main__.Review118.test_L1_success_before_retirement_store) ... SESSION_KILL_MODE=pidfd
+ok
+test_L2_incomplete_empty_keeps_previous (__main__.Review118.test_L2_incomplete_empty_keeps_previous) ... ok
+test_L2_timed_out_empty_keeps_previous (__main__.Review118.test_L2_timed_out_empty_keeps_previous) ... ok
+test_R1_permission_rescan_fork_real (__main__.Review118.test_R1_permission_rescan_fork_real) ... FAIL
+
+======================================================================
+FAIL: test_R1_permission_rescan_fork_real (__main__.Review118.test_R1_permission_rescan_fork_real)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-122/tests/test_118.py", line 19, in test_R1_permission_rescan_fork_real
+    def test_R1_permission_rescan_fork_real(self):self.scenario('permission')
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-122/tests/test_118.py", line 17, in scenario
+    self.assertEqual(r.returncode,0,r.stderr+r.stdout);v=json.loads(r.stdout);self.assertTrue(v['PASS'])
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : SESSION_TRANSIENT_ERRORS_RECOVERED PID 907391 errno=EPERM: [Errno 1] injected member denial
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/ps5-helper-122/tests/owned_scenario.py", line 58, in <module>
+    assert (message is None)==(case=='esrch'),message
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: None
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 1.161s
+
+FAILED (failures=1)

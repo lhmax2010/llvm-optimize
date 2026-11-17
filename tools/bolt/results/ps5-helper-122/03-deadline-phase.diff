@@ -1,0 +1,15 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 36fa10a1a96e..19b276110b6a 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -292,8 +292,8 @@ def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+         detail = '; errors: '+'; '.join(errors) if errors else ''
+         if last_observed:
+             raise LiveDescendantsError(
+-                'process session %d drain deadline; %s%s' %
+-                (sid, observation_detail(), detail))
++                'process session %d %s deadline; %s%s' %
++                (sid, 'cleanup' if kill else 'drain', observation_detail(), detail))
+         raise SessionInspectionError(
+             'could not verify that the session is empty; %s%s' %
+             (observation_detail(), detail), [])

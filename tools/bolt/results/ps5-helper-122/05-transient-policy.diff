@@ -1,0 +1,27 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 62e725638a41..c1c96537a760 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -338,8 +338,8 @@ def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+                     errors['PID %d: %s' % (pid, error)] = None
+         if not final_scan_incomplete and not members:
+             if errors:
+-                raise GateError('session cleanup/check failed; '+observation_detail()+
+-                                '; errors: '+'; '.join(errors))
++                print('SESSION_TRANSIENT_ERRORS_RECOVERED '+
++                      '; '.join(errors), file=sys.stderr, flush=True)
+             return
+         if time.monotonic() >= deadline:
+             expired()
+@@ -362,8 +362,10 @@ def kill_session(sid, timeout=10):
+         if not errors:
+             raise
+         errors.append(str(error))
++        raise GateError('session cleanup failed: '+'; '.join(errors)) from error
+     if errors:
+-        raise GateError('session cleanup failed: '+'; '.join(errors))
++        print('SESSION_TRANSIENT_ERRORS_RECOVERED '+
++              '; '.join(errors), file=sys.stderr, flush=True)
+ 
+ _CANCEL_SIGNAL = None
+ _ACTIVE_SESSION = None  # SID of the unreaped leader; cleared before final reap.
