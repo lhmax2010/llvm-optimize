@@ -1,0 +1,90 @@
+{
+  "step": "G1",
+  "started_at": "2026-11-18T08:55:09-08:00",
+  "tier": "standard",
+  "memory_max": 8672698368,
+  "cpu_percent": 400,
+  "jobs": 6,
+  "admission": [
+    {
+      "time": "2026-11-18T08:55:09-08:00",
+      "mem_available": 24326889472,
+      "home_available": 412757606400,
+      "check": 1
+    }
+  ],
+  "admission_wait_seconds": 0.0,
+  "unit": "llvm-opt-133n-20261118-g1.service",
+  "argv": [
+    "/usr/bin/systemd-run",
+    "--user",
+    "--wait",
+    "--pipe",
+    "--unit=llvm-opt-133n-20261118-g1.service",
+    "--expand-environment=no",
+    "-p",
+    "MemoryMax=8672698368",
+    "-p",
+    "MemorySwapMax=0",
+    "-p",
+    "CPUQuota=400%",
+    "-p",
+    "Nice=19",
+    "-p",
+    "IOSchedulingClass=idle",
+    "-p",
+    "OOMPolicy=stop",
+    "-p",
+    "KillMode=control-group",
+    "-p",
+    "TimeoutStopSec=120",
+    "-p",
+    "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G1",
+    "/usr/bin/python3",
+    "-B",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/worker.py",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118",
+    "G1",
+    "standard",
+    "6",
+    "8672698368",
+    "400"
+  ],
+  "ended_at": "2026-11-18T09:56:56-08:00",
+  "seconds": 3707.223,
+  "rc": 1,
+  "resources": {
+    "memory.peak": "8672698368",
+    "VmHWM_sample": {
+      "bytes": 8058806272,
+      "pid": 2173033,
+      "argv": "/usr/bin/ld.lld --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o bin/clang-22 /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0 -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64 -L/lib/../lib64 -L/usr/lib64 -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../x86_64-tizen-linux-gnu/lib -L/lib -L/usr/lib -plugin-opt=mcpu=x86-64 -plugin-opt=O3 -plugin-opt=thinlto -plugin-opt=-function-sections=1 -plugin-opt=-data-sections=1 --gc-sections --color-diagnostics --thinlto-cache-dir=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache --export-dynamic --dependency-file=tools/clang/tools/driver/CMakeFiles/clang.dir/link.d tools/clang/tools/driver/CMakeFiles/clang.dir/driver.cpp.o tools/clang/tools/driver/CMakeFiles/clang.dir/cc1_main.cpp.o tools/clang/tools/driver/CMakeFiles/clang.dir/cc1as_main.cpp.o tools/clang/tools/driver/CMakeFiles/clang.dir/cc1gen_reproducer_main.cpp.o tools/clang/tools/driver/CMakeFiles/clang.dir/clang-driver.cpp.o -rpath $ORIGIN/../lib64:/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64: lib64/libLLVMX86CodeGen.a lib64/libLLVMX86AsmParser.a lib64/libLLVMX86Desc.a lib64/libLLVMX86Disassembler.a lib64/libLLVMX86Info.a lib64/libLLVMARMCodeGen.a lib64/libLLVMARMAsmParser.a lib64/libLLVMARMDesc.a lib64/libLLVMARMDisassembler.a lib64/libLLVMARMInfo.a lib64/libLLVMARMUtils.a lib64/libLLVMAArch64CodeGen.a lib64/libLLVMAArch64AsmParser.a lib64/libLLVMAArch64Desc.a lib64/libLLVMAArch64Disassembler.a lib64/libLLVMAArch64Info.a lib64/libLLVMAArch64Utils.a lib64/libLLVMBPFCodeGen.a lib64/libLLVMBPFAsmParser.a lib64/libLLVMBPFDesc.a lib64/libLLVMBPFDisassembler.a lib64/libLLVMBPFInfo.a lib64/libLLVMAnalysis.a lib64/libLLVMCodeGen.a lib64/libLLVMCore.a lib64/libLLVMipo.a lib64/libLLVMAggressiveInstCombine.a lib64/libLLVMInstCombine.a lib64/libLLVMInstrumentation.a lib64/libLLVMMC.a lib64/libLLVMMCParser.a lib64/libLLVMObjCARCOpts.a lib64/libLLVMOption.a lib64/libLLVMScalarOpts.a lib64/libLLVMSupport.a lib64/libLLVMTargetParser.a lib64/libLLVMTransformUtils.a lib64/libLLVMVectorize.a lib64/libclangBasic.a lib64/libclangCodeGen.a lib64/libclangDriver.a lib64/libclangFrontend.a lib64/libclangFrontendTool.a lib64/libclangOptions.a lib64/libclangSerialization.a lib64/libLLVMAsmPrinter.a lib64/libLLVMMCDisassembler.a lib64/libLLVMCoverage.a lib64/libLLVMFrontendDriver.a lib64/libLLVMLTO.a lib64/libLLVMPasses.a lib64/libLLVMCFGuard.a lib64/libLLVMGlobalISel.a lib64/libLLVMSelectionDAG.a lib64/libLLVMCodeGenTypes.a lib64/libLLVMIRPrinter.a lib64/libLLVMTarget.a lib64/libLLVMCoroutines.a lib64/libLLVMSandboxIR.a lib64/libLLVMHipStdPar.a lib64/libLLVMCGData.a lib64/libLLVMBitWriter.a lib64/libLLVMLinker.a lib64/libLLVMExtensions.a lib64/libclangExtractAPI.a lib64/libclangInstallAPI.a lib64/libLLVMTextAPIBinaryReader.a lib64/libclangRewriteFrontend.a lib64/libclangStaticAnalyzerFrontend.a lib64/libclangStaticAnalyzerCheckers.a lib64/libclangStaticAnalyzerCore.a lib64/libclangCrossTU.a lib64/libLLVMWindowsDriver.a lib64/libclangIndex.a lib64/libLLVMPlugins.a lib64/libclangParse.a lib64/libclangSema.a lib64/libclangAPINotes.a lib64/libclangEdit.a lib64/libclangAnalysisLifetimeSafety.a lib64/libclangAnalysis.a lib64/libclangASTMatchers.a lib64/libclangAST.a lib64/libclangSupport.a lib64/libclangFormat.a lib64/libclangToolingInclusions.a lib64/libclangToolingCore.a lib64/libclangRewrite.a lib64/libclangLex.a lib64/libLLVMFrontendOpenMP.a lib64/libLLVMFrontendOffloading.a lib64/libLLVMObjectYAML.a lib64/libLLVMFrontendAtomic.a lib64/libLLVMProfileData.a lib64/libLLVMSymbolize.a lib64/libLLVMDebugInfoGSYM.a lib64/libLLVMDebugInfoDWARF.a lib64/libLLVMDebugInfoPDB.a lib64/libLLVMDebugInfoCodeView.a lib64/libLLVMDebugInfoMSF.a lib64/libLLVMDebugInfoBTF.a lib64/libLLVMObject.a lib64/libLLVMDebugInfoDWARFLowLevel.a lib64/libLLVMIRReader.a lib64/libLLVMBitReader.a lib64/libLLVMAsmParser.a lib64/libLLVMTextAPI.a lib64/libLLVMFrontendHLSL.a lib64/libLLVMBinaryFormat.a lib64/libLLVMRemarks.a lib64/libLLVMBitstreamReader.a lib64/libLLVMFrontendDirective.a lib64/libLLVMDemangle.a -lrt -ldl -lm /usr/lib64/libz.so -rpath-link /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64 -u__llvm_profile_runtime /usr/lib64/clang/22/lib/linux/libclang_rt.profile-x86_64.a -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/crtendS.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/crtn.o"
+    },
+    "memory.events": "low 0\nhigh 0\nmax 12058\noom 0\noom_kill 0\noom_group_kill 0",
+    "memory.stat": "anon 9846784\nfile 8063770624",
+    "memory.max": "8672698368",
+    "memory.swap.peak": "0"
+  },
+  "systemd": "Result=exit-code\nMemoryPeak=8672698368\nCPUUsageNSec=8250232971000\nActiveState=failed\nInvocationID=a88965a9f1464758883adc1f15b16803\n",
+  "watchdog": null,
+  "log_path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G1/service.log",
+  "end_measurement": {
+    "time": "2026-11-18T09:56:56-08:00",
+    "mem_available": 24274354176,
+    "home_available": 385664417792
+  },
+  "worker": {
+    "status": "STOP",
+    "reason": "134 skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'instrumented-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles/instrumented-build-1795020912008271908'}], 'started_at': '2026-11-18T16:55:09+00:00', 'admission': [{'at': '2026-11-18T16:55:09+00:00', 'memory': 24307625984, 'disk': {'/home': 412757479424, '/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles': 412757479424}}], 'tier': 'managed', 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles/instrumented-build-1795020912008271908/build-0.txt', 'ended_at': '2026-11-18T17:56:56+00:00'}",
+    "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/worker.py\", line 149, in <module>\n    out=generate(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/pgosteps.py\", line 271, in generate\n    raise RuntimeError(f\"134 skill exited {proc.returncode}: {err}\")\nRuntimeError: 134 skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'instrumented-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles/instrumented-build-1795020912008271908'}], 'started_at': '2026-11-18T16:55:09+00:00', 'admission': [{'at': '2026-11-18T16:55:09+00:00', 'memory': 24307625984, 'disk': {'/home': 412757479424, '/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles': 412757479424}}], 'tier': 'managed', 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles/instrumented-build-1795020912008271908/build-0.txt', 'ended_at': '2026-11-18T17:56:56+00:00'}\n",
+    "cgroup_end": {
+      "memory.peak": "8672698368",
+      "memory.events": "low 0\nhigh 0\nmax 12058\noom 0\noom_kill 0\noom_group_kill 0",
+      "memory.max": "8672698368",
+      "memory.stat": "anon 9846784\nfile 8063770624",
+      "memory.swap.peak": "0"
+    }
+  },
+  "log_tail": "Running as unit: llvm-opt-133n-20261118-g1.service\n/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py --config /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-config/config.json --output /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles --stages instrumented-build\nSTOP: command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles/instrumented-build-1795020912008271908/build-0.txt\n{\n  \"status\": \"STOP\",\n  \"project\": \"T\",\n  \"stages\": [\n    {\n      \"name\": \"instrumented-build\",\n      \"status\": \"STOP\",\n      \"attempt\": \"/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles/instrumented-build-1795020912008271908\"\n    }\n  ],\n  \"started_at\": \"2026-11-18T16:55:09+00:00\",\n  \"admission\": [\n    {\n      \"at\": \"2026-11-18T16:55:09+00:00\",\n      \"memory\": 24307625984,\n      \"disk\": {\n        \"/home\": 412757479424,\n        \"/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles\": 412757479424\n      }\n    }\n  ],\n  \"tier\": \"managed\",\n  \"reason\": \"command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles/instrumented-build-1795020912008271908/build-0.txt\",\n  \"ended_at\": \"2026-11-18T17:56:56+00:00\"\n}\nTraceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/worker.py\", line 149, in <module>\n    out=generate(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/pgosteps.py\", line 271, in generate\n    raise RuntimeError(f\"134 skill exited {proc.returncode}: {err}\")\nRuntimeError: 134 skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'instrumented-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles/instrumented-build-1795020912008271908'}], 'started_at': '2026-11-18T16:55:09+00:00', 'admission': [{'at': '2026-11-18T16:55:09+00:00', 'memory': 24307625984, 'disk': {'/home': 412757479424, '/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles': 412757479424}}], 'tier': 'managed', 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-profiles/instrumented-build-1795020912008271908/build-0.txt', 'ended_at': '2026-11-18T17:56:56+00:00'}\n\nFinished with result: exit-code\nMain processes terminated with: code=exited/status=1\nService runtime: 1h 1min 47.155s\nCPU time consumed: 2h 17min 30.232s\nMemory peak: 8.0G\nMemory swap peak: 0B\n",
+  "status": "STOP"
+}
