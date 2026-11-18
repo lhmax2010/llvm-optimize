@@ -152,3 +152,20 @@ lib64"  lib64/libLLVMX86CodeGen.a  lib64/libLLVMX86AsmParser.a  lib64/libLLVMX86
 I 的 llvm-bolt 组件库包含 `libLLVMX86Desc.a`，动态 `libLLVM.so` 匹配为 False。镜像编译单元命中 0 项。仅归一化两个工作区路径后，runtime ExternalProject 配置命令等同于 PS5：True；runtime 源码等同：True。未执行独立 runtime 子项目的生成或构建。
 
 [首次配置故障原文](../../tools/bolt/results/task133-d/N3-cmake.json)、[修正后的命令和日志索引](../../tools/bolt/results/task133-d/N3-cmake2.json)、[链接与 runtime 图证据](../../tools/bolt/results/task133-d/N3-graph-summary.json)、[本地日志和大文件路径、字节与 SHA256](../../tools/bolt/results/task133-d/N3-local-artifacts.json)。
+
+
+## N4：133-N 完整验证
+
+**SKIPPED。**
+
+| 步骤 | 结论 | 档位 | MemoryMax B | 开始 | 结束 | 等待 s | 执行 s | cgroup peak B | MemAvailable B | /home 可用 B | 依据 |
+|---|---|---|---:|---|---|---:|---:|---:|---:|---:|---|
+| N4 | SKIPPED | — | — | — | — | 1800.004 | — | UNKNOWN | 24288186368 | 385663987712 | MemAvailable minus 8 GiB below reduced MemoryMax |
+
+
+## 留在本机的证据
+
+| 步骤 | 文件 | 字节 | SHA256 |
+|---|---|---:|---|
+
+本地结果目录 /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118。全部步骤状态见[总 JSON](../../tools/bolt/results/task133-n/summary.json)。看门狗触发：否。
