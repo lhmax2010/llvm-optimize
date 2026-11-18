@@ -1703,3 +1703,12 @@ H5=ed922413c19b01d07e0ec6547771267f40ab5469，tree=66aa08d9e6717b904a0eb390096d9
 ## 2026-11-17：128号（H4 QB 核对完成；源码日期差异未作放行判定）
 
 1232862=Base-Dev，1232863=Toolchain，实际均为H4 7a7bc17467d4c5da9763e86e3c74a123b3ff0df2/tree472c872afe958f464112d22b6304cde006fcbf98，不是H5。六架构成功；与H2 1231418/1231417比较，102/102二进制载荷和1294个llvm-static-devel完整归档SHA相同。SESSION_KILL_MODE均pidfd（每项目26命中含10实际输出）；STARTUP flags为null，TERM/HUP default、INT ignored；REAL三阶段及POST均PASS。新告警/错误关键字0，会话清理错误0。源码helper对Git一致、spec仅VCS；1334c36-to-61ef5d3.diff仅头部Date变化，正文SHA相同，按任务要求单列且不自行判源码整体PASS。新RPM保留在keep-baselines/qb-1232862-1232863，>10MB分析只留本地并登记SHA；未操作夜间编排、Gerrit或sandbox。见[128号](128_qb_1232862_1232863.md)。
+
+
+## 2026-11-18：131 号第二批 PGO 准备
+
+从 361395 PS5 7b05a137 的相同 tree 建立本地 pgo-dev。候选 cfcc4da0965449c08231a6e52691a57824e9330e 包含离线 profile 选择、默认关闭开关、Ninja 与发货门禁、运行库隔离和转换器参数分类。RPM 4.14.1 的 48 组解析通过。三个架构的默认展开仅增加开头 14 个宏定义生成的空行。旧套件首轮 719/743，新增夹具末轮 17/18，候选未认证。
+
+备份检查覆盖 26 个 bundle。碰到目录权限及文件状态断言后停止删除，释放 0 B。旧 PGO 构建已确认部分 compiler-rt/openmp 命令采到 profile-use，完整 build.ninja 未保留。计数方法保持 UNKNOWN。离线配对入口完成 dry-run，127 N0 资源策略及正式构建的接线仍待核对。
+
+设计 v10 记录乙一、作用范围与发货门禁、PS5 开关、Base-Dev 分包测速和第二批顺序。详见[131 号报告](131_pgo_preparation.md)和[设计 v10](design/tizen_llvm_speed_design_v10.md)。
