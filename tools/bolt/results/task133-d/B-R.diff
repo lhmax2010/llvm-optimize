@@ -1,0 +1,571 @@
+diff --git a/compiler-rt/CMakeLists.txt b/compiler-rt/CMakeLists.txt
+index a92258ae1244..f10737ed9abb 100644
+--- a/compiler-rt/CMakeLists.txt
++++ b/compiler-rt/CMakeLists.txt
+@@ -6,6 +6,17 @@
+ cmake_minimum_required(VERSION 3.20.0)
+ set(LLVM_SUBPROJECT_TITLE "Compiler-RT")
+ 
++# The main LLVM build consumes its IR profile; runtime libraries must not.
++if(TIZEN_PGO_EXCLUDE_RUNTIMES AND LLVM_PROFDATA_FILE)
++  foreach(flag_var CMAKE_C_FLAGS CMAKE_CXX_FLAGS CMAKE_ASM_FLAGS
++          CMAKE_EXE_LINKER_FLAGS CMAKE_MODULE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
++    string(REPLACE "-fprofile-instr-use=\"${LLVM_PROFDATA_FILE}\"" ""
++           stripped_flags "${${flag_var}}")
++    set(${flag_var} "${stripped_flags}")
++  endforeach()
++  set(LLVM_PROFDATA_FILE "")
++endif()
++
+ if(NOT DEFINED LLVM_COMMON_CMAKE_UTILS)
+   set(LLVM_COMMON_CMAKE_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/../cmake)
+ endif()
+diff --git a/openmp/CMakeLists.txt b/openmp/CMakeLists.txt
+index cfe01daaa80d..b08b5867c545 100644
+--- a/openmp/CMakeLists.txt
++++ b/openmp/CMakeLists.txt
+@@ -1,6 +1,17 @@
+ cmake_minimum_required(VERSION 3.20.0)
+ set(LLVM_SUBPROJECT_TITLE "OpenMP")
+ 
++# The main LLVM build consumes its IR profile; runtime libraries must not.
++if(TIZEN_PGO_EXCLUDE_RUNTIMES AND LLVM_PROFDATA_FILE)
++  foreach(flag_var CMAKE_C_FLAGS CMAKE_CXX_FLAGS CMAKE_ASM_FLAGS
++          CMAKE_EXE_LINKER_FLAGS CMAKE_MODULE_LINKER_FLAGS CMAKE_SHARED_LINKER_FLAGS)
++    string(REPLACE "-fprofile-instr-use=\"${LLVM_PROFDATA_FILE}\"" ""
++           stripped_flags "${${flag_var}}")
++    set(${flag_var} "${stripped_flags}")
++  endforeach()
++  set(LLVM_PROFDATA_FILE "")
++endif()
++
+ set(LLVM_COMMON_CMAKE_UTILS ${CMAKE_CURRENT_SOURCE_DIR}/../cmake)
+ 
+ # Add path for custom modules
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 15fe8c35f780..4df2e70f1bf1 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -96,9 +96,206 @@ def certified():
+ 
+ 
+ def profile_identity(path):
++    paired = paired_bolt_profile()
++    expected = paired['sha256'] if paired is not None else PROFILE_SHA
+     actual = digest(path)
+-    require(actual == PROFILE_SHA, 'profile SHA actual=%s expected=%s; remedy: first verify the Source identity; '
+-            'do not assume the profile is stale' % (actual, PROFILE_SHA))
++    require(actual == expected, 'profile SHA actual=%s expected=%s; remedy: first verify the Source identity; '
++            'do not assume the profile is stale' % (actual, expected))
++
++def _unique_manifest_fields(pairs):
++    result = {}
++    for key, value in pairs:
++        require(key not in result, 'duplicate profile manifest field: '+key)
++        result[key] = value
++    return result
++
++
++def select_pgo_profile(manifest, project, pgo, bolt):
++    # With PGO disabled the historical Source1200 SHA remains authoritative.
++    if not pgo:
++        return None if not bolt else {'baseline': True, 'sha256': PROFILE_SHA}
++    with Path(manifest).open(encoding='utf-8') as stream:
++        doc = json.load(stream, object_pairs_hook=_unique_manifest_fields)
++    require(doc['status'] == 'READY', 'profile manifest is not READY (PLACEHOLDER is not usable)')
++    require(doc['format'] == 1 and doc['llvm_version'] == CERTIFIED['llvm_version'],
++            'unsupported profile manifest format or LLVM version')
++    require(project in ('T', 'D'), 'unknown profile build project')
++    pairs = {}
++    for item in doc['profiles']:
++        require(item['project'] in ('T', 'D') and item['pgo'] is True
++                and type(item['bolt']) is bool, 'invalid profile mapping key')
++        key = item['project'], item['pgo'], item['bolt']
++        require(key not in pairs, 'duplicate profile mapping: '+str(key))
++        pairs[key] = item
++    key = project, pgo, bolt
++    require(key in pairs, 'missing profile mapping: '+str(key))
++    return pairs[key]
++
++
++def unpack_pgo_asset(source, dest, info):
++    for key in ('sha256', 'xz_sha256'):
++        require(re.fullmatch(r'[0-9a-f]{64}', info[key]), 'invalid profile digest '+key)
++    for key in ('bytes', 'xz_bytes'):
++        require(type(info[key]) is int and info[key] > 0, 'invalid profile size '+key)
++    source, dest = Path(source), Path(dest)
++    require(source.name == info['file'] and source.stat().st_size == info['xz_bytes']
++            and digest(source) == info['xz_sha256'], 'compressed profile identity mismatch: '+str(source))
++    # Limit writes to the declared size and publish only a verified stream.
++    dest.parent.mkdir(parents=True, exist_ok=True)
++    with tempfile.NamedTemporaryFile(dir=dest.parent, delete=False) as packed:
++        tmp = Path(packed.name)
++        try:
++            size = 0
++            with lzma.open(source, 'rb') as src:
++                first = True
++                for block in iter(lambda: src.read(1024*1024), b''):
++                    check_cancel()
++                    require(not (first and block.startswith(b'PLACEHOLDER')), 'placeholder profile payload')
++                    first = False
++                    size += len(block)
++                    require(size <= info['bytes'], 'profile exceeds declared size')
++                    packed.write(block)
++            packed.flush()
++            require(size == info['bytes'] and digest(tmp) == info['sha256'],
++                    'uncompressed profile identity mismatch: '+str(source))
++            os.replace(tmp, dest)
++        finally:
++            tmp.unlink(missing_ok=True)
++    return {'path': str(dest.resolve()), 'sha256': info['sha256'], 'bytes': size}
++
++
++def prepare_pgo(manifest, project, work, profile, bolt_profile=None):
++    row = select_pgo_profile(manifest, project, True, bolt_profile is not None)
++    work = Path(work).absolute()
++    require(not (work/'state.json').exists(), 'PGO state already exists, use a fresh build')
++    result = {'project': project, 'manifest_sha256': digest(manifest),
++              'profdata': unpack_pgo_asset(profile, work/'clang.profdata', row['profdata'])}
++    if bolt_profile is not None:
++        result['bolt'] = unpack_pgo_asset(bolt_profile, work/'clang.fdata', row['bolt_profile'])
++    save(work/'state.json', result)
++    return result
++
++
++def pgo_runtime_target(output):
++    # Targets observed in the historical Ninja progress stream, plus their
++    # separate-build directory names and the runtime libraries' link outputs.
++    parts = Path(output).parts
++    return (bool({'compiler-rt', 'openmp', 'runtimes', 'offload'} & set(parts))
++            or Path(output).name.startswith(('libclang_rt.', 'libomp.', 'libompd.',
++                                             'libarcher.', 'libomptarget.')))
++
++
++def check_pgo_commands(commands, expected=None):
++    checked = {'compile': 0, 'profile_use': 0, 'runtime_compile': 0}
++    for row in commands:
++        tokens = shlex.split(row['command'])
++        output = row.get('output', '')
++        flags = [a for a in tokens if re.match(r'-f(?:no-)?(?:cs-)?(?:profile|auto-profile)', a)]
++        is_compile = ('-c' in tokens and
++                      any(Path(name).suffix in ('.c','.cc','.cpp','.cxx','.C','.m','.mm')
++                          for name in (row.get('file', ''),)))
++        runtime = pgo_runtime_target(output)
++        if is_compile:
++            checked['compile'] += 1
++            checked['runtime_compile'] += int(runtime)
++        if not expected or runtime:
++            require(not flags, 'unexpected PGO option for '+output+': '+str(flags))
++        elif is_compile or flags:
++            require(flags == ['-fprofile-instr-use='+expected],
++                    'wrong PGO option for '+output+': '+str(flags))
++            checked['profile_use'] += int(is_compile)
++    require(checked['compile'] > 0, 'could not identify C/C++ compile edges')
++    if expected:
++        require(checked['profile_use'] and checked['runtime_compile'],
++                'PGO check missed main or runtime targets')
++    return checked
++
++
++def verify_pgo_ninja(build, enabled=False):
++    build = Path(build)
++    require((build/'build.ninja').is_file(), 'missing primary Ninja graph')
++    expected = None
++    if enabled:
++        state = json.loads((build/'pgo-profiles/state.json').read_text())
++        profile = state['profdata']
++        expected = str((build/'pgo-profiles/clang.profdata').resolve())
++        require(profile['path'] == expected and digest(expected) == profile['sha256'],
++                'configured profdata identity mismatch')
++    run = subprocess.run(['ninja', '-t', 'compdb'], cwd=build, check=True, capture_output=True)
++    result = check_pgo_commands(json.loads(run.stdout), expected)
++    print('PGO_NINJA_CHECK', json.dumps(result), flush=True)
++    if enabled:
++        print('PGO_MATCH UNKNOWN method-not-qualified', flush=True)
++    return result
++
++
++def pgo_runtime_dependencies(root, enabled=False):
++    """Inspect installed ELF and every member of the static-devel archives."""
++    root = Path(root)
++    marker = re.compile(r'(?<![A-Za-z0-9_])(?:_?_llvm_prf_[A-Za-z0-9_]+|__llvm_profile_[A-Za-z0-9_]+)')
++    needed = re.compile(r'\(NEEDED\).*?\[libclang_rt\.profile[^]]*\]')
++    result = {'status': 'PASS', 'archives': 0, 'elf': 0, 'findings': []}
++    paths = set((root/'usr/lib64').glob('lib*.a')) | set((root/'usr/lib').glob('lib*.a'))
++    try:
++        for path in sorted(set(root.rglob('*')) | paths):
++            check_cancel()
++            if path.is_symlink() or not path.is_file():
++                continue
++            with path.open('rb') as source:
++                head = source.read(20)
++            archive = path in paths
++            if archive:
++                require(head.startswith(b'!<arch>\n'), 'invalid static-devel archive: '+str(path))
++            else:
++                if len(head) < 20 or head[:4] != b'\x7fELF':
++                    continue
++                if int.from_bytes(head[16:18], 'little' if head[5]==1 else 'big') not in (2,3):
++                    continue
++                relative = path.relative_to(root).parts
++                if path.suffix == '.debug' or 'debug' in relative[:-1]:
++                    continue
++            result['archives' if archive else 'elf'] += 1
++            with subprocess.Popen(['readelf','-W','-h','-S','-s','-d',str(path)],
++                                  stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
++                                  encoding='utf-8', errors='replace',
++                                  env={**os.environ, 'LC_ALL': 'C'}) as reader:
++                members = headers = 0
++                member = None
++                for line in reader.stdout:
++                    if line.startswith('File:'):
++                        member = line.split(':', 1)[1].strip()
++                        members += 1
++                    if line.lstrip().startswith('ELF Header:'):
++                        headers += 1
++                    if marker.search(line) or needed.search(line):
++                        result['status'] = 'FAIL'
++                        if len(result['findings']) < 30:
++                            result['findings'].append({'path':str(path),'member':member,'line':line.strip()})
++                    if re.search(r'readelf: (?:Error|Warning):', line):
++                        result['status'] = 'FAIL'
++                        if len(result['findings']) < 30:
++                            result['findings'].append({'path':str(path),'line':line.strip()})
++                require(reader.wait() == 0 and (headers == members if archive else headers == 1),
++                        'could not inspect complete ELF payload: '+str(path))
++    except (OSError, GateError, ValueError) as error:
++        if isinstance(error, GateError) and error.cancel_originated:
++            raise
++        result['status'] = 'FAIL'
++        result['error'] = str(error)
++    print('PGO_RUNTIME_CHECK', json.dumps(result), flush=True)
++    require(not enabled or result['status']=='PASS', 'PGO runtime dependency gate failed')
++    return result
++
++
++def paired_bolt_profile():
++    state_path = os.environ.get('TIZEN_PGO_STATE')
++    if state_path is None:
++        return None
++    state = json.loads(Path(state_path).read_text())
++    profile = state['bolt']
++    require(digest(profile['path']) == profile['sha256'], 'paired BOLT profile identity mismatch')
++    return profile
++
+ 
+ OPTIONS = ['-reorder-blocks=ext-tsp', '-reorder-functions=cdsort', '-split-functions',
+            '-split-all-cold', '-split-eh', '-dyno-stats', '--thread-count=1', '-stale-threshold=5', '-use-old-text']
+@@ -209,11 +406,13 @@ def session_kill_mode():
+ 
+ def session_deadline(deadline, members, *, phase='scan'):
+     if deadline is not None and time.monotonic() >= deadline:
+-        raise SessionDeadlineError(
+-            ('session deadline expired; scan incomplete; last observed members: '
+-             if phase == 'scan' else
+-             'session deadline expired while signalling; last observed members: ')+
+-            session_snapshot(members), members)
++        error = SessionDeadlineError(
++            ({'scan': 'session deadline expired; scan incomplete; last observed members: ',
++              'completed-scan': 'session deadline expired after enumeration; scan incomplete at verification; last observed members: ',
++              'signalling': 'session deadline expired while signalling; last observed members: '}[phase])+
++            (session_snapshot(members) or "(none)"), members)
++        error.completed_enumeration = phase == "completed-scan"
++        raise error
+ 
+ 
+ def kill_session_member(sid, pid, starttime, deadline=None):
+@@ -261,9 +460,9 @@ def live_session_members(sid, deadline=None):
+                     members.append(member)
+     except OSError as error:
+         raise SessionInspectionError('cannot enumerate/read process session; scan incomplete: '+str(error), members) from error
+-    session_deadline(deadline, members)
++    session_deadline(deadline, members, phase='completed-scan')
+     if denied:
+-        raise SessionInspectionError('scan incomplete; member read errors: '+'; '.join(denied), members)
++        raise SessionInspectionError('scan incomplete; member read errors: '+format_session_errors(denied), members)
+     return sorted(members)
+ 
+ 
+@@ -276,12 +475,21 @@ def session_snapshot(members):
+         if comm is None:
+             comm = '?'
+         comm = comm.encode('utf-8', 'surrogateescape').decode('utf-8', 'replace')
++        comm = ''.join(char if char.isprintable() else ascii(char)[1:-1] for char in comm)
+         observed.append('%d:%s (%s)' % (pid, comm, state))
+     if len(members) > 20:
+         observed.append('+%d more' % (len(members)-20))
+     return ', '.join(observed)
+ 
+ 
++def format_session_errors(errors):
++    # Limits are per list. Full error observations still drive the decision.
++    visible = [entry if len(entry) <= 512 else entry[:509]+'...' for entry in list(errors)[:20]]
++    if len(errors) > 20:
++        visible.append('+%d more' % (len(errors)-20))
++    return '; '.join(visible)
++
++
+ def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+     # The unreaped session leader pins the SID. Descendants that call setsid()
+     # themselves escape this session and are outside this tracking model.
+@@ -304,7 +512,7 @@ def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+         return 'partial observations: '+partial_snapshot
+ 
+     def expired():
+-        detail = '; errors: '+'; '.join(errors) if errors else ''
++        detail = '; errors: '+format_session_errors(errors) if errors else ''
+         if last_observed:
+             raise LiveDescendantsError(
+                 'process session %d %s deadline; %s%s' %
+@@ -321,7 +529,7 @@ def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+         try:
+             members = live_session_members(sid, deadline)
+         except SessionInspectionError as error:
+-            final_scan_incomplete = True
++            final_scan_incomplete = not getattr(error, 'completed_enumeration', False)
+             errors[str(error)] = None
+             members = error.members
+             partial_snapshot = session_snapshot(members) if members else ''
+@@ -354,7 +562,7 @@ def wait_session_exit(sid, timeout=10, *, kill=False, deadline=None):
+         if not final_scan_incomplete and not members:
+             if errors:
+                 raise GateError('session cleanup/check failed; '+observation_detail()+
+-                                '; errors: '+'; '.join(errors))
++                                '; errors: '+format_session_errors(errors))
+             return
+         if time.monotonic() >= deadline:
+             expired()
+@@ -448,8 +656,16 @@ def call(argv, log, cwd=None, timeout=300):
+         if previous != signal.SIG_DFL:
+             signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+         session_kill_mode()
++        recorded_argv = list(map(str, argv))
++        recorded_cwd = str(cwd) if cwd else None
++        for field, values in (('argv', recorded_argv), ('cwd', [recorded_cwd] if recorded_cwd is not None else [])):
++            for value in values:
++                try:
++                    value.encode('utf-8')
++                except UnicodeEncodeError as error:
++                    raise GateError('command '+field+' contains non-UTF-8 bytes: '+ascii(value)) from error
+         save(log.with_suffix(log.suffix+'.argv.json'),
+-             {'argv': list(map(str, argv)), 'cwd': str(cwd) if cwd else None,
++             {'argv': recorded_argv, 'cwd': recorded_cwd,
+               'SIGCHLD_original': str(previous), 'SIGCHLD_reset_to_default': previous != signal.SIG_DFL})
+         with log.open('wb') as output:
+             check_cancel()
+@@ -486,6 +702,11 @@ def call(argv, log, cwd=None, timeout=300):
+                 primary = ('COMMAND_ERROR: command exited successfully with live descendants: '+
+                            str(error))
+                 raise GateError(primary) from error
++            except GateError as error:
++                if error.cancel_originated:
++                    raise
++                primary = 'COMMAND_ERROR: command exited successfully; '+str(error)
++                raise GateError(primary) from error
+             # Retire scan/kill authority before a reap can release the SID.
+             _ACTIVE_SESSION = None
+             session_retired = True
+@@ -535,6 +756,14 @@ def call(argv, log, cwd=None, timeout=300):
+             signal.signal(signal.SIGCHLD, previous)
+ 
+ def profile_unpack(source, output):
++    paired = paired_bolt_profile()
++    if paired is not None:
++        output = Path(output)
++        require(not output.exists(), 'BOLT profile destination already exists')
++        shutil.copyfile(paired['path'], output)
++        profile_identity(output)
++        return {'bytes': output.stat().st_size, 'sha256': digest(output)}
++
+     output = Path(output)
+     require(not output.exists(), 'profile output must be new')
+     output.parent.mkdir(parents=True, exist_ok=True)
+@@ -2077,6 +2306,12 @@ def main():
+     s=sub.add_parser('compare-root');s.add_argument('root');s.add_argument('baseline');s.add_argument('after')
+     s=sub.add_parser('install');s.add_argument('root');s.add_argument('candidate');s.add_argument('state');s.add_argument('identity')
+     s=sub.add_parser('post');s.add_argument('root');s.add_argument('state');s.add_argument('ordinary');s.add_argument('work');s.add_argument('--resource-dir');s.add_argument('--debugfiles-list',required=True)
++    s=sub.add_parser('pgo-prepare')
++    s.add_argument('manifest'); s.add_argument('project', choices=('T','D'))
++    s.add_argument('work'); s.add_argument('profile'); s.add_argument('--bolt-profile')
++    s=sub.add_parser('pgo-check-ninja'); s.add_argument('build')
++    s=sub.add_parser('pgo-post'); s.add_argument('root'); s.add_argument('build')
++    s.add_argument('--enabled', action='store_true')
+     s=sub.add_parser('disk-report');s.add_argument('stage',choices=['begin','tool-built','pipeline','post']);s.add_argument('--build');s.add_argument('--work');s.add_argument('--root')
+     s=sub.add_parser('disk-diagnose');s.add_argument('step');s.add_argument('log');s.add_argument('--build');s.add_argument('--work');s.add_argument('--root')
+     s=sub.add_parser('run-step');s.add_argument('step');s.add_argument('log');s.add_argument('--output');s.add_argument('--success-marker');s.add_argument('argv',nargs=argparse.REMAINDER)
+@@ -2133,9 +2368,23 @@ def main():
+     elif a.cmd=='compare-root':result=compare_root(a.root,json.loads(Path(a.baseline).read_text()),a.after)
+     elif a.cmd=='install':
+         install_candidate(a.root,a.candidate,a.state,json.loads(Path(a.identity).read_text()),announce=True,identity_path=a.identity);return
++    elif a.cmd=='pgo-prepare':
++        result=prepare_pgo(a.manifest,a.project,a.work,a.profile,a.bolt_profile)
++    elif a.cmd=='pgo-check-ninja':
++        result=verify_pgo_ninja(a.build,True)
++    elif a.cmd=='pgo-post':
++        if not a.enabled:
++            verify_pgo_ninja(a.build)
++        result=pgo_runtime_dependencies(a.root,a.enabled)
+     elif a.cmd=='post':
+         result=post_gate(a.root,json.loads(Path(a.state).read_text()),a.ordinary,a.work,
+-                         a.resource_dir,a.debugfiles_list);save(Path(a.work)/'post-result.json',result)
++                          a.resource_dir,a.debugfiles_list);save(Path(a.work)/'post-result.json',result)
++        # The RPM's existing post invocation keeps the default spec expansion stable.
++        if os.environ.get('RPM_BUILD_ROOT') == a.root:
++            enabled = os.environ.get('TIZEN_PGO_STATE') is not None
++            if not enabled:
++                verify_pgo_ninja(Path(a.ordinary).parent.parent)
++            pgo_runtime_dependencies(a.root,enabled)
+     print(json.dumps(result,ensure_ascii=False),flush=True)
+ 
+ def cli():
+diff --git a/packaging/clang-pgo.fdata.xz b/packaging/clang-pgo.fdata.xz
+new file mode 100644
+index 0000000000000000000000000000000000000000..ad19dc4cd3280b17c4b96742e1074b59eb9460b2
+GIT binary patch
+literal 68
+zcmexsUKJ6=z`*kC+7>q^21Q0O1_p)_{ill=8Mp&{9GzV~{C!+pgSZ&h9DhIUY)GvX
+Y1EUJhGKm{E<hOmUWdy2aV2O+Z0N1b;1poj5
+
+literal 0
+HcmV?d00001
+
+diff --git a/packaging/clang-pgo.profdata.xz b/packaging/clang-pgo.profdata.xz
+new file mode 100644
+index 0000000000000000000000000000000000000000..ad19dc4cd3280b17c4b96742e1074b59eb9460b2
+GIT binary patch
+literal 68
+zcmexsUKJ6=z`*kC+7>q^21Q0O1_p)_{ill=8Mp&{9GzV~{C!+pgSZ&h9DhIUY)GvX
+Y1EUJhGKm{E<hOmUWdy2aV2O+Z0N1b;1poj5
+
+literal 0
+HcmV?d00001
+
+diff --git a/packaging/llvm-profiles.manifest b/packaging/llvm-profiles.manifest
+new file mode 100644
+index 000000000000..8d2f6189d132
+--- /dev/null
++++ b/packaging/llvm-profiles.manifest
+@@ -0,0 +1,6 @@
++{
++  "format": 1,
++  "llvm_version": "22.1.8",
++  "status": "PLACEHOLDER",
++  "profiles": []
++}
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index c2f74bfe2d01..f7e7831a8635 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -275,6 +275,10 @@ def classify_options(argv, arch='x86_64'):
+               or token in ('-frecord-command-line', '-frecord-gcc-switches')
+               or token.startswith('-std=')):
+             category, reason = 'ir', 'function/module attributes, metadata or frontend semantics'
++        elif token.startswith('-fprofile-instr-use=') and token.split('=', 1)[1]:
++            category, reason = 'ir', 'profile-use weights and entry counts already materialized in IR'
++        elif re.match(r'-f(?:no-)?(?:cs-)?(?:profile|auto-profile|coverage-mapping)', token):
++            raise ValueError('uncertified profile option: '+token)
+         elif token == '-flto=thin':
+             category, reason = 'irrelevant', 'pre-link bitcode format already materialized; never replay LTO'
+         elif re.fullmatch(r'--param=ssp-buffer-size=\d+', token):
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index ce6284ae26e5..06f9144ec1f8 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -1,6 +1,7 @@
+ # Quickbuild sandbox: x86_64 BOLT is on by default; other architectures unchanged.
+ %bcond_without llvm_speedup
+ %bcond_without hybrid_link
++%bcond_with clang_pgo
+ %ifarch x86_64
+ %bcond_without clang_bolt
+ %else
+@@ -8,6 +9,7 @@
+ %endif
+ %global llvm_hybrid_enabled 0
+ %global llvm_bolt_enabled 0
++%global llvm_pgo_enabled 0
+ %if %{with llvm_speedup}
+ %if %{with hybrid_link}
+ %global llvm_hybrid_enabled 1
+@@ -15,6 +17,18 @@
+ %if %{with clang_bolt}
+ %global llvm_bolt_enabled 1
+ %endif
++%ifarch x86_64
++%if %{with clang_pgo}
++%global llvm_pgo_enabled 1
++%define llvm_pgo_sources Source1202: clang-pgo.profdata.xz \
++Source1203: clang-pgo.fdata.xz \
++Source1204: llvm-profiles.manifest
++%global llvm_pgo_post_enabled --enabled
++%if %{llvm_bolt_enabled}
++%define llvm_pgo_bolt_source --bolt-profile "%{SOURCE1203}"
++%endif
++%endif
++%endif
+ %endif
+ 
+ %define keepstatic 1
+@@ -66,7 +80,7 @@ Source1004: mlgo_x86_model.tar.gz
+ Source1005: llvm-static-archives-native.py
+ Source1200: clang-bolt-v2.fdata.xz
+ Source1201: clang-bolt-helper.py
+-
++%{?llvm_pgo_sources}
+ %ifarch x86_64
+ BuildRequires: util-linux
+ %endif
+@@ -367,9 +381,21 @@ MLGO_REQUIRED_RUNTIME_OBJECTS="xla_compiled_cpu_function.cc.o cpu_function_runti
+ 
+ mkdir -p build
+ cd build
++%if %{llvm_pgo_enabled}
++%if %{llvm_release_build}
++%global llvm_pgo_project D
++%else
++%global llvm_pgo_project T
++%endif
++python3 -B %{SOURCE1201} pgo-prepare "%{SOURCE1204}" %{llvm_pgo_project} "$PWD/pgo-profiles" "%{SOURCE1202}"%{?llvm_pgo_bolt_source} || exit 1
++%endif
+ cmake \
+     -G Ninja \
+     -DTIZEN=1 \
++%if %{llvm_pgo_enabled}
++    -DLLVM_PROFDATA_FILE="$PWD/pgo-profiles/clang.profdata" \
++    -DTIZEN_PGO_EXCLUDE_RUNTIMES=ON \
++%endif
+ %ifarch x86_64
+     -DCMAKE_C_COMPILER=clang \
+     -DCMAKE_CXX_COMPILER=clang++ \
+@@ -468,6 +494,10 @@ cmake \
+     -DLLVM_RAEVICT_MODEL_PATH=none \
+ %endif
+     ../llvm
++%if %{llvm_pgo_enabled}
++test -f build.ninja || exit 1
++python3 -B %{SOURCE1201} pgo-check-ninja "$PWD" || exit 1
++%endif
+ 
+ %if 0%{mlgo_verify_configure_only}
+   # ---- configure-only probe: guard against §0 traps; check sentinels, GBS exit code non-0 is expected ----
+@@ -579,6 +609,9 @@ echo TIZEN_HYBRID_LINK_OK
+ 
+ %install
+ cd build
++%if %{llvm_pgo_enabled}
++export TIZEN_PGO_STATE="$PWD/pgo-profiles/state.json"
++%endif
+ cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
+ %ifarch x86_64
+ %if %{llvm_bolt_enabled}
+@@ -988,5 +1021,10 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+     python3 -B %{SOURCE1201} post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json" "%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22" "%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate" --resource-dir "%{buildroot}%{_libdir}/clang/%{llvm_version}" --debugfiles-list "%{_builddir}/%{buildsubdir}/debugfiles.list" || bolt_status_exit $? \
+     echo BOLT_POST_GATE_PASS \
+     bolt_optional python3 -B %{SOURCE1201} disk-report post
++%else
++%global __pgo_original_spec_install_post %{__spec_install_post}
++%define __spec_install_post \
++    %{__pgo_original_spec_install_post} \
++    python3 -B %{SOURCE1201} pgo-post "%{buildroot}" "%{_builddir}/%{buildsubdir}/build" %{?llvm_pgo_post_enabled} || exit 1
+ %endif
+ %endif

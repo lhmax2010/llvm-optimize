@@ -1712,3 +1712,12 @@ H5=ed922413c19b01d07e0ec6547771267f40ab5469，tree=66aa08d9e6717b904a0eb390096d9
 备份检查覆盖 26 个 bundle。碰到目录权限及文件状态断言后停止删除，释放 0 B。旧 PGO 构建已确认部分 compiler-rt/openmp 命令采到 profile-use，完整 build.ninja 未保留。计数方法保持 UNKNOWN。离线配对入口完成 dry-run，127 N0 资源策略及正式构建的接线仍待核对。
 
 设计 v10 记录乙一、作用范围与发货门禁、PS5 开关、Base-Dev 分包测速和第二批顺序。详见[131 号报告](131_pgo_preparation.md)和[设计 v10](design/tizen_llvm_speed_design_v10.md)。
+
+
+## 2026-11-18：133-D 续做
+
+- A 清理了 3 个已核验的空文件，释放 0 B。73 个获准候选因目录权限保留，含 7 个 bundle。无法读取项为 0。[清理清单](131_backup_cleanup.md#133-d-续做)
+- B 通过。历史和新增 761/761，实际参数转换另验 1 项，三架构默认展开仅差宏定义空行，48/48 解析。R 为 `2b9031dd9ab46e3fb142da13e64624de3896e8be`，tree `ef9c45fb4f6b01f7ac410271153ff7b08552985a`。[PGO 续做](131_pgo_preparation.md#133-d-b-续做)
+- D 的生产匹配计数保持 UNKNOWN。完成 4 类基础真值验证，COMDAT 在一次夹具修正后因 profile key 解析失败停止。[匹配方法](131_pgo_match_method.md#133-d-d-续做)
+- N3 PARTIAL。I 为 `a4d024f0f35630a743653af1542cb02e539fced6`。按预期复现 Found erroneous configuration，I 的链接、镜像编译单元、runtime 图全部满足。未完成缺少导出 tar 的补充 nobuild 解析。[N3 续做](112_361624_combined_validation.md#133-d-续做-n3)
+- 汇总时 /home 可用 137,630,457,856 B（128.18 GiB）。

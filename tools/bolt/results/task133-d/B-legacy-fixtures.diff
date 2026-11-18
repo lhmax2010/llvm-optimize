@@ -1,0 +1,66 @@
+--- tests/test_109_regressions.py (old)
++++ tests/test_109_regressions.py (new)
+@@ -7,7 +7,14 @@
+ C=S/'packaging/llvm-static-archives-native.py'
+ HERE=Path(__file__).parent
+ AD=HERE/'external/adapted'
+-M={int(k):v for k,v in json.loads((HERE/'external/line-map.json').read_text()).items()}
++def _locate_injection(text, pattern, offset):
++ lines=text.splitlines()
++ matches=[i+1+offset for i in range(len(lines)) if lines[i:i+len(pattern)]==pattern]
++ if len(matches)!=1:
++  raise AssertionError(f'injection anchor must be unique: {pattern!r}; matches={matches}')
++ return matches[0]
++M={int(k):_locate_injection(H.read_text(),v['lines'],v['offset'])
++   for k,v in json.loads((HERE/'external/injection-anchors.json').read_text()).items()}
+ OBS=[]
+ if ctypes.CDLL(None).prctl(36,1,0,0,0)!=0:raise RuntimeError('test subreaper unavailable')
+ def load():
+@@ -71,7 +78,7 @@
+   return p
+  def claude_h2(self,mode,oldline):
+   new_line=M.get(oldline,oldline)
+-  p=self.run_probe('h2.py',[H,mode,new_line,self.d,M[254]],timeout=20)
++  p=self.run_probe('h2.py',[H,mode,new_line,self.d,M[254],M[256]],timeout=20)
+   if p.returncode==0:
+    self.assertIn('RAISED GateError CANCELLED',p.stdout)
+   else:self.assertIn(p.returncode,[-signal.SIGTERM,-signal.SIGHUP])
+--- tests/external/adapted/h2.py (old)
++++ tests/external/adapted/h2.py (new)
+@@ -5,7 +5,7 @@
+ pidfile = os.path.join(workdir, 'child.pid')
+ argv = ['/bin/sh', '-c', 'echo $$ > %s; exec sleep 30' % pidfile]
+ fired = {'first': False, 'second': False}
+-spawn_line = int(sys.argv[5])
++spawn_line, deferred_line = map(int, sys.argv[5:7])
+ def local(frame, event, arg):
+     if event == 'line':
+         if frame.f_lineno == spawn_line and not fired['first']:
+@@ -14,10 +14,10 @@
+                 h._CANCEL_SIGNAL = signal.SIGTERM          # first signal already handled
+             elif mode == 'two-real-at-line':
+                 pass
+-        if mode == 'deferred-then-third' and frame.f_lineno == 465 and not fired.get('d'):
++        if mode == 'deferred-then-third' and frame.f_lineno == deferred_line and not fired.get('d'):
+             fired['d'] = True
+             os.kill(os.getpid(), signal.SIGTERM)
+-        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != 465:
++        if mode == 'deferred-then-third' and frame.f_lineno == line and fired.get('d') and not fired['second'] and line != deferred_line:
+             fired['second'] = True
+             os.kill(os.getpid(), signal.SIGHUP)
+         if frame.f_lineno == line and not fired['second'] and mode in ('second-at-line', 'two-real-at-line'):
+--- tests/test_124.py (old)
++++ tests/test_124.py (new)
+@@ -11,7 +11,11 @@
+    with self.assertRaises(h.SessionDeadlineError) as e:h.live_session_members(42,1)
+   self.assertIn('session deadline expired; scan incomplete; last observed members:',str(e.exception));self.assertNotIn('while signalling',str(e.exception))
+  def test_signalling_deadline_has_no_incomplete(self):
+-  h=self.h;clock=[0.];members=[(31,'S',1,'first'),(32,'S',2,'second')]
++  h=self.h;clock=[0.];members=[]
++  for pid, name in ((31,'first'),(32,'second')):
++   member=h._StatTuple((pid,'S',pid-30))
++   member.comm=name
++   members.append(member)
+   def send(*args):clock[0]=2.
+   with patch.object(h,'time',types.SimpleNamespace(monotonic=lambda:clock[0],sleep=lambda d:None)),patch.object(h,'live_session_members',return_value=members),patch.object(h,'kill_session_member',side_effect=send):
+    with self.assertRaises(h.LiveDescendantsError) as e:h.wait_session_exit(42,1,kill=True)

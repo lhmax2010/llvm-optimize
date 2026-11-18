@@ -79,3 +79,76 @@ FileNotFoundError: [Errno 2] No such file or directory: '/home/linhao/Toolchain/
 [准入观察](../../tools/bolt/results/night-102-112-20261116/admission-20261116T193634.json)；[看门狗观察](../../tools/bolt/results/night-102-112-20261116/watchdog-20261116T193634.json)。
 
 最终交付采样 2026-11-16T21:18:02.827097-08:00：memory.peak=952078336B，memory.events原文见[交付资源记录](../../tools/bolt/results/night-102-112-20261116/step4-delivery-resource-snapshot.json)，OOM和看门狗触发均为0。此采样在最后记录提交及服务退出之前，不冒称覆盖退出后的数值。
+
+
+## 133-D 续做 N3
+
+**PARTIAL。** 候选 I 为 `a4d024f0f35630a743653af1542cb02e539fced6`，tree 为 `a982f88c18a6f73d97b2e861b74316d64214d9ae`。PS5 基线配置成功，按预期复现 Found erroneous configuration，I 的链接、镜像编译单元、runtime 图全部满足。主 spec 的默认三架构、八个开关组合和五个场景全部完成平台展开。追加的 rpmbuild `--nobuild` 门槛受工作树无源 tar 限制。
+
+### 对象、提交和冲突
+
+三个输入大小与 SHA256 全部符合。只读 fetch PS1 `da885208aeb52f55c448ff46873d242346727522`，`ls-tree` 找到 `bolt/CMakeLists.txt`，其源码根为独立工作树根目录。先 `git am` v3，验证只改动两个 spec。随后按 A1–A4 各建一提交，恢复 18 个 `DISABLE_LLVM_LINK_LLVM_DYLIB` 位置为变量，由 standalone 和共享 LLVM 条件控制；镜像实现和定义受同一条件控制。A5 删除了 spec 里重复的手工 merge-fdata 安装，保留 CMake 的 `add_bolt_tool` 安装和 RPM 文件清单。llvm-bat-dump 的手工安装保留。
+
+将 PS1 及其后的 C1 提交依次拣选到 PS5。唯一冲突是 `packaging/llvm.spec` 安装入口。使用 HQ 的 `DESTDIR` 和 OpenMP 兼容链接清理，然后运行 PS5 原有 BOLT 安装后流程。清理位于 PS5 安装基线快照之前。其余冲突为零，保留开关、混合链接、BOLT 后处理、`debugfiles.list` 和原 helper。
+
+[C1 diff](../../tools/bolt/results/review-361624/combined/C1.diff)、[C1 提交顺序](../../tools/bolt/results/task133-d/N3-C1-final.json)、[A2 的 18 个位置](../../tools/bolt/results/task133-d/N3-A2-locations.json)、[冲突原文](../../tools/bolt/results/task133-d/N3-install-conflict.diff)、[解决原文](../../tools/bolt/results/task133-d/N3-install-resolution.txt)、[PS5 到 I 的 diff](../../tools/bolt/results/task133-d/N3-I.diff)。
+
+### spec 检查
+
+16 组平台展开全通过，变更归类为三项 Obsoletes、MLGO 增量配置缺资产时的解包、显式 SHA1 build-id、DESTDIR 与 OpenMP 兼容链接、文件列表顺序。所有展开中 BOLT、混合链接和关键门禁标记的次数与 PS5 相同。
+
+| llvm-tools-subpkgs | bolt_targets | 库后缀 | bolt Requires |
+|---|---|---|---|
+| x86_64 | X86;AArch64 | 64 | libllvm = 22.1.8 |
+| aarch64 | AArch64 | 64 | libllvm = 22.1.8 |
+| armv7l / i586 | ExclusiveArch 排除 | 不适用 | 不适用 |
+
+x86_64 和 aarch64 的 BuildRequires 原文见证据。独立 `rpmbuild -bp --nobuild --nodeps` 确认 armv7l/i586 被拒绝。其余 12 次缺少导出的 `llvm-22.1.8.tar.gz`。原始展开和两种解析工具的范围分别记录。
+
+[展开和 BuildRequires 原文](../../tools/bolt/results/task133-d/N3-spec.json)、[差异逐组归类](../../tools/bolt/results/task133-d/N3-expanded-classification.json)、[nobuild 的全部回执](../../tools/bolt/results/task133-d/N3-nobuild.json)。
+
+### CMake 配置与 Ninja 图
+
+| 变体 | 返回码 | 时长 | 结果 |
+|---|---:|---:|---|
+| (i) PS5 | 0 | 347.4s | PS5 基线配置成功 |
+| (ii) PS5 + 361624 PS1 | 1 | 342.6s | 按预期复现 Found erroneous configuration |
+| (iii) I | 0 | 343.1s | I 的链接、镜像编译单元、runtime 图全部满足 |
+
+配置使用 x86_64 默认展开及 74 号实际编译参数，匹配的平台工具、sysroot 和 MLGO 资产，各变体加上 BOLT 项目，开启 runtime 以获得 ExternalProject 命令。安装与项目构建命令均未执行。CMake 自身执行了编译器探针。首次配置时私有 clang 的资源目录未随工具复制，导致缺少 `stddef.h`，外层误报 libstdc++ 版本过旧。修正一次，显式引用平台资源目录，重复执行三个配置。每个配置有 45 分钟上限。
+
+(ii) 的错误原文
+
+~~~text
+-- Skipping FreeBSDKernel plugin due to missing libfbsdvmcore
+-- Symbols (liblldb): exporting all symbols from the lldb namespace
+-- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE)
+-- Targeting X86 in llvm-bolt
+-- Building BOLT runtime libraries for unknown
+CMake Error at cmake/modules/LLVMProcessSources.cmake:113 (message):
+  Found erroneous configuration for source file X86BoltMnemonicTables.cpp
+
+  LLVM's build system enforces that all source files are added to a build
+  target, that exactly one build target exists in each directory, and that
+  this target lists all files in that directory.  If you want multiple
+  targets in the same directory, add PARTIAL_SOURCES_INTENDED to the target
+  specification, though it is discouraged.
+
+  Please update
+  /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/src-raw/bolt/lib/Target/X86/CMakeLists.txt
+
+
+Call Stack (most recent call first):
+  cmake/modules/LLVMProcessSources.cmake:59 (llvm_check_source_file_list)
+  cmake/modules/AddLLVM.cmake:519 (llvm_process_sources)
+~~~
+
+(iii) 链接行摘录
+
+~~~text
+lib64"  lib64/libLLVMX86CodeGen.a  lib64/libLLVMX86AsmParser.a  lib64/libLLVMX86Desc.a  lib64/libLLVMX86Disassembler.a  lib64/libLLV
+~~~
+
+I 的 llvm-bolt 组件库包含 `libLLVMX86Desc.a`，动态 `libLLVM.so` 匹配为 False。镜像编译单元命中 0 项。仅归一化两个工作区路径后，runtime ExternalProject 配置命令等同于 PS5：True；runtime 源码等同：True。未执行独立 runtime 子项目的生成或构建。
+
+[首次配置故障原文](../../tools/bolt/results/task133-d/N3-cmake.json)、[修正后的命令和日志索引](../../tools/bolt/results/task133-d/N3-cmake2.json)、[链接与 runtime 图证据](../../tools/bolt/results/task133-d/N3-graph-summary.json)、[本地日志和大文件路径、字节与 SHA256](../../tools/bolt/results/task133-d/N3-local-artifacts.json)。

@@ -62,3 +62,27 @@ assert p.stat()==st
 | `36-qb_analysis/work3_findutils-01add93a/repository.bundle` | 34,528,541 | 33 | 33 | 保留。有未证明可达的提交 |
 
 [重复 bundle 的两条路径与 SHA256](../../tools/bolt/results/task131/backup-duplicates.json)。[删除结果及空间](../../tools/bolt/results/task131/backup-space.json)。
+
+
+## 133-D 续做
+
+**部分完成。** 复核了 76 个曾获准删除的候选中的实际可删项。3 个文件与已推送的空 Git blob 相同，删除后实际释放 **0 B**。其余 73 项因目录权限保留，未使用特权方式删除。
+
+删除路径相对于备份目录，三项均为 0 B。
+
+- `00-source/root-5645c783/bundle-create.txt`
+- `00-source/root-e27851fd/bundle-create.txt`
+- `00-source/root-759fbb28/bundle-create.txt`
+
+| 结果 | 项数 | 依据 |
+|---|---:|---|
+| 已删除 | 3 | 文件身份、大小、SHA256 和 Git blob 复核后逐项删除 |
+| 权限受阻 | 73 | 66 个非 bundle 文件删除返回 Errno 13。7 个 bundle 的父目录是 uid 0、0755，未尝试删除。重复 bundle 已包含在这 7 项中 |
+| 其他保留 | 895 | 没有删除依据或不在授权的已验证清单 |
+| 无法读取 | 0 | 本轮未遇到读取阶段的 PermissionError |
+
+这 73 项共 30,268,330,050 B。读到了 131 的 bundle 图核对及重复 SHA 记录；未复算未删除 bundle 的远端可达图。非 bundle 删除前重新关联了当前公布的 GitHub 引用，逐个核对同一文件描述符的 SHA256、Git blob 及不含 atime 的身份字段。删除前后各路径均限制于原备份目录，拒绝跟随符号链接。
+
+`/home` 可用空间从 147,606,310,912 B 变为 147,606,007,808 B（137.47 GiB）。可用量的净变化不能归到这三个 0 B 文件。
+
+[删除及 blob 核对](../../tools/bolt/results/task133-d/A-deleted.json)、[73 个权限受阻项目](../../tools/bolt/results/task133-d/A-blocked.json)、[其他 895 项及保留依据](../../tools/bolt/results/task133-d/A-retained.json)、[无法读取清单](../../tools/bolt/results/task133-d/A-unreadable.json)、[df 与远端引用核对](../../tools/bolt/results/task133-d/A-summary.json)。

@@ -1,0 +1,116 @@
+[
+  {
+    "argv": [
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/tizen-tools/bin/clang-22",
+      "--target=x86_64-tizen-linux-gnu",
+      "-O3",
+      "-c",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/probe.c",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/profile-use-native.o",
+      "-fprofile-instr-use=/home/linhao/Toolchain/development/llvm-optimize/temp/pgo-profiles-keep-20261102/clang.profdata"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/tizen-tools/bin/clang-22",
+      "--target=x86_64-tizen-linux-gnu",
+      "-O3",
+      "-c",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/probe.c",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/instrumented.o",
+      "-fprofile-generate=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/tizen-tools/bin/clang-22",
+      "--target=x86_64-tizen-linux-gnu",
+      "-O3",
+      "-c",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/probe.c",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/profile-use-bitcode.o",
+      "-fprofile-instr-use=/home/linhao/Toolchain/development/llvm-optimize/temp/pgo-profiles-keep-20261102/clang.profdata",
+      "-frecord-gcc-switches",
+      "-flto=thin"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/tizen-tools/bin/llvm-dis",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/profile-use-bitcode.o",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/profile-use.ll"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/usr/bin/ar",
+      "rc",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/test_disabled_instrumented_archive_logged/usr/lib64/libprobe.a",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/instrumented.o"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/usr/bin/ar",
+      "rc",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/test_instrumented_archive_rejected/usr/lib64/libprobe.a",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/instrumented.o"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/usr/bin/ar",
+      "rc",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/test_profile_use_only_archive_accepted/usr/lib64/libprobe.a",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/profile-use-native.o"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/tizen-tools/bin/clang-22",
+      "--no-default-config",
+      "--target=x86_64-tizen-linux-gnu",
+      "-x",
+      "ir",
+      "-O3",
+      "-fno-function-sections",
+      "-fno-data-sections",
+      "-funique-section-names",
+      "-faddrsig",
+      "-ffp-contract=on",
+      "-c",
+      "-fPIE",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/profile-use-bitcode.o",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/B-pgo-fixtures/converted.o"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+]

@@ -29,3 +29,25 @@ STOP: could not link fixture with the Tizen toolchain
 ~~~
 
 全匹配、完全缺失、部分 hash 不匹配、仅 COMDAT 不匹配、跨单元重复、执行次数零、同名局部函数、同名 ODR 定义 hash 不同、匹配后被删除及克隆等真值夹具均未完成。产物门禁记录 UNKNOWN。[首次命令和完整回执](../../tools/bolt/results/task131/match-probes.json)。[一次修正后的回执](../../tools/bolt/results/task131/match-probes-retry.json)。
+
+
+## 133-D D 续做
+
+**UNKNOWN。** 将平台 clang 和 lld 作为私有 ELF 直接运行。先探测了原 PT_INTERP 与平台 `LD_LIBRARY_PATH` 的组合，返回 SIGSEGV。仅在私有副本中改用匹配的 Tizen PT_INTERP，保留历史原件。Tizen clang 22.1.8 的 `--version` 和小程序编译、链接成功。
+
+IR 对照在 `opt pgo-instr-gen` 提取 profile key 和 CFG hash，用 LLVM 22.1.8 读入手工限定的 IR profile，在 `opt pgo-instr-use` 的输入实例上对照诊断与 entry-count。已通过全匹配、无缺失的健康单元、完全缺失和部分 hash 不匹配。平台 `opt -stats` 接受该选项，但这几份运行未输出所需的全量计数。
+
+初次 COMDAT 夹具在 systemd 传参时将 `$name` 展开成了空字符串。保留原始错误，修正一次后重跑。重跑中 LLVM 正确生成 `@__profn_a = linkonce_odr hidden constant [1 x i8] c"a"`，夹具只识别 `private constant`，因此第二次准备错误停止。本次没有通过 COMDAT、跨单元重复、零计数、同名局部、不同 hash 的 ODR、匹配后删除和克隆的真值门槛。没有给出生产 PGO 匹配率。
+
+~~~text
+error: expected top-level entity
+ = comdat any
+ ^
+AssertionError
+~~~
+
+~~~text
+KeyError: '@__profn_a'
+~~~
+
+[工具最初探测](../../tools/bolt/results/task133-d/tool-direct-probe.json)、[匹配加载器的工具校验](../../tools/bolt/results/task133-d/tool-direct-rebound.json)、[首次夹具命令与原文](../../tools/bolt/results/task133-d/D-commands.json)、[修正重跑命令与原文](../../tools/bolt/results/task133-d/D-commands-retry.json)、[已完成夹具的逐实例对照](../../tools/bolt/results/task133-d/D-fixtures-retry.json)。

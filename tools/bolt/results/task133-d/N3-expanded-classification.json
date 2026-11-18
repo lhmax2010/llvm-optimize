@@ -1,0 +1,1794 @@
+[
+  {
+    "tag": "default-x86_64",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        1,
+        1
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        1,
+        1
+      ],
+      "installed-baseline": [
+        2,
+        2
+      ],
+      "tool-verify": [
+        1,
+        1
+      ],
+      "compare-root ": [
+        1,
+        1
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "default-aarch64",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        0,
+        0
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        0,
+        0
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_aarch_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.aarch64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.aarch64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "default-armv7l",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        0,
+        0
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        0,
+        0
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_arm_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.arm cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/lib/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/lib/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/lib/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "switch-000",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        0,
+        0
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "switch-001",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        0,
+        0
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "switch-010",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        0,
+        0
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "switch-011",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        0,
+        0
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "switch-100",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        0,
+        0
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "switch-101",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        0,
+        0
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        1,
+        1
+      ],
+      "installed-baseline": [
+        2,
+        2
+      ],
+      "tool-verify": [
+        1,
+        1
+      ],
+      "compare-root ": [
+        1,
+        1
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "switch-110",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        1,
+        1
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "switch-111",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        1,
+        1
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        1,
+        1
+      ],
+      "installed-baseline": [
+        2,
+        2
+      ],
+      "tool-verify": [
+        1,
+        1
+      ],
+      "compare-root ": [
+        1,
+        1
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "five-on",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        1,
+        1
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        1,
+        1
+      ],
+      "installed-baseline": [
+        2,
+        2
+      ],
+      "tool-verify": [
+        1,
+        1
+      ],
+      "compare-root ": [
+        1,
+        1
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "five-off",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        1,
+        1
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "five-armv7l",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        0,
+        0
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        0,
+        0
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_arm_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.arm cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/lib/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/lib/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/lib/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "five-aarch64",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        0,
+        0
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        0,
+        0
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_aarch_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.aarch64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.aarch64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.aarch64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  },
+  {
+    "tag": "five-rollback",
+    "PS5_I_markers": {
+      "-DTIZEN_HYBRID_LINK=ON": [
+        1,
+        1
+      ],
+      "BOLT_PROFILE_SOURCE=": [
+        0,
+        0
+      ],
+      "installed-baseline": [
+        0,
+        0
+      ],
+      "tool-verify": [
+        0,
+        0
+      ],
+      "compare-root ": [
+        0,
+        0
+      ],
+      "BOLT_POST_GATE_PASS": [
+        0,
+        0
+      ],
+      "debugfiles.list": [
+        0,
+        0
+      ],
+      "install_main": [
+        0,
+        0
+      ],
+      " --debug-info": [
+        1,
+        1
+      ]
+    },
+    "static_diff": [
+      {
+        "category": "obsolete split subpackages",
+        "lines": [
+          "+Obsoletes: clang-analyzer <= 22.1.8-1",
+          "+Obsoletes: llvm-xray <= 22.1.8-1",
+          "+Obsoletes: llvm-prof-tools <= 22.1.8-1"
+        ]
+      },
+      {
+        "category": "MLGO incremental setup",
+        "lines": [
+          "+# Ensure verify assets exist even when %prep is skipped (incremental builds)",
+          "+if [ ! -d mlgo_verify_assets ]; then",
+          "+    mkdir -p mlgo_verify_assets",
+          "+    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/I/packaging/mlgo_x86_model.tar.gz",
+          "+fi"
+        ]
+      },
+      {
+        "category": "explicit build ID",
+        "lines": [
+          "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\",
+          "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\",
+          "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        ]
+      },
+      {
+        "category": "DESTDIR and OpenMP symlinks",
+        "lines": [
+          "-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake",
+          "+# DESTDIR, not a prefix under buildroot: the openmp install script creates its",
+          "+# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build",
+          "+# environment's /usr/lib when DESTDIR is unset.",
+          "+DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake",
+          "+# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package",
+          "+# provides libgomp.so and libgomp.so.1 on the target.",
+          "+rm -f /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/parse-n3/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/bin/intercept-build",
+          "-/usr/bin/intercept-build"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "+/usr/libexec/analyze-c++",
+          "+/usr/libexec/analyze-cc",
+          "+/usr/libexec/c++-analyzer",
+          "+/usr/libexec/ccc-analyzer",
+          "+/usr/libexec/intercept-c++",
+          "+/usr/libexec/intercept-cc"
+        ]
+      },
+      {
+        "category": "package file list/order",
+        "lines": [
+          "-/usr/libexec/analyze-c++",
+          "-/usr/libexec/analyze-cc",
+          "-/usr/libexec/c++-analyzer",
+          "-/usr/libexec/ccc-analyzer",
+          "-/usr/libexec/intercept-c++",
+          "-/usr/libexec/intercept-cc"
+        ]
+      }
+    ]
+  }
+]

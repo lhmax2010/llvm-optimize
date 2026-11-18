@@ -80,3 +80,45 @@ B 生成脚本第一次锚点未匹配且未写出 helper，修正其缩进锚�
 [本地证据清单](../../tools/bolt/results/task131/local-artifacts.json)。
 
 既有测试还写出了一个位于 126 号夹具目录的已跟踪诊断 JSON。此次生成副本保存在本地，原文件已按开始时的 HEAD 逐字节恢复，归档没有包含这项旧文件改动。
+
+
+## 133-D B 续做
+
+**PASS。** 既有 20 套件 743/743，131 新增 18/18，合计 **761/761**。同参数 ThinLTO 验证另作 1 项，compiler-rt/OpenMP CMake 块各复核 1 项。RPM 平台解析 48/48。
+
+1. 将 23 项按行号触发的信号夹具改为查找唯一源码锚点。每个锚点与旧版的同一源码行及上下文逐字匹配，保留 `sys.settrace` 行事件与注入时机。遇到缺失或重复锚点直接失败。没有修改任何断言。
+2. 旧诊断中的 `scan incomplete at verification` 已在 131 基底的对应路径保留，复跑通过，无需改文字。
+3. `test_124` 的伪进程成员改用三元素 `_StatTuple` 与附加 `comm` 属性，断言不变。
+4. Tizen Clang 22.1.8 用 58 号 D 构建采样第 1722 行的实际参数产生 profile-use ThinLTO。替换样例输入输出、include 目录的根路径和现存同一合并 profile 路径。转换器把该参数分类为 IR 已承载，后端命令省略它，生成机器码 ELF；未扩大选项白名单。样例函数并未作为历史训练函数计数。
+5. `llvm.spec` 只在 PGO 开启时设置 `TIZEN_PGO_EXCLUDE_RUNTIMES`。compiler-rt/OpenMP 的 CMake 子目录只在该开关下删除继承的 PGO 参数并清空子目录的 `LLVM_PROFDATA_FILE`。核对了两段 CMake 对六类参数变量的处理以及 37 个历史运行库目标、157 个关联边。Ninja 检查要求运行库无 PGO 参数，主构建 C/C++ 只使用已核验路径。此次未运行 PGO 完整构建或独立 runtime Ninja 图。
+6. 131 留下的 25 项失败全部清零。此轮完整运行没有失败，不需要第二次修改断言。
+7. x86_64、armv7l、aarch64 默认展开各新增 14 个宏定义空行，去掉空行后逐字节等于 PS5。16 × 3 开关解析全部通过。
+8. 本地候选 R 为 `2b9031dd9ab46e3fb142da13e64624de3896e8be`，tree 为 `ef9c45fb4f6b01f7ac410271153ff7b08552985a`。产品核对使用 `cfcc4da0` 的同一 tree；R 是通过后的登记提交，测试夹具改动在证据库。
+
+| 测试 | 旧触发行 / 原 H5 源码行 | 唯一定位的原源码 | 现行 |
+|---|---:|---|---:|
+| `test_claude_h2_deferred_then_third_257` | 257 / 466 | `stderr=subprocess.STDOUT, start_new_session=True)` | 682 |
+| `test_claude_h2_deferred_then_third_258` | 258 / 467 | `_ACTIVE_SESSION = process.pid` | 683 |
+| `test_claude_h2_deferred_then_third_259` | 259 / 468 | `finally: / _SPAWNING = False` | 684 |
+| `test_claude_h2_deferred_then_third_260` | 260 / 469 | `_SPAWNING = False` | 685 |
+| `test_claude_h2_deferred_then_third_261` | 261 / 470 | `if _DEFERRED_SECOND_SIGNAL is not None:` | 686 |
+| `test_claude_h2_deferred_then_third_262` | 262 / 471 | `pending = _DEFERRED_SECOND_SIGNAL` | 687 |
+| `test_claude_h2_deferred_then_third_263` | 263 / 472 | `_DEFERRED_SECOND_SIGNAL = None` | 688 |
+| `test_claude_h2_deferred_then_third_264` | 264 / 473 | `record_cancel(pending, None)` | 689 |
+| `test_claude_h2_deferred_then_third_265` | 265 / 474 | `rc = peek_child_exit(process, timeout)` | 690 |
+| `test_claude_h2_second_at_line_254` | 254 / 463 | `_SPAWNING = True` | 679 |
+| `test_claude_h2_second_at_line_255` | 255 / 464 | `_SPAWNING = True / try:` | 680 |
+| `test_claude_h2_second_at_line_256` | 256 / 465 | `process = subprocess.Popen(list(map(str, argv)), cwd=cwd, stdout=output,` | 681 |
+| `test_claude_h2_second_at_line_257` | 257 / 466 | `stderr=subprocess.STDOUT, start_new_session=True)` | 682 |
+| `test_claude_h2_second_at_line_258` | 258 / 467 | `_ACTIVE_SESSION = process.pid` | 683 |
+| `test_claude_h2_second_at_line_259` | 259 / 468 | `finally: / _SPAWNING = False` | 684 |
+| `test_claude_h2_second_at_line_260` | 260 / 469 | `_SPAWNING = False` | 685 |
+| `test_claude_h2_second_at_line_261` | 261 / 470 | `if _DEFERRED_SECOND_SIGNAL is not None:` | 686 |
+| `test_claude_h2_second_at_line_262` | 262 / 471 | `pending = _DEFERRED_SECOND_SIGNAL` | 687 |
+| `test_claude_h2_second_at_line_263` | 263 / 472 | `_DEFERRED_SECOND_SIGNAL = None` | 688 |
+| `test_claude_h2_second_at_line_264` | 264 / 473 | `record_cancel(pending, None)` | 689 |
+| `test_claude_h2_second_at_line_265` | 265 / 474 | `rc = peek_child_exit(process, timeout)` | 690 |
+| `test_claude_h2_two_real_at_line_258` | 258 / 467 | `_ACTIVE_SESSION = process.pid` | 683 |
+| `test_claude_h2_two_real_at_line_265` | 265 / 474 | `rc = peek_child_exit(process, timeout)` | 690 |
+
+[逐项锚点和时机依据](../../tools/bolt/results/task133-d/B-hook-locations.json)、[夹具 diff](../../tools/bolt/results/task133-d/B-legacy-fixtures.diff)、[测试计数、日志路径及 SHA](../../tools/bolt/results/task133-d/B-confirmation.json)、[运行库目标及 CMake 检查](../../tools/bolt/results/task133-d/B-runtime-scope.json)、[转换器实物夹具原始参数](../../tools/bolt/results/task133-d/B-historical-profile-commands.json)、[48 组解析及默认展开](../../tools/bolt/results/task133-d/spec-matrix.json)、[PS5 到 R 的 diff](../../tools/bolt/results/task133-d/B-R.diff)。

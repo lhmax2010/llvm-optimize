@@ -1,0 +1,218 @@
+[
+  {
+    "argv": [
+      "opt",
+      "--passes=pgo-instr-gen",
+      "-S",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/full-0.ll",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/full-0.instrumented.ll"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "llvm-profdata",
+      "merge",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/full.txt",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/full.profdata"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "opt",
+      "--passes=pgo-instr-use",
+      "-pgo-test-profile-file=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/full.profdata",
+      "-pgo-warn-missing-function",
+      "-no-pgo-warn-mismatch=false",
+      "-no-pgo-warn-mismatch-comdat-weak=false",
+      "-stats",
+      "-S",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/full-0.ll",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/full-0.used.ll"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "opt",
+      "--passes=pgo-instr-gen",
+      "-S",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/healthy-0.ll",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/healthy-0.instrumented.ll"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "llvm-profdata",
+      "merge",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/healthy.txt",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/healthy.profdata"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "opt",
+      "--passes=pgo-instr-use",
+      "-pgo-test-profile-file=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/healthy.profdata",
+      "-pgo-warn-missing-function",
+      "-no-pgo-warn-mismatch=false",
+      "-no-pgo-warn-mismatch-comdat-weak=false",
+      "-stats",
+      "-S",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/healthy-0.ll",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/healthy-0.used.ll"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "opt",
+      "--passes=pgo-instr-gen",
+      "-S",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/missing-0.ll",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/missing-0.instrumented.ll"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "llvm-profdata",
+      "merge",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/missing.txt",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/missing.profdata"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "opt",
+      "--passes=pgo-instr-use",
+      "-pgo-test-profile-file=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/missing.profdata",
+      "-pgo-warn-missing-function",
+      "-no-pgo-warn-mismatch=false",
+      "-no-pgo-warn-mismatch-comdat-weak=false",
+      "-stats",
+      "-S",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/missing-0.ll",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/missing-0.used.ll"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": "warning: /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/missing-0.ll: no profile data available for function a Hash = 784007058953177093 up to 0 count discarded\nwarning: /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/missing-0.ll: no profile data available for function b Hash = 784007058953177093 up to 0 count discarded\n"
+  },
+  {
+    "argv": [
+      "opt",
+      "--passes=pgo-instr-gen",
+      "-S",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash-0.ll",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash-0.instrumented.ll"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "opt",
+      "--passes=pgo-instr-gen",
+      "-S",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash-1.ll",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash-1.instrumented.ll"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "llvm-profdata",
+      "merge",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash.txt",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash.profdata"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "opt",
+      "--passes=pgo-instr-use",
+      "-pgo-test-profile-file=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash.profdata",
+      "-pgo-warn-missing-function",
+      "-no-pgo-warn-mismatch=false",
+      "-no-pgo-warn-mismatch-comdat-weak=false",
+      "-stats",
+      "-S",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash-0.ll",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash-0.used.ll"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": "warning: /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash-0.ll: function control flow change detected (hash mismatch) b Hash = 1063705160175073211 up to 8 count discarded\n"
+  },
+  {
+    "argv": [
+      "opt",
+      "--passes=pgo-instr-use",
+      "-pgo-test-profile-file=/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash.profdata",
+      "-pgo-warn-missing-function",
+      "-no-pgo-warn-mismatch=false",
+      "-no-pgo-warn-mismatch-comdat-weak=false",
+      "-stats",
+      "-S",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash-1.ll",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/mixed-hash-1.used.ll"
+    ],
+    "rc": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "opt",
+      "--passes=pgo-instr-gen",
+      "-S",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/comdat-0.ll",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/comdat-0.instrumented.ll"
+    ],
+    "rc": 1,
+    "stdout": "",
+    "stderr": "/home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/tizen-tools/bin/opt: /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth/comdat-0.ll:3:2: error: expected top-level entity\n = comdat any\n ^\n"
+  }
+]

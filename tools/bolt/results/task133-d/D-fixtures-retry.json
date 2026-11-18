@@ -1,0 +1,151 @@
+[
+  {
+    "fixture": "full",
+    "units": [
+      {
+        "truth": {
+          "a": "matched",
+          "b": "matched"
+        },
+        "observed": {
+          "a": "matched",
+          "b": "matched"
+        },
+        "queries": {
+          "a": [
+            "a",
+            784007058953177093,
+            2
+          ],
+          "b": [
+            "b",
+            784007058953177093,
+            2
+          ]
+        },
+        "entry_counts": {
+          "a": 6,
+          "b": 8
+        },
+        "diagnostics": [],
+        "pass": true
+      }
+    ],
+    "pass": true
+  },
+  {
+    "fixture": "healthy",
+    "units": [
+      {
+        "truth": {
+          "a": "matched"
+        },
+        "observed": {
+          "a": "matched"
+        },
+        "queries": {
+          "a": [
+            "a",
+            784007058953177093,
+            2
+          ]
+        },
+        "entry_counts": {
+          "a": 6
+        },
+        "diagnostics": [],
+        "pass": true
+      }
+    ],
+    "pass": true
+  },
+  {
+    "fixture": "missing",
+    "units": [
+      {
+        "truth": {
+          "a": "missing",
+          "b": "missing"
+        },
+        "observed": {
+          "a": "missing",
+          "b": "missing"
+        },
+        "queries": {
+          "a": [
+            "a",
+            784007058953177093,
+            2
+          ],
+          "b": [
+            "b",
+            784007058953177093,
+            2
+          ]
+        },
+        "entry_counts": {},
+        "diagnostics": [
+          "warning: /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth-retry/missing-0.ll: no profile data available for function a Hash = 784007058953177093 up to 0 count discarded",
+          "warning: /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth-retry/missing-0.ll: no profile data available for function b Hash = 784007058953177093 up to 0 count discarded"
+        ],
+        "pass": true
+      }
+    ],
+    "pass": true
+  },
+  {
+    "fixture": "mixed-hash",
+    "units": [
+      {
+        "truth": {
+          "a": "matched",
+          "b": "mismatched"
+        },
+        "observed": {
+          "a": "matched",
+          "b": "mismatched"
+        },
+        "queries": {
+          "a": [
+            "a",
+            784007058953177093,
+            2
+          ],
+          "b": [
+            "b",
+            1063705160175073211,
+            3
+          ]
+        },
+        "entry_counts": {
+          "a": 6
+        },
+        "diagnostics": [
+          "warning: /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/D-fixtures/truth-retry/mixed-hash-0.ll: function control flow change detected (hash mismatch) b Hash = 1063705160175073211 up to 8 count discarded"
+        ],
+        "pass": true
+      },
+      {
+        "truth": {
+          "b": "matched"
+        },
+        "observed": {
+          "b": "matched"
+        },
+        "queries": {
+          "b": [
+            "b",
+            784007058953177093,
+            2
+          ]
+        },
+        "entry_counts": {
+          "b": 8
+        },
+        "diagnostics": [],
+        "pass": true
+      }
+    ],
+    "pass": true
+  }
+]
