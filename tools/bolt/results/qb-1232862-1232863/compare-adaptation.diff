@@ -1,0 +1,29 @@
+--- 118/compare_current.py
++++ 128/compare_current.py
+@@ -3,12 +3,12 @@
+ from rpm_io import manifest
+ E=Path(__file__).resolve().parent
+ W=Path('/home/linhao/Toolchain/development/llvm-optimize')
+-X=W/'temp/qb-1231417-1231418'
+-O=E.parent/'qb-1226850-1226851'
++X=W/'temp/keep-baselines/qb-1232862-1232863'
++O=E.parent/'qb-1231417-1231418'
+ plan=json.loads((E/'rpm-plan.json').read_text())
+ oldrecords=[json.loads(p.read_text()) for p in (O/'downloads').glob('*/*/*.json')]
+ oldmap={(r['build'],r['arch'],r['name']):r for r in oldrecords}
+-mapping={'1231417':'1226850','1231418':'1226851'}
++mapping={'1232863':'1231417','1232862':'1231418'}
+ oldplan=json.loads((O/'rpm-plan.json').read_text())
+ for bid,oldid in mapping.items():
+  for arch in ('x86_64','armv7l','aarch64'):
+@@ -50,8 +50,8 @@
+   old=oldmap[(oldid,row['arch'],row['name'])]
+   print('START',row['build'],row['arch'],row['name'],flush=True)
+   a=fetch(old);b=fetch(row)
+-  assert 'fea0fe464d56e17f2c7588c557bfffd9f6ac352b' in a['rpm_query'],a
+-  assert 'b06ee2ac62085748b1b137523582c989ac78184e' in b['rpm_query'],b
++  assert 'b06ee2ac62085748b1b137523582c989ac78184e' in a['rpm_query'],a
++  assert '7a7bc17467d4c5da9763e86e3c74a123b3ff0df2' in b['rpm_query'],b
+   assert a['rpm_query'].split('\t')[1]==b['rpm_query'].split('\t')[1]=='22.1.8'
+   ma=getman(Path(a['path']),oldid,row['arch'],row['name']);mb=getman(Path(b['path']),row['build'],row['arch'],row['name'])
+   added=sorted(mb.keys()-ma.keys());removed=sorted(ma.keys()-mb.keys())

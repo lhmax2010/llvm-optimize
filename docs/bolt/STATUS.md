@@ -1698,3 +1698,8 @@ H4=7a7bc17467d4c5da9763e86e3c74a123b3ff0df2，tree=472c872afe958f464112d22b6304c
 ## 2026-11-17：126号（PASS，H5已推sandbox）
 
 H5=ed922413c19b01d07e0ec6547771267f40ab5469，tree=66aa08d9e6717b904a0eb390096d908fea1109c0，父61ef5d31，说明与H4逐字节相同，仅helper +3/-2。proc_stat及call元数据改为read_bytes+surrogateescape，comm显示用replace；6/3元组与fail-closed不变。Codex125无新正确性问题，风格项跟进；Claude非UTF8导致清理中断已修。复审先独立归档推送eb9855aa；首轮743项742通过、1个(b)类新夹具patch接口失败，一次纠正且断言未改，第二轮743/743通过；r18探针通过、包装器剩余清理0。125旧test_122已重命名pre-correction并加README。H4 lease推送并ls-remote核对，无STOP；交付一次准备修正：清单对Git R100源路径的判断修正为no-renames及字节核对；未操作120-N或Gerrit评审。见[126号](126_helper_utf8.md)。
+
+
+## 2026-11-17：128号（H4 QB 核对完成；源码日期差异未作放行判定）
+
+1232862=Base-Dev，1232863=Toolchain，实际均为H4 7a7bc17467d4c5da9763e86e3c74a123b3ff0df2/tree472c872afe958f464112d22b6304cde006fcbf98，不是H5。六架构成功；与H2 1231418/1231417比较，102/102二进制载荷和1294个llvm-static-devel完整归档SHA相同。SESSION_KILL_MODE均pidfd（每项目26命中含10实际输出）；STARTUP flags为null，TERM/HUP default、INT ignored；REAL三阶段及POST均PASS。新告警/错误关键字0，会话清理错误0。源码helper对Git一致、spec仅VCS；1334c36-to-61ef5d3.diff仅头部Date变化，正文SHA相同，按任务要求单列且不自行判源码整体PASS。新RPM保留在keep-baselines/qb-1232862-1232863，>10MB分析只留本地并登记SHA；未操作夜间编排、Gerrit或sandbox。见[128号](128_qb_1232862_1232863.md)。
