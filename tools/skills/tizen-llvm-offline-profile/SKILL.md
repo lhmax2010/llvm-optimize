@@ -53,4 +53,6 @@ Use an isolated user service if systemd is available. Set MemoryMax to the appro
 - If Ninja still carries PGO options in runtime subprojects, inspect their actual compile edges and remove the inherited options in the local subproject scope before retrying. ldd cannot inspect archive members and must not substitute for ELF inspection.
 - PGO match is UNKNOWN until the query-stage counting method passes fixture and real compiler checks. [pgo-match-method.md](references/pgo-match-method.md) describes the remaining validation.
 
+On a host with a private target toolchain, use the optional tool_environment configuration object to assign loader variables by tool key. This keeps the target library search path out of Git and build-adapter commands. The special key bolt-instrumented-clang applies to the generated training executable.
+
 generation pipeline not yet validated by a full run

@@ -47,6 +47,22 @@ class PlanTests(unittest.TestCase):
         memory.assert_not_called()
         self.assertEqual([s["stage"] for s in plan["stages"] if s["selected"]], ["bolt-match"])
 
+    def test_private_loader_environment_is_scoped_to_its_tool(self):
+        cfg = json.loads(self.example.read_text())
+        rows = json.loads((SKILL / "references/training-set.json").read_text())
+        env = {"LD_LIBRARY_PATH": "/path/to/target-libs"}
+        cfg["tool_environment"] = {
+            "instrumented_clang": env, "readelf": env,
+            "bolt-instrumented-clang": env,
+        }
+        pipeline = pgo_pair.Pipeline(cfg, self.output, rows)
+        self.assertEqual(pipeline.tool_environment(pipeline.train("ir")[0]["argv"]), env)
+        self.assertEqual(pipeline.tool_environment(pipeline.train("bolt")[0]["argv"]), env)
+        self.assertEqual(pipeline.tool_environment(pipeline.plan()["pgo-build"][-1]["argv"]), env)
+        self.assertEqual(pipeline.tool_environment(pipeline.tool("git", "status")), {})
+        self.assertEqual(pipeline.tool_environment(pipeline.custom("pgo-build")[0]["argv"]), {})
+        self.assertEqual(pipeline.tool_environment(pipeline.rewrite()["argv"]), {})
+
     def test_stage_selection_is_canonical_and_checked(self):
         self.assertEqual(pgo_pair.active_stages("bolt-match,ir-train"), ["ir-train", "bolt-match"])
         for value in ("unknown", "ir-train,ir-train"):

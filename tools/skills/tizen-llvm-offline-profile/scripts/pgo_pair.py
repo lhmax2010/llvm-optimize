@@ -288,11 +288,23 @@ class Pipeline:
             self.status["watchdog"] = data
             raise RuntimeError("job crossed the memory or disk stop line")
 
+    def tool_environment(self, argv):
+        by_tool = self.cfg.get("tool_environment", {})
+        for name, path in self.tools.items():
+            if argv[0] == str(path):
+                return by_tool.get(name, {})
+        if argv[0] == str(self.executable):
+            return by_tool.get("bolt-instrumented-clang", {})
+        if (len(argv) > 1 and any(Path(arg).name == "runtime_dep_check.py" for arg in argv[:3])
+                and str(self.tools["readelf"]) in argv):
+            return by_tool.get("readelf", {})
+        return {}
+
     def run(self, attempt, label, action):
         self.watchdog()
         argv = action["argv"]
         log = attempt / (label + ".txt")
-        env = {**self.cfg.get("environment", {}), "LC_ALL": "C",
+        env = {**self.cfg.get("environment", {}), **self.tool_environment(argv), "LC_ALL": "C",
                "PROFILE_JOBS": str(self.tier["jobs"]), **action["extra_env"]}
         with log.open("xb") as stream:
             output_path = Path(action["stdout"]) if action["stdout"] else None
