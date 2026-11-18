@@ -1,5 +1,7 @@
 # 130号 Gerrit 361395 PS5 上传核对
 
+**续做二通过。** H5′ `7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8` 已上传为 361395 PS5，Gerrit PS5 引用和 sandbox 均指向该提交。Tree 与 H5 相同，为 `66aa08d9e6717b904a0eb390096d908fea1109c0`。
+
 
 **续做结果：按 PM 修订规则通过文本门禁，Gerrit 拒绝上传（`no new changes`）。361395 最新仍为 PS4，未生成 PS5。**
 
@@ -118,3 +120,107 @@ error: failed to push some refs to 'ssh://review.tizen.org:29418/platform/upstre
 | PS4 | `e9f16ee3c078f9a5ae563ee01e52ace27b28da4d` |
 
 原始回执（含进度回车）及核对数据保存在本地 `/home/linhao/Toolchain/development/llvm-optimize/temp/task130-ps5-upload/resume`。
+
+## 续做二
+
+**续做二通过。** H5′ `7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8` 已上传为 361395 PS5，Gerrit PS5 引用和 sandbox 均指向该提交。Tree 与 H5 相同，为 `66aa08d9e6717b904a0eb390096d908fea1109c0`。
+
+按用户确认的前提沿用 H5 的 QB 和 127 号夜间验证。本次用相同内容重建 Git 提交对象，逐字节核对原始提交对象及 PS4 到候选的完整 diff。唯一变化是提交者时间。
+
+~~~sh
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-126/source -c 'user.name=Hao Lin' -c user.email=hao.lin@samsung.com -c commit.gpgSign=false commit-tree 66aa08d9e6717b904a0eb390096d908fea1109c0 -p 61ef5d31ca91025c414c748477bef0c64ddfa67c
+~~~
+
+| 对象字段 | 核对结果 |
+|---|---|
+| H5 | `ed922413c19b01d07e0ec6547771267f40ab5469` |
+| H5′ | `7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8` |
+| Tree | `66aa08d9e6717b904a0eb390096d908fea1109c0`，相同 |
+| 父提交 | `61ef5d31ca91025c414c748477bef0c64ddfa67c`，相同 |
+| 提交说明及 Change-Id | 逐字节相同，`I28171720d5bbbf9eaf491cdafc0aee0b43f9cd06` |
+| 作者（姓名、邮箱、原始时间） | `Hao Lin <hao.lin@samsung.com> 1792065558 +0800`，相同 |
+| 原提交者名、邮箱和 Git 原始时间 | `Hao Lin <hao.lin@samsung.com> 1794937200 -0800` |
+| 新提交者名、邮箱和 Git 原始时间 | `Hao Lin <hao.lin@samsung.com> 1794985017 -0800` |
+
+PS4→H5′ 的完整 diff 与 PS4→H5 逐字节相同，沿用上一节通过的文本门禁。
+
+### Gerrit 上传与核对
+
+推送前查询确认最新为 PS4 `e9f16ee3c078f9a5ae563ee01e52ace27b28da4d`。Gerrit 推送开始于 `2026-11-17T22:57:32-08:00`，结束于 `2026-11-17T22:57:39-08:00`。
+
+~~~sh
+/usr/bin/ssh -o BatchMode=yes -p 29418 lhmax2025@review.tizen.org gerrit query --format=JSON --current-patch-set --patch-sets change:361395
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-126/source push ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8:refs/for/tizen_base
+~~~
+
+回执原文如下，终端进度回车按换行呈现。
+
+~~~text
+remote: 
+remote: Processing changes: refs: 1, updated: 1        
+remote: Processing changes: refs: 1, updated: 1        
+remote: Processing changes: refs: 1, updated: 1        
+remote: Processing changes: refs: 1, updated: 1, done            
+remote: commit 7b05a13: warning: subject >50 characters; use shorter first paragraph        
+remote: 
+remote: SUCCESS        
+remote: 
+remote:   https://review.tizen.org/gerrit/c/platform/upstream/llvm/+/361395 x86_64: hybrid linkage, BOLT clang, fixed flags and archives [WIP]        
+remote: 
+remote: The following approvals got outdated and were removed:        
+remote: * Code-Review+1 by Dongkyun Son        
+remote: * Code-Review+1 by Lin Hao        
+remote: * Verified+1 by Lin Hao        
+remote: 
+remote: 
+To ssh://review.tizen.org:29418/platform/upstream/llvm
+ * [new reference]             7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 -> refs/for/tizen_base
+~~~
+
+Gerrit 报告 change 仍为 WIP，并自动移除了三条过期审批。推送命令只包含提交及目标引用。
+
+~~~sh
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-126/source ls-remote --exit-code ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm refs/changes/95/361395/5
+/usr/bin/ssh -o BatchMode=yes -p 29418 lhmax2025@review.tizen.org gerrit query --format=JSON --current-patch-set --patch-sets change:361395
+~~~
+
+~~~text
+7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8	refs/changes/95/361395/5
+~~~
+
+后续查询确认 361395 最新为 PS5，PS1 至 PS4 的 revision 均与推送前相同。
+
+| Patch set | Revision |
+|---|---|
+| PS1 | `c5244e13258bb541458dcd4a08254217d7c556a9` |
+| PS2 | `d0b2e82aa90b11251a13b67d890642bf2fa6f66c` |
+| PS3 | `ecb2dec72ec5afde9c6c70f166e2ac12b47c093e` |
+| PS4 | `e9f16ee3c078f9a5ae563ee01e52ace27b28da4d` |
+| PS5 | `7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8` |
+
+### sandbox 同步与核对
+
+PS5 核对通过后，先确认 sandbox 仍指向 H5，再以用户指定的 lease 更新到 H5′。
+
+~~~sh
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-126/source ls-remote --exit-code ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm refs/heads/sandbox/lhmax2025/bolt_pgo
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-126/source push --force-with-lease=refs/heads/sandbox/lhmax2025/bolt_pgo:ed922413c19b01d07e0ec6547771267f40ab5469 ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8:refs/heads/sandbox/lhmax2025/bolt_pgo
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/temp/ps5-helper-126/source ls-remote --exit-code ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm refs/heads/sandbox/lhmax2025/bolt_pgo
+~~~
+
+~~~text
+remote: 
+remote: Processing changes: refs: 1        
+remote: Processing changes: refs: 1, done            
+To ssh://review.tizen.org:29418/platform/upstream/llvm
+ + ed922413c19b...7b05a13744d1 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 -> sandbox/lhmax2025/bolt_pgo (forced update)
+~~~
+
+同步前后引用原文依次如下。
+
+~~~text
+ed922413c19b01d07e0ec6547771267f40ab5469	refs/heads/sandbox/lhmax2025/bolt_pgo
+7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8	refs/heads/sandbox/lhmax2025/bolt_pgo
+~~~
+
+原始推送回执、只读查询及 Git 对象核对保存于本地 `/home/linhao/Toolchain/development/llvm-optimize/temp/task130-ps5-upload/resume2`。
