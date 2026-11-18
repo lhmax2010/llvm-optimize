@@ -66,3 +66,22 @@ LLVM Profile Warning: Unable to track new values: Running out of static counters
 | G1 | /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G1/service.log | 2811 | b852a19bca2873848c327ca5d33fa36b728d48029c85034b7ef20b85945047e0 |
 
 本地结果目录 /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118。全部步骤状态见[总 JSON](../../tools/bolt/results/task133-n/summary.json)。看门狗触发：否。
+
+
+## G1 恢复预检：STOP
+
+2026-11-18T10:39:43-08:00，原 G1 的 Ninja 完成且记录了 `PGO_INSTRUMENTED_BUILD_PASS`。首个停止是清理 BUILD 时目标工具拒绝选项，原文如下。
+
+~~~text
+rm: Unknown option 'one-file-system' (see "rm --help")
+~~~
+
+按一次准备修正机会拟改用 Python 的目录清理，并在续跑前测试已保留的插桩 clang。候选恢复改动的技能单测 41/41 通过。运行 `clang-22 --version` 的预检实际失败如下。
+
+~~~text
+subprocess.CalledProcessError: Command '['/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-config/ir-artifacts/clang-22', '--version']' died with <Signals.SIGSEGV: 11>.
+~~~
+
+ELF 请求主机的 `/lib64/ld-linux-x86-64.so.2`。预检的 `LD_LIBRARY_PATH` 同时指向 Tizen 根的 `usr/lib64` 和 `lib64`，程序依赖包含 `libc.so.6` 和 `ld-linux-x86-64.so.2`。这是可见的运行环境差异。SIGSEGV 本身的确切原因未做二次运行验证。未启动恢复队列，未重编译或重新执行插桩 clang，G2–G8 仍为 SKIPPED。首次运行时 G1 内存达到限制，有 12,058 次 max 事件，OOM 与 OOM kill 都为 0。
+
+已保留 BUILD `/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD`，清理前实测 20,000,354,304 B。保留的插桩 clang `/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-config/ir-artifacts/clang-22` 为 1,466,952,360 B，SHA256 `381789a9f576f9e6e7affe25ee568e303da6816ba28e64c86135d29c55ea06a7`。它是编译产物，训练和 profile 生成均尚未执行。未完成现场恢复验证的技能改动作为本地 diff 保存，证据分支保留先前已测试并推送的目标工具独立运行库配置修正。原始编排报告和各步 JSON 保留。[恢复预检 JSON](../../tools/bolt/results/task133-n/G1-recovery.json)

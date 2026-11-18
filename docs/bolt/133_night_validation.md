@@ -40,3 +40,6 @@ N2 的 RPM 4.14 只读展开：hybrid_OFF=True, unsets_cache=True, bolt_absent=T
 | N1 | /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/N1/service.log | 145897 | b9eaa32e8342122f0bd51193265678e543b82de11d1be67d9ab70ea53128925e |
 
 本地结果目录 /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118。全部步骤状态见[总 JSON](../../tools/bolt/results/task133-n/summary.json)。看门狗触发：否。
+
+
+G1 完成编译与链接，在 BUILD 清理处 STOP。一次恢复修正的预检遇到插桩 clang `--version` SIGSEGV，未续跑。N1、N2、N4 结论不变。[原文与已保留产物](132_pgo_pair_generation.md)
