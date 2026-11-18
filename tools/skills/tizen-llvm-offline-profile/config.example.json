@@ -1,0 +1,188 @@
+{
+  "project": "T",
+  "llvm_version": "22.1.8",
+  "source_commit": "0000000000000000000000000000000000000000",
+  "snapshot": "pinned-toolchain-or-basedev-snapshot",
+  "training": "bundled",
+  "paths": {
+    "llvm": "/path/to/llvm-project",
+    "gbs_config": "/path/to/config/gbs.conf",
+    "instrumented_source": "/path/to/offline/ir-source",
+    "pgo_source": "/path/to/offline/pgo-source",
+    "instrumented_root": "/path/to/jobs/ir-gbs",
+    "pgo_root": "/path/to/jobs/pgo-gbs",
+    "pgo_build": "/path/to/jobs/pgo-gbs/build",
+    "package_root": "/path/to/jobs/pgo-gbs/shipping-payload",
+    "inputs": "/path/to/training",
+    "synthetic_dir": "/path/to/training/synthetic",
+    "sysroot_armv7l": "/path/to/sysroots/armv7l",
+    "sysroot_aarch64": "/path/to/sysroots/aarch64",
+    "resource_dir": "/path/to/sysroots/clang-resource/22"
+  },
+  "tools": {
+    "git": "/path/to/bin/git",
+    "ninja": "/path/to/bin/ninja",
+    "readelf": "/path/to/bin/llvm-readelf",
+    "instrumented_clang": "{instrumented_root}/build/bin/clang-22",
+    "llvm_profdata": "/path/to/pinned-llvm/bin/llvm-profdata",
+    "llvm_bolt": "{pgo_build}/bin/llvm-bolt",
+    "merge_fdata": "{pgo_build}/bin/merge-fdata"
+  },
+  "environment": {
+    "LD_LIBRARY_PATH": "/path/to/matching/runtime/lib64"
+  },
+  "profile_path_in_build": "/path/to/jobs/pgo/clang.profdata",
+  "ninja_roots": [
+    "{pgo_build}"
+  ],
+  "bolt_input": "{output}/clang-with-relocs",
+  "bolt_runtime": "/path/to/jobs/pgo-gbs/bolt-runtime/libbolt_rt_instr.a",
+  "commands": {
+    "instrumented-build": [
+      {
+        "argv": [
+          "/path/to/bin/gbs",
+          "-c",
+          "{gbs_config}",
+          "build",
+          "-A",
+          "x86_64",
+          "--include-all",
+          "--noinit",
+          "--threads",
+          "{jobs}",
+          "--buildroot",
+          "{instrumented_root}"
+        ],
+        "cwd": "{instrumented_source}"
+      }
+    ],
+    "pgo-build": [
+      {
+        "argv": [
+          "/path/to/bin/cp",
+          "--",
+          "{profdata}",
+          "{pgo_source}/packaging/offline-clang.profdata"
+        ],
+        "cwd": "{pgo_source}"
+      },
+      {
+        "argv": [
+          "/path/to/bin/gbs",
+          "-c",
+          "{gbs_config}",
+          "build",
+          "-A",
+          "x86_64",
+          "--include-all",
+          "--noinit",
+          "--threads",
+          "{jobs}",
+          "--buildroot",
+          "{pgo_root}"
+        ],
+        "cwd": "{pgo_source}"
+      }
+    ],
+    "bolt-tools": [
+      {
+        "argv": [
+          "/path/to/bin/cmake",
+          "-S",
+          "{llvm}/llvm",
+          "-B",
+          "{pgo_build}",
+          "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+          "-DBOLT_BUILD_TOOLS=OFF",
+          "-DBOLT_ENABLE_RUNTIME=ON",
+          "-DBOLT_INCLUDE_TESTS=OFF",
+          "-DBOLT_TARGETS_TO_BUILD=X86"
+        ],
+        "cwd": "{pgo_build}"
+      },
+      {
+        "argv": [
+          "/path/to/bin/ninja",
+          "-C",
+          "{pgo_build}",
+          "-j",
+          "{jobs}",
+          "llvm-bolt",
+          "merge-fdata",
+          "bolt_rt"
+        ],
+        "cwd": "{pgo_build}"
+      }
+    ],
+    "relink-strip-debug": [
+      {
+        "argv": [
+          "/path/to/bin/ninja",
+          "-t",
+          "commands",
+          "-s",
+          "bin/clang-22"
+        ],
+        "cwd": "{pgo_build}",
+        "stdout": "{output}/link.original"
+      },
+      {
+        "argv": [
+          "/path/to/bin/python3",
+          "-B",
+          "{llvm}/packaging/clang-bolt-helper.py",
+          "replay",
+          "{output}/link.original",
+          "{output}/clang-relinked",
+          "{output}/clang-relinked.d",
+          "{output}/relink.sh"
+        ],
+        "cwd": "{pgo_build}"
+      },
+      {
+        "argv": [
+          "/path/to/bin/sh",
+          "{output}/relink.sh"
+        ],
+        "cwd": "{pgo_build}"
+      },
+      {
+        "argv": [
+          "/path/to/pinned-llvm/bin/llvm-strip",
+          "--strip-debug",
+          "-o",
+          "{output}/clang-with-relocs",
+          "{output}/clang-relinked"
+        ],
+        "cwd": "{pgo_build}"
+      }
+    ]
+  },
+  "resources": {
+    "tier": "normal",
+    "tiers": {
+      "normal": {
+        "admission_memory_bytes": 34359738368,
+        "admission_disk_bytes": 150323855360,
+        "memory_max_bytes": 25769803776,
+        "jobs": 6
+      },
+      "reduced": {
+        "admission_memory_bytes": 30064771072,
+        "admission_disk_bytes": 139586437120,
+        "memory_max_bytes": 23622320128,
+        "jobs": 2
+      }
+    },
+    "stop_memory_bytes": 8589934592,
+    "stop_disk_bytes": 32212254720,
+    "watchdog_seconds": 30,
+    "defer_seconds": 0,
+    "max_seconds": 21600,
+    "lock_path": "/path/to/jobs/locks/profile-generation.lock",
+    "disk_paths": [
+      "/path/to/jobs"
+    ]
+  }
+}

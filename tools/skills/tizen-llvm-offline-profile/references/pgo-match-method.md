@@ -1,0 +1,9 @@
+# IR PGO match status
+
+Current result: UNKNOWN. The historical instrumented setup explicitly requested LLVM_BUILD_INSTRUMENTED=IR and llvm-profdata reported IR. The build option defaults to off. An explicit IR build uses -fprofile-generate. ON without IR uses frontend instrumentation, and CSIR is a separate mode.
+
+The diagnostic flags can reveal missing functions and CFG hash changes. They omit matched function instances and cannot establish a denominator. Enable COMDAT/weak diagnostics for experiments. A snapshot opt accepted -stats but emitted no complete query counts in checked fixtures. llvm-profdata describes stored keys; it cannot identify every query made by the compiler. Counting function_entry_count in final pre-link bitcode measures annotation coverage. Later inlining, deletion and cloning change that population.
+
+Measure at the IR profile-use lookup. Emit the module identity, exact key and hash, and matched, missing or mismatched state for each actual lookup. Establish the lookup population and preserve per-module local identities and distinct ODR hashes. Match the production target, pipeline, options and profile bytes. Compare query events against several real compiler translation units before reporting a percentage. Measure CSIR's post-link part separately.
+
+Fixtures must cover fully matching and healthy units, missing keys, CFG and COMDAT hash mismatches, repeated cross-unit functions, zero execution counts, same-name locals, distinct ODR hashes, post-match deletion and optimizer clones. Preliminary opt fixtures reproduced four basic outcomes. COMDAT and the remaining cases were not validated. The production check records UNKNOWN without blocking generation. A release threshold requires independently validated measurements. The BOLT 5% cutoff applies only to BOLT.
