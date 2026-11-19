@@ -169,3 +169,30 @@ I 的 llvm-bolt 组件库包含 `libLLVMX86Desc.a`，动态 `libLLVM.so` 匹配�
 |---|---|---:|---|
 
 本地结果目录 /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118。全部步骤状态见[总 JSON](../../tools/bolt/results/task133-n/summary.json)。看门狗触发：否。
+
+
+## N4：138-N 续跑
+
+**SKIPPED。**
+
+| 步骤 | 结论 | 档位 | MemoryMax GiB | 并行 | 开始 | 结束 | 等待秒 | 执行秒 | 内存峰值 B | 准入 MemAvailable GiB | 准入 /home GiB | 原因 |
+|---|---|---|---:|---:|---|---|---:|---:|---:|---:|---:|---|
+| N4 | SKIPPED | — | — | — | — | — | 1800.004 | — | — | 19.05 | 370.73 | MemAvailable minus 6 GiB below stage floor |
+
+候选 I 产物核对
+
+~~~json
+{
+  "audit_main": null,
+  "audit_subpackages": null,
+  "cleanup_main": null,
+  "cleanup_subpackages": null
+}
+~~~
+
+
+
+| 步骤 | 本地路径 | 字节 | SHA256 |
+|---|---|---:|---|
+
+单元 llvm-opt-138n-20261119.service，截止 2026-11-20T08:30:00+08:00。启动 MemAvailable 20.22 GiB，/home 可用 352.98 GiB。看门狗触发：否。[逐步 JSON](../../tools/bolt/results/task138-n-20261119/summary.json)

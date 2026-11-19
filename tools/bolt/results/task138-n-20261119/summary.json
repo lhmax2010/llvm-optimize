@@ -1,0 +1,720 @@
+{
+  "rows": [
+    {
+      "step": "N2",
+      "status": "SKIPPED",
+      "reason": "MemAvailable minus 6 GiB below stage floor",
+      "admission": [
+        {
+          "time": "2026-11-19T00:24:02-08:00",
+          "mem_available": 21711581184,
+          "home_available": 379004260352,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 15269130240,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T00:29:02-08:00",
+          "mem_available": 21348417536,
+          "home_available": 378999300096,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 14905966592,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T00:34:02-08:00",
+          "mem_available": 20825165824,
+          "home_available": 378999308288,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 14382714880,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T00:39:02-08:00",
+          "mem_available": 20321230848,
+          "home_available": 378999300096,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 13878779904,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T00:44:02-08:00",
+          "mem_available": 20289576960,
+          "home_available": 378997891072,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 13847126016,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T00:49:02-08:00",
+          "mem_available": 20276695040,
+          "home_available": 378997878784,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 13834244096,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T00:54:02-08:00",
+          "mem_available": 20287877120,
+          "home_available": 378997878784,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 13845426176,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        }
+      ],
+      "admission_wait_seconds": 1800.003
+    },
+    {
+      "step": "G2",
+      "started_at": "2026-11-19T00:54:06-08:00",
+      "tier": "dynamic",
+      "memory_max": 1778184192,
+      "cpu_percent": 400,
+      "jobs": 1,
+      "admission": [
+        {
+          "time": "2026-11-19T00:54:06-08:00",
+          "mem_available": 20274892800,
+          "home_available": 378997821440,
+          "memory_plan": {
+            "stage": "ir-train",
+            "memory_max": 1778184192,
+            "standard_cap": 1778184192,
+            "floor": 1778184192,
+            "jobs": 1,
+            "admitted": true
+          },
+          "disk_required": 27191027456
+        }
+      ],
+      "admission_wait_seconds": 0.0,
+      "unit": "llvm-opt-138n-20261119-g2.service",
+      "argv": [
+        "/usr/bin/systemd-run",
+        "--user",
+        "--wait",
+        "--pipe",
+        "--unit=llvm-opt-138n-20261119-g2.service",
+        "--expand-environment=no",
+        "-p",
+        "MemoryMax=1778184192",
+        "-p",
+        "MemorySwapMax=0",
+        "-p",
+        "CPUQuota=400%",
+        "-p",
+        "Nice=19",
+        "-p",
+        "IOSchedulingClass=idle",
+        "-p",
+        "OOMPolicy=stop",
+        "-p",
+        "KillMode=control-group",
+        "-p",
+        "TimeoutStopSec=120",
+        "-p",
+        "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G2",
+        "--setenv=TASK133_WORKSPACE=/home/linhao/Toolchain/development/llvm-optimize",
+        "--setenv=TASK138_UNIT=llvm-opt-138n-20261119-g2",
+        "--setenv=TASK133_ADMISSION_MEMORY=20274892800",
+        "/usr/bin/python3",
+        "-B",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/orchestration/worker.py",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119",
+        "G2",
+        "dynamic",
+        "1",
+        "1778184192",
+        "400"
+      ],
+      "ended_at": "2026-11-19T00:58:06-08:00",
+      "seconds": 239.723,
+      "rc": 0,
+      "resources": {
+        "memory.peak": "1778184192",
+        "VmHWM_sample": {
+          "bytes": 1095176192,
+          "pid": 2318215,
+          "argv": "/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2 --library-path /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-config/ir-artifacts/lib64:/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64:/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64 /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G-config/ir-artifacts/clang-22 --target=armv7l-tizen-linux-gnueabi --sysroot=/home/linhao/GBS-ROOT-TIZEN-UNIFIED-LLVM/local/BUILD-ROOTS/scratch.armv7l.0 -resource-dir=/home/linhao/Toolchain/development/llvm-optimize/temp/toolchain-baseline/usr/lib64/clang/22 -std=c++17 -O2 -c /home/linhao/Toolchain/development/llvm-optimize/archive/workspace-cleanup-135/recovered-training/A/A.cpp -o /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/00/input.o -fintegrated-cc1"
+        },
+        "memory.events": "low 0\nhigh 0\nmax 5726\noom 0\noom_kill 0\noom_group_kill 0",
+        "memory.stat": "anon 10035200\nfile 1750503424",
+        "memory.max": "1778184192",
+        "memory.swap.peak": "0"
+      },
+      "systemd": "Result=success\nMemoryPeak=[not set]\nCPUUsageNSec=[not set]\nActiveState=inactive\nInvocationID=\n",
+      "watchdog": null,
+      "log_path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G2/service.log",
+      "end_measurement": {
+        "time": "2026-11-19T00:58:06-08:00",
+        "mem_available": 20326993920,
+        "home_available": 398123458560
+      },
+      "worker": {
+        "status": "PASS",
+        "details": {
+          "stage": "ir-train",
+          "artifacts": [
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/00/4921513259987090381_0-2318215.profraw",
+              "bytes": 32385336,
+              "sha256": "c601ad6994b0e80d4a4718ef11e78ca8e3133ccb770f51b6452d6e86e6aaf799"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/01/4921513259987090381_0-2318239.profraw",
+              "bytes": 32366728,
+              "sha256": "4d921b89f0b5cd2e3134bd352832aad8b2dee8d7513dec01ff8a1323d487a231"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/02/4921513259987090381_0-2318241.profraw",
+              "bytes": 32366824,
+              "sha256": "7ab93c8bbfba5fd9633371312fb69da2c3812bb2d6ffa881eff275120e17f089"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/03/4921513259987090381_0-2318248.profraw",
+              "bytes": 32464808,
+              "sha256": "cdcf2693a99f639587e46121124dbc71c7a4c708d891b1bbd1c7f4059ea2d132"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/04/4921513259987090381_0-2318268.profraw",
+              "bytes": 32455624,
+              "sha256": "77fbd461d113ebe86a571255911d6d191f5777b1e195473269e92966e016ead8"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/05/4921513259987090381_0-2318274.profraw",
+              "bytes": 32458120,
+              "sha256": "ba9b0637cc058028156cafbb33c9cd3c64157e6e31fed400e9795e664606c790"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/06/4921513259987090381_0-2318293.profraw",
+              "bytes": 32463000,
+              "sha256": "8d9d852fda5879833a45d746f0a7db9b09a518e8cefa0b470e645a27bf30ad2c"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/07/4921513259987090381_0-2318299.profraw",
+              "bytes": 32452040,
+              "sha256": "495fb8545f5f31ec0e30faa50638cacbe1d2b37d2c0d119cfd138af9f7153879"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/08/4921513259987090381_0-2318308.profraw",
+              "bytes": 32453736,
+              "sha256": "57454dc2a0e5f189c09e3d536a4d20a220689c13360b787fff6837854eff151e"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/09/4921513259987090381_0-2318315.profraw",
+              "bytes": 32455576,
+              "sha256": "3c0311ff56ea579f117861a05bfe95b9030cab7cf0e78d2b50f7a0b8d7ed6f26"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/10/4921513259987090381_0-2318322.profraw",
+              "bytes": 32455160,
+              "sha256": "b3c56e22efb7c41422ebfe887221dd177843a5f93561a6e2db801a078af549ad"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/11/4921513259987090381_0-2318329.profraw",
+              "bytes": 32453400,
+              "sha256": "5a1dc1cad89fd78cb22b3fb78e3ce1384d3b3919ff4a86b0dc9a972c892ff407"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/12/4921513259987090381_0-2318345.profraw",
+              "bytes": 32456984,
+              "sha256": "6bf1030aedab8de3776f11ccb87110072f98e5f9c5a390046f34792beb58c20e"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/13/4921513259987090381_0-2318360.profraw",
+              "bytes": 32476584,
+              "sha256": "37bd474cb7a7a7b280149be09dd30fdc2a38d9f560e87568feabf018de7f699a"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/14/4921513259987090381_0-2318369.profraw",
+              "bytes": 32467144,
+              "sha256": "a051c5950018d8e7feeddb9e46dcc254624c042c99a0b334b09c0533e3a57447"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/15/4921513259987090381_0-2318384.profraw",
+              "bytes": 32468648,
+              "sha256": "97229516a41fe5ecba17f8519baff9bb3c5c45b8984178004f995b0ef174ef20"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/16/4921513259987090381_0-2318393.profraw",
+              "bytes": 32475256,
+              "sha256": "52a6d9216135ae4767a94869b94ec0f989d85ebc55450bc5bc9039672881f0c4"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/17/4921513259987090381_0-2318400.profraw",
+              "bytes": 32462488,
+              "sha256": "678ca5ef57d6b25cc07845ff0d168c2cfea42c5eb2552b6df36f4fb374382d5a"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/18/4921513259987090381_0-2318405.profraw",
+              "bytes": 32464056,
+              "sha256": "f373c1ab316b253431854afd6ec8ce1457f70bc0e70a989f7942a8882ca262e3"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/19/4921513259987090381_0-2318410.profraw",
+              "bytes": 32466120,
+              "sha256": "df22c13b10d6c72f36d3f1805cfa509a7ab3222316c99bb05441fe39710151f6"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/20/4921513259987090381_0-2318433.profraw",
+              "bytes": 32465384,
+              "sha256": "0969705f08f9387cd0f9f571694dc91577c3fad5512d6584048d12ed6399249f"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/21/4921513259987090381_0-2318454.profraw",
+              "bytes": 32465016,
+              "sha256": "c1d414046b1374578a96791835582a7f441f3e4b54c98c37aba32e58d193f02c"
+            },
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/22/4921513259987090381_0-2318462.profraw",
+              "bytes": 32468136,
+              "sha256": "34965ddefe63244dfc132d52e5f35e00b0cb5bb0df9d386f7e1426232001d6ea"
+            }
+          ],
+          "bolt_match": null,
+          "G1_cleanup": {
+            "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD",
+            "bytes": 20000354304,
+            "deleted": true
+          }
+        },
+        "cgroup_end": {
+          "memory.peak": "1778184192",
+          "memory.events": "low 0\nhigh 0\nmax 5726\noom 0\noom_kill 0\noom_group_kill 0",
+          "memory.max": "1778184192",
+          "memory.stat": "anon 10035200\nfile 1750503424",
+          "memory.swap.peak": "0"
+        }
+      },
+      "log_tail": "Running as unit: llvm-opt-138n-20261119-g2.service; invocation ID: 203dd4d079e24ab584615fa34efb45fd\n/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py --config /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-config/config.json --output /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles --stages ir-train --memory-available-bytes 20274892800 --resume --recover-instrumented /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-config/recovery-receipt.json\n{\n  \"status\": \"PARTIAL\",\n  \"project\": \"T\",\n  \"stages\": [\n    {\n      \"name\": \"instrumented-build\",\n      \"status\": \"REUSED\"\n    },\n    {\n      \"name\": \"ir-train\",\n      \"status\": \"PASS\",\n      \"attempt\": \"/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir-train-1795078458515497910\"\n    }\n  ],\n  \"started_at\": \"2026-11-19T08:54:06+00:00\",\n  \"admission\": [\n    {\n      \"at\": \"2026-11-19T08:54:06+00:00\",\n      \"memory\": 20265742336,\n      \"disk\": {\n        \"/home\": 378997800960,\n        \"/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles\": 378997800960\n      },\n      \"admission_memory\": 20274892800,\n      \"stage\": \"ir-train\",\n      \"memory_max\": 1778184192,\n      \"standard_cap\": 1778184192,\n      \"floor\": 1778184192,\n      \"jobs\": 1,\n      \"admitted\": true,\n      \"actual_memory_max\": 1778184192\n    }\n  ],\n  \"ended_at\": \"2026-11-19T08:57:35+00:00\"\n}\n/usr/bin/sudo -n /usr/sbin/chroot /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0 /usr/bin/du -sx -B1 /home/abuild/rpmbuild/BUILD\n/usr/bin/sudo -n /usr/sbin/chroot /home/linhao/Toolchain/development/llvm-optimize/archive/task133-n-20261118/G1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0 /usr/bin/python3 -B - /home/abuild/rpmbuild /home/abuild/rpmbuild/BUILD\nFinished with result: success\nMain processes terminated with: code=exited/status=0\nService runtime: 3min 59.650s\nCPU time consumed: 3min 5.307s\nMemory peak: 1.6G\nMemory swap peak: 0B\n",
+      "status": "PASS"
+    },
+    {
+      "step": "G3",
+      "started_at": "2026-11-19T00:58:08-08:00",
+      "tier": "dynamic",
+      "memory_max": 2189705216,
+      "cpu_percent": 400,
+      "jobs": 1,
+      "admission": [
+        {
+          "time": "2026-11-19T00:58:08-08:00",
+          "mem_available": 20320038912,
+          "home_available": 398123384832,
+          "memory_plan": {
+            "stage": "merge-profdata",
+            "memory_max": 2189705216,
+            "standard_cap": 2189705216,
+            "floor": 2189705216,
+            "jobs": 1,
+            "admitted": true
+          },
+          "disk_required": 27243555672
+        }
+      ],
+      "admission_wait_seconds": 0.0,
+      "unit": "llvm-opt-138n-20261119-g3.service",
+      "argv": [
+        "/usr/bin/systemd-run",
+        "--user",
+        "--wait",
+        "--pipe",
+        "--unit=llvm-opt-138n-20261119-g3.service",
+        "--expand-environment=no",
+        "-p",
+        "MemoryMax=2189705216",
+        "-p",
+        "MemorySwapMax=0",
+        "-p",
+        "CPUQuota=400%",
+        "-p",
+        "Nice=19",
+        "-p",
+        "IOSchedulingClass=idle",
+        "-p",
+        "OOMPolicy=stop",
+        "-p",
+        "KillMode=control-group",
+        "-p",
+        "TimeoutStopSec=120",
+        "-p",
+        "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G3",
+        "--setenv=TASK133_WORKSPACE=/home/linhao/Toolchain/development/llvm-optimize",
+        "--setenv=TASK138_UNIT=llvm-opt-138n-20261119-g3",
+        "--setenv=TASK133_ADMISSION_MEMORY=20320038912",
+        "/usr/bin/python3",
+        "-B",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/orchestration/worker.py",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119",
+        "G3",
+        "dynamic",
+        "1",
+        "2189705216",
+        "400"
+      ],
+      "ended_at": "2026-11-19T00:58:22-08:00",
+      "seconds": 13.129,
+      "rc": 0,
+      "resources": {
+        "memory.peak": "2189705216",
+        "VmHWM_sample": {
+          "bytes": 1934172160,
+          "pid": 2318781,
+          "argv": "/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2 --library-path /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/lib64 /home/linhao/Toolchain/development/llvm-optimize/temp/task133-d/tizen-tools/bin/llvm-profdata merge -o /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/clang.profdata /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/00/4921513259987090381_0-2318215.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/01/4921513259987090381_0-2318239.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/02/4921513259987090381_0-2318241.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/03/4921513259987090381_0-2318248.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/04/4921513259987090381_0-2318268.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/05/4921513259987090381_0-2318274.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/06/4921513259987090381_0-2318293.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/07/4921513259987090381_0-2318299.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/08/4921513259987090381_0-2318308.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/09/4921513259987090381_0-2318315.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/10/4921513259987090381_0-2318322.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/11/4921513259987090381_0-2318329.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/12/4921513259987090381_0-2318345.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/13/4921513259987090381_0-2318360.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/14/4921513259987090381_0-2318369.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/15/4921513259987090381_0-2318384.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/16/4921513259987090381_0-2318393.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/17/4921513259987090381_0-2318400.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/18/4921513259987090381_0-2318405.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/19/4921513259987090381_0-2318410.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/20/4921513259987090381_0-2318433.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/21/4921513259987090381_0-2318454.profraw /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/ir/22/4921513259987090381_0-2318462.profraw"
+        },
+        "memory.events": "low 0\nhigh 0\nmax 231\noom 0\noom_kill 0\noom_group_kill 0",
+        "memory.stat": "anon 9900032\nfile 556400640",
+        "memory.max": "2189705216",
+        "memory.swap.peak": "0"
+      },
+      "systemd": "Result=success\nMemoryPeak=[not set]\nCPUUsageNSec=[not set]\nActiveState=inactive\nInvocationID=\n",
+      "watchdog": null,
+      "log_path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G3/service.log",
+      "end_measurement": {
+        "time": "2026-11-19T00:58:22-08:00",
+        "mem_available": 20152336384,
+        "home_available": 398070784000
+      },
+      "worker": {
+        "status": "PASS",
+        "details": {
+          "stage": "merge-profdata",
+          "artifacts": [
+            {
+              "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/clang.profdata",
+              "bytes": 52530416,
+              "sha256": "39171c4a5fcb6166ac86d6d47ad16c7890527a73e66c26f035fb910288f496aa"
+            }
+          ],
+          "bolt_match": null
+        },
+        "cgroup_end": {
+          "memory.peak": "2189705216",
+          "memory.events": "low 0\nhigh 0\nmax 231\noom 0\noom_kill 0\noom_group_kill 0",
+          "memory.max": "2189705216",
+          "memory.stat": "anon 9900032\nfile 556400640",
+          "memory.swap.peak": "0"
+        }
+      },
+      "log_tail": "Running as unit: llvm-opt-138n-20261119-g3.service; invocation ID: 508f98a4ae0d4b38b7094100650d7ec2\n/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py --config /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-config/config.json --output /home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles --stages merge-profdata --memory-available-bytes 20320038912 --resume\n{\n  \"status\": \"PARTIAL\",\n  \"project\": \"T\",\n  \"stages\": [\n    {\n      \"name\": \"merge-profdata\",\n      \"status\": \"PASS\",\n      \"attempt\": \"/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles/merge-profdata-1795078696026602008\"\n    }\n  ],\n  \"started_at\": \"2026-11-19T08:58:09+00:00\",\n  \"admission\": [\n    {\n      \"at\": \"2026-11-19T08:58:09+00:00\",\n      \"memory\": 20294606848,\n      \"disk\": {\n        \"/home\": 398123368448,\n        \"/home/linhao/Toolchain/development/llvm-optimize/archive/task138-n-20261119/G-profiles\": 398123368448\n      },\n      \"admission_memory\": 20320038912,\n      \"stage\": \"merge-profdata\",\n      \"memory_max\": 2189705216,\n      \"standard_cap\": 2189705216,\n      \"floor\": 2189705216,\n      \"jobs\": 1,\n      \"admitted\": true,\n      \"actual_memory_max\": 2189705216\n    }\n  ],\n  \"ended_at\": \"2026-11-19T08:58:22+00:00\"\n}\nFinished with result: success\nMain processes terminated with: code=exited/status=0\nService runtime: 13.079s\nCPU time consumed: 12.597s\nMemory peak: 2.0G\nMemory swap peak: 0B\n",
+      "status": "PASS"
+    },
+    {
+      "step": "G4",
+      "status": "SKIPPED",
+      "reason": "MemAvailable minus 6 GiB below stage floor",
+      "admission": [
+        {
+          "time": "2026-11-19T00:58:24-08:00",
+          "mem_available": 20169134080,
+          "home_available": 398070718464,
+          "memory_plan": {
+            "stage": "pgo-build",
+            "memory_max": 13726683136,
+            "standard_cap": 26044792832,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 102677635662
+        },
+        {
+          "time": "2026-11-19T01:03:24-08:00",
+          "mem_available": 20395241472,
+          "home_available": 398070677504,
+          "memory_plan": {
+            "stage": "pgo-build",
+            "memory_max": 13952790528,
+            "standard_cap": 26044792832,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 102677635662
+        },
+        {
+          "time": "2026-11-19T01:08:24-08:00",
+          "mem_available": 20378087424,
+          "home_available": 398070677504,
+          "memory_plan": {
+            "stage": "pgo-build",
+            "memory_max": 13935636480,
+            "standard_cap": 26044792832,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 102677635662
+        },
+        {
+          "time": "2026-11-19T01:13:24-08:00",
+          "mem_available": 20404506624,
+          "home_available": 398070677504,
+          "memory_plan": {
+            "stage": "pgo-build",
+            "memory_max": 13962055680,
+            "standard_cap": 26044792832,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 102677635662
+        },
+        {
+          "time": "2026-11-19T01:18:24-08:00",
+          "mem_available": 20382588928,
+          "home_available": 398070677504,
+          "memory_plan": {
+            "stage": "pgo-build",
+            "memory_max": 13940137984,
+            "standard_cap": 26044792832,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 102677635662
+        },
+        {
+          "time": "2026-11-19T01:23:24-08:00",
+          "mem_available": 20390445056,
+          "home_available": 398070677504,
+          "memory_plan": {
+            "stage": "pgo-build",
+            "memory_max": 13947994112,
+            "standard_cap": 26044792832,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 102677635662
+        },
+        {
+          "time": "2026-11-19T01:28:24-08:00",
+          "mem_available": 20397416448,
+          "home_available": 398070677504,
+          "memory_plan": {
+            "stage": "pgo-build",
+            "memory_max": 13954965504,
+            "standard_cap": 26044792832,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 102677635662
+        }
+      ],
+      "admission_wait_seconds": 1800.002
+    },
+    {
+      "step": "G5",
+      "status": "SKIPPED",
+      "reason": "PGO prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-19T01:28:27-08:00",
+          "mem_available": 20357455872,
+          "home_available": 398070624256
+        }
+      ],
+      "admission_wait_seconds": 0
+    },
+    {
+      "step": "G6",
+      "status": "SKIPPED",
+      "reason": "PGO prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-19T01:28:30-08:00",
+          "mem_available": 20344315904,
+          "home_available": 398070571008
+        }
+      ],
+      "admission_wait_seconds": 0
+    },
+    {
+      "step": "G7",
+      "status": "SKIPPED",
+      "reason": "PGO prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-19T01:28:32-08:00",
+          "mem_available": 20332867584,
+          "home_available": 398070521856
+        }
+      ],
+      "admission_wait_seconds": 0
+    },
+    {
+      "step": "G8",
+      "status": "SKIPPED",
+      "reason": "PGO prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-19T01:28:34-08:00",
+          "mem_available": 20340711424,
+          "home_available": 398070472704
+        }
+      ],
+      "admission_wait_seconds": 0
+    },
+    {
+      "step": "N4",
+      "status": "SKIPPED",
+      "reason": "MemAvailable minus 6 GiB below stage floor",
+      "admission": [
+        {
+          "time": "2026-11-19T01:28:37-08:00",
+          "mem_available": 20354441216,
+          "home_available": 398070423552,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 13911990272,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T01:33:37-08:00",
+          "mem_available": 20451229696,
+          "home_available": 398070415360,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 14008778752,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T01:38:37-08:00",
+          "mem_available": 20424179712,
+          "home_available": 398070415360,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 13981728768,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T01:43:37-08:00",
+          "mem_available": 20483674112,
+          "home_available": 398070415360,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 14041223168,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T01:48:37-08:00",
+          "mem_available": 20416991232,
+          "home_available": 398070415360,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 13974540288,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T01:53:37-08:00",
+          "mem_available": 20449288192,
+          "home_available": 398070415360,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 14006837248,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        },
+        {
+          "time": "2026-11-19T01:58:37-08:00",
+          "mem_available": 20450779136,
+          "home_available": 398070415360,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 14008328192,
+            "standard_cap": 25769803776,
+            "floor": 16106127360,
+            "jobs": 3,
+            "admitted": false
+          },
+          "disk_required": 96636764160
+        }
+      ],
+      "admission_wait_seconds": 1800.004
+    }
+  ],
+  "startup": {
+    "time": "2026-11-19T00:24:02-08:00",
+    "mem_available": 21711581184,
+    "home_available": 379004268544
+  },
+  "end": {
+    "time": "2026-11-19T01:58:40-08:00",
+    "mem_available": 20437549056,
+    "home_available": 398070366208
+  },
+  "watchdog_triggered": false
+}
