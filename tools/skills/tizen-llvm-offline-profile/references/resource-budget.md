@@ -32,3 +32,9 @@ Run the wrapper on an approved host with a qualified configuration. For example,
 ~~~
 
 Capture the service exit, cgroup memory peak/events, disk samples, elapsed time and final controller summary. A reduced-tier retry requires a separate approved attempt with matching job limits and cgroup settings. Stop cleanly on a host resource breach, OOM, deadline, ambiguous state or lost lock. Keep the outputs and logs for diagnosis.
+
+## One-shot stage admission
+
+With resources.stage_admission enabled, set the stage cgroup MemoryMax to min(MemAvailable minus 6 GiB, standard cap). Full package builds use a 24 GiB cap and a 15 GiB floor. The PGO package build and BOLT tool build with relink use the 15 GiB linker floor. Historical peak caps are 120% of the measured peak, rounded up to a memory page. The instrumented build, IR training, profdata merge, BOLT instrumentation with training and merge, and BOLT match use that cap as their floor. Separate peaks were unavailable for BOLT tools with relink and manifest compression. Their cap uses the maximum observed pipeline peak at 120%. Manifest compression has a 1 GiB planning floor. The serial training, merge, rewrite and compression stages use one job. Build stages use floor(6 times MemoryMax divided by 24 GiB), with a minimum of two jobs.
+
+Keep the existing disk admission budget and the 15 GiB disk and 6 GiB memory running stop lines. Sample admission once for each stage and retain the measured values in the summary.

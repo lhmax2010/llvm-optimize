@@ -93,6 +93,94 @@ class PlanTests(unittest.TestCase):
             self.assertEqual(manifest.file_identity(dest / (name + ".cpp")),
                              {key: rows[name][key] for key in ("bytes", "sha256")})
 
+    def recovery_fixture(self):
+        cfg = json.loads(self.example.read_text())
+        rows = json.loads((SKILL / "references/training-set.json").read_text())
+        source = self.root / "source"
+        recipe = source / "packaging/llvm.spec"
+        recipe.parent.mkdir(parents=True)
+        recipe.write_bytes(b"recipe")
+        conf = self.root / "gbs.conf"
+        conf.write_bytes(b"configuration")
+        cfg["paths"].update(llvm=str(source), gbs_config=str(conf))
+        cfg["resources"]["lock_path"] = str(self.root / "lock")
+        tools = {}
+        for name in ("instrumented_clang", "llvm_profdata"):
+            path = self.root / name
+            path.write_bytes(name.encode())
+            cfg["tools"][name] = str(path)
+            tools[name] = {"path": str(path), "version": "22.1.8", **manifest.file_identity(path)}
+        log = self.root / "build-0.txt"
+        log.write_text("PGO_INSTRUMENTED_BUILD_PASS\n")
+        identity = {"commit": cfg["source_commit"], "tree": "1" * 40,
+                    "snapshot": cfg["snapshot"], "recipe": manifest.file_identity(recipe),
+                    "gbs_config": manifest.file_identity(conf)}
+        receipt = self.root / "recovery.json"
+        receipt.write_text(json.dumps({"stage": "instrumented-build", "source_identity": identity,
+                                       "tools": tools, "build_log": {"path": str(log), **manifest.file_identity(log)}}))
+        return pgo_pair.Pipeline(cfg, self.output, rows), receipt, identity, tools
+
+    def test_recovery_dry_run_verifies_and_does_not_write(self):
+        pipeline, receipt, _, tools = self.recovery_fixture()
+        result = pipeline.dry_run(["ir-train"], resume=True, recovery=receipt, available=24 * 2**30)
+        self.assertEqual(result["recovery"]["status"], "VERIFIED_FOR_REUSE")
+        self.assertEqual(result["recovery"]["next_stage"], "ir-train")
+        self.assertFalse(self.output.exists())
+        Path(tools["instrumented_clang"]["path"]).write_text("changed")
+        with self.assertRaisesRegex(RuntimeError, "retained tool content mismatch"):
+            pipeline.dry_run(["ir-train"], resume=True, recovery=receipt)
+
+    def test_execute_recovers_g1_and_calls_only_g2(self):
+        pipeline, receipt, identity, _ = self.recovery_fixture()
+        artifact = self.root / "trained.profraw"
+        artifact.write_bytes(b"profile")
+        with patch.object(pipeline, "admit", return_value=True), \
+             patch.object(pipeline, "verify_inputs"), \
+             patch.object(pipeline, "source_identity", return_value=identity), \
+             patch.object(pipeline, "watchdog"), \
+             patch.object(pipeline, "stage", return_value=[artifact]) as stage:
+            pipeline.execute(["ir-train"], True, receipt)
+        self.assertEqual([call.args[0] for call in stage.call_args_list], ["ir-train"])
+        self.assertTrue(pipeline.checkpoint("instrumented-build"))
+        self.assertTrue(pipeline.checkpoint("ir-train"))
+
+    def test_stage_admission_is_one_shot_with_matching_cgroup(self):
+        cfg = json.loads(self.example.read_text())
+        rows = json.loads((SKILL / "references/training-set.json").read_text())
+        pipeline = pgo_pair.Pipeline(cfg, self.output, rows)
+        stage = "pgo-build"
+        memory = 22 * 2**30
+        disk = {"/path/to/disk": 150 * 2**30}
+        with patch.object(pipeline, "measure", return_value={"memory": memory, "disk": disk}) as measure, \
+             patch.object(pipeline, "cgroup_memory_max", return_value=16 * 2**30), \
+             patch.object(pgo_pair.time, "sleep") as sleep:
+            self.assertTrue(pipeline.admit([stage]))
+            self.assertEqual(pipeline.tier["jobs"], 4)
+            self.assertEqual(measure.call_count, 1)
+            sleep.assert_not_called()
+        with patch.object(pipeline, "measure", return_value={"memory": memory, "disk": disk}), \
+             patch.object(pipeline, "cgroup_memory_max", return_value=17 * 2**30):
+            with self.assertRaisesRegex(RuntimeError, "outside its admitted"):
+                pipeline.admit([stage])
+        with patch.object(pipeline, "measure", return_value={"memory": 20 * 2**30, "disk": disk}), \
+             patch.object(pipeline, "cgroup_memory_max") as cap:
+            self.assertFalse(pipeline.admit([stage]))
+            self.assertEqual(pipeline.status["status"], "SKIPPED")
+            cap.assert_not_called()
+
+    def test_launch_configuration_applies_to_training_and_version(self):
+        cfg = json.loads(self.example.read_text())
+        rows = json.loads((SKILL / "references/training-set.json").read_text())
+        cfg["tool_launchers"] = {"instrumented_clang": {"loader": "/path/to/loader",
+                                                       "library_path": ["/path/to/tizen/lib"]}}
+        cfg["training_extra_args"] = {"ir": ["-fintegrated-cc1"]}
+        pipeline = pgo_pair.Pipeline(cfg, self.output, rows)
+        prefix = ["/path/to/loader", "--library-path", "/path/to/tizen/lib", str(pipeline.tools["instrumented_clang"])]
+        self.assertEqual(pipeline.train("ir")[0]["argv"][:4], prefix)
+        self.assertEqual(pipeline.train("ir")[0]["argv"][-1], "-fintegrated-cc1")
+        self.assertEqual(pipeline.action(pipeline.tool("instrumented_clang", "--version"))["argv"], [*prefix, "--version"])
+        self.assertEqual(pipeline.action(pipeline.tool("git", "status"))["argv"], pipeline.tool("git", "status"))
+
     def test_checkpoint_rejects_changed_artifacts(self):
         cfg = json.loads(self.example.read_text())
         rows = json.loads((SKILL / "references/training-set.json").read_text())

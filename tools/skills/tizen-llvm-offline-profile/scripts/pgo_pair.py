@@ -17,6 +17,8 @@ import sys
 import time
 
 from bolt_stale_gate import GateError, audit_log
+from build_cleanup import remove_tree
+from stage_resources import RESERVE, admission as stage_admission
 from manifest import file_identity, generate
 
 STAGES = (
@@ -138,6 +140,10 @@ class Pipeline:
         self.resources = cfg["resources"]
         limits = self.resources["tiers"][self.resources["tier"]]
         self.paths["jobs"] = str(limits["jobs"])
+        self.dynamic_admission = self.resources.get("stage_admission", False)
+        if self.dynamic_admission and (self.resources["stop_memory_bytes"] != RESERVE or
+                                       self.resources["stop_disk_bytes"] != 15 * 2**30):
+            raise ValueError("stage admission requires the 6 GiB memory and 15 GiB disk stop lines")
         if (type(limits["jobs"]) is not int or limits["jobs"] <= 0 or
                 not 0 < self.resources["watchdog_seconds"] <= 30 or
                 self.resources["max_seconds"] <= 0 or
@@ -156,6 +162,15 @@ class Pipeline:
             raise ValueError("source_commit must be a full lowercase commit ID")
         self.command_config = cfg["commands"]
         self.tools = {name: absolute(self.expand(path)) for name, path in cfg["tools"].items()}
+        self.launchers = {}
+        for name, launch in cfg.get("tool_launchers", {}).items():
+            if name not in self.tools and name != "bolt-instrumented-clang":
+                raise ValueError(f"unknown launcher tool: {name}")
+            loader = absolute(self.expand(launch["loader"]))
+            libraries = [str(absolute(self.expand(path))) for path in launch["library_path"]]
+            if not libraries:
+                raise ValueError(f"empty loader library path: {name}")
+            self.launchers[name] = [str(loader), "--library-path", ":".join(libraries)]
         self.bolt_input = absolute(self.expand(cfg["bolt_input"]))
         self.bolt_runtime = absolute(self.expand(cfg["bolt_runtime"]))
         self.executable = self.root / "clang-bolt-instrumented"
@@ -187,7 +202,9 @@ class Pipeline:
 
     def action(self, argv, cwd=None, extra_env=None, stdout=None):
         absolute(argv[0])
-        return {"argv": argv, "cwd": str(self.root if cwd is None else cwd),
+        name = self.tool_name(argv)
+        launcher = self.launchers.get(name, [])
+        return {"argv": launcher + argv, "cwd": str(self.root if cwd is None else cwd),
                 "extra_env": extra_env or {}, "stdout": str(stdout) if stdout else None}
 
     def train(self, mode):
@@ -199,7 +216,8 @@ class Pipeline:
         for index, row in enumerate(self.rows):
             tree = self.root / mode / f"{index:02d}"
             env = {"LLVM_PROFILE_FILE": str(tree / "%m-%p.profraw")} if mode == "ir" else {}
-            argv = [str(program), *row["compiler_args"], "-c", row["file"], "-o", str(tree / "input.o")]
+            extra = self.cfg.get("training_extra_args", {}).get(mode, [])
+            argv = [str(program), *row["compiler_args"], "-c", row["file"], "-o", str(tree / "input.o"), *extra]
             actions.append(self.action(argv, tree, env))
         return actions
 
@@ -238,9 +256,16 @@ class Pipeline:
         }
         return mapping
 
-    def dry_run(self, selected):
+    def dry_run(self, selected, resume=False, recovery=None, available=None):
+        recovery_plan = None
+        if recovery:
+            receipt = self.recovery_receipt(recovery)
+            recovery_plan = {"stage": "instrumented-build", "status": "VERIFIED_FOR_REUSE",
+                             "artifacts": receipt["tools"], "next_stage": "ir-train"}
         mapping = self.plan()
-        return {"mode": "dry-run", "executes_builds": False, "project": self.cfg["project"],
+        return {"mode": "dry-run", "resume": resume, "recovery": recovery_plan,
+                "stage_admission": ([stage_admission(name, available) for name in selected]
+                                    if available is not None else []), "executes_builds": False, "project": self.cfg["project"],
                 "stages": [{"stage": name, "selected": name in selected, "commands": mapping[name],
                             "historical_substeps": [{"seconds": seconds, "peak_cgroup_bytes": memory}
                                                     for seconds, memory in MEASUREMENTS[name]]}
@@ -253,8 +278,28 @@ class Pipeline:
                           "Stage checkpoints are validated by content identity before reuse.",
                           "PGO match remains UNKNOWN. Final package qualification is separate."]}
 
-    def admit(self):
+    def admit(self, selected=(), available=None):
         start = time.monotonic()
+        if self.dynamic_admission:
+            if len(selected) != 1:
+                raise ValueError("select one stage per resource-limited invocation")
+            self.end = start + self.resources["max_seconds"]
+            measurement = self.measure()
+            available = measurement["memory"] if available is None else available
+            limit = stage_admission(selected[0], available)
+            self.status["admission"] = [{**measurement, "admission_memory": available, **limit}]
+            if not limit["admitted"] or min(measurement["disk"].values()) < self.resources["tiers"][self.resources["tier"]]["admission_disk_bytes"]:
+                self.status["status"] = "SKIPPED"
+                self.status["reason"] = "stage memory or disk below admission floor"
+                return False
+            cap = self.cgroup_memory_max()
+            if not limit["floor"] <= cap <= limit["memory_max"]:
+                raise RuntimeError("stage cgroup MemoryMax is outside its admitted memory budget")
+            self.tier = {"jobs": stage_admission(selected[0], cap + RESERVE)["jobs"]}
+            self.paths["jobs"] = str(self.tier["jobs"])
+            self.status["admission"][-1].update(actual_memory_max=cap, jobs=self.tier["jobs"])
+            return True
+
         self.end = start + self.resources["max_seconds"]
         retry = self.resources["defer_seconds"]
         if not 0 <= retry <= 1800:
@@ -268,11 +313,30 @@ class Pipeline:
                         min(measurement["disk"].values()) >= tier["admission_disk_bytes"]):
                     self.tier = tier
                     self.status["tier"] = name
-                    return
+                    return True
             if attempt or not retry or time.monotonic() + retry >= self.end:
                 break
             time.sleep(retry)
         raise RuntimeError("resource admission failed for the selected tier; see summary")
+
+    def cgroup_memory_max(self):
+        relative = next(line[3:] for line in Path("/proc/self/cgroup").read_text().splitlines()
+                        if line.startswith("0::"))
+        root = Path("/sys/fs/cgroup")
+        group = root / relative.lstrip("/")
+        limits = []
+        for path in (group, *group.parents):
+            if not path.is_relative_to(root):
+                break
+            try:
+                value = (path / "memory.max").read_text().strip()
+            except FileNotFoundError:
+                continue
+            if value != "max":
+                limits.append(int(value))
+        if not limits:
+            raise RuntimeError("stage requires a finite cgroup MemoryMax")
+        return min(limits)
 
     def measure(self):
         mounts = {str(self.root), *self.resources["disk_paths"]}
@@ -288,13 +352,21 @@ class Pipeline:
             self.status["watchdog"] = data
             raise RuntimeError("job crossed the memory or disk stop line")
 
+    def tool_name(self, argv):
+        tools = {**self.tools, "bolt-instrumented-clang": self.executable}
+        for name, path in tools.items():
+            prefix = self.launchers.get(name, [])
+            if argv[0] == str(path) or (prefix and argv[:len(prefix)+1] == [*prefix, str(path)]):
+                return name
+        return None
+
     def tool_environment(self, argv):
         by_tool = self.cfg.get("tool_environment", {})
-        for name, path in self.tools.items():
-            if argv[0] == str(path):
-                return by_tool.get(name, {})
-        if argv[0] == str(self.executable):
-            return by_tool.get("bolt-instrumented-clang", {})
+        name = self.tool_name(argv)
+        if name in self.launchers:
+            return {key: val for key, val in by_tool.get(name, {}).items() if key != "LD_LIBRARY_PATH"}
+        if name:
+            return by_tool.get(name, {})
         if (len(argv) > 1 and any(Path(arg).name == "runtime_dep_check.py" for arg in argv[:3])
                 and str(self.tools["readelf"]) in argv):
             return by_tool.get("readelf", {})
@@ -304,14 +376,16 @@ class Pipeline:
         self.watchdog()
         argv = action["argv"]
         log = attempt / (label + ".txt")
-        env = {**self.cfg.get("environment", {}), **self.tool_environment(argv), "LC_ALL": "C",
+        env = {**os.environ, **self.cfg.get("environment", {}), **self.tool_environment(argv), "LC_ALL": "C",
                "PROFILE_JOBS": str(self.tier["jobs"]), **action["extra_env"]}
+        if self.tool_name(argv) in self.launchers:
+            env.pop("LD_LIBRARY_PATH", None)
         with log.open("xb") as stream:
             output_path = Path(action["stdout"]) if action["stdout"] else None
             output = output_path.open("xb") if output_path else stream
             started = time.monotonic()
             try:
-                with subprocess.Popen(argv, cwd=action["cwd"], env={**os.environ, **env}, stdout=output,
+                with subprocess.Popen(argv, cwd=action["cwd"], env=env, stdout=output,
                                       stderr=stream if output_path else subprocess.STDOUT,
                                       start_new_session=True) as process:
                     try:
@@ -504,7 +578,47 @@ class Pipeline:
                 raise RuntimeError(f"checkpoint artifact changed: {record['path']}")
         return True
 
-    def execute(self, selected, resume):
+    def recovery_receipt(self, path):
+        receipt = read(absolute(path))
+        if receipt["stage"] != "instrumented-build":
+            raise RuntimeError("receipt must describe the instrumented build")
+        for key, value in (("commit", self.cfg["source_commit"]), ("snapshot", self.cfg["snapshot"]),
+                           ("recipe", file_identity(Path(self.paths["llvm"]) / "packaging/llvm.spec")),
+                           ("gbs_config", file_identity(self.paths["gbs_config"]))):
+            if receipt["source_identity"][key] != value:
+                raise RuntimeError(f"retained build identity mismatch: {key}")
+        if set(receipt["tools"]) != {"instrumented_clang", "llvm_profdata"}:
+            raise RuntimeError("retained build receipt requires both IR tools")
+        for name, record in receipt["tools"].items():
+            if absolute(record["path"]) != self.tools[name] or not record["version"]:
+                raise RuntimeError(f"retained tool path or version mismatch: {name}")
+            if file_identity(self.tools[name]) != {k: record[k] for k in ("bytes", "sha256")}:
+                raise RuntimeError(f"retained tool content mismatch: {name}")
+        log = receipt["build_log"]
+        path = absolute(log["path"])
+        if file_identity(path) != {k: log[k] for k in ("bytes", "sha256")}:
+            raise RuntimeError("retained build log content mismatch")
+        with path.open(errors="replace") as stream:
+            if not any(line.rstrip() == "PGO_INSTRUMENTED_BUILD_PASS" for line in stream):
+                raise RuntimeError("retained build log has no instrumented build completion marker")
+        return receipt
+
+    def adopt_instrumented(self, receipt):
+        if receipt["source_identity"] != self.current_identity:
+            raise RuntimeError("retained build source identity does not match the current source")
+        ir = self.root / "ir-tools.json"
+        origin = self.root / "source-identity.json"
+        log = receipt["build_log"]
+        save(ir, receipt["tools"])
+        save(origin, self.current_identity)
+        files = [ir, origin, *map(Path, (row["path"] for row in receipt["tools"].values())), Path(log["path"])]
+        save(self.root / "instrumented-build.done.json", {
+            "stage": "instrumented-build", "identity": self.state_digest,
+            "attempt": str(Path(log["path"]).parent),
+            "artifacts": [{"path": str(p), **file_identity(p)} for p in files],
+        })
+
+    def execute(self, selected, resume, recovery=None, available=None):
         lock = absolute(self.resources["lock_path"])
         if self.root.is_symlink():
             raise ValueError("output root must not be a symbolic link")
@@ -512,7 +626,8 @@ class Pipeline:
             self.root.mkdir(exist_ok=resume)
             self.status["started_at"] = timestamp()
             try:
-                self.admit()
+                if not self.admit(selected, available):
+                    return
                 self.verify_inputs()
                 audit = self.root / ("inputs-" + str(time.time_ns()))
                 audit.mkdir()
@@ -521,6 +636,11 @@ class Pipeline:
                 if old_identity.exists() and read(old_identity) != self.current_identity:
                     raise RuntimeError("source, recipe, snapshot or build configuration changed")
                 existing = [self.checkpoint(name) for name in STAGES]
+                if recovery and not existing[0]:
+                    self.adopt_instrumented(self.recovery_receipt(recovery))
+                    existing[0] = self.checkpoint(STAGES[0])
+                    if STAGES[0] not in selected:
+                        self.status["stages"].append({"name": STAGES[0], "status": "REUSED"})
                 planned = set(selected)
                 for index, name in enumerate(STAGES):
                     if name in planned and not all(existing[j] or STAGES[j] in planned for j in range(index)):
@@ -540,6 +660,14 @@ class Pipeline:
                     artifacts = [{"path": str(path), **file_identity(path)} for path in outputs]
                     if not all(x["bytes"] > 0 for x in artifacts):
                         raise RuntimeError(f"empty stage output: {name}")
+                    cleanup = self.cfg.get("build_tree_cleanup", {}).get(name)
+                    if cleanup:
+                        project = self.expand(cleanup["project_root"])
+                        tree = self.expand(cleanup["path"])
+                        if any(Path(record["path"]).resolve().is_relative_to(Path(tree)) for record in artifacts):
+                            raise RuntimeError("a checkpoint artifact still resides in the intermediate build tree")
+                        save(attempt / "cleanup-intent.json", {"path": tree, "retained": artifacts})
+                        remove_tree(project, tree)
                     save(self.root / (name + ".done.json"), {"stage": name, "identity": self.state_digest,
                                                              "attempt": str(attempt), "artifacts": artifacts})
                     row["status"] = "PASS"
@@ -560,6 +688,9 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--recover-instrumented", type=Path)
+    parser.add_argument("--memory-available-bytes", type=int,
+                        help="admission snapshot from the enclosing stage launcher")
     parser.add_argument("--stages", help="comma-separated stage names")
     args = parser.parse_args()
     try:
@@ -570,15 +701,20 @@ def main():
             training = absolute(cfg["training"])
         pipeline = Pipeline(cfg, args.output, read(training))
         selected = active_stages(args.stages)
+        if args.recover_instrumented and not args.resume:
+            raise ValueError("a retained instrumented build receipt requires --resume")
+        if args.memory_available_bytes is not None and args.memory_available_bytes <= 0:
+            raise ValueError("memory snapshot must be positive")
         if args.dry_run:
-            print(json.dumps(pipeline.dry_run(selected), indent=2))
+            print(json.dumps(pipeline.dry_run(selected, args.resume, args.recover_instrumented,
+                                              args.memory_available_bytes), indent=2))
         else:
             def interrupt(signum, frame):
                 raise KeyboardInterrupt(f"received signal {signum}")
 
             for signum in (signal.SIGTERM, signal.SIGHUP):
                 signal.signal(signum, interrupt)
-            pipeline.execute(selected, args.resume)
+            pipeline.execute(selected, args.resume, args.recover_instrumented, args.memory_available_bytes)
     except (GateError, RuntimeError, OSError, KeyError, TypeError, ValueError, KeyboardInterrupt) as error:
         parser.exit(1, f"STOP: {error or type(error).__name__}\n")
 

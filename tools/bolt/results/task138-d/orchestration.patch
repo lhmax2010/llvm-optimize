@@ -1,0 +1,270 @@
+--- a/orchestrator.py
++++ b/orchestrator.py
+@@ -3,8 +3,12 @@
+ from pathlib import Path
+ from zoneinfo import ZoneInfo
+ W,B,A=map(Path,sys.argv[1:4])
+-GIB=2**30
+-UNIT="llvm-opt-133n-20261118"
++SCRIPTS = Path(__file__).resolve().parent
++SKILL = B / "tools/skills/tizen-llvm-offline-profile/scripts"
++sys.path.insert(0, str(SKILL))
++from stage_resources import GIB, admission
++from pgo_pair import STAGES
++UNIT="llvm-opt-night-dynamic"
+ SYS="/usr/bin/systemctl"
+ RUN="/usr/bin/systemd-run"
+ GIT="/usr/bin/git"
+@@ -25,7 +29,7 @@
+ def git(*arg):
+  return command([GIT,"-C",str(B),*arg],env=dict(os.environ,GIT_TERMINAL_PROMPT="0"),timeout=90)
+ def publish(file,key):
+- dest=B/"tools/bolt/results/task133-n"
++ dest=B/"tools/bolt/results"/A.name
+  dest.mkdir(parents=True,exist_ok=True)
+  files=[dest/(key+".json")]
+  files[0].write_bytes(file.read_bytes())
+@@ -73,38 +77,33 @@
+  return d
+ def cut(seconds):
+  return datetime.now(deadline.tzinfo)+timedelta(seconds=seconds)
+-def select(name, std, reduced, disk):
++def select(stage, disk):
+  t0=time.monotonic()
+- checks=[]
+- for attempt in range(7):
+-  v=resources()
+-  v["check"]=attempt+1
+-  checks.append(v)
+-  if cut(0)>=deadline:
+-   return None,"reached 08:30 Asia/Shanghai",checks,time.monotonic()-t0
+-  if v["home_available"]<disk:
+-   return None,"/home below disk admission",checks,time.monotonic()-t0
+-  if v["mem_available"]>=std+8*GIB:
+-   return ("standard",std),"",checks,time.monotonic()-t0
+-  if attempt==6:
+-   if v["mem_available"]>=reduced+8*GIB:
+-    return ("reduced",reduced),"",checks,time.monotonic()-t0
+-   return None,"MemAvailable minus 8 GiB below reduced MemoryMax",checks,time.monotonic()-t0
+-  remain=(deadline-cut(0)).total_seconds()
+-  if remain>0: time.sleep(min(300,remain))
+- raise AssertionError(name)
++ row=resources()
++ limit=admission(stage,row["mem_available"])
++ row["memory_plan"]=limit
++ if cut(0)>=deadline:
++  return None,"reached 08:30 Asia/Shanghai",[row],time.monotonic()-t0
++ if row["home_available"]<disk:
++  return None,"/home below disk admission",[row],time.monotonic()-t0
++ if not limit["admitted"]:
++  return None,"MemAvailable minus 6 GiB below stage floor",[row],time.monotonic()-t0
++ return limit,"",[row],time.monotonic()-t0
++
+ def execute(step,group,limits,tier,checks,wait,index):
+  mem,cpu,jobs,timeout=limits
+  path=A/step
+  path.mkdir(exist_ok=True)
+  unit=UNIT+"-"+step.lower()+".service"
+- worker=A/"worker.py"
++ worker=SCRIPTS/"worker.py"
+  argv=[RUN,"--user","--wait","--pipe","--unit="+unit,"--expand-environment=no",
+        "-p","MemoryMax="+str(mem),"-p","MemorySwapMax=0","-p","CPUQuota="+str(cpu)+"%",
+        "-p","Nice=19","-p","IOSchedulingClass=idle","-p","OOMPolicy=stop",
+        "-p","KillMode=control-group","-p","TimeoutStopSec=120","-p","WorkingDirectory="+str(path)]
+  if timeout: argv+=["-p","RuntimeMaxSec="+str(timeout)]
+- argv+=["/usr/bin/python3","-B",str(worker),str(A),step,tier,str(jobs),str(mem),str(cpu)]
++ argv+=["--setenv=TASK133_WORKSPACE="+str(W),
++       "--setenv=TASK133_ADMISSION_MEMORY="+str(checks[-1]["mem_available"]),
++       "/usr/bin/python3","-B",str(worker),str(A),step,tier,str(jobs),str(mem),str(cpu)]
+  row={"step":step,"started_at":stamp(),"tier":tier,"memory_max":mem,"cpu_percent":cpu,"jobs":jobs,"admission":checks,"admission_wait_seconds":round(wait,3),"unit":unit,"argv":argv}
+  write(path/"started.json",row)
+  print("133-N START",step,tier,mem,checks[-1],flush=True)
+@@ -159,34 +158,29 @@
+ deadline=now.replace(hour=8,minute=30,second=0,microsecond=0)
+ if deadline<=now: deadline+=timedelta(days=1)
+ disk_G=math.ceil((125.626-30)*GIB)
+-source99=11222745088
+-source74=24482992128
+-g_peaks={"G1":7227248640,"G2":1481818112,"G3":1824751616,"G4":21703991296,
+-         "G5":None,"G6":17074352128,"G7":8712601600,"G8":None}
+-plan=[("N1","N1",12*GIB,math.ceil(source99*0.7),60*GIB,400,2,7200),
+-      ("N2","N2",math.ceil(source74*1.2),math.ceil(source74*0.7),90*GIB,1200,8,0)]
+-for stage,peak in g_peaks.items():
+- src=peak if peak else max(n for n in g_peaks.values() if n)
+- plan.append((stage,"G",math.ceil(src*1.2),math.ceil(src*0.7),disk_G,400,6,0))
+-plan.append(("N4","N4",math.ceil(source74*1.2),math.ceil(source74*0.7),90*GIB,1200,8,0))
++plan=[("N1","N1","archive-replay",60*GIB,400,7200),
++      ("N2","N2","full-build",90*GIB,1200,0)]
++for order,stage in enumerate(STAGES,1):
++ plan.append(("G"+str(order),"G",stage,disk_G,400,0))
++plan.append(("N4","N4","full-build",90*GIB,1200,0))
+ init=resources()
+ write(A/"startup.json",{"unit":UNIT+".service","startup":init,"deadline":deadline.isoformat(),
+- "source_99_peak_bytes":source99,"source_74_T_peak_bytes":source74,"PGO_stage_peaks":g_peaks,"disk_G_bytes":disk_G,
+- "plan":plan,"G_missing_peak_budget":"G5/G8 use maximum observed pipeline-stage peak from 131, conservative planning bound, not a measurement"})
++ "disk_G_bytes":disk_G,"reserve_bytes":6*GIB,"plan":plan})
+ print("133-N STARTUP",init,"deadline",deadline.isoformat(),flush=True)
+ interrupted=False
+ blocked_g=False
+ rows=[]
+-for index,(step,group,std,reduced,disk,cpu,jobs,timeout) in enumerate(plan):
++for index,(step,group,stage,disk,cpu,timeout) in enumerate(plan):
+  if interrupted or (group=="G" and blocked_g):
+   result={"step":step,"status":"SKIPPED","reason":"watchdog crossed stop line" if interrupted else "PGO prerequisite did not pass","admission":[resources()],"admission_wait_seconds":0}
+  else:
+-  selected,reason,checks,wait=select(step,std,reduced,disk)
++  selected,reason,checks,wait=select(stage,disk)
+   if not selected:
+    result={"step":step,"status":"SKIPPED","reason":reason,"admission":checks,"admission_wait_seconds":round(wait,3)}
+   else:
+-   tier,mem=selected
+-   count=jobs if tier=="standard" else max(1,jobs//2)
++   tier="dynamic"
++   mem=selected["memory_max"]
++   count=selected["jobs"]
+    try:
+     result=execute(step,group,(mem,cpu,count,timeout),tier,checks,wait,index)
+    except Exception as e:
+--- a/buildsteps.py
++++ b/buildsteps.py
+@@ -172,11 +172,12 @@
+  count=checked(*chroot(root,"/usr/bin/du","-sx","-B1",INNER)).decode()
+  result={"path":str(build),"bytes":int(count.split()[0])}
+  save(d/"build-cleanup.json",result)
+- script=("from pathlib import Path; import shutil, sys; "
+-         "p = Path(sys.argv[1]); assert p == Path('/home/abuild/rpmbuild/BUILD'); "
+-         "assert p.is_dir() and not p.is_symlink() and p.resolve() == p; "
+-         "assert shutil.rmtree.avoids_symlink_attacks; shutil.rmtree(p)")
+- checked(*chroot(root,"/usr/bin/python3","-B","-c",script,INNER))
++ # Pass the same audited cleanup into the build environment, whose rm is different.
++ toolbox=Path(os.environ["TASK133_WORKSPACE"]).with_name("llvm-optimize-bolt")
++ cleanup=toolbox/"tools/skills/tizen-llvm-offline-profile/scripts/build_cleanup.py"
++ argv=chroot(root,"/usr/bin/python3","-B","-","/home/abuild/rpmbuild",INNER)
++ print(shlex.join(argv),flush=True)
++ subprocess.run(argv,input=cleanup.read_bytes(),check=True)
+  assert not build.exists(),str(build)
+  result["deleted"]=True
+  save(d/"build-cleanup.json",result)
+--- a/worker.py
++++ b/worker.py
+@@ -4,7 +4,7 @@
+ ROOT,TASK,TIER,JOBS,MEM,CPU=sys.argv[1:7]
+ A=Path(ROOT)
+ D=A/TASK
+-W=A.parents[1]
++W=Path(os.environ['TASK133_WORKSPACE'])
+ B=W.with_name(W.name+"-bolt")
+ R=W/"temp/task131/pgo-dev"
+ PS="7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8"
+@@ -149,7 +149,9 @@
+   out=generate(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)
+  else:
+   raise ValueError(TASK)
+- row={"status":"PASS","details":out}
++ row={"status":out.pop("_step_status", "PASS"),"details":out}
++ if row["status"]=="SKIPPED":
++  row["reason"]=out.get("reason","stage admission failed")
+ except BlockingIOError as e:
+  row={"status":"SKIPPED","reason":"shared project heavy-stage exclusion is busy", "error":str(e)}
+  print(row,flush=True)
+--- a/pgosteps.py
++++ b/pgosteps.py
+@@ -57,11 +57,20 @@
+   if tool=="instrumented_clang": dirs.insert(0,ir_asset/"lib64")
+   s["tool_environment"][tool]={"LD_LIBRARY_PATH":":".join(map(str,dirs))}
+  s["tool_environment"]["bolt-instrumented-clang"]=s["tool_environment"]["instrumented_clang"]
++ s["tool_launchers"]={"instrumented_clang":{
++   "loader":str(ir_root/"usr/lib64/ld-linux-x86-64.so.2"),
++   "library_path":s["tool_environment"]["instrumented_clang"]["LD_LIBRARY_PATH"].split(":"),
++ }}
++ s["tool_launchers"]["llvm_profdata"] = {
++   "loader":str(platform/"usr/lib64/ld-linux-x86-64.so.2"),
++   "library_path":s["tool_environment"]["llvm_profdata"]["LD_LIBRARY_PATH"].split(":"),
++ }
++ s["training_extra_args"]={"ir":["-fintegrated-cc1"]}
+  for stage in ("instrumented-build","pgo-build","bolt-tools","relink-strip-debug"):
+-  s["commands"][stage]=[{"argv":[PY,"-B",str(a/"pgosteps.py"),"adapter",str(a),stage],"cwd":str(d)}]
++  s["commands"][stage]=[{"argv":[PY,"-B",str(Path(__file__).resolve()),"adapter",str(a),stage],"cwd":str(d)}]
+  # Actual spool resources are set by the systemd scheduler. Keep the checkpoint
+  # description stable across stages and any per-stage tier changes.
+- s["resources"].update(tier="managed",tiers={"managed":{"admission_memory_bytes":7*2**30,"admission_disk_bytes":16*2**30,
++ s["resources"].update(stage_admission=True,tier="managed",tiers={"managed":{"admission_memory_bytes":7*2**30,"admission_disk_bytes":16*2**30,
+              "memory_max_bytes":0,"jobs":6}},stop_memory_bytes=6*2**30,stop_disk_bytes=15*2**30,defer_seconds=0,
+              max_seconds=86400,lock_path=str(d/"generation.lock"))
+  for key in ("sysroot_armv7l","sysroot_aarch64","resource_dir"):
+@@ -74,46 +83,8 @@
+                                  str(old),str(d/"config.json")))
+  (d/"134-config-to-live.diff").write_text(diff)
+  return d/"config.json"
+-def recover_instrumented(a,d,w):
+- root=scratch(d)
+- gpath=root/BUILD_DIR.lstrip("/")
+- identities=read(d/"artifacts.json")
+- out=a/"G-config/ir-artifacts/clang-22"
+- fresh=read(d/"build-cleanup.json")
+- assert fresh["path"]==str(root/INNER.lstrip("/")) and not fresh.get("deleted")
+- assert gpath.is_dir() and sha(gpath/"bin/clang-22")==sha(out)
+- assert sha(gpath/"CMakeCache.txt")==sha(d/"CMakeCache.instrumented.txt")
+- assert "LLVM_BUILD_INSTRUMENTED:STRING=IR" in (gpath/"CMakeCache.txt").read_text()
+- for record in identities:
+-  assert record==receipt(Path(record["path"])),record
+- before=read(a/"G1.json")["worker"]["reason"]
+- assert "134 skill exited 1" in before
+- attempts=sorted((a/"G-profiles").glob("instrumented-build-*"))
+- original=[t/"build-0.txt" for t in attempts if (t/"build-0.txt").is_file()
+-           and t.name!=max(attempts).name]
+- assert len(original)==1,original
+- logs=[]
+- with original[0].open(errors="replace") as f:
+-  verified=False
+-  for i,line in enumerate(f,1):
+-   if line.rstrip()=="PGO_INSTRUMENTED_BUILD_PASS":
+-    verified=True
+-   if "LLVM Profile Warning" in line:
+-    logs.append((i,line.rstrip()))
+- assert verified
+- save(d/"recovery-verification.json",{"retained_result":identities,"source_log":receipt(original[0]),
+-    "compile_success":verified,"warnings":len(logs),"warning_first":logs[0] if logs else None})
+- print("Reusing the already linked instrumented compiler with verified identity.",flush=True)
+- for i,line in logs:
+-  print(line,flush=True)
+- settle_root(root)
+- save(d/"build-cleanup-first-attempt.json",fresh)
+- delete_intermediate(d,root)
+-
+ def adapt_instrumented(a,w,b,jobs):
+  d=a/"G1"
+- if os.environ.get("TASK133_RESUME_EXISTING_IR")=="1":
+-  return recover_instrumented(a,d,w)
+  source=prepare_source(w,d,R)
+  exp=export(w,b,d,source,R,"llvm.spec")
+  sp=exp/"llvm.spec"
+@@ -297,7 +268,8 @@
+   skill=b/SKILL/"pgo_pair.py"
+   root=a/"G-profiles"
+   args=[PY,"-B",str(skill),"--config",str(c),"--output",str(root),"--stages",stage]
+-  if idx or os.environ.get("TASK133_RESUME_EXISTING_IR")=="1": args += ["--resume"]
++  args += ["--memory-available-bytes",os.environ["TASK133_ADMISSION_MEMORY"]]
++  if idx: args += ["--resume"]
+   elif not root.exists():
+    with (d/"skill-dry-run.json").open("xb") as out:
+     subprocess.run([*args,"--dry-run"],check=True,stdout=out)
+@@ -307,6 +279,9 @@
+   if proc.returncode:
+    err=read(root/"summary.json") if (root/"summary.json").is_file() else {}
+    raise RuntimeError(f"134 skill exited {proc.returncode}: {err}")
++  status=read(root/"summary.json")
++  if status["status"]=="SKIPPED":
++   return {"_step_status":"SKIPPED","stage":stage,"reason":status["reason"],"admission":status["admission"]}
+   check=read(root/(stage+".done.json"))
+   assert check["stage"]==stage
+   counts=None
+@@ -324,7 +299,7 @@
+  _,mode,d,stage=sys.argv
+  assert mode=="adapter"
+  a=Path(d)
+- w=a.parents[1]
++ w=Path(os.environ["TASK133_WORKSPACE"])
+  b=w.with_name(w.name+"-bolt")
+  actions={"instrumented-build":adapt_instrumented,"pgo-build":adapt_pgo,"bolt-tools":adapt_tools,"relink-strip-debug":adapt_link}
+  actions[stage](a,w,b,int(os.environ["TASK133_JOBS"]))
