@@ -1,0 +1,279 @@
+{
+  "rows": [
+    {
+      "step": "N2",
+      "started_at": "2026-11-20T07:47:49-08:00",
+      "tier": "dynamic",
+      "memory_max": 22000951296,
+      "cpu_percent": 1200,
+      "jobs": 6,
+      "thinlto_jobs": 6,
+      "link_jobs": 1,
+      "admission": [
+        {
+          "time": "2026-11-20T07:47:49-08:00",
+          "mem_available": 26295918592,
+          "home_available": 267874074624,
+          "memory_plan": {
+            "stage": "full-build",
+            "memory_max": 22000951296,
+            "standard_cap": 25769803776,
+            "floor": 10737418240,
+            "jobs": 6,
+            "thinlto_jobs": 6,
+            "link_jobs": 1,
+            "admitted": true
+          },
+          "disk_required": 96636764160
+        }
+      ],
+      "admission_wait_seconds": 0.0,
+      "unit": "llvm-opt-148-weekend-n2.service",
+      "argv": [
+        "/usr/bin/systemd-run",
+        "--user",
+        "--wait",
+        "--pipe",
+        "--unit=llvm-opt-148-weekend-n2.service",
+        "--expand-environment=no",
+        "-p",
+        "MemoryMax=22000951296",
+        "-p",
+        "MemorySwapMax=0",
+        "-p",
+        "CPUQuota=1200%",
+        "-p",
+        "Nice=19",
+        "-p",
+        "IOSchedulingClass=idle",
+        "-p",
+        "OOMPolicy=stop",
+        "-p",
+        "KillMode=control-group",
+        "-p",
+        "TimeoutStopSec=120",
+        "-p",
+        "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2",
+        "--setenv=TASK133_WORKSPACE=/home/linhao/Toolchain/development/llvm-optimize",
+        "--setenv=TASK138_UNIT=llvm-opt-148-weekend-n2",
+        "--setenv=TASK133_ADMISSION_MEMORY=26295918592",
+        "/usr/bin/python3",
+        "-B",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/worker.py",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task148",
+        "N2",
+        "dynamic",
+        "6",
+        "22000951296",
+        "1200"
+      ],
+      "ended_at": "2026-11-20T07:51:57-08:00",
+      "seconds": 247.467,
+      "rc": 1,
+      "resources": {
+        "memory.peak": "10126950400",
+        "VmHWM_sample": {
+          "bytes": 798351360,
+          "pid": 7922,
+          "argv": "git archive --format=tar --prefix= 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 --"
+        },
+        "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+        "memory.stat": "anon 10387456\nfile 9202921472",
+        "memory.max": "22000951296",
+        "memory.swap.peak": "0"
+      },
+      "systemd": "Result=exit-code\nMemoryPeak=10110373888\nCPUUsageNSec=129139041000\nActiveState=failed\nInvocationID=871aa99441e54fab9200aa7777396ab8\n",
+      "watchdog": null,
+      "log_path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/service.log",
+      "end_measurement": {
+        "time": "2026-11-20T07:51:57-08:00",
+        "mem_available": 25483239424,
+        "home_available": 259943518208
+      },
+      "worker": {
+        "status": "STOP",
+        "reason": "Command '['/usr/bin/gbs', '-c', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs.conf', 'build', '-A', 'x86_64', '-B', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-driver', '-c', '7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8', '--threads=6', '--define', 'jobs 6', '--define', '_smp_mflags -j6', '--define', '_costomized_smp_mflags -j6', '--define', 'mlgo_build_jobs 6', '--define', '_without_llvm_speedup 1', '--define', '_buildshell /var/tmp/llvm-stage-jobs/build-shell', '--noinit', '--baselibs', '--style=tar', '--spec', 'llvm.spec', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source']' returned non-zero exit status 1.",
+        "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/worker.py\", line 157, in <module>\n    out=build(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 292, in build\n    rpms=run_gbs(w,d,source,ref,\"llvm.spec\",jobs,exp,extra)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 154, in run_gbs\n    checked(*argv,cwd=source,output=d/\"gbs.log\")\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 30, in checked\n    return subprocess.run(argv,cwd=cwd,env=env or CLEAN_ENV,stdout=f,stderr=subprocess.STDOUT,check=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['/usr/bin/gbs', '-c', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs.conf', 'build', '-A', 'x86_64', '-B', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-driver', '-c', '7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8', '--threads=6', '--define', 'jobs 6', '--define', '_smp_mflags -j6', '--define', '_costomized_smp_mflags -j6', '--define', 'mlgo_build_jobs 6', '--define', '_without_llvm_speedup 1', '--define', '_buildshell /var/tmp/llvm-stage-jobs/build-shell', '--noinit', '--baselibs', '--style=tar', '--spec', 'llvm.spec', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source']' returned non-zero exit status 1.\n",
+        "cgroup_end": {
+          "memory.peak": "10126950400",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+          "memory.max": "22000951296",
+          "memory.stat": "anon 10387456\nfile 9202921472",
+          "memory.swap.peak": "0"
+        }
+      },
+      "log_tail": "-C /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source status --porcelain --untracked-files=no\n/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/gbs.conf export --spec llvm.spec --commit 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 --upstream-branch sandbox/fangyu.he/llvm_optmize --upstream-tag upstream/22.1.8 --outdir-directly -o /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/export /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source\n/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2 --library-path /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64 /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/rpmspec --showrc\n/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2 --library-path /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64 /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/rpmspec -P --macros '/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/macros:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/macros.d/macros.*:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/platform/%{_target}/macros:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/fileattrs/*.attr:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/tizen/macros:/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/rerun4/parse/toolchain-x86-debug.macros' --target x86_64-tizen-linux --define '_topdir /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/rpm' --define '_builddir /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/rpm/BUILD' --define '_sourcedir /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/export' --define '_toolchain clang' --define 'jobs 6' --define '_smp_mflags -j6' --define '_costomized_smp_mflags -j6' --define 'mlgo_build_jobs 6' --define '_without_llvm_speedup 1' /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/export/llvm.spec\n/usr/bin/sudo -n /usr/bin/build --uid 1000:1000 --root /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0 --dist /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/build.conf --arch x86_64 --target x86_64-tizen-linux --stage=-bp --debug --baselibs --define 'jobs 6' --define '_smp_mflags -j6' --define '_costomized_smp_mflags -j6' --define 'mlgo_build_jobs 6' --define '_without_llvm_speedup 1' --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/packages/ --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/debug/ /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/export/llvm.spec\n/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs.conf build -A x86_64 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-driver -c 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 --threads=6 --define 'jobs 6' --define '_smp_mflags -j6' --define '_costomized_smp_mflags -j6' --define 'mlgo_build_jobs 6' --define '_without_llvm_speedup 1' --define '_buildshell /var/tmp/llvm-stage-jobs/build-shell' --noinit --baselibs --style=tar --spec llvm.spec /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source\nTraceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/worker.py\", line 157, in <module>\n    out=build(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 292, in build\n    rpms=run_gbs(w,d,source,ref,\"llvm.spec\",jobs,exp,extra)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 154, in run_gbs\n    checked(*argv,cwd=source,output=d/\"gbs.log\")\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 30, in checked\n    return subprocess.run(argv,cwd=cwd,env=env or CLEAN_ENV,stdout=f,stderr=subprocess.STDOUT,check=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['/usr/bin/gbs', '-c', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs.conf', 'build', '-A', 'x86_64', '-B', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-driver', '-c', '7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8', '--threads=6', '--define', 'jobs 6', '--define', '_smp_mflags -j6', '--define', '_costomized_smp_mflags -j6', '--define', 'mlgo_build_jobs 6', '--define', '_without_llvm_speedup 1', '--define', '_buildshell /var/tmp/llvm-stage-jobs/build-shell', '--noinit', '--baselibs', '--style=tar', '--spec', 'llvm.spec', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source']' returned non-zero exit status 1.\n\nFinished with result: exit-code\nMain processes terminated with: code=exited/status=1\nService runtime: 4min 7.411s\nCPU time consumed: 2min 9.139s\nMemory peak: 9.4G\nMemory swap peak: 0B\n",
+      "status": "FAIL",
+      "reason": "Command '['/usr/bin/gbs', '-c', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs.conf', 'build', '-A', 'x86_64', '-B', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-driver', '-c', '7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8', '--threads=6', '--define', 'jobs 6', '--define', '_smp_mflags -j6', '--define', '_costomized_smp_mflags -j6', '--define', 'mlgo_build_jobs 6', '--define', '_without_llvm_speedup 1', '--define', '_buildshell /var/tmp/llvm-stage-jobs/build-shell', '--noinit', '--baselibs', '--style=tar', '--spec', 'llvm.spec', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source']' returned non-zero exit status 1."
+    },
+    {
+      "step": "G4",
+      "started_at": "2026-11-20T07:51:59-08:00",
+      "tier": "dynamic",
+      "memory_max": 21220311040,
+      "cpu_percent": 400,
+      "jobs": 4,
+      "thinlto_jobs": 4,
+      "link_jobs": 1,
+      "admission": [
+        {
+          "time": "2026-11-20T07:51:59-08:00",
+          "mem_available": 25515278336,
+          "home_available": 259943448576,
+          "memory_plan": {
+            "stage": "pgo-build",
+            "memory_max": 21220311040,
+            "standard_cap": 25769803776,
+            "floor": 10737418240,
+            "jobs": 4,
+            "thinlto_jobs": 4,
+            "link_jobs": 1,
+            "admitted": true
+          },
+          "disk_required": 102677635662
+        }
+      ],
+      "admission_wait_seconds": 0.0,
+      "unit": "llvm-opt-148-weekend-g4.service",
+      "argv": [
+        "/usr/bin/systemd-run",
+        "--user",
+        "--wait",
+        "--pipe",
+        "--unit=llvm-opt-148-weekend-g4.service",
+        "--expand-environment=no",
+        "-p",
+        "MemoryMax=21220311040",
+        "-p",
+        "MemorySwapMax=0",
+        "-p",
+        "CPUQuota=400%",
+        "-p",
+        "Nice=19",
+        "-p",
+        "IOSchedulingClass=idle",
+        "-p",
+        "OOMPolicy=stop",
+        "-p",
+        "KillMode=control-group",
+        "-p",
+        "TimeoutStopSec=120",
+        "-p",
+        "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G4",
+        "--setenv=TASK133_WORKSPACE=/home/linhao/Toolchain/development/llvm-optimize",
+        "--setenv=TASK138_UNIT=llvm-opt-148-weekend-g4",
+        "--setenv=TASK133_ADMISSION_MEMORY=25515278336",
+        "/usr/bin/python3",
+        "-B",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/worker.py",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task148",
+        "G4",
+        "dynamic",
+        "4",
+        "21220311040",
+        "400"
+      ],
+      "ended_at": "2026-11-20T07:55:25-08:00",
+      "seconds": 206.242,
+      "rc": 1,
+      "resources": {
+        "memory.peak": "11801169920",
+        "VmHWM_sample": {
+          "bytes": 786190336,
+          "pid": 11211,
+          "argv": "git archive --format=tar --prefix= 61726b1d1974b086392a35d0df8d281a1200cd25 --"
+        },
+        "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+        "memory.stat": "anon 12349440\nfile 10847399936",
+        "memory.max": "21220311040",
+        "memory.swap.peak": "0"
+      },
+      "systemd": "Result=exit-code\nMemoryPeak=11116965888\nCPUUsageNSec=142911359000\nActiveState=failed\nInvocationID=dc717112cf3b419b940f06303de3f179\n",
+      "watchdog": null,
+      "log_path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G4/service.log",
+      "end_measurement": {
+        "time": "2026-11-20T07:55:25-08:00",
+        "mem_available": 25148907520,
+        "home_available": 251896594432
+      },
+      "worker": {
+        "status": "STOP",
+        "reason": "profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles/pgo-build-1795189969263471273'}], 'started_at': '2026-11-20T15:52:45+00:00', 'admission': [{'at': '2026-11-20T15:52:45+00:00', 'memory': 25715462144, 'disk': {'/home': 259890814976, '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles': 259890814976}, 'admission_memory': 25515278336, 'stage': 'pgo-build', 'memory_max': 21220311040, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 21220311040}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles/pgo-build-1795189969263471273/build-0.txt', 'ended_at': '2026-11-20T15:55:25+00:00'}",
+        "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/worker.py\", line 163, in <module>\n    out=generate(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/pgosteps.py\", line 288, in generate\n    raise RuntimeError(f\"profile skill exited {proc.returncode}: {err}\")\nRuntimeError: profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles/pgo-build-1795189969263471273'}], 'started_at': '2026-11-20T15:52:45+00:00', 'admission': [{'at': '2026-11-20T15:52:45+00:00', 'memory': 25715462144, 'disk': {'/home': 259890814976, '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles': 259890814976}, 'admission_memory': 25515278336, 'stage': 'pgo-build', 'memory_max': 21220311040, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 21220311040}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles/pgo-build-1795189969263471273/build-0.txt', 'ended_at': '2026-11-20T15:55:25+00:00'}\n",
+        "cgroup_end": {
+          "memory.peak": "11801169920",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+          "memory.max": "21220311040",
+          "memory.stat": "anon 12349440\nfile 10847399936",
+          "memory.swap.peak": "0"
+        }
+      },
+      "log_tail": "Running as unit: llvm-opt-148-weekend-g4.service\nLLVM_BUILD_JOBS planned pgo-build {\"jobs\": 4, \"thinlto_jobs\": 4, \"link_jobs\": 1}\n/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize-bolt/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py --config /home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-config/config.json --output /home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles --stages pgo-build --memory-available-bytes 25515278336 --resume\nSTOP: command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles/pgo-build-1795189969263471273/build-0.txt\n{\n  \"status\": \"STOP\",\n  \"project\": \"T\",\n  \"stages\": [\n    {\n      \"name\": \"pgo-build\",\n      \"status\": \"STOP\",\n      \"attempt\": \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles/pgo-build-1795189969263471273\"\n    }\n  ],\n  \"started_at\": \"2026-11-20T15:52:45+00:00\",\n  \"admission\": [\n    {\n      \"at\": \"2026-11-20T15:52:45+00:00\",\n      \"memory\": 25715462144,\n      \"disk\": {\n        \"/home\": 259890814976,\n        \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles\": 259890814976\n      },\n      \"admission_memory\": 25515278336,\n      \"stage\": \"pgo-build\",\n      \"memory_max\": 21220311040,\n      \"standard_cap\": 25769803776,\n      \"floor\": 10737418240,\n      \"jobs\": 4,\n      \"thinlto_jobs\": 4,\n      \"link_jobs\": 1,\n      \"admitted\": true,\n      \"actual_memory_max\": 21220311040\n    }\n  ],\n  \"reason\": \"command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles/pgo-build-1795189969263471273/build-0.txt\",\n  \"ended_at\": \"2026-11-20T15:55:25+00:00\"\n}\nTraceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/worker.py\", line 163, in <module>\n    out=generate(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/pgosteps.py\", line 288, in generate\n    raise RuntimeError(f\"profile skill exited {proc.returncode}: {err}\")\nRuntimeError: profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles/pgo-build-1795189969263471273'}], 'started_at': '2026-11-20T15:52:45+00:00', 'admission': [{'at': '2026-11-20T15:52:45+00:00', 'memory': 25715462144, 'disk': {'/home': 259890814976, '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles': 259890814976}, 'admission_memory': 25515278336, 'stage': 'pgo-build', 'memory_max': 21220311040, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 21220311040}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles/pgo-build-1795189969263471273/build-0.txt', 'ended_at': '2026-11-20T15:55:25+00:00'}\n\nFinished with result: exit-code\nMain processes terminated with: code=exited/status=1\nService runtime: 3min 26.178s\nCPU time consumed: 2min 22.911s\nMemory peak: 10.3G\nMemory swap peak: 0B\n",
+      "status": "FAIL",
+      "reason": "profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles/pgo-build-1795189969263471273'}], 'started_at': '2026-11-20T15:52:45+00:00', 'admission': [{'at': '2026-11-20T15:52:45+00:00', 'memory': 25715462144, 'disk': {'/home': 259890814976, '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles': 259890814976}, 'admission_memory': 25515278336, 'stage': 'pgo-build', 'memory_max': 21220311040, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 21220311040}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task148/G-profiles/pgo-build-1795189969263471273/build-0.txt', 'ended_at': '2026-11-20T15:55:25+00:00'}"
+    },
+    {
+      "step": "G5",
+      "status": "SKIPPED",
+      "reason": "PGO prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-20T07:55:27-08:00",
+          "mem_available": 25114677248,
+          "home_available": 251896549376
+        }
+      ],
+      "admission_wait_seconds": 0
+    },
+    {
+      "step": "G6",
+      "status": "SKIPPED",
+      "reason": "PGO prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-20T07:55:27-08:00",
+          "mem_available": 25104842752,
+          "home_available": 251896532992
+        }
+      ],
+      "admission_wait_seconds": 0
+    },
+    {
+      "step": "G7",
+      "status": "SKIPPED",
+      "reason": "PGO prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-20T07:55:27-08:00",
+          "mem_available": 25102618624,
+          "home_available": 251896516608
+        }
+      ],
+      "admission_wait_seconds": 0
+    },
+    {
+      "step": "G8",
+      "status": "SKIPPED",
+      "reason": "PGO prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-20T07:55:27-08:00",
+          "mem_available": 25099423744,
+          "home_available": 251896500224
+        }
+      ],
+      "admission_wait_seconds": 0
+    }
+  ],
+  "startup": {
+    "time": "2026-11-20T07:47:49-08:00",
+    "mem_available": 26295918592,
+    "home_available": 267874078720
+  },
+  "end": {
+    "time": "2026-11-20T07:55:27-08:00",
+    "mem_available": 25099911168,
+    "home_available": 251896483840
+  },
+  "watchdog_triggered": false
+}

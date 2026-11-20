@@ -1,0 +1,76 @@
+--- initial/buildsteps.py
++++ resume/buildsteps.py
+@@ -137,6 +137,7 @@
+  cfg=configparser.ConfigParser()
+  cfg.read(gbs_config(w))
+  cfg["general"]["buildroot"]=str(driver)
++ cfg["general"]["tmpdir"]=str(d/"tmp")
+  if repos:
+   names=[]
+   for i,repo in enumerate(repos):
+@@ -149,7 +150,6 @@
+  with conf.open("w") as f: cfg.write(f)
+  argv=[GBS,"-c",str(conf),"build","-A","x86_64","-B",str(driver),"-c",commit,"--threads="+str(jobs),*macros(jobs,extra),
+        "--baselibs","--style=tar","--spec",spec,str(source)]
+- if spec=="llvm.spec": argv.insert(argv.index("--baselibs"),"--noinit")
+  save(d/"gbs-command.json",argv)
+  checked(*argv,cwd=source,output=d/"gbs.log")
+  if (root/".build.log").is_file():
+--- initial/orchestrator.py
++++ resume/orchestrator.py
+@@ -9,12 +9,12 @@
+ from stage_resources import GIB, RESERVE, WATCHDOG_DISK, WATCHDOG_MEMORY, admission
+ from pgo_pair import STAGES
+ from weekend import publish, startup_extras
+-UNIT="llvm-opt-148-weekend"
++UNIT="llvm-opt-148-weekend-resume"
+ SYS="/usr/bin/systemctl"
+ RUN="/usr/bin/systemd-run"
+ GIT="/usr/bin/git"
+ def stamp():
+- return datetime.now().astimezone().isoformat(timespec="seconds")
++ return datetime.now(ZoneInfo("America/Los_Angeles")).isoformat(timespec="seconds")
+ def write(path,value):
+  tmp=path.with_suffix(path.suffix+".tmp")
+  tmp.write_text(json.dumps(value,indent=2,ensure_ascii=False)+"\n")
+--- initial/weekend.py
++++ resume/weekend.py
+@@ -118,7 +118,11 @@
+             "[112](112_361624_combined_validation.md) · [138-N](138_night_validation.md) · "
+             "[144](144_361624_next_ps.md) · [145](145_classification_and_b2.md) · "
+             "[146](146_classification_v2.md) · [147 裁决](147_pm_ruling_and_prep.md) · "
+-            "[147 PS5](147_push.md)", "", "## 执行记录", "",
++            "[147 PS5](147_push.md)", "",
++            "首次 N2 和 G4 在开始编译前均被 GBS 拒绝。使用 144 B1 已验证的正常初始化，移除 "
++            "--noinit 并将 GBS tmpdir 指向各步骤的新目录。两步各用一次修正机会。"
++            "[首次原文和修正](../../tools/bolt/results/task148/first-attempt/README.md)", "",
++            "## 执行记录", "",
+             "|步骤|结果|档位|MemoryMax B|编译/ThinLTO/链接|开始|结束|等待 s|执行 s|cgroup 峰值 B|准入 MemAvailable B|准入 /home B|原因|",
+             "|---|---|---|---:|---|---|---|---:|---:|---:|---:|---:|---|"]
+     for step in STEPS:
+@@ -157,7 +161,7 @@
+         terminal = read(archive/"summary.json")
+         text += ["看门狗" + ("已触发。" if terminal["watchdog_triggered"] else "未触发。"), "",
+                  "[可机读最终记录](../../tools/bolt/results/task148/summary.json)"]
+-    doc.write_text("\n".join(text)+"\n")
++    doc.write_text("\n".join(text).rstrip()+"\n")
+ 
+ def publish(work, evidence, archive, record, key):
+     dest = evidence/"tools/bolt/results/task148"
+@@ -184,6 +188,16 @@
+             path = archive/"G-config/recover-g3.json"
+             files.append(dest/path.name)
+             shutil.copyfile(path, files[-1])
++        raw_log = step/"service.log"
++        if raw_log.is_file() and raw_log.stat().st_size <= 1024**2:
++            files.append(dest/(key+"-service.txt"))
++            shutil.copyfile(raw_log, files[-1])
++        for name in ("dry-run.json", "validation.json", "key-lines.json", "needed-comparison.json",
++                     "pgo-evidence.json", "runtime-dependency-gate.json"):
++            path = step/name
++            if path.is_file() and path.stat().st_size <= 1024**2:
++                files.append(dest/(key+"-"+name))
++                shutil.copyfile(path, files[-1])
+         manifest = dest/(key+"-local-evidence.json")
+         save(manifest, retained)
+         files.append(manifest)
