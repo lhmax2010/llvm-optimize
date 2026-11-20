@@ -1,6 +1,6 @@
 # 148 · 周末构建与离线 profile
 
-**进行中：N2 INTERRUPTED，G4 SKIPPED，G5 SKIPPED，G6 SKIPPED，G7 PENDING，G8 PENDING，N4 SUPERSEDED。**
+**进行中：N2 INTERRUPTED，G4 SKIPPED，G5 SKIPPED，G6 SKIPPED，G7 SKIPPED，G8 PENDING，N4 SUPERSEDED。**
 
 周报原样归档，提交 4ff2be33d7c8d1a68c8495955b2717a033b3a75d。[周报](weekly/2026-11-20_weekly_report.md)
 
@@ -18,7 +18,7 @@
 | G4 | SKIPPED | — | — | —/—/— | — | — | 0 | — | — | 27002327040 | 15896154112 | watchdog crossed stop line |
 | G5 | SKIPPED | — | — | —/—/— | — | — | 0 | — | — | 27003068416 | 15896084480 | watchdog crossed stop line |
 | G6 | SKIPPED | — | — | —/—/— | — | — | 0 | — | — | 26952196096 | 15896002560 | watchdog crossed stop line |
-| G7 | PENDING | — | — | —/—/— | — | — | — | — | — | — | — | — |
+| G7 | SKIPPED | — | — | —/—/— | — | — | 0 | — | — | 26996269056 | 15895928832 | watchdog crossed stop line |
 | G8 | PENDING | — | — | —/—/— | — | — | — | — | — | — | — | — |
 
 启动时 2026-11-20T07:58:57-08:00，MemAvailable 25,124,794,368 B，/home 可用 251,896,115,200 B。截止 2026-11-23T06:00:00-08:00。
@@ -54,3 +54,7 @@
   "artifacts": []
 }
 ~~~
+
+### G7
+
+[逐步记录及结束日志](../../tools/bolt/results/task148/G7.json)
