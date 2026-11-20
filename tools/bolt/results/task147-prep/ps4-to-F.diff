@@ -1,0 +1,499 @@
+diff --git a/bolt/CMakeLists.txt b/bolt/CMakeLists.txt
+index ce08094e25bab9f5f1a95706c3b834e0817c07a5..a17647c86fa05d165d01c52655ff477db913f016 100644
+--- a/bolt/CMakeLists.txt
++++ b/bolt/CMakeLists.txt
+@@ -154,6 +154,12 @@ if (BOLT_ENABLE_RUNTIME)
+   endif()
+ 
+   include(ExternalProject)
++  if(BOLT_BUILT_STANDALONE)
++    # The runtime uses its own architecture and ABI flags. Clear distribution
++    # flags that can conflict with them, such as -msse4.2 and
++    # -mgeneral-regs-only.
++    list(APPEND extra_args -DCMAKE_C_FLAGS= -DCMAKE_CXX_FLAGS=)
++  endif()
+   ExternalProject_Add(bolt_rt
+     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/runtime"
+     STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/bolt_rt-stamps
+@@ -165,12 +171,6 @@ if (BOLT_ENABLE_RUNTIME)
+                -DLLVM_LIBDIR_SUFFIX=${LLVM_LIBDIR_SUFFIX}
+                -DLLVM_LIBRARY_DIR=${LLVM_LIBRARY_DIR}
+                -DBOLT_BUILT_STANDALONE=${BOLT_BUILT_STANDALONE}
+-               # The runtime is freestanding and adds its own ISA flags
+-               # (-mgeneral-regs-only etc.); distro optflags inherited from
+-               # the environment conflict with them (e.g. -msse4.2 with
+-               # -mgeneral-regs-only), so start from clean flag sets.
+-               -DCMAKE_C_FLAGS=
+-               -DCMAKE_CXX_FLAGS=
+                ${extra_args}
+     INSTALL_COMMAND ""
+     BUILD_ALWAYS True
+@@ -200,6 +200,12 @@ include_directories(
+   ${CMAKE_CURRENT_BINARY_DIR}/include
+   )
+ 
++if(BOLT_BUILT_STANDALONE AND LLVM_LINK_LLVM_DYLIB)
++  set(BOLT_LLVM_LINK_MODE "")
++else()
++  set(BOLT_LLVM_LINK_MODE DISABLE_LLVM_LINK_LLVM_DYLIB)
++endif()
++
+ add_subdirectory(lib)
+ add_subdirectory(tools)
+ 
+diff --git a/bolt/lib/Core/CMakeLists.txt b/bolt/lib/Core/CMakeLists.txt
+index 69937353e7fe09ac43f71a0f1a172b31f8475d4c..22e25cb489a6833138845cad68ae4f199f68323c 100644
+--- a/bolt/lib/Core/CMakeLists.txt
++++ b/bolt/lib/Core/CMakeLists.txt
+@@ -38,6 +38,7 @@ add_llvm_library(LLVMBOLTCore
+   Relocation.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+   LINK_LIBS
+   ${LLVM_PTHREAD_LIB}
+   )
+diff --git a/bolt/lib/Passes/CMakeLists.txt b/bolt/lib/Passes/CMakeLists.txt
+index 303f1fbcdae83820ee467b495955435608684e11..8a8b71fb5d16e3ef8ad7d5aac5d7d17f93001501 100644
+--- a/bolt/lib/Passes/CMakeLists.txt
++++ b/bolt/lib/Passes/CMakeLists.txt
+@@ -50,6 +50,7 @@ add_llvm_library(LLVMBOLTPasses
+   RetpolineInsertion.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   LINK_LIBS
+   ${LLVM_PTHREAD_LIB}
+diff --git a/bolt/lib/Profile/CMakeLists.txt b/bolt/lib/Profile/CMakeLists.txt
+index d2ec75dacb7fb17faa050c9e64f869bf236e612c..9d6e2fb6866195d7bbf7211f0c259eaae7c47329 100644
+--- a/bolt/lib/Profile/CMakeLists.txt
++++ b/bolt/lib/Profile/CMakeLists.txt
+@@ -8,6 +8,7 @@ add_llvm_library(LLVMBOLTProfile
+   YAMLProfileWriter.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   LINK_COMPONENTS
+   Demangle
+diff --git a/bolt/lib/Rewrite/CMakeLists.txt b/bolt/lib/Rewrite/CMakeLists.txt
+index e45bef86d4cf73440c11e2550e232d2b7a133f1a..4333637249f446b09e22ba97f1cf600a560599cf 100644
+--- a/bolt/lib/Rewrite/CMakeLists.txt
++++ b/bolt/lib/Rewrite/CMakeLists.txt
+@@ -29,6 +29,7 @@ add_llvm_library(LLVMBOLTRewrite
+   GNUPropertyRewriter.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   LINK_LIBS
+   ${LLVM_PTHREAD_LIB}
+diff --git a/bolt/lib/RuntimeLibs/CMakeLists.txt b/bolt/lib/RuntimeLibs/CMakeLists.txt
+index e890430363947584f766ffb52d34a015717a7a94..5e185389a04e20c7383693e9868945357420acca 100644
+--- a/bolt/lib/RuntimeLibs/CMakeLists.txt
++++ b/bolt/lib/RuntimeLibs/CMakeLists.txt
+@@ -12,6 +12,7 @@ add_llvm_library(LLVMBOLTRuntimeLibs
+   InstrumentationRuntimeLibrary.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(LLVMBOLTRuntimeLibs
+diff --git a/bolt/lib/Target/AArch64/CMakeLists.txt b/bolt/lib/Target/AArch64/CMakeLists.txt
+index 54c2755234a2fa5e14b2ffac7209fb1b878ecf77..6c2f27b01aef97f11a9b8b7a01a34ac0380641df 100644
+--- a/bolt/lib/Target/AArch64/CMakeLists.txt
++++ b/bolt/lib/Target/AArch64/CMakeLists.txt
+@@ -22,6 +22,7 @@ add_llvm_library(LLVMBOLTTargetAArch64
+   AArch64MCSymbolizer.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   DEPENDS
+   AArch64CommonTableGen
+diff --git a/bolt/lib/Target/RISCV/CMakeLists.txt b/bolt/lib/Target/RISCV/CMakeLists.txt
+index 93c97effd31efb02e6721d4ff8138e98b3bb1dd6..0a8c829b5a281d5fd24e8b5f73c63034cc212419 100644
+--- a/bolt/lib/Target/RISCV/CMakeLists.txt
++++ b/bolt/lib/Target/RISCV/CMakeLists.txt
+@@ -21,6 +21,7 @@ add_llvm_library(LLVMBOLTTargetRISCV
+   RISCVMCPlusBuilder.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   DEPENDS
+   RISCVCommonTableGen
+diff --git a/bolt/lib/Target/X86/CMakeLists.txt b/bolt/lib/Target/X86/CMakeLists.txt
+index baaabab1c1e88c819dc93b6798268934c99c449b..00ee83768e7a4c5ce82803f052aa3ca2cd61d960 100644
+--- a/bolt/lib/Target/X86/CMakeLists.txt
++++ b/bolt/lib/Target/X86/CMakeLists.txt
+@@ -21,26 +21,29 @@ set(LLVMBOLT_TARGET_X86_SOURCES
+   X86MCPlusBuilder.cpp
+   X86MCSymbolizer.cpp
+   )
+-# The standalone mirror TU needs generated .inc files that only exist when
+-# this bolt is configured standalone (see tablegen() calls above); upstream
+-# LLVMX86Desc already provides these symbols in whole-LLVM builds.
+-if(BOLT_BUILT_STANDALONE)
++# The X86 mirror uses .inc files generated for a standalone BOLT build.
++# Compile it only when linking that build against the LLVM dylib. Component
++# builds get these symbols from LLVMX86Desc.
++if(BOLT_BUILT_STANDALONE AND LLVM_LINK_LLVM_DYLIB)
+   list(APPEND LLVMBOLT_TARGET_X86_SOURCES X86BoltMnemonicTables.cpp)
++else()
++  list(APPEND LLVM_OPTIONAL_SOURCES X86BoltMnemonicTables.cpp)
+ endif()
+ 
+ add_llvm_library(LLVMBOLTTargetX86
+   ${LLVMBOLT_TARGET_X86_SOURCES}
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   DEPENDS
+   X86CommonTableGen
+   )
+ 
+-# The installed LLVM may not provide llvm::X86::isNOP & friends (they are
+-# compiled into LLVMX86Desc upstream); build them into this target instead.
++# The installed LLVM dylib may not export X86 helpers such as
++# llvm::X86::isNOP. Enable the mirror in standalone dylib builds.
+ # Must run after add_llvm_library().
+-if(BOLT_BUILT_STANDALONE)
++if(BOLT_BUILT_STANDALONE AND LLVM_LINK_LLVM_DYLIB)
+   target_compile_definitions(LLVMBOLTTargetX86 PRIVATE BOLT_STANDALONE_X86_TABLES=1)
+ endif()
+ 
+diff --git a/bolt/lib/Utils/CMakeLists.txt b/bolt/lib/Utils/CMakeLists.txt
+index 36d3d67f21eaa5ee39f088f86b20687b52d2270c..51935b8d943400e7e6002664252049f8fd942cd4 100644
+--- a/bolt/lib/Utils/CMakeLists.txt
++++ b/bolt/lib/Utils/CMakeLists.txt
+@@ -44,6 +44,7 @@ add_llvm_library(LLVMBOLTUtils
+   ${version_inc}
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   LINK_LIBS
+   ${LLVM_PTHREAD_LIB}
+diff --git a/bolt/tools/bat-dump/CMakeLists.txt b/bolt/tools/bat-dump/CMakeLists.txt
+index 857e8d01706961c593890b3fbe425a2f4e501e94..5d66fb6e00d7dd3bb696ef6df4f1ee588bf24b90 100644
+--- a/bolt/tools/bat-dump/CMakeLists.txt
++++ b/bolt/tools/bat-dump/CMakeLists.txt
+@@ -6,6 +6,7 @@ set(LLVM_LINK_COMPONENTS
+ add_bolt_executable(llvm-bat-dump
+   bat-dump.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(llvm-bat-dump
+diff --git a/bolt/tools/binary-analysis/CMakeLists.txt b/bolt/tools/binary-analysis/CMakeLists.txt
+index d999762b562fa8e91d7ac2d98f9f6f6b7735a33b..8ffd94e4340446b5d1697af126562d9bdc689127 100644
+--- a/bolt/tools/binary-analysis/CMakeLists.txt
++++ b/bolt/tools/binary-analysis/CMakeLists.txt
+@@ -7,6 +7,7 @@ set(LLVM_LINK_COMPONENTS
+ 
+ add_bolt_tool(llvm-bolt-binary-analysis
+   binary-analysis.cpp
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(llvm-bolt-binary-analysis
+diff --git a/bolt/tools/driver/CMakeLists.txt b/bolt/tools/driver/CMakeLists.txt
+index 95b09be3236a216381ba82640b0bd1cf66ea5707..0e124d3c7367f04ef7676b5d37f31a7eb1ff0bf8 100644
+--- a/bolt/tools/driver/CMakeLists.txt
++++ b/bolt/tools/driver/CMakeLists.txt
+@@ -14,6 +14,7 @@ endif()
+ add_bolt_tool(llvm-bolt
+   llvm-bolt.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   DEPENDS
+   ${BOLT_DRIVER_DEPS}
+diff --git a/bolt/tools/heatmap/CMakeLists.txt b/bolt/tools/heatmap/CMakeLists.txt
+index 27094622fabfdaf7c42e15621af5f4536d10763b..993c148af7dc14bf0b3e54b0b1c1611ca965e6f6 100644
+--- a/bolt/tools/heatmap/CMakeLists.txt
++++ b/bolt/tools/heatmap/CMakeLists.txt
+@@ -7,6 +7,7 @@ set(LLVM_LINK_COMPONENTS
+ 
+ add_bolt_tool(llvm-bolt-heatmap
+   heatmap.cpp
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(llvm-bolt-heatmap
+diff --git a/bolt/tools/llvm-bolt-fuzzer/CMakeLists.txt b/bolt/tools/llvm-bolt-fuzzer/CMakeLists.txt
+index 138918b706a9149ced23e8c3ec515ace7a4ce5e2..92e8b76bc6ba879f055b896899e7cc698fd61051 100644
+--- a/bolt/tools/llvm-bolt-fuzzer/CMakeLists.txt
++++ b/bolt/tools/llvm-bolt-fuzzer/CMakeLists.txt
+@@ -5,6 +5,7 @@ set(LLVM_LINK_COMPONENTS
+ add_llvm_fuzzer(llvm-bolt-fuzzer
+   llvm-bolt-fuzzer.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ if (TARGET llvm-bolt-fuzzer)
+diff --git a/bolt/tools/merge-fdata/CMakeLists.txt b/bolt/tools/merge-fdata/CMakeLists.txt
+index 3202b94ac8f3e90b2b0f0cd57426e02174e450e1..af3221b4d2c5a7919699d8d2abd6513974890c7d 100644
+--- a/bolt/tools/merge-fdata/CMakeLists.txt
++++ b/bolt/tools/merge-fdata/CMakeLists.txt
+@@ -3,6 +3,7 @@ set(LLVM_LINK_COMPONENTS Support)
+ add_bolt_tool(merge-fdata
+   merge-fdata.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   DEPENDS
+   intrinsics_gen
+diff --git a/bolt/unittests/Core/CMakeLists.txt b/bolt/unittests/Core/CMakeLists.txt
+index 61ddae38e002d755680b614a49871067c837b16c..748836cb0c543cbb01ffbc5e084bbc056689f9a3 100644
+--- a/bolt/unittests/Core/CMakeLists.txt
++++ b/bolt/unittests/Core/CMakeLists.txt
+@@ -17,6 +17,7 @@ add_bolt_unittest(CoreTests
+   #       dynamic LLVM library when LLVM_LINK_LLVM_DYLIB is ON.
+   ${LLVM_MAIN_SRC_DIR}/lib/Testing/Support/Error.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(CoreTests
+diff --git a/bolt/unittests/Passes/CMakeLists.txt b/bolt/unittests/Passes/CMakeLists.txt
+index f2c213e092a31aed3bffaa46b4f6ca56e486a094..42b80356b52cd35d7b39499241b9e29f3b3a570b 100644
+--- a/bolt/unittests/Passes/CMakeLists.txt
++++ b/bolt/unittests/Passes/CMakeLists.txt
+@@ -8,6 +8,7 @@ set(LLVM_LINK_COMPONENTS
+ add_bolt_unittest(PassTests
+   PointerAuthCFIFixup.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(PassTests
+diff --git a/bolt/unittests/Profile/CMakeLists.txt b/bolt/unittests/Profile/CMakeLists.txt
+index 829e9ce135e1232589ae98d3eb604257a5e68a6a..85d41b6ca5c377eb2ac696de6e131693eac29455 100644
+--- a/bolt/unittests/Profile/CMakeLists.txt
++++ b/bolt/unittests/Profile/CMakeLists.txt
+@@ -8,6 +8,7 @@ add_bolt_unittest(ProfileTests
+   DataAggregator.cpp
+   PerfSpeEvents.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(ProfileTests
+diff --git a/packaging/llvm-tools-subpkgs.spec b/packaging/llvm-tools-subpkgs.spec
+index 569d024bbae36d45994e02c66499c9c75165ee7f..f76c3ce8fdc6257d0e0b3cc0986b06b999342469 100644
+--- a/packaging/llvm-tools-subpkgs.spec
++++ b/packaging/llvm-tools-subpkgs.spec
+@@ -5,25 +5,37 @@ Release:    1
+ License:    NCSA
+ Group:      Development/Tools
+ Source0:    llvm-22.1.8.tar.gz
++# Package scope: x86_64 and aarch64 build hosts. armv7l and i586 are
++# excluded. riscv64 is also excluded, as a packaging scope choice and not
++# for lack of upstream BOLT support: it would need its own RISCV target
++# branch below and its own validation. Confirm the consumer matrix first.
++ExclusiveArch: x86_64 aarch64
+ BuildRequires: cmake
+ BuildRequires: ninja
+-BuildRequires: llvm
+-BuildRequires: llvm-devel
++BuildRequires: llvm = %{version}
++BuildRequires: llvm-devel = %{version}
+ # llvm-static-devel: llvm-devel's LLVMExports.cmake validates the static
+ # imported targets (libLLVM*.a) at configure time; without the archives
+ # present, find_package(LLVM) aborts before bolt can link the dylib.
+-BuildRequires: llvm-static-devel
++BuildRequires: llvm-static-devel = %{version}
+ # libomp: the exported target "omp" in LLVMExports-release.cmake references
+ # /usr/lib64/libomp.so; the configure-time existence check aborts without it.
+-BuildRequires: libomp
++BuildRequires: libomp = %{version}
+ # zlib-devel, libxml2-devel: the exported LLVM targets reference ZLIB::ZLIB
+ # and LibXml2::LibXml2 in their link interfaces (bolt standalone build)
+ BuildRequires: zlib-devel
+ BuildRequires: libxml2-devel
+ BuildRequires: clang
+-BuildRequires: libllvm
++BuildRequires: libllvm = %{version}
+ BuildRequires: compiler-rt
+ 
++# BOLT targets per build architecture: each must exist in the installed LLVM.
++%ifarch x86_64
++%global bolt_targets X86;AArch64
++%else
++%global bolt_targets AArch64
++%endif
++
+ %description
+ Standalone subpackages for LLVM debugging and analysis tools:
+  - bolt: BOLT post-link binary optimizer, built standalone against the
+@@ -38,13 +50,17 @@ rebuilding this package (minutes), not the multi-hour LLVM build.
+ %package -n bolt
+ Summary: BOLT post-link binary optimizer
+ License: NCSA
+-Requires: libllvm
+-Requires: compiler-rt
++# Same LLVM version; rpm also generates the libLLVM.so.22.1(LLVM_22.1)
++# dependency. The provider release is intentionally not pinned: this
++# package has its own release number, which must not be used for libllvm.
++# ABI compatibility across libllvm releases stays a provider policy.
++Requires: libllvm = %{version}
+ 
+ %description -n bolt
+ BOLT is a post-link binary optimizer that reorders code in the final
+-binary or DSO based on runtime profile data (perf LBR/PT samples) to
+-improve instruction cache and TLB utilization.
++binary or DSO based on runtime profile data (perf LBR/PT samples, or
++sampled instruction addresses without branch records via perf2bolt -ba)
++to improve instruction cache and TLB utilization.
+ 
+ %prep
+ %setup -q -n llvm-22.1.8
+@@ -54,10 +70,13 @@ improve instruction cache and TLB utilization.
+ # itself; the standard debug_package macro would add them a second time
+ # and fail with "package already exists". NOTE: keep percent signs out of
+ # this comment -- rpmbuild expands macros even in comment lines.
+-# Debuginfo IS still generated (find-debuginfo.sh runs in
+-# __os_install_post): bolt-debuginfo and the debugsource package are
+-# produced. The -Wl,--build-id=sha1 linker flags above make the bolt
+-# binaries debug-correlatable.
++# find-debuginfo.sh still runs from __debug_install_post and moves the
++# separated debug files into bolt-debuginfo, named after the bolt
++# subpackage; sources go to llvm-tools-subpkgs-debugsource. Compiler
++# flags, including the debug options, come from the distribution CFLAGS
++# and CXXFLAGS that the build section exports and CMake reads. The
++# build-id linker flags in the build section tie each debug file to its
++# binary.
+ %define debug_package %{nil}
+ 
+ %build
+@@ -74,10 +93,26 @@ export CFLAGS CXXFLAGS
+ %endif
+ 
+ # Standalone detection: CMAKE_SOURCE_DIR == bolt source dir
+-# => BOLT_BUILT_STANDALONE=TRUE, find_package(LLVM) finds /usr/lib64/cmake/llvm.
+-# LLVM_LINK_LLVM_DYLIB=ON is mandatory: Tizen ships libLLVM.so (libllvm) and
+-# only STATIC IMPORTED targets in llvm-devel; the static component archives
+-# live in llvm-static-devel which is not installed here.
++# => BOLT_BUILT_STANDALONE=TRUE, find_package(LLVM) finds the installed
++# LLVM CMake package under the architecture libdir.
++# LLVM_LINK_LLVM_DYLIB=ON is mandatory: BOLT must link libLLVM.so (libllvm);
++# llvm-static-devel is installed only because the exported targets are
++# validated at configure time.
++#
++# Require one provider Version-Release for these packages in this build
++# root; all of them come from llvm.spec (drop libomp here if it ever gets
++# its own source package). This is not a byte-identity check.
++test "$(llvm-config --version)" = "%{version}" || exit 1
++llvm_evr=""
++for p in llvm llvm-devel llvm-static-devel libllvm libomp; do
++    e=$(rpm -q --qf '%%{VERSION}-%%{RELEASE}' "$p") || exit 1
++    if [ -n "$llvm_evr" ] && [ "$e" != "$llvm_evr" ]; then
++        echo "LLVM provider mismatch: $p $e, expected $llvm_evr"
++        exit 1
++    fi
++    llvm_evr=$e
++done
++echo "LLVM provider Version-Release consistency check passed: $llvm_evr"
+ mkdir -p bolt-build
+ cd bolt-build
+ cmake \
+@@ -88,23 +123,24 @@ cmake \
+     -DCMAKE_C_COMPILER=clang \
+     -DCMAKE_CXX_COMPILER=clang++ \
+     -DCMAKE_INSTALL_PREFIX=/usr \
+-    -DLLVM_LIBDIR_SUFFIX=64 \
++    -DLLVM_LIBDIR_SUFFIX=`echo %{_lib} | sed s/lib//g` \
+     -DLLVM_ENABLE_RTTI=ON \
+     -DLLVM_LINK_LLVM_DYLIB=ON \
+-    -DCMAKE_EXE_LINKER_FLAGS="-Wl,--build-id=sha1" \
+-    -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--build-id=sha1" \
++    -DCMAKE_EXE_LINKER_FLAGS="$LDFLAGS -Wl,--build-id=sha1" \
++    -DCMAKE_SHARED_LINKER_FLAGS="$LDFLAGS -Wl,--build-id=sha1" \
+     -DBOLT_INCLUDE_TESTS=OFF \
+-%ifarch armv7l
+-    -DBOLT_ENABLE_RUNTIME=OFF \
+-%endif
++    -DBOLT_TARGETS_TO_BUILD="%{bolt_targets}" \
+     -DLLVM_INCLUDE_TESTS=OFF
+-# bolt: driver + tools; bolt_rt: runtime archives (ExternalProject).
+-# CMake enables the runtime only on x86_64/aarch64/riscv64 hosts, so armv7l
+-# builds just the driver. The runtime is for instrumenting x86/aarch64 targets.
+-%ifarch armv7l
+-ninja bolt
+-%else
++# bolt: driver + tools; bolt_rt: runtime archives (ExternalProject) for the
++# build architecture.
+ ninja bolt bolt_rt
++# Target registration check, kept in the build section so it also runs
++# when the check section is skipped. It does not test a rewrite.
++LC_ALL=C ./bin/llvm-bolt --version > bolt-version.txt 2>&1 || { cat bolt-version.txt; exit 1; }
++cat bolt-version.txt
++grep -Eq '^[[:space:]]*aarch64[[:space:]]+-' bolt-version.txt
++%ifarch x86_64
++grep -Eq '^[[:space:]]*x86-64[[:space:]]+-' bolt-version.txt
+ %endif
+ 
+ %install
+@@ -113,18 +149,14 @@ cd bolt-build
+ DESTDIR=%{buildroot} ninja install
+ # The internal bolt static libs are build artifacts, not shipped content.
+ rm -f %{buildroot}%{_libdir}/libLLVMBOLT*.a
+-# LLVM_LIBDIR_SUFFIX=64 installs the internal archives to lib64 instead.
+-rm -f %{buildroot}%{_prefix}/lib64/libLLVMBOLT*.a
+ # perf2bolt and llvm-boltdiff are aliases of llvm-bolt: upstream installs them
+ # as symlinks (bolt/tools/driver/CMakeLists.txt), and llvm-bolt selects its
+ # mode from the name it is invoked as. Separate copies also collided on
+ # build-id in the debuginfo step.
+ ln -sf llvm-bolt %{buildroot}%{_prefix}/bin/perf2bolt
+ ln -sf llvm-bolt %{buildroot}%{_prefix}/bin/llvm-boltdiff
+-# llvm-bat-dump and merge-fdata use add_bolt_executable which carries no
+-# install rule; stage them manually from the build tree.
++# llvm-bat-dump has no install rule; stage it from the build tree.
+ install -p -m 0755 bin/llvm-bat-dump %{buildroot}%{_prefix}/bin/
+-install -p -m 0755 bin/merge-fdata   %{buildroot}%{_prefix}/bin/
+ cd ..
+ 
+ %files -n bolt
+@@ -136,8 +168,6 @@ cd ..
+ %{_prefix}/bin/llvm-bolt-binary-analysis
+ %{_prefix}/bin/llvm-bat-dump
+ %{_prefix}/bin/merge-fdata
+-%ifnarch armv7l
+ %{_libdir}/libbolt_rt_instr.a
+ %{_libdir}/libbolt_rt_hugify.a
+-%endif
+ 
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 176b947123bc95fb99ecbd4aef2f8657955a95f2..b83f8dba673ec1b4705abe99c6d8601f61ae4361 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -108,10 +108,9 @@ BuildRequires: clang, llvm, libllvm
+ 
+ 
+ Requires: libllvm = %{version}-%{release}
+-# scan-build and scan-view are Python scripts (formerly in clang-analyzer)
+-# scan-build also needs clang installed at runtime; llvm does not require it
+-# (requiring clang here would make llvm and clang depend on each other)
+-Requires: python3
++# scan-build (Perl) also needs clang installed at runtime; llvm does not
++# require it (requiring clang here would make llvm and clang depend on
++# each other)
+ # clang-analyzer, llvm-xray and llvm-prof-tools used to be separate
+ # subpackages (llvm-tools-subpkgs.spec) that owned these files; llvm takes them over
+ Obsoletes: clang-analyzer <= %{version}-%{release}
+@@ -428,7 +427,7 @@ cmake \
+ %endif
+ %ifarch armv7l
+     -DCMAKE_BUILD_TYPE=MinSizeRel \
+-    -DLLVM_TARGETS_TO_BUILD='ARM;AArch64;X86;BPF' \
++    -DLLVM_TARGETS_TO_BUILD='ARM;BPF' \
+     -DLLVM_TARGET_ARCH="ARM" \
+ %endif
+ %ifarch aarch64
