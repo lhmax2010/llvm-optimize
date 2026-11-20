@@ -1,0 +1,92 @@
+[
+  {
+    "id": "A1",
+    "ps4": "未包含",
+    "files": "bolt/lib/Target/X86/CMakeLists.txt",
+    "reason": "PS4 未登记被省略的镜像源。加入 LLVM_OPTIONAL_SOURCES 消除 in-tree 配置错误。"
+  },
+  {
+    "id": "A2",
+    "ps4": "未包含",
+    "files": "bolt/CMakeLists.txt 和 18 个 BOLT 组件位置",
+    "reason": "PS4 未恢复组件链接限制。统一由 BOLT_LLVM_LINK_MODE 决定，只有 standalone dylib 模式允许 LLVM 共享库。"
+  },
+  {
+    "id": "A3",
+    "ps4": "部分包含",
+    "files": "bolt/lib/Target/X86/CMakeLists.txt",
+    "reason": "PS4 仅检查 standalone；源文件和编译定义的两处条件都增加 LLVM_LINK_LLVM_DYLIB，避免 standalone 静态链接重复定义。"
+  },
+  {
+    "id": "A4",
+    "ps4": "部分包含",
+    "files": "bolt/CMakeLists.txt",
+    "reason": "PS4 已清空 standalone runtime flags，但也无条件清空 in-tree。将两个空值移到 standalone 块。"
+  },
+  {
+    "id": "B1",
+    "ps4": "未包含",
+    "files": "packaging/llvm.spec、packaging/llvm-tools-subpkgs.spec",
+    "reason": "PS4 还允许 armv7l BOLT 并扩大 LLVM 后端。恢复 ARM;BPF，独立包限 x86_64/aarch64，排除 armv7l 和 i586。"
+  },
+  {
+    "id": "B2",
+    "ps4": "未包含",
+    "files": "packaging/llvm-tools-subpkgs.spec",
+    "reason": "PS4 没有 per-arch BOLT_TARGETS_TO_BUILD 或注册目标门禁。增加 X86;AArch64 / AArch64 并检查 --version。"
+  },
+  {
+    "id": "B3",
+    "ps4": "未包含",
+    "files": "packaging/llvm-tools-subpkgs.spec",
+    "reason": "PS4 的 provider 依赖未绑定版本。增加版本绑定及五项 EVR 检查，去除 bolt 的 compiler-rt 运行时依赖。"
+  },
+  {
+    "id": "B4",
+    "ps4": "未包含",
+    "files": "packaging/llvm.spec",
+    "reason": "PS4 保留 llvm 的 Python 运行时 Requires 及错误脚本说明。删除该 Requires 并说明 Perl scan-build 的 clang 依赖。"
+  },
+  {
+    "id": "B5",
+    "ps4": "未包含",
+    "files": "packaging/llvm-tools-subpkgs.spec",
+    "reason": "PS4 写死 lib64 并重复移除归档。改为从 RPM _lib 派生后缀，合并归档清理。"
+  },
+  {
+    "id": "B6",
+    "ps4": "未包含",
+    "files": "packaging/llvm-tools-subpkgs.spec",
+    "reason": "PS4 保留 build-id 但覆盖独立包的发行 LDFLAGS。将 build-id 追加至原值。"
+  },
+  {
+    "id": "B7",
+    "ps4": "部分包含",
+    "files": "packaging/llvm-tools-subpkgs.spec",
+    "reason": "PS4 已写出 bolt-debuginfo，但注释误指 __os_install_post。改为 __debug_install_post，说明发行编译参数及 build-id 对应关系。"
+  },
+  {
+    "id": "A5",
+    "ps4": "未包含",
+    "files": "packaging/llvm-tools-subpkgs.spec",
+    "reason": "PS4 手工再安装 merge-fdata。删除该行，因为 add_bolt_tool 已由 Ninja 安装。"
+  },
+  {
+    "id": "措辞 1",
+    "ps4": "未包含",
+    "files": "bolt/CMakeLists.txt",
+    "reason": "standalone dylib 分支明确设置空字符串。"
+  },
+  {
+    "id": "措辞 2",
+    "ps4": "未包含",
+    "files": "bolt/CMakeLists.txt",
+    "reason": "runtime flags 的理由随逻辑移进 standalone 块。"
+  },
+  {
+    "id": "措辞 3",
+    "ps4": "未包含",
+    "files": "bolt/lib/Target/X86/CMakeLists.txt",
+    "reason": "明确镜像只服务 standalone dylib，组件链接从 LLVMX86Desc 提供符号。"
+  }
+]

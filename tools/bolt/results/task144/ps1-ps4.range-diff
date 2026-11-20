@@ -1,0 +1,52 @@
+1:  da885208aeb5 ! 1:  1ddecbe8729f packaging: split tool subpackages into a standalone llvm-tools-subpkgs spec
+    @@ packaging/llvm-tools-subpkgs.spec (new)
+     +
+     +%build
+     +# ---- A. BOLT built standalone against the installed toolchain ----
+    ++# aarch64: Tizen's RPM optflags carry the GCC-only big.LITTLE tune name
+    ++# -mtune=cortex-a57.cortex-a53, which the clang driver rejects with
+    ++# "unsupported argument 'cortex-a57.cortex-a53' to option '-mtune='".
+    ++# Remap it to the plain core name clang accepts (same workaround the
+    ++# llvm and libcxx-runtimes specs apply).
+    ++%ifarch aarch64
+    ++CFLAGS="$(printf '%%s\n' "$CFLAGS" | sed 's/-mtune=cortex-a57\.cortex-a53/-mtune=cortex-a53/g')"
+    ++CXXFLAGS="$(printf '%%s\n' "$CXXFLAGS" | sed 's/-mtune=cortex-a57\.cortex-a53/-mtune=cortex-a53/g')"
+    ++export CFLAGS CXXFLAGS
+    ++%endif
+    ++
+     +# Standalone detection: CMAKE_SOURCE_DIR == bolt source dir
+     +# => BOLT_BUILT_STANDALONE=TRUE, find_package(LLVM) finds /usr/lib64/cmake/llvm.
+     +# LLVM_LINK_LLVM_DYLIB=ON is mandatory: Tizen ships libLLVM.so (libllvm) and
+    @@ packaging/llvm.spec: BuildRequires: clang, llvm, libllvm
+      
+      %description
+      LLVM is a compiler infrastructure designed for compile-time, link-time, runtime,
+    -@@ packaging/llvm.spec: export CXXFLAGS="$OPTFLAGS_CXXFLAGS -O3 -flto=thin -fomit-frame-pointer -Wno-unu
+    +@@ packaging/llvm.spec: export CFLAGS CXXFLAGS LDFLAGS
+      
+      # Set up MLGO AOT model paths from bundled verify assets
+      %if %{with mlgo}
+    @@ packaging/llvm.spec: cmake \
+          -DLLVM_TARGET_ARCH="ARM" \
+      %endif
+      %ifarch aarch64
+    -@@ packaging/llvm.spec: ninja -j %{mlgo_build_jobs}
+    +@@ packaging/llvm.spec: echo TIZEN_HYBRID_LINK_OK
+      
+      %install
+      cd build
+    @@ packaging/llvm.spec: ninja -j %{mlgo_build_jobs}
+     +# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package
+     +# provides libgomp.so and libgomp.so.1 on the target.
+     +rm -f %{buildroot}%{_libdir}/libgomp.so %{buildroot}%{_libdir}/libgomp.so.1 %{buildroot}%{_libdir}/libiomp5.so
+    + %ifarch x86_64
+    + %if %{llvm_bolt_enabled}
+    + 
+    +@@ packaging/llvm.spec: bolt_optional python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK"
+    + # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
+    + %endif
+    + %endif
+    ++
+      ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
+      
+      ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang

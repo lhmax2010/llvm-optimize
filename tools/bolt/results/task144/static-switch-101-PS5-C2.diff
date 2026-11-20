@@ -1,0 +1,133 @@
+--- PS5
++++ C2
+@@ -1,3 +1,10 @@
++
++
++
++
++
++
++
+ 
+ 
+ 
+@@ -101,6 +108,14 @@
+ 
+ 
+ Requires: libllvm = 22.1.8-1
++
++
++
++
++
++Obsoletes: clang-analyzer <= 22.1.8-1
++Obsoletes: llvm-xray <= 22.1.8-1
++Obsoletes: llvm-prof-tools <= 22.1.8-1
+ 
+ %description
+ LLVM is a compiler infrastructure designed for compile-time, link-time, runtime,
+@@ -339,6 +354,11 @@
+ # END TIZEN_LLVM_FIXED_FLAGS
+ 
+ # Set up MLGO AOT model paths from bundled verify assets
++# Ensure verify assets exist even when %prep is skipped (incremental builds)
++if [ ! -d mlgo_verify_assets ]; then
++    mkdir -p mlgo_verify_assets
++    tar -C mlgo_verify_assets -xzf /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/packaging/mlgo_x86_model.tar.gz
++fi
+ MLGO_AOT_DIR="$PWD/mlgo_verify_assets"
+ MLGO_BUILD_DIR="$PWD/build"
+ MLGO_RUNTIME_OBJECTS="${MLGO_AOT_DIR}/xla_runtime_objects/xla_compiled_cpu_function.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/cpu_function_runtime.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/custom_call_status.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/executable_run_options.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o"
+@@ -357,8 +377,8 @@
+     -DCMAKE_ASM_FLAGS="$CFLAGS" \
+     -DCMAKE_C_FLAGS="$CFLAGS" \
+     -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
+-    -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+-    -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
++    -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1" \
++    -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1" \
+     -DLLVM_USE_LINKER=lld \
+     -DLLVM_ENABLE_LTO=Thin \
+     -DCMAKE_RANLIB=/usr/bin/llvm-ranlib \
+@@ -376,6 +396,7 @@
+     -DLLVM_LINK_LLVM_DYLIB=OFF \
+     -DCLANG_LINK_CLANG_DYLIB=OFF \
+     -DLLVM_ENABLE_PROJECTS="clang;lldb;clang-tools-extra;lld;compiler-rt;openmp" \
++    -DCLANG_DEFAULT_LINKER=lld \
+     -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
+     -DLLVM_BUILD_EXAMPLES=OFF \
+     -DLLVM_INCLUDE_EXAMPLES=OFF \
+@@ -410,7 +431,13 @@
+ export CC=x86_64-tizen-linux-gnu-clang CXX=x86_64-tizen-linux-gnu-clang++;
+ 
+ cd build
+-cmake -DCMAKE_INSTALL_PREFIX=/home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr -P cmake_install.cmake
++# DESTDIR, not a prefix under buildroot: the openmp install script creates its
++# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build
++# environment's /usr/lib when DESTDIR is unset.
++DESTDIR=/home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64 cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake
++# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package
++# provides libgomp.so and libgomp.so.1 on the target.
++rm -f /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libgomp.so.1 /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/libiomp5.so
+ 
+ # Reject debug-named buildroots before any BOLT action.
+ # Keep the ordinary install and BOLT payload under the same platform debug-path policy.
+@@ -509,6 +536,7 @@
+ # Release it only inside the enabled x86_64 BOLT block.
+ bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/packaging/clang-bolt-helper.py cache-release "$PWD" "$BOLT_WORK"
+ # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
++
+ ln -sf /usr/bin/clang++ /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/bin/clang++-22
+ 
+ ln -sf clang /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/bin/x86_64-tizen-linux-gnu-clang
+@@ -517,6 +545,11 @@
+ cat >> /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64//usr/bin/clang.cfg << EOF
+ -target x86_64-tizen-linux-gnu
+ -resource-dir /usr/lib64/clang/22
++EOF
++# Match the default linker selected for this project; preserve Base-Dev configuration.
++# -z nostart-stop-gc: keep sections referenced only through __start_/__stop_ under --gc-sections, as GNU ld does.
++cat >> /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64//usr/bin/clang.cfg << EOF
++-Wl,-z,nostart-stop-gc
+ EOF
+ ln -sf clang.cfg /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64//usr/bin/clang++.cfg
+ 
+@@ -567,11 +600,11 @@
+ %manifest llvm.manifest
+ %defattr(-,root,root,-)
+ /usr/bin/analyze-build
++/usr/bin/intercept-build
+ /usr/bin/bugpoint
+ /usr/bin/clang-linker-wrapper
+ /usr/bin/clang-offload-packager
+ /usr/bin/clang-repl
+-/usr/bin/intercept-build
+ /usr/bin/llc
+ /usr/bin/lld
+ /usr/bin/ld.lld
+@@ -717,6 +750,12 @@
+ /usr/bin/clang-refactor
+ /usr/bin/clang-scan-deps
+ /usr/bin/clang-format
++/usr/libexec/analyze-c++
++/usr/libexec/analyze-cc
++/usr/libexec/c++-analyzer
++/usr/libexec/ccc-analyzer
++/usr/libexec/intercept-c++
++/usr/libexec/intercept-cc
+ /usr/bin/clang-include-cleaner
+ /usr/bin/clang-include-fixer
+ /usr/bin/clang-offload-bundler
+@@ -733,12 +772,6 @@
+ /usr/lib64/clang/22/include/*
+ /usr/lib64/libclang*.so*
+ /usr/lib64/cmake/clang/*
+-/usr/libexec/analyze-c++
+-/usr/libexec/analyze-cc
+-/usr/libexec/c++-analyzer
+-/usr/libexec/ccc-analyzer
+-/usr/libexec/intercept-c++
+-/usr/libexec/intercept-cc
+ /usr/bin/clang.cfg
+ /usr/bin/clang++.cfg
+ 

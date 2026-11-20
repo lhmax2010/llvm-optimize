@@ -1,0 +1,41 @@
+--- I
++++ C2
+@@ -1,3 +1,10 @@
++
++
++
++
++
++
++
+ 
+ 
+ 
+@@ -389,6 +396,7 @@
+     -DLLVM_LINK_LLVM_DYLIB=OFF \
+     -DCLANG_LINK_CLANG_DYLIB=OFF \
+     -DLLVM_ENABLE_PROJECTS="clang;lldb;clang-tools-extra;lld;compiler-rt;openmp" \
++    -DCLANG_DEFAULT_LINKER=lld \
+     -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
+     -DLLVM_BUILD_EXAMPLES=OFF \
+     -DLLVM_INCLUDE_EXAMPLES=OFF \
+@@ -528,6 +536,7 @@
+ # Release it only inside the enabled x86_64 BOLT block.
+ bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/packaging/clang-bolt-helper.py cache-release "$PWD" "$BOLT_WORK"
+ # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
++
+ ln -sf /usr/bin/clang++ /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/bin/clang++-22
+ 
+ ln -sf clang /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64/usr/bin/x86_64-tizen-linux-gnu-clang
+@@ -536,6 +545,11 @@
+ cat >> /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64//usr/bin/clang.cfg << EOF
+ -target x86_64-tizen-linux-gnu
+ -resource-dir /usr/lib64/clang/22
++EOF
++# Match the default linker selected for this project; preserve Base-Dev configuration.
++# -z nostart-stop-gc: keep sections referenced only through __start_/__stop_ under --gc-sections, as GNU ld does.
++cat >> /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64//usr/bin/clang.cfg << EOF
++-Wl,-z,nostart-stop-gc
+ EOF
+ ln -sf clang.cfg /home/linhao/Toolchain/development/llvm-optimize/archive/task144/static/rpm/BUILDROOT/llvm-22.1.8-1.x86_64//usr/bin/clang++.cfg
+ 

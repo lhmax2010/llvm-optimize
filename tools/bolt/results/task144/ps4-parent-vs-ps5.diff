@@ -1,0 +1,42 @@
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index ce6284ae26e5..62e30f78b48f 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -17,6 +17,13 @@
+ %endif
+ %endif
+ 
++# Capture the project toolchain before this spec selects a bootstrap compiler.
++# Base-Dev x86_64 may use Clang to build LLVM without changing its default linker.
++%global _tizen_clang_default_lld 0
++%if "%{?_toolchain}" == "clang"
++%global _tizen_clang_default_lld 1
++%endif
++
+ %define keepstatic 1
+ 
+ # MLGO AOT support for LLVM MLGO (Ahead-of-Time compilation)
+@@ -435,6 +442,9 @@ cmake \
+ %endif
+ %endif
+     -DLLVM_ENABLE_PROJECTS="clang;lldb;clang-tools-extra;lld;compiler-rt;openmp" \
++%if %{_tizen_clang_default_lld}
++    -DCLANG_DEFAULT_LINKER=lld \
++%endif
+     -DLLVM_ENABLE_PER_TARGET_RUNTIME_DIR=OFF \
+     -DLLVM_BUILD_EXAMPLES=OFF \
+     -DLLVM_INCLUDE_EXAMPLES=OFF \
+@@ -695,6 +705,13 @@ cat >> %{buildroot}/%{_prefix}/bin/clang.cfg << EOF
+ -target %{_host}
+ -resource-dir %{_prefix}/%{_lib}/clang/%{llvm_version}
+ EOF
++%if %{_tizen_clang_default_lld}
++# Match the default linker selected for this project; preserve Base-Dev configuration.
++# -z nostart-stop-gc: keep sections referenced only through __start_/__stop_ under --gc-sections, as GNU ld does.
++cat >> %{buildroot}/%{_prefix}/bin/clang.cfg << EOF
++-Wl,-z,nostart-stop-gc
++EOF
++%endif
+ ln -sf clang.cfg %{buildroot}/%{_prefix}/bin/clang++.cfg
+ 
+ # copy lldb for sdk

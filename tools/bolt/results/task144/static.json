@@ -1,0 +1,177 @@
+{
+  "PS5_to_C2_expansions": [
+    {
+      "variant": "default-x86_64",
+      "arch": "x86_64",
+      "result": "PASS",
+      "remaining_I_to_C2": "PS4 parent default LLD + clang.cfg; PS4 whitespace only"
+    },
+    {
+      "variant": "default-aarch64",
+      "arch": "aarch64",
+      "result": "PASS",
+      "remaining_I_to_C2": "PS4 parent default LLD + clang.cfg; PS4 whitespace only"
+    },
+    {
+      "variant": "default-armv7l",
+      "arch": "armv7l",
+      "result": "PASS",
+      "remaining_I_to_C2": "PS4 parent default LLD + clang.cfg; PS4 whitespace only"
+    },
+    {
+      "variant": "switch-000",
+      "arch": "x86_64",
+      "result": "PASS",
+      "remaining_I_to_C2": "PS4 parent default LLD + clang.cfg; PS4 whitespace only"
+    },
+    {
+      "variant": "switch-001",
+      "arch": "x86_64",
+      "result": "PASS",
+      "remaining_I_to_C2": "PS4 parent default LLD + clang.cfg; PS4 whitespace only"
+    },
+    {
+      "variant": "switch-010",
+      "arch": "x86_64",
+      "result": "PASS",
+      "remaining_I_to_C2": "PS4 parent default LLD + clang.cfg; PS4 whitespace only"
+    },
+    {
+      "variant": "switch-011",
+      "arch": "x86_64",
+      "result": "PASS",
+      "remaining_I_to_C2": "PS4 parent default LLD + clang.cfg; PS4 whitespace only"
+    },
+    {
+      "variant": "switch-100",
+      "arch": "x86_64",
+      "result": "PASS",
+      "remaining_I_to_C2": "PS4 parent default LLD + clang.cfg; PS4 whitespace only"
+    },
+    {
+      "variant": "switch-101",
+      "arch": "x86_64",
+      "result": "PASS",
+      "remaining_I_to_C2": "PS4 parent default LLD + clang.cfg; PS4 whitespace only"
+    },
+    {
+      "variant": "switch-110",
+      "arch": "x86_64",
+      "result": "PASS",
+      "remaining_I_to_C2": "PS4 parent default LLD + clang.cfg; PS4 whitespace only"
+    },
+    {
+      "variant": "switch-111",
+      "arch": "x86_64",
+      "result": "PASS",
+      "remaining_I_to_C2": "PS4 parent default LLD + clang.cfg; PS4 whitespace only"
+    }
+  ],
+  "standalone": [
+    {
+      "arch": "x86_64",
+      "exclusive": [
+        "x86_64",
+        "aarch64"
+      ],
+      "supported": true,
+      "lines": [
+        "ExclusiveArch: x86_64 aarch64",
+        "BuildRequires: cmake",
+        "BuildRequires: ninja",
+        "BuildRequires: llvm = 22.1.8",
+        "BuildRequires: llvm-devel = 22.1.8",
+        "BuildRequires: llvm-static-devel = 22.1.8",
+        "BuildRequires: libomp = 22.1.8",
+        "BuildRequires: zlib-devel",
+        "BuildRequires: libxml2-devel",
+        "BuildRequires: clang",
+        "BuildRequires: libllvm = 22.1.8",
+        "BuildRequires: compiler-rt",
+        "Requires: libllvm = 22.1.8",
+        "    -DLLVM_LIBDIR_SUFFIX=`echo lib64 | sed s/lib//g` \\",
+        "    -DBOLT_TARGETS_TO_BUILD=\"X86;AArch64\" \\"
+      ],
+      "targets": "X86;AArch64",
+      "libdir_suffix": "64"
+    },
+    {
+      "arch": "aarch64",
+      "exclusive": [
+        "x86_64",
+        "aarch64"
+      ],
+      "supported": true,
+      "lines": [
+        "ExclusiveArch: x86_64 aarch64",
+        "BuildRequires: cmake",
+        "BuildRequires: ninja",
+        "BuildRequires: llvm = 22.1.8",
+        "BuildRequires: llvm-devel = 22.1.8",
+        "BuildRequires: llvm-static-devel = 22.1.8",
+        "BuildRequires: libomp = 22.1.8",
+        "BuildRequires: zlib-devel",
+        "BuildRequires: libxml2-devel",
+        "BuildRequires: clang",
+        "BuildRequires: libllvm = 22.1.8",
+        "BuildRequires: compiler-rt",
+        "Requires: libllvm = 22.1.8",
+        "    -DLLVM_LIBDIR_SUFFIX=`echo lib64 | sed s/lib//g` \\",
+        "    -DBOLT_TARGETS_TO_BUILD=\"AArch64\" \\"
+      ],
+      "targets": "AArch64",
+      "libdir_suffix": "64"
+    },
+    {
+      "arch": "armv7l",
+      "exclusive": [
+        "x86_64",
+        "aarch64"
+      ],
+      "supported": false,
+      "lines": [
+        "ExclusiveArch: x86_64 aarch64",
+        "BuildRequires: cmake",
+        "BuildRequires: ninja",
+        "BuildRequires: llvm = 22.1.8",
+        "BuildRequires: llvm-devel = 22.1.8",
+        "BuildRequires: llvm-static-devel = 22.1.8",
+        "BuildRequires: libomp = 22.1.8",
+        "BuildRequires: zlib-devel",
+        "BuildRequires: libxml2-devel",
+        "BuildRequires: clang",
+        "BuildRequires: libllvm = 22.1.8",
+        "BuildRequires: compiler-rt",
+        "Requires: libllvm = 22.1.8",
+        "    -DLLVM_LIBDIR_SUFFIX=`echo lib | sed s/lib//g` \\",
+        "    -DBOLT_TARGETS_TO_BUILD=\"AArch64\" \\"
+      ]
+    },
+    {
+      "arch": "i586",
+      "exclusive": [
+        "x86_64",
+        "aarch64"
+      ],
+      "supported": false,
+      "lines": [
+        "ExclusiveArch: x86_64 aarch64",
+        "BuildRequires: cmake",
+        "BuildRequires: ninja",
+        "BuildRequires: llvm = 22.1.8",
+        "BuildRequires: llvm-devel = 22.1.8",
+        "BuildRequires: llvm-static-devel = 22.1.8",
+        "BuildRequires: libomp = 22.1.8",
+        "BuildRequires: zlib-devel",
+        "BuildRequires: libxml2-devel",
+        "BuildRequires: clang",
+        "BuildRequires: libllvm = 22.1.8",
+        "BuildRequires: compiler-rt",
+        "Requires: libllvm = 22.1.8",
+        "    -DLLVM_LIBDIR_SUFFIX=`echo lib | sed s/lib//g` \\",
+        "    -DBOLT_TARGETS_TO_BUILD=\"AArch64\" \\"
+      ]
+    }
+  ],
+  "historical_basis": "N3-expanded-classification.json; I -> C2 exact except default LLD and blank lines"
+}

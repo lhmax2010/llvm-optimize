@@ -1,0 +1,29 @@
+packaging: split tool subpackages into a standalone llvm-tools-subpkgs spec
+
+* 3a5189033a1f - packaging: move tool subpackages to a standalone llvm-tools-subpkgs spec
+* d364b338759a - bolt: create ZLIB/LibXml2 targets in standalone build
+* 28e72ec6b05d - bolt: mirror X86 mnemonic tables and helpers for standalone build
+* 1b9c1ce174de - packaging: add --build-id=sha1 to toolchain linker flags
+* 0cc528da035e - bolt: standalone build fixes for LLVM_LINK_LLVM_DYLIB=ON
+* 3abe328e2c30 - packaging: keep the ARM and BPF targets on armv7l
+* d3f74e4f484d - packaging: add Obsoletes to llvm and tidy tool subpackages
+* c7edd8f43c66 - packaging: note that scan-build needs clang at runtime
+* 67304f964043 - packaging: install with DESTDIR and do not ship libgomp/libiomp5 links
+
+Keep BOLT on component libraries in-tree and allow the LLVM dylib in
+standalone builds. Mark the X86 mirror source optional, compile it and
+enable its declarations only in standalone dylib builds, and clear
+inherited BOLT runtime flags only in standalone builds.
+
+Build the standalone package on x86_64 and aarch64 with per-architecture
+BOLT targets and check their registration. Match LLVM provider versions
+and verify the installed releases agree. Preserve distribution linker
+flags, derive the library suffix from the RPM architecture, document
+debug package generation, and install merge-fdata only once. Keep
+the existing armv7l LLVM target list and omit the additional Python
+runtime requirement from llvm.
+
+Change-Id: Ie2c1d45cea6703a0caef72187397275a03e66468
+Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+Signed-off-by: Pareek Eshaan <e.pareek@samsung.com>
+Co-Authored-By: Cline SR
