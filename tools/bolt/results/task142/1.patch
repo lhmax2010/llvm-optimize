@@ -1,0 +1,313 @@
+From 4e5adcd58008a6340ba9005b7c8a1ae28efd46e2 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Thu, 19 Nov 2026 21:31:28 -0800
+Subject: [PATCH] bolt: keep in-tree builds on component libraries
+
+Treat the X86 mnemonic mirror as optional so an in-tree configuration
+can omit it without triggering the source list check. Build the mirror
+only when standalone BOLT links against the shared LLVM library.
+
+Use one link-mode setting for BOLT libraries, tools and tests. Keep
+component linkage in-tree and allow the shared library for standalone
+builds configured for that mode. Clear the runtime flags only for
+standalone builds so in-tree builds retain their target flags.
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+Change-Id: Ifbe8d6d2feb54b9b934f2cf34d8d2cf0c302bed8
+---
+ bolt/CMakeLists.txt                        | 11 +++++++++--
+ bolt/lib/Core/CMakeLists.txt               |  1 +
+ bolt/lib/Passes/CMakeLists.txt             |  1 +
+ bolt/lib/Profile/CMakeLists.txt            |  1 +
+ bolt/lib/Rewrite/CMakeLists.txt            |  1 +
+ bolt/lib/RuntimeLibs/CMakeLists.txt        |  1 +
+ bolt/lib/Target/AArch64/CMakeLists.txt     |  1 +
+ bolt/lib/Target/RISCV/CMakeLists.txt       |  1 +
+ bolt/lib/Target/X86/CMakeLists.txt         |  7 +++++--
+ bolt/lib/Utils/CMakeLists.txt              |  1 +
+ bolt/tools/bat-dump/CMakeLists.txt         |  1 +
+ bolt/tools/binary-analysis/CMakeLists.txt  |  1 +
+ bolt/tools/driver/CMakeLists.txt           |  1 +
+ bolt/tools/heatmap/CMakeLists.txt          |  1 +
+ bolt/tools/llvm-bolt-fuzzer/CMakeLists.txt |  1 +
+ bolt/tools/merge-fdata/CMakeLists.txt      |  1 +
+ bolt/unittests/Core/CMakeLists.txt         |  1 +
+ bolt/unittests/Passes/CMakeLists.txt       |  1 +
+ bolt/unittests/Profile/CMakeLists.txt      |  1 +
+ 19 files changed, 31 insertions(+), 4 deletions(-)
+
+diff --git a/bolt/CMakeLists.txt b/bolt/CMakeLists.txt
+index ce08094e25ba..e3b99f725bb2 100644
+--- a/bolt/CMakeLists.txt
++++ b/bolt/CMakeLists.txt
+@@ -154,6 +154,9 @@ if (BOLT_ENABLE_RUNTIME)
+   endif()
+ 
+   include(ExternalProject)
++  if(BOLT_BUILT_STANDALONE)
++    list(APPEND extra_args -DCMAKE_C_FLAGS= -DCMAKE_CXX_FLAGS=)
++  endif()
+   ExternalProject_Add(bolt_rt
+     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/runtime"
+     STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/bolt_rt-stamps
+@@ -169,8 +172,6 @@ if (BOLT_ENABLE_RUNTIME)
+                # (-mgeneral-regs-only etc.); distro optflags inherited from
+                # the environment conflict with them (e.g. -msse4.2 with
+                # -mgeneral-regs-only), so start from clean flag sets.
+-               -DCMAKE_C_FLAGS=
+-               -DCMAKE_CXX_FLAGS=
+                ${extra_args}
+     INSTALL_COMMAND ""
+     BUILD_ALWAYS True
+@@ -200,6 +201,12 @@ include_directories(
+   ${CMAKE_CURRENT_BINARY_DIR}/include
+   )
+ 
++if(BOLT_BUILT_STANDALONE AND LLVM_LINK_LLVM_DYLIB)
++  set(BOLT_LLVM_LINK_MODE)
++else()
++  set(BOLT_LLVM_LINK_MODE DISABLE_LLVM_LINK_LLVM_DYLIB)
++endif()
++
+ add_subdirectory(lib)
+ add_subdirectory(tools)
+ 
+diff --git a/bolt/lib/Core/CMakeLists.txt b/bolt/lib/Core/CMakeLists.txt
+index 69937353e7fe..22e25cb489a6 100644
+--- a/bolt/lib/Core/CMakeLists.txt
++++ b/bolt/lib/Core/CMakeLists.txt
+@@ -38,6 +38,7 @@ add_llvm_library(LLVMBOLTCore
+   Relocation.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+   LINK_LIBS
+   ${LLVM_PTHREAD_LIB}
+   )
+diff --git a/bolt/lib/Passes/CMakeLists.txt b/bolt/lib/Passes/CMakeLists.txt
+index 303f1fbcdae8..8a8b71fb5d16 100644
+--- a/bolt/lib/Passes/CMakeLists.txt
++++ b/bolt/lib/Passes/CMakeLists.txt
+@@ -50,6 +50,7 @@ add_llvm_library(LLVMBOLTPasses
+   RetpolineInsertion.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   LINK_LIBS
+   ${LLVM_PTHREAD_LIB}
+diff --git a/bolt/lib/Profile/CMakeLists.txt b/bolt/lib/Profile/CMakeLists.txt
+index d2ec75dacb7f..9d6e2fb68661 100644
+--- a/bolt/lib/Profile/CMakeLists.txt
++++ b/bolt/lib/Profile/CMakeLists.txt
+@@ -8,6 +8,7 @@ add_llvm_library(LLVMBOLTProfile
+   YAMLProfileWriter.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   LINK_COMPONENTS
+   Demangle
+diff --git a/bolt/lib/Rewrite/CMakeLists.txt b/bolt/lib/Rewrite/CMakeLists.txt
+index e45bef86d4cf..4333637249f4 100644
+--- a/bolt/lib/Rewrite/CMakeLists.txt
++++ b/bolt/lib/Rewrite/CMakeLists.txt
+@@ -29,6 +29,7 @@ add_llvm_library(LLVMBOLTRewrite
+   GNUPropertyRewriter.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   LINK_LIBS
+   ${LLVM_PTHREAD_LIB}
+diff --git a/bolt/lib/RuntimeLibs/CMakeLists.txt b/bolt/lib/RuntimeLibs/CMakeLists.txt
+index e89043036394..5e185389a04e 100644
+--- a/bolt/lib/RuntimeLibs/CMakeLists.txt
++++ b/bolt/lib/RuntimeLibs/CMakeLists.txt
+@@ -12,6 +12,7 @@ add_llvm_library(LLVMBOLTRuntimeLibs
+   InstrumentationRuntimeLibrary.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(LLVMBOLTRuntimeLibs
+diff --git a/bolt/lib/Target/AArch64/CMakeLists.txt b/bolt/lib/Target/AArch64/CMakeLists.txt
+index 54c2755234a2..6c2f27b01aef 100644
+--- a/bolt/lib/Target/AArch64/CMakeLists.txt
++++ b/bolt/lib/Target/AArch64/CMakeLists.txt
+@@ -22,6 +22,7 @@ add_llvm_library(LLVMBOLTTargetAArch64
+   AArch64MCSymbolizer.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   DEPENDS
+   AArch64CommonTableGen
+diff --git a/bolt/lib/Target/RISCV/CMakeLists.txt b/bolt/lib/Target/RISCV/CMakeLists.txt
+index 93c97effd31e..0a8c829b5a28 100644
+--- a/bolt/lib/Target/RISCV/CMakeLists.txt
++++ b/bolt/lib/Target/RISCV/CMakeLists.txt
+@@ -21,6 +21,7 @@ add_llvm_library(LLVMBOLTTargetRISCV
+   RISCVMCPlusBuilder.cpp
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   DEPENDS
+   RISCVCommonTableGen
+diff --git a/bolt/lib/Target/X86/CMakeLists.txt b/bolt/lib/Target/X86/CMakeLists.txt
+index baaabab1c1e8..0d2bb1f3c3f4 100644
+--- a/bolt/lib/Target/X86/CMakeLists.txt
++++ b/bolt/lib/Target/X86/CMakeLists.txt
+@@ -24,14 +24,17 @@ set(LLVMBOLT_TARGET_X86_SOURCES
+ # The standalone mirror TU needs generated .inc files that only exist when
+ # this bolt is configured standalone (see tablegen() calls above); upstream
+ # LLVMX86Desc already provides these symbols in whole-LLVM builds.
+-if(BOLT_BUILT_STANDALONE)
++if(BOLT_BUILT_STANDALONE AND LLVM_LINK_LLVM_DYLIB)
+   list(APPEND LLVMBOLT_TARGET_X86_SOURCES X86BoltMnemonicTables.cpp)
++else()
++  list(APPEND LLVM_OPTIONAL_SOURCES X86BoltMnemonicTables.cpp)
+ endif()
+ 
+ add_llvm_library(LLVMBOLTTargetX86
+   ${LLVMBOLT_TARGET_X86_SOURCES}
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   DEPENDS
+   X86CommonTableGen
+@@ -40,7 +43,7 @@ add_llvm_library(LLVMBOLTTargetX86
+ # The installed LLVM may not provide llvm::X86::isNOP & friends (they are
+ # compiled into LLVMX86Desc upstream); build them into this target instead.
+ # Must run after add_llvm_library().
+-if(BOLT_BUILT_STANDALONE)
++if(BOLT_BUILT_STANDALONE AND LLVM_LINK_LLVM_DYLIB)
+   target_compile_definitions(LLVMBOLTTargetX86 PRIVATE BOLT_STANDALONE_X86_TABLES=1)
+ endif()
+ 
+diff --git a/bolt/lib/Utils/CMakeLists.txt b/bolt/lib/Utils/CMakeLists.txt
+index 36d3d67f21ea..51935b8d9434 100644
+--- a/bolt/lib/Utils/CMakeLists.txt
++++ b/bolt/lib/Utils/CMakeLists.txt
+@@ -44,6 +44,7 @@ add_llvm_library(LLVMBOLTUtils
+   ${version_inc}
+ 
+   NO_EXPORT
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   LINK_LIBS
+   ${LLVM_PTHREAD_LIB}
+diff --git a/bolt/tools/bat-dump/CMakeLists.txt b/bolt/tools/bat-dump/CMakeLists.txt
+index 857e8d017069..5d66fb6e00d7 100644
+--- a/bolt/tools/bat-dump/CMakeLists.txt
++++ b/bolt/tools/bat-dump/CMakeLists.txt
+@@ -6,6 +6,7 @@ set(LLVM_LINK_COMPONENTS
+ add_bolt_executable(llvm-bat-dump
+   bat-dump.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(llvm-bat-dump
+diff --git a/bolt/tools/binary-analysis/CMakeLists.txt b/bolt/tools/binary-analysis/CMakeLists.txt
+index d999762b562f..8ffd94e43404 100644
+--- a/bolt/tools/binary-analysis/CMakeLists.txt
++++ b/bolt/tools/binary-analysis/CMakeLists.txt
+@@ -7,6 +7,7 @@ set(LLVM_LINK_COMPONENTS
+ 
+ add_bolt_tool(llvm-bolt-binary-analysis
+   binary-analysis.cpp
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(llvm-bolt-binary-analysis
+diff --git a/bolt/tools/driver/CMakeLists.txt b/bolt/tools/driver/CMakeLists.txt
+index 95b09be3236a..0e124d3c7367 100644
+--- a/bolt/tools/driver/CMakeLists.txt
++++ b/bolt/tools/driver/CMakeLists.txt
+@@ -14,6 +14,7 @@ endif()
+ add_bolt_tool(llvm-bolt
+   llvm-bolt.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   DEPENDS
+   ${BOLT_DRIVER_DEPS}
+diff --git a/bolt/tools/heatmap/CMakeLists.txt b/bolt/tools/heatmap/CMakeLists.txt
+index 27094622fabf..993c148af7dc 100644
+--- a/bolt/tools/heatmap/CMakeLists.txt
++++ b/bolt/tools/heatmap/CMakeLists.txt
+@@ -7,6 +7,7 @@ set(LLVM_LINK_COMPONENTS
+ 
+ add_bolt_tool(llvm-bolt-heatmap
+   heatmap.cpp
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(llvm-bolt-heatmap
+diff --git a/bolt/tools/llvm-bolt-fuzzer/CMakeLists.txt b/bolt/tools/llvm-bolt-fuzzer/CMakeLists.txt
+index 138918b706a9..92e8b76bc6ba 100644
+--- a/bolt/tools/llvm-bolt-fuzzer/CMakeLists.txt
++++ b/bolt/tools/llvm-bolt-fuzzer/CMakeLists.txt
+@@ -5,6 +5,7 @@ set(LLVM_LINK_COMPONENTS
+ add_llvm_fuzzer(llvm-bolt-fuzzer
+   llvm-bolt-fuzzer.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ if (TARGET llvm-bolt-fuzzer)
+diff --git a/bolt/tools/merge-fdata/CMakeLists.txt b/bolt/tools/merge-fdata/CMakeLists.txt
+index 3202b94ac8f3..af3221b4d2c5 100644
+--- a/bolt/tools/merge-fdata/CMakeLists.txt
++++ b/bolt/tools/merge-fdata/CMakeLists.txt
+@@ -3,6 +3,7 @@ set(LLVM_LINK_COMPONENTS Support)
+ add_bolt_tool(merge-fdata
+   merge-fdata.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+ 
+   DEPENDS
+   intrinsics_gen
+diff --git a/bolt/unittests/Core/CMakeLists.txt b/bolt/unittests/Core/CMakeLists.txt
+index 61ddae38e002..748836cb0c54 100644
+--- a/bolt/unittests/Core/CMakeLists.txt
++++ b/bolt/unittests/Core/CMakeLists.txt
+@@ -17,6 +17,7 @@ add_bolt_unittest(CoreTests
+   #       dynamic LLVM library when LLVM_LINK_LLVM_DYLIB is ON.
+   ${LLVM_MAIN_SRC_DIR}/lib/Testing/Support/Error.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(CoreTests
+diff --git a/bolt/unittests/Passes/CMakeLists.txt b/bolt/unittests/Passes/CMakeLists.txt
+index f2c213e092a3..42b80356b52c 100644
+--- a/bolt/unittests/Passes/CMakeLists.txt
++++ b/bolt/unittests/Passes/CMakeLists.txt
+@@ -8,6 +8,7 @@ set(LLVM_LINK_COMPONENTS
+ add_bolt_unittest(PassTests
+   PointerAuthCFIFixup.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(PassTests
+diff --git a/bolt/unittests/Profile/CMakeLists.txt b/bolt/unittests/Profile/CMakeLists.txt
+index 829e9ce135e1..85d41b6ca5c3 100644
+--- a/bolt/unittests/Profile/CMakeLists.txt
++++ b/bolt/unittests/Profile/CMakeLists.txt
+@@ -8,6 +8,7 @@ add_bolt_unittest(ProfileTests
+   DataAggregator.cpp
+   PerfSpeEvents.cpp
+ 
++  ${BOLT_LLVM_LINK_MODE}
+   )
+ 
+ target_link_libraries(ProfileTests
+-- 
+2.43.0
+

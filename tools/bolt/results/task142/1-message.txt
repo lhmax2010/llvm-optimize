@@ -1,0 +1,13 @@
+bolt: keep in-tree builds on component libraries
+
+Treat the X86 mnemonic mirror as optional so an in-tree configuration
+can omit it without triggering the source list check. Build the mirror
+only when standalone BOLT links against the shared LLVM library.
+
+Use one link-mode setting for BOLT libraries, tools and tests. Keep
+component linkage in-tree and allow the shared library for standalone
+builds configured for that mode. Clear the runtime flags only for
+standalone builds so in-tree builds retain their target flags.
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+Change-Id: Ifbe8d6d2feb54b9b934f2cf34d8d2cf0c302bed8
