@@ -1,0 +1,142 @@
+{
+  "status": "UNCLASSIFIED",
+  "input_members": [
+    {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task146/driver/old.o",
+      "sha256": "5bad4dd37811f830427ae75f699e4ccea0141cf28ab653d585a8a9cd6aa55ac5",
+      "bytes": 8096872
+    },
+    {
+      "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task146/driver/new.o",
+      "sha256": "9d8965c9104869be47736fc604944a44f6a899b534dded379280fa75a12e6bb8",
+      "bytes": 8097096
+    }
+  ],
+  "other_members_unchanged_in_145": 75,
+  "exec_sections_compared": 330,
+  "instruction_diffs": {
+    ".text._ZN5clang6driver6DriverC2EN4llvm9StringRefES3_RNS_17DiagnosticsEngineENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEENS2_18IntrusiveRefCntPtrINS2_3vfs10FileSystemEEE": [
+      {
+        "kind": "replace",
+        "old_pos": 242,
+        "new_pos": 242,
+        "old": [
+          "movq\t$0x0, 0x4b8(%rbx)",
+          "movb\t$0x0, 0x4c0(%rbx)"
+        ],
+        "new": [
+          "movl\t$0x646c6c, 0x4c0(%rbx)  # imm = 0x646C6C",
+          "movq\t$0x3, 0x4b8(%rbx)"
+        ],
+        "old_normalized": [
+          "movq $0x0, OFFSET(%rbx)",
+          "movb $0x0, OFFSET(%rbx)"
+        ],
+        "new_normalized": [
+          "movl $0x646c6c, OFFSET(%rbx) # imm = ADDR",
+          "movq $0x3, OFFSET(%rbx)"
+        ]
+      }
+    ]
+  },
+  "changed_elf_sections": [
+    ".debug_info",
+    ".debug_line",
+    ".debug_loc",
+    ".eh_frame",
+    ".rela.data.rel.ro..Lswitch.table._ZN5clang6driver6Driver26getExecutableForDriverModeENS1_10DriverModeE",
+    ".rela.debug_info",
+    ".rela.debug_line",
+    ".rela.debug_loc",
+    ".rela.debug_ranges",
+    ".rela.text._ZN5clang6driver6DriverC2EN4llvm9StringRefES3_RNS_17DiagnosticsEngineENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEENS2_18IntrusiveRefCntPtrINS2_3vfs10FileSystemEEE",
+    ".rodata.str1.1",
+    ".strtab",
+    ".symtab",
+    ".text._ZN5clang6driver6DriverC2EN4llvm9StringRefES3_RNS_17DiagnosticsEngineENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEENS2_18IntrusiveRefCntPtrINS2_3vfs10FileSystemEEE"
+  ],
+  "allocated_relocation_sections_compared": 301,
+  "semantic_allocated_relocation_differences": {},
+  "string_tables": {
+    ".rodata.str1.1": {
+      "old_entries": 244,
+      "new_entries": 244,
+      "values_removed": 0,
+      "values_added": 0,
+      "old_only": [],
+      "new_only": [],
+      "all_changed_values_are_local_string_numbers": false
+    },
+    ".rodata.str1.8": {
+      "old_entries": 0,
+      "new_entries": 0,
+      "values_removed": 0,
+      "values_added": 0,
+      "old_only": [],
+      "new_only": [],
+      "all_changed_values_are_local_string_numbers": false
+    },
+    ".debug_str": {
+      "old_entries": 28126,
+      "new_entries": 28126,
+      "values_removed": 0,
+      "values_added": 0,
+      "old_only": [],
+      "new_only": [],
+      "all_changed_values_are_local_string_numbers": false
+    },
+    ".debug_line_str": {
+      "old_entries": 0,
+      "new_entries": 0,
+      "values_removed": 0,
+      "values_added": 0,
+      "old_only": [],
+      "new_only": [],
+      "all_changed_values_are_local_string_numbers": false
+    },
+    ".strtab": {
+      "old_entries": 1049,
+      "new_entries": 1049,
+      "values_removed": 12,
+      "values_added": 12,
+      "old_only": [
+        ".L.str.69",
+        ".L.str.9",
+        ".L.str.27",
+        ".L.str.86",
+        ".L.str.66",
+        ".L.str.106",
+        ".L.str.64",
+        ".L.str.72",
+        ".L.str.62",
+        ".L.str.52",
+        ".L.str.32",
+        ".L.str.11"
+      ],
+      "new_only": [
+        ".L.str.59",
+        ".L.str.68",
+        ".L.str.28",
+        ".L.str.46",
+        ".L.str.85",
+        ".L.str.65",
+        ".L.str.105",
+        ".L.str.5",
+        ".L.str.63",
+        ".L.str.23",
+        ".L.str.71",
+        ".L.str.10"
+      ],
+      "all_changed_values_are_local_string_numbers": true
+    }
+  },
+  "source": "/home/linhao/Toolchain/development/llvm-optimize/archive/task144/source-c2/clang/lib/Driver/Driver.cpp",
+  "source_lines": [
+    [
+      183,
+      "      PreferredLinker(CLANG_DEFAULT_LINKER), CheckInputsExist(true),"
+    ]
+  ],
+  "constructor_literal_bytes": "6c6c6400",
+  "constructor_literal_length": 3
+}

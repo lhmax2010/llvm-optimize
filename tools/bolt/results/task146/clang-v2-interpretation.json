@@ -1,0 +1,57 @@
+{
+  "only_default_linker_literal_or_length": false,
+  "same_symbol_ranges_on_both_sides_for_alias_pair": true,
+  "old_hot_and_cold_instructions": [
+    427,
+    310
+  ],
+  "new_hot_instructions": 732,
+  "default_linker_initialization": {
+    "kind": "replace",
+    "before_at": 232,
+    "after_at": 242,
+    "before_raw": [
+      "movq\t$0x0, 0x4b8(%rbx)",
+      "movb\t$0x0, 0x4c0(%rbx)"
+    ],
+    "after_raw": [
+      "movl\t$0x646c6c, 0x4c0(%rbx)  # imm = 0x646C6C",
+      "movq\t$0x3, 0x4b8(%rbx)"
+    ],
+    "before_normalized": [
+      "movq $0x0, OFFSET(%rbx)",
+      "movb $0x0, OFFSET(%rbx)"
+    ],
+    "after_normalized": [
+      "movl $0x646c6c, OFFSET(%rbx) # imm = ADDR",
+      "movq $0x3, OFFSET(%rbx)"
+    ]
+  },
+  "first_difference_beyond_literal_and_length": {
+    "kind": "replace",
+    "before_at": 59,
+    "after_at": 59,
+    "before_raw": [
+      "je\t <_ZN5clang6driver6DriverC2EN4llvm9StringRefES3_RNS_17DiagnosticsEngineENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEENS2_18IntrusiveRefCntPtrINS2_3vfs10FileSystemEEE.cold.0>"
+    ],
+    "after_raw": [
+      "jne\t <L1>",
+      "movq\t0x8(%rsp), %rax",
+      "movzbl\t(%rax), %eax",
+      "movb\t%al, (%rbp)",
+      "jmp\t <L2>"
+    ],
+    "before_normalized": [
+      "je <_ZN5clang6driver6DriverC2EN4llvm9StringRefES3_RNS_17DiagnosticsEngineENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEENS2_18IntrusiveRefCntPtrINS2_3vfs10FileSystemEEE.cold.0>"
+    ],
+    "after_normalized": [
+      "jne <ADDR>",
+      "movq OFFSET(%rsp), %rax",
+      "movzbl (%rax), %eax",
+      "movb %al, (%rbp)",
+      "jmp <ADDR>"
+    ]
+  },
+  "native_object_has_only_literal_and_length_change": "driver-v2.json",
+  "processor_instruction_differences_in_shipped_elf_are_not_accepted_as_an_address_or_literal_change": true
+}

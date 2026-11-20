@@ -1,0 +1,17 @@
+--- /home/linhao/Toolchain/development/llvm-optimize/archive/task146/driver/first-check.py	2026-11-20 04:41:06.948409863 -0800
++++ /home/linhao/Toolchain/development/llvm-optimize/archive/task146/driver_v2.py	2026-11-20 04:41:06.974438786 -0800
+@@ -121,11 +121,11 @@
+         strs=strdiff((l,r))
+         rl,rr=(relocations(e,[x[0] for x in insts]) for e,insts in zip((l,r),addressed_rows,strict=True))
+     reloc={k:{"old":rl.get(k),"new":rr.get(k)} for k in sorted(rl.keys()|rr.keys()) if rl.get(k)!=rr.get(k)}
+-    want_a=["movq $0x0, OFFSET(%rbx)","movb $0x0, OFFSET(%rbx)"]
+-    want_b=["movl $0x646c6c, OFFSET(%rbx) # imm = 0x646C6C","movq $0x3, OFFSET(%rbx)"]
++    want_a=["movq\t$0x0, 0x4b8(%rbx)","movb\t$0x0, 0x4c0(%rbx)"]
++    want_b=["movl\t$0x646c6c, 0x4c0(%rbx)  # imm = 0x646C6C","movq\t$0x3, 0x4b8(%rbx)"]
+     ctor_only=len(instructions)==1 and list(instructions)[0].startswith(constructor_prefix)
+     delta=next(iter(instructions.values()),[])
+-    exact_literals=(len(delta)==1 and delta[0]["old_normalized"]==want_a and delta[0]["new_normalized"]==want_b)
++    exact_literals=(len(delta)==1 and delta[0]["old"]==want_a and delta[0]["new"]==want_b)
+     valid_strings=all((not r["values_removed"] and not r["values_added"]) or
+                       k==".strtab" and r["all_changed_values_are_local_string_numbers"] for k,r in strs.items())
+     passed=ctor_only and exact_literals and valid_strings and not reloc
