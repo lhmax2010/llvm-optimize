@@ -1,0 +1,148 @@
+{
+  "unit": "llvm-opt-148-weekend-resume.service",
+  "startup": {
+    "time": "2026-11-20T07:58:57-08:00",
+    "mem_available": 25124794368,
+    "home_available": 251896115200
+  },
+  "deadline": "2026-11-23T06:00:00-08:00",
+  "disk_G_bytes": 102677635662,
+  "reserve_bytes": 4294967296,
+  "watchdog_memory_bytes": 3221225472,
+  "plan": [
+    [
+      "N2",
+      "N2",
+      "full-build",
+      96636764160,
+      1200,
+      0
+    ],
+    [
+      "G4",
+      "G",
+      "pgo-build",
+      102677635662,
+      400,
+      0
+    ],
+    [
+      "G5",
+      "G",
+      "bolt-tools-relink",
+      102677635662,
+      400,
+      0
+    ],
+    [
+      "G6",
+      "G",
+      "bolt-instrument-train-merge",
+      102677635662,
+      400,
+      0
+    ],
+    [
+      "G7",
+      "G",
+      "bolt-match",
+      102677635662,
+      400,
+      0
+    ],
+    [
+      "G8",
+      "G",
+      "write-manifest",
+      102677635662,
+      400,
+      0
+    ]
+  ],
+  "projected": {
+    "N2": {
+      "stage": "full-build",
+      "memory_max": 20829827072,
+      "standard_cap": 25769803776,
+      "floor": 10737418240,
+      "jobs": 4,
+      "thinlto_jobs": 4,
+      "link_jobs": 1,
+      "admitted": true,
+      "disk_required": 96636764160
+    },
+    "G4": {
+      "stage": "pgo-build",
+      "memory_max": 20829827072,
+      "standard_cap": 25769803776,
+      "floor": 10737418240,
+      "jobs": 4,
+      "thinlto_jobs": 4,
+      "link_jobs": 1,
+      "admitted": true,
+      "disk_required": 102677635662
+    },
+    "G5": {
+      "stage": "bolt-tools-relink",
+      "memory_max": 20829827072,
+      "standard_cap": 25769803776,
+      "floor": 16106127360,
+      "jobs": 4,
+      "thinlto_jobs": 4,
+      "link_jobs": 1,
+      "admitted": true,
+      "disk_required": 102677635662
+    },
+    "G6": {
+      "stage": "bolt-instrument-train-merge",
+      "memory_max": 20829827072,
+      "standard_cap": 25769803776,
+      "floor": 19327352832,
+      "jobs": 1,
+      "thinlto_jobs": null,
+      "link_jobs": null,
+      "admitted": true,
+      "disk_required": 102677635662
+    },
+    "G7": {
+      "stage": "bolt-match",
+      "memory_max": 10455121920,
+      "standard_cap": 10455121920,
+      "floor": 10455121920,
+      "jobs": 1,
+      "thinlto_jobs": null,
+      "link_jobs": null,
+      "admitted": true,
+      "disk_required": 102677635662
+    },
+    "G8": {
+      "stage": "write-manifest",
+      "memory_max": 20829827072,
+      "standard_cap": 25769803776,
+      "floor": 1073741824,
+      "jobs": 1,
+      "thinlto_jobs": null,
+      "link_jobs": null,
+      "admitted": true,
+      "disk_required": 102677635662
+    }
+  },
+  "estimates": {
+    "N2": "约 1 小时 56 分至 2 小时 28 分",
+    "G4": "约 2 小时 35 分至 3 小时 27 分",
+    "G5": "工具约 7–11 分钟，另加重链和 strip",
+    "G6": "历史约 7 分 41 秒，不含准入等待",
+    "G7": "重写为分钟级，另加运行时依赖检查",
+    "G8": "没有同口径压缩实测"
+  },
+  "N4": {
+    "status": "SUPERSEDED",
+    "basis": "361624 PS5 cbaa01f5c148f5cc705f969e13ac41fef811a9f9 的树 ef1ab363fa8e9be29eb930916e86c6e8f10f11af 与 C2 相同。144 的 B1 与 145 的 B2 覆盖 N4.1 / N4.2；145、146 及 147 裁决完成差异归类。旧 I 的 133-N 和 138-N N4 均未运行，替代依据是后继产品树的验证。"
+  },
+  "weekly": {
+    "status": "PASS",
+    "commit": "4ff2be33d7c8d1a68c8495955b2717a033b3a75d",
+    "receipt": "9732a5991b77b0c592874a2dd61b178e0fb734c49a7aadf255cc85d2d6274aca  /home/linhao/Toolchain/development/llvm-optimize-bolt/docs/bolt/weekly/2026-11-20_weekly_report.md",
+    "remote": "4ff2be33d7c8d1a68c8495955b2717a033b3a75d\trefs/heads/bolt-v4"
+  }
+}

@@ -1,6 +1,6 @@
 # 148 · 周末构建与离线 profile
 
-**进行中：N2 INTERRUPTED，G4 SKIPPED，G5 SKIPPED，G6 SKIPPED，G7 SKIPPED，G8 SKIPPED，N4 SUPERSEDED。**
+**最终：N2 INTERRUPTED，G4 SKIPPED，G5 SKIPPED，G6 SKIPPED，G7 SKIPPED，G8 SKIPPED，N4 SUPERSEDED。**
 
 周报原样归档，提交 4ff2be33d7c8d1a68c8495955b2717a033b3a75d。[周报](weekly/2026-11-20_weekly_report.md)
 
@@ -68,3 +68,7 @@
   "artifacts": []
 }
 ~~~
+
+看门狗已触发。
+
+[可机读最终记录](../../tools/bolt/results/task148/summary.json)
