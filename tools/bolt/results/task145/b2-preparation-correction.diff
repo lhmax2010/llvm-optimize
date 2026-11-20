@@ -1,0 +1,28 @@
+--- /home/linhao/Toolchain/development/llvm-optimize/archive/task145/b2.py	2026-11-20 03:54:45.719992271 -0800
++++ /home/linhao/Toolchain/development/llvm-optimize/archive/task145/b2-corrected.py	2026-11-20 04:00:42.969306038 -0800
+@@ -90,7 +90,7 @@
+     need(must<=set(local),("provider closure",sorted(must-set(local))))
+     need(len({local[n]["evr"] for n in must})==1,local)
+     checked(["/usr/bin/createrepo_c",repo],"provider-repo")
+-    cfg["repo.b1_provider"]={"url":repo.as_uri()}
++    cfg["repo.b1_provider"]={"url":str(repo)}
+     profile=cfg[cfg["general"]["profile"]]
+     profile["repos"]="repo.b1_provider,"+profile["repos"]
+     bs.save(E/"local-providers.json",local)
+@@ -197,8 +197,15 @@
+     rows=read(D/"export-command.json")
+     rows[0]=GBS
+     rows[rows.index("--spec")+1]=spec
+-    checked(rows,"export",S)
+     export=D/"export"
++    sealed=D.parent/"b2-first-a1/export"
++    reference=D.parent/"b2-first-a1/evidence/export-argv.json"
++    prior=read(reference)
++    need(sealed.is_dir() and prior[prior.index("--commit")+1]==C2
++         and (sealed/spec).is_file() and list(sealed.glob("*.tar.gz")), "missing C2 export from first preparation")
++    shutil.copytree(sealed,export,copy_function=os.link)
++    bs.save(E/"reuse-export.json",{"root":str(sealed),"argv":prior,
++            "files":[bs.receipt(p) for p in sorted(export.iterdir()) if p.is_file()]})
+     need((export/spec).is_file(),"GBS native export missing spec")
+     title="llvm-tools-subpkgs"
+     dest=D/"gbs-driver/local/sources/tizen_base_toolchain_standard"/(title+"-22.1.8-1")

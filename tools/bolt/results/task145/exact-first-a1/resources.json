@@ -1,0 +1,75 @@
+{
+  "unit": "llvm-opt-task145-exact-first-a1.service",
+  "at": "2026-11-20T04:02:59-08:00",
+  "mem_available": 18957815808,
+  "memory_max": 4294967296,
+  "jobs": 1,
+  "directory": "/home/linhao/Toolchain/development/llvm-optimize/archive/task145/exact-first-a1",
+  "argv": [
+    "/usr/bin/systemd-run",
+    "--user",
+    "--wait",
+    "--pipe",
+    "--unit=llvm-opt-task145-exact-first-a1.service",
+    "-p",
+    "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task145/exact-first-a1",
+    "-p",
+    "MemoryMax=4294967296",
+    "-p",
+    "MemorySwapMax=0",
+    "-p",
+    "Nice=19",
+    "-p",
+    "IOSchedulingClass=idle",
+    "-p",
+    "OOMPolicy=stop",
+    "-p",
+    "KillMode=control-group",
+    "-p",
+    "TimeoutStopSec=120",
+    "/usr/bin/python3",
+    "-B",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task145/clang_exact.py",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task145/exact-first-a1",
+    "1"
+  ],
+  "rc": 1,
+  "minimum": 17315500032,
+  "end": "2026-11-20T04:14:04-08:00",
+  "seconds": 665.45,
+  "systemd": {
+    "Result": "exit-code",
+    "ControlGroup": "",
+    "MemoryPeak": "1014022144",
+    "ActiveState": "failed"
+  },
+  "result": {
+    "status": "STOP",
+    "compared": 146959,
+    "different": 25,
+    "equal": 146934,
+    "old_only": 0,
+    "new_only": 0,
+    "coverage": {
+      "old": {
+        "outside_function_ranges": 327303,
+        "within_function_ranges": 22825625,
+        "distinct_symbol_ranges": 162527,
+        "distinct_symbol_names": 165934,
+        "named_functions": 165785,
+        "cold_named_functions": 18820,
+        "unrepresented_ranges": 0
+      },
+      "new": {
+        "outside_function_ranges": 327311,
+        "within_function_ranges": 22825620,
+        "distinct_symbol_ranges": 162526,
+        "distinct_symbol_names": 165932,
+        "named_functions": 165783,
+        "cold_named_functions": 18818,
+        "unrepresented_ranges": 0
+      }
+    }
+  },
+  "status": "STOP"
+}

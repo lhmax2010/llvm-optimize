@@ -1,0 +1,131 @@
+{
+  "diff_line_index": {
+    "ps1-ps4.diff": [
+      {
+        "line": 229,
+        "file": "packaging/clang-bolt-helper.py",
+        "categories": [
+          "build-id"
+        ],
+        "text": "+SHA and Build-ID for crash localization; the shipped clang is fully stripped."
+      },
+      {
+        "line": 2229,
+        "file": "packaging/clang-bolt-helper.py",
+        "categories": [
+          "build-id"
+        ],
+        "text": "+            require(item.get('kind') in ('clang_debug','clang_build_id') and"
+      },
+      {
+        "line": 3253,
+        "file": "packaging/llvm.spec",
+        "categories": [
+          "clang.cfg/default linker"
+        ],
+        "text": "+    -DCLANG_DEFAULT_LINKER=lld \\"
+      },
+      {
+        "line": 3424,
+        "file": "packaging/llvm.spec",
+        "categories": [
+          "clang.cfg/default linker"
+        ],
+        "text": "+# -z nostart-stop-gc: keep sections referenced only through __start_/__stop_ under --gc-sections, as GNU ld does."
+      },
+      {
+        "line": 3425,
+        "file": "packaging/llvm.spec",
+        "categories": [
+          "clang.cfg/default linker"
+        ],
+        "text": "+cat >> %{buildroot}/%{_prefix}/bin/clang.cfg << EOF"
+      },
+      {
+        "line": 3426,
+        "file": "packaging/llvm.spec",
+        "categories": [
+          "clang.cfg/default linker"
+        ],
+        "text": "+-Wl,-z,nostart-stop-gc"
+      }
+    ],
+    "ps4-parent-vs-ps5.diff": [
+      {
+        "line": 24,
+        "file": "packaging/llvm.spec",
+        "categories": [
+          "clang.cfg/default linker"
+        ],
+        "text": "+    -DCLANG_DEFAULT_LINKER=lld \\"
+      },
+      {
+        "line": 35,
+        "file": "packaging/llvm.spec",
+        "categories": [
+          "clang.cfg/default linker"
+        ],
+        "text": "+# -z nostart-stop-gc: keep sections referenced only through __start_/__stop_ under --gc-sections, as GNU ld does."
+      },
+      {
+        "line": 36,
+        "file": "packaging/llvm.spec",
+        "categories": [
+          "clang.cfg/default linker"
+        ],
+        "text": "+cat >> %{buildroot}/%{_prefix}/bin/clang.cfg << EOF"
+      },
+      {
+        "line": 37,
+        "file": "packaging/llvm.spec",
+        "categories": [
+          "clang.cfg/default linker"
+        ],
+        "text": "+-Wl,-z,nostart-stop-gc"
+      }
+    ]
+  },
+  "removed_or_new_outside_build_id": [],
+  "r_ps4_clang_cfg_already_excluded_from_509": {
+    "file": "/usr/bin/clang.cfg",
+    "lines": {
+      "ps4-parent-vs-ps5.diff": [
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39
+      ],
+      "ps1-ps4.diff": [
+        3424,
+        3426
+      ]
+    }
+  },
+  "archive": {
+    "path": "/usr/lib64/libclangDriver.a",
+    "members_before": 76,
+    "members_after": 76,
+    "diff": [
+      {
+        "name": "Driver.cpp.o",
+        "old": [
+          {
+            "name": "Driver.cpp.o",
+            "bytes": 8096872,
+            "sha256": "5bad4dd37811f830427ae75f699e4ccea0141cf28ab653d585a8a9cd6aa55ac5"
+          }
+        ],
+        "new": [
+          {
+            "name": "Driver.cpp.o",
+            "bytes": 8097096,
+            "sha256": "9d8965c9104869be47736fc604944a44f6a899b534dded379280fa75a12e6bb8"
+          }
+        ]
+      }
+    ]
+  }
+}

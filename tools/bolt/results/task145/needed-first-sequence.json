@@ -1,0 +1,53 @@
+[
+  {
+    "unit": "llvm-opt-task145-needed-first-a1.service",
+    "at": "2026-11-20T04:00:05-08:00",
+    "mem_available": 18985869312,
+    "memory_max": 4294967296,
+    "jobs": 1,
+    "directory": "/home/linhao/Toolchain/development/llvm-optimize/archive/task145/needed-first-a1",
+    "argv": [
+      "/usr/bin/systemd-run",
+      "--user",
+      "--wait",
+      "--pipe",
+      "--unit=llvm-opt-task145-needed-first-a1.service",
+      "-p",
+      "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task145/needed-first-a1",
+      "-p",
+      "MemoryMax=4294967296",
+      "-p",
+      "MemorySwapMax=0",
+      "-p",
+      "Nice=19",
+      "-p",
+      "IOSchedulingClass=idle",
+      "-p",
+      "OOMPolicy=stop",
+      "-p",
+      "KillMode=control-group",
+      "-p",
+      "TimeoutStopSec=120",
+      "/usr/bin/python3",
+      "-B",
+      "/home/linhao/Toolchain/development/llvm-optimize/archive/task145/needed.py",
+      "/home/linhao/Toolchain/development/llvm-optimize/archive/task145/needed-first-a1",
+      "1"
+    ],
+    "rc": 1,
+    "minimum": 18769543168,
+    "end": "2026-11-20T04:02:11-08:00",
+    "seconds": 126.54,
+    "systemd": {
+      "Result": "exit-code",
+      "ControlGroup": "",
+      "MemoryPeak": "262144",
+      "ActiveState": "failed"
+    },
+    "result": {
+      "status": "STOP",
+      "error": "STOP B1 NEEDED: the in-tree llvm-bolt is absent from the 22 B1 binary RPM manifests, its original executable was in the cleaned BUILD tree, and the readelf invocation did not preserve stdout."
+    },
+    "status": "STOP"
+  }
+]
