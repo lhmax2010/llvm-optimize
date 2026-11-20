@@ -1,6 +1,6 @@
 # 148 · 周末构建与离线 profile
 
-**进行中：N2 INTERRUPTED，G4 PENDING，G5 PENDING，G6 PENDING，G7 PENDING，G8 PENDING，N4 SUPERSEDED。**
+**进行中：N2 INTERRUPTED，G4 SKIPPED，G5 PENDING，G6 PENDING，G7 PENDING，G8 PENDING，N4 SUPERSEDED。**
 
 周报原样归档，提交 4ff2be33d7c8d1a68c8495955b2717a033b3a75d。[周报](weekly/2026-11-20_weekly_report.md)
 
@@ -15,7 +15,7 @@
 |步骤|结果|档位|MemoryMax B|编译/ThinLTO/链接|开始|结束|等待 s|执行 s|cgroup 峰值 B|准入 MemAvailable B|准入 /home B|原因|
 |---|---|---|---:|---|---|---|---:|---:|---:|---:|---:|---|
 | N2 | INTERRUPTED | dynamic | 20829827072 | 4/4/1 | 2026-11-20T07:58:57-08:00 | 2026-11-20T13:14:53-08:00 | 0.0 | 18956.297 | 20829827072 | 25124794368 | 251896111104 | — |
-| G4 | PENDING | — | — | —/—/— | — | — | — | — | — | — | — | — |
+| G4 | SKIPPED | — | — | —/—/— | — | — | 0 | — | — | 27002327040 | 15896154112 | watchdog crossed stop line |
 | G5 | PENDING | — | — | —/—/— | — | — | — | — | — | — | — | — |
 | G6 | PENDING | — | — | —/—/— | — | — | — | — | — | — | — | — |
 | G7 | PENDING | — | — | —/—/— | — | — | — | — | — | — | — | — |
@@ -30,3 +30,13 @@
 ### N2
 
 [逐步记录及结束日志](../../tools/bolt/results/task148/N2.json)
+
+### G4
+
+[逐步记录及结束日志](../../tools/bolt/results/task148/G4.json)
+
+~~~json
+{
+  "artifacts": []
+}
+~~~
