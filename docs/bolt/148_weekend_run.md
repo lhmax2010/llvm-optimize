@@ -1,6 +1,6 @@
 # 148 · 周末构建与离线 profile
 
-**进行中：N2 INTERRUPTED，G4 SKIPPED，G5 SKIPPED，G6 PENDING，G7 PENDING，G8 PENDING，N4 SUPERSEDED。**
+**进行中：N2 INTERRUPTED，G4 SKIPPED，G5 SKIPPED，G6 SKIPPED，G7 PENDING，G8 PENDING，N4 SUPERSEDED。**
 
 周报原样归档，提交 4ff2be33d7c8d1a68c8495955b2717a033b3a75d。[周报](weekly/2026-11-20_weekly_report.md)
 
@@ -17,7 +17,7 @@
 | N2 | INTERRUPTED | dynamic | 20829827072 | 4/4/1 | 2026-11-20T07:58:57-08:00 | 2026-11-20T13:14:53-08:00 | 0.0 | 18956.297 | 20829827072 | 25124794368 | 251896111104 | — |
 | G4 | SKIPPED | — | — | —/—/— | — | — | 0 | — | — | 27002327040 | 15896154112 | watchdog crossed stop line |
 | G5 | SKIPPED | — | — | —/—/— | — | — | 0 | — | — | 27003068416 | 15896084480 | watchdog crossed stop line |
-| G6 | PENDING | — | — | —/—/— | — | — | — | — | — | — | — | — |
+| G6 | SKIPPED | — | — | —/—/— | — | — | 0 | — | — | 26952196096 | 15896002560 | watchdog crossed stop line |
 | G7 | PENDING | — | — | —/—/— | — | — | — | — | — | — | — | — |
 | G8 | PENDING | — | — | —/—/— | — | — | — | — | — | — | — | — |
 
@@ -44,3 +44,13 @@
 ### G5
 
 [逐步记录及结束日志](../../tools/bolt/results/task148/G5.json)
+
+### G6
+
+[逐步记录及结束日志](../../tools/bolt/results/task148/G6.json)
+
+~~~json
+{
+  "artifacts": []
+}
+~~~
