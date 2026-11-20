@@ -1,24 +1,24 @@
 {
   "step": "N2",
-  "started_at": "2026-11-20T07:47:49-08:00",
+  "started_at": "2026-11-20T07:58:57-08:00",
   "tier": "dynamic",
-  "memory_max": 22000951296,
+  "memory_max": 20829827072,
   "cpu_percent": 1200,
-  "jobs": 6,
-  "thinlto_jobs": 6,
+  "jobs": 4,
+  "thinlto_jobs": 4,
   "link_jobs": 1,
   "admission": [
     {
-      "time": "2026-11-20T07:47:49-08:00",
-      "mem_available": 26295918592,
-      "home_available": 267874074624,
+      "time": "2026-11-20T07:58:57-08:00",
+      "mem_available": 25124794368,
+      "home_available": 251896111104,
       "memory_plan": {
         "stage": "full-build",
-        "memory_max": 22000951296,
+        "memory_max": 20829827072,
         "standard_cap": 25769803776,
         "floor": 10737418240,
-        "jobs": 6,
-        "thinlto_jobs": 6,
+        "jobs": 4,
+        "thinlto_jobs": 4,
         "link_jobs": 1,
         "admitted": true
       },
@@ -26,16 +26,16 @@
     }
   ],
   "admission_wait_seconds": 0.0,
-  "unit": "llvm-opt-148-weekend-n2.service",
+  "unit": "llvm-opt-148-weekend-resume-n2.service",
   "argv": [
     "/usr/bin/systemd-run",
     "--user",
     "--wait",
     "--pipe",
-    "--unit=llvm-opt-148-weekend-n2.service",
+    "--unit=llvm-opt-148-weekend-resume-n2.service",
     "--expand-environment=no",
     "-p",
-    "MemoryMax=22000951296",
+    "MemoryMax=20829827072",
     "-p",
     "MemorySwapMax=0",
     "-p",
@@ -51,56 +51,63 @@
     "-p",
     "TimeoutStopSec=120",
     "-p",
-    "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2",
+    "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2",
     "--setenv=TASK133_WORKSPACE=/home/linhao/Toolchain/development/llvm-optimize",
-    "--setenv=TASK138_UNIT=llvm-opt-148-weekend-n2",
-    "--setenv=TASK133_ADMISSION_MEMORY=26295918592",
+    "--setenv=TASK138_UNIT=llvm-opt-148-weekend-resume-n2",
+    "--setenv=TASK133_ADMISSION_MEMORY=25124794368",
     "/usr/bin/python3",
     "-B",
-    "/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/worker.py",
-    "/home/linhao/Toolchain/development/llvm-optimize/archive/task148",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/orchestration/worker.py",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume",
     "N2",
     "dynamic",
-    "6",
-    "22000951296",
+    "4",
+    "20829827072",
     "1200"
   ],
-  "ended_at": "2026-11-20T07:51:57-08:00",
-  "seconds": 247.467,
-  "rc": 1,
+  "stop_command": {
+    "rc": 0,
+    "stderr": "",
+    "stdout": ""
+  },
+  "ended_at": "2026-11-20T13:14:53-08:00",
+  "seconds": 18956.297,
+  "rc": 0,
   "resources": {
-    "memory.peak": "10126950400",
+    "memory.peak": "20829827072",
     "VmHWM_sample": {
-      "bytes": 798351360,
-      "pid": 7922,
-      "argv": "git archive --format=tar --prefix= 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 --"
+      "bytes": 12810035200,
+      "pid": 49017,
+      "argv": "/usr/bin/ld.lld --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o bin/clang-repl /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0 -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64 -L/lib/../lib64 -L/usr/lib64 -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../x86_64-tizen-linux-gnu/lib -L/lib -L/usr/lib -plugin-opt=mcpu=nehalem -plugin-opt=O3 -plugin-opt=thinlto -plugin-opt=-function-sections=1 -plugin-opt=-data-sections=1 --gc-sections --thinlto-jobs=4 --color-diagnostics --thinlto-cache-dir=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache --export-dynamic --gc-sections --long-plt --dependency-file=tools/clang/tools/clang-repl/CMakeFiles/clang-repl.dir/link.d tools/clang/tools/clang-repl/CMakeFiles/clang-repl.dir/ClangRepl.cpp.o -rpath $ORIGIN/../lib64: lib64/libLLVMX86CodeGen.a lib64/libLLVMX86AsmParser.a lib64/libLLVMX86Desc.a lib64/libLLVMX86Disassembler.a lib64/libLLVMX86Info.a lib64/libLLVMARMCodeGen.a lib64/libLLVMARMAsmParser.a lib64/libLLVMARMDesc.a lib64/libLLVMARMDisassembler.a lib64/libLLVMARMInfo.a lib64/libLLVMARMUtils.a lib64/libLLVMAArch64CodeGen.a lib64/libLLVMAArch64AsmParser.a lib64/libLLVMAArch64Desc.a lib64/libLLVMAArch64Disassembler.a lib64/libLLVMAArch64Info.a lib64/libLLVMAArch64Utils.a lib64/libLLVMBPFCodeGen.a lib64/libLLVMBPFAsmParser.a lib64/libLLVMBPFDesc.a lib64/libLLVMBPFDisassembler.a lib64/libLLVMBPFInfo.a lib64/libLLVMCore.a lib64/libLLVMLineEditor.a lib64/libLLVMOption.a lib64/libLLVMOrcJIT.a lib64/libLLVMOrcShared.a lib64/libLLVMSupport.a lib64/libLLVMTargetParser.a lib64/libclangAST.a lib64/libclangBasic.a lib64/libclangFrontend.a lib64/libclangInterpreter.a lib64/libLLVMAsmPrinter.a lib64/libLLVMMCDisassembler.a lib64/libclangFrontendTool.a lib64/libclangCodeGen.a lib64/libLLVMCoverage.a lib64/libLLVMFrontendDriver.a lib64/libLLVMLTO.a lib64/libLLVMExtensions.a lib64/libclangExtractAPI.a lib64/libclangInstallAPI.a lib64/libLLVMTextAPIBinaryReader.a lib64/libclangRewriteFrontend.a lib64/libclangStaticAnalyzerFrontend.a lib64/libclangStaticAnalyzerCheckers.a lib64/libclangStaticAnalyzerCore.a lib64/libclangCrossTU.a lib64/libclangDriver.a lib64/libclangIndex.a lib64/libclangOptions.a lib64/libclangParse.a lib64/libLLVMPlugins.a lib64/libclangSerialization.a lib64/libclangSema.a lib64/libclangAPINotes.a lib64/libclangEdit.a lib64/libclangAnalysisLifetimeSafety.a lib64/libclangAnalysis.a lib64/libclangASTMatchers.a lib64/libclangSupport.a lib64/libclangFormat.a lib64/libclangToolingInclusions.a lib64/libclangToolingCore.a lib64/libclangRewrite.a lib64/libclangLex.a lib64/libLLVMOrcDebugging.a lib64/libLLVMPasses.a lib64/libLLVMCFGuard.a lib64/libLLVMGlobalISel.a lib64/libLLVMSelectionDAG.a lib64/libLLVMCodeGen.a lib64/libLLVMCGData.a lib64/libLLVMCodeGenTypes.a lib64/libLLVMIRPrinter.a lib64/libLLVMObjCARCOpts.a lib64/libLLVMCoroutines.a lib64/libLLVMipo.a lib64/libLLVMInstrumentation.a lib64/libLLVMVectorize.a lib64/libLLVMSandboxIR.a lib64/libLLVMFrontendOpenMP.a lib64/libLLVMScalarOpts.a lib64/libLLVMFrontendOffloading.a lib64/libLLVMObjectYAML.a lib64/libLLVMFrontendAtomic.a lib64/libLLVMFrontendDirective.a lib64/libLLVMAggressiveInstCombine.a lib64/libLLVMInstCombine.a lib64/libLLVMLinker.a lib64/libLLVMHipStdPar.a lib64/libLLVMTransformUtils.a lib64/libLLVMBitWriter.a lib64/libLLVMExecutionEngine.a lib64/libLLVMTarget.a lib64/libLLVMAnalysis.a lib64/libLLVMProfileData.a lib64/libLLVMSymbolize.a lib64/libLLVMDebugInfoGSYM.a lib64/libLLVMDebugInfoPDB.a lib64/libLLVMDebugInfoCodeView.a lib64/libLLVMDebugInfoMSF.a lib64/libLLVMDebugInfoBTF.a lib64/libLLVMFrontendHLSL.a lib64/libLLVMWindowsDriver.a lib64/libLLVMRuntimeDyld.a lib64/libLLVMJITLink.a lib64/libLLVMOrcTargetProcess.a lib64/libLLVMDebugInfoDWARF.a lib64/libLLVMObject.a lib64/libLLVMMCParser.a lib64/libLLVMMC.a lib64/libLLVMTextAPI.a lib64/libLLVMIRReader.a lib64/libLLVMBitReader.a lib64/libLLVMAsmParser.a lib64/libLLVMRemarks.a lib64/libLLVMBitstreamReader.a lib64/libLLVMDebugInfoDWARFLowLevel.a lib64/libLLVMBinaryFormat.a lib64/libLLVMDemangle.a -lrt -ldl -lm /usr/lib64/libz.so -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/crtendS.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/crtn.o"
     },
-    "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
-    "memory.stat": "anon 10387456\nfile 9202921472",
-    "memory.max": "22000951296",
+    "memory.events": "low 0\nhigh 0\nmax 8010\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+    "memory.stat": "anon 2645073920\nfile 15162343424",
+    "memory.max": "20829827072",
     "memory.swap.peak": "0"
   },
-  "systemd": "Result=exit-code\nMemoryPeak=10110373888\nCPUUsageNSec=129139041000\nActiveState=failed\nInvocationID=871aa99441e54fab9200aa7777396ab8\n",
-  "watchdog": null,
-  "log_path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/service.log",
-  "end_measurement": {
-    "time": "2026-11-20T07:51:57-08:00",
-    "mem_available": 25483239424,
-    "home_available": 259943518208
-  },
-  "worker": {
-    "status": "STOP",
-    "reason": "Command '['/usr/bin/gbs', '-c', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs.conf', 'build', '-A', 'x86_64', '-B', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-driver', '-c', '7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8', '--threads=6', '--define', 'jobs 6', '--define', '_smp_mflags -j6', '--define', '_costomized_smp_mflags -j6', '--define', 'mlgo_build_jobs 6', '--define', '_without_llvm_speedup 1', '--define', '_buildshell /var/tmp/llvm-stage-jobs/build-shell', '--noinit', '--baselibs', '--style=tar', '--spec', 'llvm.spec', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source']' returned non-zero exit status 1.",
-    "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/worker.py\", line 157, in <module>\n    out=build(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 292, in build\n    rpms=run_gbs(w,d,source,ref,\"llvm.spec\",jobs,exp,extra)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 154, in run_gbs\n    checked(*argv,cwd=source,output=d/\"gbs.log\")\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 30, in checked\n    return subprocess.run(argv,cwd=cwd,env=env or CLEAN_ENV,stdout=f,stderr=subprocess.STDOUT,check=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['/usr/bin/gbs', '-c', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs.conf', 'build', '-A', 'x86_64', '-B', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-driver', '-c', '7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8', '--threads=6', '--define', 'jobs 6', '--define', '_smp_mflags -j6', '--define', '_costomized_smp_mflags -j6', '--define', 'mlgo_build_jobs 6', '--define', '_without_llvm_speedup 1', '--define', '_buildshell /var/tmp/llvm-stage-jobs/build-shell', '--noinit', '--baselibs', '--style=tar', '--spec', 'llvm.spec', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source']' returned non-zero exit status 1.\n",
-    "cgroup_end": {
-      "memory.peak": "10126950400",
-      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
-      "memory.max": "22000951296",
-      "memory.stat": "anon 10387456\nfile 9202921472",
-      "memory.swap.peak": "0"
+  "systemd": "Result=success\nMemoryPeak=20829827072\nCPUUsageNSec=56724186182000\nActiveState=inactive\nInvocationID=7eb7c15bdf584cf090e4042ab9ea897d\n",
+  "watchdog": {
+    "time": "2026-11-20T13:14:53-08:00",
+    "mem_available": 24333205504,
+    "home_available": 15896272896,
+    "memory.peak": "20829827072",
+    "memory.max": "20829827072",
+    "memory.events": "low 0\nhigh 0\nmax 8010\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+    "memory.swap.peak": "0",
+    "memory.stat": "anon 2645073920\nfile 15162343424",
+    "VmHWM_sample": {
+      "bytes": 2762158080,
+      "pid": 20918,
+      "argv": "rpmbuild --define jobs 4 --define _smp_mflags -j4 --define _costomized_smp_mflags -j4 --define mlgo_build_jobs 4 --define _without_llvm_speedup 1 --define _buildshell /var/tmp/llvm-stage-jobs/build-shell --define _srcdefattr (-,root,root) --nosignature --target=x86_64 --define _build_create_debug 1 -ba /home/abuild/rpmbuild/SOURCES/llvm.spec"
     }
   },
-  "log_tail": "-C /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source status --porcelain --untracked-files=no\n/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/gbs.conf export --spec llvm.spec --commit 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 --upstream-branch sandbox/fangyu.he/llvm_optmize --upstream-tag upstream/22.1.8 --outdir-directly -o /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/export /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source\n/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2 --library-path /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64 /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/rpmspec --showrc\n/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2 --library-path /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64 /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/rpmspec -P --macros '/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/macros:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/macros.d/macros.*:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/platform/%{_target}/macros:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/fileattrs/*.attr:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/tizen/macros:/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/rerun4/parse/toolchain-x86-debug.macros' --target x86_64-tizen-linux --define '_topdir /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/rpm' --define '_builddir /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/rpm/BUILD' --define '_sourcedir /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/export' --define '_toolchain clang' --define 'jobs 6' --define '_smp_mflags -j6' --define '_costomized_smp_mflags -j6' --define 'mlgo_build_jobs 6' --define '_without_llvm_speedup 1' /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/export/llvm.spec\n/usr/bin/sudo -n /usr/bin/build --uid 1000:1000 --root /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0 --dist /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/build.conf --arch x86_64 --target x86_64-tizen-linux --stage=-bp --debug --baselibs --define 'jobs 6' --define '_smp_mflags -j6' --define '_costomized_smp_mflags -j6' --define 'mlgo_build_jobs 6' --define '_without_llvm_speedup 1' --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/packages/ --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/debug/ /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/export/llvm.spec\n/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs.conf build -A x86_64 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-driver -c 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 --threads=6 --define 'jobs 6' --define '_smp_mflags -j6' --define '_costomized_smp_mflags -j6' --define 'mlgo_build_jobs 6' --define '_without_llvm_speedup 1' --define '_buildshell /var/tmp/llvm-stage-jobs/build-shell' --noinit --baselibs --style=tar --spec llvm.spec /home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source\nTraceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/worker.py\", line 157, in <module>\n    out=build(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 292, in build\n    rpms=run_gbs(w,d,source,ref,\"llvm.spec\",jobs,exp,extra)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 154, in run_gbs\n    checked(*argv,cwd=source,output=d/\"gbs.log\")\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task148/orchestration/buildsteps.py\", line 30, in checked\n    return subprocess.run(argv,cwd=cwd,env=env or CLEAN_ENV,stdout=f,stderr=subprocess.STDOUT,check=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['/usr/bin/gbs', '-c', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs.conf', 'build', '-A', 'x86_64', '-B', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-driver', '-c', '7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8', '--threads=6', '--define', 'jobs 6', '--define', '_smp_mflags -j6', '--define', '_costomized_smp_mflags -j6', '--define', 'mlgo_build_jobs 6', '--define', '_without_llvm_speedup 1', '--define', '_buildshell /var/tmp/llvm-stage-jobs/build-shell', '--noinit', '--baselibs', '--style=tar', '--spec', 'llvm.spec', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source']' returned non-zero exit status 1.\n\nFinished with result: exit-code\nMain processes terminated with: code=exited/status=1\nService runtime: 4min 7.411s\nCPU time consumed: 2min 9.139s\nMemory peak: 9.4G\nMemory swap peak: 0B\n",
-  "status": "FAIL",
-  "reason": "Command '['/usr/bin/gbs', '-c', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs.conf', 'build', '-A', 'x86_64', '-B', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/gbs-driver', '-c', '7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8', '--threads=6', '--define', 'jobs 6', '--define', '_smp_mflags -j6', '--define', '_costomized_smp_mflags -j6', '--define', 'mlgo_build_jobs 6', '--define', '_without_llvm_speedup 1', '--define', '_buildshell /var/tmp/llvm-stage-jobs/build-shell', '--noinit', '--baselibs', '--style=tar', '--spec', 'llvm.spec', '/home/linhao/Toolchain/development/llvm-optimize/archive/task148/N2/source']' returned non-zero exit status 1."
+  "log_path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/service.log",
+  "end_measurement": {
+    "time": "2026-11-20T13:14:53-08:00",
+    "mem_available": 26864443392,
+    "home_available": 15896272896
+  },
+  "log_tail": "Running as unit: llvm-opt-148-weekend-resume-n2.service; invocation ID: 7eb7c15bdf584cf090e4042ab9ea897d\nLLVM_BUILD_JOBS planned full-build {\"jobs\": 4, \"thinlto_jobs\": 4, \"link_jobs\": 1}\n/usr/bin/git clone --quiet --shared --no-checkout /home/linhao/Toolchain/development/llvm-optimize/temp/task131/pgo-dev /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/source\n/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/source checkout --quiet --detach 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8\n/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/source rev-parse HEAD\n/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/source status --porcelain --untracked-files=no\n/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/gbs.conf export --spec llvm.spec --commit 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 --upstream-branch sandbox/fangyu.he/llvm_optmize --upstream-tag upstream/22.1.8 --outdir-directly -o /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/export /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/source\n/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2 --library-path /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64 /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/rpmspec --showrc\n/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2 --library-path /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64 /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/rpmspec -P --macros '/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/macros:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/macros.d/macros.*:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/platform/%{_target}/macros:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/fileattrs/*.attr:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/tizen/macros:/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/rerun4/parse/toolchain-x86-debug.macros' --target x86_64-tizen-linux --define '_topdir /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/rpm' --define '_builddir /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/rpm/BUILD' --define '_sourcedir /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/export' --define '_toolchain clang' --define 'jobs 4' --define '_smp_mflags -j4' --define '_costomized_smp_mflags -j4' --define 'mlgo_build_jobs 4' --define '_without_llvm_speedup 1' /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/export/llvm.spec\n/usr/bin/sudo -n /usr/bin/build --uid 1000:1000 --root /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0 --dist /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/build.conf --arch x86_64 --target x86_64-tizen-linux --stage=-bp --debug --baselibs --define 'jobs 4' --define '_smp_mflags -j4' --define '_costomized_smp_mflags -j4' --define 'mlgo_build_jobs 4' --define '_without_llvm_speedup 1' --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/packages/ --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/debug/ /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/export/llvm.spec\n/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/gbs.conf build -A x86_64 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/gbs-driver -c 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 --threads=4 --define 'jobs 4' --define '_smp_mflags -j4' --define '_costomized_smp_mflags -j4' --define 'mlgo_build_jobs 4' --define '_without_llvm_speedup 1' --define '_buildshell /var/tmp/llvm-stage-jobs/build-shell' --baselibs --style=tar --spec llvm.spec /home/linhao/Toolchain/development/llvm-optimize/archive/task148/resume/N2/source\nFinished with result: success\nMain processes terminated with: code=killed/status=TERM\nService runtime: 5h 15min 55.991s\nCPU time consumed: 15h 45min 24.106s\nMemory peak: 19.3G\nMemory swap peak: 0B\n",
+  "status": "INTERRUPTED",
+  "reason": ""
 }
