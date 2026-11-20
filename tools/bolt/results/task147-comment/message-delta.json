@@ -1,0 +1,14 @@
+{
+  "added": [
+    {
+      "message": "Patch Set 5:\n\nPS5 on top of PS4: fixes for the in-tree BOLT build and the standalone llvm-tools-subpkgs spec. The PS4 history in the commit message is unchanged; a summary of the PS5 changes follows it.\n\nBOLT CMake\n- Add BOLT_LLVM_LINK_MODE, set before its consumers in bolt/CMakeLists.txt. It is empty only when BOLT is built standalone with LLVM_LINK_LLVM_DYLIB=ON, and DISABLE_LLVM_LINK_LLVM_DYLIB otherwise. All BOLT libraries, tools and unit tests use it, so in-tree BOLT keeps linking the LLVM component libraries as before, and only the standalone dylib build links libLLVM.so.\n- X86BoltMnemonicTables.cpp is listed in LLVM_OPTIONAL_SOURCES and compiled only for standalone dylib builds; the mirror declarations are enabled under the same condition.\n- The inherited runtime C/C++ flags are cleared only for standalone builds; in-tree runtime flags are unchanged.\n- merge-fdata is installed once by CMake; the duplicate manual install is removed.\n\nllvm.spec\n- armv7l LLVM_TARGETS_TO_BUILD is back to ARM;BPF.\n- The explicit Requires: python3 on llvm is removed.\n\nllvm-tools-subpkgs.spec\n- ExclusiveArch: x86_64 aarch64, with BOLT_TARGETS_TO_BUILD set per architecture and a check that the expected targets are registered.\n- The LLVM provider BuildRequires (llvm, llvm-devel, llvm-static-devel, libllvm, libomp) are pinned to %{version}, and %build checks that the installed providers share one version and release.\n- bolt now requires libllvm = %{version} at runtime (unversioned in PS4); its explicit Requires: compiler-rt is removed.\n- LLVM_LIBDIR_SUFFIX is derived from %{_lib} instead of a fixed 64.\n- The distribution $LDFLAGS are kept in the CMake linker flags, together with --build-id=sha1.\n- The debug packaging comment now describes the actual flow (find-debuginfo via __debug_install_post, bolt-debuginfo and llvm-tools-subpkgs-debugsource).\n\nTested on x86_64: full llvm build with in-tree BOLT, and a standalone llvm-tools-subpkgs build against the installed llvm packages.",
+      "reviewer": {
+        "email": "hao.lin@samsung.com",
+        "name": "Lin Hao",
+        "username": "lhmax2025"
+      },
+      "timestamp": 1795188149
+    }
+  ],
+  "removed_or_modified_before_entries": []
+}

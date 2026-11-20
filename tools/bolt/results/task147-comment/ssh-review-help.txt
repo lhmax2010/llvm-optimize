@@ -1,0 +1,46 @@
+gerrit review {COMMIT | CHANGE,PATCHSET} ... [--] [--abandon] [--branch (-b) VAL] [--deadline VAL] [--help (-h)] [--json (-j)] [--label (-l) LABEL=VALUE] [--message (-m) MESSAGE] [--move BRANCH] [--notify (-n) [NONE | OWNER | OWNER_REVIEWERS | ALL]] [--project (-p) PROJECT] [--rebase] [--restore] [--submit (-s)] [--tag (-t) TAG] [--trace] [--trace-id VAL] [--verified N] [--code-review N]
+
+ {COMMIT | CHANGE,PATCHSET}             : list of commits or patch sets to
+                                          review
+ --                                     : end of options (default: false)
+ --abandon                              : abandon the specified change(s)
+                                          (default: false)
+ --branch (-b) VAL                      : branch containing the specified patch
+                                          set(s)
+ --deadline VAL                         : deadline after which the request
+                                          should be aborted)
+ --help (-h)                            : display this help text (default: true)
+ --json (-j)                            : read review input json from stdin
+                                          (default: false)
+ --label (-l) LABEL=VALUE               : custom label(s) to assign
+ --message (-m) MESSAGE                 : cover message to publish on change(s)
+ --move BRANCH                          : move the specified change(s)
+ --notify (-n) [NONE | OWNER |          : Who to send email notifications to
+ OWNER_REVIEWERS | ALL]                   after the review is stored.
+ --project (-p) PROJECT                 : project containing the specified
+                                          patch set(s)
+ --rebase                               : rebase the specified change(s)
+                                          (default: false)
+ --restore                              : restore the specified abandoned
+                                          change(s) (default: false)
+ --submit (-s)                          : submit the specified patch set(s)
+                                          (default: false)
+ --tag (-t) TAG                         : applies a tag to the given review
+ --trace                                : enable request tracing (default:
+                                          false)
+ --trace-id VAL                         : trace ID (can only be set if --trace
+                                          was set too)
+ --verified N                           : score for Verified
+                                          -1 Fails
+                                           0 No score
+                                          +1 Verified
+ --code-review N                        : score for Code-Review
+                                          -2 Do not submit
+                                          -1 I would prefer that you didn't
+                                          submit this
+                                           0 No score
+                                          +1 Looks good to me, but someone else
+                                          must approve
+                                          +2 Looks good to me, approved
+
+
