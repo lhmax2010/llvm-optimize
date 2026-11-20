@@ -1,0 +1,50 @@
+{
+  "status": "PASS",
+  "gerrit_status": "NEW",
+  "gerrit_ps": 4,
+  "gerrit_revision": "1ddecbe8729f832b5ef565092d039f68df647a43",
+  "target_branch": "tizen_base",
+  "F2": "636ef90aa1ff75ca8731b84b1526e6a557cffcd6",
+  "tree": "ef1ab363fa8e9be29eb930916e86c6e8f10f11af",
+  "parent": "f346dd75e87de324dc2abe61454ca1c49969d12d",
+  "author": "Dongkyun Son <dongkyun.s@samsung.com> 1794637555 +0900",
+  "spec_checks": [
+    {
+      "file": "packaging/llvm.spec",
+      "sha256": "f79a43b382e2daacd0c06c666cf97a7d6e8ec15983154d433d465ddd5109b8c4",
+      "build_id_sha1": [
+        {
+          "line": 415,
+          "text": "    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        },
+        {
+          "line": 416,
+          "text": "    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+        }
+      ],
+      "module_related": [
+        {
+          "line": 342,
+          "text": "            # from LDFLAGS. CMAKE_MODULE_LINKER_FLAGS is initialized from this"
+        }
+      ],
+      "module_build_id_sha1": false
+    },
+    {
+      "file": "packaging/llvm-tools-subpkgs.spec",
+      "sha256": "339df5a372ab57c9fce424b86d226e4e4537e9a39823034f606b3d02ca2037a5",
+      "build_id_sha1": [
+        {
+          "line": 129,
+          "text": "    -DCMAKE_EXE_LINKER_FLAGS=\"$LDFLAGS -Wl,--build-id=sha1\" \\"
+        },
+        {
+          "line": 130,
+          "text": "    -DCMAKE_SHARED_LINKER_FLAGS=\"$LDFLAGS -Wl,--build-id=sha1\" \\"
+        }
+      ],
+      "module_related": [],
+      "module_build_id_sha1": false
+    }
+  ]
+}
