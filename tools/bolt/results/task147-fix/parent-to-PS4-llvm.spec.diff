@@ -1,0 +1,122 @@
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 62e30f78b48f..176b947123bc 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -108,6 +108,15 @@ BuildRequires: clang, llvm, libllvm
+ 
+ 
+ Requires: libllvm = %{version}-%{release}
++# scan-build and scan-view are Python scripts (formerly in clang-analyzer)
++# scan-build also needs clang installed at runtime; llvm does not require it
++# (requiring clang here would make llvm and clang depend on each other)
++Requires: python3
++# clang-analyzer, llvm-xray and llvm-prof-tools used to be separate
++# subpackages (llvm-tools-subpkgs.spec) that owned these files; llvm takes them over
++Obsoletes: clang-analyzer <= %{version}-%{release}
++Obsoletes: llvm-xray <= %{version}-%{release}
++Obsoletes: llvm-prof-tools <= %{version}-%{release}
+ 
+ %description
+ LLVM is a compiler infrastructure designed for compile-time, link-time, runtime,
+@@ -366,6 +375,19 @@ export CFLAGS CXXFLAGS LDFLAGS
+ 
+ # Set up MLGO AOT model paths from bundled verify assets
+ %if %{with mlgo}
++# Ensure verify assets exist even when %%prep is skipped (incremental builds)
++if [ ! -d mlgo_verify_assets ]; then
++    mkdir -p mlgo_verify_assets
++%ifarch armv7l
++    tar -C mlgo_verify_assets -xzf %{SOURCE1002}
++%endif
++%ifarch aarch64
++    tar -C mlgo_verify_assets -xzf %{SOURCE1003}
++%endif
++%ifarch x86_64
++    tar -C mlgo_verify_assets -xzf %{SOURCE1004}
++%endif
++fi
+ MLGO_AOT_DIR="$PWD/mlgo_verify_assets"
+ MLGO_BUILD_DIR="$PWD/build"
+ MLGO_RUNTIME_OBJECTS="${MLGO_AOT_DIR}/xla_runtime_objects/xla_compiled_cpu_function.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/cpu_function_runtime.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/custom_call_status.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/executable_run_options.cc.o;${MLGO_AOT_DIR}/xla_runtime_objects/runtime_single_threaded_matmul_f32.cc.o"
+@@ -391,8 +413,8 @@ cmake \
+     -DCMAKE_C_FLAGS="$CFLAGS" \
+     -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
+ %if %{defined _toolchain}
+-    -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+-    -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections" \
++    -DCMAKE_SHARED_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1" \
++    -DCMAKE_EXE_LINKER_FLAGS="-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1" \
+     -DLLVM_USE_LINKER=lld \
+     -DLLVM_ENABLE_LTO=Thin \
+     -DCMAKE_RANLIB=%{_bindir}/llvm-ranlib \
+@@ -406,7 +428,7 @@ cmake \
+ %endif
+ %ifarch armv7l
+     -DCMAKE_BUILD_TYPE=MinSizeRel \
+-    -DLLVM_TARGETS_TO_BUILD='ARM;BPF' \
++    -DLLVM_TARGETS_TO_BUILD='ARM;AArch64;X86;BPF' \
+     -DLLVM_TARGET_ARCH="ARM" \
+ %endif
+ %ifarch aarch64
+@@ -589,7 +611,13 @@ echo TIZEN_HYBRID_LINK_OK
+ 
+ %install
+ cd build
+-cmake -DCMAKE_INSTALL_PREFIX=%{buildroot}/usr -P cmake_install.cmake
++# DESTDIR, not a prefix under buildroot: the openmp install script creates its
++# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build
++# environment's /usr/lib when DESTDIR is unset.
++DESTDIR=%{buildroot} cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake
++# Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package
++# provides libgomp.so and libgomp.so.1 on the target.
++rm -f %{buildroot}%{_libdir}/libgomp.so %{buildroot}%{_libdir}/libgomp.so.1 %{buildroot}%{_libdir}/libiomp5.so
+ %ifarch x86_64
+ %if %{llvm_bolt_enabled}
+ 
+@@ -696,6 +724,7 @@ bolt_optional python3 -B %{SOURCE1201} cache-release "$PWD" "$BOLT_WORK"
+ # Any subsequent buildroot mutation (including native archive conversion) must follow this gate.
+ %endif
+ %endif
++
+ ln -sf %{_prefix}/bin/clang++ %{buildroot}%{_prefix}/bin/clang++-%{llvm_version}
+ 
+ ln -sf clang %{buildroot}%{_prefix}/bin/%{_host}-clang
+@@ -775,11 +804,11 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %manifest %{name}.manifest
+ %defattr(-,root,root,-)
+ %{_prefix}/bin/analyze-build
++%{_prefix}/bin/intercept-build
+ %{_prefix}/bin/bugpoint
+ %{_prefix}/bin/clang-linker-wrapper
+ %{_prefix}/bin/clang-offload-packager
+ %{_prefix}/bin/clang-repl
+-%{_prefix}/bin/intercept-build
+ %{_prefix}/bin/llc
+ %{_prefix}/bin/lld
+ %{_prefix}/bin/ld.lld
+@@ -925,6 +954,12 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %{_prefix}/bin/clang-refactor
+ %{_prefix}/bin/clang-scan-deps
+ %{_prefix}/bin/clang-format
++%{_prefix}/libexec/analyze-c++
++%{_prefix}/libexec/analyze-cc
++%{_prefix}/libexec/c++-analyzer
++%{_prefix}/libexec/ccc-analyzer
++%{_prefix}/libexec/intercept-c++
++%{_prefix}/libexec/intercept-cc
+ %{_prefix}/bin/clang-include-cleaner
+ %{_prefix}/bin/clang-include-fixer
+ %{_prefix}/bin/clang-offload-bundler
+@@ -941,12 +976,6 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %{_libdir}/clang/%{llvm_version}/include/*
+ %{_libdir}/libclang*.so*
+ %{_libdir}/cmake/clang/*
+-%{_prefix}/libexec/analyze-c++
+-%{_prefix}/libexec/analyze-cc
+-%{_prefix}/libexec/c++-analyzer
+-%{_prefix}/libexec/ccc-analyzer
+-%{_prefix}/libexec/intercept-c++
+-%{_prefix}/libexec/intercept-cc
+ %{_prefix}/bin/clang.cfg
+ %{_prefix}/bin/clang++.cfg
+ 

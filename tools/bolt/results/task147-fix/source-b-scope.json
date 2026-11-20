@@ -1,0 +1,125 @@
+{
+  "ps4_f2_changed_files": [
+    "bolt/CMakeLists.txt",
+    "bolt/lib/Core/CMakeLists.txt",
+    "bolt/lib/Passes/CMakeLists.txt",
+    "bolt/lib/Profile/CMakeLists.txt",
+    "bolt/lib/Rewrite/CMakeLists.txt",
+    "bolt/lib/RuntimeLibs/CMakeLists.txt",
+    "bolt/lib/Target/AArch64/CMakeLists.txt",
+    "bolt/lib/Target/RISCV/CMakeLists.txt",
+    "bolt/lib/Target/X86/CMakeLists.txt",
+    "bolt/lib/Utils/CMakeLists.txt",
+    "bolt/tools/bat-dump/CMakeLists.txt",
+    "bolt/tools/binary-analysis/CMakeLists.txt",
+    "bolt/tools/driver/CMakeLists.txt",
+    "bolt/tools/heatmap/CMakeLists.txt",
+    "bolt/tools/llvm-bolt-fuzzer/CMakeLists.txt",
+    "bolt/tools/merge-fdata/CMakeLists.txt",
+    "bolt/unittests/Core/CMakeLists.txt",
+    "bolt/unittests/Passes/CMakeLists.txt",
+    "bolt/unittests/Profile/CMakeLists.txt",
+    "packaging/llvm-tools-subpkgs.spec",
+    "packaging/llvm.spec"
+  ],
+  "ps4_build_id": [
+    {
+      "line": 45,
+      "text": "-    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\"
+    },
+    {
+      "line": 46,
+      "text": "-    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections\" \\"
+    },
+    {
+      "line": 47,
+      "text": "+    -DCMAKE_SHARED_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+    },
+    {
+      "line": 48,
+      "text": "+    -DCMAKE_EXE_LINKER_FLAGS=\"-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1\" \\"
+    }
+  ],
+  "parent_default_linker": [
+    {
+      "line": 24,
+      "text": "+    -DCLANG_DEFAULT_LINKER=lld \\"
+    }
+  ],
+  "driver_initialization": [
+    {
+      "line": 183,
+      "text": "      PreferredLinker(CLANG_DEFAULT_LINKER), CheckInputsExist(true),"
+    }
+  ],
+  "installed_root_and_rewrite_scope": [
+    {
+      "line": 684,
+      "text": "python3 -B %{SOURCE1201} installed-baseline \"%{buildroot}\" \"$BOLT_WORK/installed-baseline.json\" || bolt_status_exit $?"
+    },
+    {
+      "line": 685,
+      "text": "python3 -B %{SOURCE1201} snapshot \"%{buildroot}\" \"$BOLT_WORK/install-before.json\" || bolt_status_exit $?"
+    },
+    {
+      "line": 687,
+      "text": "bolt_step ordinary-copy cp -p bin/clang-22 \"$BOLT_WORK/ordinary-clang-22\""
+    },
+    {
+      "line": 692,
+      "text": "  -DBOLT_BUILD_TOOLS=OFF -DBOLT_ENABLE_RUNTIME=OFF \\"
+    },
+    {
+      "line": 717,
+      "text": "python3 -B %{SOURCE1201} compare-root \"%{buildroot}\" \"$BOLT_WORK/install-before.json\" \\"
+    },
+    {
+      "line": 791,
+      "text": "python3 -B %{SOURCE1201} install \"%{buildroot}\" \"$BOLT_WORK/clang.candidate\" \\"
+    },
+    {
+      "line": 1033,
+      "text": "    python3 -B %{SOURCE1201} post \"%{buildroot}\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/install-state.json\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/ordinary-clang-22\" \"%{_builddir}/%{buildsubdir}/build/clang-bolt/post-gate\" --resource-dir \"%{buildroot}%{_libdir}/clang/%{llvm_version}\" --debugfiles-list \"%{_builddir}/%{buildsubdir}/debugfiles.list\" || bolt_status_exit $? \\"
+    }
+  ],
+  "in_tree_link_mode_and_source": [
+    {
+      "line": 26,
+      "text": "if(BOLT_BUILT_STANDALONE)"
+    },
+    {
+      "line": 157,
+      "text": "  if(BOLT_BUILT_STANDALONE)"
+    },
+    {
+      "line": 203,
+      "text": "if(BOLT_BUILT_STANDALONE AND LLVM_LINK_LLVM_DYLIB)"
+    },
+    {
+      "line": 204,
+      "text": "  set(BOLT_LLVM_LINK_MODE \"\")"
+    },
+    {
+      "line": 206,
+      "text": "  set(BOLT_LLVM_LINK_MODE DISABLE_LLVM_LINK_LLVM_DYLIB)"
+    }
+  ],
+  "target_mirror": [
+    {
+      "line": 8,
+      "text": "if(BOLT_BUILT_STANDALONE)"
+    },
+    {
+      "line": 27,
+      "text": "if(BOLT_BUILT_STANDALONE AND LLVM_LINK_LLVM_DYLIB)"
+    },
+    {
+      "line": 30,
+      "text": "  list(APPEND LLVM_OPTIONAL_SOURCES X86BoltMnemonicTables.cpp)"
+    },
+    {
+      "line": 46,
+      "text": "if(BOLT_BUILT_STANDALONE AND LLVM_LINK_LLVM_DYLIB)"
+    }
+  ]
+}

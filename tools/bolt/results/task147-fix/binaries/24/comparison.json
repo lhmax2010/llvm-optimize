@@ -1,0 +1,157 @@
+{
+  "index": 24,
+  "path": "/usr/lib64/libclang-cpp.so.22.1",
+  "compared": 87985,
+  "same": 87983,
+  "different": 2,
+  "old_only": 0,
+  "new_only": 0,
+  "identity_and_coverage": {
+    "old": {
+      "elf": "/home/linhao/Toolchain/development/llvm-optimize/archive/task144/b1-audit/comparison/old/clang-x86_64/usr/lib64/libclang-cpp.so.22.1",
+      "elf_sha256": "eef3e324d36649fc809a52ed8c8771077eb8dcf9ed4ddc767982470d0ccaa5dc",
+      "debug": "/home/linhao/Toolchain/development/llvm-optimize/archive/task144/b1-audit/comparison/old/clang-debuginfo-x86_64/usr/lib/debug/usr/lib64/libclang-cpp.so.22.1.debug",
+      "debug_crc32": "86c4fc68",
+      "coverage": {
+        "outside_function_ranges": 656371,
+        "within_function_ranges": 11978390,
+        "distinct_symbol_ranges": 86480,
+        "distinct_symbol_names": 88037,
+        "named_functions": 87985,
+        "cold_named_functions": 0,
+        "unrepresented_ranges": 0
+      },
+      "disassembly_argv": [
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task144/b1-a1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2",
+        "--library-path",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task144/b1-a1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task144/b1-a1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+        "-d",
+        "--no-show-raw-insn",
+        "--symbolize-operands",
+        "--no-leading-addr",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task147-fix/binaries/24/old.symbols"
+      ]
+    },
+    "new": {
+      "elf": "/home/linhao/Toolchain/development/llvm-optimize/archive/task144/b1-audit/comparison/new/clang-x86_64/usr/lib64/libclang-cpp.so.22.1",
+      "elf_sha256": "14e5d18ff1bbbfad550dc0791b342b0d4f6a13508b5a47d1d9da0d50e7418c35",
+      "debug": "/home/linhao/Toolchain/development/llvm-optimize/archive/task144/b1-audit/comparison/new/clang-debuginfo-x86_64/usr/lib/debug/usr/lib64/libclang-cpp.so.22.1.debug",
+      "debug_crc32": "5a257359",
+      "coverage": {
+        "outside_function_ranges": 656368,
+        "within_function_ranges": 11978390,
+        "distinct_symbol_ranges": 86480,
+        "distinct_symbol_names": 88037,
+        "named_functions": 87985,
+        "cold_named_functions": 0,
+        "unrepresented_ranges": 0
+      },
+      "disassembly_argv": [
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task144/b1-a1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2",
+        "--library-path",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task144/b1-a1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task144/b1-a1/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/llvm-objdump",
+        "-d",
+        "--no-show-raw-insn",
+        "--symbolize-operands",
+        "--no-leading-addr",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task147-fix/binaries/24/new.symbols"
+      ]
+    }
+  },
+  "changed_functions": [
+    {
+      "section": ".text",
+      "function": "_ZN5clang6driver6DriverC1EN4llvm9StringRefES3_RNS_17DiagnosticsEngineENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEENS2_18IntrusiveRefCntPtrINS2_3vfs10FileSystemEEE",
+      "before_count": 686,
+      "after_count": 686,
+      "raw_spans_old": [
+        [
+          "1dd1310ff5fff04e4dd84dadf4418ea5974be84bd219f854a4a53a9e76942b40",
+          686,
+          351432682,
+          351457916
+        ]
+      ],
+      "raw_spans_new": [
+        [
+          "d11c4b9311c6f2a90cdeafcf59f12de571b79ffe65bbf34eedfbd1d6408ba095",
+          686,
+          351432680,
+          351457937
+        ]
+      ],
+      "changes": [
+        {
+          "kind": "replace",
+          "before_at": 242,
+          "after_at": 242,
+          "before_raw": [
+            "movq\t$0x0, 0x4b8(%rbx)",
+            "movb\t$0x0, 0x4c0(%rbx)"
+          ],
+          "after_raw": [
+            "movl\t$0x646c6c, 0x4c0(%rbx)  # imm = 0x646C6C",
+            "movq\t$0x3, 0x4b8(%rbx)"
+          ],
+          "before_normalized": [
+            "movq $0x0, OFFSET(%rbx)",
+            "movb $0x0, OFFSET(%rbx)"
+          ],
+          "after_normalized": [
+            "movl $0x646c6c, OFFSET(%rbx) # imm = ADDR",
+            "movq $0x3, OFFSET(%rbx)"
+          ]
+        }
+      ],
+      "display_name": "clang::driver::Driver::Driver(llvm::StringRef, llvm::StringRef, clang::DiagnosticsEngine&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>)"
+    },
+    {
+      "section": ".text",
+      "function": "_ZN5clang6driver6DriverC2EN4llvm9StringRefES3_RNS_17DiagnosticsEngineENSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEENS2_18IntrusiveRefCntPtrINS2_3vfs10FileSystemEEE",
+      "before_count": 686,
+      "after_count": 686,
+      "raw_spans_old": [
+        [
+          "1dd1310ff5fff04e4dd84dadf4418ea5974be84bd219f854a4a53a9e76942b40",
+          686,
+          351432682,
+          351457916
+        ]
+      ],
+      "raw_spans_new": [
+        [
+          "d11c4b9311c6f2a90cdeafcf59f12de571b79ffe65bbf34eedfbd1d6408ba095",
+          686,
+          351432680,
+          351457937
+        ]
+      ],
+      "changes": [
+        {
+          "kind": "replace",
+          "before_at": 242,
+          "after_at": 242,
+          "before_raw": [
+            "movq\t$0x0, 0x4b8(%rbx)",
+            "movb\t$0x0, 0x4c0(%rbx)"
+          ],
+          "after_raw": [
+            "movl\t$0x646c6c, 0x4c0(%rbx)  # imm = 0x646C6C",
+            "movq\t$0x3, 0x4b8(%rbx)"
+          ],
+          "before_normalized": [
+            "movq $0x0, OFFSET(%rbx)",
+            "movb $0x0, OFFSET(%rbx)"
+          ],
+          "after_normalized": [
+            "movl $0x646c6c, OFFSET(%rbx) # imm = ADDR",
+            "movq $0x3, OFFSET(%rbx)"
+          ]
+        }
+      ],
+      "display_name": "clang::driver::Driver::Driver(llvm::StringRef, llvm::StringRef, clang::DiagnosticsEngine&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>)"
+    }
+  ]
+}

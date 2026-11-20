@@ -1,0 +1,23 @@
+{
+  "case_insensitive_regex": "github|lhmax|llvm-optimize|sandbox|bolt-v4|codex|claude|openai|\\b(?:ai|cline|chatgpt|copilot)\\b|\\btask[ _-]*\\d{1,4}\\b|\\d{1,4}\\s*号|/home/",
+  "added_message_lines": [
+    "Keep in-tree BOLT on component libraries by setting BOLT_LLVM_LINK_MODE",
+    "before its consumers. List the unused X86 mirror in LLVM_OPTIONAL_SOURCES",
+    "and compile it only for standalone dylib builds. Clear the inherited",
+    "runtime C and C++ flags only for standalone builds.",
+    "",
+    "Restore ARM;BPF as the armv7l LLVM target list and drop the explicit",
+    "python3 requirement from llvm. Limit the standalone spec to x86_64 and",
+    "aarch64, set BOLT_TARGETS_TO_BUILD per architecture, and verify target",
+    "registration.",
+    "",
+    "Bind the LLVM provider build requirements to the LLVM version and check",
+    "that the installed providers share one version and release. Keep the",
+    "libllvm version requirement for bolt and remove its compiler-rt runtime",
+    "requirement. Derive LLVM_LIBDIR_SUFFIX from %{_lib}, retain distribution",
+    "LDFLAGS, correct the debug packaging comments, and let CMake install",
+    "merge-fdata once.",
+    "Signed-off-by: Hao Lin <hao.lin@samsung.com>"
+  ],
+  "hits": []
+}

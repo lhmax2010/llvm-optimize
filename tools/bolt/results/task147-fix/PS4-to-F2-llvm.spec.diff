@@ -1,0 +1,27 @@
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 176b947123bc..b83f8dba673e 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -108,10 +108,9 @@ BuildRequires: clang, llvm, libllvm
+ 
+ 
+ Requires: libllvm = %{version}-%{release}
+-# scan-build and scan-view are Python scripts (formerly in clang-analyzer)
+-# scan-build also needs clang installed at runtime; llvm does not require it
+-# (requiring clang here would make llvm and clang depend on each other)
+-Requires: python3
++# scan-build (Perl) also needs clang installed at runtime; llvm does not
++# require it (requiring clang here would make llvm and clang depend on
++# each other)
+ # clang-analyzer, llvm-xray and llvm-prof-tools used to be separate
+ # subpackages (llvm-tools-subpkgs.spec) that owned these files; llvm takes them over
+ Obsoletes: clang-analyzer <= %{version}-%{release}
+@@ -428,7 +427,7 @@ cmake \
+ %endif
+ %ifarch armv7l
+     -DCMAKE_BUILD_TYPE=MinSizeRel \
+-    -DLLVM_TARGETS_TO_BUILD='ARM;AArch64;X86;BPF' \
++    -DLLVM_TARGETS_TO_BUILD='ARM;BPF' \
+     -DLLVM_TARGET_ARCH="ARM" \
+ %endif
+ %ifarch aarch64
