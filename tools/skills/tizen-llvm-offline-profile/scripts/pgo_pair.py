@@ -18,7 +18,7 @@ import time
 
 from bolt_stale_gate import GateError, audit_log
 from build_cleanup import remove_tree
-from stage_resources import RESERVE, admission as stage_admission
+from stage_resources import WATCHDOG_DISK, WATCHDOG_MEMORY, admission as stage_admission, parallelism
 from manifest import file_identity, generate
 
 STAGES = (
@@ -139,11 +139,15 @@ class Pipeline:
         self.rows = targets(rows, self.paths)
         self.resources = cfg["resources"]
         limits = self.resources["tiers"][self.resources["tier"]]
-        self.paths["jobs"] = str(limits["jobs"])
+        self.set_parallelism({"jobs": limits["jobs"], "thinlto_jobs": limits["jobs"], "link_jobs": 1})
         self.dynamic_admission = self.resources.get("stage_admission", False)
-        if self.dynamic_admission and (self.resources["stop_memory_bytes"] != RESERVE or
-                                       self.resources["stop_disk_bytes"] != 15 * 2**30):
-            raise ValueError("stage admission requires the 6 GiB memory and 15 GiB disk stop lines")
+        self.stop_memory = WATCHDOG_MEMORY if self.dynamic_admission else self.resources["stop_memory_bytes"]
+        self.stop_disk = WATCHDOG_DISK if self.dynamic_admission else self.resources["stop_disk_bytes"]
+        # Accept archived configurations with the previous memory threshold so
+        # their immutable stage checkpoint fingerprints still validate.
+        if self.dynamic_admission and (self.resources["stop_memory_bytes"] not in (WATCHDOG_MEMORY, 6 * 2**30)
+                                       or self.resources["stop_disk_bytes"] != WATCHDOG_DISK):
+            raise ValueError("stage admission requires the 3 GiB memory and 15 GiB disk stop lines")
         if (type(limits["jobs"]) is not int or limits["jobs"] <= 0 or
                 not 0 < self.resources["watchdog_seconds"] <= 30 or
                 self.resources["max_seconds"] <= 0 or
@@ -180,6 +184,10 @@ class Pipeline:
         self.state_digest = hashlib.sha256(json.dumps([cfg, str(self.root), rows], sort_keys=True).encode()).hexdigest()
         self.tier = None
         self.end = None
+
+    def set_parallelism(self, counts):
+        for name, value in counts.items():
+            self.paths[name] = "" if value is None else str(value)
 
     def expand(self, value):
         return value.format_map(self.paths)
@@ -262,7 +270,16 @@ class Pipeline:
             receipt = self.recovery_receipt(recovery)
             recovery_plan = {"stage": "instrumented-build", "status": "VERIFIED_FOR_REUSE",
                              "artifacts": receipt["tools"], "next_stage": "ir-train"}
-        mapping = self.plan()
+        mapping = {}
+        for name in selected:
+            if available is not None and self.dynamic_admission:
+                limit = stage_admission(name, available)
+                self.set_parallelism({key: limit[key] for key in ("jobs", "thinlto_jobs", "link_jobs")})
+            mapping[name] = self.plan()[name]
+        defaults = self.cfg["resources"]["tiers"][self.resources["tier"]]["jobs"]
+        self.set_parallelism({"jobs": defaults, "thinlto_jobs": defaults, "link_jobs": 1})
+        for name, commands in self.plan().items():
+            mapping.setdefault(name, commands)
         return {"mode": "dry-run", "resume": resume, "recovery": recovery_plan,
                 "stage_admission": ([stage_admission(name, available) for name in selected]
                                     if available is not None else []), "executes_builds": False, "project": self.cfg["project"],
@@ -295,9 +312,9 @@ class Pipeline:
             cap = self.cgroup_memory_max()
             if not limit["floor"] <= cap <= limit["memory_max"]:
                 raise RuntimeError("stage cgroup MemoryMax is outside its admitted memory budget")
-            self.tier = {"jobs": stage_admission(selected[0], cap + RESERVE)["jobs"]}
-            self.paths["jobs"] = str(self.tier["jobs"])
-            self.status["admission"][-1].update(actual_memory_max=cap, jobs=self.tier["jobs"])
+            self.tier = parallelism(selected[0], cap)
+            self.set_parallelism(self.tier)
+            self.status["admission"][-1].update(self.tier, actual_memory_max=cap)
             return True
 
         self.end = start + self.resources["max_seconds"]
@@ -347,8 +364,7 @@ class Pipeline:
         if time.monotonic() >= self.end:
             raise RuntimeError("job deadline reached")
         data = self.measure()
-        if (data["memory"] < self.resources["stop_memory_bytes"] or
-                min(data["disk"].values()) < self.resources["stop_disk_bytes"]):
+        if data["memory"] < self.stop_memory or min(data["disk"].values()) < self.stop_disk:
             self.status["watchdog"] = data
             raise RuntimeError("job crossed the memory or disk stop line")
 
@@ -377,7 +393,9 @@ class Pipeline:
         argv = action["argv"]
         log = attempt / (label + ".txt")
         env = {**os.environ, **self.cfg.get("environment", {}), **self.tool_environment(argv), "LC_ALL": "C",
-               "PROFILE_JOBS": str(self.tier["jobs"]), **action["extra_env"]}
+               **action["extra_env"]}
+        for key in ("jobs", "thinlto_jobs", "link_jobs"):
+            env["PROFILE_" + key.upper()] = self.paths[key]
         if self.tool_name(argv) in self.launchers:
             env.pop("LD_LIBRARY_PATH", None)
         with log.open("xb") as stream:
@@ -675,6 +693,10 @@ class Pipeline:
                 self.status["status"] = "UNQUALIFIED" if all_complete else "PARTIAL"
             except (RuntimeError, OSError, TypeError, ValueError, KeyError, KeyboardInterrupt) as error:
                 self.status["reason"] = str(error) or type(error).__name__
+                if "watchdog" in self.status:
+                    self.status["status"] = "INTERRUPTED"
+                    if self.status["stages"] and self.status["stages"][-1]["status"] == "STOP":
+                        self.status["stages"][-1]["status"] = "INTERRUPTED"
                 raise
             finally:
                 self.status["ended_at"] = timestamp()

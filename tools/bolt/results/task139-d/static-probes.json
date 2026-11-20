@@ -1,0 +1,106 @@
+{
+  "N2": {
+    "commit": "7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8",
+    "rpm_expanded_ninja": [
+      "ninja -j 4"
+    ],
+    "old_cmake_scheduling": {
+      "CMAKE_SHARED_LINKER_FLAGS": "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+      "CMAKE_EXE_LINKER_FLAGS": "-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+      "LLVM_PARALLEL_COMPILE_JOBS": "-DLLVM_PARALLEL_COMPILE_JOBS=6",
+      "LLVM_PARALLEL_LINK_JOBS": "-DLLVM_PARALLEL_LINK_JOBS=2"
+    },
+    "proposed_cmake_scheduling": {
+      "CMAKE_EXE_LINKER_FLAGS": "-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--thinlto-jobs=4",
+      "CMAKE_SHARED_LINKER_FLAGS": "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--thinlto-jobs=4",
+      "CMAKE_MODULE_LINKER_FLAGS": "-DCMAKE_MODULE_LINKER_FLAGS=-Wl,-z,relro,--as-needed -Wl,--gc-sections -Wl,--thinlto-jobs=4",
+      "LLVM_PARALLEL_COMPILE_JOBS": "-DLLVM_PARALLEL_COMPILE_JOBS=4",
+      "LLVM_PARALLEL_LINK_JOBS": "-DLLVM_PARALLEL_LINK_JOBS=1"
+    },
+    "other_cmake_tokens_unchanged": true
+  },
+  "G4": {
+    "commit": "2b9031dd9ab46e3fb142da13e64624de3896e8be",
+    "rpm_expanded_ninja": [
+      "ninja -j 4"
+    ],
+    "old_cmake_scheduling": {
+      "CMAKE_SHARED_LINKER_FLAGS": "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+      "CMAKE_EXE_LINKER_FLAGS": "-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections",
+      "LLVM_PARALLEL_COMPILE_JOBS": "-DLLVM_PARALLEL_COMPILE_JOBS=6",
+      "LLVM_PARALLEL_LINK_JOBS": "-DLLVM_PARALLEL_LINK_JOBS=2"
+    },
+    "proposed_cmake_scheduling": {
+      "CMAKE_EXE_LINKER_FLAGS": "-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--thinlto-jobs=4",
+      "CMAKE_SHARED_LINKER_FLAGS": "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--thinlto-jobs=4",
+      "CMAKE_MODULE_LINKER_FLAGS": "-DCMAKE_MODULE_LINKER_FLAGS=-Wl,-z,relro,--as-needed -Wl,--gc-sections -Wl,--thinlto-jobs=4",
+      "LLVM_PARALLEL_COMPILE_JOBS": "-DLLVM_PARALLEL_COMPILE_JOBS=4",
+      "LLVM_PARALLEL_LINK_JOBS": "-DLLVM_PARALLEL_LINK_JOBS=1"
+    },
+    "other_cmake_tokens_unchanged": true
+  },
+  "N4": {
+    "commit": "a4d024f0f35630a743653af1542cb02e539fced6",
+    "rpm_expanded_ninja": [
+      "ninja -d keeprsp -j 4 || exit 1"
+    ],
+    "old_cmake_scheduling": {
+      "CMAKE_SHARED_LINKER_FLAGS": "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1",
+      "CMAKE_EXE_LINKER_FLAGS": "-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1",
+      "LLVM_PARALLEL_COMPILE_JOBS": "-DLLVM_PARALLEL_COMPILE_JOBS=6",
+      "LLVM_PARALLEL_LINK_JOBS": "-DLLVM_PARALLEL_LINK_JOBS=2"
+    },
+    "proposed_cmake_scheduling": {
+      "CMAKE_EXE_LINKER_FLAGS": "-DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1 -Wl,--thinlto-jobs=4",
+      "CMAKE_SHARED_LINKER_FLAGS": "-DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld -flto=thin -ffunction-sections -fdata-sections -Wl,--gc-sections -Wl,--build-id=sha1 -Wl,--thinlto-jobs=4",
+      "CMAKE_MODULE_LINKER_FLAGS": "-DCMAKE_MODULE_LINKER_FLAGS=-Wl,-z,relro,--as-needed -Wl,--gc-sections -Wl,--thinlto-jobs=4",
+      "LLVM_PARALLEL_COMPILE_JOBS": "-DLLVM_PARALLEL_COMPILE_JOBS=4",
+      "LLVM_PARALLEL_LINK_JOBS": "-DLLVM_PARALLEL_LINK_JOBS=1"
+    },
+    "other_cmake_tokens_unchanged": true
+  },
+  "rpm_build_shell_expansion": "/var/tmp/llvm-stage-jobs/build-shell -e",
+  "gbs_noinit": "[--no-configure] [--noinit] [--ccache]",
+  "plan_19_gib": [
+    {
+      "stage": "full-build",
+      "memory_max": 16106127360,
+      "standard_cap": 25769803776,
+      "floor": 10737418240,
+      "jobs": 4,
+      "thinlto_jobs": 4,
+      "link_jobs": 1,
+      "admitted": true
+    },
+    {
+      "stage": "pgo-build",
+      "memory_max": 16106127360,
+      "standard_cap": 25769803776,
+      "floor": 10737418240,
+      "jobs": 4,
+      "thinlto_jobs": 4,
+      "link_jobs": 1,
+      "admitted": true
+    },
+    {
+      "stage": "bolt-tools-relink",
+      "memory_max": 16106127360,
+      "standard_cap": 25769803776,
+      "floor": 16106127360,
+      "jobs": 4,
+      "thinlto_jobs": 4,
+      "link_jobs": 1,
+      "admitted": true
+    },
+    {
+      "stage": "bolt-instrument-train-merge",
+      "memory_max": 16106127360,
+      "standard_cap": 25769803776,
+      "floor": 19327352832,
+      "jobs": 1,
+      "thinlto_jobs": null,
+      "link_jobs": null,
+      "admitted": false
+    }
+  ]
+}

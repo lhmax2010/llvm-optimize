@@ -73,19 +73,31 @@ class BuildCleanupTests(unittest.TestCase):
 
 
 class StageResourcesTests(unittest.TestCase):
-    def test_full_build_uses_24_gib_cap_and_rounds_jobs_down(self):
-        available = int(22.6 * GIB)
-        plan = admission("full-build", available)
-        self.assertEqual(plan["memory_max"], available - 6 * GIB)
-        self.assertEqual(plan["jobs"], 4)
-        self.assertTrue(plan["admitted"])
-        self.assertEqual(admission("full-build", 40 * GIB)["memory_max"], 24 * GIB)
-        self.assertEqual(admission("full-build", 40 * GIB)["jobs"], 6)
+    def test_full_build_tier_boundaries(self):
+        for available, jobs in ((14*GIB, 2), (18*GIB-1, 2), (18*GIB, 4),
+                                (24*GIB-1, 4), (24*GIB, 6), (40*GIB, 6)):
+            with self.subTest(available=available):
+                plan = admission("full-build", available)
+                self.assertEqual(plan["jobs"], jobs)
+                self.assertEqual(plan["thinlto_jobs"], jobs)
+                self.assertEqual(plan["link_jobs"], 1)
+                self.assertTrue(plan["admitted"])
+        self.assertEqual(admission("full-build", 40*GIB)["memory_max"], 24*GIB)
 
-    def test_linker_floor_and_light_stage_cutoff(self):
+    def test_floors_and_historical_evening(self):
         for stage in ("full-build", "pgo-build", "bolt-tools-relink"):
-            self.assertTrue(admission(stage, 21 * GIB)["admitted"])
-            self.assertFalse(admission(stage, 21 * GIB - 1)["admitted"])
-        floor = budget("bolt-instrument-train-merge")[1]
-        self.assertTrue(admission("bolt-instrument-train-merge", floor + 6 * GIB)["admitted"])
-        self.assertFalse(admission("bolt-instrument-train-merge", floor + 6 * GIB - 1)["admitted"])
+            floor = budget(stage)[1]
+            self.assertTrue(admission(stage, floor+4*GIB)["admitted"])
+            self.assertFalse(admission(stage, floor+4*GIB-1)["admitted"])
+            plan = admission(stage, 19*GIB)
+            self.assertEqual((plan["memory_max"], plan["jobs"]), (15*GIB, 4))
+        stage = "bolt-instrument-train-merge"
+        self.assertFalse(admission(stage, 19*GIB)["admitted"])
+        self.assertFalse(admission(stage, 22*GIB-1)["admitted"])
+        plan = admission(stage, 22*GIB)
+        self.assertTrue(plan["admitted"])
+        self.assertEqual((plan["memory_max"], plan["jobs"], plan["thinlto_jobs"]), (18*GIB, 1, None))
+
+    def test_watchdog_limits(self):
+        from stage_resources import WATCHDOG_DISK, WATCHDOG_MEMORY
+        self.assertEqual((WATCHDOG_MEMORY, WATCHDOG_DISK), (3*GIB, 15*GIB))

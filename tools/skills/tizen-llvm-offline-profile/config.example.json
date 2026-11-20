@@ -6,6 +6,8 @@
   "training": "bundled",
   "paths": {
     "llvm": "/path/to/llvm-project",
+    "skill_scripts": "/path/to/profile-skill/scripts",
+    "rpm_build_shell": "/var/tmp/llvm-stage-jobs/build-shell",
     "gbs_config": "/path/to/config/gbs.conf",
     "instrumented_source": "/path/to/offline/ir-source",
     "pgo_source": "/path/to/offline/pgo-source",
@@ -17,7 +19,9 @@
     "synthetic_dir": "/path/to/training/synthetic",
     "sysroot_armv7l": "/path/to/sysroots/armv7l",
     "sysroot_aarch64": "/path/to/sysroots/aarch64",
-    "resource_dir": "/path/to/sysroots/clang-resource/22"
+    "resource_dir": "/path/to/sysroots/clang-resource/22",
+    "instrumented_chroot": "/path/to/jobs/ir-gbs/local/BUILD-ROOTS/scratch.x86_64.0",
+    "pgo_chroot": "/path/to/jobs/pgo-gbs/local/BUILD-ROOTS/scratch.x86_64.0"
   },
   "tools": {
     "git": "/path/to/bin/git",
@@ -41,6 +45,15 @@
     "instrumented-build": [
       {
         "argv": [
+          "/usr/bin/python3",
+          "{skill_scripts}/build_jobs.py",
+          "install",
+          "{instrumented_chroot}"
+        ],
+        "cwd": "{instrumented_source}"
+      },
+      {
+        "argv": [
           "/path/to/bin/gbs",
           "-c",
           "{gbs_config}",
@@ -52,7 +65,11 @@
           "--threads",
           "{jobs}",
           "--buildroot",
-          "{instrumented_root}"
+          "{instrumented_root}",
+          "--define",
+          "mlgo_build_jobs {jobs}",
+          "--define",
+          "_buildshell {rpm_build_shell}"
         ],
         "cwd": "{instrumented_source}"
       }
@@ -69,6 +86,15 @@
       },
       {
         "argv": [
+          "/usr/bin/python3",
+          "{skill_scripts}/build_jobs.py",
+          "install",
+          "{pgo_chroot}"
+        ],
+        "cwd": "{pgo_source}"
+      },
+      {
+        "argv": [
           "/path/to/bin/gbs",
           "-c",
           "{gbs_config}",
@@ -80,7 +106,11 @@
           "--threads",
           "{jobs}",
           "--buildroot",
-          "{pgo_root}"
+          "{pgo_root}",
+          "--define",
+          "mlgo_build_jobs {jobs}",
+          "--define",
+          "_buildshell {rpm_build_shell}"
         ],
         "cwd": "{pgo_source}"
       }
@@ -88,16 +118,20 @@
     "bolt-tools": [
       {
         "argv": [
+          "/usr/bin/python3",
+          "{skill_scripts}/build_jobs.py",
+          "reconfigure",
+          "{pgo_build}",
           "/path/to/bin/cmake",
           "-S",
           "{llvm}/llvm",
           "-B",
           "{pgo_build}",
           "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
-          "-DBOLT_BUILD_TOOLS=OFF",
           "-DBOLT_ENABLE_RUNTIME=ON",
           "-DBOLT_INCLUDE_TESTS=OFF",
-          "-DBOLT_TARGETS_TO_BUILD=X86"
+          "-DBOLT_TARGETS_TO_BUILD=X86",
+          "-DBOLT_BUILD_TOOLS=OFF"
         ],
         "cwd": "{pgo_build}"
       },
@@ -175,7 +209,7 @@
         "jobs": 2
       }
     },
-    "stop_memory_bytes": 6442450944,
+    "stop_memory_bytes": 3221225472,
     "stop_disk_bytes": 16106127360,
     "watchdog_seconds": 30,
     "defer_seconds": 0,

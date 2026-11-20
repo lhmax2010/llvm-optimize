@@ -1,0 +1,263 @@
+--- a/buildsteps.py
++++ b/buildsteps.py
+@@ -124,6 +124,12 @@
+  checked(*command,cwd=d,output=d/"prep.log")
+  return root
+ def run_gbs(w,d,source,commit,spec,jobs,exported,extra=(),repos=(), pkg="llvm"):
++ root=d/"gbs-root/local/BUILD-ROOTS/scratch.x86_64.0"
++ if spec=="llvm.spec":
++  from build_jobs import from_environment, install
++  counts=from_environment()
++  assert counts[0]==jobs
++  extra=(*extra,"_buildshell "+install(root,counts))
+  driver=d/"gbs-driver"
+  target=driver/f"local/sources/tizen_base_toolchain_standard/{pkg}-22.1.8-1"
+  target.parent.mkdir(parents=True,exist_ok=True)
+@@ -143,11 +149,15 @@
+  with conf.open("w") as f: cfg.write(f)
+  argv=[GBS,"-c",str(conf),"build","-A","x86_64","-B",str(driver),"-c",commit,"--threads="+str(jobs),*macros(jobs,extra),
+        "--baselibs","--style=tar","--spec",spec,str(source)]
++ if spec=="llvm.spec": argv.insert(argv.index("--baselibs"),"--noinit")
+  save(d/"gbs-command.json",argv)
+  checked(*argv,cwd=source,output=d/"gbs.log")
+- root=d/"gbs-root/local/BUILD-ROOTS/scratch.x86_64.0"
+  if (root/".build.log").is_file():
+   shutil.copyfile(root/".build.log",d/"rpm-build.log")
++ if spec=="llvm.spec":
++  from build_jobs import require_rpm_log
++  log=d/"rpm-build.log"
++  require_rpm_log(log if log.is_file() else d/"gbs.log",counts)
+  rpm_set=sorted(p for p in (driver/"local/repos").rglob("*.rpm") if p.is_file())
+  assert rpm_set, "GBS returned success but no local RPMs were found"
+  save(d/"rpm-identities.json",[receipt(p) for p in rpm_set])
+--- a/orchestrator.py
++++ b/orchestrator.py
+@@ -6,9 +6,9 @@
+ SCRIPTS = Path(__file__).resolve().parent
+ SKILL = B / "tools/skills/tizen-llvm-offline-profile/scripts"
+ sys.path.insert(0, str(SKILL))
+-from stage_resources import GIB, admission
++from stage_resources import GIB, RESERVE, WATCHDOG_DISK, WATCHDOG_MEMORY, admission
+ from pgo_pair import STAGES
+-UNIT="llvm-opt-138n-20261119"
++UNIT="llvm-opt-139-low-memory"
+ SYS="/usr/bin/systemctl"
+ RUN="/usr/bin/systemd-run"
+ GIT="/usr/bin/git"
+@@ -34,14 +34,14 @@
+  files=[dest/(key+".json")]
+  files[0].write_bytes(file.read_bytes())
+  if key=="summary":
+-  files += [B/"docs/bolt"/name for name in ("138_night_validation.md","132_pgo_pair_generation.md","112_361624_combined_validation.md")]
++  files += [B/"docs/bolt"/name for name in ("139_low_memory_night_validation.md","132_pgo_pair_generation.md","112_361624_combined_validation.md")]
+  absolute=[str(p) for p in files]
+  results=[]
+  try:
+   checks=[git("branch","--show-current"),git("diff","--cached","--name-only")]
+   assert checks[0].returncode==0 and checks[0].stdout.strip()=="bolt-v4"
+   assert checks[1].returncode==0 and not checks[1].stdout
+-  for args in (("add","--",*absolute),("diff","--cached","--check"),("-c","user.name=Hao Lin","-c","user.email=hao.lin@samsung.com","commit","-s","-m","docs: record 138-N "+key),("push","origin","HEAD:refs/heads/bolt-v4")):
++  for args in (("add","--",*absolute),("diff","--cached","--check"),("-c","user.name=Hao Lin","-c","user.email=hao.lin@samsung.com","commit","-s","-m","docs: record low-memory night "+key),("push","origin","HEAD:refs/heads/bolt-v4")):
+    r=git(*args)
+    results.append({"argv":args,"rc":r.returncode,"stdout":r.stdout,"stderr":r.stderr})
+    if r.returncode: break
+@@ -94,7 +94,7 @@
+   if limit["admitted"]:
+    return limit,"",checks,elapsed
+   if observation==6:
+-   return None,"MemAvailable minus 6 GiB below stage floor",checks,elapsed
++   return None,"MemAvailable minus 4 GiB below stage floor",checks,elapsed
+   time.sleep(min(300,max(0,(deadline-cut(0)).total_seconds())))
+  raise AssertionError(stage)
+ 
+@@ -113,9 +113,10 @@
+  argv+=["--setenv=TASK133_WORKSPACE="+str(W), "--setenv=TASK138_UNIT="+stage_unit,
+        "--setenv=TASK133_ADMISSION_MEMORY="+str(checks[-1]["mem_available"]),
+        "/usr/bin/python3","-B",str(worker),str(A),step,tier,str(jobs),str(mem),str(cpu)]
+- row={"step":step,"started_at":stamp(),"tier":tier,"memory_max":mem,"cpu_percent":cpu,"jobs":jobs,"admission":checks,"admission_wait_seconds":round(wait,3),"unit":unit,"argv":argv}
++ row={"step":step,"started_at":stamp(),"tier":tier,"memory_max":mem,"cpu_percent":cpu,"jobs":jobs,"thinlto_jobs":checks[-1]["memory_plan"]["thinlto_jobs"],
++      "link_jobs":checks[-1]["memory_plan"]["link_jobs"],"admission":checks,"admission_wait_seconds":round(wait,3),"unit":unit,"argv":argv}
+  write(path/"started.json",row)
+- print("138-N START",step,tier,mem,checks[-1],flush=True)
++ print("low-memory night START",step,tier,mem,checks[-1],flush=True)
+  t0=time.monotonic()
+  stats={}
+  watchdog=None
+@@ -135,7 +136,7 @@
+    if process.poll() is not None: break
+    if time.monotonic() >= watchdog_at:
+     watchdog_at=time.monotonic()+30
+-    below=snapshot["mem_available"]<6*GIB or snapshot["home_available"]<15*GIB
++    below=snapshot["mem_available"]<WATCHDOG_MEMORY or snapshot["home_available"]<WATCHDOG_DISK
+    else:
+     below=False
+    if below:
+@@ -155,6 +156,8 @@
+  identity=path/"worker.json"
+  if identity.is_file():
+   row["worker"]=json.loads(identity.read_text())
++  if not row["watchdog"]:
++   row["watchdog"]=row["worker"].get("details",{}).get("watchdog")
+   stats.update(row["worker"].get("cgroup_end",{}))
+  with logpath.open("rb") as f:
+   f.seek(max(0,logpath.stat().st_size-12000))
+@@ -166,7 +169,7 @@
+  p=A/(key+".json")
+  write(p,result)
+  publish(p,key)
+- print("138-N",key,result["status"],stamp(),flush=True)
++ print("low-memory night",key,result["status"],stamp(),flush=True)
+ 
+ zone=ZoneInfo("Asia/Shanghai")
+ now=datetime.now(zone)
+@@ -192,9 +195,9 @@
+ plan.append(("N4","N4","full-build",90*GIB,1200,0))
+ init=resources()
+ write(A/"startup.json",{"unit":UNIT+".service","startup":init,"deadline":deadline.isoformat(),
+- "disk_G_bytes":disk_G,"reserve_bytes":6*GIB,"plan":plan,
++ "disk_G_bytes":disk_G,"reserve_bytes":RESERVE,"watchdog_memory_bytes":WATCHDOG_MEMORY,"plan":plan,
+  "projected":{x[0]:{**admission(x[2],init["mem_available"]),"disk_required":x[3]} for x in plan}})
+-print("138-N STARTUP",init,"deadline",deadline.isoformat(),flush=True)
++print("low-memory night STARTUP",init,"deadline",deadline.isoformat(),flush=True)
+ interrupted=False
+ blocked_g=False
+ rows=[]
+@@ -222,4 +225,4 @@
+ from report import reports
+ reports(W,B,A)
+ publish(A/"summary.json","summary")
+-print("138-N FINISHED",stamp(),[(r["step"],r["status"]) for r in rows],flush=True)
++print("low-memory night FINISHED",stamp(),[(r["step"],r["status"]) for r in rows],flush=True)
+--- a/pgosteps.py
++++ b/pgosteps.py
+@@ -71,7 +71,7 @@
+  # Actual spool resources are set by the systemd scheduler. Keep the checkpoint
+  # description stable across stages and any per-stage tier changes.
+  s["resources"].update(stage_admission=True,tier="managed",tiers={"managed":{"admission_memory_bytes":7*2**30,"admission_disk_bytes":16*2**30,
+-             "memory_max_bytes":0,"jobs":6}},stop_memory_bytes=6*2**30,stop_disk_bytes=15*2**30,defer_seconds=0,
++             "memory_max_bytes":0,"jobs":6}},stop_memory_bytes=3*2**30,stop_disk_bytes=15*2**30,defer_seconds=0,
+              max_seconds=86400,lock_path=str(d/"generation.lock"))
+  for key in ("sysroot_armv7l","sysroot_aarch64","resource_dir"):
+   assert Path(s["paths"][key]).is_dir(),(key,s["paths"][key])
+@@ -118,9 +118,11 @@
+   temp=root/"home/abuild/133n-instrumented.spec"
+   shutil.copyfile(sp,temp)
+   assert sha(temp)==sha(sp)
++  from build_jobs import from_environment, install
++  build_shell=install(root,from_environment())
+   cmd=[*chroot(root,"/usr/bin/rpmbuild","-bc","--short-circuit",
+         "--define","_topdir /home/abuild/rpmbuild","--define","_toolchain clang"),
+-        *macros(jobs,("_without_clang_bolt 1",)),
++        *macros(jobs,("_without_clang_bolt 1","_buildshell "+build_shell)),
+         "/home/abuild/133n-instrumented.spec"]
+   # Use build's configured uid to keep outputs readable and use the same RPM
+   # macros that extracted the unchanged R source tree in the previous step.
+@@ -201,6 +203,7 @@
+  # It releases BUILD once the relinked ELF and BOLT tools are checked out.
+ def inner_exec(root,argv):
+  return (*chroot(root,"/usr/bin/env","-i","LC_ALL=C","PATH=/usr/bin:/bin","HOME=/home/abuild",
++                 *(key+"="+os.environ[key] for key in ("PROFILE_JOBS","PROFILE_THINLTO_JOBS","PROFILE_LINK_JOBS") if key in os.environ),
+                  "/bin/sh","-c","cd \"$1\"; shift; exec \"$@\"","/bin/sh",BUILD_DIR),*map(str,argv))
+ def adapt_tools(a,w,b,jobs):
+  root=scratch(a/"G4")
+@@ -210,17 +213,18 @@
+   full=inner_exec(root,argv)
+   return checked(*iv,*full[3:],**kwargs)
+  d=a/"G5"
+- # Save the link line before the additional BOLT project changes the graph.
++ # Capture the clang relink command after applying this stage's pools and backend cap.
++ local=root/"home/abuild/133n-bolt"
++ local.mkdir()
++ scheduler=local/"build_jobs.py"
++ shutil.copyfile(b/SKILL/scheduler.name,scheduler)
++ args=(PY,"-B","/home/abuild/133n-bolt/build_jobs.py","reconfigure",BUILD_DIR,"/usr/bin/cmake",
++       "-S","../llvm","-B",".","-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
++       "-DBOLT_BUILD_TOOLS=ON","-DBOLT_ENABLE_RUNTIME=ON","-DBOLT_INCLUDE_TESTS=OFF","-DBOLT_TARGETS_TO_BUILD=X86")
++ call(*args,output=d/"bolt-configure.log")
+  line=call("/usr/bin/ninja","-t","commands","-s","bin/clang-22")
+  (d/"link.original").write_bytes(line)
+- local=root/"home/abuild/133n-bolt"
+- local.mkdir()
+- orig=local/"link.original"
+- orig.write_bytes(line)
+- helper="/home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py"
+- args=("/usr/bin/cmake","-S","../llvm","-B",".","-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+-       "-DBOLT_BUILD_TOOLS=ON","-DBOLT_ENABLE_RUNTIME=ON","-DBOLT_INCLUDE_TESTS=OFF","-DBOLT_TARGETS_TO_BUILD=X86")
+- call(*args,output=d/"bolt-configure.log")
++ (local/"link.original").write_bytes(line)
+  call("/usr/bin/ninja","-j",str(jobs),"llvm-bolt","merge-fdata","bolt_rt",output=d/"bolt-tools.log")
+  assets=a/"G-config/bolt-artifacts"
+  assets.mkdir()
+@@ -279,7 +283,9 @@
+   proc=subprocess.run(args,env=env)
+   if proc.returncode:
+    err=read(root/"summary.json") if (root/"summary.json").is_file() else {}
+-   raise RuntimeError(f"134 skill exited {proc.returncode}: {err}")
++   if err.get("status")=="INTERRUPTED":
++    return {"_step_status":"INTERRUPTED","watchdog":err["watchdog"],"reason":err["reason"]}
++   raise RuntimeError(f"profile skill exited {proc.returncode}: {err}")
+   status=read(root/"summary.json")
+   if status["status"]=="SKIPPED":
+    return {"_step_status":"SKIPPED","stage":stage,"reason":status["reason"],"admission":status["admission"]}
+@@ -311,5 +317,6 @@
+  a=Path(d)
+  w=Path(os.environ["TASK133_WORKSPACE"])
+  b=w.with_name(w.name+"-bolt")
++ sys.path.insert(0,str(b/SKILL))
+  actions={"instrumented-build":adapt_instrumented,"pgo-build":adapt_pgo,"bolt-tools":adapt_tools,"relink-strip-debug":adapt_link}
+  actions[stage](a,w,b,int(os.environ["TASK133_JOBS"]))
+--- a/report.py
++++ b/report.py
+@@ -1,4 +1,4 @@
+-"""138-N final report with real measurements and retained evidence."""
++"""低内存档位 final report with real measurements and retained evidence."""
+ from pathlib import Path
+ import hashlib
+ import json
+@@ -118,7 +118,7 @@
+                 "本轮 N2 尚无 RPM 展开记录。133-N 已验证 §_without_llvm_speedup 1§ 的 RPM 4.14 展开。")
+     if (n2_needed := read(a / "N2/needed.json")) is not None:
+         n2_check += "\n\n" + jsonblock("N2 产物 NEEDED 原文",n2_needed)
+-    put(b / "docs/bolt/138_night_validation.md", "# 138-N 夜间验证", f"""
++    put(b / "docs/bolt/139_low_memory_night_validation.md", "# 低内存档位 夜间验证", f"""
+ **{summary_line}。**
+ 
+ {breadcrumb}
+@@ -156,7 +156,7 @@
+              "G4_runtime_logs": [identity(x) for x in prof.glob("pgo-build-*/runtime-dependency-gate.txt")],
+              "G1_cleanup":read(a/"G2/build-cleanup.json"),"G4_cleanup":read(a/"G4/build-cleanup.json")}
+     (a / "pgo-summary.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2) + "\n")
+-    put(b / "docs/bolt/132_pgo_pair_generation.md", "## 138-N 续跑", f"""
++    put(b / "docs/bolt/132_pgo_pair_generation.md", "## 低内存档位 续跑", f"""
+ **{', '.join(rows[k]['step'] + ' ' + rows[k]['status'] for k in pks)}。**
+ 
+ {breadcrumb}
+@@ -182,7 +182,7 @@
+         "cleanup_main":read(a/"N4/build-cleanup.json"),
+         "cleanup_subpackages":read(a/"N4/subpackages/build-cleanup.json"),
+     }
+-    put(b / "docs/bolt/112_361624_combined_validation.md", "## N4：138-N 续跑", f"""
++    put(b / "docs/bolt/112_361624_combined_validation.md", "## N4：低内存档位 续跑", f"""
+ **{n4['status']}。**
+ 
+ {table([n4])}
+--- a/worker.py
++++ b/worker.py
+@@ -12,6 +12,17 @@
+ JOBS=int(JOBS)
+ MEM=int(MEM)
+ CPU=int(CPU)
++sys.path.insert(0, str(B / "tools/skills/tizen-llvm-offline-profile/scripts"))
++from stage_resources import parallelism
++stage = {"N1":"archive-replay","N2":"full-build","N4":"full-build","G1":"instrumented-build",
++         "G2":"ir-train","G3":"merge-profdata","G4":"pgo-build","G5":"bolt-tools-relink",
++         "G6":"bolt-instrument-train-merge","G7":"bolt-match","G8":"write-manifest"}[TASK]
++counts = parallelism(stage, MEM)
++assert counts["jobs"] == JOBS
++for key, value in counts.items():
++ if value is not None:
++  os.environ["PROFILE_"+key.upper()] = str(value)
++print("LLVM_BUILD_JOBS planned", stage, json.dumps(counts), flush=True)
+ REPLAY=B/"tools/bolt/results/weekend-99-20261114/step5"
+ 
+ def digest(path):

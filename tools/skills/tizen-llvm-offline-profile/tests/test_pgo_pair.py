@@ -74,8 +74,11 @@ class PlanTests(unittest.TestCase):
         cfg["resources"]["tier"] = "reduced"
         rows = json.loads((SKILL / "references/training-set.json").read_text())
         plan = pgo_pair.Pipeline(cfg, self.output, rows).plan()
-        argv = plan["instrumented-build"][0]["argv"]
+        argv = next(action["argv"] for action in plan["instrumented-build"]
+                    if Path(action["argv"][0]).name == "gbs")
         self.assertEqual(argv[argv.index("--threads") + 1], "2")
+        self.assertIn("mlgo_build_jobs 2", argv)
+        self.assertIn("_buildshell /var/tmp/llvm-stage-jobs/build-shell", argv)
 
     def test_checked_normally_and_runtime_flags_rejected(self):
         main = {"command": "clang -c a.c -fprofile-instr-use=/profile", "output": "lib/code.o", "file": "a.c"}
@@ -152,21 +155,34 @@ class PlanTests(unittest.TestCase):
         memory = 22 * 2**30
         disk = {"/path/to/disk": 150 * 2**30}
         with patch.object(pipeline, "measure", return_value={"memory": memory, "disk": disk}) as measure, \
-             patch.object(pipeline, "cgroup_memory_max", return_value=16 * 2**30), \
+             patch.object(pipeline, "cgroup_memory_max", return_value=18 * 2**30), \
              patch.object(pgo_pair.time, "sleep") as sleep:
             self.assertTrue(pipeline.admit([stage]))
             self.assertEqual(pipeline.tier["jobs"], 4)
             self.assertEqual(measure.call_count, 1)
             sleep.assert_not_called()
         with patch.object(pipeline, "measure", return_value={"memory": memory, "disk": disk}), \
-             patch.object(pipeline, "cgroup_memory_max", return_value=17 * 2**30):
+             patch.object(pipeline, "cgroup_memory_max", return_value=19 * 2**30):
             with self.assertRaisesRegex(RuntimeError, "outside its admitted"):
                 pipeline.admit([stage])
-        with patch.object(pipeline, "measure", return_value={"memory": 20 * 2**30, "disk": disk}), \
+        with patch.object(pipeline, "measure", return_value={"memory": 13 * 2**30, "disk": disk}), \
              patch.object(pipeline, "cgroup_memory_max") as cap:
             self.assertFalse(pipeline.admit([stage]))
             self.assertEqual(pipeline.status["status"], "SKIPPED")
             cap.assert_not_called()
+
+    def test_dynamic_watchdog_legacy_config_and_boundary(self):
+        cfg = json.loads(self.example.read_text())
+        cfg["resources"]["stop_memory_bytes"] = 6 * 2**30
+        rows = json.loads((SKILL / "references/training-set.json").read_text())
+        pipeline = pgo_pair.Pipeline(cfg, self.output, rows)
+        pipeline.end = float("inf")
+        disk = {"/path/to/disk": 15*2**30}
+        with patch.object(pipeline, "measure", return_value={"memory": 3*2**30, "disk": disk}):
+            pipeline.watchdog()
+        with patch.object(pipeline, "measure", return_value={"memory": 3*2**30-1, "disk": disk}):
+            with self.assertRaisesRegex(RuntimeError, "crossed the memory or disk"):
+                pipeline.watchdog()
 
     def test_launch_configuration_applies_to_training_and_version(self):
         cfg = json.loads(self.example.read_text())

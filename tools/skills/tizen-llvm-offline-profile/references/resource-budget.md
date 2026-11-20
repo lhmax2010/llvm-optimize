@@ -35,6 +35,14 @@ Capture the service exit, cgroup memory peak/events, disk samples, elapsed time 
 
 ## One-shot stage admission
 
-With resources.stage_admission enabled, set the stage cgroup MemoryMax to min(MemAvailable minus 6 GiB, standard cap). Full package builds use a 24 GiB cap and a 15 GiB floor. The PGO package build and BOLT tool build with relink use the 15 GiB linker floor. Historical peak caps are 120% of the measured peak, rounded up to a memory page. The instrumented build, IR training, profdata merge, BOLT instrumentation with training and merge, and BOLT match use that cap as their floor. Separate peaks were unavailable for BOLT tools with relink and manifest compression. Their cap uses the maximum observed pipeline peak at 120%. Manifest compression has a 1 GiB planning floor. The serial training, merge, rewrite and compression stages use one job. Build stages use floor(6 times MemoryMax divided by 24 GiB), with a minimum of two jobs.
+For a heavy stage, set the service MemoryMax to the smaller of MemAvailable minus 4 GiB and 24 GiB. Round down to a memory page. Full package builds require 10 GiB, building BOLT tools and relinking requires 15 GiB, and BOLT instrumentation with training and merge requires 18 GiB. The instrumented compiler build keeps its historical floor of 8.08 GiB. The measured light stages keep a floor and cap of 120% of their respective historical peaks, rounded up to a memory page. Manifest compression has a 1 GiB planning floor and a 24 GiB cap.
 
-Keep the existing disk admission budget and the 15 GiB disk and 6 GiB memory running stop lines. Sample admission once for each stage and retain the measured values in the summary.
+| Admitted build MemoryMax | Ninja and compile pool | ThinLTO workers per link | Concurrent LLVM links |
+|---|---:|---:|---:|
+| At least 20 GiB | 6 | 6 | 1 |
+| At least 14 GiB and below 20 GiB | 4 | 4 | 1 |
+| At least 10 GiB and below 14 GiB | 2 | 2 | 1 |
+
+The instrumented compiler stage uses two jobs when admitted below 10 GiB. BOLT instrumentation retains its one-thread setting even if its cgroup limit increases. At 19 GiB MemAvailable, a heavy stage has a 15 GiB cgroup limit. The compiler build, package build and BOLT tools can be planned at four jobs. The instrumentation stage needs at least 22 GiB MemAvailable before disk admission. Admission sets a ceiling, and a lower cap has not been validated by a full run.
+
+Use the existing disk admission budgets and the 15 GiB disk and 3 GiB memory running stop lines. Retain the actual observations and enforced settings in the summary. Keep old checkpoints and their configuration bytes together when resuming. A dynamic-admission configuration archived with the former 6 GiB watchdog value is accepted without editing its checkpoint identity and runs with the current 3 GiB limit.
