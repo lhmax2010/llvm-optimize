@@ -14,7 +14,7 @@
 
 |步骤|结果|档位|MemoryMax B|编译/ThinLTO/链接|开始|结束|等待 s|执行 s|cgroup 峰值 B|准入 MemAvailable B|准入 /home B|原因|
 |---|---|---|---:|---|---|---|---:|---:|---:|---:|---:|---|
-| N2 | INTERRUPTED | dynamic | 20829827072 | 4/4/1 | 2026-11-20T07:58:57-08:00 | 2026-11-20T13:14:53-08:00 | 0.0 | 18956.297 | 20829827072 | 25124794368 | 251896111104 | — |
+| N2 | INTERRUPTED | dynamic | 20829827072 | 4/4/1 | 2026-11-20T07:58:57-08:00 | 2026-11-20T13:14:53-08:00 | 0.0 | 18956.297 | 20829827072 | 25124794368 | 251896111104 | 打包时 /home 可用低于 15 GiB，看门狗停止 N2 |
 | G4 | SKIPPED | — | — | —/—/— | — | — | 0 | — | — | 27002327040 | 15896154112 | watchdog crossed stop line |
 | G5 | SKIPPED | — | — | —/—/— | — | — | 0 | — | — | 27003068416 | 15896084480 | watchdog crossed stop line |
 | G6 | SKIPPED | — | — | —/—/— | — | — | 0 | — | — | 26952196096 | 15896002560 | watchdog crossed stop line |
@@ -23,13 +23,23 @@
 
 启动时 2026-11-20T07:58:57-08:00，MemAvailable 25,124,794,368 B，/home 可用 251,896,115,200 B。截止 2026-11-23T06:00:00-08:00。
 
-每步资源采用 [139-D](139_resource_diagnosis.md)；N2、G4、G5 等待上限各 60 分钟，G6 内存下限 18 GiB。编排使用本任务独立锁；G1–G3 收据只读核对后迁入本次根。
+每步资源采用 [139-D](139_resource_diagnosis.md)；N2、G4、G5 等待上限各 60 分钟，G6 内存下限 18 GiB。编排使用本任务独立锁；首次 G4 尝试前核对并迁入 138-N 的 G1–G3 收据，现有 profile 保留。
 
 ## 门禁和产物
 
 ### N2
 
-[逐步记录及结束日志](../../tools/bolt/results/task148/N2.json)
+关闭开关写法为 `--define '_without_llvm_speedup 1'`，展开预检六项全部通过。混合链接和 BOLT 均关闭，ThinLTO、Python 构建依赖和转换器保留。Ninja 编译和链接完成，225 个归档转换通过。
+
+13:14:53 PST，打包时 `/home` 可用 15,896,272,896 B（14.80 GiB），低于 15 GiB 保护线。MemAvailable 当时为 24,333,205,504 B（22.66 GiB），OOM 为 0。看门狗只停止 N2 子单元。日志中已有 16 条 RPM 写出记录，打包没有正常结束，未做成品 NEEDED 或 ELF 节核对。
+
+~~~text
+[16180s] NATIVE_ARCHIVES_END 1795206663.9236534 PASS 225
+[18810s] Terminated
+[18810s] linhao-linux ran out of disk space. Please try again.
+~~~
+
+[关闭开关预检](../../tools/bolt/results/task148/N2-dry-run.json) · [逐步记录及结束日志](../../tools/bolt/results/task148/N2.json)
 
 ### G4
 
@@ -69,6 +79,6 @@
 }
 ~~~
 
-看门狗已触发。
+看门狗已触发。G4–G8 因磁盘保护顺序跳过，没有本次的 PGO 正式产物、BOLT profile 或成对清单，G7 的 R、S/N 和运行时依赖复核无本次结果。
 
 [可机读最终记录](../../tools/bolt/results/task148/summary.json)
