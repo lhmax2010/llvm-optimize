@@ -1,0 +1,196 @@
+{
+  "step": "N2",
+  "attempt": 1,
+  "started_at": "2026-11-24T06:42:16-08:00",
+  "memory_max": 19736842240,
+  "floor": 10737418240,
+  "admitted": true,
+  "tier": "dynamic",
+  "jobs": 4,
+  "thinlto_jobs": 4,
+  "link_jobs": 1,
+  "cpu_percent": 400,
+  "admission": [
+    {
+      "time": "2026-11-24T06:42:16-08:00",
+      "mem_available": 24031809536,
+      "home_available": 325995601920,
+      "memory_plan": {
+        "memory_max": 19736842240,
+        "floor": 10737418240,
+        "admitted": true,
+        "tier": "dynamic",
+        "jobs": 4,
+        "thinlto_jobs": 4,
+        "link_jobs": 1
+      },
+      "disk_required": 312154457695,
+      "step": "N2"
+    }
+  ],
+  "admission_wait_seconds": 0.0,
+  "unit": "llvm-opt-149-run-resume-n2-1.service",
+  "argv": [
+    "/usr/bin/systemd-run",
+    "--user",
+    "--wait",
+    "--pipe",
+    "--unit=llvm-opt-149-run-resume-n2-1.service",
+    "--expand-environment=no",
+    "-p",
+    "MemoryMax=19736842240",
+    "-p",
+    "MemorySwapMax=0",
+    "-p",
+    "CPUQuota=400%",
+    "-p",
+    "Nice=19",
+    "-p",
+    "IOSchedulingClass=idle",
+    "-p",
+    "OOMPolicy=stop",
+    "-p",
+    "KillMode=control-group",
+    "-p",
+    "TimeoutStopSec=120",
+    "-p",
+    "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2",
+    "-p",
+    "ExecStopPost=/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/orchestration/capture_stop.py /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/cgroup-stop-1.json",
+    "--setenv=TZ=America/Los_Angeles",
+    "--setenv=TASK133_WORKSPACE=/home/linhao/Toolchain/development/llvm-optimize",
+    "--setenv=TASK138_UNIT=llvm-opt-149-run-resume-n2-1",
+    "--setenv=TASK133_ADMISSION_MEMORY=24031809536",
+    "/usr/bin/python3",
+    "-B",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/orchestration/worker.py",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume",
+    "N2",
+    "dynamic",
+    "4",
+    "19736842240",
+    "400"
+  ],
+  "status": "PASS",
+  "reason": "GBS 成功，修正日志路径后使用已产出的 RPM 完成核对",
+  "rc": 1,
+  "ended_at": "2026-11-24T13:40:46-08:00",
+  "seconds": 25110.229,
+  "resources": {
+    "memory.peak": "19736842240",
+    "memory.max": "19736842240",
+    "memory.events": "low 0\nhigh 0\nmax 31054\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+    "memory.swap.peak": "0",
+    "memory.stat": "anon 10166272\nfile 10103386112",
+    "VmHWM_sample": {
+      "bytes": 12851929088,
+      "pid": 1910644,
+      "argv": "/usr/bin/ld.lld --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o bin/clang-repl /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0 -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64 -L/lib/../lib64 -L/usr/lib64 -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../x86_64-tizen-linux-gnu/lib -L/lib -L/usr/lib -plugin-opt=mcpu=nehalem -plugin-opt=O3 -plugin-opt=thinlto -plugin-opt=-function-sections=1 -plugin-opt=-data-sections=1 --gc-sections --thinlto-jobs=4 --color-diagnostics --thinlto-cache-dir=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache --export-dynamic --gc-sections --long-plt --dependency-file=tools/clang/tools/clang-repl/CMakeFiles/clang-repl.dir/link.d tools/clang/tools/clang-repl/CMakeFiles/clang-repl.dir/ClangRepl.cpp.o -rpath $ORIGIN/../lib64: lib64/libLLVMX86CodeGen.a lib64/libLLVMX86AsmParser.a lib64/libLLVMX86Desc.a lib64/libLLVMX86Disassembler.a lib64/libLLVMX86Info.a lib64/libLLVMARMCodeGen.a lib64/libLLVMARMAsmParser.a lib64/libLLVMARMDesc.a lib64/libLLVMARMDisassembler.a lib64/libLLVMARMInfo.a lib64/libLLVMARMUtils.a lib64/libLLVMAArch64CodeGen.a lib64/libLLVMAArch64AsmParser.a lib64/libLLVMAArch64Desc.a lib64/libLLVMAArch64Disassembler.a lib64/libLLVMAArch64Info.a lib64/libLLVMAArch64Utils.a lib64/libLLVMBPFCodeGen.a lib64/libLLVMBPFAsmParser.a lib64/libLLVMBPFDesc.a lib64/libLLVMBPFDisassembler.a lib64/libLLVMBPFInfo.a lib64/libLLVMCore.a lib64/libLLVMLineEditor.a lib64/libLLVMOption.a lib64/libLLVMOrcJIT.a lib64/libLLVMOrcShared.a lib64/libLLVMSupport.a lib64/libLLVMTargetParser.a lib64/libclangAST.a lib64/libclangBasic.a lib64/libclangFrontend.a lib64/libclangInterpreter.a lib64/libLLVMAsmPrinter.a lib64/libLLVMMCDisassembler.a lib64/libclangFrontendTool.a lib64/libclangCodeGen.a lib64/libLLVMCoverage.a lib64/libLLVMFrontendDriver.a lib64/libLLVMLTO.a lib64/libLLVMExtensions.a lib64/libclangExtractAPI.a lib64/libclangInstallAPI.a lib64/libLLVMTextAPIBinaryReader.a lib64/libclangRewriteFrontend.a lib64/libclangStaticAnalyzerFrontend.a lib64/libclangStaticAnalyzerCheckers.a lib64/libclangStaticAnalyzerCore.a lib64/libclangCrossTU.a lib64/libclangDriver.a lib64/libclangIndex.a lib64/libclangOptions.a lib64/libclangParse.a lib64/libLLVMPlugins.a lib64/libclangSerialization.a lib64/libclangSema.a lib64/libclangAPINotes.a lib64/libclangEdit.a lib64/libclangAnalysisLifetimeSafety.a lib64/libclangAnalysis.a lib64/libclangASTMatchers.a lib64/libclangSupport.a lib64/libclangFormat.a lib64/libclangToolingInclusions.a lib64/libclangToolingCore.a lib64/libclangRewrite.a lib64/libclangLex.a lib64/libLLVMOrcDebugging.a lib64/libLLVMPasses.a lib64/libLLVMCFGuard.a lib64/libLLVMGlobalISel.a lib64/libLLVMSelectionDAG.a lib64/libLLVMCodeGen.a lib64/libLLVMCGData.a lib64/libLLVMCodeGenTypes.a lib64/libLLVMIRPrinter.a lib64/libLLVMObjCARCOpts.a lib64/libLLVMCoroutines.a lib64/libLLVMipo.a lib64/libLLVMInstrumentation.a lib64/libLLVMVectorize.a lib64/libLLVMSandboxIR.a lib64/libLLVMFrontendOpenMP.a lib64/libLLVMScalarOpts.a lib64/libLLVMFrontendOffloading.a lib64/libLLVMObjectYAML.a lib64/libLLVMFrontendAtomic.a lib64/libLLVMFrontendDirective.a lib64/libLLVMAggressiveInstCombine.a lib64/libLLVMInstCombine.a lib64/libLLVMLinker.a lib64/libLLVMHipStdPar.a lib64/libLLVMTransformUtils.a lib64/libLLVMBitWriter.a lib64/libLLVMExecutionEngine.a lib64/libLLVMTarget.a lib64/libLLVMAnalysis.a lib64/libLLVMProfileData.a lib64/libLLVMSymbolize.a lib64/libLLVMDebugInfoGSYM.a lib64/libLLVMDebugInfoPDB.a lib64/libLLVMDebugInfoCodeView.a lib64/libLLVMDebugInfoMSF.a lib64/libLLVMDebugInfoBTF.a lib64/libLLVMFrontendHLSL.a lib64/libLLVMWindowsDriver.a lib64/libLLVMRuntimeDyld.a lib64/libLLVMJITLink.a lib64/libLLVMOrcTargetProcess.a lib64/libLLVMDebugInfoDWARF.a lib64/libLLVMObject.a lib64/libLLVMMCParser.a lib64/libLLVMMC.a lib64/libLLVMTextAPI.a lib64/libLLVMIRReader.a lib64/libLLVMBitReader.a lib64/libLLVMAsmParser.a lib64/libLLVMRemarks.a lib64/libLLVMBitstreamReader.a lib64/libLLVMDebugInfoDWARFLowLevel.a lib64/libLLVMBinaryFormat.a lib64/libLLVMDemangle.a -lrt -ldl -lm /usr/lib64/libz.so -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/crtendS.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/crtn.o"
+    }
+  },
+  "systemd": "Result=exit-code\nMemoryPeak=19736842240\nCPUUsageNSec=67376265451000\nActiveState=failed\nInvocationID=456f15c533eb4c14989fe39f86776fd5\n",
+  "worker": {
+    "status": "STOP",
+    "reason": "missing effective LLVM build jobs marker or Ninja -j in the RPM build log",
+    "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/orchestration/worker.py\", line 157, in <module>\n    out=build(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/orchestration/buildsteps.py\", line 292, in build\n    rpms=run_gbs(w,d,source,ref,\"llvm.spec\",jobs,exp,extra)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/orchestration/buildsteps.py\", line 160, in run_gbs\n    require_rpm_log(log if log.is_file() else d/\"gbs.log\",counts)\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/skills/tizen-llvm-offline-profile/scripts/build_jobs.py\", line 125, in require_rpm_log\n    raise ValueError(\"missing effective LLVM build jobs marker or Ninja -j in the RPM build log\")\nValueError: missing effective LLVM build jobs marker or Ninja -j in the RPM build log\n",
+    "cgroup_end": {
+      "memory.peak": "19736842240",
+      "memory.events": "low 0\nhigh 0\nmax 31054\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+      "memory.max": "19736842240",
+      "memory.stat": "anon 10166272\nfile 10103386112",
+      "memory.swap.peak": "0"
+    }
+  },
+  "watchdog": null,
+  "oom_killed": false,
+  "log_path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/service.log",
+  "log_tail": "Running as unit: llvm-opt-149-run-resume-n2-1.service; invocation ID: 456f15c533eb4c14989fe39f86776fd5\nLLVM_BUILD_JOBS planned full-build {\"jobs\": 4, \"thinlto_jobs\": 4, \"link_jobs\": 1}\n/usr/bin/git clone --quiet --shared --no-checkout /home/linhao/Toolchain/development/llvm-optimize/temp/task131/pgo-dev /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/source\n/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/source checkout --quiet --detach 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8\n/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/source rev-parse HEAD\n/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/source status --porcelain --untracked-files=no\n/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/gbs.conf export --spec llvm.spec --commit 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 --upstream-branch sandbox/fangyu.he/llvm_optmize --upstream-tag upstream/22.1.8 --outdir-directly -o /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/export /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/source\n/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2 --library-path /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64 /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/rpmspec --showrc\n/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64/ld-linux-x86-64.so.2 --library-path /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib64 /home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/bin/rpmspec -P --macros '/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/macros:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/macros.d/macros.*:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/platform/%{_target}/macros:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/fileattrs/*.attr:/home/linhao/Toolchain/development/llvm-optimize/temp/rebase-359934-20261111-r6/toolchain/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/lib/rpm/tizen/macros:/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/bolt/results/fifth-review-20261111/rerun4/parse/toolchain-x86-debug.macros' --target x86_64-tizen-linux --define '_topdir /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/rpm' --define '_builddir /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/rpm/BUILD' --define '_sourcedir /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/export' --define '_toolchain clang' --define 'jobs 4' --define '_smp_mflags -j4' --define '_costomized_smp_mflags -j4' --define 'mlgo_build_jobs 4' --define '_without_llvm_speedup 1' /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/export/llvm.spec\n/usr/bin/sudo -n /usr/bin/build --uid 1000:1000 --root /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0 --dist /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/build.conf --arch x86_64 --target x86_64-tizen-linux --stage=-bp --debug --baselibs --define 'jobs 4' --define '_smp_mflags -j4' --define '_costomized_smp_mflags -j4' --define 'mlgo_build_jobs 4' --define '_without_llvm_speedup 1' --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/packages/ --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/debug/ /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/export/llvm.spec\n/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/gbs.conf build -A x86_64 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/gbs-driver -c 7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8 --threads=4 --define 'jobs 4' --define '_smp_mflags -j4' --define '_costomized_smp_mflags -j4' --define 'mlgo_build_jobs 4' --define '_without_llvm_speedup 1' --define '_buildshell /var/tmp/llvm-stage-jobs/build-shell' --baselibs --style=tar --spec llvm.spec /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/source\nTraceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/orchestration/worker.py\", line 157, in <module>\n    out=build(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/orchestration/buildsteps.py\", line 292, in build\n    rpms=run_gbs(w,d,source,ref,\"llvm.spec\",jobs,exp,extra)\n         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/orchestration/buildsteps.py\", line 160, in run_gbs\n    require_rpm_log(log if log.is_file() else d/\"gbs.log\",counts)\n  File \"/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/skills/tizen-llvm-offline-profile/scripts/build_jobs.py\", line 125, in require_rpm_log\n    raise ValueError(\"missing effective LLVM build jobs marker or Ninja -j in the RPM build log\")\nValueError: missing effective LLVM build jobs marker or Ninja -j in the RPM build log\n\nFinished with result: exit-code\nMain processes terminated with: code=exited/status=1\nService runtime: 6h 58min 30.155s\nCPU time consumed: 18h 42min 56.265s\nMemory peak: 18.3G\nMemory swap peak: 0B\n",
+  "end_measurement": {
+    "time": "2026-11-24T13:40:46-08:00",
+    "mem_available": 25362124800,
+    "home_available": 142017282048
+  },
+  "cleanup": {
+    "roots": [
+      {
+        "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0",
+        "estimated_allocated_bytes_removed": 167678210048,
+        "entries_removed": 255374,
+        "remaining": true,
+        "skipped_sample": [
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/share/upgrade'",
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/var/cache/ldconfig'",
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/root'"
+        ]
+      },
+      {
+        "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/tmp",
+        "estimated_allocated_bytes_removed": 12288,
+        "entries_removed": 3,
+        "remaining": false,
+        "skipped_sample": []
+      }
+    ],
+    "before": {
+      "time": "2026-11-24T13:40:46-08:00",
+      "mem_available": 25362124800,
+      "home_available": 142017282048
+    },
+    "after": {
+      "time": "2026-11-24T13:44:25-08:00",
+      "mem_available": 25294012416,
+      "home_available": 306996989952
+    },
+    "df_delta": 164979707904,
+    "estimated_allocated_bytes_removed": 167678222336
+  },
+  "original_status_path": "N2.json",
+  "validation_path": "N2-validation.json",
+  "audit": {
+    "unit": "llvm-opt-149-run-n2-audit.service",
+    "started_at": "2026-11-24T13:42:24-08:00",
+    "ended_at": "2026-11-24T13:44:46-08:00",
+    "seconds": 142,
+    "memory_peak_journal": "3.1G",
+    "log_fixtures": 5,
+    "rebuilt": false,
+    "validation": {
+      "commit": "7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8",
+      "source_tree": "66aa08d9e6717b904a0eb390096d908fea1109c0",
+      "dry_run": {
+        "switch": "_without_llvm_speedup 1",
+        "checks": {
+          "hybrid_OFF": true,
+          "unsets_cache": true,
+          "bolt_absent": true,
+          "python3_required": true,
+          "converter_active": true,
+          "thin_lto_retained": true
+        }
+      },
+      "parallelism": [
+        4,
+        4,
+        1
+      ],
+      "rpm_log": {
+        "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/rpm-build.log",
+        "bytes": 2098150,
+        "sha256": "7ac70adf83311728c407fbc72674a0f59b0384b9dc36ea4407286059f9b8de2c"
+      },
+      "validation": {
+        "log_lines": [
+          "16520: [16128s] NATIVE_ARCHIVES_STARTUP {\"architecture_parameters\": {\"CFLAGS\": null, \"CXXFLAGS\": null}, \"signals\": {\"SIGTERM\": \"default\", \"SIGINT\": \"default\", \"SIGHUP\": \"default\"}}",
+          "16973: [18545s] NATIVE_ARCHIVES_END 1795550036.9227204 PASS 225"
+        ],
+        "elf_tools": 107,
+        "needed": "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/needed.json",
+        "bolt_sections": 0,
+        "needed_baseline": "22.1.8-1 x86_64 RPM-extracted tools, docs/13_baseline_build.md",
+        "needed_comparison": "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/N2/needed-comparison.json",
+        "matching_LLVM_linkage": 104,
+        "same_needed_entries_and_order": 104
+      }
+    }
+  }
+}

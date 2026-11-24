@@ -1,0 +1,60 @@
+--- a/orchestration/buildsteps.py
++++ b/orchestration/buildsteps.py
+@@ -1,5 +1,5 @@
+ from pathlib import Path
+-import configparser, hashlib, importlib.util, json, os, re, shlex, shutil, stat, subprocess, sys
++import configparser, gzip, hashlib, importlib.util, json, os, re, shlex, shutil, stat, subprocess, sys
+ 
+ GIT="/usr/bin/git"
+ GBS="/usr/bin/gbs"
+@@ -152,12 +152,10 @@
+        "--baselibs","--style=tar","--spec",spec,str(source)]
+  save(d/"gbs-command.json",argv)
+  checked(*argv,cwd=source,output=d/"gbs.log")
+- if (root/".build.log").is_file():
+-  shutil.copyfile(root/".build.log",d/"rpm-build.log")
++ log=archive_rpm_log(d,root)
+  if spec=="llvm.spec":
+   from build_jobs import require_rpm_log
+-  log=d/"rpm-build.log"
+-  require_rpm_log(log if log.is_file() else d/"gbs.log",counts)
++  require_rpm_log(log,counts)
+  rpm_set=sorted(p for p in (driver/"local/repos").rglob("*.rpm") if p.is_file())
+  assert rpm_set, "GBS returned success but no local RPMs were found"
+  save(d/"rpm-identities.json",[receipt(p) for p in rpm_set])
+@@ -209,14 +207,28 @@
+    assert p.wait()==0,rpm
+ def elf(path,*opts):
+  return checked("/usr/bin/readelf","--wide",*opts,path).decode()
++def archive_rpm_log(d,root=None):
++ log=d/"rpm-build.log"
++ if log.is_file():
++  return log
++ scratch_log=root/".build.log" if root is not None else None
++ if scratch_log is not None and scratch_log.is_file():
++  source=scratch_log
++ else:
++  repo=d/"gbs-driver/local/repos"
++  candidates=sorted(p for p in repo.rglob("log.txt*")
++                    if p.name in ("log.txt","log.txt.gz") and p.is_file())
++  if len(candidates)!=1:
++   raise RuntimeError(f"expected one full RPM build log under {repo}: {candidates}")
++  source=candidates[0]
++ opener=gzip.open if source.suffix==".gz" else Path.open
++ pending=log.with_suffix(".pending")
++ with opener(source,"rb") as src, pending.open("xb") as out:
++  shutil.copyfileobj(src,out)
++ pending.rename(log)
++ return log
+ def log_lines(d,filter):
+- log=d/"rpm-build.log"
+- if not log.exists():
+-  candidates=sorted((d/"gbs-driver/local/repos").rglob("log.txt.gz"))
+-  assert len(candidates)==1,candidates
+-  import gzip
+-  with gzip.open(candidates[0],"rb") as src, log.open("wb") as out:
+-   shutil.copyfileobj(src,out)
++ log=archive_rpm_log(d)
+  with log.open(errors="replace") as stream:
+   return [f"{i}: {ln.rstrip()}" for i,ln in enumerate(stream,1) if filter(ln)]
+ def n2_checks(w,d,rpms):
