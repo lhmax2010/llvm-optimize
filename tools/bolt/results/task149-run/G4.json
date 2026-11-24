@@ -1,0 +1,147 @@
+{
+  "step": "G4",
+  "attempt": 1,
+  "started_at": "2026-11-24T06:16:18-08:00",
+  "memory_max": 19013111808,
+  "floor": 10737418240,
+  "admitted": true,
+  "tier": "dynamic",
+  "jobs": 4,
+  "thinlto_jobs": 4,
+  "link_jobs": 1,
+  "cpu_percent": 400,
+  "admission": [
+    {
+      "time": "2026-11-24T06:16:18-08:00",
+      "mem_available": 23308079104,
+      "home_available": 342286942208,
+      "memory_plan": {
+        "memory_max": 19013111808,
+        "floor": 10737418240,
+        "admitted": true,
+        "tier": "dynamic",
+        "jobs": 4,
+        "thinlto_jobs": 4,
+        "link_jobs": 1
+      },
+      "disk_required": 312154457695,
+      "step": "G4"
+    }
+  ],
+  "admission_wait_seconds": 0.0,
+  "unit": "llvm-opt-149-run-g4-1.service",
+  "argv": [
+    "/usr/bin/systemd-run",
+    "--user",
+    "--wait",
+    "--pipe",
+    "--unit=llvm-opt-149-run-g4-1.service",
+    "--expand-environment=no",
+    "-p",
+    "MemoryMax=19013111808",
+    "-p",
+    "MemorySwapMax=0",
+    "-p",
+    "CPUQuota=400%",
+    "-p",
+    "Nice=19",
+    "-p",
+    "IOSchedulingClass=idle",
+    "-p",
+    "OOMPolicy=stop",
+    "-p",
+    "KillMode=control-group",
+    "-p",
+    "TimeoutStopSec=120",
+    "-p",
+    "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G4",
+    "-p",
+    "ExecStopPost=/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/orchestration/capture_stop.py /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G4/cgroup-stop-1.json",
+    "--setenv=TZ=America/Los_Angeles",
+    "--setenv=TASK133_WORKSPACE=/home/linhao/Toolchain/development/llvm-optimize",
+    "--setenv=TASK138_UNIT=llvm-opt-149-run-g4-1",
+    "--setenv=TASK133_ADMISSION_MEMORY=23308079104",
+    "/usr/bin/python3",
+    "-B",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/orchestration/worker.py",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run",
+    "G4",
+    "dynamic",
+    "4",
+    "19013111808",
+    "400"
+  ],
+  "status": "FAIL",
+  "reason": "profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090'}], 'started_at': '2026-11-24T14:17:02+00:00', 'admission': [{'at': '2026-11-24T14:17:02+00:00', 'memory': 23652880384, 'disk': {'/home': 342234165248, '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles': 342234165248}, 'admission_memory': 23308079104, 'stage': 'pgo-build', 'memory_max': 19013111808, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 19013111808}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090/build-0.txt', 'ended_at': '2026-11-24T14:24:37+00:00'}",
+  "rc": 1,
+  "ended_at": "2026-11-24T06:24:37-08:00",
+  "seconds": 499.566,
+  "resources": {
+    "memory.peak": "7194046464",
+    "memory.max": "19013111808",
+    "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+    "memory.swap.peak": "0",
+    "memory.stat": "anon 12406784\nfile 6150815744",
+    "VmHWM_sample": {
+      "bytes": 805597184,
+      "pid": 1246841,
+      "argv": "git archive --format=tar --prefix=llvm-22.1.8/ 57b79bc676ed340dbcef656b9ec8fef1ed8412c9 --"
+    }
+  },
+  "systemd": "Result=exit-code\nMemoryPeak=7194046464\nCPUUsageNSec=209380703000\nActiveState=failed\nInvocationID=3dbd3e2990644bb18e3e45d0c2ce5635\n",
+  "worker": {
+    "status": "STOP",
+    "reason": "profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090'}], 'started_at': '2026-11-24T14:17:02+00:00', 'admission': [{'at': '2026-11-24T14:17:02+00:00', 'memory': 23652880384, 'disk': {'/home': 342234165248, '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles': 342234165248}, 'admission_memory': 23308079104, 'stage': 'pgo-build', 'memory_max': 19013111808, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 19013111808}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090/build-0.txt', 'ended_at': '2026-11-24T14:24:37+00:00'}",
+    "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/orchestration/worker.py\", line 166, in <module>\n    out=generate(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/orchestration/pgosteps.py\", line 290, in generate\n    raise RuntimeError(f\"profile skill exited {proc.returncode}: {err}\")\nRuntimeError: profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090'}], 'started_at': '2026-11-24T14:17:02+00:00', 'admission': [{'at': '2026-11-24T14:17:02+00:00', 'memory': 23652880384, 'disk': {'/home': 342234165248, '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles': 342234165248}, 'admission_memory': 23308079104, 'stage': 'pgo-build', 'memory_max': 19013111808, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 19013111808}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090/build-0.txt', 'ended_at': '2026-11-24T14:24:37+00:00'}\n",
+    "cgroup_end": {
+      "memory.peak": "7194046464",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+      "memory.max": "19013111808",
+      "memory.stat": "anon 12406784\nfile 6150815744",
+      "memory.swap.peak": "0"
+    }
+  },
+  "watchdog": null,
+  "oom_killed": false,
+  "log_path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G4/service.log",
+  "log_tail": "Running as unit: llvm-opt-149-run-g4-1.service\nLLVM_BUILD_JOBS planned pgo-build {\"jobs\": 4, \"thinlto_jobs\": 4, \"link_jobs\": 1}\n/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/orchestration/profile_stage.py --config /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-config/config.json --output /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles --stages pgo-build --memory-available-bytes 23308079104 --resume\nSTOP: command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090/build-0.txt\n{\n  \"status\": \"STOP\",\n  \"project\": \"T\",\n  \"stages\": [\n    {\n      \"name\": \"pgo-build\",\n      \"status\": \"STOP\",\n      \"attempt\": \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090\"\n    }\n  ],\n  \"started_at\": \"2026-11-24T14:17:02+00:00\",\n  \"admission\": [\n    {\n      \"at\": \"2026-11-24T14:17:02+00:00\",\n      \"memory\": 23652880384,\n      \"disk\": {\n        \"/home\": 342234165248,\n        \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles\": 342234165248\n      },\n      \"admission_memory\": 23308079104,\n      \"stage\": \"pgo-build\",\n      \"memory_max\": 19013111808,\n      \"standard_cap\": 25769803776,\n      \"floor\": 10737418240,\n      \"jobs\": 4,\n      \"thinlto_jobs\": 4,\n      \"link_jobs\": 1,\n      \"admitted\": true,\n      \"actual_memory_max\": 19013111808\n    }\n  ],\n  \"reason\": \"command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090/build-0.txt\",\n  \"ended_at\": \"2026-11-24T14:24:37+00:00\"\n}\nTraceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/orchestration/worker.py\", line 166, in <module>\n    out=generate(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/orchestration/pgosteps.py\", line 290, in generate\n    raise RuntimeError(f\"profile skill exited {proc.returncode}: {err}\")\nRuntimeError: profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090'}], 'started_at': '2026-11-24T14:17:02+00:00', 'admission': [{'at': '2026-11-24T14:17:02+00:00', 'memory': 23652880384, 'disk': {'/home': 342234165248, '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles': 342234165248}, 'admission_memory': 23308079104, 'stage': 'pgo-build', 'memory_max': 19013111808, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 19013111808}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090/build-0.txt', 'ended_at': '2026-11-24T14:24:37+00:00'}\n\nFinished with result: exit-code\nMain processes terminated with: code=exited/status=1\nService runtime: 8min 19.478s\nCPU time consumed: 3min 29.380s\nMemory peak: 6.6G\nMemory swap peak: 0B\n",
+  "end_measurement": {
+    "time": "2026-11-24T06:24:37-08:00",
+    "mem_available": 23423930368,
+    "home_available": 333902688256
+  },
+  "cleanup": {
+    "roots": [
+      {
+        "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0",
+        "estimated_allocated_bytes_removed": 2813939712,
+        "entries_removed": 200422,
+        "remaining": true,
+        "skipped_sample": [
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/share/upgrade'",
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/var/cache/ldconfig'",
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/root'"
+        ]
+      },
+      {
+        "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G4/tmp",
+        "estimated_allocated_bytes_removed": 12288,
+        "entries_removed": 3,
+        "remaining": false,
+        "skipped_sample": []
+      }
+    ],
+    "before": {
+      "time": "2026-11-24T06:24:37-08:00",
+      "mem_available": 23423930368,
+      "home_available": 333902688256
+    },
+    "after": {
+      "time": "2026-11-24T06:24:41-08:00",
+      "mem_available": 23642177536,
+      "home_available": 336800620544
+    },
+    "df_delta": 2897932288,
+    "estimated_allocated_bytes_removed": 2813952000
+  }
+}
