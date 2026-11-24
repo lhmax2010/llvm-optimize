@@ -1,0 +1,15 @@
+--- R/packaging/clang-bolt-helper.py
++++ R-with-check-fix/packaging/clang-bolt-helper.py
+@@ -201,7 +201,11 @@
+         if not expected or runtime:
+             require(not flags, 'unexpected PGO option for '+output+': '+str(flags))
+         elif is_compile or flags:
+-            require(flags == ['-fprofile-instr-use='+expected],
++            profile_flag = '-fprofile-instr-use=' + expected
++            # CMake propagates the same profile through C/C++ and linker flags.
++            duplicate_link = ('-c' not in tokens and '-o' in tokens and
++                              flags == [profile_flag, profile_flag])
++            require(flags == [profile_flag] or duplicate_link,
+                     'wrong PGO option for '+output+': '+str(flags))
+             checked['profile_use'] += int(is_compile)
+     require(checked['compile'] > 0, 'could not identify C/C++ compile edges')
