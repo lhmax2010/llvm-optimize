@@ -1,7 +1,7 @@
-Running as unit: llvm-opt-149-run-g4-1.service
+Running as unit: llvm-opt-149-run-resume-g4-1.service
 LLVM_BUILD_JOBS planned pgo-build {"jobs": 4, "thinlto_jobs": 4, "link_jobs": 1}
-/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/orchestration/profile_stage.py --config /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-config/config.json --output /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles --stages pgo-build --memory-available-bytes 23308079104 --resume
-STOP: command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090/build-0.txt
+/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/orchestration/profile_stage.py --config /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/G-config/config.json --output /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/G-profiles --stages pgo-build --memory-available-bytes 23429066752 --resume
+STOP: command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/G-profiles/pgo-build-1795530554543376618/build-0.txt
 {
   "status": "STOP",
   "project": "T",
@@ -9,44 +9,44 @@ STOP: command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/a
     {
       "name": "pgo-build",
       "status": "STOP",
-      "attempt": "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090"
+      "attempt": "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/G-profiles/pgo-build-1795530554543376618"
     }
   ],
-  "started_at": "2026-11-24T14:17:02+00:00",
+  "started_at": "2026-11-24T14:29:08+00:00",
   "admission": [
     {
-      "at": "2026-11-24T14:17:02+00:00",
-      "memory": 23652880384,
+      "at": "2026-11-24T14:29:08+00:00",
+      "memory": 24063094784,
       "disk": {
-        "/home": 342234165248,
-        "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles": 342234165248
+        "/home": 331473756160,
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/G-profiles": 331473756160
       },
-      "admission_memory": 23308079104,
+      "admission_memory": 23429066752,
       "stage": "pgo-build",
-      "memory_max": 19013111808,
+      "memory_max": 19134099456,
       "standard_cap": 25769803776,
       "floor": 10737418240,
       "jobs": 4,
       "thinlto_jobs": 4,
       "link_jobs": 1,
       "admitted": true,
-      "actual_memory_max": 19013111808
+      "actual_memory_max": 19134099456
     }
   ],
-  "reason": "command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090/build-0.txt",
-  "ended_at": "2026-11-24T14:24:37+00:00"
+  "reason": "command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/G-profiles/pgo-build-1795530554543376618/build-0.txt",
+  "ended_at": "2026-11-24T14:41:52+00:00"
 }
 Traceback (most recent call last):
-  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/orchestration/worker.py", line 166, in <module>
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/orchestration/worker.py", line 166, in <module>
     out=generate(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/orchestration/pgosteps.py", line 290, in generate
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/orchestration/pgosteps.py", line 298, in generate
     raise RuntimeError(f"profile skill exited {proc.returncode}: {err}")
-RuntimeError: profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090'}], 'started_at': '2026-11-24T14:17:02+00:00', 'admission': [{'at': '2026-11-24T14:17:02+00:00', 'memory': 23652880384, 'disk': {'/home': 342234165248, '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles': 342234165248}, 'admission_memory': 23308079104, 'stage': 'pgo-build', 'memory_max': 19013111808, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 19013111808}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/G-profiles/pgo-build-1795529839570967090/build-0.txt', 'ended_at': '2026-11-24T14:24:37+00:00'}
+RuntimeError: profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/G-profiles/pgo-build-1795530554543376618'}], 'started_at': '2026-11-24T14:29:08+00:00', 'admission': [{'at': '2026-11-24T14:29:08+00:00', 'memory': 24063094784, 'disk': {'/home': 331473756160, '/home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/G-profiles': 331473756160}, 'admission_memory': 23429066752, 'stage': 'pgo-build', 'memory_max': 19134099456, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 19134099456}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task149-run/resume/G-profiles/pgo-build-1795530554543376618/build-0.txt', 'ended_at': '2026-11-24T14:41:52+00:00'}
 
 Finished with result: exit-code
 Main processes terminated with: code=exited/status=1
-Service runtime: 8min 19.478s
-CPU time consumed: 3min 29.380s
-Memory peak: 6.6G
+Service runtime: 13min 7.337s
+CPU time consumed: 3min 30.331s
+Memory peak: 7.9G
 Memory swap peak: 0B
