@@ -6,7 +6,7 @@
 - PGO+BOLT 候选状态为 等待 G 链。—
 - 大型库已删除 0/11，3 个自测库保留。
 
-更新于 2026-11-25T07:43:53.563675-08:00。
+更新于 2026-11-25T07:52:01.703275-08:00。
 
 ## 单元与顺序
 
@@ -17,8 +17,8 @@
 | `llvm-opt-task154-after-153.service` | active/running | Wed 2026-11-25 07:36:45 PST |
 | `llvm-opt-task160-g-chain.service` | active/running | Wed 2026-11-25 07:36:45 PST |
 | `llvm-opt-task161-night.service` | active/running | — |
-| `llvm-opt-task161-backup-scan.service` | active/running | — |
-| `llvm-opt-task161-backup-duplicates.service` | active/running | — |
+| `llvm-opt-task161-backup-scan.service` | inactive/dead | — |
+| `llvm-opt-task161-backup-duplicates.service` | inactive/dead | — |
 | `llvm-opt-task160-backup-large.service` | active/running | — |
 | `llvm-opt-task160-backup-evidence.service` | active/running | — |
 | `llvm-opt-task154-full-build-1.service` | inactive/dead | — |
@@ -38,7 +38,7 @@
 
 154-B 仍采用原磁盘准入线 302,154,457,695 B，包含 30 GB 预留。
 
-当前 /home 可用 272,886,972,416 B，MemAvailable 25,973,391,360 B。
+当前 /home 可用 269,776,674,816 B，MemAvailable 26,190,389,248 B。
 
 | 采样时间 | /home 可用 B | /home 已用 B | MemAvailable B |
 |---|---:|---:|---:|
