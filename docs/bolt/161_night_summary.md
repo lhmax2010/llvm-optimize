@@ -5,9 +5,9 @@
 - PS6 等待 154-B 结束并发布验证证据。
 - PGO+BOLT 候选状态为 等待 G 链。—
 - 大型库已删除 11/11，3 个自测库保留。
-- 大型库归档首轮 STOP，原因是 SHA256 检查调用错误。正在复用 bundle 重新核对。 [首轮原始提交](https://github.com/lhmax2010/llvm-optimize/blob/2720eb0b/tools/bolt/results/task160/backup-supplement/large-terminal.json)
+- 大型库归档首轮 STOP，原因是 SHA256 检查调用错误。续做已通过。 [首轮原始提交](https://github.com/lhmax2010/llvm-optimize/blob/2720eb0b/tools/bolt/results/task160/backup-supplement/large-terminal.json)
 
-更新于 2026-11-25T08:27:27.825899-08:00。
+更新于 2026-11-25T08:28:03.748374-08:00。
 
 ## 单元与顺序
 
@@ -38,8 +38,9 @@
 | 157-B | WAITING | — | — | — |
 
 154-B 仍采用原磁盘准入线 302,154,457,695 B，包含 30 GB 预留。
+160 补充累计净释放 46,013,472,768 B，其中本次接续 46,010,806,272 B。清理结束时 /home 可用 318,757,769,216 B。
 
-当前 /home 可用 318,757,765,120 B，MemAvailable 22,442,893,312 B。
+当前 /home 可用 318,757,695,488 B，MemAvailable 22,392,053,760 B。
 
 | 采样时间 | /home 可用 B | /home 已用 B | MemAvailable B |
 |---|---:|---:|---:|
