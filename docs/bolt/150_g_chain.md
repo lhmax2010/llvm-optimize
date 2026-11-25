@@ -1,18 +1,36 @@
 # 150 · PGO/BOLT profile 生成
 
-**仅配置预演两轮完成，最终 0 条违规。** 最终配方为本地 pgo-dev 提交 750d7a83475a3c3c6fecf545ea74ba110fc845f5。G4 仍须通过磁盘和内存准入，N2 已在 149-run 通过。
+**进行中**
 
-| 预演 | Ninja 记录 | 违规 | 核对结果 |
-|---|---:|---:|---|
-| 1 | 21,983 | 5 | 三个 clang-tidy OpenMP 检查对象误归运行时。两个 Clang 链接命令后附 CMake -E，所以链接分类误报。没有缺失、错误或多余 PGO 参数的主编译边。 |
-| 2 | 25,940 | 0 | 5,357 条主 C/C++ 编译边使用正确 profile，879 条运行时 C/C++ 编译边没有 PGO 选项。 |
+|步骤|结论|档位|MemoryMax B|编译/ThinLTO/链接|起止 PST|等待 s|执行 s|cgroup 峰值 B|准入内存 B|准入磁盘 B|清理 df 差值 B|原因|
+|---|---|---|---:|---|---|---:|---:|---:|---:|---:|---:|---|
+| G4 | SKIPPED | — | — | —/—/— | — → 2026-11-24T21:08:30-08:00 | 3600.0 | — | — | 16467451904 | 303165779968 | — | disk below floor |
+| G5 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
+| G6 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
+| G7 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
+| G8 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
 
-第二轮补齐了 compdb 省略的 3,957 个非 phony 输出。compdb -x 展开响应文件。有命令的遗漏输出通过 Ninja 查询原命令，未经执行。[Ninja 的 compdb 实现](https://github.com/ninja-build/ninja/blob/v1.13.1/src/ninja.cc#L969-L1024)
+本地配方 750d7a83475a3c3c6fecf545ea74ba110fc845f5。两轮仅配置预演最终扫描 25,940 条 Ninja 记录，0 条违规。第一轮的 5 条分类误报及修正已保留。门禁 8/8、技能 59/59、编排 6/6 通过。N2 已由 149-run 完成。预演只运行 CMake 和门禁，配置之后退出。
 
-两轮均在独立新根使用同一配方配置，第二轮通过门禁后按预演标记立即退出。没有运行 Ninja 产品编译。root 所有的残留只登记。预演与完整运行都复用通过哈希核对的 G3 profdata，原 IR 输入提交与新配方单独记账。
+峰值增长 P 为 222,650,722,030 B。G4 准入包含 15% 系数、15 GiB 安全线和另一项目的 40 GB 磁盘预留。
 
-- 最终门禁 8/8、技能 59/59、编排 6/6 通过。
-- 19:36 PST 的日志证明用户执行了 149-run 的 sudo 脚本。三个目录仍以原 inode 存在，未保存脚本逐条输出，因此各项成功、拒绝和释放字节数无法确认。
-- G4 的保守磁盘准入为 312,154,457,695 B。磁盘或内存不够时按 10 分钟间隔重测，最长等待 60 分钟。
+启动时 2026-11-24T20:08:30-08:00，MemAvailable 16,909,451,264 B，/home 可用 303,195,275,264 B。
+G6 等待截止 2026-11-25T06:00:00-08:00。整体截止 2026-11-26T20:00:00-08:00。
 
-[最终配方补丁](../../tools/bolt/results/task150/pgo-recipe-final.patch) · [门禁分类修正](../../tools/bolt/results/task150/preview-1/gate-correction.diff) · [预演一](../../tools/bolt/results/task150/preview-1/ninja-gate.json) · [预演二](../../tools/bolt/results/task150/preview-2/ninja-gate.json) · [单测](../../tools/bolt/results/task150/gate-tests-final.txt) · [清理复测](../../tools/bolt/results/task150/sudo-recheck.json)
+- G4 磁盘准入 312,154,457,695 B
+- G5 磁盘准入 88,318,382,080 B
+- G6 磁盘准入 61,054,246,912 B
+- G7 磁盘准入 62,548,578,304 B
+- G8 磁盘准入 58,253,611,008 B
+
+若 G4 通过，先保留经过 SHA256 核对的 clang 和成品清单。G5 复用 G4 的对象和 Ninja 图重链，核对导出的 ELF、BOLT 工具和匹配运行库后清理交接根。G3 检查点按内容核对，IR 源提交与新的 PGO 源提交分别登记。
+
+看门狗只停止本任务当前子单元。清理之后按依赖关系和准入规则继续。
+
+[最终配方补丁](../../tools/bolt/results/task150/pgo-recipe-final.patch) · [门禁修正](../../tools/bolt/results/task150/preview-1/gate-correction.diff) · [两轮预演](../../tools/bolt/results/task150/preview-summary.json) · [门禁单测](../../tools/bolt/results/task150/gate-tests-final.txt) · [上次 sudo 结果复测](../../tools/bolt/results/task150/sudo-recheck.json)
+
+## 日志与结果
+
+### G4
+
+[G4 JSON 与日志索引](../../tools/bolt/results/task150/G4.json)

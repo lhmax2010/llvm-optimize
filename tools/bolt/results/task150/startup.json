@@ -1,0 +1,92 @@
+{
+  "unit": "llvm-opt-150-g-chain.service",
+  "startup": {
+    "time": "2026-11-24T20:08:30-08:00",
+    "mem_available": 16909451264,
+    "home_available": 303195275264
+  },
+  "peak_growth": 222650722030,
+  "disks": {
+    "G4": 312154457695,
+    "G5": 88318382080,
+    "G6": 61054246912,
+    "G7": 62548578304,
+    "G8": 58253611008
+  },
+  "deadline": "2026-11-26T20:00:00-08:00",
+  "g6_deadline": "2026-11-25T06:00:00-08:00",
+  "estimates": {
+    "G4": "2h35–3h27 historical PGO estimate; 149 N2 full packaging took 6h58 at 4 jobs",
+    "G5": "7–11 min for tools plus unmeasured relink",
+    "G6": "7m41s historical; admission wait up to 06:00 PST",
+    "G7": "minutes for rewrite, plus runtime scan",
+    "G8": "no comparable compression measurement"
+  },
+  "recipe": "750d7a83475a3c3c6fecf545ea74ba110fc845f5",
+  "preview": {
+    "status": "PASS",
+    "violations": 0,
+    "categories": {},
+    "reason": "CMake configured; complete Ninja graph passed; stopped before compilation",
+    "cleanup": [
+      {
+        "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task150/preview-2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0",
+        "estimated_allocated_bytes_removed": 2814201856,
+        "entries_removed": 200422,
+        "remaining": true,
+        "skipped_sample": [
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task150/preview-2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/share/upgrade'",
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task150/preview-2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/var/cache/ldconfig'",
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task150/preview-2/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/root'"
+        ]
+      }
+    ]
+  },
+  "projected": {
+    "G4": {
+      "memory_max": 12614483968,
+      "floor": 10737418240,
+      "admitted": true,
+      "tier": "dynamic",
+      "jobs": 2,
+      "thinlto_jobs": 2,
+      "link_jobs": 1
+    },
+    "G5": {
+      "memory_max": 12614483968,
+      "floor": 16106127360,
+      "admitted": false,
+      "tier": "dynamic",
+      "jobs": 2,
+      "thinlto_jobs": 2,
+      "link_jobs": 1
+    },
+    "G6": {
+      "memory_max": 13151354880,
+      "floor": 17179869184,
+      "admitted": false,
+      "tier": "fallback",
+      "jobs": 1,
+      "thinlto_jobs": null,
+      "link_jobs": null
+    },
+    "G7": {
+      "memory_max": 12614483968,
+      "floor": 9663676416,
+      "admitted": true,
+      "tier": "dynamic",
+      "jobs": 1,
+      "thinlto_jobs": null,
+      "link_jobs": null
+    },
+    "G8": {
+      "memory_max": 12614483968,
+      "floor": 1073741824,
+      "admitted": true,
+      "tier": "dynamic",
+      "jobs": 1,
+      "thinlto_jobs": null,
+      "link_jobs": null
+    }
+  }
+}
