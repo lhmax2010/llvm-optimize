@@ -1,0 +1,88 @@
+     1	//==- X86MnemonicTables.cpp - Generate mnemonic extraction tables. -*- C++ -*-//
+     2	//
+     3	// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+     4	// See https://llvm.org/LICENSE.txt for license information.
+     5	// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+     6	//
+     7	//===----------------------------------------------------------------------===//
+     8	//
+     9	// This tablegen backend is responsible for emitting tables that group
+    10	// instructions by their mnemonic name wrt AsmWriter Variant (e.g. isADD, etc).
+    11	//
+    12	//===----------------------------------------------------------------------===//
+    13	
+    14	#include "Common/CodeGenInstruction.h"
+    15	#include "Common/CodeGenTarget.h"
+    16	#include "X86RecognizableInstr.h"
+    17	#include "llvm/TableGen/Record.h"
+    18	#include "llvm/TableGen/TableGenBackend.h"
+    19	
+    20	using namespace llvm;
+    21	
+    22	namespace {
+    23	
+    24	class X86MnemonicTablesEmitter {
+    25	  const CodeGenTarget Target;
+    26	
+    27	public:
+    28	  X86MnemonicTablesEmitter(const RecordKeeper &R) : Target(R) {}
+    29	
+    30	  // Output X86 mnemonic tables.
+    31	  void run(raw_ostream &OS);
+    32	};
+    33	} // namespace
+    34	
+    35	void X86MnemonicTablesEmitter::run(raw_ostream &OS) {
+    36	  emitSourceFileHeader("X86 Mnemonic tables", OS);
+    37	  OS << "namespace llvm {\nnamespace X86 {\n\n";
+    38	  const Record *AsmWriter = Target.getAsmWriter();
+    39	  unsigned Variant = AsmWriter->getValueAsInt("Variant");
+    40	
+    41	  // Hold all instructions grouped by mnemonic
+    42	  StringMap<SmallVector<const CodeGenInstruction *, 0>> MnemonicToCGInstrMap;
+    43	
+    44	  for (const CodeGenInstruction *I : Target.getInstructions()) {
+    45	    const Record *Def = I->TheDef;
+    46	    // Filter non-X86 instructions.
+    47	    if (!Def->isSubClassOf("X86Inst"))
+    48	      continue;
+    49	    X86Disassembler::RecognizableInstrBase RI(*I);
+    50	    if (!RI.shouldBeEmitted())
+    51	      continue;
+    52	    if ( // Non-parsable instruction defs contain prefix as part of AsmString
+    53	        Def->getValueAsString("AsmVariantName") == "NonParsable" ||
+    54	        // Skip prefix byte
+    55	        RI.Form == X86Local::PrefixByte)
+    56	      continue;
+    57	    std::string Mnemonic = X86Disassembler::getMnemonic(I, Variant);
+    58	    MnemonicToCGInstrMap[Mnemonic].push_back(I);
+    59	  }
+    60	
+    61	  OS << "#ifdef GET_X86_MNEMONIC_TABLES_H\n";
+    62	  OS << "#undef GET_X86_MNEMONIC_TABLES_H\n\n";
+    63	  for (StringRef Mnemonic : MnemonicToCGInstrMap.keys())
+    64	    OS << "bool is" << Mnemonic << "(unsigned Opcode);\n";
+    65	  OS << "#endif // GET_X86_MNEMONIC_TABLES_H\n\n";
+    66	
+    67	  OS << "#ifdef GET_X86_MNEMONIC_TABLES_CPP\n";
+    68	  OS << "#undef GET_X86_MNEMONIC_TABLES_CPP\n\n";
+    69	  for (StringRef Mnemonic : MnemonicToCGInstrMap.keys()) {
+    70	    OS << "bool is" << Mnemonic << "(unsigned Opcode) {\n";
+    71	    auto Mnemonics = MnemonicToCGInstrMap[Mnemonic];
+    72	    if (Mnemonics.size() == 1) {
+    73	      const CodeGenInstruction *CGI = *Mnemonics.begin();
+    74	      OS << "\treturn Opcode == " << CGI->getName() << ";\n}\n\n";
+    75	    } else {
+    76	      OS << "\tswitch (Opcode) {\n";
+    77	      for (const CodeGenInstruction *CGI : Mnemonics) {
+    78	        OS << "\tcase " << CGI->getName() << ":\n";
+    79	      }
+    80	      OS << "\t\treturn true;\n\t}\n\treturn false;\n}\n\n";
+    81	    }
+    82	  }
+    83	  OS << "#endif // GET_X86_MNEMONIC_TABLES_CPP\n\n";
+    84	  OS << "} // end namespace X86\n} // end namespace llvm";
+    85	}
+    86	
+    87	static TableGen::Emitter::OptClass<X86MnemonicTablesEmitter>
+    88	    X("gen-x86-mnemonic-tables", "Generate X86 mnemonic tables");

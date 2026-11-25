@@ -1,0 +1,189 @@
+clang/tools/scan-build-py/bin/analyze-build
+     1	#!/usr/bin/env python3
+     9	import os.path
+    10	this_dir = os.path.dirname(os.path.realpath(__file__))
+    11	sys.path.append(os.path.join(os.path.dirname(this_dir), 'lib'))
+    12	
+    13	from libscanbuild.analyze import analyze_build
+    14	
+    15	if __name__ == '__main__':
+    16	    multiprocessing.freeze_support()
+    17	    sys.exit(analyze_build())
+clang/tools/scan-build-py/bin/intercept-build
+     1	#!/usr/bin/env python3
+     9	import os.path
+    10	this_dir = os.path.dirname(os.path.realpath(__file__))
+    11	sys.path.append(os.path.join(os.path.dirname(this_dir), 'lib'))
+    12	
+    13	from libscanbuild.intercept import intercept_build
+    14	
+    15	if __name__ == '__main__':
+    16	    multiprocessing.freeze_support()
+    17	    sys.exit(intercept_build())
+clang/tools/scan-build-py/bin/scan-build
+     1	#!/usr/bin/env python3
+     9	import os.path
+    10	this_dir = os.path.dirname(os.path.realpath(__file__))
+    11	sys.path.append(os.path.join(os.path.dirname(this_dir), 'lib'))
+    12	
+    13	from libscanbuild.analyze import scan_build
+    14	
+    15	if __name__ == '__main__':
+    16	    multiprocessing.freeze_support()
+    17	    sys.exit(scan_build())
+clang/tools/scan-build-py/lib/libscanbuild/intercept.py
+    26	import itertools
+    27	import json
+    28	import glob
+    29	import logging
+    30	from libear import build_libear, TemporaryDirectory
+    31	from libscanbuild import (
+    32	    command_entry_point,
+    33	    compiler_wrapper,
+    34	    wrapper_environment,
+    35	    run_command,
+   110	
+   111	
+   112	def setup_environment(args, destination):
+   113	    """Sets up the environment for the build command.
+   114	
+   115	    It sets the required environment variables and execute the given command.
+   116	    The exec calls will be logged by the 'libear' preloaded library or by the
+   117	    'wrapper' programs."""
+   118	
+   119	    c_compiler = args.cc if "cc" in args else "cc"
+   120	    cxx_compiler = args.cxx if "cxx" in args else "c++"
+   121	
+   122	    libear_path = (
+   123	        None
+   124	        if args.override_compiler or is_preload_disabled(sys.platform)
+   125	        else build_libear(c_compiler, destination)
+   126	    )
+   127	
+   128	    environment = dict(os.environ)
+   129	    environment.update({"INTERCEPT_BUILD_TARGET_DIR": destination})
+   130	
+   131	    if not libear_path:
+   132	        logging.debug("intercept gonna use compiler wrappers")
+   133	        environment.update(wrapper_environment(args))
+   134	        environment.update({"CC": COMPILER_WRAPPER_CC, "CXX": COMPILER_WRAPPER_CXX})
+   135	    elif sys.platform == "darwin":
+   136	        logging.debug("intercept gonna preload libear on OSX")
+   137	        environment.update(
+   138	            {"DYLD_INSERT_LIBRARIES": libear_path, "DYLD_FORCE_FLAT_NAMESPACE": "1"}
+   139	        )
+   140	    else:
+   141	        logging.debug("intercept gonna preload libear on UNIX")
+   142	        environment.update({"LD_PRELOAD": libear_path})
+   143	
+clang/tools/scan-build-py/lib/libscanbuild/analyze.py
+    11	 -- Report:    create a cover report from the analyzer outputs.  """
+    12	
+    13	import re
+    14	import os
+    15	import os.path
+    16	import json
+    17	import logging
+    18	import multiprocessing
+    19	import tempfile
+    20	import functools
+    21	import subprocess
+    22	import contextlib
+    23	import datetime
+    24	import shutil
+    25	import glob
+    26	from collections import defaultdict
+    27	
+    28	from libscanbuild import (
+    29	    command_entry_point,
+    30	    compiler_wrapper,
+    31	    wrapper_environment,
+    32	    run_build,
+    33	    run_command,
+    34	    CtuConfig,
+    35	)
+    36	from libscanbuild.arguments import (
+    37	    parse_args_for_scan_build,
+    38	    parse_args_for_analyze_build,
+    39	)
+    40	from libscanbuild.intercept import capture
+    41	from libscanbuild.report import document
+    42	from libscanbuild.compilation import split_command, classify_source, compiler_language
+clang/tools/scan-build/bin/scan-build
+     1	#!/usr/bin/env perl
+   445	
+   446	sub CopyFiles {
+   447	
+   448	  my $Dir = shift;
+   449	
+   450	  my $JS = Cwd::realpath("$RealBin/../share/scan-build/sorttable.js");
+   451	
+   452	  DieDiag("Cannot find 'sorttable.js'.\n")
+   453	    if (! -r $JS);
+   454	
+   455	  copy($JS, "$Dir");
+   456	
+   457	  DieDiag("Could not copy 'sorttable.js' to '$Dir'.\n")
+   458	    if (! -r "$Dir/sorttable.js");
+   459	
+   460	  my $CSS = Cwd::realpath("$RealBin/../share/scan-build/scanview.css");
+   461	
+   462	  DieDiag("Cannot find 'scanview.css'.\n")
+   463	    if (! -r $CSS);
+   464	
+   465	  copy($CSS, "$Dir");
+   466	
+   467	  DieDiag("Could not copy 'scanview.css' to '$Dir'.\n")
+   468	    if (! -r $CSS);
+   469	}
+   470	
+   471	##----------------------------------------------------------------------------##
+   472	# CalcStats - Calculates visitation statistics and returns the string.
+   473	##----------------------------------------------------------------------------##
+   940	
+   941	      if ($Options{ViewResults} and -r "$Options{OutputDir}/index.html") {
+   942	        Diag "Viewing analysis results in '$Options{OutputDir}' using scan-view.\n";
+   943	        my $ScanView = Cwd::realpath("$RealBin/scan-view");
+   944	        if (! -x $ScanView) { $ScanView = "scan-view"; }
+   945	        if (! -x $ScanView) { $ScanView = Cwd::realpath("$RealBin/../../scan-view/bin/scan-view"); }
+   946	        if (! -x $ScanView) { $ScanView = `which scan-view`; chomp $ScanView; }
+   947	        exec $ScanView, "$Options{OutputDir}";
+   948	      }
+   949	
+  1908	
+  1909	# Determine the location of ccc-analyzer.
+  1910	my $AbsRealBin = Cwd::realpath($RealBin);
+  1911	my $Cmd = "$AbsRealBin/../libexec/ccc-analyzer";
+  1912	my $CmdCXX = "$AbsRealBin/../libexec/c++-analyzer";
+  1913	
+  1914	# Portability: use less strict but portable check -e (file exists) instead of
+  1915	# non-portable -x (file is executable). On some windows ports -x just checks
+  1916	# file extension to determine if a file is executable (see Perl language
+  1917	# reference, perlport)
+  1918	if (!defined $Cmd || ! -e $Cmd) {
+  1919	  $Cmd = "$AbsRealBin/ccc-analyzer";
+  1920	  DieDiag("'ccc-analyzer' does not exist at '$Cmd'\n") if(! -e $Cmd);
+  1921	}
+  1922	if (!defined $CmdCXX || ! -e $CmdCXX) {
+  1923	  $CmdCXX = "$AbsRealBin/c++-analyzer";
+  1924	  DieDiag("'c++-analyzer' does not exist at '$CmdCXX'\n") if(! -e $CmdCXX);
+  1925	}
+  1926	
+clang/tools/scan-view/bin/scan-view
+     1	#!/usr/bin/env python
+    63	
+    64	
+    65	def run(port, options, root):
+    66	    # Prefer to look relative to the installed binary
+    67	    share = os.path.dirname(__file__) + "/../share/scan-view"
+    68	    if not os.path.isdir(share):
+    69	        # Otherwise look relative to the source
+    70	        share = os.path.dirname(__file__) + "/../../scan-view/share"
+    71	    sys.path.append(share)
+    72	
+    73	    import ScanView
+    74	    try:
+    75	        print('Starting scan-view at: http://%s:%d' % (options.host,
+    76	                                                       port))
+    77	        print('  Use Ctrl-C to exit.')
+    78	        httpd = ScanView.create_server((options.host, port),

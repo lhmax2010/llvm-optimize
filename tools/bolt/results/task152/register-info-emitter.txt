@@ -1,0 +1,71 @@
+   911	//
+   912	// runMCDesc - Print out MC register descriptions.
+   913	//
+   914	void RegisterInfoEmitter::runMCDesc(raw_ostream &OS, raw_ostream &MainOS,
+   915	                                    StringRef FilenamePrefix) {
+   916	  emitInclude(FilenamePrefix, "MCDesc.inc", "GET_REGINFO_MC_DESC", MainOS);
+   917	
+   918	  emitSourceFileHeader("MC Register Information", OS);
+   919	
+  1082	  OS << "} // end anonymous namespace\n\n";
+  1083	
+  1084	  RegClassStrings.layout();
+  1085	  RegClassStrings.emitStringLiteralDef(
+  1086	      OS, Twine("extern const char ") + TargetName + "RegClassStrings[]");
+  1087	
+  1088	  OS << "extern const MCRegisterClass " << TargetName
+  1089	     << "MCRegisterClasses[] = {\n";
+  1090	
+  1091	  for (const auto &RC : RegisterClasses) {
+  1092	    ArrayRef<const Record *> Order = RC.getOrder();
+  1093	    std::string RCName = Order.empty() ? "nullptr" : RC.getName();
+  1094	    std::string RCBitsName = Order.empty() ? "nullptr" : RC.getName() + "Bits";
+  1095	    std::string RCBitsSize = Order.empty() ? "0" : "sizeof(" + RCBitsName + ")";
+  1096	    uint32_t RegSize = 0;
+  1097	    if (RC.RSI.isSimple())
+  1098	      RegSize = RC.RSI.getSimple().RegSize;
+  1099	    OS << "  { " << RCName << ", " << RCBitsName << ", "
+  1100	       << RegClassStrings.get(RC.getName()) << ", " << RC.getOrder().size()
+  1101	       << ", " << RCBitsSize << ", " << RC.getQualifiedIdName() << ", "
+  1102	       << RegSize << ", " << static_cast<unsigned>(RC.CopyCost) << ", "
+  1103	       << (RC.Allocatable ? "true" : "false") << ", "
+  1104	       << (RC.getBaseClassOrder() ? "true" : "false") << " },\n";
+  1105	  }
+  1106	
+  1107	  OS << "};\n\n";
+  1108	
+  1109	  EmitRegMappingTables(OS, Regs, false);
+  1110	
+  1111	  // Emit Reg encoding table
+  1112	  OS << "extern const uint16_t " << TargetName;
+  1113	  OS << "RegEncodingTable[] = {\n";
+  1114	  // Add entry for NoRegister
+  1115	  OS << "  0,\n";
+  1116	  for (const auto &RE : Regs) {
+  1117	    const Record *Reg = RE.TheDef;
+  1118	    const BitsInit *BI = Reg->getValueAsBitsInit("HWEncoding");
+  1119	    uint64_t Value = BI->convertKnownBitsToInt();
+  1120	    OS << "  " << Value << ",\n";
+  1121	  }
+  1122	  OS << "};\n"; // End of HW encoding table
+  1123	
+  1124	  // MCRegisterInfo initialization routine.
+  1125	  OS << "static inline void Init" << TargetName
+  1126	     << "MCRegisterInfo(MCRegisterInfo *RI, unsigned RA, "
+  1127	     << "unsigned DwarfFlavour = 0, unsigned EHFlavour = 0, unsigned PC = 0) "
+  1128	        "{\n"
+  1129	     << "  RI->InitMCRegisterInfo(" << TargetName << "RegDesc, "
+  1130	     << Regs.size() + 1 << ", RA, PC, " << TargetName << "MCRegisterClasses, "
+  1131	     << RegisterClasses.size() << ", " << TargetName << "RegUnitRoots, "
+  1132	     << RegBank.getNumNativeRegUnits() << ", " << TargetName << "RegDiffLists, "
+  1133	     << TargetName << "LaneMaskLists, " << TargetName << "RegStrings, "
+  1134	     << TargetName << "RegClassStrings, " << TargetName << "SubRegIdxLists, "
+  1135	     << (llvm::size(SubRegIndices) + 1) << ",\n"
+  1136	     << TargetName << "RegEncodingTable);\n\n";
+  1137	
+  1138	  EmitRegMapping(OS, Regs, false);
+  1139	
+  1140	  OS << "}\n\n";
+  1141	
+  1142	  OS << "} // end namespace llvm\n\n";
+  1143	}
