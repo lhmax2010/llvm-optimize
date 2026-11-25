@@ -6,9 +6,10 @@
 - PGO+BOLT 候选状态为 等待 G 链。—
 - 大型库已删除 11/11，3 个自测库保留。
 - [154-B 的 sudo 清理脚本](../../tools/bolt/results/task154/sudo-clean.sh) 等待用户审核。
+- G4 FAIL。PermissionError: [Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0' -> '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G5/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0'。
 - 大型库归档首轮 STOP，原因是 SHA256 检查调用错误。续做已通过。 [首轮原始提交](https://github.com/lhmax2010/llvm-optimize/blob/2720eb0b/tools/bolt/results/task160/backup-supplement/large-terminal.json)
 
-更新于 2026-11-25T11:37:59.125899-08:00。
+更新于 2026-11-25T13:54:46.406371-08:00。
 
 ## 单元与顺序
 
@@ -31,7 +32,7 @@
 | 步骤 | 结论 | 用时 s | 等待 s | 原因 |
 |---|---|---:|---:|---|
 | 154-B | PARTIAL | 11035.8 | — | waiting for 139-D memory floor or build disk allowance |
-| G4 | WAITING | — | — | active: llvm-opt-task154-after-153.service |
+| G4 | FAIL | 7963.344 | 0.0 | PermissionError: [Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0' -> '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G5/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0' |
 | G5 | WAITING | — | — | — |
 | G6 | WAITING | — | — | — |
 | G7 | WAITING | — | — | — |
@@ -43,17 +44,21 @@
 154-B 仍采用原磁盘准入线 302,154,457,695 B，包含 30 GB 预留。
 160 补充累计净释放 46,013,472,768 B，其中本次接续 46,010,806,272 B。清理结束时 /home 可用 318,757,769,216 B。
 
-当前 /home 可用 310,068,912,128 B，MemAvailable 27,545,559,040 B。
+当前 /home 可用 248,547,512,320 B，MemAvailable 28,047,671,296 B。
 
 | 采样时间 | /home 可用 B | /home 已用 B | MemAvailable B |
 |---|---:|---:|---:|
-| 2026-11-25T10:23:25.515784-08:00 | 250,425,229,312 | 1,617,383,108,608 | 26,958,491,648 |
-| 2026-11-25T10:33:26.110338-08:00 | 270,238,650,368 | 1,597,569,687,552 | 27,584,143,360 |
-| 2026-11-25T10:43:26.530112-08:00 | 267,048,554,496 | 1,600,759,783,424 | 27,065,364,480 |
-| 2026-11-25T10:53:26.956209-08:00 | 264,027,705,344 | 1,603,780,632,576 | 27,138,060,288 |
-| 2026-11-25T11:03:27.460222-08:00 | 262,865,657,856 | 1,604,942,680,064 | 27,697,020,928 |
-| 2026-11-25T11:13:28.031951-08:00 | 270,328,713,216 | 1,597,479,624,704 | 25,749,872,640 |
-| 2026-11-25T11:23:28.466634-08:00 | 269,397,483,520 | 1,598,410,854,400 | 25,646,190,592 |
-| 2026-11-25T11:33:28.905613-08:00 | 268,167,094,272 | 1,599,641,243,648 | 25,623,969,792 |
+| 2026-11-25T12:43:43.222284-08:00 | 268,700,606,464 | 1,599,107,731,456 | 27,001,974,784 |
+| 2026-11-25T12:53:43.724476-08:00 | 247,243,841,536 | 1,620,564,496,384 | 26,940,633,088 |
+| 2026-11-25T13:03:44.137797-08:00 | 244,001,533,952 | 1,623,806,803,968 | 22,610,481,152 |
+| 2026-11-25T13:13:44.551629-08:00 | 240,898,097,152 | 1,626,910,240,768 | 26,321,682,432 |
+| 2026-11-25T13:23:45.030415-08:00 | 239,462,756,352 | 1,628,345,581,568 | 26,916,491,264 |
+| 2026-11-25T13:33:45.483531-08:00 | 245,240,287,232 | 1,622,568,050,688 | 27,077,296,128 |
+| 2026-11-25T13:43:45.957085-08:00 | 243,365,498,880 | 1,624,442,839,040 | 25,281,990,656 |
+| 2026-11-25T13:53:46.371676-08:00 | 250,178,469,888 | 1,617,629,868,032 | 27,773,317,120 |
 
-G4 已记录 0 条 ARCHIVE_MEMBER_RETRY。 [160 G 链报告](160_g_chain.md) · [采样原文](../../tools/bolt/results/task161/resources.jsonl)
+G4 已记录 1 条 ARCHIVE_MEMBER_RETRY。 [160 G 链报告](160_g_chain.md) · [采样原文](../../tools/bolt/results/task161/resources.jsonl)
+
+~~~text
+[ 4766s] ARCHIVE_MEMBER_RETRY usr/lib64/libclangAST.a Disasm.cpp.o 8589934592 PASS
+~~~
