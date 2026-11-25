@@ -1,0 +1,17 @@
+     1	set(LLVM_LINK_COMPONENTS Support)
+     2	
+     3	add_bolt_tool(merge-fdata
+     4	  merge-fdata.cpp
+     5	
+     6	  ${BOLT_LLVM_LINK_MODE}
+     7	
+     8	  DEPENDS
+     9	  intrinsics_gen
+    10	)
+    11	
+    12	add_dependencies(bolt merge-fdata)
+    13	
+    14	# Emit relocations for BOLT meta test (bolt/test/runtime/meta-merge-fdata.test)
+    15	if (BOLT_INCLUDE_TESTS AND UNIX AND NOT APPLE)
+    16	  target_link_options(merge-fdata PRIVATE LINKER:--emit-relocs)
+    17	endif()

@@ -1,0 +1,44 @@
+    33	  set(OPENMP_ENABLE_WERROR FALSE CACHE BOOL
+    34	    "Enable -Werror flags to turn warnings into errors for supporting compilers.")
+    35	  set(OPENMP_LIBDIR_SUFFIX "" CACHE STRING
+    36	    "Suffix of lib installation directory, e.g. 64 => lib64")
+    37	  # Do not use OPENMP_LIBDIR_SUFFIX directly, use OPENMP_INSTALL_LIBDIR.
+    38	  set(OPENMP_INSTALL_LIBDIR "lib${OPENMP_LIBDIR_SUFFIX}" CACHE STRING
+    39	      "Path where built OpenMP libraries should be installed.")
+    40	
+    41	  # Group test settings.
+    42	  set(OPENMP_TEST_C_COMPILER ${CMAKE_C_COMPILER} CACHE STRING
+    43	    "C compiler to use for testing OpenMP runtime libraries.")
+    44	  set(OPENMP_TEST_CXX_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING
+    45	    "C++ compiler to use for testing OpenMP runtime libraries.")
+    46	  set(OPENMP_TEST_Fortran_COMPILER ${CMAKE_Fortran_COMPILER} CACHE STRING
+    47	    "FORTRAN compiler to use for testing OpenMP runtime libraries.")
+    48	  set(OPENMP_LLVM_TOOLS_DIR "" CACHE PATH "Path to LLVM tools for testing.")
+    49	
+    50	  set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to conform to")
+    51	  set(CMAKE_CXX_STANDARD_REQUIRED NO)
+    52	  set(CMAKE_CXX_EXTENSIONS NO)
+    53	else()
+    54	  # Usually <llvm-project>/runtimes/CMakeLists.txt sets LLVM_TREE_AVAILABLE and
+    55	  # we assume it is not available otherwise. The exception is that we are in an
+    56	  # LLVM_ENABLE_PROJECTS=openmp build, the LLVM tree is actually available.
+    57	  # Note that this build mode has been deprecated.
+    58	  # See https://github.com/llvm/llvm-project/issues/124014
+    59	  if (NOT LLVM_RUNTIMES_BUILD AND "openmp" IN_LIST LLVM_ENABLE_PROJECTS)
+    60	    set(LLVM_TREE_AVAILABLE True)
+    61	  endif ()
+    62	
+    63	  set(OPENMP_ENABLE_WERROR ${LLVM_ENABLE_WERROR})
+    64	
+    65	  # When building in tree we install the runtime according to the LLVM settings.
+    66	  if(LLVM_ENABLE_PER_TARGET_RUNTIME_DIR AND NOT APPLE)
+    67	    set(OPENMP_INSTALL_LIBDIR lib${LLVM_LIBDIR_SUFFIX}/${LLVM_DEFAULT_TARGET_TRIPLE} CACHE STRING
+    68	        "Path where built openmp libraries should be installed.")
+    69	  else()
+    70	    set(OPENMP_INSTALL_LIBDIR "lib${LLVM_LIBDIR_SUFFIX}" CACHE STRING
+    71	        "Path where built OpenMP libraries should be installed.")
+    72	  endif()
+    73	
+    74	  set(OPENMP_TEST_C_COMPILER_default "${LLVM_TOOLS_BINARY_DIR}/clang${CMAKE_EXECUTABLE_SUFFIX}")
+    75	  set(OPENMP_TEST_CXX_COMPILER_default "${LLVM_TOOLS_BINARY_DIR}/clang++${CMAKE_EXECUTABLE_SUFFIX}")
+    76	  set(OPENMP_TEST_Fortran_COMPILER_default "${LLVM_TOOLS_BINARY_DIR}/flang${CMAKE_EXECUTABLE_SUFFIX}")

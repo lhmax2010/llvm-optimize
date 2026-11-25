@@ -1,0 +1,26 @@
+From de3bf8dc783bf54d142a448cc3673ecee3fecaef Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Wed, 25 Nov 2026 01:14:57 -0800
+Subject: [PATCH] packaging: describe the OpenMP alias install directory
+
+---
+ packaging/llvm.spec | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 41f3e6be98004c04c71b12de672f34b6a315801e..228b8e0264da63c92971af0181d94b355db405b8 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -610,9 +610,9 @@ echo TIZEN_HYBRID_LINK_OK
+ 
+ %install
+ cd build
+-# DESTDIR, not a prefix under buildroot: the openmp install script creates its
+-# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build
+-# environment's /usr/lib when DESTDIR is unset.
++# Use DESTDIR with the normal install prefix: OpenMP creates the
++# libgomp/libiomp5 symlinks under $DESTDIR plus its configured
++# library directory (%{_libdir} for this build).
+ DESTDIR=%{buildroot} cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake
+ # Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package
+ # provides libgomp.so and libgomp.so.1 on the target.
