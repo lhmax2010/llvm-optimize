@@ -5,8 +5,9 @@
 - PS6 等待 154-B 结束并发布验证证据。
 - PGO+BOLT 候选状态为 等待 G 链。—
 - 大型库已删除 0/11，3 个自测库保留。
+- 大型库归档 STOP。 [原文](../../tools/bolt/results/task160/backup-supplement/large-terminal.json)
 
-更新于 2026-11-25T07:56:21.280161-08:00。
+更新于 2026-11-25T08:01:52.695546-08:00。
 
 ## 单元与顺序
 
@@ -19,7 +20,7 @@
 | `llvm-opt-task161-night.service` | active/running | — |
 | `llvm-opt-task161-backup-scan.service` | inactive/dead | — |
 | `llvm-opt-task161-backup-duplicates.service` | inactive/dead | — |
-| `llvm-opt-task160-backup-large.service` | active/running | — |
+| `llvm-opt-task160-backup-large.service` | failed/failed | — |
 | `llvm-opt-task160-backup-evidence.service` | active/running | — |
 | `llvm-opt-task154-full-build-1.service` | inactive/dead | — |
 | `llvm-opt-task154-full-build-2.service` | inactive/dead | — |
@@ -37,8 +38,9 @@
 | 157-B | WAITING | — | — | — |
 
 154-B 仍采用原磁盘准入线 302,154,457,695 B，包含 30 GB 预留。
+160 补充累计净释放 2,666,496 B，其中本次接续 0 B。清理结束时 /home 可用 268,306,079,744 B。
 
-当前 /home 可用 263,770,095,616 B，MemAvailable 24,569,540,608 B。
+当前 /home 可用 268,305,350,656 B，MemAvailable 21,782,274,048 B。
 
 | 采样时间 | /home 可用 B | /home 已用 B | MemAvailable B |
 |---|---:|---:|---:|
