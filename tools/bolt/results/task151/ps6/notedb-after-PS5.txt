@@ -1,0 +1,146 @@
+commit 947684c35e6782435b803d801ad56cca5416393f
+tree d1a3a058a7a26c5a0b0207ec8fbebb641530bf21
+parent 48cf607a2a0d17cd09961a5cd7d2286886cf70e0
+author Gerrit User 7427 <7427@e010ba19-9d5d-4e2b-accf-c7c313b0558c> 1795585395 +0000
+committer Gerrit Code Review <gerrit@localhost> 1795585395 +0000
+
+    Update patch set 6
+    
+    Patch Set 6: Code-Review+1 Verified+1
+    
+    Patch-set: 6
+    Reviewer: Gerrit User 7427 <7427@e010ba19-9d5d-4e2b-accf-c7c313b0558c>
+    Label: Verified=+1, 9e27b82b8f37bc646a0b9f7e1cee78eb4f088c81
+    Label: Code-Review=+1, 36f3a6a80b711585d5a79eeeda66668c127a9cfa
+
+commit 48cf607a2a0d17cd09961a5cd7d2286886cf70e0
+tree d1a3a058a7a26c5a0b0207ec8fbebb641530bf21
+parent 2a8db04020f0e8f5c78450116a90c56d0f413436
+author Gerrit User 7427 <7427@e010ba19-9d5d-4e2b-accf-c7c313b0558c> 1795585235 +0000
+committer Gerrit Code Review <gerrit@localhost> 1795585235 +0000
+
+    Update patch set 6
+    
+    Patch Set 6:
+    
+    Review of PS6 (no vote).
+    
+    Addresses items 1 and 2 from the PS5 review:
+    - clang-analyzer Obsoletes moved from llvm to clang; the llvm comment is corrected.
+    - analyze-build, intercept-build, scan-build and scan-build-py moved from the llvm %files to the clang %files. clang already Requires llvm, so there is no cycle.
+    - llvm-tools-subpkgs.spec description updated to match the new ownership.
+    
+    Verified: the spec parses (rpmspec -q --srpm exits 0) and the diff has no whitespace errors. No gbs build yet.
+    
+    Non-blocking items 3-5 from the PS5 review are not addressed in this patchset.
+    
+    Patch-set: 6
+
+commit 2a8db04020f0e8f5c78450116a90c56d0f413436
+tree d1a3a058a7a26c5a0b0207ec8fbebb641530bf21
+parent 5a3957517422b788702674ffab6f79ca6419aea9
+author Gerrit User 7427 <7427@e010ba19-9d5d-4e2b-accf-c7c313b0558c> 1795585235 +0000
+committer Gerrit Code Review <gerrit@localhost> 1795585235 +0000
+
+    Update patch set 6
+    
+    Patch-set: 6
+    Attention: {"person_ident":"Gerrit User 7427 \u003c7427@e010ba19-9d5d-4e2b-accf-c7c313b0558c\u003e","operation":"REMOVE","reason":"removed on reply"}
+
+commit 5a3957517422b788702674ffab6f79ca6419aea9
+tree d1a3a058a7a26c5a0b0207ec8fbebb641530bf21
+parent b903e35178bf8f657a20fba97a60262bad2b5084
+author Gerrit User 7427 <7427@e010ba19-9d5d-4e2b-accf-c7c313b0558c> 1795585235 +0000
+committer Gerrit Code Review <gerrit@localhost> 1795585235 +0000
+
+    Update patch set 5
+    
+    Patch Set 5:
+    
+    Review of PS5 (no vote).
+    
+    Blocking-ish, addressed in PS6:
+    1. packaging/llvm.spec: "Obsoletes: clang-analyzer" is on the llvm package, but the analyzer libexec scripts (ccc-analyzer, c++-analyzer, intercept-cc, ...) are owned by the clang package. The obsolete belongs on clang, and the comment "llvm takes them over" is inaccurate for those files.
+    2. packaging/llvm.spec: analyze-build, intercept-build, scan-build and scan-build-py are in the llvm %files, but they run the libexec scripts that ship from clang. Installing llvm alone leaves them non-functional. clang already Requires llvm, so moving them to clang avoids the cycle the comment was trying to avoid.
+    
+    Non-blocking:
+    3. llvm.spec %install comment says the openmp libgomp/libiomp5 symlinks land in $DESTDIR/usr/lib. The openmp install rule writes to $DESTDIR${CMAKE_INSTALL_PREFIX}/${OPENMP_INSTALL_LIBDIR} (lib64 on 64-bit). The rm uses %{_libdir}, which matches that path, so only the comment is off.
+    4. Commit message lists items that are already in the base (ARM;BPF target list, LLVM_LIBDIR_SUFFIX derivation, dropped python3 Requires) and not changes in this patchset. Worth rewording to describe what this change does.
+    5. bolt/lib/Target/X86/X86GenSubSuperRegisterBody.inc and X86GenNeedsAddressSizeOverrideBody.inc match the upstream bodies in f346dd75 (ignoring whitespace). Minor: the #define macros in X86BoltMnemonicTables.cpp are not #undef'd, and the is16BitMemOperand signature continuation is misaligned.
+    
+    Not verified: no gbs build. Before submit, please confirm on the built libLLVM.so.22.1 that X86::isNOP / getX86SubSuperRegister / needsAddressSizeOverride are not exported (nm -D --defined-only), otherwise the X86 mirror duplicates symbols.
+    
+    Patch-set: 5
+
+commit b903e35178bf8f657a20fba97a60262bad2b5084
+tree d1a3a058a7a26c5a0b0207ec8fbebb641530bf21
+parent ec9a02043931c1cd48729264f7d7b1b5343ffa6b
+author Gerrit User 7427 <7427@e010ba19-9d5d-4e2b-accf-c7c313b0558c> 1795584907 +0000
+committer Gerrit Code Review <gerrit@localhost> 1795584907 +0000
+
+    Create patch set 6
+    
+    Uploaded patch set 6.
+    
+    Outdated Votes:
+    * Code-Review+1 (copy condition: "changekind:NO_CHANGE OR is:MIN")
+    * Verified+1 (copy condition: "changekind:NO_CHANGE")
+    
+    
+    Patch-set: 6
+    Subject: packaging: split tool subpackages into a standalone llvm-tools-subpkgs spec
+    Commit: 06f3424c543a9645707f9afbbd9b5318280fffeb
+    Tag: autogenerated:gerrit:newPatchSet
+    Groups: 06f3424c543a9645707f9afbbd9b5318280fffeb
+    Attention: {"person_ident":"Gerrit User 15296 \u003c15296@e010ba19-9d5d-4e2b-accf-c7c313b0558c\u003e","operation":"ADD","reason":"Votes got outdated and were removed: Code-Review+1, Verified+1"}
+
+commit ec9a02043931c1cd48729264f7d7b1b5343ffa6b
+tree d1a3a058a7a26c5a0b0207ec8fbebb641530bf21
+parent cf826b8bb0430e75847c9601d568ac4e7ccbc32d
+author Gerrit User 15296 <15296@e010ba19-9d5d-4e2b-accf-c7c313b0558c> 1795188254 +0000
+committer Gerrit Code Review <gerrit@localhost> 1795188254 +0000
+
+    Update patch set 5
+    
+    Patch Set 5: Code-Review+1 Verified+1
+    
+    Patch-set: 5
+    Reviewer: Gerrit User 15296 <15296@e010ba19-9d5d-4e2b-accf-c7c313b0558c>
+    Label: Verified=+1, ef7e2db47ea412eb36b4a6178d276a85b00d85dd
+    Label: Code-Review=+1, 736e9f1dad89e09ef549fcdc5674bf0862575d21
+
+commit cf826b8bb0430e75847c9601d568ac4e7ccbc32d
+tree d1a3a058a7a26c5a0b0207ec8fbebb641530bf21
+parent 09b2d930e080234c6545a7fa2b4ddbf8a04c253b
+author Gerrit User 15296 <15296@e010ba19-9d5d-4e2b-accf-c7c313b0558c> 1795188149 +0000
+committer Gerrit Code Review <gerrit@localhost> 1795188149 +0000
+
+    Update patch set 5
+    
+    Patch Set 5:
+    
+    PS5 on top of PS4: fixes for the in-tree BOLT build and the standalone llvm-tools-subpkgs spec. The PS4 history in the commit message is unchanged; a summary of the PS5 changes follows it.
+    
+    BOLT CMake
+    - Add BOLT_LLVM_LINK_MODE, set before its consumers in bolt/CMakeLists.txt. It is empty only when BOLT is built standalone with LLVM_LINK_LLVM_DYLIB=ON, and DISABLE_LLVM_LINK_LLVM_DYLIB otherwise. All BOLT libraries, tools and unit tests use it, so in-tree BOLT keeps linking the LLVM component libraries as before, and only the standalone dylib build links libLLVM.so.
+    - X86BoltMnemonicTables.cpp is listed in LLVM_OPTIONAL_SOURCES and compiled only for standalone dylib builds; the mirror declarations are enabled under the same condition.
+    - The inherited runtime C/C++ flags are cleared only for standalone builds; in-tree runtime flags are unchanged.
+    - merge-fdata is installed once by CMake; the duplicate manual install is removed.
+    
+    llvm.spec
+    - armv7l LLVM_TARGETS_TO_BUILD is back to ARM;BPF.
+    - The explicit Requires: python3 on llvm is removed.
+    
+    llvm-tools-subpkgs.spec
+    - ExclusiveArch: x86_64 aarch64, with BOLT_TARGETS_TO_BUILD set per architecture and a check that the expected targets are registered.
+    - The LLVM provider BuildRequires (llvm, llvm-devel, llvm-static-devel, libllvm, libomp) are pinned to %{version}, and %build checks that the installed providers share one version and release.
+    - bolt now requires libllvm = %{version} at runtime (unversioned in PS4); its explicit Requires: compiler-rt is removed.
+    - LLVM_LIBDIR_SUFFIX is derived from %{_lib} instead of a fixed 64.
+    - The distribution $LDFLAGS are kept in the CMake linker flags, together with --build-id=sha1.
+    - The debug packaging comment now describes the actual flow (find-debuginfo via __debug_install_post, bolt-debuginfo and llvm-tools-subpkgs-debugsource).
+    
+    Tested on x86_64: full llvm build with in-tree BOLT, and a standalone llvm-tools-subpkgs build against the installed llvm packages.
+    
+    Patch-set: 5
+    Attention: {"person_ident":"Gerrit User 15296 \u003c15296@e010ba19-9d5d-4e2b-accf-c7c313b0558c\u003e","operation":"REMOVE","reason":"removed on reply"}
+    Attention: {"person_ident":"Gerrit User 7427 \u003c7427@e010ba19-9d5d-4e2b-accf-c7c313b0558c\u003e","operation":"ADD","reason":"Someone else replied on the change"}

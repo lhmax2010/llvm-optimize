@@ -1,0 +1,73 @@
+diff --git a/packaging/llvm-tools-subpkgs.spec b/packaging/llvm-tools-subpkgs.spec
+index f76c3ce8fdc6257d0e0b3cc0986b06b999342469..6fc901a8eac1367a4b3a032a7fa142f5919f8946 100644
+--- a/packaging/llvm-tools-subpkgs.spec
++++ b/packaging/llvm-tools-subpkgs.spec
+@@ -41,9 +41,9 @@ Standalone subpackages for LLVM debugging and analysis tools:
+  - bolt: BOLT post-link binary optimizer, built standalone against the
+    installed LLVM toolchain (no full LLVM rebuild required)
+ 
+-The tools below (scan-build, llvm-xray, llvm-cov, llvm-profgen, llvm-profdata,
+-and the analyzer libexec scripts) now ship from the llvm and clang packages,
+-because llvm-devel's exports and the clang-analyzer files need them there.
++The tools below now ship from the llvm and clang packages: llvm-xray, llvm-cov,
++llvm-profgen and llvm-profdata from llvm; scan-build and the analyzer libexec
++scripts from clang.
+ Changes to this spec only require
+ rebuilding this package (minutes), not the multi-hour LLVM build.
+ 
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index b83f8dba673ec1b4705abe99c6d8601f61ae4361..b6c3a914ed93570bde7f14e3e140e0d9b2bb9b97 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -108,12 +108,8 @@ BuildRequires: clang, llvm, libllvm
+ 
+ 
+ Requires: libllvm = %{version}-%{release}
+-# scan-build (Perl) also needs clang installed at runtime; llvm does not
+-# require it (requiring clang here would make llvm and clang depend on
+-# each other)
+-# clang-analyzer, llvm-xray and llvm-prof-tools used to be separate
+-# subpackages (llvm-tools-subpkgs.spec) that owned these files; llvm takes them over
+-Obsoletes: clang-analyzer <= %{version}-%{release}
++# llvm-xray and llvm-prof-tools used to be separate subpackages
++# (llvm-tools-subpkgs.spec) that owned these files; llvm takes them over
+ Obsoletes: llvm-xray <= %{version}-%{release}
+ Obsoletes: llvm-prof-tools <= %{version}-%{release}
+ 
+@@ -154,6 +150,7 @@ Summary: Clang %{version} (C Language family frontend for LLVM)
+ License: NCSA
+ Requires: llvm = %{version}-%{release}
+ Provides: libclang.so.%{version}
++Obsoletes: clang-analyzer <= %{version}-%{release}
+ 
+ %description -n clang
+ A new front-end for the C family of languages is in development.
+@@ -802,8 +799,6 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %files
+ %manifest %{name}.manifest
+ %defattr(-,root,root,-)
+-%{_prefix}/bin/analyze-build
+-%{_prefix}/bin/intercept-build
+ %{_prefix}/bin/bugpoint
+ %{_prefix}/bin/clang-linker-wrapper
+ %{_prefix}/bin/clang-offload-packager
+@@ -877,8 +872,6 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %{_prefix}/bin/run-clang-tidy
+ %{_prefix}/bin/sancov
+ %{_prefix}/bin/sanstats
+-%{_prefix}/bin/scan-build
+-%{_prefix}/bin/scan-build-py
+ %{_prefix}/bin/scan-view
+ %{_prefix}/bin/verify-uselistorder
+ %{_prefix}/bin/diagtool
+@@ -936,6 +929,10 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %files -n clang
+ %manifest %{name}.manifest
+ %defattr(-,root,root,-)
++%{_prefix}/bin/analyze-build
++%{_prefix}/bin/intercept-build
++%{_prefix}/bin/scan-build
++%{_prefix}/bin/scan-build-py
+ %{_prefix}/bin/clang
+ %{_prefix}/bin/clang++
+ %{_prefix}/bin/%{_host}-clang

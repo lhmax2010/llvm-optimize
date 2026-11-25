@@ -1,0 +1,80 @@
+[
+  {
+    "timestamp": 1795188149,
+    "reviewer": {
+      "name": "Lin Hao",
+      "email": "hao.lin@samsung.com",
+      "username": "lhmax2025"
+    },
+    "message": "Patch Set 5:\n\nPS5 on top of PS4: fixes for the in-tree BOLT build and the standalone llvm-tools-subpkgs spec. The PS4 history in the commit message is unchanged; a summary of the PS5 changes follows it.\n\nBOLT CMake\n- Add BOLT_LLVM_LINK_MODE, set before its consumers in bolt/CMakeLists.txt. It is empty only when BOLT is built standalone with LLVM_LINK_LLVM_DYLIB=ON, and DISABLE_LLVM_LINK_LLVM_DYLIB otherwise. All BOLT libraries, tools and unit tests use it, so in-tree BOLT keeps linking the LLVM component libraries as before, and only the standalone dylib build links libLLVM.so.\n- X86BoltMnemonicTables.cpp is listed in LLVM_OPTIONAL_SOURCES and compiled only for standalone dylib builds; the mirror declarations are enabled under the same condition.\n- The inherited runtime C/C++ flags are cleared only for standalone builds; in-tree runtime flags are unchanged.\n- merge-fdata is installed once by CMake; the duplicate manual install is removed.\n\nllvm.spec\n- armv7l LLVM_TARGETS_TO_BUILD is back to ARM;BPF.\n- The explicit Requires: python3 on llvm is removed.\n\nllvm-tools-subpkgs.spec\n- ExclusiveArch: x86_64 aarch64, with BOLT_TARGETS_TO_BUILD set per architecture and a check that the expected targets are registered.\n- The LLVM provider BuildRequires (llvm, llvm-devel, llvm-static-devel, libllvm, libomp) are pinned to %{version}, and %build checks that the installed providers share one version and release.\n- bolt now requires libllvm = %{version} at runtime (unversioned in PS4); its explicit Requires: compiler-rt is removed.\n- LLVM_LIBDIR_SUFFIX is derived from %{_lib} instead of a fixed 64.\n- The distribution $LDFLAGS are kept in the CMake linker flags, together with --build-id=sha1.\n- The debug packaging comment now describes the actual flow (find-debuginfo via __debug_install_post, bolt-debuginfo and llvm-tools-subpkgs-debugsource).\n\nTested on x86_64: full llvm build with in-tree BOLT, and a standalone llvm-tools-subpkgs build against the installed llvm packages.",
+    "time_pst": "2026-11-20T07:22:29-08:00",
+    "patch_set": 5,
+    "file": null,
+    "line": null
+  },
+  {
+    "timestamp": 1795188254,
+    "reviewer": {
+      "name": "Lin Hao",
+      "email": "hao.lin@samsung.com",
+      "username": "lhmax2025"
+    },
+    "message": "Patch Set 5: Code-Review+1 Verified+1",
+    "time_pst": "2026-11-20T07:24:14-08:00",
+    "patch_set": 5,
+    "file": null,
+    "line": null
+  },
+  {
+    "timestamp": 1795584907,
+    "reviewer": {
+      "name": "Dongkyun Son",
+      "email": "dongkyun.s@samsung.com",
+      "username": "dkson95"
+    },
+    "message": "Uploaded patch set 6.\n\nOutdated Votes:\n* Code-Review+1 (copy condition: \"changekind:NO_CHANGE OR is:MIN\")\n* Verified+1 (copy condition: \"changekind:NO_CHANGE\")\n",
+    "time_pst": "2026-11-24T21:35:07-08:00",
+    "patch_set": 6,
+    "file": null,
+    "line": null
+  },
+  {
+    "timestamp": 1795585235,
+    "reviewer": {
+      "name": "Dongkyun Son",
+      "email": "dongkyun.s@samsung.com",
+      "username": "dkson95"
+    },
+    "message": "Patch Set 5:\n\nReview of PS5 (no vote).\n\nBlocking-ish, addressed in PS6:\n1. packaging/llvm.spec: \"Obsoletes: clang-analyzer\" is on the llvm package, but the analyzer libexec scripts (ccc-analyzer, c++-analyzer, intercept-cc, ...) are owned by the clang package. The obsolete belongs on clang, and the comment \"llvm takes them over\" is inaccurate for those files.\n2. packaging/llvm.spec: analyze-build, intercept-build, scan-build and scan-build-py are in the llvm %files, but they run the libexec scripts that ship from clang. Installing llvm alone leaves them non-functional. clang already Requires llvm, so moving them to clang avoids the cycle the comment was trying to avoid.\n\nNon-blocking:\n3. llvm.spec %install comment says the openmp libgomp/libiomp5 symlinks land in $DESTDIR/usr/lib. The openmp install rule writes to $DESTDIR${CMAKE_INSTALL_PREFIX}/${OPENMP_INSTALL_LIBDIR} (lib64 on 64-bit). The rm uses %{_libdir}, which matches that path, so only the comment is off.\n4. Commit message lists items that are already in the base (ARM;BPF target list, LLVM_LIBDIR_SUFFIX derivation, dropped python3 Requires) and not changes in this patchset. Worth rewording to describe what this change does.\n5. bolt/lib/Target/X86/X86GenSubSuperRegisterBody.inc and X86GenNeedsAddressSizeOverrideBody.inc match the upstream bodies in f346dd75 (ignoring whitespace). Minor: the #define macros in X86BoltMnemonicTables.cpp are not #undef'd, and the is16BitMemOperand signature continuation is misaligned.\n\nNot verified: no gbs build. Before submit, please confirm on the built libLLVM.so.22.1 that X86::isNOP / getX86SubSuperRegister / needsAddressSizeOverride are not exported (nm -D --defined-only), otherwise the X86 mirror duplicates symbols.",
+    "time_pst": "2026-11-24T21:40:35-08:00",
+    "patch_set": 5,
+    "file": null,
+    "line": null
+  },
+  {
+    "timestamp": 1795585235,
+    "reviewer": {
+      "name": "Dongkyun Son",
+      "email": "dongkyun.s@samsung.com",
+      "username": "dkson95"
+    },
+    "message": "Patch Set 6:\n\nReview of PS6 (no vote).\n\nAddresses items 1 and 2 from the PS5 review:\n- clang-analyzer Obsoletes moved from llvm to clang; the llvm comment is corrected.\n- analyze-build, intercept-build, scan-build and scan-build-py moved from the llvm %files to the clang %files. clang already Requires llvm, so there is no cycle.\n- llvm-tools-subpkgs.spec description updated to match the new ownership.\n\nVerified: the spec parses (rpmspec -q --srpm exits 0) and the diff has no whitespace errors. No gbs build yet.\n\nNon-blocking items 3-5 from the PS5 review are not addressed in this patchset.",
+    "time_pst": "2026-11-24T21:40:35-08:00",
+    "patch_set": 6,
+    "file": null,
+    "line": null
+  },
+  {
+    "timestamp": 1795585395,
+    "reviewer": {
+      "name": "Dongkyun Son",
+      "email": "dongkyun.s@samsung.com",
+      "username": "dkson95"
+    },
+    "message": "Patch Set 6: Code-Review+1 Verified+1",
+    "time_pst": "2026-11-24T21:43:15-08:00",
+    "patch_set": 6,
+    "file": null,
+    "line": null
+  }
+]

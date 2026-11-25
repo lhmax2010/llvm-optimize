@@ -1,0 +1,37 @@
+diff --git a/packaging/llvm-tools-subpkgs.spec b/packaging/llvm-tools-subpkgs.spec
+index f76c3ce8fdc6257d0e0b3cc0986b06b999342469..6fc901a8eac1367a4b3a032a7fa142f5919f8946 100644
+--- a/packaging/llvm-tools-subpkgs.spec
++++ b/packaging/llvm-tools-subpkgs.spec
+@@ -44,3 +44,3 @@ Standalone subpackages for LLVM debugging and analysis tools:
+-The tools below (scan-build, llvm-xray, llvm-cov, llvm-profgen, llvm-profdata,
+-and the analyzer libexec scripts) now ship from the llvm and clang packages,
+-because llvm-devel's exports and the clang-analyzer files need them there.
++The tools below now ship from the llvm and clang packages: llvm-xray, llvm-cov,
++llvm-profgen and llvm-profdata from llvm; scan-build and the analyzer libexec
++scripts from clang.
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index b83f8dba673ec1b4705abe99c6d8601f61ae4361..b6c3a914ed93570bde7f14e3e140e0d9b2bb9b97 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -111,6 +111,2 @@ Requires: libllvm = %{version}-%{release}
+-# scan-build (Perl) also needs clang installed at runtime; llvm does not
+-# require it (requiring clang here would make llvm and clang depend on
+-# each other)
+-# clang-analyzer, llvm-xray and llvm-prof-tools used to be separate
+-# subpackages (llvm-tools-subpkgs.spec) that owned these files; llvm takes them over
+-Obsoletes: clang-analyzer <= %{version}-%{release}
++# llvm-xray and llvm-prof-tools used to be separate subpackages
++# (llvm-tools-subpkgs.spec) that owned these files; llvm takes them over
+@@ -156,0 +153 @@ Provides: libclang.so.%{version}
++Obsoletes: clang-analyzer <= %{version}-%{release}
+@@ -805,2 +801,0 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+-%{_prefix}/bin/analyze-build
+-%{_prefix}/bin/intercept-build
+@@ -880,2 +874,0 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+-%{_prefix}/bin/scan-build
+-%{_prefix}/bin/scan-build-py
+@@ -938,0 +932,4 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
++%{_prefix}/bin/analyze-build
++%{_prefix}/bin/intercept-build
++%{_prefix}/bin/scan-build
++%{_prefix}/bin/scan-build-py
