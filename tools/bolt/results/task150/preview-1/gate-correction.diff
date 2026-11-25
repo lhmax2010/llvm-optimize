@@ -1,0 +1,91 @@
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index d8d507ae9b58..047d4f0c4b89 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -184,12 +184,47 @@ def pgo_runtime_target(output):
+         and re.fullmatch(r'[0-9][0-9.]*', version) and resource == 'lib'
+         for lib, clang, version, resource in zip(parts, parts[1:], parts[2:], parts[3:])
+     )
+-    return (resource_dir
+-            or bool({'compiler-rt', 'openmp', 'runtimes', 'offload'} & set(parts))
++    # clang-tidy's OpenMP checks belong to the Clang tooling build.
++    openmp_runtime = any(part == 'openmp' and previous != 'clang-tidy'
++                         for previous, part in zip(('', *parts), parts))
++    return (resource_dir or openmp_runtime
++            or bool({'compiler-rt', 'runtimes', 'offload'} & set(parts))
+             or path.name.startswith(('clang_rt.', 'libclang_rt.', 'libomp.', 'libompd.',
+                                      'libarcher.', 'libomptarget.')))
+ 
+ 
++def complete_ninja_rows(ninja, build, rows, env=None):
++    """Include targets omitted by compdb, such as commands without inputs."""
++    def tool(*args):
++        return subprocess.run([*ninja, '-t', *args], cwd=build, env=env, check=True,
++                              capture_output=True, text=True, timeout=60).stdout
++
++    covered = {row['output'] for row in rows}
++    for line in tool('targets', 'all').splitlines():
++        output, separator, rule = line.rpartition(': ')
++        if not separator:
++            raise ValueError(f'could not parse Ninja target: {line}')
++        if rule == 'phony' or output in covered:
++            continue
++        command = tool('commands', '-s', output).rstrip('\n')
++        if command:
++            rows.append({'directory': str(build), 'output': output, 'command': command,
++                         'file': '', 'compdb_omitted': True})
++    return rows
++
++
++def pgo_link_commands(tokens):
++    # Ninja link rules can append shell commands such as cmake -E create_symlink.
++    segment = []
++    for token in (*tokens, '&&'):
++        if token in ('&&', '||', '|', ';'):
++            if '-o' in segment and not {'-c', '-E', '-S', '-fsyntax-only'}.intersection(segment):
++                yield segment
++            segment = []
++        else:
++            segment.append(token)
++
++
+ def scan_pgo_commands(commands, expected, runtime_only=False):
+     counts = {'edges': 0, 'compile': 0, 'profile_use': 0, 'runtime_compile': 0}
+     violations = []
+@@ -211,9 +246,12 @@ def scan_pgo_commands(commands, expected, runtime_only=False):
+                    or any(word in ('cd', '--build') and pgo_runtime_target(path)
+                           for word, path in zip(tokens, tokens[1:]))
+                    or any(word.startswith('--build=') and pgo_runtime_target(word[8:]) for word in tokens))
+-        compiles = ('-c' in tokens
+-                    and Path(source).suffix in ('.c', '.cc', '.cpp', '.cxx', '.C', '.m', '.mm'))
+-        links = '-o' in tokens and not {'-c', '-E', '-S', '-fsyntax-only'}.intersection(tokens)
++        suffixes = ('.c', '.cc', '.cpp', '.cxx', '.C', '.m', '.mm')
++        if not source and row.get('compdb_omitted') and '-c' in tokens:
++            source = next((arg for arg in tokens if not arg.startswith('-')
++                           and Path(arg).suffix in suffixes), '')
++        compiles = '-c' in tokens and Path(source).suffix in suffixes
++        links = list(pgo_link_commands(tokens))
+         if compiles:
+             counts['compile'] += 1
+             counts['runtime_compile'] += int(runtime)
+@@ -225,7 +263,9 @@ def scan_pgo_commands(commands, expected, runtime_only=False):
+             reason = 'unexpected PGO option with PGO disabled' if flags else ''
+         else:
+             category = 'main_compile' if compiles else 'link' if links else 'other'
+-            valid = flags == required or (links and flags == required * 2)
++            duplicate_link = (flags == required * 2
++                              and any(link.count(required[0]) == 2 for link in links))
++            valid = flags == required or duplicate_link
+             if compiles and valid:
+                 counts['profile_use'] += 1
+             reason = 'wrong PGO option' if (compiles or flags) and not valid else ''
+@@ -259,7 +299,8 @@ def verify_pgo_ninja(build, enabled=False):
+         require(profile['path'] == expected and digest(expected) == profile['sha256'],
+                 'configured profdata identity mismatch')
+     run = subprocess.run(['ninja', '-t', 'compdb', '-x'], cwd=build, check=True, capture_output=True)
+-    result = check_pgo_commands(json.loads(run.stdout), expected)
++    rows = complete_ninja_rows(['ninja'], build, json.loads(run.stdout))
++    result = check_pgo_commands(rows, expected)
+     print('PGO_NINJA_CHECK', json.dumps(result), flush=True)
+     if enabled:
+         print('PGO_MATCH UNKNOWN method-not-qualified', flush=True)

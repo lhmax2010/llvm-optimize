@@ -13,6 +13,7 @@ EVIDENCE = WORK.with_name(WORK.name + "-bolt")
 sys.path.insert(0, str(EVIDENCE / "tools/skills/tizen-llvm-offline-profile/scripts"))
 from pgo_pair import check_compile_db
 from pgo_pair import scan_pgo_commands as skill_scan
+from pgo_pair import complete_ninja_rows as skill_complete
 
 helper = WORK / "temp/task131/pgo-dev/packaging/clang-bolt-helper.py"
 spec = importlib.util.spec_from_file_location("recipe_helper", helper)
@@ -91,6 +92,37 @@ class PgoGateTests(unittest.TestCase):
     def test_a_bad_shell_token_does_not_stop_the_scan(self):
         report = self.both([{"output": "x", "command": "clang++ '"}, compile_edge("next.o")])
         self.assertEqual([item["category"] for item in report["violations"]], ["parse", "main_compile"])
+
+    def test_inputless_edges_are_checked(self):
+        targets = "seen.o: compile\ncustom.o: CUSTOM_COMMAND\nphony_target: phony\n"
+        fallback = "clang++ -c input.cpp -o custom.o\n"
+        rows = [compile_edge("seen.o", FLAG)]
+        for complete in (recipe.complete_ninja_rows, skill_complete):
+            with patch("subprocess.run", side_effect=[
+                    subprocess.CompletedProcess([], 0, targets),
+                    subprocess.CompletedProcess([], 0, fallback)]) as calls:
+                result = complete(["/usr/bin/ninja"], Path("/build"), rows.copy())
+            self.assertEqual(calls.call_args_list[-1].args[0],
+                             ["/usr/bin/ninja", "-t", "commands", "-s", "custom.o"])
+            violation = self.both(result)["violations"][0]
+            self.assertEqual((violation["output"], violation["category"]), ("custom.o", "main_compile"))
+
+    def test_first_preview_classification(self):
+        evidence = EVIDENCE / "tools/bolt/results/task150/preview-1/ninja-gate.json"
+        rows = json.loads(evidence.read_text())["violations"]
+        self.assertEqual(len(rows), 5)
+        for row in rows:
+            if "clang-tidy/openmp" in row["output"]:
+                row["file"] = "../clang-tools-extra/clang-tidy/openmp/" + Path(row["output"]).stem
+        report = self.both(rows)
+        self.assertEqual(report["violation_count"], 0)
+        self.assertEqual(report["profile_use"], 3)
+        self.assertEqual(report["runtime_compile"], 0)
+
+    def test_duplicate_flags_must_share_one_link_command(self):
+        rows = [{"output": "ld.lld",
+                 "command": f"clang++ {FLAG} -o lld a.o && clang++ {FLAG} -o f b.o"}]
+        self.assertEqual(self.both(rows)["violation_count"], 1)
 
 
 if __name__ == "__main__":

@@ -114,10 +114,45 @@ def pgo_runtime_target(output):
         and re.fullmatch(r'[0-9][0-9.]*', version) and resource == 'lib'
         for lib, clang, version, resource in zip(parts, parts[1:], parts[2:], parts[3:])
     )
-    return (resource_dir
-            or bool({'compiler-rt', 'openmp', 'runtimes', 'offload'} & set(parts))
+    # clang-tidy's OpenMP checks belong to the Clang tooling build.
+    openmp_runtime = any(part == 'openmp' and previous != 'clang-tidy'
+                         for previous, part in zip(('', *parts), parts))
+    return (resource_dir or openmp_runtime
+            or bool({'compiler-rt', 'runtimes', 'offload'} & set(parts))
             or path.name.startswith(('clang_rt.', 'libclang_rt.', 'libomp.', 'libompd.',
                                      'libarcher.', 'libomptarget.')))
+
+
+def complete_ninja_rows(ninja, build, rows, env=None):
+    """Include targets omitted by compdb, such as commands without inputs."""
+    def tool(*args):
+        return subprocess.run([*ninja, '-t', *args], cwd=build, env=env, check=True,
+                              capture_output=True, text=True, timeout=60).stdout
+
+    covered = {row['output'] for row in rows}
+    for line in tool('targets', 'all').splitlines():
+        output, separator, rule = line.rpartition(': ')
+        if not separator:
+            raise ValueError(f'could not parse Ninja target: {line}')
+        if rule == 'phony' or output in covered:
+            continue
+        command = tool('commands', '-s', output).rstrip('\n')
+        if command:
+            rows.append({'directory': str(build), 'output': output, 'command': command,
+                         'file': '', 'compdb_omitted': True})
+    return rows
+
+
+def pgo_link_commands(tokens):
+    # Ninja link rules can append shell commands such as cmake -E create_symlink.
+    segment = []
+    for token in (*tokens, '&&'):
+        if token in ('&&', '||', '|', ';'):
+            if '-o' in segment and not {'-c', '-E', '-S', '-fsyntax-only'}.intersection(segment):
+                yield segment
+            segment = []
+        else:
+            segment.append(token)
 
 
 def scan_pgo_commands(commands, expected, runtime_only=False):
@@ -141,9 +176,12 @@ def scan_pgo_commands(commands, expected, runtime_only=False):
                    or any(word in ('cd', '--build') and pgo_runtime_target(path)
                           for word, path in zip(tokens, tokens[1:]))
                    or any(word.startswith('--build=') and pgo_runtime_target(word[8:]) for word in tokens))
-        compiles = ('-c' in tokens
-                    and Path(source).suffix in ('.c', '.cc', '.cpp', '.cxx', '.C', '.m', '.mm'))
-        links = '-o' in tokens and not {'-c', '-E', '-S', '-fsyntax-only'}.intersection(tokens)
+        suffixes = ('.c', '.cc', '.cpp', '.cxx', '.C', '.m', '.mm')
+        if not source and row.get('compdb_omitted') and '-c' in tokens:
+            source = next((arg for arg in tokens if not arg.startswith('-')
+                           and Path(arg).suffix in suffixes), '')
+        compiles = '-c' in tokens and Path(source).suffix in suffixes
+        links = list(pgo_link_commands(tokens))
         if compiles:
             counts['compile'] += 1
             counts['runtime_compile'] += int(runtime)
@@ -155,7 +193,9 @@ def scan_pgo_commands(commands, expected, runtime_only=False):
             reason = 'unexpected PGO option with PGO disabled' if flags else ''
         else:
             category = 'main_compile' if compiles else 'link' if links else 'other'
-            valid = flags == required or (links and flags == required * 2)
+            duplicate_link = (flags == required * 2
+                              and any(link.count(required[0]) == 2 for link in links))
+            valid = flags == required or duplicate_link
             if compiles and valid:
                 counts['profile_use'] += 1
             reason = 'wrong PGO option' if (compiles or flags) and not valid else ''
@@ -559,7 +599,10 @@ class Pipeline:
                 if not ninja.is_file():
                     raise RuntimeError(f"missing Ninja graph: {ninja}")
                 compdb = self.run(attempt, f"compdb-{index}", self.action(self.tool("ninja", "-t", "compdb", "-x"), cwd))
-                result = check_compile_db(read(compdb), self.profile, runtime_only=index != 0, report=True)
+                ninja_tool = self.tool("ninja")
+                env = {**os.environ, **self.cfg.get("environment", {}), **self.tool_environment(ninja_tool), "LC_ALL": "C"}
+                commands = complete_ninja_rows(ninja_tool, cwd, read(compdb), env)
+                result = check_compile_db(commands, self.profile, runtime_only=index != 0, report=True)
                 save(attempt / f"ninja-{index}.json", {"graph": str(ninja), **file_identity(ninja)})
                 graphs.extend([compdb, attempt / f"ninja-{index}.json"])
                 total["edges"] += result["edges"]

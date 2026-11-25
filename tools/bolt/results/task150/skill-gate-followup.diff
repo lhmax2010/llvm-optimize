@@ -1,0 +1,106 @@
+diff --git a/tools/skills/tizen-llvm-offline-profile/SKILL.md b/tools/skills/tizen-llvm-offline-profile/SKILL.md
+index 4718956c..0351b340 100644
+--- a/tools/skills/tizen-llvm-offline-profile/SKILL.md
++++ b/tools/skills/tizen-llvm-offline-profile/SKILL.md
+@@ -28,7 +28,7 @@ Dry-run prints argv, selected stages and budgets without launching a subprocess.
+ 1. **instrumented-build.** Run the configured offline GBS commands in the instrumented packaging copy. Pass -DLLVM_BUILD_INSTRUMENTED=IR to CMake and build the instrumented Clang and profile runtime. Use the same project snapshot, target configuration and feature set as the intended PGO build. Deliver the instrumented Clang and the LLVM-version-matched llvm-profdata. Record source tree, spec and build configuration identities, actual CMake argv, versions, hashes and instrumentation warnings. Stop on build or tool-identity failure.
+ 2. **ir-train.** Run the instrumented Clang once per training row using the row's ordered argv followed by -c INPUT -o OBJECT. Set LLVM_PROFILE_FILE to a separate directory for each row with a %m-%p.profraw filename. Verify each input hash before training. Expect one fresh nonempty profraw per row. Retain the argv, raw profiles, build/training warning counts and first warning. Stop on a failed compile or ambiguous/missing profile output.
+ 3. **merge-profdata.** Run llvm-profdata merge -o CLANG.PROFDATA with the 23 inventoried profiles. Record the input and output hashes, version and merge log. An approved inspection may also run llvm-profdata show to verify the instrumentation level. Stop on missing inputs, merge failure or empty profdata.
+-4. **pgo-build.** Stage profdata in the offline packaging copy and expose it at the actual path visible to CMake. Build the shipping configuration with -DLLVM_PROFDATA_FILE=PATH and ordinary Clang, with the release BOLT rewrite deferred. Keep the expected ThinLTO/MLGO and hybrid-link settings. Exclude compiler-rt, OpenMP and other runtime targets from PGO in CMake. Use the source recipe's native archive conversion and normal installation to produce the shipping payload. Verify the main and any separate runtime Ninja graphs via ninja -t compdb -x. Main C/C++ compile commands use exactly one -fprofile-instr-use=PATH. A link command may repeat that exact option once. Runtime commands, including compiler resource library outputs and compiler-rt or OpenMP sub-builds, carry no PGO flags. Read ninja-gate.json for the complete list of violations. Scan the resulting installed executables, shared libraries and every shipped archive member for instrumentation. Record the graph identity, audited payload root and gate result; PGO match stays UNKNOWN pending a validated method. Stop on a mismatch, missing graph or runtime dependency.
++4. **pgo-build.** Stage profdata in the offline packaging copy and expose it at the actual path visible to CMake. Build the shipping configuration with -DLLVM_PROFDATA_FILE=PATH and ordinary Clang, with the release BOLT rewrite deferred. Keep the expected ThinLTO/MLGO and hybrid-link settings. Exclude compiler-rt, OpenMP and other runtime targets from PGO in CMake. Use the source recipe's native archive conversion and normal installation to produce the shipping payload. Verify the main and any separate runtime Ninja graphs via ninja -t compdb -x and inspect commands for non-phony outputs it omits. Main C/C++ compile commands use exactly one -fprofile-instr-use=PATH. A link command may repeat that exact option once. Runtime commands, including compiler resource library outputs and compiler-rt or OpenMP sub-builds, carry no PGO flags. Read ninja-gate.json for the complete list of violations. Scan the resulting installed executables, shared libraries and every shipped archive member for instrumentation. Record the graph identity, audited payload root and gate result; PGO match stays UNKNOWN pending a validated method. Stop on a mismatch, missing graph or runtime dependency.
+ 5. **bolt-tools-relink.** Configure BOLT in the matching PGO build tree, build llvm-bolt, merge-fdata and the matching instrumentation runtime. Use ninja -t commands -s bin/clang-22 to capture the exact original Clang link edge. Use the packaging helper's replay command (or a reviewed equivalent) to retain the original flags and objects and add --emit-relocs with a separate output and dependency path. Run that replay and llvm-strip --strip-debug to produce the BOLT input. Preserve the original compiler, relocation sections and link log. Verify relocation/debug-section handling and record tool, runtime and input hashes. Stop if the original edge, tools or relocations cannot be established.
+ 6. **bolt-instrument-train-merge.** Run llvm-bolt with -instrument, --thread-count=1, -runtime-instrumentation-lib=PATH, -instrumentation-file=PREFIX, -instrumentation-file-append-pid and -instrumentation-binpath=PATH. Compile the same 23 inputs with the instrumented compiler and original ordered flags. Inventory exactly one fresh nonempty fdata per row, then run merge-fdata and capture its standard output. Record the executable, files, argv and merged fdata hashes. Stop on missing profiles, changed inputs or tool/merge failure.
+ 7. **bolt-match.** Run the newly merged fdata against the exact input ELF from stage 5 using the release rewrite options shown by dry-run. Require a successful, trusted rewrite and -stale-threshold=5. Require both 100 × (S+U) ≤ 5 × (N+U) and 100 × S ≤ 5 × N. Persist N/M/S/U/Q and both ratios. infer-stale is forbidden. Fail closed on a truncated or malformed counter log, invalid counts or a nonzero return. Verify identity, retrain, or disable BOLT before proceeding. Keep the threshold fixed. See [gates.md](references/gates.md).
+diff --git a/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py b/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py
+index 963afb51..03ac70e1 100644
+--- a/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py
++++ b/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py
+@@ -114,12 +114,47 @@ def pgo_runtime_target(output):
+         and re.fullmatch(r'[0-9][0-9.]*', version) and resource == 'lib'
+         for lib, clang, version, resource in zip(parts, parts[1:], parts[2:], parts[3:])
+     )
+-    return (resource_dir
+-            or bool({'compiler-rt', 'openmp', 'runtimes', 'offload'} & set(parts))
++    # clang-tidy's OpenMP checks belong to the Clang tooling build.
++    openmp_runtime = any(part == 'openmp' and previous != 'clang-tidy'
++                         for previous, part in zip(('', *parts), parts))
++    return (resource_dir or openmp_runtime
++            or bool({'compiler-rt', 'runtimes', 'offload'} & set(parts))
+             or path.name.startswith(('clang_rt.', 'libclang_rt.', 'libomp.', 'libompd.',
+                                      'libarcher.', 'libomptarget.')))
+ 
+ 
++def complete_ninja_rows(ninja, build, rows, env=None):
++    """Include targets omitted by compdb, such as commands without inputs."""
++    def tool(*args):
++        return subprocess.run([*ninja, '-t', *args], cwd=build, env=env, check=True,
++                              capture_output=True, text=True, timeout=60).stdout
++
++    covered = {row['output'] for row in rows}
++    for line in tool('targets', 'all').splitlines():
++        output, separator, rule = line.rpartition(': ')
++        if not separator:
++            raise ValueError(f'could not parse Ninja target: {line}')
++        if rule == 'phony' or output in covered:
++            continue
++        command = tool('commands', '-s', output).rstrip('\n')
++        if command:
++            rows.append({'directory': str(build), 'output': output, 'command': command,
++                         'file': '', 'compdb_omitted': True})
++    return rows
++
++
++def pgo_link_commands(tokens):
++    # Ninja link rules can append shell commands such as cmake -E create_symlink.
++    segment = []
++    for token in (*tokens, '&&'):
++        if token in ('&&', '||', '|', ';'):
++            if '-o' in segment and not {'-c', '-E', '-S', '-fsyntax-only'}.intersection(segment):
++                yield segment
++            segment = []
++        else:
++            segment.append(token)
++
++
+ def scan_pgo_commands(commands, expected, runtime_only=False):
+     counts = {'edges': 0, 'compile': 0, 'profile_use': 0, 'runtime_compile': 0}
+     violations = []
+@@ -141,9 +176,12 @@ def scan_pgo_commands(commands, expected, runtime_only=False):
+                    or any(word in ('cd', '--build') and pgo_runtime_target(path)
+                           for word, path in zip(tokens, tokens[1:]))
+                    or any(word.startswith('--build=') and pgo_runtime_target(word[8:]) for word in tokens))
+-        compiles = ('-c' in tokens
+-                    and Path(source).suffix in ('.c', '.cc', '.cpp', '.cxx', '.C', '.m', '.mm'))
+-        links = '-o' in tokens and not {'-c', '-E', '-S', '-fsyntax-only'}.intersection(tokens)
++        suffixes = ('.c', '.cc', '.cpp', '.cxx', '.C', '.m', '.mm')
++        if not source and row.get('compdb_omitted') and '-c' in tokens:
++            source = next((arg for arg in tokens if not arg.startswith('-')
++                           and Path(arg).suffix in suffixes), '')
++        compiles = '-c' in tokens and Path(source).suffix in suffixes
++        links = list(pgo_link_commands(tokens))
+         if compiles:
+             counts['compile'] += 1
+             counts['runtime_compile'] += int(runtime)
+@@ -155,7 +193,9 @@ def scan_pgo_commands(commands, expected, runtime_only=False):
+             reason = 'unexpected PGO option with PGO disabled' if flags else ''
+         else:
+             category = 'main_compile' if compiles else 'link' if links else 'other'
+-            valid = flags == required or (links and flags == required * 2)
++            duplicate_link = (flags == required * 2
++                              and any(link.count(required[0]) == 2 for link in links))
++            valid = flags == required or duplicate_link
+             if compiles and valid:
+                 counts['profile_use'] += 1
+             reason = 'wrong PGO option' if (compiles or flags) and not valid else ''
+@@ -559,7 +599,10 @@ class Pipeline:
+                 if not ninja.is_file():
+                     raise RuntimeError(f"missing Ninja graph: {ninja}")
+                 compdb = self.run(attempt, f"compdb-{index}", self.action(self.tool("ninja", "-t", "compdb", "-x"), cwd))
+-                result = check_compile_db(read(compdb), self.profile, runtime_only=index != 0, report=True)
++                ninja_tool = self.tool("ninja")
++                env = {**os.environ, **self.cfg.get("environment", {}), **self.tool_environment(ninja_tool), "LC_ALL": "C"}
++                commands = complete_ninja_rows(ninja_tool, cwd, read(compdb), env)
++                result = check_compile_db(commands, self.profile, runtime_only=index != 0, report=True)
+                 save(attempt / f"ninja-{index}.json", {"graph": str(ninja), **file_identity(ninja)})
+                 graphs.extend([compdb, attempt / f"ninja-{index}.json"])
+                 total["edges"] += result["edges"]

@@ -1,0 +1,11 @@
+--- G4 spec
++++ configure-only spec
+@@ -499,6 +499,8 @@
+ test -f build.ninja || exit 1
+ python3 -B %{SOURCE1201} pgo-check-ninja "$PWD" || exit 1
+ %endif
++echo TASK150_CONFIGURE_ONLY_END
++exit 0
+ 
+ %if 0%{mlgo_verify_configure_only}
+   # ---- configure-only probe: guard against §0 traps; check sentinels, GBS exit code non-0 is expected ----
