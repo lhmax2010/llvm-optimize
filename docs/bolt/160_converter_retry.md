@@ -45,3 +45,27 @@ G1–G3 的输入与产物字节及 SHA256 已核对。保留原插桩来源，G
 [154-B 初始等待状态](../../tools/bolt/results/task160/154-wait-initial.json) · [G3 复用核对](../../tools/bolt/results/task160/recover-g3.json) · [G4–G8 dry-run](../../tools/bolt/results/task160/g4-g8-dry-run.json)
 
 2026-11-25T06:06:07-08:00 复测，/home 可用 273,551,409,152 B，距 154-B 的 302,154,457,695 B 线还差 28,603,048,543 B，MemAvailable 21,535,322,112 B。 [交接状态](../../tools/bolt/results/task160/handoff-status.json)
+
+## 160 补充 · 已完成的 12 个归档
+
+12 个原目录经独立 bundle 验证、镜像克隆 ref 核对和对象覆盖检查后删除。
+原目录释放 79,044,608 B，新增 bundle 分配 76,378,112 B，净释放 2,666,496 B。
+11 个大型原库及 3 个自测库在接续前仍保留。
+
+| Bundle（相对归档目录） | Ref 数 | 字节 | SHA256 |
+|---|---:|---:|---|
+| `09-archive-fix-full-build-20260927/test-package-bfd-4a09ebac/verified.bundle` | 1 | 3,888 | `aa24db039d54efcf18f197e5e7b8b6d1ece2fa7935e06ca0c8555cfe1f45bd15` |
+| `09-archive-fix-full-build-20260927/test-package-lld-6ad747a2/verified.bundle` | 1 | 3,871 | `b1c11584a40084dc8185f23bafb9d752ddaaa0128db0d112f179e37366da03da` |
+| `18-release-x86-full-build-20261013/round2-eight-output-proof_test-package-bfd-1b27e3f6/verified.bundle` | 1 | 6,107 | `cd5505935917856ed297f6c0e953a7d53d431a1b68703eed1ca184307d01a608` |
+| `18-release-x86-full-build-20261013/round2-eight-output-proof_test-package-lld-40f1e6ad/verified.bundle` | 1 | 6,107 | `806e098f1256be9e7c5c489a9b4d3554fcf2ef3cf0bb8553cc553e4b34958f98` |
+| `24-llvm-strip-alternative-20260929/test-package-bfd-03f3e641/verified.bundle` | 1 | 4,514 | `731b1abebcf3efe21fd325742fd892ccda3467f52b5a73743408146a42a3af4c` |
+| `24-llvm-strip-alternative-20260929/test-package-lld-c8f02f6f/verified.bundle` | 1 | 4,505 | `e74fed385f6aea2653cd4296739387ab3656c7cebcae0a1a948c9c3a5e88719d` |
+| `25-llvm-strip-x86_64-20261009/continue-20261009_test-package-bfd-2ca8bd4a/verified.bundle` | 1 | 5,810 | `859f0b39925ece69d146f4bebf19d29e0606f7dd97f1e85fbc1dc14a2cfee5d1` |
+| `25-llvm-strip-x86_64-20261009/continue-20261009_test-package-lld-81b277b8/verified.bundle` | 1 | 5,804 | `dcd392b4731b6bfcdd95b2094eba41b798490691cc6e6ccc9bc1c0f35f300051` |
+| `36-qb_analysis/work3_control_findutils-5ecf1d1e/verified.bundle` | 136 | 34,526,960 | `cede6c74ed7144d24a1065d8eb9e0233abf9285464a3aa98e52931055916bff1` |
+| `36-qb_analysis/work3_control_which-3a31a668/verified.bundle` | 61 | 161,861 | `7a2433a1290b22673aa38cdbb088b92f381109dbef3f4ce746018ff54d3a4c78` |
+| `36-qb_analysis/work3_coreutils-38da01e5/verified.bundle` | 162 | 7,091,459 | `197266ba9be06cd3ab965336fe42e6ec2beeec8d352afc6de651c63ebea72022` |
+| `36-qb_analysis/work3_findutils-01add93a/verified.bundle` | 136 | 34,526,960 | `cede6c74ed7144d24a1065d8eb9e0233abf9285464a3aa98e52931055916bff1` |
+
+[160 补充逐库清单](../../tools/bolt/results/task160/backup-supplement/small.json)
+
