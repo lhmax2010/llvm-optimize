@@ -1,0 +1,626 @@
+clang/tools/scan-build/CMakeLists.txt
+  31  set(ManPages
+  32        scan-build.1)
+  33  
+  34  set(ShareFiles
+  35        scanview.css
+  36        sorttable.js)
+  68    foreach(ManPage ${ManPages})
+  69      add_custom_command(OUTPUT "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/man1/${ManPage}"
+  70                         COMMAND ${CMAKE_COMMAND} -E make_directory
+  71                           "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/man1"
+  72                         COMMAND ${CMAKE_COMMAND} -E copy
+  73                           "${CMAKE_CURRENT_SOURCE_DIR}/man/${ManPage}"
+  74                           "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/man1/"
+  75                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/man/${ManPage})
+  76      list(APPEND Depends "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_MANDIR}/man1/${ManPage}")
+  77      install(FILES man/${ManPage}
+  78              DESTINATION "${CMAKE_INSTALL_MANDIR}/man1"
+  79              COMPONENT scan-build)
+  80    endforeach()
+  81  
+  82    foreach(ShareFile ${ShareFiles})
+  83      add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/share/scan-build/${ShareFile}
+  84                         COMMAND ${CMAKE_COMMAND} -E make_directory
+  85                           ${CMAKE_BINARY_DIR}/share/scan-build
+  86                         COMMAND ${CMAKE_COMMAND} -E copy
+  87                           ${CMAKE_CURRENT_SOURCE_DIR}/share/scan-build/${ShareFile}
+  88                           ${CMAKE_BINARY_DIR}/share/scan-build/
+  89                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/share/scan-build/${ShareFile})
+  90      list(APPEND Depends ${CMAKE_BINARY_DIR}/share/scan-build/${ShareFile})
+  91      install(FILES share/scan-build/${ShareFile}
+  92              DESTINATION "${CMAKE_INSTALL_DATADIR}/scan-build"
+  93              COMPONENT scan-build)
+  94    endforeach()
+
+clang/tools/scan-build/bin/scan-build
+ 111  sub DieDiag {
+ 112    if ($UseColor) {
+ 113      print STDERR BOLD, RED "$Prog: ";
+ 114      print STDERR RESET, RED @_;
+ 115      print STDERR RESET;
+ 116    }
+ 117    else {
+ 118      print STDERR "$Prog: ", @_;
+ 119    }
+ 120    exit 1;
+ 121  }
+ 122  
+ 123  ##----------------------------------------------------------------------------##
+ 124  # Print default checker names
+ 125  ##----------------------------------------------------------------------------##
+ 446  sub CopyFiles {
+ 447  
+ 448    my $Dir = shift;
+ 449  
+ 450    my $JS = Cwd::realpath("$RealBin/../share/scan-build/sorttable.js");
+ 451  
+ 452    DieDiag("Cannot find 'sorttable.js'.\n")
+ 453      if (! -r $JS);
+ 454  
+ 455    copy($JS, "$Dir");
+ 456  
+ 457    DieDiag("Could not copy 'sorttable.js' to '$Dir'.\n")
+ 458      if (! -r "$Dir/sorttable.js");
+ 459  
+ 460    my $CSS = Cwd::realpath("$RealBin/../share/scan-build/scanview.css");
+ 461  
+ 462    DieDiag("Cannot find 'scanview.css'.\n")
+ 463      if (! -r $CSS);
+ 464  
+ 465    copy($CSS, "$Dir");
+ 466  
+ 467    DieDiag("Could not copy 'scanview.css' to '$Dir'.\n")
+ 468      if (! -r $CSS);
+ 469  }
+ 893        print OUT "</table>\n";
+ 894      }
+ 895      print OUT "<p>Please consider submitting preprocessed files as <a href=\"http://clang-analyzer.llvm.org/filing_bugs.html\">bug reports</a>. <!-- REPORTCRASHES --> </p>\n";
+ 896    }
+ 897  
+ 898    print OUT "</body></html>\n";
+ 899    close(OUT);
+ 900    CopyFiles($Dir);
+ 901  
+ 902    # Make sure $Dir and $BaseDir are world readable/executable.
+ 903    chmod(0755, $Dir);
+ 904    if (defined $BaseDir) { chmod(0755, $BaseDir); }
+ 905  
+ 906    # Print statistics
+ 907    print CalcStats(\@Stats) if $AnalyzerStats;
+ 908  
+ 909    my $Num = scalar(@Index);
+ 910    if ($Num == 1) {
+ 911      Diag("$Num bug found.\n");
+ 941        if ($Options{ViewResults} and -r "$Options{OutputDir}/index.html") {
+ 942          Diag "Viewing analysis results in '$Options{OutputDir}' using scan-view.\n";
+ 943          my $ScanView = Cwd::realpath("$RealBin/scan-view");
+ 944          if (! -x $ScanView) { $ScanView = "scan-view"; }
+ 945          if (! -x $ScanView) { $ScanView = Cwd::realpath("$RealBin/../../scan-view/bin/scan-view"); }
+ 946          if (! -x $ScanView) { $ScanView = `which scan-view`; chomp $ScanView; }
+ 947          exec $ScanView, "$Options{OutputDir}";
+ 948        }
+1909  # Determine the location of ccc-analyzer.
+1910  my $AbsRealBin = Cwd::realpath($RealBin);
+1911  my $Cmd = "$AbsRealBin/../libexec/ccc-analyzer";
+1912  my $CmdCXX = "$AbsRealBin/../libexec/c++-analyzer";
+1913  
+1914  # Portability: use less strict but portable check -e (file exists) instead of
+1915  # non-portable -x (file is executable). On some windows ports -x just checks
+1916  # file extension to determine if a file is executable (see Perl language
+1917  # reference, perlport)
+1918  if (!defined $Cmd || ! -e $Cmd) {
+1919    $Cmd = "$AbsRealBin/ccc-analyzer";
+1920    DieDiag("'ccc-analyzer' does not exist at '$Cmd'\n") if(! -e $Cmd);
+1921  }
+1922  if (!defined $CmdCXX || ! -e $CmdCXX) {
+1923    $CmdCXX = "$AbsRealBin/c++-analyzer";
+1924    DieDiag("'c++-analyzer' does not exist at '$CmdCXX'\n") if(! -e $CmdCXX);
+1925  }
+
+clang/tools/scan-view/CMakeLists.txt
+   1  option(CLANG_INSTALL_SCANVIEW "Install the scan-view tool" ON)
+   2  
+   3  set(BinFiles
+   4        scan-view)
+   5  
+   6  set(ShareFiles
+   7        ScanView.py
+   8        Reporter.py
+   9        startfile.py
+  10        bugcatcher.ico)
+  11  
+  12  if(CLANG_INSTALL_SCANVIEW)
+  27    foreach(ShareFile ${ShareFiles})
+  28      add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/share/scan-view/${ShareFile}
+  29                         COMMAND ${CMAKE_COMMAND} -E make_directory
+  30                           ${CMAKE_BINARY_DIR}/share/scan-view
+  31                         COMMAND ${CMAKE_COMMAND} -E copy
+  32                           ${CMAKE_CURRENT_SOURCE_DIR}/share/${ShareFile}
+  33                           ${CMAKE_BINARY_DIR}/share/scan-view/
+  34                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/share/${ShareFile})
+  35      list(APPEND Depends ${CMAKE_BINARY_DIR}/share/scan-view/${ShareFile})
+  36      install(FILES share/${ShareFile}
+  37              DESTINATION "${CMAKE_INSTALL_DATADIR}/scan-view"
+  38              COMPONENT scan-view)
+  39    endforeach()
+
+clang/tools/scan-view/bin/scan-view
+   1  #!/usr/bin/env python
+   2  
+   3  from __future__ import print_function
+   4  
+   5  """The clang static analyzer results viewer.
+   6  """
+   7  
+   8  import sys
+   9  import os
+  10  import posixpath
+  11  import threading
+  12  import time
+  13  try:
+  14      from urllib.request import urlopen
+  15  except ImportError:
+  16      from urllib2 import urlopen
+  17  import webbrowser
+  18  
+  19  # How long to wait for server to start.
+  20  kSleepTimeout = .05
+  21  kMaxSleeps = int(60 / kSleepTimeout)
+  22  
+  23  # Default server parameters
+  24  
+  25  kDefaultHost = '127.0.0.1'
+  26  kDefaultPort = 8181
+  27  kMaxPortsToTry = 100
+  28  
+  29  ###
+  30  
+  31  
+  32  def url_is_up(url):
+  33      try:
+  34          o = urlopen(url)
+  35      except IOError:
+  36          return False
+  37      o.close()
+  38      return True
+  39  
+  40  
+  41  def start_browser(port, options):
+  42      import webbrowser
+  43  
+  44      url = 'http://%s:%d' % (options.host, port)
+  45  
+  46      # Wait for server to start...
+  47      if options.debug:
+  48          sys.stderr.write('%s: Waiting for server.' % sys.argv[0])
+  49          sys.stderr.flush()
+  50      for i in range(kMaxSleeps):
+  51          if url_is_up(url):
+  52              break
+  53          if options.debug:
+  54              sys.stderr.write('.')
+  55              sys.stderr.flush()
+  56          time.sleep(kSleepTimeout)
+  57      else:
+  58          print('WARNING: Unable to detect that server started.', file=sys.stderr) 
+  59  
+  60      if options.debug:
+  61          print('%s: Starting webbrowser...' % sys.argv[0], file=sys.stderr)
+  62      webbrowser.open(url)
+  63  
+  64  
+  65  def run(port, options, root):
+  66      # Prefer to look relative to the installed binary
+  67      share = os.path.dirname(__file__) + "/../share/scan-view"
+  68      if not os.path.isdir(share):
+  69          # Otherwise look relative to the source
+  70          share = os.path.dirname(__file__) + "/../../scan-view/share"
+  71      sys.path.append(share)
+  72  
+  73      import ScanView
+  74      try:
+  75          print('Starting scan-view at: http://%s:%d' % (options.host,
+  76                                                         port))
+  77          print('  Use Ctrl-C to exit.')
+  78          httpd = ScanView.create_server((options.host, port),
+  79                                         options, root)
+  80          httpd.serve_forever()
+  81      except KeyboardInterrupt:
+  82          pass
+  83  
+  84  
+  85  def port_is_open(port):
+  86      try:
+  87          import socketserver
+  88      except ImportError:
+  89          import SocketServer as socketserver
+  90      try:
+  91          t = socketserver.TCPServer((kDefaultHost, port), None)
+  92      except:
+  93          return False
+  94      t.server_close()
+  95      return True
+  96  
+  97  
+  98  def main():
+  99      import argparse
+ 100      parser = argparse.ArgumentParser(description="The clang static analyzer "
+ 101                                                   "results viewer.")
+ 102      parser.add_argument("root", metavar="<results directory>", type=str)
+ 103      parser.add_argument(
+ 104          '--host', dest="host", default=kDefaultHost, type=str,
+ 105          help="Host interface to listen on. (default=%s)" % kDefaultHost)
+ 106      parser.add_argument('--port', dest="port", default=None, type=int,
+ 107                          help="Port to listen on. (default=%s)" % kDefaultPort)
+ 108      parser.add_argument("--debug", dest="debug", default=0,
+ 109                          action="count",
+ 110                          help="Print additional debugging information.")
+ 111      parser.add_argument("--auto-reload", dest="autoReload", default=False,
+ 112                          action="store_true",
+ 113                          help="Automatically update module for each request.")
+ 114      parser.add_argument("--no-browser", dest="startBrowser", default=True,
+ 115                          action="store_false",
+ 116                          help="Don't open a webbrowser on startup.")
+ 117      parser.add_argument("--allow-all-hosts", dest="onlyServeLocal",
+ 118                          default=True, action="store_false",
+ 119                          help='Allow connections from any host (access '
+ 120                               'restricted to "127.0.0.1" by default)')
+ 121      args = parser.parse_args()
+ 122  
+ 123      # Make sure this directory is in a reasonable state to view.
+ 124      if not posixpath.exists(posixpath.join(args.root, 'index.html')):
+ 125          parser.error('Invalid directory, analysis results not found!')
+ 126  
+ 127      # Find an open port. We aren't particularly worried about race
+ 128      # conditions here. Note that if the user specified a port we only
+ 129      # use that one.
+ 130      if args.port is not None:
+ 131          port = args.port
+ 132      else:
+ 133          for i in range(kMaxPortsToTry):
+ 134              if port_is_open(kDefaultPort + i):
+ 135                  port = kDefaultPort + i
+ 136                  break
+ 137          else:
+ 138              parser.error('Unable to find usable port in [%d,%d)' %
+ 139                           (kDefaultPort, kDefaultPort+kMaxPortsToTry))
+ 140  
+ 141      # Kick off thread to wait for server and start web browser, if
+ 142      # requested.
+ 143      if args.startBrowser:
+ 144          threading.Thread(target=start_browser, args=(port, args)).start()
+ 145  
+ 146      run(port, args, args.root)
+ 147  
+ 148  if __name__ == '__main__':
+ 149      main()
+
+clang/tools/scan-view/share/ScanView.py
+   8  import shutil
+   9  import threading
+  10  import time
+  11  import socket
+  12  import itertools
+  13  import configparser
+  14  
+  15  import Reporter
+  16  
+  17  ###
+ 447              return self.send_error(400, "Invalid report.")
+ 448  
+ 449          file = keys.get("FILE")
+ 450          if not file or not posixpath.exists(file):
+ 451              return self.send_error(400, 'File does not exist: "%s"' % file)
+ 452  
+ 453          import startfile
+ 454  
+ 455          if self.server.options.debug:
+ 456              print('%s: SERVER: opening "%s"' % (sys.argv[0], file), file=sys.stderr)
+ 457  
+ 458          status = startfile.open(file)
+ 459          if status:
+ 460              res = 'Opened: "%s"' % file
+ 749                              overrides["ScanView"]["reporter"] = i
+ 750                              break
+ 751                      overrides["Radar"]["Component"] = "llvm - checker"
+ 752                      overrides["Radar"]["Component Version"] = "X"
+ 753                      return self.send_report(None, overrides)
+ 754                  elif name == "favicon.ico":
+ 755                      return self.send_path(posixpath.join(kShare, "bugcatcher.ico"))
+ 756  
+ 757          # Match directory entries.
+ 758          if components[-1] == "":
+ 759              components[-1] = "index.html"
+
+clang/tools/scan-build-py/CMakeLists.txt
+   1  option(CLANG_INSTALL_SCANBUILDPY "Install the scan-build-py tools" ON)
+   2  
+   3  set (BinFiles
+   4       "analyze-build"
+   5       "intercept-build"
+   6       "scan-build")
+   7  
+   8  set (LibExecs
+   9       "analyze-c++"
+  10       "analyze-cc"
+  11       "intercept-c++"
+  12       "intercept-cc")
+  13  
+  14  set (LibScanbuild
+  15       "__init__.py"
+  16       "analyze.py"
+  17       "arguments.py"
+  18       "clang.py"
+  19       "compilation.py"
+  20       "intercept.py"
+  21       "report.py"
+  22       "shell.py")
+  23  
+  24  set (LibScanbuildResources
+  25       "scanview.css"
+  26       "selectable.js"
+  27       "sorttable.js")
+  28  
+  29  # libear is compiled dynamically in build_libear using the specified cc
+  30  # compiler.
+  31  set (LibEar
+  32       "__init__.py"
+  33       "config.h.in"
+  34       "ear.c")
+  35  
+  36  if(CLANG_INSTALL_SCANBUILDPY)
+  37    foreach(BinFile ${BinFiles})
+  38      if ("${BinFile}" STREQUAL "scan-build")
+  39        # Need to rename scan-build to scan-build-py to prevent overwriting
+  40        # scan-build Perl implementation.
+  41        add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/bin/scan-build-py
+  42                           COMMAND ${CMAKE_COMMAND} -E make_directory
+  43                             ${CMAKE_BINARY_DIR}/bin
+  44                           COMMAND ${CMAKE_COMMAND} -E copy
+  45                             ${CMAKE_CURRENT_SOURCE_DIR}/bin/scan-build
+  46                             ${CMAKE_BINARY_DIR}/bin/scan-build-py
+  47                           DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/bin/scan-build)
+  48        install (PROGRAMS "bin/scan-build"
+  49                 DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  50                 RENAME scan-build-py
+  51                 COMPONENT scan-build-py)
+  52        list(APPEND Depends ${CMAKE_BINARY_DIR}/bin/scan-build-py)
+  53      else()
+  54        add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/bin/${BinFile}
+  55                           COMMAND ${CMAKE_COMMAND} -E make_directory
+  56                             ${CMAKE_BINARY_DIR}/bin
+  57                           COMMAND ${CMAKE_COMMAND} -E copy
+  58                             ${CMAKE_CURRENT_SOURCE_DIR}/bin/${BinFile}
+  59                             ${CMAKE_BINARY_DIR}/bin/
+  60                           DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/bin/${BinFile})
+  61        install(PROGRAMS bin/${BinFile}
+  62                DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  63                COMPONENT scan-build-py)
+  64        list(APPEND Depends ${CMAKE_BINARY_DIR}/bin/${BinFile})
+  65      endif()
+  66    endforeach()
+  67  
+  68    foreach(lib ${LibExecs})
+  69      add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/libexec/${lib}
+  70                         COMMAND ${CMAKE_COMMAND} -E make_directory
+  71                           ${CMAKE_BINARY_DIR}/libexec
+  72                         COMMAND ${CMAKE_COMMAND} -E copy
+  73                           ${CMAKE_CURRENT_SOURCE_DIR}/libexec/${lib}
+  74                           ${CMAKE_BINARY_DIR}/libexec/
+  75                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/libexec/${lib})
+  76      list(APPEND Depends ${CMAKE_BINARY_DIR}/libexec/${lib})
+  77      install(PROGRAMS libexec/${lib}
+  78              DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}"
+  79              COMPONENT scan-build-py)
+  80    endforeach()
+  81  
+  82    foreach(lib ${LibScanbuild})
+  83      add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/lib/libscanbuild/${lib}
+  84                         COMMAND ${CMAKE_COMMAND} -E make_directory
+  85                           ${CMAKE_BINARY_DIR}/lib
+  86                         COMMAND ${CMAKE_COMMAND} -E make_directory
+  87                           ${CMAKE_BINARY_DIR}/lib/libscanbuild
+  88                         COMMAND ${CMAKE_COMMAND} -E copy
+  89                           ${CMAKE_CURRENT_SOURCE_DIR}/lib/libscanbuild/${lib}
+  90                           ${CMAKE_BINARY_DIR}/lib/libscanbuild/
+  91                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libscanbuild/${lib})
+  92      list(APPEND Depends ${CMAKE_BINARY_DIR}/lib/libscanbuild/${lib})
+  93      install(FILES lib/libscanbuild/${lib}
+  94              DESTINATION lib/libscanbuild
+  95              COMPONENT scan-build-py)
+  96    endforeach()
+  97  
+  98    foreach(resource ${LibScanbuildResources})
+  99      add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/lib/libscanbuild/resources/${resource}
+ 100                         COMMAND ${CMAKE_COMMAND} -E make_directory
+ 101                           ${CMAKE_BINARY_DIR}/lib
+ 102                         COMMAND ${CMAKE_COMMAND} -E make_directory
+ 103                           ${CMAKE_BINARY_DIR}/lib/libscanbuild
+ 104                         COMMAND ${CMAKE_COMMAND} -E make_directory
+ 105                           ${CMAKE_BINARY_DIR}/lib/libscanbuild/resources
+ 106                         COMMAND ${CMAKE_COMMAND} -E copy
+ 107                           ${CMAKE_CURRENT_SOURCE_DIR}/lib/libscanbuild/resources/${resource}
+ 108                           ${CMAKE_BINARY_DIR}/lib/libscanbuild/resources
+ 109                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libscanbuild/resources/${resource})
+ 110      list(APPEND Depends ${CMAKE_BINARY_DIR}/lib/libscanbuild/resources/${resource})
+ 111      install(FILES lib/libscanbuild/resources/${resource}
+ 112              DESTINATION lib/libscanbuild/resources
+ 113              COMPONENT scan-build-py)
+ 114    endforeach()
+ 115  
+ 116    foreach(lib ${LibEar})
+ 117      add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/lib/libear/${lib}
+ 118                         COMMAND ${CMAKE_COMMAND} -E make_directory
+ 119                           ${CMAKE_BINARY_DIR}/lib
+ 120                         COMMAND ${CMAKE_COMMAND} -E make_directory
+ 121                           ${CMAKE_BINARY_DIR}/lib/libear
+ 122                         COMMAND ${CMAKE_COMMAND} -E copy
+ 123                           ${CMAKE_CURRENT_SOURCE_DIR}/lib/libear/${lib}
+ 124                           ${CMAKE_BINARY_DIR}/lib/libear/
+ 125                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/lib/libear/${lib})
+ 126      list(APPEND Depends ${CMAKE_BINARY_DIR}/lib/libear/${lib})
+ 127      install(FILES lib/libear/${lib}
+ 128              DESTINATION lib/libear
+ 129              COMPONENT scan-build-py)
+ 130    endforeach()
+ 131  
+ 132    add_custom_target(scan-build-py ALL DEPENDS ${Depends})
+ 133    add_llvm_install_targets("install-scan-build-py"
+ 134                             DEPENDS scan-build-py
+ 135                             COMPONENT scan-build-py)
+ 136  endif()
+
+clang/tools/scan-build-py/bin/analyze-build
+   1  #!/usr/bin/env python3
+   2  # -*- coding: utf-8 -*-
+   3  # Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+   4  # See https://llvm.org/LICENSE.txt for license information.
+   5  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+   6  
+   7  import multiprocessing
+   8  import sys
+   9  import os.path
+  10  this_dir = os.path.dirname(os.path.realpath(__file__))
+  11  sys.path.append(os.path.join(os.path.dirname(this_dir), 'lib'))
+  12  
+  13  from libscanbuild.analyze import analyze_build
+  14  
+  15  if __name__ == '__main__':
+  16      multiprocessing.freeze_support()
+  17      sys.exit(analyze_build())
+
+clang/tools/scan-build-py/bin/intercept-build
+   1  #!/usr/bin/env python3
+   2  # -*- coding: utf-8 -*-
+   3  # Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+   4  # See https://llvm.org/LICENSE.txt for license information.
+   5  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+   6  
+   7  import multiprocessing
+   8  import sys
+   9  import os.path
+  10  this_dir = os.path.dirname(os.path.realpath(__file__))
+  11  sys.path.append(os.path.join(os.path.dirname(this_dir), 'lib'))
+  12  
+  13  from libscanbuild.intercept import intercept_build
+  14  
+  15  if __name__ == '__main__':
+  16      multiprocessing.freeze_support()
+  17      sys.exit(intercept_build())
+
+clang/tools/scan-build-py/bin/scan-build
+   1  #!/usr/bin/env python3
+   2  # -*- coding: utf-8 -*-
+   3  # Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+   4  # See https://llvm.org/LICENSE.txt for license information.
+   5  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+   6  
+   7  import multiprocessing
+   8  import sys
+   9  import os.path
+  10  this_dir = os.path.dirname(os.path.realpath(__file__))
+  11  sys.path.append(os.path.join(os.path.dirname(this_dir), 'lib'))
+  12  
+  13  from libscanbuild.analyze import scan_build
+  14  
+  15  if __name__ == '__main__':
+  16      multiprocessing.freeze_support()
+  17      sys.exit(scan_build())
+
+clang/tools/scan-build-py/lib/libscanbuild/intercept.py
+  23  import os
+  24  import os.path
+  25  import re
+  26  import itertools
+  27  import json
+  28  import glob
+  29  import logging
+  30  from libear import build_libear, TemporaryDirectory
+  31  from libscanbuild import (
+  32      command_entry_point,
+  33      compiler_wrapper,
+  34      wrapper_environment,
+  35      run_command,
+  36      run_build,
+
+clang/tools/scan-build-py/lib/libscanbuild/report.py
+   1  # -*- coding: utf-8 -*-
+   2  # Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+   3  # See https://llvm.org/LICENSE.txt for license information.
+   4  # SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+   5  """ This module is responsible to generate 'index.html' for the report.
+   6  
+   7  The input for this step is the output directory, where individual reports
+   8  could be found. It parses those reports and generates 'index.html'. """
+   9  
+  10  import re
+  11  import os
+  12  import os.path
+  13  import sys
+  14  import shutil
+  15  import plistlib
+  16  import glob
+  17  import json
+  18  import logging
+  19  import datetime
+  20  from libscanbuild import duplicate_check
+  21  from libscanbuild.clang import get_version
+  22  
+  23  __all__ = ["document"]
+  24  
+  25  
+  26  def document(args):
+  27      """Generates cover report and returns the number of bugs/crashes."""
+  28  
+  29      html_reports_available = args.output_format in {"html", "plist-html", "sarif-html"}
+  30      sarif_reports_available = args.output_format in {"sarif", "sarif-html"}
+  31  
+  32      logging.debug("count crashes and bugs")
+  33      crash_count = sum(1 for _ in read_crashes(args.output))
+  34      bug_counter = create_counters()
+  35      for bug in read_bugs(args.output, html_reports_available):
+  36          bug_counter(bug)
+  37      result = crash_count + bug_counter.total
+  38  
+  39      if html_reports_available and result:
+  40          use_cdb = os.path.exists(args.cdb)
+  41  
+  42          logging.debug("generate index.html file")
+  43          # common prefix for source files to have sorter path
+  44          prefix = commonprefix_from(args.cdb) if use_cdb else os.getcwd()
+  45          # assemble the cover from multiple fragments
+  46          fragments = []
+  47          try:
+  48              if bug_counter.total:
+  49                  fragments.append(bug_summary(args.output, bug_counter))
+  50                  fragments.append(bug_report(args.output, prefix))
+  51              if crash_count:
+  52                  fragments.append(crash_report(args.output, prefix))
+  53              assemble_cover(args, prefix, fragments)
+  54              # copy additional files to the report
+  55              copy_resource_files(args.output)
+  56              if use_cdb:
+  57                  shutil.copy(args.cdb, args.output)
+  58          finally:
+  59              for fragment in fragments:
+  60                  os.remove(fragment)
+  61  
+  62      if sarif_reports_available:
+  63          logging.debug("merging sarif files")
+  64          merge_sarif_files(args.output)
+  65  
+
+packaging/llvm.spec
+ 753  ln -sf %{sdk_bin_dir}/lldb %{buildroot}%{_prefix}/bin/
+ 754  
+ 755  cp -P %{buildroot}%{_libdir}/liblldb.so* %{buildroot}%{sdk_lib_dir}/
+ 756  
+ 757  # Install the clang python bits
+ 758  mkdir -p %{buildroot}%{python3_sitelib}
+ 759  cp -a ../clang/bindings/python/clang %{buildroot}%{python3_sitelib}/
+ 760  
+ 761  rm -rf %{buildroot}%{_libdir}/debug/*
+ 762  rm -rf %{buildroot}/usr/lib/libear/*
+ 763  rm -rf %{buildroot}/usr/lib/libscanbuild/*
+ 764  

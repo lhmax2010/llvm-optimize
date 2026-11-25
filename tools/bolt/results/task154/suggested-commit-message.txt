@@ -1,0 +1,42 @@
+packaging: split tool subpackages into a standalone llvm-tools-subpkgs spec
+
+* 3a5189033a1f - packaging: move tool subpackages to a standalone llvm-tools-subpkgs spec
+* d364b338759a - bolt: create ZLIB/LibXml2 targets in standalone build
+* 28e72ec6b05d - bolt: mirror X86 mnemonic tables and helpers for standalone build
+* 1b9c1ce174de - packaging: add --build-id=sha1 to toolchain linker flags
+* 0cc528da035e - bolt: standalone build fixes for LLVM_LINK_LLVM_DYLIB=ON
+* 3abe328e2c30 - packaging: build profiling tools and BOLT for armv7l (Tizen)
+* d3f74e4f484d - packaging: add Obsoletes and python3 Requires to llvm; tidy tools subpackages
+* c7edd8f43c66 - packaging: note that scan-build needs clang at runtime
+* 67304f964043 - packaging: install with DESTDIR and do not ship libgomp/libiomp5 links
+
+Build BOLT from the standalone llvm-tools-subpkgs spec against the
+installed LLVM packages on x86_64 and aarch64. That build links
+libLLVM.so, while in-tree BOLT keeps linking the LLVM component
+libraries; BOLT_LLVM_LINK_MODE selects the mode before its consumers.
+The X86 helper mirror is compiled only for the standalone dylib build
+and is listed in LLVM_OPTIONAL_SOURCES otherwise, and the inherited
+runtime C and C++ flags are cleared only for standalone builds.
+
+The standalone spec pins its LLVM provider build requirements to the
+LLVM version and checks that the installed providers share one version
+and release, sets BOLT_TARGETS_TO_BUILD per architecture and verifies
+target registration, keeps the distribution LDFLAGS, derives
+LLVM_LIBDIR_SUFFIX from %{_lib}, and lets CMake install merge-fdata
+once. bolt requires libllvm = %{version} at runtime.
+
+clang now ships scan-build, scan-build-py, analyze-build and
+intercept-build together with the libexec scripts, the report
+resources and the Python modules they use, and llvm ships the
+scan-view data next to scan-view. llvm and clang provide the
+llvm-xray, llvm-prof-tools and clang-analyzer names and obsolete
+their older versions.
+
+The --build-id=sha1 flag is added to the executable and shared-library
+linker flags; module linker flags keep their existing settings.
+
+Change-Id: Ie2c1d45cea6703a0caef72187397275a03e66468
+Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+Signed-off-by: Pareek Eshaan <e.pareek@samsung.com>
+Co-Authored-By: Cline SR
+Signed-off-by: Hao Lin <hao.lin@samsung.com>

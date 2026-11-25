@@ -1,0 +1,42 @@
+From 42f363793d46fbc80c924f908a987e769f083d03 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Wed, 25 Nov 2026 01:15:01 -0800
+Subject: [PATCH] bolt: undefine X86 mirror inclusion macros
+
+---
+ bolt/lib/Target/X86/X86BoltMnemonicTables.cpp | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/bolt/lib/Target/X86/X86BoltMnemonicTables.cpp b/bolt/lib/Target/X86/X86BoltMnemonicTables.cpp
+index 9ef03f65284daf269368e1ed6ff96fc7e4cecb5c..576af84608c950ca4f508146cc20619e616a417d 100644
+--- a/bolt/lib/Target/X86/X86BoltMnemonicTables.cpp
++++ b/bolt/lib/Target/X86/X86BoltMnemonicTables.cpp
+@@ -28,9 +28,11 @@
+ 
+ #define GET_REGINFO_MC_DESC
+ #include "X86GenRegisterInfo.inc"
++#undef GET_REGINFO_MC_DESC
+ 
+ #define GET_X86_MNEMONIC_TABLES_CPP
+ #include "X86GenMnemonicTables.inc"
++#undef GET_X86_MNEMONIC_TABLES_CPP
+ 
+ namespace llvm {
+ 
+@@ -42,6 +44,7 @@ unsigned X86::getOpcodeForShortImmediateForm(unsigned Opcode) {
+   default:
+     return Opcode;
+ #include "MCTargetDesc/X86EncodingOptimizationForImmediate.def"
++#undef ENTRY
+   }
+ }
+ 
+@@ -61,7 +64,7 @@ static bool isMemOperand(const MCInst &MI, unsigned Op, unsigned RegClassID) {
+ }
+ 
+ bool is16BitMemOperand(const MCInst &MI, unsigned Op,
+-                              const MCSubtargetInfo &STI) {
++                       const MCSubtargetInfo &STI) {
+   const MCOperand &Base = MI.getOperand(Op + X86::AddrBaseReg);
+   const MCOperand &Index = MI.getOperand(Op + X86::AddrIndexReg);
+ 
