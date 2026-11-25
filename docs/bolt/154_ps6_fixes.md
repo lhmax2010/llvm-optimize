@@ -44,3 +44,17 @@ Perl scan-build 的 450–468 行从相对安装位置读取 JS/CSS，900 行生
 ### 158 号补充核对
 
 154-B 增加 clang 依赖增量与 Python 模块、字节码核对，并逐项登记三个 Python 工具的 help 结果。启动顺序为 151 → 153 → 154-B，且 154-B 须取得 158 的语料终态收据。该收据已完成，准入和截止时间沿用原值。 [脚本与单测](158_bench_hardening.md)
+
+## B · 完整构建验证
+
+**PARTIAL**。
+
+- 第 1 轮 2026-11-25T08:32:02.183939-08:00 → 2026-11-25T11:35:57.986297-08:00，11035.8 秒，档位 4/4/1，MemoryMax 18,274,127,872 B。GBS PASS，RPM 文件比较 PASS。清理前后可用空间差 28,607,578,112 B。
+- 功能结果 {"status": "SKIPPED", "reason": "runtime-plan exited 1, raw output /home/linhao/Toolchain/development/llvm-optimize/archive/task154/attempt-1/evidence/runtime-plan.txt", "analyze-build": {"status": "SKIPPED", "reason": "runtime-plan exited 1, raw output /home/linhao/Toolchain/development/llvm-optimize/archive/task154/attempt-1/evidence/runtime-plan.txt"}, "intercept-build": {"status": "SKIPPED", "reason": "runtime-plan exited 1, raw output /home/linhao/Toolchain/development/llvm-optimize/archive/task154/attempt-1/evidence/runtime-plan.txt"}, "scan-build-py": {"status": "SKIPPED", "reason": "runtime-plan exited 1, raw output /home/linhao/Toolchain/development/llvm-optimize/archive/task154/attempt-1/evidence/runtime-plan.txt"}}。
+- clang Python 检查 {"new_requirements": [], "bytecode": "ABSENT", "status": "PASS"}。
+- 第 1 轮看门狗 未触发。详细原文见 [第 1 轮证据](../../tools/bolt/results/task154/attempt-1/evidence/)。
+- 第 1 轮 `analyze-build --help` · SKIPPED。
+- 第 1 轮 `intercept-build --help` · SKIPPED。
+- 第 1 轮 `scan-build-py --help` · SKIPPED。
+- 残留由 [sudo 清理脚本](../../tools/bolt/results/task154/sudo-clean.sh) 登记。
+[最终回执](../../tools/bolt/results/task154/final.json) · [本地大文件清单](../../tools/bolt/results/task154/local-files.json)
