@@ -8,7 +8,7 @@
 | G5 | SKIPPED | — | — | —/—/— | — → 2026-11-25T04:28:44-08:00 | 0 | — | — | 18881126400 | 293855117312 | — | G chain prerequisite did not pass |
 | G6 | SKIPPED | — | — | —/—/— | — → 2026-11-25T04:28:48-08:00 | 0 | — | — | 18922160128 | 293855035392 | — | G chain prerequisite did not pass |
 | G7 | SKIPPED | — | — | —/—/— | — → 2026-11-25T04:28:51-08:00 | 0 | — | — | 18921381888 | 293854916608 | — | G chain prerequisite did not pass |
-| G8 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
+| G8 | SKIPPED | — | — | —/—/— | — → 2026-11-25T04:28:56-08:00 | 0 | — | — | 18971430912 | 293854756864 | — | G chain prerequisite did not pass |
 
 本地配方 750d7a83475a3c3c6fecf545ea74ba110fc845f5。采用 150 最终仅配置预演，没有重复预演。G4 的配方在 CMake 后、编译前执行完整 Ninja 门禁。N2 已由 149-run 完成。
 
@@ -59,3 +59,13 @@ G6 等待截止 2026-11-26T06:00:00-08:00。整体截止 2026-11-26T20:00:00-08:
 ### G7
 
 [G7 JSON 与日志索引](../../tools/bolt/results/task151/G7.json)
+
+### G8
+
+[G8 JSON 与日志索引](../../tools/bolt/results/task151/G8.json)
+
+~~~json
+{
+  "artifacts": []
+}
+~~~
