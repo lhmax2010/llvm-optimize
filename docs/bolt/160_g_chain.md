@@ -8,7 +8,7 @@
 | G5 | SKIPPED | — | — | —/—/— | — → 2026-11-25T13:54:54-08:00 | 0 | — | — | 28049133568 | 248547352576 | — | G chain prerequisite did not pass |
 | G6 | SKIPPED | — | — | —/—/— | — → 2026-11-25T13:55:02-08:00 | 0 | — | — | 28018921472 | 248547192832 | — | G chain prerequisite did not pass |
 | G7 | SKIPPED | — | — | —/—/— | — → 2026-11-25T13:55:06-08:00 | 0 | — | — | 28039430144 | 248547115008 | — | G chain prerequisite did not pass |
-| G8 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
+| G8 | SKIPPED | — | — | —/—/— | — → 2026-11-25T13:55:10-08:00 | 0 | — | — | 28034629632 | 248547037184 | — | G chain prerequisite did not pass |
 
 本地配方 ce627fa087233d9da415887222009155fe8b5029。转换器重试修复未触及 PGO Ninja 门禁，沿用 150 的预演。G4 的配方在 CMake 后、编译前执行完整 Ninja 门禁。N2 已由 149-run 完成。
 
@@ -77,3 +77,13 @@ G6 等待截止 2026-11-27T06:00:00-08:00。整体截止 2026-11-27T20:00:00-08:
 ### G7
 
 [G7 JSON 与日志索引](../../tools/bolt/results/task160/g-chain/G7.json)
+
+### G8
+
+[G8 JSON 与日志索引](../../tools/bolt/results/task160/g-chain/G8.json)
+
+~~~json
+{
+  "artifacts": []
+}
+~~~
