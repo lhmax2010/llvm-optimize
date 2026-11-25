@@ -1,6 +1,6 @@
 # 160 · PGO/BOLT profile 重跑
 
-**进行中**
+**最终**
 
 |步骤|结论|档位|MemoryMax B|编译/ThinLTO/链接|起止 PST|等待 s|执行 s|cgroup 峰值 B|准入内存 B|准入磁盘 B|清理 df 差值 B|原因|
 |---|---|---|---:|---|---|---:|---:|---:|---:|---:|---:|---|
@@ -30,6 +30,10 @@ G6 等待截止 2026-11-27T06:00:00-08:00。整体截止 2026-11-27T20:00:00-08:
 [150 的配方和预演](150_g_chain.md) · [修复和候选报告](160_converter_retry.md) · [160 编排单测](../../tools/bolt/results/task160/g-chain/tests.txt)
 
 ## 日志与结果
+
+看门狗触发 False，结束时 /home 可用 248,546,959,360 B。
+需要 sudo 复核的残留 2 项。脚本仅保留在本地。
+[最终汇总 JSON](../../tools/bolt/results/task160/g-chain/summary.json)
 
 ### G4
 
