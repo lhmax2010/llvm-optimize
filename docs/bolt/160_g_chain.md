@@ -5,7 +5,7 @@
 |步骤|结论|档位|MemoryMax B|编译/ThinLTO/链接|起止 PST|等待 s|执行 s|cgroup 峰值 B|准入内存 B|准入磁盘 B|清理 df 差值 B|原因|
 |---|---|---|---:|---|---|---:|---:|---:|---:|---:|---:|---|
 | G4 | FAIL | dynamic | 23250112512 | 6/6/1 | 2026-11-25T11:41:50-08:00 → 2026-11-25T13:54:34-08:00 | 0.0 | 7963.344 | 23250112512 | 27545079808 | 310068699136 | -1630748672 | PermissionError: [Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0' -> '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G5/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0' |
-| G5 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
+| G5 | SKIPPED | — | — | —/—/— | — → 2026-11-25T13:54:54-08:00 | 0 | — | — | 28049133568 | 248547352576 | — | G chain prerequisite did not pass |
 | G6 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
 | G7 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
 | G8 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
@@ -50,5 +50,15 @@ G6 等待截止 2026-11-27T06:00:00-08:00。整体截止 2026-11-27T20:00:00-08:
   "archive_member_retries": [
     "[ 4766s] ARCHIVE_MEMBER_RETRY usr/lib64/libclangAST.a Disasm.cpp.o 8589934592 PASS"
   ]
+}
+~~~
+
+### G5
+
+[G5 JSON 与日志索引](../../tools/bolt/results/task160/g-chain/G5.json)
+
+~~~json
+{
+  "artifacts": []
 }
 ~~~
