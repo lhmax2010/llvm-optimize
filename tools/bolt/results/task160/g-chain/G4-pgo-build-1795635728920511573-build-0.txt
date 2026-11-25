@@ -1,0 +1,104 @@
+/usr/bin/git clone --quiet --shared --no-checkout /home/linhao/Toolchain/development/llvm-optimize/temp/task131/pgo-dev /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source checkout --quiet --detach ce627fa087233d9da415887222009155fe8b5029
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source rev-parse HEAD
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source status --porcelain --untracked-files=no
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source add -- /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source/packaging/clang-pgo.profdata.xz /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source/packaging/llvm-profiles.manifest
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source diff --cached --name-only
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source -c 'user.name=Hao Lin' -c user.email=hao.lin@samsung.com commit -m 'Stage locally generated IR profile for offline pairing'
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source rev-parse HEAD
+/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/gbs.conf export --spec llvm.spec --commit 0ef611d9153a4fc22bd93a1531cf970b0750b2d4 --upstream-branch sandbox/fangyu.he/llvm_optmize --upstream-tag upstream/22.1.8 --outdir-directly -o /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/export /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source
+/usr/bin/sudo -n /usr/bin/build --uid 1000:1000 --root /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0 --dist /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/build.conf --arch x86_64 --target x86_64-tizen-linux --stage=-bp --debug --baselibs --define 'jobs 6' --define '_smp_mflags -j6' --define '_costomized_smp_mflags -j6' --define 'mlgo_build_jobs 6' --define '_with_clang_pgo 1' --define '_without_clang_bolt 1' --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/packages/ --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/debug/ /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/export/llvm.spec
+/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs.conf build -A x86_64 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver -c 0ef611d9153a4fc22bd93a1531cf970b0750b2d4 --threads=6 --define 'jobs 6' --define '_smp_mflags -j6' --define '_costomized_smp_mflags -j6' --define 'mlgo_build_jobs 6' --define '_with_clang_pgo 1' --define '_without_clang_bolt 1' --define '_buildshell /var/tmp/llvm-stage-jobs/build-shell' --baselibs --style=tar --spec llvm.spec /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/source
+LLVM_BUILD_JOBS phase=rpm ninja=6
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/clang-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/clang-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/clang-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/clang-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/clang-devel-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/clang-devel-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/clang-devel-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/clang-devel-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/compiler-rt-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/compiler-rt-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/compiler-rt-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/compiler-rt-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/libllvm-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/libllvm-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/libllvm-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/libllvm-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/libomp-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/libomp-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/libomp-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/libomp-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/libomp-devel-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/libomp-devel-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/lldb-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/lldb-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/lldb-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/lldb-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/lldb-devel-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/lldb-devel-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/lldb-devel-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/lldb-devel-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-debugsource-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-debugsource-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-devel-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-devel-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-devel-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-devel-debuginfo-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-static-devel-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/llvm-static-devel-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/python-clang-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/RPMS/python-clang-22.1.8-1.x86_64.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/SRPMS/llvm-22.1.8-1.src.rpm
+/usr/bin/rpm -qp --qf '%{NAME}	%{VERSION}	%{RELEASE}	%{ARCH}
+' /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/SRPMS/llvm-22.1.8-1.src.rpm
