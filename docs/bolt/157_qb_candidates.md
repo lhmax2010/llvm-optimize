@@ -1,14 +1,15 @@
 # 157 · QB PGO 候选
 
-**等待 G4 的正式回执。** 预检已通过。候选与 sandbox 写操作未开始。
+固定配方 `750d7a83475a3c3c6fecf545ea74ba110fc845f5`，tree `0ab6abcd20184eeab988d139b28d2ef164707dcf`，直接父提交 `e42a56bd17f2870e184e48f7d0b8769f7b505d85`。PS5 `7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8` 是祖先。
 
-配方 `750d7a83475a3c3c6fecf545ea74ba110fc845f5`，tree `0ab6abcd20184eeab988d139b28d2ef164707dcf`，直接父提交 `e42a56bd17f2870e184e48f7d0b8769f7b505d85`。
-PS5 `7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8` 经祖先检查通过。PS5 至配方的 14 条新增提交说明通过 ASCII、STATUS 禁用词和扩展禁用词检查。
+候选面向 Toolchain 项目 T，当前 profile 只含 T 的映射。x86_64 的 RPM 展开使用 LLVM_PROFDATA_FILE，CMake 源码将它转换为 -fprofile-instr-use。验证通过脚本模式执行对应 CMake 片段，不配置或编译 LLVM。ARM 展开与集成提交逐字节比较。
 
-预检用 Tizen RPM 4.14.1 展开开关片段，x86_64 的 PGO 路径与混合链接生效，BOLT 无活动步骤，ARM 两架构与默认展开逐字节相同。CMake 脚本模式执行上游 profile-use 条件，在 C/C++ 标志中生成 `-fprofile-instr-use`。RPM 调用通过 `LLVM_PROFDATA_FILE` 传递路径。没有配置或编译 LLVM。正式展开和两个 manifest 校验将在 G4 PASS 后针对候选提交执行。
+| 候选 | 结论 | 集成提交 | QB 测试提交 | 远端分支或停止原因 |
+|---|---|---|---|---|
+| A | STOP | — | — | G4 FAIL: profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task151/G-profiles/pgo-build-1795596865301453852'}], 'started_at': '2026-11-25T08:53:12+00:00', 'admission': [{'at': '2026-11-25T08:53:12+00:00', 'memory': 19849625600, 'disk': {'/home': 303581949952, '/home/linhao/Toolchain/development/llvm-optimize/archive/task151/G-profiles': 303581949952}, 'admission_memory': 20304826368, 'stage': 'pgo-build', 'memory_max': 16009859072, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 16009859072}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G-profiles/pgo-build-1795596865301453852/build-0.txt', 'ended_at': '2026-11-25T12:25:55+00:00'} |
+| B | STOP | — | — | A prerequisites did not pass |
 
-等待单元 `llvm-opt-task157-qb-candidates.service`。A 只使用 Toolchain T 的映射。G3 预期 `52,530,416 B`，SHA256 `39171c4a5fcb6166ac86d6d47ad16c7890527a73e66c26f035fb910288f496aa`。B 等待 G6、G7、G8 PASS。技能生成器写 `UNQUALIFIED`，集成提交沿用生产打包端的 `READY` 门禁。按 158 号裁决，A 和 B 的 QB 专用测试提交显式允许 `UNQUALIFIED`，其余检查照常运行。B 使用 G8 生成的原件。[实现与单测](158_bench_hardening.md#第-0-步--157-manifest-状态)。
+远端 refs/heads 创建使用普通 push。pre-push 门禁要求 Gerrit 通告该引用的旧 SHA 全零，避免并发更新已存在分支。
 
-新建引用使用普通 Git push。pre-push 检查远端通告的旧 SHA 全零，并检查完整 sandbox 目标。预检模拟通过新建、拒绝已有引用、拒绝 refs/for 和拒绝多引用四种情况。QB 由用户触发。
-
-[预检原文](../../tools/bolt/results/task157/preflight/) · [等待单元](../../tools/bolt/results/task157/watch.py)
+[A 状态和阶段原文](../../tools/bolt/results/task157/A/result.json)
+[B 状态和阶段原文](../../tools/bolt/results/task157/B/result.json)
