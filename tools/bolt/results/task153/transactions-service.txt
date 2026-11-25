@@ -1,0 +1,133 @@
+Running as unit: llvm-opt-task153-transactions.service; invocation ID: b9631bd39cf643debb5922896c4015ea
+build-clang-new 0
+verify-empty-clang-new 0
+clang-new-provides 0
+clang-new-obsoletes 0
+clang-new-requires 0
+build-llvm-new 0
+verify-empty-llvm-new 0
+llvm-new-provides 0
+llvm-new-obsoletes 0
+llvm-new-requires 0
+build-consumer 0
+verify-empty-consumer 0
+consumer-provides 0
+consumer-obsoletes 0
+consumer-requires 0
+build-old-0 0
+verify-empty-old-0 0
+old-0-provides 0
+old-0-obsoletes 0
+old-0-requires 0
+build-old-1 0
+verify-empty-old-1 0
+old-1-provides 0
+old-1-obsoletes 0
+old-1-requires 0
+init-probe 0
+root-transaction-probe 1
+init-old-0 0
+old-0-install 0
+old-0-before 0
+old-0-upgrade-test 0
+old-0-after-test 0
+old-0-upgrade-disposable-db 0
+old-0-after 0
+init-old-1 0
+old-1-install 0
+old-1-before 0
+old-1-upgrade-test 0
+old-1-after-test 0
+old-1-upgrade-disposable-db 0
+old-1-after 0
+init-consumer 0
+consumer-without-provider 1
+new-clang-satisfies-consumer 0
+init-self 0
+new-clang-first-install 0
+self-before 0
+new-clang-self-test 0
+self-after 0
+version 0
+{
+  "state": "PASS",
+  "rpm": "RPM version 4.14.1",
+  "used_private_root": false,
+  "cases": [
+    {
+      "check": "old-analyzer-upgrade",
+      "evr": {
+        "epoch": "0",
+        "version": "22.1.8",
+        "release": "0"
+      },
+      "test_rc": 0,
+      "old_package_retained": false,
+      "status": "PASS",
+      "expected_old_package_retained": false,
+      "before": [
+        "clang-analyzer\t0\t22.1.8\t0"
+      ],
+      "after_test": [
+        "clang-analyzer\t0\t22.1.8\t0"
+      ],
+      "after": [
+        "llvm\t0\t22.1.8\t1",
+        "clang\t0\t22.1.8\t1"
+      ]
+    },
+    {
+      "check": "old-analyzer-upgrade",
+      "evr": {
+        "epoch": "0",
+        "version": "22.1.8",
+        "release": "2"
+      },
+      "test_rc": 0,
+      "old_package_retained": true,
+      "status": "PASS",
+      "expected_old_package_retained": true,
+      "before": [
+        "clang-analyzer\t0\t22.1.8\t2"
+      ],
+      "after_test": [
+        "clang-analyzer\t0\t22.1.8\t2"
+      ],
+      "after": [
+        "llvm\t0\t22.1.8\t1",
+        "clang-analyzer\t0\t22.1.8\t2",
+        "clang\t0\t22.1.8\t1"
+      ]
+    },
+    {
+      "check": "requires-clang-analyzer",
+      "rc": 0,
+      "missing_provider_rc": 1,
+      "status": "PASS"
+    },
+    {
+      "check": "no-self-obsoletion",
+      "rc": 0,
+      "status": "PASS",
+      "before": [
+        "clang\t0\t22.1.8\t1",
+        "llvm\t0\t22.1.8\t1"
+      ],
+      "after": [
+        "clang\t0\t22.1.8\t1",
+        "llvm\t0\t22.1.8\t1"
+      ]
+    }
+  ],
+  "testsolv": {
+    "state": "SKIPPED",
+    "path": [],
+    "reason": "No retained testsolv executable found"
+  }
+}
+Finished with result: success
+Main processes terminated with: code=exited/status=0
+Service runtime: 2.923s
+CPU time consumed: 639ms
+Memory peak: 256.0K
+Memory swap peak: 0B

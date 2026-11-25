@@ -46,3 +46,18 @@
 等待 151 主单元及子单元退出，并在远端 bolt-v4 上验证 151 汇总提交。之后按 145 B2 口径用 B1 的 RPM 作为 provider，构建补丁 1–3 的树，核对 bolt RPM 文件清单、目标注册和 `llvm-bolt --version`。补丁 1、2 的主 llvm spec 改动仅涉及 RPM 元数据和注释，由 1(a)、1(c) 覆盖，无需做一次主 llvm 完整构建。
 
 145 B2 回执未记录磁盘时间序列。采用清理前整个 task145 目录实测分配量 17,143,382,016 B 作保守准入代理。按 1.15 倍、15 GiB 和 30 GB 余量计算，准入为 65,821,016,679 B。内存按 139-D，至少分配 10 GiB，使用同档位的编译及 ThinLTO 并行值、单链接并发。历史 B2 用时约 17 分钟。截止 2026-11-26 20:00 PST，当时仍未准入则记为 SKIPPED。
+
+## 最终事务与构建结果
+
+- RPM 哑包事务 PASS。
+  - {"check": "old-analyzer-upgrade", "evr": {"epoch": "0", "version": "22.1.8", "release": "0"}, "test_rc": 0, "old_package_retained": false, "status": "PASS", "expected_old_package_retained": false, "before": ["clang-analyzer\t0\t22.1.8\t0"], "after_test": ["clang-analyzer\t0\t22.1.8\t0"], "after": ["llvm\t0\t22.1.8\t1", "clang\t0\t22.1.8\t1"]}
+  - {"check": "old-analyzer-upgrade", "evr": {"epoch": "0", "version": "22.1.8", "release": "2"}, "test_rc": 0, "old_package_retained": true, "status": "PASS", "expected_old_package_retained": true, "before": ["clang-analyzer\t0\t22.1.8\t2"], "after_test": ["clang-analyzer\t0\t22.1.8\t2"], "after": ["llvm\t0\t22.1.8\t1", "clang-analyzer\t0\t22.1.8\t2", "clang\t0\t22.1.8\t1"]}
+  - {"check": "requires-clang-analyzer", "rc": 0, "missing_provider_rc": 1, "status": "PASS"}
+  - {"check": "no-self-obsoletion", "rc": 0, "status": "PASS", "before": ["clang\t0\t22.1.8\t1", "llvm\t0\t22.1.8\t1"], "after": ["clang\t0\t22.1.8\t1", "llvm\t0\t22.1.8\t1"]}
+- libsolv SKIPPED。
+[事务原文](../../tools/bolt/results/task153/transactions/commands.json)
+- 145 B2 同款 standalone PASS。
+- bolt RPM 9 个路径与 145 B2 相同。llvm-bolt --version 通过，注册了 x86-64 和 aarch64。镜像编译单元有实测对象。
+- 已核对远端包含 151 汇总 e5993d01b9c6d0e2ccb9ad1daf8ff2062cc4cfc2。
+
+[最终状态及证据索引](../../tools/bolt/results/task153/final.json)

@@ -1,0 +1,76 @@
+{
+  "state": "PASS",
+  "rpm": "RPM version 4.14.1",
+  "used_private_root": false,
+  "cases": [
+    {
+      "check": "old-analyzer-upgrade",
+      "evr": {
+        "epoch": "0",
+        "version": "22.1.8",
+        "release": "0"
+      },
+      "test_rc": 0,
+      "old_package_retained": false,
+      "status": "PASS",
+      "expected_old_package_retained": false,
+      "before": [
+        "clang-analyzer\t0\t22.1.8\t0"
+      ],
+      "after_test": [
+        "clang-analyzer\t0\t22.1.8\t0"
+      ],
+      "after": [
+        "llvm\t0\t22.1.8\t1",
+        "clang\t0\t22.1.8\t1"
+      ]
+    },
+    {
+      "check": "old-analyzer-upgrade",
+      "evr": {
+        "epoch": "0",
+        "version": "22.1.8",
+        "release": "2"
+      },
+      "test_rc": 0,
+      "old_package_retained": true,
+      "status": "PASS",
+      "expected_old_package_retained": true,
+      "before": [
+        "clang-analyzer\t0\t22.1.8\t2"
+      ],
+      "after_test": [
+        "clang-analyzer\t0\t22.1.8\t2"
+      ],
+      "after": [
+        "llvm\t0\t22.1.8\t1",
+        "clang-analyzer\t0\t22.1.8\t2",
+        "clang\t0\t22.1.8\t1"
+      ]
+    },
+    {
+      "check": "requires-clang-analyzer",
+      "rc": 0,
+      "missing_provider_rc": 1,
+      "status": "PASS"
+    },
+    {
+      "check": "no-self-obsoletion",
+      "rc": 0,
+      "status": "PASS",
+      "before": [
+        "clang\t0\t22.1.8\t1",
+        "llvm\t0\t22.1.8\t1"
+      ],
+      "after": [
+        "clang\t0\t22.1.8\t1",
+        "llvm\t0\t22.1.8\t1"
+      ]
+    }
+  ],
+  "testsolv": {
+    "state": "SKIPPED",
+    "path": [],
+    "reason": "No retained testsolv executable found"
+  }
+}
