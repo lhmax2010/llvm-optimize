@@ -1,0 +1,60 @@
+From 7a54d3ff49841eb4753453813ed68d9f2e63d405 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Wed, 25 Nov 2026 05:56:06 -0800
+Subject: [PATCH] packaging: enable clang PGO without BOLT for build
+ verification (test only, not for merge)
+
+Explicitly accept the unqualified manifest for build verification.
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+---
+ packaging/clang-bolt-helper.py | 7 ++++---
+ packaging/llvm.spec            | 4 ++--
+ 2 files changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 047d4f0c4b895d3bab6bcb23bbc82359a6a33675..724ae44871ce1ab192dfd6953a97fcd135bfede3 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -110,13 +110,14 @@ def _unique_manifest_fields(pairs):
+     return result
+ 
+ 
+-def select_pgo_profile(manifest, project, pgo, bolt):
++def select_pgo_profile(manifest, project, pgo, bolt, *, allow_unqualified=False):
+     # With PGO disabled the historical Source1200 SHA remains authoritative.
+     if not pgo:
+         return None if not bolt else {'baseline': True, 'sha256': PROFILE_SHA}
+     with Path(manifest).open(encoding='utf-8') as stream:
+         doc = json.load(stream, object_pairs_hook=_unique_manifest_fields)
+-    require(doc['status'] == 'READY', 'profile manifest is not READY (PLACEHOLDER is not usable)')
++    require(doc['status'] == 'READY' or (allow_unqualified and doc['status'] == 'UNQUALIFIED'),
++            'profile manifest is not READY (PLACEHOLDER is not usable)')
+     require(doc['format'] == 1 and doc['llvm_version'] == CERTIFIED['llvm_version'],
+             'unsupported profile manifest format or LLVM version')
+     require(project in ('T', 'D'), 'unknown profile build project')
+@@ -165,7 +166,7 @@ def unpack_pgo_asset(source, dest, info):
+ 
+ 
+ def prepare_pgo(manifest, project, work, profile, bolt_profile=None):
+-    row = select_pgo_profile(manifest, project, True, bolt_profile is not None)
++    row = select_pgo_profile(manifest, project, True, bolt_profile is not None, allow_unqualified=True)
+     work = Path(work).absolute()
+     require(not (work/'state.json').exists(), 'PGO state already exists, use a fresh build')
+     result = {'project': project, 'manifest_sha256': digest(manifest),
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index d64d693d056b45b0d63299191768cd9faf701eab..1699c0a4f28e0a4015da87440f138c42dcf3a6cb 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -1,9 +1,9 @@
+ # Quickbuild sandbox: x86_64 BOLT is on by default; other architectures unchanged.
+ %bcond_without llvm_speedup
+ %bcond_without hybrid_link
+-%bcond_with clang_pgo
++%bcond_without clang_pgo
+ %ifarch x86_64
+-%bcond_without clang_bolt
++%bcond_with clang_bolt
+ %else
+ %bcond_with clang_bolt
+ %endif

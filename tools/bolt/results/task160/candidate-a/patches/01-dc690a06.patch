@@ -1,0 +1,231 @@
+From dc690a0660683830f653d71a8025c10e4a6b3fd8 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Wed, 25 Nov 2026 05:54:45 -0800
+Subject: [PATCH] packaging: add a profile for clang PGO
+
+Include the offline-generated instrumentation profile and its
+manifest for x86-64 Toolchain builds. Keep PGO off by default.
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+Change-Id: I2c8547183eae93094b18d0321e7387c021d820fb
+---
+ packaging/clang-pgo.profdata.xz  | Bin 68 -> 6344928 bytes
+ packaging/llvm-profiles.manifest | 179 ++++++++++++++++++++++++++++++-
+ packaging/llvm.spec              |   3 +-
+ 3 files changed, 179 insertions(+), 3 deletions(-)
+
+diff --git a/packaging/clang-pgo.profdata.xz b/packaging/clang-pgo.profdata.xz
+index ad19dc4cd3280b17c4b96742e1074b59eb9460b2..9f88a32f29fb495b590d0097902a41852e3092d0 100644
+Binary files a/packaging/clang-pgo.profdata.xz and b/packaging/clang-pgo.profdata.xz differ
+diff --git a/packaging/llvm-profiles.manifest b/packaging/llvm-profiles.manifest
+index 8d2f6189d132d0b891ef1e162b9150d8c5380669..f0a7c50e8db2bed31bdb8064403012c380c24708 100644
+--- a/packaging/llvm-profiles.manifest
++++ b/packaging/llvm-profiles.manifest
+@@ -1,6 +1,181 @@
+ {
+   "format": 1,
+   "llvm_version": "22.1.8",
+-  "status": "PLACEHOLDER",
+-  "profiles": []
++  "status": "UNQUALIFIED",
++  "provenance": {
++    "source_identity": {
++      "commit": "2b9031dd9ab46e3fb142da13e64624de3896e8be",
++      "tree": "ef9c45fb4f6b01f7ac410271153ff7b08552985a",
++      "snapshot": "tizen-base-toolchain_20261030.061318",
++      "recipe": {
++        "bytes": 38800,
++        "sha256": "a2f314e46e8d63d468c89680a49b1f6bf1fc1fb168b5b629387969fb1b5239d3"
++      },
++      "gbs_config": {
++        "bytes": 656,
++        "sha256": "58d8c1c833be9736594546692e9300ee1546680afd93bb9f60dc0795efcc9bf1"
++      }
++    },
++    "instrumented_clang": {
++      "sha256": "381789a9f576f9e6e7affe25ee568e303da6816ba28e64c86135d29c55ea06a7",
++      "bytes": 1466952360,
++      "version": "clang version 22.1.8"
++    },
++    "training": [
++      {
++        "name": "A",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "6d4da4ce707bf9973e87c3f3810aefbfc1948572675e603bbae9483c628ce46a",
++        "bytes": 17608
++      },
++      {
++        "name": "B",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "7629320d6eb4a64e72d79ce0e62a187fdff200c1ff6e9b090127e75778618fb8",
++        "bytes": 460740
++      },
++      {
++        "name": "C",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "914929eb11a5012046d6fc3464c056f1af2f7c0bcbd5afae7c44e9e891dbd0f4",
++        "bytes": 425604
++      },
++      {
++        "name": "real_llvm_arm_ARMISelLowering",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "7925eea21ef52b6119e288fe3ac18d28ee7396af131fd2c7da636d163c6e5d79",
++        "bytes": 8219975
++      },
++      {
++        "name": "real_llvm_arm_ARMTargetTransformInfo",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "543e13c33c84558f583eeffefc1d4d519eb57bf114556733b50a322bbd6f7843",
++        "bytes": 7607820
++      },
++      {
++        "name": "real_llvm_codegen_MachinePipeliner",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "ca4fc38ed546c6f80063bf6fae3d5b77f53c475f2df4c1feb696e0b2a18133ac",
++        "bytes": 6557196
++      },
++      {
++        "name": "real_llvm_codegen_SelectionDAG",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "68a05c0780780c3cb31298f0b39a78adc2eb6bd7e5c8d9c9d0e28a2569eac027",
++        "bytes": 6641252
++      },
++      {
++        "name": "real_llvm_mc_AsmParser",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "8738c245d51bfc7e94c0de216d027b2d0d8ddbd77f0147bf76ac52665d0f9b55",
++        "bytes": 4012457
++      },
++      {
++        "name": "real_llvm_mc_MasmParser",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "3951585891114c25ba4fb08e17d2cc203c00ffb65c85465ec268d32d438cc95b",
++        "bytes": 3888311
++      },
++      {
++        "name": "real_llvm_sema_SemaExprCXX",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "c98e3891fdcc47e18244501de4bddea44c1ac73e9c923b764cd53251ce34209d",
++        "bytes": 10179680
++      },
++      {
++        "name": "real_llvm_sema_SemaStmt",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "6fb42a463b9cec5337665f495094cf29da94bad5fe63d966c165de62be393341",
++        "bytes": 9090106
++      },
++      {
++        "name": "real_llvm_transforms_Attributor",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "cd127657e329281f609418f13a2803f68f0b1b9bccb6dfca65476b6c18662684",
++        "bytes": 5485078
++      },
++      {
++        "name": "real_llvm_transforms_WholeProgramDevirt",
++        "target": "armv7l-tizen-linux-gnueabi",
++        "sha256": "dd90502c3fb4d6600efba059b36c4c3d1ec0723204e668667ecfa3f19af4db3a",
++        "bytes": 5658860
++      },
++      {
++        "name": "real_aarch64_llvm_arm_ARMISelLowering",
++        "target": "aarch64-tizen-linux-gnu",
++        "sha256": "607cdc02caa0d60e609ef484009eec36934f8571e1bd3f716b65a7cf54d0d880",
++        "bytes": 8218513
++      },
++      {
++        "name": "real_aarch64_llvm_arm_ARMTargetTransformInfo",
++        "target": "aarch64-tizen-linux-gnu",
++        "sha256": "6e24b90e3d215d66afe40777370412789f2c510860cb89cf9fae140aceda9414",
++        "bytes": 7606360
++      },
++      {
++        "name": "real_aarch64_llvm_codegen_MachinePipeliner",
++        "target": "aarch64-tizen-linux-gnu",
++        "sha256": "c527c1fdba6d5fbda4c9d5f05977eeab72f57f08ecbf0dc03a88dc5283bac97e",
++        "bytes": 6554330
++      },
++      {
++        "name": "real_aarch64_llvm_codegen_SelectionDAG",
++        "target": "aarch64-tizen-linux-gnu",
++        "sha256": "9a6284c2a607318eb15d5f6eac2045dea17ee8a0337af3afc8a6ddeb2d8e8ef9",
++        "bytes": 6639918
++      },
++      {
++        "name": "real_aarch64_llvm_mc_AsmParser",
++        "target": "aarch64-tizen-linux-gnu",
++        "sha256": "065b0315c147b477df749c30774a2c56db37aeba4a61450e0c51e0205ccf4cd4",
++        "bytes": 4011311
++      },
++      {
++        "name": "real_aarch64_llvm_mc_MasmParser",
++        "target": "aarch64-tizen-linux-gnu",
++        "sha256": "8fecbaf28238e7f1fc994c4b15f1963ee856b83362ad6bd5172fc1df082f50ac",
++        "bytes": 3887337
++      },
++      {
++        "name": "real_aarch64_llvm_sema_SemaExprCXX",
++        "target": "aarch64-tizen-linux-gnu",
++        "sha256": "b0e3072b0ba360c94c13fc444aedfa34b42a09f8906e243c74483ac1387b7eac",
++        "bytes": 10178219
++      },
++      {
++        "name": "real_aarch64_llvm_sema_SemaStmt",
++        "target": "aarch64-tizen-linux-gnu",
++        "sha256": "b6573be55442a2e3cb6d164a8a3c429eb31ad5c2f26fb22032747567c05f62e6",
++        "bytes": 9088683
++      },
++      {
++        "name": "real_aarch64_llvm_transforms_Attributor",
++        "target": "aarch64-tizen-linux-gnu",
++        "sha256": "5d8197c27f485685feb34e725618d6ac8fba2ba96905f425be84dabdef2f4e85",
++        "bytes": 5483967
++      },
++      {
++        "name": "real_aarch64_llvm_transforms_WholeProgramDevirt",
++        "target": "aarch64-tizen-linux-gnu",
++        "sha256": "c683df3c5dc31263fafc6a6bdd8605e476d01ea8c79948e013417e5015218ee5",
++        "bytes": 5700401
++      }
++    ],
++    "training_sha256": "248dd1ae97881ef3b1168a3dc91807869372b37d7dccf2438439c7ad2ebb3966",
++    "recipe": "ce627fa087233d9da415887222009155fe8b5029"
++  },
++  "profiles": [
++    {
++      "project": "T",
++      "pgo": true,
++      "bolt": false,
++      "profdata": {
++        "file": "clang-pgo.profdata.xz",
++        "bytes": 52530416,
++        "sha256": "39171c4a5fcb6166ac86d6d47ad16c7890527a73e66c26f035fb910288f496aa",
++        "xz_bytes": 6344928,
++        "xz_sha256": "e5a76509871f9f97bfd3f58e23f7d542e4d221dde72b97d164e4699614c03673"
++      }
++    }
++  ]
+ }
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 4d2e1c60e725e588625f36195bca280d980859fc..d64d693d056b45b0d63299191768cd9faf701eab 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -21,10 +21,10 @@
+ %if %{with clang_pgo}
+ %global llvm_pgo_enabled 1
+ %define llvm_pgo_sources Source1202: clang-pgo.profdata.xz \
+-Source1203: clang-pgo.fdata.xz \
+ Source1204: llvm-profiles.manifest
+ %global llvm_pgo_post_enabled --enabled
+ %if %{llvm_bolt_enabled}
++%define llvm_pgo_bolt_asset Source1203: clang-pgo.fdata.xz
+ %define llvm_pgo_bolt_source --bolt-profile "%{SOURCE1203}"
+ %endif
+ %endif
+@@ -81,6 +81,7 @@ Source1005: llvm-static-archives-native.py
+ Source1200: clang-bolt-v2.fdata.xz
+ Source1201: clang-bolt-helper.py
+ %{?llvm_pgo_sources}
++%{?llvm_pgo_bolt_asset}
+ %ifarch x86_64
+ BuildRequires: util-linux
+ %endif

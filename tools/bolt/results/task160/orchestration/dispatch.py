@@ -254,15 +254,23 @@ def main():
                     own_unit=UNIT+"-"+step.lower()+"-1.service"
                     command([SYS,"--user","stop",own_unit],timeout=140)
                 if step=="G4":
-                    log=A/step/"rpm-build.log"
-                    if log.is_file():
-                        lines=[line for line in log.read_text(errors="replace").splitlines()
-                               if "ARCHIVE_MEMBER_RETRY " in line and "echo " not in line]
-                        (A/step/"member-retries.log").write_text("".join(line+"\n" for line in lines))
-                        row["archive_member_retries"]=lines
-                    native=A/step/"gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/native-archive-conversion"
+                    scope=A/step
+                    scratch=scope/"gbs-root/local/BUILD-ROOTS/scratch.x86_64.0"
+                    # After a watchdog stop the worker may not have copied
+                    # the RPM log yet. The chroot log is still retained.
+                    paths=(scope/"rpm-build.log",scratch/".build.log")
+                    lines=[]
+                    for log in paths:
+                        if log.is_file():
+                            with log.open(errors="replace") as stream:
+                                lines.extend(line.rstrip("\n") for line in stream
+                                             if "ARCHIVE_MEMBER_RETRY " in line and "echo " not in line)
+                    lines=list(dict.fromkeys(lines))
+                    (scope/"member-retries.log").write_text("".join(line+"\n" for line in lines))
+                    row["archive_member_retries"]=lines
+                    native=scratch/"home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/native-archive-conversion"
                     receipts=[]
-                    for archive in sorted({line.split("ARCHIVE_MEMBER_RETRY ",1)[1].split()[0] for line in lines}) if log.is_file() else ():
+                    for archive in sorted({line.split("ARCHIVE_MEMBER_RETRY ",1)[1].split()[0] for line in lines}):
                         rel=Path(archive)
                         if rel.is_absolute() or ".." in rel.parts:
                             continue
@@ -271,7 +279,7 @@ def main():
                             receipts.append({"archive":archive,"member":Path(result["argv"][-1]).name,
                                              "record_path":str(receipt),"record":result})
                     if receipts:
-                        write(A/step/"member-retry-receipts.json",receipts)
+                        write(scope/"member-retry-receipts.json",receipts)
                 finish_stage(row)
         if row["status"]!="PASS":
             g_failed=True

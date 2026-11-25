@@ -13,3 +13,7 @@
 
 [A 状态和阶段原文](../../tools/bolt/results/task157/A/result.json)
 [B 状态和阶段原文](../../tools/bolt/results/task157/B/result.json)
+
+## 160 号续做
+
+A 的 G4 前置条件已按 160 号裁决移除。新的 PGO-only 测试分支 `sandbox/lhmax2025/llvm-pgo-only-20261125` 已核对为 `7a54d3ff49841eb4753453813ed68d9f2e63d405`。B 仍须等 160 重跑的 G6、G7、G8 都通过。[验收和远端回执](160_converter_retry.md)

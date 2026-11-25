@@ -1,5 +1,7 @@
 # 160 · 归档转换 OOM 串行重试
 
+**PGO-only 新分支已创建并核对。** 转换器与静态核对通过。备份清理部分完成，154-B 继续等待磁盘准入，G4 重跑等待 154-B 的发布回执。
+
 ## 转换器
 
 本地 `pgo-dev` 配方为 `ce627fa087233d9da415887222009155fe8b5029`。转换器 CLI 默认不重试。开启后，只有正常退出并在成员编译 stderr 报告 LLVM OOM 或明确分配失败的调用进入队列。并行池结束后，按成员顺序一次只重跑一个，首次和重试的命令回执保留为 `convert.json` 和 `convert-retry.json`。退出信号、超时及其他错误走失败路径。重试仍失败则该构建失败。
@@ -24,9 +26,15 @@ R 的 `llvm.spec` 有一个归档转换调用，按 BOLT 开关选择两条后�
 
 ## PGO-only 候选
 
-集成提交 `dc690a0660683830f653d71a8025c10e4a6b3fd8`，QB 测试提交 `7a54d3ff49841eb4753453813ed68d9f2e63d405`。静态核对三架构均通过，x86_64 的 PGO 开启、BOLT 关闭。集成提交保留 UNQUALIFIED、生产门禁继续拒绝。QB 测试提交仅允许此状态，通过 profile SHA256、大小和映射检查。第一次新建分支推送在 Git 对象打包时超时。已先核对远端仍无该分支，再以相同提交和新建专用 hook 重试。
+集成提交 `dc690a0660683830f653d71a8025c10e4a6b3fd8`，QB 测试提交 `7a54d3ff49841eb4753453813ed68d9f2e63d405`。静态核对三架构均通过，x86_64 的 PGO 开启、BOLT 关闭。集成提交保留 UNQUALIFIED、生产门禁继续拒绝。QB 测试提交仅允许此状态，通过 profile SHA256、大小和映射检查。第一次新建分支推送在 Git 对象打包时超时。已先核对远端仍无该分支，再以相同提交和新建专用 hook 重试并成功。
 
-[157 脚本变更](../../tools/bolt/results/task160/157-candidate-update.diff) · [第一次推送结果](../../tools/bolt/results/task160/candidate-a/first-push-result.json)
+`ls-remote` 原文如下。
+
+~~~text
+7a54d3ff49841eb4753453813ed68d9f2e63d405	refs/heads/sandbox/lhmax2025/llvm-pgo-only-20261125
+~~~
+
+[推送原文](../../tools/bolt/results/task160/candidate-a/sandbox-push.stdout.txt) · [远端核对](../../tools/bolt/results/task160/candidate-a/sandbox-after.stdout.txt) · [157 脚本变更](../../tools/bolt/results/task160/157-candidate-update.diff) · [第一次推送结果](../../tools/bolt/results/task160/candidate-a/first-push-result.json)
 
 ## 重跑编排
 
@@ -35,3 +43,5 @@ R 的 `llvm.spec` 有一个归档转换调用，按 BOLT 开关选择两条后�
 G1–G3 的输入与产物字节及 SHA256 已核对。保留原插桩来源，G4 以新配方身份开始，复用同一 G3 profdata。编排与队列 **10/10** 测试通过，离线技能 **60/60** 测试通过。dry-run 已生成，未开始 G4 构建。
 
 [154-B 初始等待状态](../../tools/bolt/results/task160/154-wait-initial.json) · [G3 复用核对](../../tools/bolt/results/task160/recover-g3.json) · [G4–G8 dry-run](../../tools/bolt/results/task160/g4-g8-dry-run.json)
+
+2026-11-25T06:06:07-08:00 复测，/home 可用 273,551,409,152 B，距 154-B 的 302,154,457,695 B 线还差 28,603,048,543 B，MemAvailable 21,535,322,112 B。 [交接状态](../../tools/bolt/results/task160/handoff-status.json)
