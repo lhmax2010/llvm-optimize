@@ -6,7 +6,7 @@
 |---|---|---|---:|---|---|---:|---:|---:|---:|---:|---:|---|
 | G4 | FAIL | dynamic | 16009859072 | 4/4/1 | 2026-11-25T00:48:12-08:00 → 2026-11-25T04:25:55-08:00 | 0.0 | 13063.27 | 14270107648 | 20304826368 | 304148250624 | 60365758464 | profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task151/G-profiles/pgo-build-1795596865301453852'}], 'started_at': '2026-11-25T08:53:12+00:00', 'admission': [{'at': '2026-11-25T08:53:12+00:00', 'memory': 19849625600, 'disk': {'/home': 303581949952, '/home/linhao/Toolchain/development/llvm-optimize/archive/task151/G-profiles': 303581949952}, 'admission_memory': 20304826368, 'stage': 'pgo-build', 'memory_max': 16009859072, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 16009859072}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G-profiles/pgo-build-1795596865301453852/build-0.txt', 'ended_at': '2026-11-25T12:25:55+00:00'} |
 | G5 | SKIPPED | — | — | —/—/— | — → 2026-11-25T04:28:44-08:00 | 0 | — | — | 18881126400 | 293855117312 | — | G chain prerequisite did not pass |
-| G6 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
+| G6 | SKIPPED | — | — | —/—/— | — → 2026-11-25T04:28:48-08:00 | 0 | — | — | 18922160128 | 293855035392 | — | G chain prerequisite did not pass |
 | G7 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
 | G8 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
 
@@ -42,5 +42,16 @@ G6 等待截止 2026-11-26T06:00:00-08:00。整体截止 2026-11-26T20:00:00-08:
 ~~~json
 {
   "artifacts": []
+}
+~~~
+
+### G6
+
+[G6 JSON 与日志索引](../../tools/bolt/results/task151/G6.json)
+
+~~~json
+{
+  "artifacts": [],
+  "VmHWM_sample": null
 }
 ~~~
