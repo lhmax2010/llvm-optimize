@@ -106,28 +106,72 @@ def owned_lock(path):
         yield
 
 
-def runtime_target(output):
+def pgo_runtime_target(output):
     path = Path(output)
-    return (bool({"compiler-rt", "openmp", "runtimes", "offload"} & set(path.parts))
-            or path.name.startswith(("libclang_rt.", "libomp.", "libompd.", "libarcher.", "libomptarget.")))
+    parts = path.parts
+    resource_dir = any(
+        re.fullmatch(r'lib[^/]*', lib) and clang == 'clang'
+        and re.fullmatch(r'[0-9][0-9.]*', version) and resource == 'lib'
+        for lib, clang, version, resource in zip(parts, parts[1:], parts[2:], parts[3:])
+    )
+    return (resource_dir
+            or bool({'compiler-rt', 'openmp', 'runtimes', 'offload'} & set(parts))
+            or path.name.startswith(('clang_rt.', 'libclang_rt.', 'libomp.', 'libompd.',
+                                     'libarcher.', 'libomptarget.')))
 
 
-def check_compile_db(rows, profile, runtime_only=False):
-    counts = {"main": 0, "runtime": 0}
-    for row in rows:
-        argv = shlex.split(row["command"])
-        flags = [arg for arg in argv if re.match(r"-f(?:no-)?(?:cs-)?(?:profile|auto-profile)", arg)]
-        runtime = runtime_only or runtime_target(row["output"])
-        compiles = "-c" in argv and Path(row["file"]).suffix in (".c", ".cc", ".cpp", ".cxx", ".m", ".mm", ".C")
+def scan_pgo_commands(commands, expected, runtime_only=False):
+    counts = {'edges': 0, 'compile': 0, 'profile_use': 0, 'runtime_compile': 0}
+    violations = []
+    required = ['-fprofile-instr-use=' + str(expected)] if expected else []
+    for edge, row in enumerate(commands, 1):
+        counts['edges'] += 1
+        output = row.get('output', '')
+        source = row.get('file', '')
+        command = row['command']
+        try:
+            tokens = shlex.split(command)
+        except ValueError as exc:
+            violations.append({'edge': edge, 'output': output, 'options': None,
+                               'category': 'parse', 'reason': str(exc), 'command': command})
+            continue
+        flags = [arg for arg in tokens if re.match(r'-f(?:no-)?(?:cs-)?(?:profile|auto-profile)', arg)]
+        runtime = (runtime_only or any(pgo_runtime_target(path) for path in
+                   (output, source, row.get('directory', '')))
+                   or any(word in ('cd', '--build') and pgo_runtime_target(path)
+                          for word, path in zip(tokens, tokens[1:]))
+                   or any(word.startswith('--build=') and pgo_runtime_target(word[8:]) for word in tokens))
+        compiles = ('-c' in tokens
+                    and Path(source).suffix in ('.c', '.cc', '.cpp', '.cxx', '.C', '.m', '.mm'))
+        links = '-o' in tokens and not {'-c', '-E', '-S', '-fsyntax-only'}.intersection(tokens)
         if compiles:
-            counts["runtime" if runtime else "main"] += 1
+            counts['compile'] += 1
+            counts['runtime_compile'] += int(runtime)
         if runtime:
-            if flags:
-                raise RuntimeError(f"profile options found in a runtime edge: {row['output']}")
-        elif compiles or flags:
-            if flags != ["-fprofile-instr-use=" + profile]:
-                raise RuntimeError(f"unexpected profile options in a main edge: {row['output']}")
-    return counts
+            category = 'runtime'
+            reason = 'unexpected PGO option in a runtime edge' if flags else ''
+        elif not required:
+            category = 'disabled'
+            reason = 'unexpected PGO option with PGO disabled' if flags else ''
+        else:
+            category = 'main_compile' if compiles else 'link' if links else 'other'
+            valid = flags == required or (links and flags == required * 2)
+            if compiles and valid:
+                counts['profile_use'] += 1
+            reason = 'wrong PGO option' if (compiles or flags) and not valid else ''
+        if reason:
+            violations.append({'edge': edge, 'output': output, 'options': flags,
+                               'category': category, 'reason': reason, 'command': command})
+    return {**counts, 'violation_count': len(violations), 'violations': violations}
+
+
+def check_compile_db(rows, profile, runtime_only=False, *, report=False):
+    result = scan_pgo_commands(rows, profile, runtime_only)
+    if report:
+        return result
+    if result["violations"]:
+        raise RuntimeError(f'Ninja PGO violations: {json.dumps(result)}')
+    return {"main": result["compile"] - result["runtime_compile"], "runtime": result["runtime_compile"]}
 
 
 class Pipeline:
@@ -248,7 +292,7 @@ class Pipeline:
             "ir-train": self.train("ir"),
             "merge-profdata": [self.action(self.tool("llvm_profdata", "merge", "-o", self.profdata, *raw_paths))],
             "pgo-build": self.custom("pgo-build") +
-            [self.action(self.tool("ninja", "-t", "compdb"), cwd=root) for root in self.ninja_roots] +
+            [self.action(self.tool("ninja", "-t", "compdb", "-x"), cwd=root) for root in self.ninja_roots] +
             [self.action([sys.executable, str(Path(__file__).with_name("runtime_dep_check.py")),
                           "--root", self.paths["package_root"], "--readelf", str(self.tools["readelf"])])],
             "bolt-tools-relink": self.custom("bolt-tools") + self.custom("relink-strip-debug") +
@@ -507,21 +551,28 @@ class Pipeline:
                 raise RuntimeError("PGO build root already exists")
             for index, action in enumerate(self.custom(name)):
                 self.run(attempt, f"build-{index}", action)
-            total = {"main": 0, "runtime": 0}
+            total = {"edges": 0, "main": 0, "runtime": 0, "violation_count": 0}
             graphs = []
+            violations = []
             for index, cwd in enumerate(self.ninja_roots):
                 ninja = cwd / "build.ninja"
                 if not ninja.is_file():
                     raise RuntimeError(f"missing Ninja graph: {ninja}")
-                compdb = self.run(attempt, f"compdb-{index}", self.action(self.tool("ninja", "-t", "compdb"), cwd))
-                result = check_compile_db(read(compdb), self.profile, runtime_only=index != 0)
+                compdb = self.run(attempt, f"compdb-{index}", self.action(self.tool("ninja", "-t", "compdb", "-x"), cwd))
+                result = check_compile_db(read(compdb), self.profile, runtime_only=index != 0, report=True)
                 save(attempt / f"ninja-{index}.json", {"graph": str(ninja), **file_identity(ninja)})
                 graphs.extend([compdb, attempt / f"ninja-{index}.json"])
-                for key in total:
-                    total[key] += result[key]
-            if not all(total.values()):
+                total["edges"] += result["edges"]
+                total["main"] += result["compile"] - result["runtime_compile"]
+                total["runtime"] += result["runtime_compile"]
+                total["violation_count"] += result["violation_count"]
+                violations.extend({"graph": str(ninja), **item} for item in result["violations"])
+            report = attempt / "ninja-gate.json"
+            save(report, {**total, "violations": violations, "pgo_match": "UNKNOWN"})
+            if violations:
+                raise RuntimeError(f'Ninja PGO check found {len(violations)} violation(s); see {report}')
+            if not total["main"] or not total["runtime"]:
                 raise RuntimeError("Ninja check missed main or runtime compilation edges")
-            save(attempt / "ninja-gate.json", {**total, "pgo_match": "UNKNOWN"})
             runtime = self.plan()[name][-1]
             log = self.run(attempt, "runtime-dependency-gate", runtime)
             return [*graphs, log, attempt / "ninja-gate.json"]

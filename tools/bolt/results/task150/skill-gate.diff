@@ -1,0 +1,154 @@
+diff --git a/tools/skills/tizen-llvm-offline-profile/SKILL.md b/tools/skills/tizen-llvm-offline-profile/SKILL.md
+index 50508a59..4718956c 100644
+--- a/tools/skills/tizen-llvm-offline-profile/SKILL.md
++++ b/tools/skills/tizen-llvm-offline-profile/SKILL.md
+@@ -28,7 +28,7 @@ Dry-run prints argv, selected stages and budgets without launching a subprocess.
+ 1. **instrumented-build.** Run the configured offline GBS commands in the instrumented packaging copy. Pass -DLLVM_BUILD_INSTRUMENTED=IR to CMake and build the instrumented Clang and profile runtime. Use the same project snapshot, target configuration and feature set as the intended PGO build. Deliver the instrumented Clang and the LLVM-version-matched llvm-profdata. Record source tree, spec and build configuration identities, actual CMake argv, versions, hashes and instrumentation warnings. Stop on build or tool-identity failure.
+ 2. **ir-train.** Run the instrumented Clang once per training row using the row's ordered argv followed by -c INPUT -o OBJECT. Set LLVM_PROFILE_FILE to a separate directory for each row with a %m-%p.profraw filename. Verify each input hash before training. Expect one fresh nonempty profraw per row. Retain the argv, raw profiles, build/training warning counts and first warning. Stop on a failed compile or ambiguous/missing profile output.
+ 3. **merge-profdata.** Run llvm-profdata merge -o CLANG.PROFDATA with the 23 inventoried profiles. Record the input and output hashes, version and merge log. An approved inspection may also run llvm-profdata show to verify the instrumentation level. Stop on missing inputs, merge failure or empty profdata.
+-4. **pgo-build.** Stage profdata in the offline packaging copy and expose it at the actual path visible to CMake. Build the shipping configuration with -DLLVM_PROFDATA_FILE=PATH and ordinary Clang, with the release BOLT rewrite deferred. Keep the expected ThinLTO/MLGO and hybrid-link settings. Exclude compiler-rt, OpenMP and other runtime targets from PGO in CMake. Use the source recipe's native archive conversion and normal installation to produce the shipping payload. Verify the main and any separate runtime Ninja graphs via ninja -t compdb. Expected main C/C++ commands use exactly -fprofile-instr-use=PATH and runtime commands carry no PGO flags. Scan the resulting installed executables, shared libraries and every shipped archive member for instrumentation. Record the graph identity, audited payload root and gate result; PGO match stays UNKNOWN pending a validated method. Stop on a mismatch, missing graph or runtime dependency.
++4. **pgo-build.** Stage profdata in the offline packaging copy and expose it at the actual path visible to CMake. Build the shipping configuration with -DLLVM_PROFDATA_FILE=PATH and ordinary Clang, with the release BOLT rewrite deferred. Keep the expected ThinLTO/MLGO and hybrid-link settings. Exclude compiler-rt, OpenMP and other runtime targets from PGO in CMake. Use the source recipe's native archive conversion and normal installation to produce the shipping payload. Verify the main and any separate runtime Ninja graphs via ninja -t compdb -x. Main C/C++ compile commands use exactly one -fprofile-instr-use=PATH. A link command may repeat that exact option once. Runtime commands, including compiler resource library outputs and compiler-rt or OpenMP sub-builds, carry no PGO flags. Read ninja-gate.json for the complete list of violations. Scan the resulting installed executables, shared libraries and every shipped archive member for instrumentation. Record the graph identity, audited payload root and gate result; PGO match stays UNKNOWN pending a validated method. Stop on a mismatch, missing graph or runtime dependency.
+ 5. **bolt-tools-relink.** Configure BOLT in the matching PGO build tree, build llvm-bolt, merge-fdata and the matching instrumentation runtime. Use ninja -t commands -s bin/clang-22 to capture the exact original Clang link edge. Use the packaging helper's replay command (or a reviewed equivalent) to retain the original flags and objects and add --emit-relocs with a separate output and dependency path. Run that replay and llvm-strip --strip-debug to produce the BOLT input. Preserve the original compiler, relocation sections and link log. Verify relocation/debug-section handling and record tool, runtime and input hashes. Stop if the original edge, tools or relocations cannot be established.
+ 6. **bolt-instrument-train-merge.** Run llvm-bolt with -instrument, --thread-count=1, -runtime-instrumentation-lib=PATH, -instrumentation-file=PREFIX, -instrumentation-file-append-pid and -instrumentation-binpath=PATH. Compile the same 23 inputs with the instrumented compiler and original ordered flags. Inventory exactly one fresh nonempty fdata per row, then run merge-fdata and capture its standard output. Record the executable, files, argv and merged fdata hashes. Stop on missing profiles, changed inputs or tool/merge failure.
+ 7. **bolt-match.** Run the newly merged fdata against the exact input ELF from stage 5 using the release rewrite options shown by dry-run. Require a successful, trusted rewrite and -stale-threshold=5. Require both 100 × (S+U) ≤ 5 × (N+U) and 100 × S ≤ 5 × N. Persist N/M/S/U/Q and both ratios. infer-stale is forbidden. Fail closed on a truncated or malformed counter log, invalid counts or a nonzero return. Verify identity, retrain, or disable BOLT before proceeding. Keep the threshold fixed. See [gates.md](references/gates.md).
+diff --git a/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py b/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py
+index c440f369..963afb51 100644
+--- a/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py
++++ b/tools/skills/tizen-llvm-offline-profile/scripts/pgo_pair.py
+@@ -106,28 +106,72 @@ def owned_lock(path):
+         yield
+ 
+ 
+-def runtime_target(output):
++def pgo_runtime_target(output):
+     path = Path(output)
+-    return (bool({"compiler-rt", "openmp", "runtimes", "offload"} & set(path.parts))
+-            or path.name.startswith(("libclang_rt.", "libomp.", "libompd.", "libarcher.", "libomptarget.")))
+-
+-
+-def check_compile_db(rows, profile, runtime_only=False):
+-    counts = {"main": 0, "runtime": 0}
+-    for row in rows:
+-        argv = shlex.split(row["command"])
+-        flags = [arg for arg in argv if re.match(r"-f(?:no-)?(?:cs-)?(?:profile|auto-profile)", arg)]
+-        runtime = runtime_only or runtime_target(row["output"])
+-        compiles = "-c" in argv and Path(row["file"]).suffix in (".c", ".cc", ".cpp", ".cxx", ".m", ".mm", ".C")
++    parts = path.parts
++    resource_dir = any(
++        re.fullmatch(r'lib[^/]*', lib) and clang == 'clang'
++        and re.fullmatch(r'[0-9][0-9.]*', version) and resource == 'lib'
++        for lib, clang, version, resource in zip(parts, parts[1:], parts[2:], parts[3:])
++    )
++    return (resource_dir
++            or bool({'compiler-rt', 'openmp', 'runtimes', 'offload'} & set(parts))
++            or path.name.startswith(('clang_rt.', 'libclang_rt.', 'libomp.', 'libompd.',
++                                     'libarcher.', 'libomptarget.')))
++
++
++def scan_pgo_commands(commands, expected, runtime_only=False):
++    counts = {'edges': 0, 'compile': 0, 'profile_use': 0, 'runtime_compile': 0}
++    violations = []
++    required = ['-fprofile-instr-use=' + str(expected)] if expected else []
++    for edge, row in enumerate(commands, 1):
++        counts['edges'] += 1
++        output = row.get('output', '')
++        source = row.get('file', '')
++        command = row['command']
++        try:
++            tokens = shlex.split(command)
++        except ValueError as exc:
++            violations.append({'edge': edge, 'output': output, 'options': None,
++                               'category': 'parse', 'reason': str(exc), 'command': command})
++            continue
++        flags = [arg for arg in tokens if re.match(r'-f(?:no-)?(?:cs-)?(?:profile|auto-profile)', arg)]
++        runtime = (runtime_only or any(pgo_runtime_target(path) for path in
++                   (output, source, row.get('directory', '')))
++                   or any(word in ('cd', '--build') and pgo_runtime_target(path)
++                          for word, path in zip(tokens, tokens[1:]))
++                   or any(word.startswith('--build=') and pgo_runtime_target(word[8:]) for word in tokens))
++        compiles = ('-c' in tokens
++                    and Path(source).suffix in ('.c', '.cc', '.cpp', '.cxx', '.C', '.m', '.mm'))
++        links = '-o' in tokens and not {'-c', '-E', '-S', '-fsyntax-only'}.intersection(tokens)
+         if compiles:
+-            counts["runtime" if runtime else "main"] += 1
++            counts['compile'] += 1
++            counts['runtime_compile'] += int(runtime)
+         if runtime:
+-            if flags:
+-                raise RuntimeError(f"profile options found in a runtime edge: {row['output']}")
+-        elif compiles or flags:
+-            if flags != ["-fprofile-instr-use=" + profile]:
+-                raise RuntimeError(f"unexpected profile options in a main edge: {row['output']}")
+-    return counts
++            category = 'runtime'
++            reason = 'unexpected PGO option in a runtime edge' if flags else ''
++        elif not required:
++            category = 'disabled'
++            reason = 'unexpected PGO option with PGO disabled' if flags else ''
++        else:
++            category = 'main_compile' if compiles else 'link' if links else 'other'
++            valid = flags == required or (links and flags == required * 2)
++            if compiles and valid:
++                counts['profile_use'] += 1
++            reason = 'wrong PGO option' if (compiles or flags) and not valid else ''
++        if reason:
++            violations.append({'edge': edge, 'output': output, 'options': flags,
++                               'category': category, 'reason': reason, 'command': command})
++    return {**counts, 'violation_count': len(violations), 'violations': violations}
++
++
++def check_compile_db(rows, profile, runtime_only=False, *, report=False):
++    result = scan_pgo_commands(rows, profile, runtime_only)
++    if report:
++        return result
++    if result["violations"]:
++        raise RuntimeError(f'Ninja PGO violations: {json.dumps(result)}')
++    return {"main": result["compile"] - result["runtime_compile"], "runtime": result["runtime_compile"]}
+ 
+ 
+ class Pipeline:
+@@ -248,7 +292,7 @@ class Pipeline:
+             "ir-train": self.train("ir"),
+             "merge-profdata": [self.action(self.tool("llvm_profdata", "merge", "-o", self.profdata, *raw_paths))],
+             "pgo-build": self.custom("pgo-build") +
+-            [self.action(self.tool("ninja", "-t", "compdb"), cwd=root) for root in self.ninja_roots] +
++            [self.action(self.tool("ninja", "-t", "compdb", "-x"), cwd=root) for root in self.ninja_roots] +
+             [self.action([sys.executable, str(Path(__file__).with_name("runtime_dep_check.py")),
+                           "--root", self.paths["package_root"], "--readelf", str(self.tools["readelf"])])],
+             "bolt-tools-relink": self.custom("bolt-tools") + self.custom("relink-strip-debug") +
+@@ -507,21 +551,28 @@ class Pipeline:
+                 raise RuntimeError("PGO build root already exists")
+             for index, action in enumerate(self.custom(name)):
+                 self.run(attempt, f"build-{index}", action)
+-            total = {"main": 0, "runtime": 0}
++            total = {"edges": 0, "main": 0, "runtime": 0, "violation_count": 0}
+             graphs = []
++            violations = []
+             for index, cwd in enumerate(self.ninja_roots):
+                 ninja = cwd / "build.ninja"
+                 if not ninja.is_file():
+                     raise RuntimeError(f"missing Ninja graph: {ninja}")
+-                compdb = self.run(attempt, f"compdb-{index}", self.action(self.tool("ninja", "-t", "compdb"), cwd))
+-                result = check_compile_db(read(compdb), self.profile, runtime_only=index != 0)
++                compdb = self.run(attempt, f"compdb-{index}", self.action(self.tool("ninja", "-t", "compdb", "-x"), cwd))
++                result = check_compile_db(read(compdb), self.profile, runtime_only=index != 0, report=True)
+                 save(attempt / f"ninja-{index}.json", {"graph": str(ninja), **file_identity(ninja)})
+                 graphs.extend([compdb, attempt / f"ninja-{index}.json"])
+-                for key in total:
+-                    total[key] += result[key]
+-            if not all(total.values()):
++                total["edges"] += result["edges"]
++                total["main"] += result["compile"] - result["runtime_compile"]
++                total["runtime"] += result["runtime_compile"]
++                total["violation_count"] += result["violation_count"]
++                violations.extend({"graph": str(ninja), **item} for item in result["violations"])
++            report = attempt / "ninja-gate.json"
++            save(report, {**total, "violations": violations, "pgo_match": "UNKNOWN"})
++            if violations:
++                raise RuntimeError(f'Ninja PGO check found {len(violations)} violation(s); see {report}')
++            if not total["main"] or not total["runtime"]:
+                 raise RuntimeError("Ninja check missed main or runtime compilation edges")
+-            save(attempt / "ninja-gate.json", {**total, "pgo_match": "UNKNOWN"})
+             runtime = self.plan()[name][-1]
+             log = self.run(attempt, "runtime-dependency-gate", runtime)
+             return [*graphs, log, attempt / "ninja-gate.json"]

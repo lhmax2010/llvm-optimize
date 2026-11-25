@@ -1,0 +1,129 @@
+From 32005e1006fb849545a8e8cdf73a1a6a41f988d6 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Tue, 24 Nov 2026 19:41:32 -0800
+Subject: [PATCH] packaging: report all LLVM PGO Ninja gate violations
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+---
+ packaging/clang-bolt-helper.py | 93 ++++++++++++++++++++++++----------
+ 1 file changed, 65 insertions(+), 28 deletions(-)
+
+diff --git a/packaging/clang-bolt-helper.py b/packaging/clang-bolt-helper.py
+index 4df2e70f1bf1..d8d507ae9b58 100644
+--- a/packaging/clang-bolt-helper.py
++++ b/packaging/clang-bolt-helper.py
+@@ -177,38 +177,75 @@ def prepare_pgo(manifest, project, work, profile, bolt_profile=None):
+ 
+ 
+ def pgo_runtime_target(output):
+-    # Targets observed in the historical Ninja progress stream, plus their
+-    # separate-build directory names and the runtime libraries' link outputs.
+-    parts = Path(output).parts
+-    return (bool({'compiler-rt', 'openmp', 'runtimes', 'offload'} & set(parts))
+-            or Path(output).name.startswith(('libclang_rt.', 'libomp.', 'libompd.',
+-                                             'libarcher.', 'libomptarget.')))
++    path = Path(output)
++    parts = path.parts
++    resource_dir = any(
++        re.fullmatch(r'lib[^/]*', lib) and clang == 'clang'
++        and re.fullmatch(r'[0-9][0-9.]*', version) and resource == 'lib'
++        for lib, clang, version, resource in zip(parts, parts[1:], parts[2:], parts[3:])
++    )
++    return (resource_dir
++            or bool({'compiler-rt', 'openmp', 'runtimes', 'offload'} & set(parts))
++            or path.name.startswith(('clang_rt.', 'libclang_rt.', 'libomp.', 'libompd.',
++                                     'libarcher.', 'libomptarget.')))
++
++
++def scan_pgo_commands(commands, expected, runtime_only=False):
++    counts = {'edges': 0, 'compile': 0, 'profile_use': 0, 'runtime_compile': 0}
++    violations = []
++    required = ['-fprofile-instr-use=' + str(expected)] if expected else []
++    for edge, row in enumerate(commands, 1):
++        counts['edges'] += 1
++        output = row.get('output', '')
++        source = row.get('file', '')
++        command = row['command']
++        try:
++            tokens = shlex.split(command)
++        except ValueError as exc:
++            violations.append({'edge': edge, 'output': output, 'options': None,
++                               'category': 'parse', 'reason': str(exc), 'command': command})
++            continue
++        flags = [arg for arg in tokens if re.match(r'-f(?:no-)?(?:cs-)?(?:profile|auto-profile)', arg)]
++        runtime = (runtime_only or any(pgo_runtime_target(path) for path in
++                   (output, source, row.get('directory', '')))
++                   or any(word in ('cd', '--build') and pgo_runtime_target(path)
++                          for word, path in zip(tokens, tokens[1:]))
++                   or any(word.startswith('--build=') and pgo_runtime_target(word[8:]) for word in tokens))
++        compiles = ('-c' in tokens
++                    and Path(source).suffix in ('.c', '.cc', '.cpp', '.cxx', '.C', '.m', '.mm'))
++        links = '-o' in tokens and not {'-c', '-E', '-S', '-fsyntax-only'}.intersection(tokens)
++        if compiles:
++            counts['compile'] += 1
++            counts['runtime_compile'] += int(runtime)
++        if runtime:
++            category = 'runtime'
++            reason = 'unexpected PGO option in a runtime edge' if flags else ''
++        elif not required:
++            category = 'disabled'
++            reason = 'unexpected PGO option with PGO disabled' if flags else ''
++        else:
++            category = 'main_compile' if compiles else 'link' if links else 'other'
++            valid = flags == required or (links and flags == required * 2)
++            if compiles and valid:
++                counts['profile_use'] += 1
++            reason = 'wrong PGO option' if (compiles or flags) and not valid else ''
++        if reason:
++            violations.append({'edge': edge, 'output': output, 'options': flags,
++                               'category': category, 'reason': reason, 'command': command})
++    return {**counts, 'violation_count': len(violations), 'violations': violations}
+ 
+ 
+ def check_pgo_commands(commands, expected=None):
+-    checked = {'compile': 0, 'profile_use': 0, 'runtime_compile': 0}
+-    for row in commands:
+-        tokens = shlex.split(row['command'])
+-        output = row.get('output', '')
+-        flags = [a for a in tokens if re.match(r'-f(?:no-)?(?:cs-)?(?:profile|auto-profile)', a)]
+-        is_compile = ('-c' in tokens and
+-                      any(Path(name).suffix in ('.c','.cc','.cpp','.cxx','.C','.m','.mm')
+-                          for name in (row.get('file', ''),)))
+-        runtime = pgo_runtime_target(output)
+-        if is_compile:
+-            checked['compile'] += 1
+-            checked['runtime_compile'] += int(runtime)
+-        if not expected or runtime:
+-            require(not flags, 'unexpected PGO option for '+output+': '+str(flags))
+-        elif is_compile or flags:
+-            require(flags == ['-fprofile-instr-use='+expected],
+-                    'wrong PGO option for '+output+': '+str(flags))
+-            checked['profile_use'] += int(is_compile)
+-    require(checked['compile'] > 0, 'could not identify C/C++ compile edges')
++    report = scan_pgo_commands(commands, expected)
++    if report['violations']:
++        print('PGO_NINJA_REPORT', json.dumps(report), flush=True)
++        message = '; '.join(dict.fromkeys(item['reason'] for item in report['violations']))
++        raise GateError(f'PGO Ninja check found {report["violation_count"]} violation(s): {message}')
++    require(report['compile'] > 0, 'could not identify C/C++ compile edges')
+     if expected:
+-        require(checked['profile_use'] and checked['runtime_compile'],
++        require(report['profile_use'] and report['runtime_compile'],
+                 'PGO check missed main or runtime targets')
+-    return checked
++    return report
+ 
+ 
+ def verify_pgo_ninja(build, enabled=False):
+@@ -221,7 +258,7 @@ def verify_pgo_ninja(build, enabled=False):
+         expected = str((build/'pgo-profiles/clang.profdata').resolve())
+         require(profile['path'] == expected and digest(expected) == profile['sha256'],
+                 'configured profdata identity mismatch')
+-    run = subprocess.run(['ninja', '-t', 'compdb'], cwd=build, check=True, capture_output=True)
++    run = subprocess.run(['ninja', '-t', 'compdb', '-x'], cwd=build, check=True, capture_output=True)
+     result = check_pgo_commands(json.loads(run.stdout), expected)
+     print('PGO_NINJA_CHECK', json.dumps(result), flush=True)
+     if enabled:
+-- 
+2.43.0
+
