@@ -1,0 +1,40 @@
+From 52df1328a4a4c2f5eeef9b4ea60fd47d377d9246 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Wed, 25 Nov 2026 03:19:32 -0800
+Subject: [PATCH] packaging: ship analyzer data with their tools
+
+---
+ packaging/llvm.spec | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 228b8e0264da63c92971af0181d94b355db405b8..a50283596f66bad285eaa8b96f46b54c4ecd7e8e 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -876,6 +876,7 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %{_prefix}/bin/sancov
+ %{_prefix}/bin/sanstats
+ %{_prefix}/bin/scan-view
++%{_datadir}/scan-view
+ %{_prefix}/bin/verify-uselistorder
+ %{_prefix}/bin/diagtool
+ %{_prefix}/bin/dsymutil
+@@ -911,6 +912,9 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %{_prefix}/include/llvm/*
+ %{_prefix}/include/llvm-c/*
+ %{_prefix}/share/*
++%exclude %{_datadir}/scan-build
++%exclude %{_datadir}/scan-view
++%exclude %{_mandir}/man1/scan-build.1*
+ %{_libdir}/cmake/lld/*
+ %{_libdir}/cmake/llvm/*
+ %{_libdir}/libLTO*.so*
+@@ -936,6 +940,8 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %{_prefix}/bin/intercept-build
+ %{_prefix}/bin/scan-build
+ %{_prefix}/bin/scan-build-py
++%{_datadir}/scan-build
++%{_mandir}/man1/scan-build.1*
+ %{_prefix}/bin/clang
+ %{_prefix}/bin/clang++
+ %{_prefix}/bin/%{_host}-clang

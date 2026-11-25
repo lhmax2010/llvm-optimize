@@ -1,0 +1,118 @@
+diff --git a/bolt/lib/Target/X86/X86BoltMnemonicTables.cpp b/bolt/lib/Target/X86/X86BoltMnemonicTables.cpp
+index 9ef03f65284daf269368e1ed6ff96fc7e4cecb5c..576af84608c950ca4f508146cc20619e616a417d 100644
+--- a/bolt/lib/Target/X86/X86BoltMnemonicTables.cpp
++++ b/bolt/lib/Target/X86/X86BoltMnemonicTables.cpp
+@@ -28,9 +28,11 @@
+ 
+ #define GET_REGINFO_MC_DESC
+ #include "X86GenRegisterInfo.inc"
++#undef GET_REGINFO_MC_DESC
+ 
+ #define GET_X86_MNEMONIC_TABLES_CPP
+ #include "X86GenMnemonicTables.inc"
++#undef GET_X86_MNEMONIC_TABLES_CPP
+ 
+ namespace llvm {
+ 
+@@ -42,6 +44,7 @@ unsigned X86::getOpcodeForShortImmediateForm(unsigned Opcode) {
+   default:
+     return Opcode;
+ #include "MCTargetDesc/X86EncodingOptimizationForImmediate.def"
++#undef ENTRY
+   }
+ }
+ 
+@@ -61,7 +64,7 @@ static bool isMemOperand(const MCInst &MI, unsigned Op, unsigned RegClassID) {
+ }
+ 
+ bool is16BitMemOperand(const MCInst &MI, unsigned Op,
+-                              const MCSubtargetInfo &STI) {
++                       const MCSubtargetInfo &STI) {
+   const MCOperand &Base = MI.getOperand(Op + X86::AddrBaseReg);
+   const MCOperand &Index = MI.getOperand(Op + X86::AddrIndexReg);
+ 
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index b6c3a914ed93570bde7f14e3e140e0d9b2bb9b97..1d8d7e10b8a09fa1356af758bd000bad0b6e9243 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -110,8 +110,10 @@ BuildRequires: clang, llvm, libllvm
+ Requires: libllvm = %{version}-%{release}
+ # llvm-xray and llvm-prof-tools used to be separate subpackages
+ # (llvm-tools-subpkgs.spec) that owned these files; llvm takes them over
+-Obsoletes: llvm-xray <= %{version}-%{release}
+-Obsoletes: llvm-prof-tools <= %{version}-%{release}
++Provides: llvm-xray = %{version}-%{release}
++Obsoletes: llvm-xray < %{version}-%{release}
++Provides: llvm-prof-tools = %{version}-%{release}
++Obsoletes: llvm-prof-tools < %{version}-%{release}
+ 
+ %description
+ LLVM is a compiler infrastructure designed for compile-time, link-time, runtime,
+@@ -150,7 +152,8 @@ Summary: Clang %{version} (C Language family frontend for LLVM)
+ License: NCSA
+ Requires: llvm = %{version}-%{release}
+ Provides: libclang.so.%{version}
+-Obsoletes: clang-analyzer <= %{version}-%{release}
++Provides: clang-analyzer = %{version}-%{release}
++Obsoletes: clang-analyzer < %{version}-%{release}
+ 
+ %description -n clang
+ A new front-end for the C family of languages is in development.
+@@ -607,9 +610,9 @@ echo TIZEN_HYBRID_LINK_OK
+ 
+ %install
+ cd build
+-# DESTDIR, not a prefix under buildroot: the openmp install script creates its
+-# libgomp/libiomp5 symlinks under $DESTDIR/usr/lib, which is the build
+-# environment's /usr/lib when DESTDIR is unset.
++# Use DESTDIR with the normal install prefix: OpenMP creates the
++# libgomp/libiomp5 symlinks under $DESTDIR plus its configured
++# library directory (%{_libdir} for this build).
+ DESTDIR=%{buildroot} cmake -DCMAKE_INSTALL_PREFIX=/usr -P cmake_install.cmake
+ # Do not ship the GCC-compatible libgomp/libiomp5 links: gcc's libgomp package
+ # provides libgomp.so and libgomp.so.1 on the target.
+@@ -756,8 +759,6 @@ mkdir -p %{buildroot}%{python3_sitelib}
+ cp -a ../clang/bindings/python/clang %{buildroot}%{python3_sitelib}/
+ 
+ rm -rf %{buildroot}%{_libdir}/debug/*
+-rm -rf %{buildroot}/usr/lib/libear/*
+-rm -rf %{buildroot}/usr/lib/libscanbuild/*
+ 
+ %ifarch x86_64
+ # Run after compilation has finished; these workers do not overlap build jobs.
+@@ -873,6 +874,7 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %{_prefix}/bin/sancov
+ %{_prefix}/bin/sanstats
+ %{_prefix}/bin/scan-view
++%{_datadir}/scan-view
+ %{_prefix}/bin/verify-uselistorder
+ %{_prefix}/bin/diagtool
+ %{_prefix}/bin/dsymutil
+@@ -908,6 +910,9 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %{_prefix}/include/llvm/*
+ %{_prefix}/include/llvm-c/*
+ %{_prefix}/share/*
++%exclude %{_datadir}/scan-build
++%exclude %{_datadir}/scan-view
++%exclude %{_mandir}/man1/scan-build.1*
+ %{_libdir}/cmake/lld/*
+ %{_libdir}/cmake/llvm/*
+ %{_libdir}/libLTO*.so*
+@@ -933,6 +938,8 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %{_prefix}/bin/intercept-build
+ %{_prefix}/bin/scan-build
+ %{_prefix}/bin/scan-build-py
++%{_datadir}/scan-build
++%{_mandir}/man1/scan-build.1*
+ %{_prefix}/bin/clang
+ %{_prefix}/bin/clang++
+ %{_prefix}/bin/%{_host}-clang
+@@ -956,6 +963,8 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %{_prefix}/libexec/ccc-analyzer
+ %{_prefix}/libexec/intercept-c++
+ %{_prefix}/libexec/intercept-cc
++%{_prefix}/lib/libscanbuild
++%{_prefix}/lib/libear
+ %{_prefix}/bin/clang-include-cleaner
+ %{_prefix}/bin/clang-include-fixer
+ %{_prefix}/bin/clang-offload-bundler
