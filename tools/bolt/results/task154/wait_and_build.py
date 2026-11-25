@@ -11,6 +11,7 @@ ORCH=W/"archive/task151/orchestration"
 sys.path.insert(0,str(ORCH))
 from policy import GIB, PAGE, ZONE, admit, floor_disk, stop_line
 from handoff import confined, prune
+from corpus_gate import corpus_terminal
 DEADLINE=datetime(2026,11,27,20,tzinfo=ZONE)
 GROWTH=222_650_722_030
 DISK=floor_disk(GROWTH,True)
@@ -63,7 +64,10 @@ def check_predecessors():
             return None,"bolt-v4 object fetch failed: "+fetch.stderr.strip()
     if any(run([*GIT,"merge-base","--is-ancestor",rev,head],timeout=20).returncode for rev in ids.values()):
         return None,"final receipts are not ancestors of the remote bolt-v4"
-    return {**ids,"remote_head":head},""
+    corpus,reason=corpus_terminal(W/"archive/task158/corpus-state.json")
+    if corpus is None:
+        return None,reason
+    return {**ids,"remote_head":head,"158_corpus":corpus},""
 def select(last,retry=False):
     plan=admit("N2",last["mem_available"])
     if retry and plan["admitted"]:
@@ -202,8 +206,14 @@ def publish(result):
                      f"RPM 文件比较 {worker.get('file_comparison','未完成')}。"
                      f"清理前后可用空间差 {row['cleanup']['df_delta']:,} B。",
                      f"- 功能结果 {json.dumps(worker.get('functional',{}),ensure_ascii=False)}。",
+                     f"- clang Python 检查 {json.dumps(worker.get('clang_python_checks',{}),ensure_ascii=False)}。",
                      f"- 第 {no} 轮看门狗 {'触发' if row['watchdog'] else '未触发'}。"
                      f"详细原文见 [第 {no} 轮证据](../../tools/bolt/results/task154/attempt-{no}/evidence/)。"])
+        for tool in ("analyze-build","intercept-build","scan-build-py"):
+            entry=worker.get("functional",{}).get(tool)
+            if entry:
+                detail=f"；[原文](../../tools/bolt/results/task154/attempt-{no}/evidence/{entry['output']})" if "output" in entry else ""
+                text.append(f"- 第 {no} 轮 `{tool} --help` · {entry['status']}{detail}。")
     if result.get("sudo_cleanup"):
         text.append("- 残留由 [sudo 清理脚本](../../tools/bolt/results/task154/sudo-clean.sh) 登记。")
     text.append("[最终回执](../../tools/bolt/results/task154/final.json) · [本地大文件清单](../../tools/bolt/results/task154/local-files.json)")

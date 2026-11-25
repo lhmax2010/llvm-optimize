@@ -1,0 +1,77 @@
+--- build.py-before
++++ build.py-after
+@@ -1,5 +1,5 @@
+ from pathlib import Path
+-import configparser, json, os, re, shutil, subprocess, sys, time, traceback
++import configparser, hashlib, json, os, re, shutil, subprocess, sys, time, traceback
+ 
+ A=Path(__file__).resolve().parent
+ W=A.parents[1]
+@@ -10,9 +10,11 @@
+ import buildsteps as bs
+ from build_jobs import install,require_rpm_log
+ from static_audit import package_files
++from rpm_python_audit import bytecode_audit, dependency_diff
+ 
+ REPO=W/"archive/task153/ps6-suggestions.git"
+ B1_SOURCE=W/"archive/task144/source-c2"
++B1_RECEIPTS=W/"archive/task144/b1-a1/evidence/rpms.json"
+ LAUNCHER=B/"tools/bolt/rebase-launch-20261111-r6/toolchain/launcher.py"
+ GIT="/usr/bin/git"
+ GBS="/usr/bin/gbs"
+@@ -75,6 +77,29 @@
+     def check_packages(rpms):
+         expected={k:set(v) for k,v in read(A/"evidence/expected-rpm-paths.json").items()}
+         actual={k:set(v) for k,v in package_files(rpms).items()}
++        key="clang:x86_64"
++        built,= (p for p in rpms if bs.rpm_meta(p)[::3]==("clang","x86_64"))
++        identity,= (r for r in read(B1_RECEIPTS)
++                    if Path(r["path"]).name=="clang-22.1.8-1.x86_64.rpm")
++        baseline=Path(identity["path"])
++        with baseline.open("rb") as stream:
++            sha=hashlib.file_digest(stream,"sha256").hexdigest()
++        if (baseline.stat().st_size,sha)!=(identity["bytes"],identity["sha256"]):
++            raise RuntimeError("retained B1 clang RPM identity mismatch")
++        for label,rpm in (("b1",baseline),("new",built)):
++            run("clang-requires-"+label,["/usr/bin/rpm","-qp","--requires",rpm],timeout=30)
++        dependencies=dependency_diff((E/"clang-requires-b1.txt").read_text(),
++                                     (E/"clang-requires-new.txt").read_text())
++        dependencies.update(baseline=identity,candidate=bs.receipt(built))
++        bs.save(E/"clang-requires-diff.json",dependencies)
++        bytecode=bytecode_audit(actual[key])
++        bytecode["unpackaged_diagnostics"]=len(misses)
++        bs.save(E/"clang-python-module-files.json",bytecode)
++        result["clang_python_checks"]={"new_requirements":dependencies["added_python"],
++                                      "bytecode":bytecode["bytecode"],
++                                      "status":"FAIL" if dependencies["added_python"] else bytecode["status"]}
++        if bytecode["status"]=="PASS":
++            expected[key].update(bytecode["covered_bytecode_paths"])
+         report={}
+         for key in sorted(expected.keys()|actual.keys()):
+             a,e=actual.get(key,set()),expected.get(key,set())
+@@ -154,7 +179,8 @@
+                 outcomes[tool]={"status":"SKIPPED","reason":"python3 not installed in the runtime dependency closure"}
+                 continue
+             rc=run("smoke-"+tool,[*smoke_cmd,"/usr/bin/"+tool,"--help"],strict=False,timeout=45)
+-            outcomes[tool]={"status":"PASS" if rc==0 else "FAIL","rc":rc}
++            outcomes[tool]={"status":"PASS" if rc==0 else "FAIL","rc":rc,
++                            "output":"smoke-"+tool+".txt"}
+         bs.save(E/"functional-results.json",outcomes)
+         result["functional"]=outcomes
+ 
+@@ -225,8 +251,14 @@
+         try:
+             smoke(rpms,repos,profile["buildconf"])
+         except (OSError,RuntimeError,AssertionError,subprocess.SubprocessError) as error:
+-            result["functional"]={"status":"SKIPPED","reason":str(error)}
++            reason=str(error)
++            result["functional"]={"status":"SKIPPED","reason":reason}
++            for name in ("analyze-build","intercept-build","scan-build-py"):
++                result["functional"][name]={"status":"SKIPPED","reason":reason}
++            bs.save(E/"functional-results.json",result["functional"])
+             (E/"functional-environment-error.txt").write_text(traceback.format_exc())
++        if result["clang_python_checks"]["status"]!="PASS":
++            raise RuntimeError("clang Python dependency or module completeness check failed")
+         if result["file_comparison"]!="PASS" or any(
+                 isinstance(x,dict) and x.get("status")=="FAIL" for x in result["functional"].values()):
+             raise RuntimeError("file ownership or functional check failed")

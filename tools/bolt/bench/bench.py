@@ -9,16 +9,19 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import signal
 import statistics
 import subprocess
 import sys
+import tempfile
 import time
 
 GIB = 2**30
 MIN_AVAILABLE = 6 * GIB
 TASKSET = "/usr/bin/taskset"
 TIME = "/usr/bin/time"
+OBJCOPY = "/usr/bin/objcopy"
 GENERIC_BUILD_COMM = {"gbs", "gbs-build", "rpmbuild", "ninja", "make", "llvm-bolt", "ld.lld"}
 
 def write_json(path, data):
@@ -95,6 +98,33 @@ def argv_for(variant, input_row, output):
             *input_row["flags"], "-x", {"c":"cpp-output", "c++":"c++-cpp-output"}[input_row["language"]],
             "-c", input_row["path"], "-o", str(output)]
 
+def variant_at(variant, alias):
+    root = Path(variant["root"])
+    if not root.is_absolute() or not root.is_dir():
+        raise ValueError(f"Invalid private root {root}")
+
+    def rebase(value):
+        original = Path(value)
+        original.resolve(strict=True).relative_to(root.resolve())
+        return str(alias / original.relative_to(root))
+
+    return {**variant, "loader": rebase(variant["loader"]), "clang": rebase(variant["clang"]),
+            "library_path": [rebase(value) for value in variant["library_path"]]}
+
+def use_variant(variant, alias):
+    compiler = variant_at(variant, alias)
+    temporary = alias.with_suffix(".next")
+    temporary.symlink_to(variant["root"], target_is_directory=True)
+    temporary.replace(alias)
+    # The kernel resolves symlink targets for /proc/self/exe. The compiler
+    # records that executable path, so the loader itself needs a stable file.
+    loader = alias.parent / "loader"
+    temporary = loader.with_suffix(".next")
+    shutil.copy2(variant["loader"], temporary)
+    temporary.replace(loader)
+    compiler["loader"] = str(loader)
+    return compiler
+
 def terminate_child(process):
     try:
         os.killpg(process.pid, signal.SIGKILL)
@@ -166,6 +196,29 @@ def measure(variant, tu, cpus, work, logs, objects, timeout):
             row["object"] = {"path": str(done), "bytes": done.stat().st_size, "sha256": digest(done)}
         return row
 
+def compare_objects(a, b):
+    if not (a and b):
+        return {"status": "UNVERIFIED"}
+    if filecmp.cmp(a["path"], b["path"], shallow=False):
+        return {"status": "IDENTICAL"}
+    result = {"status": "DIFFERENT"}
+    with tempfile.TemporaryDirectory(dir=Path(a["path"]).parent) as directory:
+        dest = [Path(directory) / name for name in ("baseline.o", "candidate.o")]
+        for original, target in zip((a, b), dest):
+            try:
+                p = subprocess.run([OBJCOPY, "--remove-section=.GCC.command.line", original["path"], target],
+                                   capture_output=True, text=True, timeout=60)
+            except (OSError, subprocess.TimeoutExpired) as error:
+                result["without_command_line"] = "UNVERIFIED"
+                result["objcopy_error"] = str(error)
+                return result
+            if p.returncode:
+                result["without_command_line"] = "UNVERIFIED"
+                result["objcopy_error"] = p.stderr
+                return result
+        result["without_command_line"] = "IDENTICAL" if filecmp.cmp(*dest, shallow=False) else "DIFFERENT"
+    return result
+
 def compare_round(round_data, baseline):
     by_variant = {n: {r["tu"]: r for r in x["measurements"]} for n,x in round_data["variants"].items()}
     comparisons = []
@@ -175,14 +228,54 @@ def compare_round(round_data, baseline):
         for ident, ref in by_variant[baseline].items():
             row = by_tu[ident]
             a, b = ref.get("object"), row.get("object")
-            if not (a and b):
-                state = "UNVERIFIED"
-            elif filecmp.cmp(a["path"], b["path"], shallow=False):
-                state = "IDENTICAL"
-            else:
-                state = "DIFFERENT"
-            comparisons.append({"variant":name, "tu":ident, "status":state, "baseline":a, "candidate":b})
+            comparisons.append({"variant":name, "tu":ident, "baseline":a, "candidate":b,
+                                **compare_objects(a, b)})
     return comparisons
+
+def anomalous(row):
+    return (row["status"] == "PASS" and row["wall_seconds"] > 1.5 * row["cpu_seconds"]
+            and row["wall_seconds"] - row["cpu_seconds"] > 1)
+
+def batch_summary(measurements, retries, elapsed):
+    return {"measurements":measurements, "anomaly_retries":retries, "elapsed_seconds":elapsed,
+            "tu_wall_seconds_sum":sum(s["wall_seconds"] for s in measurements),
+            "tu_cpu_seconds_sum":sum(s.get("cpu_seconds", 0) for s in measurements),
+            "all_passed":all(s["status"]=="PASS" for s in measurements),
+            "scored":all(s["status"]=="PASS" and not s["anomalous"] for s in measurements)}
+
+def run_batch(compiler, inputs, cpus, work, root, timeout, jobs):
+    logs, objects = root / "logs", root / "objects"
+    logs.mkdir(parents=True)
+    objects.mkdir()
+    start = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=jobs) as threads:
+        initial = list(threads.map(lambda t: measure(compiler, t, cpus, work, logs, objects, timeout), inputs))
+    for row in initial:
+        row["anomalous"] = anomalous(row)
+    return batch_summary(initial, [], time.perf_counter()-start)
+
+def repeat_batch(batch, compiler, inputs, cpus, work, root, timeout):
+    logs, objects = root / "retry-logs", root / "retry-objects"
+    logs.mkdir()
+    objects.mkdir()
+    measurements, retries = [], []
+    start = time.perf_counter()
+    for row, tu in zip(batch["measurements"], inputs):
+        selected = row
+        if row["anomalous"]:
+            selected = measure(compiler, tu, cpus, work, logs, objects, timeout)
+            selected["anomalous"] = anomalous(selected)
+            retries.append({"initial": row, "retry": selected,
+                            "objects": compare_objects(row.get("object"), selected.get("object"))})
+        measurements.append(selected)
+    result = batch_summary(measurements, retries, batch["elapsed_seconds"])
+    result["retry_elapsed_seconds"] = time.perf_counter()-start
+    return result
+
+def round_group(row):
+    return "interference" if any(
+        sample["build_process_names"] for sample in (row["environment_start"], row["environment_end"])
+    ) else "quiet"
 
 def summarize(rounds, variants, baseline, jobs):
     totals = defaultdict(list)
@@ -194,47 +287,62 @@ def summarize(rounds, variants, baseline, jobs):
         reference = {r["tu"]:r for r in base["measurements"]}
         for name, data in row["variants"].items():
             totals[name].append(data["tu_wall_seconds_sum"])
-            if data["all_passed"]:
-                successful_totals[name].append(data["tu_wall_seconds_sum"] if jobs == 1 else data["elapsed_seconds"])
+            if data.get("scored", data["all_passed"]):
+                if jobs == 1 or not data.get("anomaly_retries"):
+                    successful_totals[name].append(data["tu_wall_seconds_sum"] if jobs == 1 else data["elapsed_seconds"])
                 cpu[name].append(data["tu_cpu_seconds_sum"])
             for r in data["measurements"]:
                 prior = reference[r["tu"]]
-                if r["status"] == prior["status"] == "PASS" and r["wall_seconds"] > 0:
-                    ratios[name][r["tu"]].append(prior["wall_seconds"]/r["wall_seconds"])
-    baseline_stats = quartiles(successful_totals[baseline])
+                if (r["status"] == prior["status"] == "PASS" and r["cpu_seconds"] > 0
+                        and not (r.get("anomalous") or prior.get("anomalous"))):
+                    ratios[name][r["tu"]].append(prior["cpu_seconds"]/r["cpu_seconds"])
+    baseline_stats = quartiles(cpu[baseline])
     result = {}
     for name in variants:
-        elapsed = quartiles(successful_totals[name])
-        speed = (baseline_stats["median"]/elapsed["median"] if elapsed and baseline_stats and elapsed["median"] else None)
+        primary = quartiles(cpu[name])
+        speed = (baseline_stats["median"]/primary["median"] if primary and baseline_stats and primary["median"] else None)
         per_tu = {ident:statistics.median(vals) for ident,vals in ratios[name].items()}
         counts = Counter(c["status"] for rd in rounds for c in rd["comparisons"] if c["variant"]==name)
-        result[name] = {"total_seconds":elapsed,"observed_tu_wall_seconds_sum":quartiles(totals[name]),
-                        "total_cpu_seconds":quartiles(cpu[name]),"speedup_vs_baseline":speed,
+        result[name] = {"total_seconds":primary,"observed_tu_wall_seconds_sum":quartiles(totals[name]),
+                        "total_cpu_seconds":primary,"total_wall_seconds":quartiles(successful_totals[name]),"speedup_vs_baseline":speed,
                         "per_tu_speedup":per_tu,"per_tu_distribution":quartiles(list(per_tu.values())),
                         "object_comparisons":dict(counts)}
     return result
 
 def markdown(result):
     text = [f"# {result['label']}", "", f"Rounds {len(result['rounds'])}, jobs {result['jobs']}, CPUs {result['cpus']}.",
-            "", "| Variant | Valid rounds | Median total wall (s) | IQR (s) | Speedup vs V0 | Per-TU speedup Q1 / median / Q3 | Objects |",
-            "|---|---:|---:|---:|---:|---|---|"]
+            "", "One warmup batch per variant is excluded. The primary metric is user + system CPU time.",
+            "", "| Variant | Valid rounds | Median CPU (s) | CPU IQR (s) | Median wall (s) | Speedup vs V0 | Per-TU speedup Q1 / median / Q3 | Objects |",
+            "|---|---:|---:|---:|---:|---:|---|---|"]
     for name,row in result["summary"].items():
         tot,dist = row["total_seconds"],row["per_tu_distribution"]
         numbers = " / ".join(f"{dist[k]:.3f}×" for k in ("q1","median","q3")) if dist else "—"
         speed = f"{row['speedup_vs_baseline']:.3f}×" if row["speedup_vs_baseline"] is not None else "—"
         count = row["object_comparisons"]
+        wall = row["total_wall_seconds"]
         marker = "🔴 " if count.get("DIFFERENT") else ""
         text.append(f"| {name} | {tot['count'] if tot else 0} | "
                     f"{format(tot['median'],'.3f') if tot else '—'} | "
-                    f"{format(tot['iqr'],'.3f') if tot else '—'} | {speed} | {numbers} | "
+                    f"{format(tot['iqr'],'.3f') if tot else '—'} | {format(wall['median'],'.3f') if wall else '—'} | {speed} | {numbers} | "
                     f"{marker}{count.get('IDENTICAL',0)} same / {count.get('DIFFERENT',0)} different / "
                     f"{count.get('UNVERIFIED',0)} unverified |")
-    text.extend(["","## Object differences and failures",""])
+    text.extend(["","## Quiet and interference rounds","",
+                 "Interference means that a sampled process name matched a build tool. Generic names cannot identify the owning project.",
+                 "", "| Group | Variant | Valid rounds | Median CPU (s) | Median wall (s) |", "|---|---|---:|---:|---:|"])
+    for group, summary in result["groups"].items():
+        for name, row in summary.items():
+            cpu, wall = row["total_cpu_seconds"], row["total_wall_seconds"]
+            text.append(f"| {group} | {name} | {cpu['count'] if cpu else 0} | "
+                        f"{format(cpu['median'],'.3f') if cpu else '—'} | {format(wall['median'],'.3f') if wall else '—'} |")
+    text.extend(["","## Object differences, failures, and retries",""])
     for rd in result["rounds"]:
         for c in rd["comparisons"]:
             if c["status"] != "IDENTICAL":
-                text.append(f"- {'🔴 ' if c['status']=='DIFFERENT' else ''}Round {rd['round']} · {c['variant']} · {c['tu']} · {c['status']}.")
+                diagnostic = f" Without .GCC.command.line: {c['without_command_line']}." if "without_command_line" in c else ""
+                text.append(f"- {'🔴 ' if c['status']=='DIFFERENT' else ''}Round {rd['round']} · {c['variant']} · {c['tu']} · {c['status']}.{diagnostic}")
         for name,d in rd["variants"].items():
+            for retry in d["anomaly_retries"]:
+                text.append(f"- Round {rd['round']} · {name} · {retry['initial']['tu']} · anomalous sample repeated once.")
             for r in d["measurements"]:
                 if r["status"] == "FAIL":
                     text.append(f"- Round {rd['round']} · {name} · {r['tu']} · compile exit {r['rc']}.")
@@ -257,29 +365,41 @@ def run_bench(config, dest, *, rounds, jobs, cpus, variants, label, timeout, oth
             raise ValueError(f"Compiler identity failed: {name}")
     work = dest / "work"
     work.mkdir()
+    alias = dest / "current-root"
+    all_layouts = [variant_at(config["variants"][name], alias) for name in variants]
+    if any(any(a[field] != all_layouts[0][field] for field in ("loader", "clang", "library_path"))
+           for a in all_layouts[1:]):
+        raise ValueError("All variants must provide identical relative loader, library, and compiler paths")
+    warmup = {}
+    for name in variants:
+        compiler = use_variant(config["variants"][name], alias)
+        warmup[name] = run_batch(compiler, inputs, cpus, work, dest / "warmup" / name,
+                                 timeout, jobs)
+    write_json(dest / "warmup.json", warmup)
     collected = []
     for i in range(rounds):
         order = rotation(variants,i)
         row = {"round":i+1,"order":order,"environment_start":capture_environment(cpus,other_comm),"variants":{}}
         for name in order:
             memory_guard()
-            root = dest / f"round-{i+1:02}"/name
-            logs,objects = root/"logs",root/"objects"
-            logs.mkdir(parents=True)
-            objects.mkdir()
-            compiler = config["variants"][name]
-            start = time.perf_counter()
-            with ThreadPoolExecutor(max_workers=jobs) as threads:
-                measurements = list(threads.map(lambda t: measure(compiler,t,cpus,work,logs,objects,timeout),inputs))
-            row["variants"][name] = {"measurements":measurements,"elapsed_seconds":time.perf_counter()-start,
-                "tu_wall_seconds_sum":sum(s["wall_seconds"] for s in measurements),
-                "tu_cpu_seconds_sum":sum(s.get("cpu_seconds", 0) for s in measurements),
-                "all_passed":all(s["status"]=="PASS" for s in measurements)}
+            compiler = use_variant(config["variants"][name], alias)
+            row["variants"][name] = run_batch(compiler, inputs, cpus, work, dest / f"round-{i+1:02}" / name,
+                                              timeout, jobs)
+        for name in order:
+            batch = row["variants"][name]
+            if any(s["anomalous"] for s in batch["measurements"]):
+                compiler = use_variant(config["variants"][name], alias)
+                row["variants"][name] = repeat_batch(batch, compiler, inputs, cpus, work,
+                                                     dest / f"round-{i+1:02}" / name, timeout)
         row["comparisons"] = compare_round(row, "V0")
         row["environment_end"] = capture_environment(cpus,other_comm)
+        row["group"] = round_group(row)
         collected.append(row)
         write_json(dest / f"round-{i+1:02}.json",row)
-    result = {"label":label,"jobs":jobs,"cpus":cpus,"rounds":collected,"summary":summarize(collected,variants,"V0",jobs)}
+    result = {"label":label,"jobs":jobs,"cpus":cpus,"common_root":str(alias),"rounds":collected,
+              "warmup":warmup,"summary":summarize(collected,variants,"V0",jobs),
+              "groups":{group:summarize([row for row in collected if row["group"]==group],variants,"V0",jobs)
+                        for group in ("quiet","interference")}}
     write_json(dest/"results.json",result)
     (dest/"results.md").write_text(markdown(result))
     return result
