@@ -7,7 +7,7 @@
 | G4 | FAIL | dynamic | 23250112512 | 6/6/1 | 2026-11-25T11:41:50-08:00 → 2026-11-25T13:54:34-08:00 | 0.0 | 7963.344 | 23250112512 | 27545079808 | 310068699136 | -1630748672 | PermissionError: [Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0' -> '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G5/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0' |
 | G5 | SKIPPED | — | — | —/—/— | — → 2026-11-25T13:54:54-08:00 | 0 | — | — | 28049133568 | 248547352576 | — | G chain prerequisite did not pass |
 | G6 | SKIPPED | — | — | —/—/— | — → 2026-11-25T13:55:02-08:00 | 0 | — | — | 28018921472 | 248547192832 | — | G chain prerequisite did not pass |
-| G7 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
+| G7 | SKIPPED | — | — | —/—/— | — → 2026-11-25T13:55:06-08:00 | 0 | — | — | 28039430144 | 248547115008 | — | G chain prerequisite did not pass |
 | G8 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
 
 本地配方 ce627fa087233d9da415887222009155fe8b5029。转换器重试修复未触及 PGO Ninja 门禁，沿用 150 的预演。G4 的配方在 CMake 后、编译前执行完整 Ninja 门禁。N2 已由 149-run 完成。
@@ -73,3 +73,7 @@ G6 等待截止 2026-11-27T06:00:00-08:00。整体截止 2026-11-27T20:00:00-08:
   "VmHWM_sample": null
 }
 ~~~
+
+### G7
+
+[G7 JSON 与日志索引](../../tools/bolt/results/task160/g-chain/G7.json)
