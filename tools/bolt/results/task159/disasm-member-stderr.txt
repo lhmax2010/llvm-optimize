@@ -1,0 +1,83 @@
+LLVM ERROR: out of memory
+Allocation failed
+PLEASE submit a bug report to https://github.com/llvm/llvm-project/issues/ and include the crash backtrace, preprocessed source, and associated run script.
+Stack dump:
+0.	Program arguments: /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin/clang-22 --no-default-config --target=x86_64-tizen-linux-gnu -x ir -O3 -ffunction-sections -fdata-sections -funique-section-names -faddrsig -g -gdwarf-4 -ffp-contract=on -c -fPIC /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/native-archive-conversion/members/usr/lib64/libclangAST.a/00052/input.bc -o /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/native-archive-conversion/members/usr/lib64/libclangAST.a/00052/Disasm.cpp.o
+1.	Code generation
+2.	Running pass 'Function Pass Manager' on module '/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/native-archive-conversion/members/usr/lib64/libclangAST.a/00052/input.bc'.
+3.	Running pass 'Assignment Tracking Analysis' on function '@_ZNK5clang6interp8Function4dumpERN4llvm11raw_ostreamENS0_7CodePtrE'
+ #0 0x00005d71bcd72277 llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/Unix/Signals.inc:846:8
+ #1 0x00005d71bcd71e65 llvm::sys::RunSignalHandlers() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/Signals.cpp:109:18
+ #2 0x00005d71bcd71e65 llvm::sys::CleanupOnSignal(unsigned long) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/Unix/Signals.inc:376:3
+ #3 0x00005d71bcd2128e (anonymous namespace)::CrashRecoveryContextImpl::HandleCrash(int, unsigned long) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/CrashRecoveryContext.cpp:73:5
+ #4 0x00005d71bcd2145e CrashRecoverySignalHandler(int) (.llvm.1064056916423503555) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/CrashRecoveryContext.cpp:391:1
+ #5 0x00007bfc2ea62ac0 (/lib64/libc.so.6+0x3eac0)
+ #6 0x00007bfc2eab2d4c (/lib64/libc.so.6+0x8ed4c)
+ #7 0x00007bfc2ea62a22 raise (/lib64/libc.so.6+0x3ea22)
+ #8 0x00007bfc2ea4c4a2 abort (/lib64/libc.so.6+0x284a2)
+ #9 0x00005d71bcd25635 std::mutex::lock() /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/std_mutex.h:117:2
+#10 0x00005d71bcd25635 std::lock_guard<std::mutex>::lock_guard(std::mutex&) /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/std_mutex.h:250:19
+#11 0x00005d71bcd25635 llvm::report_bad_alloc_error(char const*, bool) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/ErrorHandling.cpp:185:33
+#12 0x00005d71bb20b095 (anonymous namespace)::AssignmentTrackingLowering::run(FunctionVarLocsBuilder*) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/DenseMap.h:0:11
+#13 0x00005d71bb213ee8 analyzeFunction(llvm::Function&, llvm::DataLayout const&, FunctionVarLocsBuilder*) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/CodeGen/AssignmentTrackingAnalysis.cpp:2744:20
+#14 0x00005d71bb4e5418 std::__uniq_ptr_impl<llvm::FunctionVarLocs, std::default_delete<llvm::FunctionVarLocs>>::_M_ptr() const /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/unique_ptr.h:193:51
+#15 0x00005d71bb4e5418 std::unique_ptr<llvm::FunctionVarLocs, std::default_delete<llvm::FunctionVarLocs>>::get() const /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/unique_ptr.h:464:21
+#16 0x00005d71bb4e5418 std::unique_ptr<llvm::FunctionVarLocs, std::default_delete<llvm::FunctionVarLocs>>::operator->() const /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/unique_ptr.h:457:9
+#17 0x00005d71bb4e5418 llvm::AssignmentTrackingAnalysis::runOnFunction(llvm::Function&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/CodeGen/AssignmentTrackingAnalysis.cpp:2801:3
+#18 0x00005d71bb98b865 llvm::FPPassManager::runOnFunction(llvm::Function&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/IR/LegacyPassManager.cpp:0:27
+#19 0x00005d71bb98aa88 llvm::FPPassManager::runOnModule(llvm::Module&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/IR/LegacyPassManager.cpp:1444:13
+#20 0x00005d71bb99f074 (anonymous namespace)::MPPassManager::runOnModule(llvm::Module&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/IR/LegacyPassManager.cpp:1513:27
+#21 0x00005d71bb99f074 llvm::legacy::PassManagerImpl::run(llvm::Module&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/IR/LegacyPassManager.cpp:531:44
+#22 0x00005d71bc021e4c (anonymous namespace)::EmitAssemblyHelper::RunCodegenPipeline(clang::BackendAction, std::unique_ptr<llvm::raw_pwrite_stream, std::default_delete<llvm::raw_pwrite_stream>>&, std::unique_ptr<llvm::ToolOutputFile, std::default_delete<llvm::ToolOutputFile>>&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/CodeGen/BackendUtil.cpp:1294:9
+#23 0x00005d71bc021e4c (anonymous namespace)::EmitAssemblyHelper::emitAssembly(clang::BackendAction, std::unique_ptr<llvm::raw_pwrite_stream, std::default_delete<llvm::raw_pwrite_stream>>, clang::BackendConsumer*) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/CodeGen/BackendUtil.cpp:1317:3
+#24 0x00005d71bc021e4c clang::emitBackendOutput(clang::CompilerInstance&, clang::CodeGenOptions&, llvm::StringRef, llvm::Module*, clang::BackendAction, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>, std::unique_ptr<llvm::raw_pwrite_stream, std::default_delete<llvm::raw_pwrite_stream>>, clang::BackendConsumer*) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/CodeGen/BackendUtil.cpp:1489:13
+#25 0x00005d71bc0ba80b std::unique_ptr<llvm::raw_pwrite_stream, std::default_delete<llvm::raw_pwrite_stream>>::~unique_ptr() /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/unique_ptr.h:397:6
+#26 0x00005d71bc0ba80b clang::CodeGenAction::ExecuteAction() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/CodeGen/CodeGenAction.cpp:1183:3
+#27 0x00005d71bbe57a1d clang::CompilerInstance::shouldBuildGlobalModuleIndex() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Frontend/CompilerInstance.cpp:89:34
+#28 0x00005d71bbe57a1d clang::FrontendAction::Execute() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Frontend/FrontendAction.cpp:1317:10
+#29 0x00005d71bbe5757b llvm::Error::getPtr() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/Support/Error.h:281:12
+#30 0x00005d71bbe5757b llvm::Error::operator bool() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/Support/Error.h:241:16
+#31 0x00005d71bbe5757b clang::CompilerInstance::ExecuteAction(clang::FrontendAction&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Frontend/CompilerInstance.cpp:1006:23
+#32 0x00005d71bbe572cd clang::ExecuteCompilerInvocation(clang::CompilerInstance*) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/FrontendTool/ExecuteCompilerInvocation.cpp:310:25
+#33 0x00005d71bbefa6f1 cc1_main(llvm::ArrayRef<char const*>, char const*, void*) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/tools/driver/cc1_main.cpp:304:15
+#34 0x00005d71bbef09f6 llvm::SmallVectorBase<unsigned int>::size() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/SmallVector.h:80:32
+#35 0x00005d71bbef09f6 llvm::SmallVectorTemplateCommon<void*, void>::end() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/SmallVector.h:275:37
+#36 0x00005d71bbef09f6 llvm::BumpPtrAllocatorImpl<llvm::MallocAllocator, 4096ul, 4096ul, 128ul>::~BumpPtrAllocatorImpl() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/Support/Allocator.h:99:42
+#37 0x00005d71bbef09f6 ExecuteCC1Tool(llvm::SmallVectorImpl<char const*>&, llvm::ToolContext const&, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>) (.llvm.5817533206056808902) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/tools/driver/driver.cpp:237:1
+#38 0x00005d71bbef08b2 std::__atomic_base<int>::fetch_sub(int, std::memory_order) /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/atomic_base.h:641:16
+#39 0x00005d71bbef08b2 llvm::ThreadSafeRefCountedBase<llvm::vfs::FileSystem>::Release() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/IntrusiveRefCntPtr.h:134:32
+#40 0x00005d71bbef08b2 llvm::IntrusiveRefCntPtrInfo<llvm::vfs::FileSystem>::release(llvm::vfs::FileSystem*) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/IntrusiveRefCntPtr.h:164:38
+#41 0x00005d71bbef08b2 llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>::release() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/IntrusiveRefCntPtr.h:233:7
+#42 0x00005d71bbef08b2 llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>::~IntrusiveRefCntPtr() /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/IntrusiveRefCntPtr.h:196:27
+#43 0x00005d71bbef08b2 clang_main(int, char**, llvm::ToolContext const&)::$_0::operator()(llvm::SmallVectorImpl<char const*>&) const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/tools/driver/driver.cpp:376:5
+#44 0x00005d71bbef08b2 int llvm::function_ref<int (llvm::SmallVectorImpl<char const*>&)>::callback_fn<clang_main(int, char**, llvm::ToolContext const&)::$_0>(long, llvm::SmallVectorImpl<char const*>&) (.llvm.5817533206056808902) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/STLFunctionalExtras.h:46:12
+#45 0x00005d71bd2e48f9 clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const::$_0::operator()() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Driver/Job.cpp:442:30
+#46 0x00005d71bd2e48f9 void llvm::function_ref<void ()>::callback_fn<clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const::$_0>(long) (.llvm.10106085274877444412) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/STLFunctionalExtras.h:46:12
+#47 0x00005d71bc12c433 llvm::function_ref<void ()>::operator()() const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/include/llvm/ADT/STLFunctionalExtras.h:0:12
+#48 0x00005d71bc12c433 llvm::CrashRecoveryContext::RunSafely(llvm::function_ref<void ()>) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/llvm/lib/Support/CrashRecoveryContext.cpp:426:3
+#49 0x00005d71bc12c262 clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Driver/Job.cpp:442:7
+#50 0x00005d71bbf69eba std::_Function_base::_M_empty() const /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/std_function.h:247:37
+#51 0x00005d71bbf69eba std::function<void (clang::driver::Command const&, int)>::operator bool() const /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../gcc/x86_64-tizen-linux-gnu/14.2.0/include/c++/bits/std_function.h:574:17
+#52 0x00005d71bbf69eba clang::driver::Compilation::ExecuteCommand(clang::driver::Command const&, clang::driver::Command const*&, bool) const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Driver/Compilation.cpp:197:7
+#53 0x00005d71bbf69a4e clang::driver::Compilation::ExecuteJobs(clang::driver::JobList const&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&, bool) const /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Driver/Compilation.cpp:246:13
+#54 0x00005d71bbf69a4e clang::driver::Driver::ExecuteCompilation(clang::driver::Compilation&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/lib/Driver/Driver.cpp:2269:5
+#55 0x00005d71bbef49ff clang_main(int, char**, llvm::ToolContext const&) /home/abuild/rpmbuild/BUILD/llvm-22.1.8/clang/tools/driver/driver.cpp:0:21
+#56 0x00005d71bbe37eb2 main /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/tools/clang/tools/driver/clang-driver.cpp:17:10
+#57 0x00007bfc2ea4db97 (/lib64/libc.so.6+0x29b97)
+#58 0x00007bfc2ea4dc55 __libc_start_main (/lib64/libc.so.6+0x29c55)
+#59 0x00005d71bc1ef9c1 _start /home/abuild/rpmbuild/BUILD/glibc-2.40/csu/../sysdeps/x86_64/start.S:117:0
+clang-22: error: clang frontend command failed with exit code 134 (use -v to see invocation)
+clang version 22.1.8
+Target: x86_64-tizen-linux-gnu
+Thread model: posix
+InstalledDir: /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/bin
+clang-22: note: diagnostic msg: 
+********************
+
+PLEASE ATTACH THE FOLLOWING FILES TO THE BUG REPORT:
+Preprocessed source(s) and associated run script(s) are located at:
+clang-22: note: diagnostic msg: /tmp/input-7c4732.bc
+clang-22: note: diagnostic msg: /tmp/input-7c4732.sh
+clang-22: note: diagnostic msg: 
+
+********************
