@@ -1,0 +1,104 @@
+diff --git a/tools/skills/tizen-llvm-offline-profile/SKILL.md b/tools/skills/tizen-llvm-offline-profile/SKILL.md
+index 0351b340..a0113e87 100644
+--- a/tools/skills/tizen-llvm-offline-profile/SKILL.md
++++ b/tools/skills/tizen-llvm-offline-profile/SKILL.md
+@@ -28,7 +28,7 @@ Dry-run prints argv, selected stages and budgets without launching a subprocess.
+ 1. **instrumented-build.** Run the configured offline GBS commands in the instrumented packaging copy. Pass -DLLVM_BUILD_INSTRUMENTED=IR to CMake and build the instrumented Clang and profile runtime. Use the same project snapshot, target configuration and feature set as the intended PGO build. Deliver the instrumented Clang and the LLVM-version-matched llvm-profdata. Record source tree, spec and build configuration identities, actual CMake argv, versions, hashes and instrumentation warnings. Stop on build or tool-identity failure.
+ 2. **ir-train.** Run the instrumented Clang once per training row using the row's ordered argv followed by -c INPUT -o OBJECT. Set LLVM_PROFILE_FILE to a separate directory for each row with a %m-%p.profraw filename. Verify each input hash before training. Expect one fresh nonempty profraw per row. Retain the argv, raw profiles, build/training warning counts and first warning. Stop on a failed compile or ambiguous/missing profile output.
+ 3. **merge-profdata.** Run llvm-profdata merge -o CLANG.PROFDATA with the 23 inventoried profiles. Record the input and output hashes, version and merge log. An approved inspection may also run llvm-profdata show to verify the instrumentation level. Stop on missing inputs, merge failure or empty profdata.
+-4. **pgo-build.** Stage profdata in the offline packaging copy and expose it at the actual path visible to CMake. Build the shipping configuration with -DLLVM_PROFDATA_FILE=PATH and ordinary Clang, with the release BOLT rewrite deferred. Keep the expected ThinLTO/MLGO and hybrid-link settings. Exclude compiler-rt, OpenMP and other runtime targets from PGO in CMake. Use the source recipe's native archive conversion and normal installation to produce the shipping payload. Verify the main and any separate runtime Ninja graphs via ninja -t compdb -x and inspect commands for non-phony outputs it omits. Main C/C++ compile commands use exactly one -fprofile-instr-use=PATH. A link command may repeat that exact option once. Runtime commands, including compiler resource library outputs and compiler-rt or OpenMP sub-builds, carry no PGO flags. Read ninja-gate.json for the complete list of violations. Scan the resulting installed executables, shared libraries and every shipped archive member for instrumentation. Record the graph identity, audited payload root and gate result; PGO match stays UNKNOWN pending a validated method. Stop on a mismatch, missing graph or runtime dependency.
++4. **pgo-build.** Stage profdata in the offline packaging copy and expose it at the actual path visible to CMake. Build the shipping configuration with -DLLVM_PROFDATA_FILE=PATH and ordinary Clang, with the release BOLT rewrite deferred. Keep the expected ThinLTO/MLGO and hybrid-link settings. Exclude compiler-rt, OpenMP and other runtime targets from PGO in CMake. Use the source recipe's native archive conversion and normal installation to produce the shipping payload. Verify the main and any separate runtime Ninja graphs via ninja -t compdb -x and inspect commands for non-phony outputs it omits. Main C/C++ compile commands use exactly one -fprofile-instr-use=PATH. A link command may repeat that exact option once. Runtime commands, including compiler resource library outputs and compiler-rt or OpenMP sub-builds, carry no PGO flags. Read ninja-gate.json for the complete list of violations. Scan the resulting installed executables, shared libraries and every native static-devel archive member for instrumentation. Record the graph identity, audited payload root and gate result; PGO match stays UNKNOWN pending a validated method. Stop on a mismatch, missing graph or runtime dependency.
+ 5. **bolt-tools-relink.** Configure BOLT in the matching PGO build tree, build llvm-bolt, merge-fdata and the matching instrumentation runtime. Use ninja -t commands -s bin/clang-22 to capture the exact original Clang link edge. Use the packaging helper's replay command (or a reviewed equivalent) to retain the original flags and objects and add --emit-relocs with a separate output and dependency path. Run that replay and llvm-strip --strip-debug to produce the BOLT input. Preserve the original compiler, relocation sections and link log. Verify relocation/debug-section handling and record tool, runtime and input hashes. Stop if the original edge, tools or relocations cannot be established.
+ 6. **bolt-instrument-train-merge.** Run llvm-bolt with -instrument, --thread-count=1, -runtime-instrumentation-lib=PATH, -instrumentation-file=PREFIX, -instrumentation-file-append-pid and -instrumentation-binpath=PATH. Compile the same 23 inputs with the instrumented compiler and original ordered flags. Inventory exactly one fresh nonempty fdata per row, then run merge-fdata and capture its standard output. Record the executable, files, argv and merged fdata hashes. Stop on missing profiles, changed inputs or tool/merge failure.
+ 7. **bolt-match.** Run the newly merged fdata against the exact input ELF from stage 5 using the release rewrite options shown by dry-run. Require a successful, trusted rewrite and -stale-threshold=5. Require both 100 × (S+U) ≤ 5 × (N+U) and 100 × S ≤ 5 × N. Persist N/M/S/U/Q and both ratios. infer-stale is forbidden. Fail closed on a truncated or malformed counter log, invalid counts or a nonzero return. Verify identity, retrain, or disable BOLT before proceeding. Keep the threshold fixed. See [gates.md](references/gates.md).
+diff --git a/tools/skills/tizen-llvm-offline-profile/references/gates.md b/tools/skills/tizen-llvm-offline-profile/references/gates.md
+index 1f41cca2..c6cf0fbb 100644
+--- a/tools/skills/tizen-llvm-offline-profile/references/gates.md
++++ b/tools/skills/tizen-llvm-offline-profile/references/gates.md
+@@ -27,4 +27,4 @@ The count function is the packaging implementation. The file-level checker addit
+ 
+ ## Runtime dependencies
+ 
+-Use llvm-readelf to inspect ELF sections, symbol tables and dynamic entries. Check regular archives through readelf's member enumeration and reject malformed or external thin members. Reject __llvm_prf_* sections, __llvm_profile_* symbols and libclang_rt.profile* NEEDED libraries. Check the installed executable/shared payload and each static archive member after native conversion. Inspect the corresponding unstripped build artifacts if the release strips the required symbol table. Record missing coverage rather than treating a stripped symbol table as proof about local symbols. Do not use ldd on an .a file.
++Use llvm-readelf to inspect ELF sections, symbol tables and dynamic entries. Check regular archives through readelf's member enumeration and reject malformed or external thin members. Reject __llvm_prf_* sections, __llvm_profile_* symbols and libclang_rt.profile* NEEDED libraries. Check the installed executable/shared payload and each static-devel archive member after native conversion. The compiler resource archive contains the profile runtime for use as a build input. Check for that runtime in the audited executables, shared libraries and static-devel members. Inspect the corresponding unstripped build artifacts if the release strips the required symbol table. Record missing coverage rather than treating a stripped symbol table as proof about local symbols. Do not use ldd on an .a file.
+diff --git a/tools/skills/tizen-llvm-offline-profile/scripts/runtime_dep_check.py b/tools/skills/tizen-llvm-offline-profile/scripts/runtime_dep_check.py
+index 0f3c32b2..9f24544c 100644
+--- a/tools/skills/tizen-llvm-offline-profile/scripts/runtime_dep_check.py
++++ b/tools/skills/tizen-llvm-offline-profile/scripts/runtime_dep_check.py
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env python3
+-"""Inspect shipped ELF files and every member of ordinary static archives."""
++"""Inspect shipped ELF and the native static-devel archives."""
+ import argparse
+ import json
+ import os
+@@ -31,6 +31,7 @@ def audit(root, readelf):
+     if not readelf.is_absolute():
+         raise ValueError("an absolute readelf path is required")
+     counts = {"elf": 0, "archives": 0}
++    static_libdirs = {root / "usr/lib", root / "usr/lib64"}
+     issues = []
+     def walk_error(error):
+         raise error
+@@ -43,22 +44,25 @@ def audit(root, readelf):
+                 continue
+             with path.open("rb") as stream:
+                 ident = stream.read(20)
+-            if ident.startswith(THIN):
+-                issues.append({"file": str(path.relative_to(root)), "diagnostic": "external members in thin archive"})
+-                continue
+-            if ident.startswith(ARCHIVE):
++            # The compiler resource directory also ships the profile runtime
++            # itself as a static input for instrumented builds. Static-devel
++            # archives live in the normal RPM library directories.
++            if path.parent in static_libdirs and path.match("lib*.a"):
++                if ident.startswith(THIN):
++                    issues.append({"file": str(path.relative_to(root)), "diagnostic": "external members in thin archive"})
++                    continue
++                if not ident.startswith(ARCHIVE):
++                    issues.append({"file": str(path.relative_to(root)), "diagnostic": "invalid archive magic"})
++                    continue
+                 counts["archives"] += 1
+             elif ident.startswith(ELF):
+                 if len(ident) < 20 or ident[5] not in (1, 2):
+                     issues.append({"file": str(path.relative_to(root)), "diagnostic": "invalid ELF identification"})
+                     continue
+                 elf_type = int.from_bytes(ident[16:18], "little" if ident[5] == 1 else "big")
+-                if elf_type not in (2, 3):
++                if elf_type not in (2, 3) or path.suffix == ".debug" or "debug" in path.relative_to(root).parts[:-1]:
+                     continue
+                 counts["elf"] += 1
+-            elif path.suffix == ".a":
+-                issues.append({"file": str(path.relative_to(root)), "diagnostic": "invalid archive magic"})
+-                continue
+             else:
+                 continue
+             argv = [str(readelf), "--wide", "--section-headers", "--symbols", "--dynamic", str(path)]
+diff --git a/tools/skills/tizen-llvm-offline-profile/tests/test_runtime_dep_check.py b/tools/skills/tizen-llvm-offline-profile/tests/test_runtime_dep_check.py
+index 82c8c99e..371d2252 100644
+--- a/tools/skills/tizen-llvm-offline-profile/tests/test_runtime_dep_check.py
++++ b/tools/skills/tizen-llvm-offline-profile/tests/test_runtime_dep_check.py
+@@ -13,7 +13,8 @@ class RuntimeGateTests(unittest.TestCase):
+         temporary = tempfile.TemporaryDirectory()
+         self.addCleanup(temporary.cleanup)
+         self.root = Path(temporary.name)
+-        self.archive = self.root / "libtest.a"
++        self.archive = self.root / "usr/lib64/libtest.a"
++        self.archive.parent.mkdir(parents=True)
+         # Mock readelf; the magic identifies the object routed to it.
+         self.archive.write_bytes(r.ARCHIVE)
+         self.reader = Path("/path/to/llvm-readelf")
+@@ -64,3 +65,13 @@ class RuntimeGateTests(unittest.TestCase):
+         path.write_bytes(r.ELF + bytes([2, 1]) + b"\0" * 10 + b"\x03\0\0\0")
+         with patch.object(r.subprocess, "Popen", return_value=self.tool(["  [1] .text PROGBITS"])):
+             self.assertEqual(r.audit(self.root, self.reader)["elf"], 1)
++
++    def test_resource_runtime_archive_is_not_a_static_devel_archive(self):
++        resource = self.root / "usr/lib64/clang/22/lib/linux/libclang_rt.profile-x86_64.a"
++        resource.parent.mkdir(parents=True)
++        resource.write_bytes(r.ARCHIVE)
++        with patch.object(r.subprocess, "Popen", return_value=self.tool(["  [1] .text PROGBITS"])) as run:
++            result = r.audit(self.root, self.reader)
++        self.assertEqual((result["status"], result["archives"]), ("PASS", 1))
++        self.assertEqual(run.call_count, 1)
++        self.assertEqual(run.call_args.args[0][-1], str(self.archive))

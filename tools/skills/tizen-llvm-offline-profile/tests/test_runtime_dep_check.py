@@ -13,7 +13,8 @@ class RuntimeGateTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        self.archive = self.root / "libtest.a"
+        self.archive = self.root / "usr/lib64/libtest.a"
+        self.archive.parent.mkdir(parents=True)
         # Mock readelf; the magic identifies the object routed to it.
         self.archive.write_bytes(r.ARCHIVE)
         self.reader = Path("/path/to/llvm-readelf")
@@ -64,3 +65,13 @@ class RuntimeGateTests(unittest.TestCase):
         path.write_bytes(r.ELF + bytes([2, 1]) + b"\0" * 10 + b"\x03\0\0\0")
         with patch.object(r.subprocess, "Popen", return_value=self.tool(["  [1] .text PROGBITS"])):
             self.assertEqual(r.audit(self.root, self.reader)["elf"], 1)
+
+    def test_resource_runtime_archive_is_not_a_static_devel_archive(self):
+        resource = self.root / "usr/lib64/clang/22/lib/linux/libclang_rt.profile-x86_64.a"
+        resource.parent.mkdir(parents=True)
+        resource.write_bytes(r.ARCHIVE)
+        with patch.object(r.subprocess, "Popen", return_value=self.tool(["  [1] .text PROGBITS"])) as run:
+            result = r.audit(self.root, self.reader)
+        self.assertEqual((result["status"], result["archives"]), ("PASS", 1))
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_args.args[0][-1], str(self.archive))

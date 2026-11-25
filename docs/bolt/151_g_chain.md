@@ -17,3 +17,9 @@
 7 项编排单测通过，覆盖更新后的磁盘预留、首选与回退、回退档 OOM、步骤清理以及看门狗停止后的准入。N2 沿用 149-run 结果。
 
 [启动 JSON](../../tools/bolt/results/task151/startup.json) · [sudo 输出与复测](../../tools/bolt/results/task151/sudo-recheck.json) · [编排单测](../../tools/bolt/results/task151/tests.txt)
+
+### 运行时依赖门禁准备核对
+
+用 149-run 保存的成品编译器运行时 RPM 复现了外部技能检查的误报。旧检查递归审计了编译器资源目录中的 libclang_rt.profile-x86_64.a，该归档本身就是链接插桩时使用的运行时库。技能现与 R 的 RPM 门禁使用相同范围，检查发货 ELF 和普通库目录中的静态开发归档。PGO 配方、实际 Ninja 门禁和禁止运行时依赖的条件保持一致。真实夹具与技能 60 项测试通过。
+
+[旧检查原文](../../tools/bolt/results/task151/runtime-scope-legacy.json) · [修正 diff](../../tools/bolt/results/task151/runtime-scope-correction.diff) · [真实夹具结果](../../tools/bolt/results/task151/runtime-scope-corrected.json)

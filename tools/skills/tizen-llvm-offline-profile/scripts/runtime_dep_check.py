@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inspect shipped ELF files and every member of ordinary static archives."""
+"""Inspect shipped ELF and the native static-devel archives."""
 import argparse
 import json
 import os
@@ -31,6 +31,7 @@ def audit(root, readelf):
     if not readelf.is_absolute():
         raise ValueError("an absolute readelf path is required")
     counts = {"elf": 0, "archives": 0}
+    static_libdirs = {root / "usr/lib", root / "usr/lib64"}
     issues = []
     def walk_error(error):
         raise error
@@ -43,22 +44,25 @@ def audit(root, readelf):
                 continue
             with path.open("rb") as stream:
                 ident = stream.read(20)
-            if ident.startswith(THIN):
-                issues.append({"file": str(path.relative_to(root)), "diagnostic": "external members in thin archive"})
-                continue
-            if ident.startswith(ARCHIVE):
+            # The compiler resource directory also ships the profile runtime
+            # itself as a static input for instrumented builds. Static-devel
+            # archives live in the normal RPM library directories.
+            if path.parent in static_libdirs and path.match("lib*.a"):
+                if ident.startswith(THIN):
+                    issues.append({"file": str(path.relative_to(root)), "diagnostic": "external members in thin archive"})
+                    continue
+                if not ident.startswith(ARCHIVE):
+                    issues.append({"file": str(path.relative_to(root)), "diagnostic": "invalid archive magic"})
+                    continue
                 counts["archives"] += 1
             elif ident.startswith(ELF):
                 if len(ident) < 20 or ident[5] not in (1, 2):
                     issues.append({"file": str(path.relative_to(root)), "diagnostic": "invalid ELF identification"})
                     continue
                 elf_type = int.from_bytes(ident[16:18], "little" if ident[5] == 1 else "big")
-                if elf_type not in (2, 3):
+                if elf_type not in (2, 3) or path.suffix == ".debug" or "debug" in path.relative_to(root).parts[:-1]:
                     continue
                 counts["elf"] += 1
-            elif path.suffix == ".a":
-                issues.append({"file": str(path.relative_to(root)), "diagnostic": "invalid archive magic"})
-                continue
             else:
                 continue
             argv = [str(readelf), "--wide", "--section-headers", "--symbols", "--dynamic", str(path)]
