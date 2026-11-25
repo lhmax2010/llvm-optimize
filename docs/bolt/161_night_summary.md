@@ -7,7 +7,7 @@
 - 大型库已删除 11/11，3 个自测库保留。
 - 大型库归档首轮 STOP，原因是 SHA256 检查调用错误。续做已通过。 [首轮原始提交](https://github.com/lhmax2010/llvm-optimize/blob/2720eb0b/tools/bolt/results/task160/backup-supplement/large-terminal.json)
 
-更新于 2026-11-25T08:28:03.748374-08:00。
+更新于 2026-11-25T08:32:08.255670-08:00。
 
 ## 单元与顺序
 
@@ -22,14 +22,14 @@
 | `llvm-opt-task161-backup-duplicates.service` | inactive/dead | — |
 | `llvm-opt-task160-backup-large.service` | inactive/dead | — |
 | `llvm-opt-task160-backup-evidence.service` | active/running | — |
-| `llvm-opt-task154-full-build-1.service` | inactive/dead | — |
+| `llvm-opt-task154-full-build-1.service` | active/running | — |
 | `llvm-opt-task154-full-build-2.service` | inactive/dead | — |
 
 ## 步骤与资源
 
 | 步骤 | 结论 | 用时 s | 等待 s | 原因 |
 |---|---|---:|---:|---|
-| 154-B | WAITING | — | — | waiting for 139-D memory floor or build disk allowance |
+| 154-B | RUNNING | — | — | waiting for 139-D memory floor or build disk allowance |
 | G4 | WAITING | — | — | active: llvm-opt-task154-after-153.service |
 | G5 | WAITING | — | — | — |
 | G6 | WAITING | — | — | — |
@@ -37,10 +37,12 @@
 | G8 | WAITING | — | — | — |
 | 157-B | WAITING | — | — | — |
 
+154-B 准入时 /home 可用 318,757,634,048 B，MemAvailable 22,569,095,168 B。
+
 154-B 仍采用原磁盘准入线 302,154,457,695 B，包含 30 GB 预留。
 160 补充累计净释放 46,013,472,768 B，其中本次接续 46,010,806,272 B。清理结束时 /home 可用 318,757,769,216 B。
 
-当前 /home 可用 318,757,695,488 B，MemAvailable 22,392,053,760 B。
+当前 /home 可用 318,737,539,072 B，MemAvailable 22,498,668,544 B。
 
 | 采样时间 | /home 可用 B | /home 已用 B | MemAvailable B |
 |---|---:|---:|---:|
