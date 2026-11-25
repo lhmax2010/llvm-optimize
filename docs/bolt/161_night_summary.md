@@ -3,13 +3,14 @@
 ## 需要用户处理的事项
 
 - PS6 的 154-B 结果为 **PARTIAL**。 [评审材料](161_ps6_review_packet.md)
-- PGO+BOLT 候选状态为 等待 G 链。—
+- PGO+BOLT 候选状态为 SKIPPED。G6, G7 and G8 must all pass
 - 大型库已删除 11/11，3 个自测库保留。
 - [154-B 的 sudo 清理脚本](../../tools/bolt/results/task154/sudo-clean.sh) 等待用户审核。
+- G 链的 sudo 清理脚本保存在 `/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/sudo-clean.py`。
 - G4 FAIL。PermissionError: [Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0' -> '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G5/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0'。
 - 大型库归档首轮 STOP，原因是 SHA256 检查调用错误。续做已通过。 [首轮原始提交](https://github.com/lhmax2010/llvm-optimize/blob/2720eb0b/tools/bolt/results/task160/backup-supplement/large-terminal.json)
 
-更新于 2026-11-25T13:54:46.406371-08:00。
+更新于 2026-11-25T13:55:28.824022-08:00。
 
 ## 单元与顺序
 
@@ -18,7 +19,7 @@
 | 单元 | 状态 | 重启时间 |
 |---|---|---|
 | `llvm-opt-task154-after-153.service` | inactive/dead | Wed 2026-11-25 07:36:45 PST |
-| `llvm-opt-task160-g-chain.service` | active/running | Wed 2026-11-25 07:36:45 PST |
+| `llvm-opt-task160-g-chain.service` | inactive/dead | Wed 2026-11-25 07:36:45 PST |
 | `llvm-opt-task161-night.service` | active/running | — |
 | `llvm-opt-task161-backup-scan.service` | inactive/dead | — |
 | `llvm-opt-task161-backup-duplicates.service` | inactive/dead | — |
@@ -33,18 +34,18 @@
 |---|---|---:|---:|---|
 | 154-B | PARTIAL | 11035.8 | — | waiting for 139-D memory floor or build disk allowance |
 | G4 | FAIL | 7963.344 | 0.0 | PermissionError: [Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0' -> '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G5/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0' |
-| G5 | WAITING | — | — | — |
-| G6 | WAITING | — | — | — |
-| G7 | WAITING | — | — | — |
-| G8 | WAITING | — | — | — |
-| 157-B | WAITING | — | — | — |
+| G5 | SKIPPED | — | 0 | G chain prerequisite did not pass |
+| G6 | SKIPPED | — | 0 | G chain prerequisite did not pass |
+| G7 | SKIPPED | — | 0 | G chain prerequisite did not pass |
+| G8 | SKIPPED | — | 0 | G chain prerequisite did not pass |
+| 157-B | SKIPPED | — | — | G6, G7 and G8 must all pass |
 
 154-B 准入时 /home 可用 318,757,634,048 B，MemAvailable 22,569,095,168 B。
 
 154-B 仍采用原磁盘准入线 302,154,457,695 B，包含 30 GB 预留。
 160 补充累计净释放 46,013,472,768 B，其中本次接续 46,010,806,272 B。清理结束时 /home 可用 318,757,769,216 B。
 
-当前 /home 可用 248,547,512,320 B，MemAvailable 28,047,671,296 B。
+当前 /home 可用 248,546,738,176 B，MemAvailable 28,056,145,920 B。
 
 | 采样时间 | /home 可用 B | /home 已用 B | MemAvailable B |
 |---|---:|---:|---:|

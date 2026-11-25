@@ -1,9 +1,9 @@
 {
   "current": {
-    "at": "2026-11-25T13:54:46.406371-08:00",
-    "home_available": 248547512320,
-    "home_used": 1619260825600,
-    "mem_available": 28047671296
+    "at": "2026-11-25T13:55:28.824022-08:00",
+    "home_available": 248546738176,
+    "home_used": 1619261599744,
+    "mem_available": 28056145920
   },
   "samples": [
     {
@@ -56,7 +56,7 @@
     }
   ],
   "morning": false,
-  "all_terminal": false,
+  "all_terminal": true,
   "states": {
     "llvm-opt-task154-after-153.service": {
       "Result": "success",
@@ -67,8 +67,8 @@
     "llvm-opt-task160-g-chain.service": {
       "Result": "success",
       "Id": "llvm-opt-task160-g-chain.service",
-      "ActiveState": "active",
-      "SubState": "running"
+      "ActiveState": "inactive",
+      "SubState": "dead"
     },
     "llvm-opt-task161-night.service": {
       "Result": "success",
@@ -545,14 +545,74 @@
         "estimated_allocated_bytes_removed": 0
       }
     },
-    {},
-    {},
-    {},
-    {}
+    {
+      "step": "G5",
+      "status": "SKIPPED",
+      "reason": "G chain prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-25T13:54:54-08:00",
+          "mem_available": 28049133568,
+          "home_available": 248547352576
+        }
+      ],
+      "admission_wait_seconds": 0,
+      "ended_at": "2026-11-25T13:54:54-08:00"
+    },
+    {
+      "step": "G6",
+      "status": "SKIPPED",
+      "reason": "G chain prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-25T13:55:02-08:00",
+          "mem_available": 28018921472,
+          "home_available": 248547192832
+        }
+      ],
+      "admission_wait_seconds": 0,
+      "ended_at": "2026-11-25T13:55:02-08:00"
+    },
+    {
+      "step": "G7",
+      "status": "SKIPPED",
+      "reason": "G chain prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-25T13:55:06-08:00",
+          "mem_available": 28039430144,
+          "home_available": 248547115008
+        }
+      ],
+      "admission_wait_seconds": 0,
+      "ended_at": "2026-11-25T13:55:06-08:00"
+    },
+    {
+      "step": "G8",
+      "status": "SKIPPED",
+      "reason": "G chain prerequisite did not pass",
+      "admission": [
+        {
+          "time": "2026-11-25T13:55:10-08:00",
+          "mem_available": 28034629632,
+          "home_available": 248547037184
+        }
+      ],
+      "admission_wait_seconds": 0,
+      "ended_at": "2026-11-25T13:55:10-08:00"
+    }
   ],
   "g_live": {},
-  "g_final": null,
+  "g_final": "c57c7eb8c823e56122881235c5bccde10b1be8e8",
   "g_failure": null,
-  "candidate": {},
+  "candidate": {
+    "status": "SKIPPED",
+    "stage_status": {
+      "G6": "SKIPPED",
+      "G7": "SKIPPED",
+      "G8": "SKIPPED"
+    },
+    "reason": "G6, G7 and G8 must all pass"
+  },
   "packet_error": false
 }
