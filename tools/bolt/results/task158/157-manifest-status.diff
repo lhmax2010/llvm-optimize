@@ -1,0 +1,108 @@
+--- candidate.py.before
++++ candidate.py
+@@ -130,6 +130,23 @@
+             "training_sha256":hashlib.sha256(json.dumps(rows,sort_keys=True,separators=(",",":")).encode()).hexdigest(),
+             "recipe":RECIPE}
+ 
++def verification_helper(original):
++    text=replace(original, "def select_pgo_profile(manifest, project, pgo, bolt):",
++                 "def select_pgo_profile(manifest, project, pgo, bolt, *, allow_unqualified=False):")
++    text=replace(text, "require(doc['status'] == 'READY', 'profile manifest is not READY (PLACEHOLDER is not usable)')",
++                 "require(doc['status'] == 'READY' or (allow_unqualified and doc['status'] == 'UNQUALIFIED'),\n"
++                 "            'profile manifest is not READY (PLACEHOLDER is not usable)')")
++    return replace(text, "select_pgo_profile(manifest, project, True, bolt_profile is not None)",
++                   "select_pgo_profile(manifest, project, True, bolt_profile is not None, allow_unqualified=True)")
++
++
++def verification_commit(integration,d,assets,message):
++    helper=assets/"clang-bolt-helper.py"
++    helper.write_text(verification_helper(show(integration,HELPER)))
++    return local_commit(integration,d,{SPEC:assets/"llvm.spec",HELPER:helper},
++           message+"\n\nExplicitly accept the unqualified manifest for build verification.")
++
++
+ def make_a(d):
+     profile=PROFILES/"clang.profdata"
+     require(file_identity(profile)==PROFDATA,"G3 profdata does not match authorized size and SHA")
+@@ -140,7 +157,7 @@
+     asset=assets/"clang-pgo.profdata.xz"
+     asset_info=pack(profile,asset)
+     manifest=assets/"llvm-profiles.manifest"
+-    save(manifest,{"format":1,"llvm_version":"22.1.8","status":"READY",
++    save(manifest,{"format":1,"llvm_version":"22.1.8","status":"UNQUALIFIED",
+                    "provenance":shared_provenance(),
+                    "profiles":[{"project":"T","pgo":True,"bolt":False,"profdata":asset_info}]})
+     # A PGO-only build must not declare the unused placeholder fdata.
+@@ -160,7 +177,7 @@
+     s=replace(s,"%bcond_without clang_bolt\n","%bcond_with clang_bolt\n")
+     test_spec=assets/"llvm.spec"
+     test_spec.write_text(s)
+-    test=local_commit(integration,d,{SPEC:test_spec},
++    test=verification_commit(integration,d,assets,
+            "packaging: enable clang PGO without BOLT for build verification (test only, not for merge)")
+     return integration,test,assets
+ 
+@@ -169,8 +186,8 @@
+     body=read(source)
+     match=read(PROFILES/"bolt-match.json")
+     save(d/"G7-match.json",match)
+-    require(body.get("status")=="READY",
+-            "G8 manifest status is "+repr(body.get("status"))+"; packaged pgo-prepare requires READY; source manifest kept unchanged")
++    require(body.get("status")=="UNQUALIFIED",
++            "G8 did not deliver the expected unqualified manifest; original kept unchanged")
+     require(body.get("provenance",{}).get("bolt_match")==match,"G8 match identity differs from G7")
+     pair=next((w for w in body["profiles"] if w["project"]=="T" and w["pgo"] is True and w["bolt"] is True),None)
+     require(pair is not None,"G8 is missing the paired T profile")
+@@ -203,7 +220,7 @@
+         "Ship the profile matched to the PGO build. Use the validated\n"
+         "paired profile when both optimizations are enabled.",True)
+     test_spec.write_text(replace(s,"%bcond_with clang_pgo\n","%bcond_without clang_pgo\n"))
+-    test=local_commit(integration,d,{SPEC:test_spec},
++    test=verification_commit(integration,d,assets,
+           "packaging: enable clang PGO with BOLT for build verification (test only, not for merge)")
+     return integration,test,assets
+ 
+@@ -244,6 +261,11 @@
+ def validate_candidate(d,kind,base,test,assets):
+     manifest=assets/"llvm-profiles.manifest"
+     body=read(manifest)
++    require(body["status"]=="UNQUALIFIED","integration must retain UNQUALIFIED")
++    original_helper=show(base,HELPER)
++    require(original_helper==show(RECIPE,HELPER),"the integration changed the production helper")
++    require(show(test,HELPER)==verification_helper(original_helper),
++            "verification helper changed more than the status allowance")
+     bolt=kind=="B"
+     row=next(r for r in body["profiles"] if r["project"]=="T" and r["pgo"] is True and r["bolt"]==bolt)
+     asset=assets/row["profdata"]["file"]
+@@ -254,7 +276,7 @@
+     default=assets/"integration-llvm.spec"
+     default.write_text(show(base,SPEC))
+     cli=[sys.executable,"-B",SKILL/"manifest.py","check","--manifest",manifest,"--project","T",
+-         "--pgo","on","--bolt","on" if bolt else "off"]
++         "--pgo","on","--bolt","on" if bolt else "off","--allow-unqualified"]
+     logged(d,"skill-manifest-check",cli)
+     work=d/"profile-check"
+     argv=[sys.executable,"-B",helper,"pgo-prepare",manifest,"T",work,asset]
+@@ -266,6 +288,14 @@
+     for path in tracked:
+         require(git("hash-object",str(path)).strip()==git("rev-parse",test+":packaging/"+path.name).strip(),
+                 "the Git Source blob differs from the validated asset: "+path.name)
++    production=d/"integration-helper.py"
++    production.write_text(original_helper)
++    deny=list(argv)
++    deny[2]=production
++    deny[6]=d/"integration-rejection-work"
++    denied=logged(d,"integration-manifest-rejects-unqualified",deny,expect=(1,))
++    require("profile manifest is not READY" in denied.stdout+denied.stderr,
++            "production gate did not reject UNQUALIFIED at the status check")
+     logged(d,"packaged-manifest-check",argv)
+     unpacked=work/"clang.profdata"
+     require(file_identity(unpacked)==PROFDATA,"packaged helper emitted different profdata")
+@@ -302,6 +332,7 @@
+                     "echo BOLT_PIPELINE_PASS" not in s,f"{arch} unexpectedly enables a profile path")
+         results[arch]="PASS"
+     return {"rpmspec":results,"skill_manifest":"PASS","packaged_manifest":"PASS",
++            "integration_rejects_unqualified":"PASS","verification_only_status_difference":"PASS",
+             "compile_flag_script":flag,"profile":receipt(asset),"manifest":receipt(manifest),
+             "variant":"PGO+BOLT" if bolt else "PGO-only","project":"T",
+             **({"bolt_profile":receipt(paired),"stale_threshold":5} if bolt else {})}

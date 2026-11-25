@@ -1,0 +1,44 @@
+test_all_asset_identities_checked (__main__.TestStatus.test_all_asset_identities_checked) ... ok
+test_duplicate_json_fields_rejected (__main__.TestStatus.test_duplicate_json_fields_rejected) ... ok
+test_duplicate_mapping_rejected (__main__.TestStatus.test_duplicate_mapping_rejected) ... ok
+test_integration_rejects_unqualified_for_both_mappings (__main__.TestStatus.test_integration_rejects_unqualified_for_both_mappings) ... ok
+test_placeholder_bytes_rejected (__main__.TestStatus.test_placeholder_bytes_rejected) ... ERROR
+test_placeholder_status_rejected (__main__.TestStatus.test_placeholder_status_rejected) ... ok
+test_production_ready_still_works (__main__.TestStatus.test_production_ready_still_works) ... ok
+test_project_and_switch_mapping_enforced (__main__.TestStatus.test_project_and_switch_mapping_enforced) ... FAIL
+test_unknown_status_rejected (__main__.TestStatus.test_unknown_status_rejected) ... ok
+test_verification_accepts_unqualified_for_both_mappings (__main__.TestStatus.test_verification_accepts_unqualified_for_both_mappings) ... ok
+
+======================================================================
+ERROR: test_placeholder_bytes_rejected (__main__.TestStatus.test_placeholder_bytes_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task158/test_157_manifest.py", line 80, in test_placeholder_bytes_rejected
+    self.profile, info = self.asset("placeholder.profdata", b"PLACEHOLDER content")
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task158/test_157_manifest.py", line 40, in asset
+    return packed, candidate.pack(plain, packed)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/skills/tizen-llvm-offline-profile/scripts/manifest.py", line 90, in pack
+    verify_asset(result, dest.parent)
+  File "/home/linhao/Toolchain/development/llvm-optimize-bolt/tools/skills/tizen-llvm-offline-profile/scripts/manifest.py", line 39, in verify_asset
+    raise ValueError(f"placeholder profile: {name}")
+ValueError: placeholder profile: placeholder.profdata.xz
+
+======================================================================
+FAIL: test_project_and_switch_mapping_enforced (__main__.TestStatus.test_project_and_switch_mapping_enforced)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task158/test_157_manifest.py", line 100, in test_project_and_switch_mapping_enforced
+    doc = copy.deepcopy(self.doc)
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task158/test_157_manifest.py", line 54, in reject
+    p = self.invoke(doc, **kwargs)
+AssertionError: 2 != 1 : usage: helper.py pgo-prepare [-h] [--bolt-profile BOLT_PROFILE]
+                             manifest {T,D} work profile
+helper.py pgo-prepare: error: argument project: invalid choice: 'X' (choose from 'T', 'D')
+
+
+----------------------------------------------------------------------
+Ran 10 tests in 60.035s
+
+FAILED (failures=1, errors=1)
