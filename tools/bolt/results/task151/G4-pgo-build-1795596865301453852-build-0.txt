@@ -1,0 +1,25 @@
+/usr/bin/git clone --quiet --shared --no-checkout /home/linhao/Toolchain/development/llvm-optimize/temp/task131/pgo-dev /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source checkout --quiet --detach 750d7a83475a3c3c6fecf545ea74ba110fc845f5
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source rev-parse HEAD
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source status --porcelain --untracked-files=no
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source add -- /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source/packaging/clang-pgo.profdata.xz /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source/packaging/llvm-profiles.manifest
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source diff --cached --name-only
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source -c 'user.name=Hao Lin' -c user.email=hao.lin@samsung.com commit -m 'Stage locally generated IR profile for offline pairing'
+/usr/bin/git -C /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source rev-parse HEAD
+/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/gbs.conf export --spec llvm.spec --commit 4bdedc3acf85aa35ac83e30e513e0b474033c1e8 --upstream-branch sandbox/fangyu.he/llvm_optmize --upstream-tag upstream/22.1.8 --outdir-directly -o /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/export /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source
+/usr/bin/sudo -n /usr/bin/build --uid 1000:1000 --root /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0 --dist /home/linhao/Toolchain/development/llvm-optimize/temp/night-20261105/configs/toolchain/build.conf --arch x86_64 --target x86_64-tizen-linux --stage=-bp --debug --baselibs --define 'jobs 4' --define '_smp_mflags -j4' --define '_costomized_smp_mflags -j4' --define 'mlgo_build_jobs 4' --define '_with_clang_pgo 1' --define '_without_clang_bolt 1' --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/packages/ --repo http://download.tizen.org/snapshots/TIZEN/Tizen/Tizen-Base-Toolchain/tizen-base-toolchain_20261030.061318/repos/standard/debug/ /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/export/llvm.spec
+/usr/bin/gbs -c /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/gbs.conf build -A x86_64 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/gbs-driver -c 4bdedc3acf85aa35ac83e30e513e0b474033c1e8 --threads=4 --define 'jobs 4' --define '_smp_mflags -j4' --define '_costomized_smp_mflags -j4' --define 'mlgo_build_jobs 4' --define '_with_clang_pgo 1' --define '_without_clang_bolt 1' --define '_buildshell /var/tmp/llvm-stage-jobs/build-shell' --baselibs --style=tar --spec llvm.spec /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task151/orchestration/pgosteps.py", line 339, in <module>
+    actions[stage](a,w,b,int(os.environ["TASK133_JOBS"]))
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task151/orchestration/pgosteps.py", line 194, in adapt_pgo
+    rpms=run_gbs(w,d,src,derived,"llvm.spec",jobs,exp,extra)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task151/orchestration/buildsteps.py", line 155, in run_gbs
+    checked(*argv,cwd=source,output=d/"gbs.log")
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task151/orchestration/buildsteps.py", line 30, in checked
+    return subprocess.run(argv,cwd=cwd,env=env or CLEAN_ENV,stdout=f,stderr=subprocess.STDOUT,check=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/usr/bin/gbs', '-c', '/home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/gbs.conf', 'build', '-A', 'x86_64', '-B', '/home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/gbs-driver', '-c', '4bdedc3acf85aa35ac83e30e513e0b474033c1e8', '--threads=4', '--define', 'jobs 4', '--define', '_smp_mflags -j4', '--define', '_costomized_smp_mflags -j4', '--define', 'mlgo_build_jobs 4', '--define', '_with_clang_pgo 1', '--define', '_without_clang_bolt 1', '--define', '_buildshell /var/tmp/llvm-stage-jobs/build-shell', '--baselibs', '--style=tar', '--spec', 'llvm.spec', '/home/linhao/Toolchain/development/llvm-optimize/archive/task151/G4/source']' returned non-zero exit status 1.

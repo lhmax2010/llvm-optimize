@@ -1,25 +1,36 @@
-# 151 B · G 链
+# 151 · PGO/BOLT profile 生成
 
-**G4 已通过资源准入并启动。** 2026-11-25 00:48:12 PST，编排单元 llvm-opt-151-g-chain.service 启动。采用任务 150 最终配方 750d7a83475a3c3c6fecf545ea74ba110fc845f5。该配方已通过 150 的仅配置预演，G4 的实际 CMake 配置后仍执行完整 Ninja 门禁。
+**进行中**
 
-| 步骤 | 磁盘准入 B | 内存下限 | 当前状态 |
-|---|---:|---|---|
-| G4 | 302154457695 | 10 GiB | 运行，4/4/1，MemoryMax 16009859072 B |
-| G5 | 78318382080 | 15 GiB | 等待 G4 |
-| G6 | 51054246912 | 首选 18 GiB，回退 16 GiB | 等待 G5 |
-| G7 | 52548578304 | 9 GiB | 等待 G6 |
-| G8 | 48253611008 | 1 GiB | 等待 G7 |
+|步骤|结论|档位|MemoryMax B|编译/ThinLTO/链接|起止 PST|等待 s|执行 s|cgroup 峰值 B|准入内存 B|准入磁盘 B|清理 df 差值 B|原因|
+|---|---|---|---:|---|---|---:|---:|---:|---:|---:|---:|---|
+| G4 | FAIL | dynamic | 16009859072 | 4/4/1 | 2026-11-25T00:48:12-08:00 → 2026-11-25T04:25:55-08:00 | 0.0 | 13063.27 | 14270107648 | 20304826368 | 304148250624 | 60365758464 | profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'pgo-build', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task151/G-profiles/pgo-build-1795596865301453852'}], 'started_at': '2026-11-25T08:53:12+00:00', 'admission': [{'at': '2026-11-25T08:53:12+00:00', 'memory': 19849625600, 'disk': {'/home': 303581949952, '/home/linhao/Toolchain/development/llvm-optimize/archive/task151/G-profiles': 303581949952}, 'admission_memory': 20304826368, 'stage': 'pgo-build', 'memory_max': 16009859072, 'standard_cap': 25769803776, 'floor': 10737418240, 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'admitted': True, 'actual_memory_max': 16009859072}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task151/G-profiles/pgo-build-1795596865301453852/build-0.txt', 'ended_at': '2026-11-25T12:25:55+00:00'} |
+| G5 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
+| G6 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
+| G7 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
+| G8 | PENDING | — | — | —/—/— | — → — | — | — | — | — | — | — | — |
 
-启动时 /home 可用 304,148,254,720 B，MemAvailable 20,304,826,368 B。P 采用 222,650,722,030 B，磁盘预留为 15 GiB 加 30 GB。G4 最多等待 3 小时，G5 最多等待 60 分钟。G6 等待截止为 2026-11-26 06:00 PST，总截止为 2026-11-26 20:00 PST。
+本地配方 750d7a83475a3c3c6fecf545ea74ba110fc845f5。采用 150 最终仅配置预演，没有重复预演。G4 的配方在 CMake 后、编译前执行完整 Ninja 门禁。N2 已由 149-run 完成。
 
-用户的两份 sudo 输出共登记 5 条，均无拒绝。149-run 三处记录为 0 B。150 两处记录为 1,065,443,328 B 和 1,065,447,424 B。脚本统计的已释放块和两个时点的全机 df 差值分别保留。
+峰值增长 P 为 222,650,722,030 B。G4 准入包含 15% 系数、15 GiB 安全线和另一项目的 30 GB 磁盘预留。
 
-7 项编排单测通过，覆盖更新后的磁盘预留、首选与回退、回退档 OOM、步骤清理以及看门狗停止后的准入。N2 沿用 149-run 结果。
+启动时 2026-11-25T00:48:12-08:00，MemAvailable 20,304,826,368 B，/home 可用 304,148,254,720 B。
+G6 等待截止 2026-11-26T06:00:00-08:00。整体截止 2026-11-26T20:00:00-08:00。
 
-[启动 JSON](../../tools/bolt/results/task151/startup.json) · [sudo 输出与复测](../../tools/bolt/results/task151/sudo-recheck.json) · [编排单测](../../tools/bolt/results/task151/tests.txt)
+- G4 磁盘准入 302,154,457,695 B
+- G5 磁盘准入 78,318,382,080 B
+- G6 磁盘准入 51,054,246,912 B
+- G7 磁盘准入 52,548,578,304 B
+- G8 磁盘准入 48,253,611,008 B
 
-### 运行时依赖门禁准备核对
+若 G4 通过，先保留经过 SHA256 核对的 clang 和成品清单。G5 复用 G4 的对象和 Ninja 图重链，核对导出的 ELF、BOLT 工具和匹配运行库后清理交接根。G3 检查点按内容核对，IR 源提交与新的 PGO 源提交分别登记。
 
-用 149-run 保存的成品编译器运行时 RPM 复现了外部技能检查的误报。旧检查递归审计了编译器资源目录中的 libclang_rt.profile-x86_64.a，该归档本身就是链接插桩时使用的运行时库。技能现与 R 的 RPM 门禁使用相同范围，检查发货 ELF 和普通库目录中的静态开发归档。PGO 配方、实际 Ninja 门禁和禁止运行时依赖的条件保持一致。真实夹具与技能 60 项测试通过。
+看门狗只停止本任务当前子单元。清理之后按依赖关系和准入规则继续。
 
-[旧检查原文](../../tools/bolt/results/task151/runtime-scope-legacy.json) · [修正 diff](../../tools/bolt/results/task151/runtime-scope-correction.diff) · [真实夹具结果](../../tools/bolt/results/task151/runtime-scope-corrected.json)
+[150 的配方和预演](150_g_chain.md) · [用户的 sudo 输出与复测](../../tools/bolt/results/task151/sudo-recheck.json) · [151 编排单测](../../tools/bolt/results/task151/tests.txt)
+
+## 日志与结果
+
+### G4
+
+[G4 JSON 与日志索引](../../tools/bolt/results/task151/G4.json)
