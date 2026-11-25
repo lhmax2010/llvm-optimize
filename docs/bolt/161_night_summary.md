@@ -7,7 +7,7 @@
 - 大型库已删除 11/11，3 个自测库保留。
 - 大型库归档首轮 STOP，原因是 SHA256 检查调用错误。续做已通过。 [首轮原始提交](https://github.com/lhmax2010/llvm-optimize/blob/2720eb0b/tools/bolt/results/task160/backup-supplement/large-terminal.json)
 
-更新于 2026-11-25T08:32:08.255670-08:00。
+更新于 2026-11-25T08:32:42.486178-08:00。
 
 ## 单元与顺序
 
@@ -21,7 +21,7 @@
 | `llvm-opt-task161-backup-scan.service` | inactive/dead | — |
 | `llvm-opt-task161-backup-duplicates.service` | inactive/dead | — |
 | `llvm-opt-task160-backup-large.service` | inactive/dead | — |
-| `llvm-opt-task160-backup-evidence.service` | active/running | — |
+| `llvm-opt-task160-backup-evidence.service` | inactive/dead | — |
 | `llvm-opt-task154-full-build-1.service` | active/running | — |
 | `llvm-opt-task154-full-build-2.service` | inactive/dead | — |
 
@@ -42,7 +42,7 @@
 154-B 仍采用原磁盘准入线 302,154,457,695 B，包含 30 GB 预留。
 160 补充累计净释放 46,013,472,768 B，其中本次接续 46,010,806,272 B。清理结束时 /home 可用 318,757,769,216 B。
 
-当前 /home 可用 318,737,539,072 B，MemAvailable 22,498,668,544 B。
+当前 /home 可用 316,313,923,584 B，MemAvailable 22,258,102,272 B。
 
 | 采样时间 | /home 可用 B | /home 已用 B | MemAvailable B |
 |---|---:|---:|---:|
