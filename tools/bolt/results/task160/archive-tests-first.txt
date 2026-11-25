@@ -1,0 +1,51 @@
+test_enomem_diagnostic_and_unrelated_line (__main__.RetryTest.test_enomem_diagnostic_and_unrelated_line) ... ERROR
+test_oom_retry_failure_keeps_failed_state (__main__.RetryTest.test_oom_retry_failure_keeps_failed_state) ... ok
+test_oom_success_retries_after_parallel_workers_and_in_order (__main__.RetryTest.test_oom_success_retries_after_parallel_workers_and_in_order) ... ERROR
+test_other_failures_and_disabled_retry_do_not_retry (__main__.RetryTest.test_other_failures_and_disabled_retry_do_not_retry) ... ok
+test_success_matches_the_previous_converter_byte_for_byte (__main__.RetryTest.test_success_matches_the_previous_converter_byte_for_byte) ... ERROR
+
+======================================================================
+ERROR: test_enomem_diagnostic_and_unrelated_line (__main__.RetryTest.test_enomem_diagnostic_and_unrelated_line)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/test_archive_retry.py", line 137, in test_enomem_diagnostic_and_unrelated_line
+    self.run_archive(self.new,'enomem')
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/test_archive_retry.py", line 92, in run_archive
+    module.convert(root,output,self.compiler,Path('/usr/bin/true'),Path('/usr/bin/true'),directory,
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/task131/pgo-dev/packaging/llvm-static-archives-native.py", line 978, in convert
+    record = dict(path=str(rel), before_sha256=before['sha256'], after_sha256=after['sha256'],
+                                                                              ~~~~~^^^^^^^^^^
+KeyError: 'sha256'
+
+======================================================================
+ERROR: test_oom_success_retries_after_parallel_workers_and_in_order (__main__.RetryTest.test_oom_success_retries_after_parallel_workers_and_in_order)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/test_archive_retry.py", line 100, in test_oom_success_retries_after_parallel_workers_and_in_order
+    artifact = self.run_archive(self.new,'oom')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/test_archive_retry.py", line 92, in run_archive
+    module.convert(root,output,self.compiler,Path('/usr/bin/true'),Path('/usr/bin/true'),directory,
+  File "/home/linhao/Toolchain/development/llvm-optimize/temp/task131/pgo-dev/packaging/llvm-static-archives-native.py", line 978, in convert
+    record = dict(path=str(rel), before_sha256=before['sha256'], after_sha256=after['sha256'],
+                                                                              ~~~~~^^^^^^^^^^
+KeyError: 'sha256'
+
+======================================================================
+ERROR: test_success_matches_the_previous_converter_byte_for_byte (__main__.RetryTest.test_success_matches_the_previous_converter_byte_for_byte)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/test_archive_retry.py", line 131, in test_success_matches_the_previous_converter_byte_for_byte
+    before = self.run_archive(self.old,'success',False,label='old')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/test_archive_retry.py", line 92, in run_archive
+    module.convert(root,output,self.compiler,Path('/usr/bin/true'),Path('/usr/bin/true'),directory,
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/tmpbo49elyi/old.py", line 925, in convert
+    record = dict(path=str(rel), before_sha256=before['sha256'], after_sha256=after['sha256'],
+                                                                              ~~~~~^^^^^^^^^^
+KeyError: 'sha256'
+
+----------------------------------------------------------------------
+Ran 5 tests in 25.665s
+
+FAILED (errors=3)

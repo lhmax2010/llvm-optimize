@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+base=/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run
+root="$base/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0"
+dir=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build
+test "$(pwd -P)" = "$root$dir"
+test "$1" = -t
+case "$2" in
+    compdb) test "$#" = 3 && test "$3" = -x ;;
+    targets) test "$#" = 3 && test "$3" = all ;;
+    commands) test "$#" = 4 && test "$3" = -s ;;
+    *) exit 2 ;;
+esac
+exec /usr/bin/sudo -n /usr/sbin/chroot --userspec=1000:1000 "$root" /bin/sh -c 'cd "$1"; shift; exec /usr/bin/ninja "$@"' /bin/sh "$dir" "$@"

@@ -1,0 +1,250 @@
+From ce627fa087233d9da415887222009155fe8b5029 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Wed, 25 Nov 2026 05:51:25 -0800
+Subject: [PATCH] packaging: retry native archive memory failures
+
+Defer archive members whose compiler reports memory exhaustion until
+the parallel workers finish. Retry them serially with a larger address
+space limit while preserving the original inputs and compiler options.
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+---
+ packaging/llvm-static-archives-native.py | 100 ++++++++++++++++++-----
+ packaging/llvm.spec                      |   4 +-
+ 2 files changed, 80 insertions(+), 24 deletions(-)
+
+diff --git a/packaging/llvm-static-archives-native.py b/packaging/llvm-static-archives-native.py
+index f7e7831a86354b76e9b90b38658ba6b37ff47821..5b1a692d1dd0f2db0cf4847354507be30b8ee397 100644
+--- a/packaging/llvm-static-archives-native.py
++++ b/packaging/llvm-static-archives-native.py
+@@ -564,6 +564,21 @@ def atomic_json(path, value):
+             os.unlink(name)
+ 
+ 
++class RetryableArchiveMemoryError(RuntimeError):
++    pass
++
++
++def archive_memory_error(stderr):
++    if re.search(r'(?m)^LLVM ERROR: out of memory\s*$', stderr):
++        return True
++    # Only recognize an allocation or prlimit diagnostic, not a source
++    # line, a killed process, or an arbitrary error quoting ENOMEM.
++    return bool(re.search(
++        r'(?im)^(?:[^\n]*\b(?:mmap|mremap|malloc|calloc|realloc|munmap|allocation|RLIMIT_AS)'
++        r'\b[^\n]*|prlimit: failed to execute [^\n]*):\s*'
++        r'(?:Cannot allocate memory|ENOMEM)\.?\s*$', stderr))
++
++
+ class Commands:
+     def __init__(self, address_space_bytes=4*1024**3, timeout=600):
+         self.stop = threading.Event()
+@@ -601,7 +616,7 @@ class Commands:
+         if self.stop.is_set():
+             raise RuntimeError('cancelled after: '+self.failure_reason if self.failure_reason else 'cancelled after command failure')
+ 
+-    def run(self, argv, prefix, stdout=None):
++    def run(self, argv, prefix, stdout=None, *, defer_memory_error=False, address_space_bytes=None):
+         # Reap the direct child and stop running members of its process group. Orphaned
+         # grandchildren go to the nearest subreaper or PID 1; members that left the
+         # process group are not signalled. SIGKILL is not awaited. Uninterruptible
+@@ -610,10 +625,12 @@ class Commands:
+         self.check()
+         prefix = Path(prefix)
+         timing, log = prefix.with_suffix('.time'), prefix.with_suffix('.log')
+-        command = ['/usr/bin/prlimit', '--as='+str(self.address_space_bytes), '--core=0',
++        limit = self.address_space_bytes if address_space_bytes is None else address_space_bytes
++        command = ['/usr/bin/prlimit', '--as='+str(limit), '--core=0',
+                    '--', *map(str, argv)]
+         start = time.monotonic()
+         reason, status, usage, observed = None, None, None, False
++        retryable = False
+         with log.open('wb') as err:
+             with self.lock:
+                 if self.stop.is_set() or self.signal_received is not None:
+@@ -644,7 +661,11 @@ class Commands:
+                             observed = True
+                             if info.si_code != os.CLD_EXITED or info.si_status:
+                                 reason = reason or 'command failed'
+-                                self.cancel(reason)  # Includes descendants after the leader exits.
++                                retryable = (defer_memory_error and reason == 'command failed'
++                                             and info.si_code == os.CLD_EXITED
++                                             and archive_memory_error(log.read_text(errors='replace')))
++                                if not retryable:
++                                    self.cancel(reason)  # Includes descendants after the leader exits.
+                     if observed and (not self.stop.is_set() or now-self.cancelled_at >= 3):
+                         break
+                     time.sleep(0.05)
+@@ -676,8 +697,11 @@ class Commands:
+         timing.write_text(record['time_raw'])
+         atomic_json(prefix.with_suffix('.json'), record)
+         if rc or reason:
++            message = f'{reason or "command failed"} ({rc}): {argv}; see {log}'
++            if retryable and not self.stop.is_set() and self.signal_received is None:
++                raise RetryableArchiveMemoryError(message)
+             self.cancel()
+-            raise RuntimeError(f'{reason or "command failed"} ({rc}): {argv}; see {log}')
++            raise RuntimeError(message)
+         self.check()
+         return record
+ 
+@@ -806,10 +830,12 @@ def cleanup_evidence(output):
+             path.unlink()
+ 
+ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3, command=None, debug_info=None):
++            address_space_bytes=4*1024**3, command=None, debug_info=None, *, retry_address_space_bytes=None):
+     root, output, build = Path(root).resolve(), Path(output).resolve(), Path(build).resolve()
+     if arch not in CERTIFIED_OPTIMIZATION or jobs < 1 or address_space_bytes < 1:
+         raise ValueError('invalid architecture or resource parameters')
++    if retry_address_space_bytes is not None and retry_address_space_bytes <= address_space_bytes:
++        raise ValueError('retry address space must exceed the initial limit')
+     if debug_info not in ('yes', 'no'):
+         raise ValueError('debug-info expected=yes|no found='+str(debug_info))
+     reset_evidence(root, output, build)
+@@ -859,7 +885,7 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                         raise ValueError('extracted member SHA mismatch')
+                     (source if member['kind'] == 'bitcode' else target).write_bytes(payload)
+                     paths.append((member, source, target))
+-            def process(item):
++            def process(item, *, retry=False):
+                 member, source, target = item
+                 command.check()
+                 if member['kind'] == 'machine':
+@@ -869,14 +895,27 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                     atomic_json(source.parent/'relocations.json', relocs)
+                     return dict(ordinal=member['ordinal'], name=member['name'], preserved=True,
+                                 relocation_check=relocs)
+-                text_ir = source.with_suffix('.ll')
+-                with text_ir.open('wb') as out:
+-                    command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
+-                with text_ir.open() as lines:
+-                    settings = ir_settings(lines, arch=arch, debug_info=debug_info)
+-                atomic_json(source.parent/'ir-settings.json', settings)
+-                text_ir.unlink()
+-                record = command.run([compiler, *settings['flags'], str(source), '-o', str(target)], source.parent/'convert')
++                settings_path = source.parent/'ir-settings.json'
++                if retry:
++                    settings = json.loads(settings_path.read_text())
++                    target.unlink(missing_ok=True)
++                    label = 'convert-retry'
++                else:
++                    text_ir = source.with_suffix('.ll')
++                    with text_ir.open('wb') as out:
++                        command.run([disassembler, str(source), '-o', '-'], source.parent/'disassemble', stdout=out)
++                    with text_ir.open() as lines:
++                        settings = ir_settings(lines, arch=arch, debug_info=debug_info)
++                    atomic_json(settings_path, settings)
++                    text_ir.unlink()
++                    label = 'convert'
++                argv = [compiler, *settings['flags'], str(source), '-o', str(target)]
++                if retry:
++                    record = command.run(argv, source.parent/label, address_space_bytes=retry_address_space_bytes)
++                elif retry_address_space_bytes is not None:
++                    record = command.run(argv, source.parent/label, defer_memory_error=True)
++                else:
++                    record = command.run(argv, source.parent/label)
+                 data = target.read_bytes()
+                 if settings['policy']['dwarf'] is None and elf_details(data)[1]:
+                     raise ValueError('release conversion unexpectedly emitted debug sections')
+@@ -887,25 +926,39 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+                 symbols = check_symbols(nm, source, target, command)
+                 return dict(ordinal=member['ordinal'], name=member['name'], preserved=False,
+                             settings=settings, conversion=record, symbols=symbols, sha256=sha(target))
+-            results = []
++            results, retries = [], []
+             iterator = iter(paths)
+             with ThreadPoolExecutor(max_workers=jobs) as pool:
+-                pending = {pool.submit(process, item) for item in list(next(iterator, None) for _ in range(jobs)) if item is not None}
++                pending = {pool.submit(process, item): item
++                           for item in list(next(iterator, None) for _ in range(jobs)) if item is not None}
+                 try:
+                     while pending:
+                         command.check()
+-                        done, pending = wait(pending, timeout=0.05, return_when=FIRST_COMPLETED)
++                        done, _ = wait(pending, timeout=0.05, return_when=FIRST_COMPLETED)
+                         for future in done:
+-                            results.append(future.result())
++                            item = pending.pop(future)
++                            try:
++                                results.append(future.result())
++                            except RetryableArchiveMemoryError:
++                                retries.append(item)
+                         for _ in done:
+                             item = next(iterator, None)
+                             if item is not None:
+-                                pending.add(pool.submit(process, item))
++                                pending[pool.submit(process, item)] = item
+                 except BaseException:
+                     command.cancel()
+                     for future in pending:
+                         future.cancel()
+                     raise
++            for item in sorted(retries, key=lambda entry: entry[0]['ordinal']):
++                command.check()
++                outcome = 'FAIL'
++                try:
++                    results.append(process(item, retry=True))
++                    outcome = 'PASS'
++                finally:
++                    print(f"ARCHIVE_MEMBER_RETRY {rel} {item[0]['name']} {retry_address_space_bytes} {outcome}",
++                          flush=True)
+             target_archive = output/'archives'/rel
+             target_archive.parent.mkdir(parents=True, exist_ok=True)
+             command.run(['/usr/bin/ar', 'qcDS', str(target_archive), *[str(t) for _, _, t in paths]], work/'pack')
+@@ -959,7 +1012,7 @@ def convert(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+ 
+ 
+ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs=4,
+-            address_space_bytes=4*1024**3, debug_info=None):
++            address_space_bytes=4*1024**3, debug_info=None, *, retry_address_space_bytes=None):
+     root, output = Path(root).resolve(), Path(output).resolve()
+     command = Commands(address_space_bytes)
+     old_handlers = {sig: signal.getsignal(sig) for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP)}
+@@ -969,7 +1022,8 @@ def install(root, output, compiler, disassembler, nm, build, arch='x86_64', jobs
+     result = None
+     try:
+         print('NATIVE_ARCHIVES_BEGIN', time.time(), flush=True)
+-        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes, command, debug_info)
++        result = convert(root, output, compiler, disassembler, nm, build, arch, jobs, address_space_bytes,
++                         command, debug_info, retry_address_space_bytes=retry_address_space_bytes)
+         command.check()
+         result['status'] = 'INSTALLING'
+         atomic_json(output/'summary.json', result)
+@@ -1047,6 +1101,7 @@ def _install_main():
+     parser.add_argument('--nm', type=Path, required=True)
+     parser.add_argument('--jobs', type=int, default=4)
+     parser.add_argument('--address-space-bytes', type=int, default=4*1024**3)
++    parser.add_argument('--retry-address-space-bytes', type=int)
+     args = parser.parse_args()
+     def record_cancel(sig, frame):
+         global _CANCEL_SIGNAL
+@@ -1059,7 +1114,8 @@ def _install_main():
+     failure = None
+     try:
+         install(args.root, args.evidence, args.compiler.resolve(), args.disassembler.resolve(),
+-                args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info)
++                args.nm.resolve(), args.build, args.arch, args.jobs, args.address_space_bytes, args.debug_info,
++                retry_address_space_bytes=args.retry_address_space_bytes)
+     except BaseException:
+         failure = sys.exc_info()
+     finally:
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 06f9144ec1f879c13bc4908594cf3fe8e973d001..4d2e1c60e725e588625f36195bca280d980859fc 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -767,9 +767,9 @@ python3 %{SOURCE1005} --root "%{buildroot}" \
+     --disassembler "%{_builddir}/%{buildsubdir}/build/bin/llvm-dis" \
+     --nm "%{_builddir}/%{buildsubdir}/build/bin/llvm-nm" \
+ %if %{llvm_bolt_enabled}
+-    --jobs 4 --address-space-bytes 4294967296 || bolt_status_exit $?
++    --jobs 4 --address-space-bytes 4294967296 --retry-address-space-bytes 8589934592 || bolt_status_exit $?
+ %else
+-    --jobs 4 --address-space-bytes 4294967296 || exit 1
++    --jobs 4 --address-space-bytes 4294967296 --retry-address-space-bytes 8589934592 || exit 1
+ %endif
+ %endif
+ 
+-- 
+2.43.0
+

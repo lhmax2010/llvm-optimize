@@ -1,0 +1,93 @@
+--- task157/candidate.py
++++ task160/candidate.py
+@@ -4,15 +4,17 @@
+ from zoneinfo import ZoneInfo
+ 
+ A=Path(__file__).resolve().parent
+-W=A.parents[1]
++W=A.parents[2]
+ B=W.with_name(W.name+"-bolt")
+-OLD=W/"archive/task151"
++IR_RUN=W/"archive/task151"
++OLD=A.parent/"run"
+ PROFILES=OLD/"G-profiles"
++IR_PROFILES=IR_RUN/"G-profiles"
+ SRC=W/"temp/task131/pgo-dev"
+-REPO=A/"llvm.git"
++REPO=W/"archive/task157/llvm.git"
+ E=A/"evidence"
+ PS5="7b05a13744d1cf81a5e9cff22a27eb037bf1b6a8"
+-RECIPE="750d7a83475a3c3c6fecf545ea74ba110fc845f5"
++RECIPE=(A.parent/"recipe.sha").read_text().strip()
+ PROFILE_SHA="39171c4a5fcb6166ac86d6d47ad16c7890527a73e66c26f035fb910288f496aa"
+ PROFDATA={"bytes":52_530_416,"sha256":PROFILE_SHA}
+ REMOTE="ssh://lhmax2025@review.tizen.org:29418/platform/upstream/llvm"
+@@ -99,15 +101,28 @@
+ 
+ def local_commit(parent,d,files,message,change_id=False):
+     now=datetime.now(TIMEZONE).isoformat(timespec="seconds")
+-    env={**ENV,"GIT_INDEX_FILE":str(d/"index"),"GIT_AUTHOR_DATE":now,"GIT_COMMITTER_DATE":now}
+-    git("read-tree",parent,env=env)
+-    for name,source in files.items():
++    env={**ENV,"GIT_AUTHOR_DATE":now,"GIT_COMMITTER_DATE":now}
++    def entries(tree):
++        rows={}
++        for row in git("ls-tree","-z",tree).split("\0"):
++            if row:
++                info,name=row.split("\t",1)
++                rows[name]=info
++        return rows
++    def make_tree(rows):
++        return git("mktree","-z",data="".join(info+"\t"+name+"\0" for name,info in rows.items())).strip()
++    package=entries(parent+":packaging")
++    for path,source in files.items():
++        subdir,name=path.split("/",1)
++        require(subdir=="packaging" and Path(name).name==name,"candidate path is outside packaging: "+path)
+         if source is None:
+-            git("update-index","--force-remove","--",name,env=env)
++            package.pop(name,None)
+         else:
+             blob=git("hash-object","-w",str(source),env=env).strip()
+-            git("update-index","--add","--cacheinfo","100644",blob,name,env=env)
+-    tree=git("write-tree",env=env).strip()
++            package[name]="100644 blob "+blob
++    root=entries(parent)
++    root["packaging"]="040000 tree "+make_tree(package)
++    tree=make_tree(root)
+     msg=message.rstrip()+"\n\n"+SIGN+"\n"
+     if change_id:
+         ident1=git("var","GIT_AUTHOR_IDENT",env=env).strip()
+@@ -118,9 +133,9 @@
+     return git("commit-tree",tree,"-p",parent,env=env,data=msg).strip()
+ 
+ def shared_provenance():
+-    ir=read(PROFILES/"ir-tools.json")
+-    source=read(PROFILES/"ir-source-identity.json")
+-    train_path=Path(read(OLD/"G-config/config.json")["training"])
++    ir=read(IR_PROFILES/"ir-tools.json")
++    source=read(IR_PROFILES/"ir-source-identity.json")
++    train_path=Path(read(IR_RUN/"G-config/config.json")["training"])
+     rows=[{k:r[k] for k in ("name","target","sha256","bytes")} for r in read(train_path)]
+     require(len(rows)==23 and len({r["name"] for r in rows})==23,"training set has unexpected cardinality")
+     model=ir["instrumented_clang"]
+@@ -148,9 +163,9 @@
+ 
+ 
+ def make_a(d):
+-    profile=PROFILES/"clang.profdata"
++    profile=IR_PROFILES/"clang.profdata"
+     require(file_identity(profile)==PROFDATA,"G3 profdata does not match authorized size and SHA")
+-    check=read(PROFILES/"merge-profdata.done.json")
++    check=read(IR_PROFILES/"merge-profdata.done.json")
+     require(any({k:r[k] for k in ("bytes","sha256")}==PROFDATA for r in check["artifacts"]),"G3 checkpoint identity mismatch")
+     assets=d/"assets"
+     assets.mkdir()
+@@ -371,7 +386,7 @@
+     return branch,p.stdout.strip()
+ 
+ def finalize(kind,previous=None):
+-    stages=("G4",) if kind=="A" else ("G4","G6","G7","G8")
++    stages=() if kind=="A" else ("G6","G7","G8")
+     for name in stages:
+         require(read(OLD/(name+".json")).get("status")=="PASS",f"{name} must pass before candidate preparation")
+     recipe=preflight()
