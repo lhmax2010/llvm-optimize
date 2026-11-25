@@ -1,6 +1,6 @@
 # 150 · PGO/BOLT profile 生成
 
-**进行中**
+**最终**
 
 |步骤|结论|档位|MemoryMax B|编译/ThinLTO/链接|起止 PST|等待 s|执行 s|cgroup 峰值 B|准入内存 B|准入磁盘 B|清理 df 差值 B|原因|
 |---|---|---|---:|---|---|---:|---:|---:|---:|---:|---:|---|
@@ -30,6 +30,10 @@ G6 等待截止 2026-11-25T06:00:00-08:00。整体截止 2026-11-26T20:00:00-08:
 [最终配方补丁](../../tools/bolt/results/task150/pgo-recipe-final.patch) · [门禁修正](../../tools/bolt/results/task150/preview-1/gate-correction.diff) · [两轮预演](../../tools/bolt/results/task150/preview-summary.json) · [门禁单测](../../tools/bolt/results/task150/gate-tests-final.txt) · [上次 sudo 结果复测](../../tools/bolt/results/task150/sudo-recheck.json)
 
 ## 日志与结果
+
+看门狗触发 False，结束时 /home 可用 303,165,333,504 B。
+需要 sudo 复核的残留 2 项。脚本仅保留在本地。
+[最终汇总 JSON](../../tools/bolt/results/task150/summary.json)
 
 ### G4
 
