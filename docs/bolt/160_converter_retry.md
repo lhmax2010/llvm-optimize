@@ -71,9 +71,9 @@ G1–G3 的输入与产物字节及 SHA256 已核对。保留原插桩来源，G
 
 ## 160 补充 · 属主修正后的仓库复核
 
-**删除 12/23 个授权仓库，3 个自测库继续保留。** 本轮净释放 2,666,496 B。
+**删除 23/23 个授权仓库，3 个自测库继续保留。** 本轮净释放 46,013,472,768 B。
 
-原目录删除的已分配空间 79,044,608 B，新增 bundle 占用 76,378,112 B。/home 可用空间从 273,231,630,336 B 变为 268,306,079,744 B，全盘同期变化 -4,925,550,592 B。
+原目录删除的已分配空间 50,533,842,944 B，新增 bundle 占用 4,520,370,176 B。/home 可用空间从 273,231,630,336 B 变为 318,757,769,216 B，全盘同期变化 +45,526,138,880 B。
 
 小型库分别打包。大型 LLVM 库使用一个自包含的标准 Git bundle。共享 pack 保留每个源库的全部对象 ID。原有 refs 和通过 Git fsck 获取的 lost refs 在隔离的临时库中登记。bundle 由空库验证并镜像克隆，逐库比对每个 ref 与对象 ID，再按原路径检查是否打开或挂载后才删除。 [Git bundle 格式](https://git-scm.com/docs/gitformat-bundle)
 
@@ -91,6 +91,7 @@ G1–G3 的输入与产物字节及 SHA256 已核对。保留原插桩来源，G
 | `36-qb_analysis/work3_control_which-3a31a668/verified.bundle` | 1 | 61 | 161,861 | `7a2433a1290b22673aa38cdbb088b92f381109dbef3f4ce746018ff54d3a4c78` |
 | `36-qb_analysis/work3_coreutils-38da01e5/verified.bundle` | 1 | 162 | 7,091,459 | `197266ba9be06cd3ab965336fe42e6ec2beeec8d352afc6de651c63ebea72022` |
 | `36-qb_analysis/work3_findutils-01add93a/verified.bundle` | 1 | 136 | 34,526,960 | `cede6c74ed7144d24a1065d8eb9e0233abf9285464a3aa98e52931055916bff1` |
+| `llvm-shared-20261125.bundle` | 11 | 596 | 4,443,984,398 | `8736acaa57f83da1764397f7546369578e01e7e3273afc18b40e4e2744774169` |
 
 bundle 保存在 `archive/backup-unique/task160/bundles/`。逐库原始 refs、lost refs、核对和删除回执均已归档。
 
@@ -98,31 +99,10 @@ bundle 保存在 `archive/backup-unique/task160/bundles/`。逐库原始 refs、
 
 `patch-apply-check-6105a95d` 的 pack 独立重算 SHA-1，索引及反向索引 SHA256、配置、HEAD 和空的 refs 与 `patch-apply-check-c54a3707` 一致，复用了该库的 fsck 输出。源库与共享镜像的对象 ID 仍逐库核对。
 
-- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/04-pgo-resource-20261102/source-D-aa70a0e3/verified.git`。
-- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/05-review-round3-continue-20261012/patch-apply-check-c54a3707/verified.git`。
-- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/05-review-round3-continue-20261012/patch-work-617ca250/verified.git`。
-- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/10-archive-followup-review-20261014/apply-check-5b6fd066/verified.git`。
-- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/10-archive-followup-review-20261014/submit-work-4512d286/verified.git`。
-- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/18-release-x86-full-build-20261013/latest-base_source-ae3cb8ab/verified.git`。
-- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/19-release-attribution-20261013/patch-apply-check-6105a95d/verified.git`。
-- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/19-release-attribution-20261013/patch-work-45589d5e/verified.git`。
-- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/29-llvm-hybrid-trial/root-8885f3e3/verified.git`。
-- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/30-llvm-archivefix-trial/root-fd4d3568/verified.git`。
-- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/32-followup-356949-ps2-message-20261014/review-work-c226bed9/verified.git`。
 
-大型库阶段 STOP 原文
-
-~~~text
-Traceback (most recent call last):
-  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/backup-supplement/large.py", line 264, in <module>
-    execute()
-  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/backup-supplement/large.py", line 217, in execute
-    if backup.file_hash(pending)!=info['sha256']:
-       ^^^^^^^^^^^^^^^^
-AttributeError: module 'compact_backup' has no attribute 'file_hash'
-~~~
+首轮镜像克隆后的 SHA256 检查调用了不存在的函数。原目录保留，续做使用相同 bundle，并重新验证克隆及 SHA256。 [首轮 STOP 原文](../../tools/bolt/results/task160/backup-supplement/large-terminal-first.json)
 
 
-2026-11-25T08:01:48.021633-08:00 复核，154-B 仍等待磁盘准入。 /home 可用 268,306,075,648 B，磁盘准入线 302,154,457,695 B。复核时 MemAvailable 为 21,797,650,432 B。
+2026-11-25T08:32:12.722998-08:00 复核，154-B 已通过准入并启动，启动回执时间为 2026-11-25T08:32:02.183939-08:00。 /home 可用 318,387,994,624 B，磁盘准入线 302,154,457,695 B。复核时 MemAvailable 为 22,331,633,664 B。
 
 [Bundle 清单和逐库核对](../../tools/bolt/results/task160/backup-supplement/summary.json) · [154-B 单元回执](../../tools/bolt/results/task160/backup-supplement/task154.json)

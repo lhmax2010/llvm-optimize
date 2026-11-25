@@ -1,7 +1,7 @@
 {
-  "at": "2026-11-25T08:01:48.021633-08:00",
-  "home_available": 268306075648,
-  "mem_available": 21797650432,
+  "at": "2026-11-25T08:32:12.722998-08:00",
+  "home_available": 318387994624,
+  "mem_available": 22331633664,
   "disk_required": 302154457695,
   "wait_unit": {
     "MainPID": "6965",
@@ -13,12 +13,12 @@
   },
   "build_units": [
     {
-      "MainPID": "0",
+      "MainPID": "18983",
       "Result": "success",
-      "ExecMainStartTimestamp": "",
+      "ExecMainStartTimestamp": "Wed 2026-11-25 08:32:02 PST",
       "Id": "llvm-opt-task154-full-build-1.service",
-      "ActiveState": "inactive",
-      "SubState": "dead"
+      "ActiveState": "active",
+      "SubState": "running"
     },
     {
       "MainPID": "0",
@@ -29,14 +29,103 @@
       "SubState": "dead"
     }
   ],
-  "started": [],
+  "started": [
+    {
+      "unit": "llvm-opt-task154-full-build-1.service",
+      "prerequisites": {
+        "151": "e5993d01b9c6d0e2ccb9ad1daf8ff2062cc4cfc2",
+        "153": "bdfb542bcd68940627f53cc4b6b69b93264b65aa",
+        "remote_head": "5e859bfc7db5e90da60367a082e147331b6c39d1",
+        "158_corpus": {
+          "status": "PASS",
+          "package_build_active": false,
+          "at": "2026-11-25T04:25:43.059365-08:00",
+          "preprocessing_only": true,
+          "inputs": 177,
+          "new": 147,
+          "prepare_failures": 0,
+          "packages": {
+            "zlib": 20,
+            "llvm": 10,
+            "bzip2": 7,
+            "expat": 4,
+            "icu": 76,
+            "jsoncpp": 3,
+            "libwebp": 55,
+            "sqlite": 1,
+            "tinyxml2": 1
+          },
+          "languages": {
+            "c": 87,
+            "c++": 90
+          },
+          "size_bands": {
+            "small": 75,
+            "medium": 97,
+            "large": 5
+          },
+          "size_min": 36652,
+          "size_max": 19739071,
+          "total_bytes": 229749282
+        }
+      },
+      "admission": {
+        "at": "2026-11-25T08:32:01.066502-08:00",
+        "mem_available": 22569095168,
+        "home_available": 318757634048
+      },
+      "plan": {
+        "memory_max": 18274127872,
+        "floor": 10737418240,
+        "admitted": true,
+        "tier": "dynamic",
+        "jobs": 4,
+        "thinlto_jobs": 4,
+        "link_jobs": 1
+      },
+      "argv": [
+        "/usr/bin/systemd-run",
+        "--user",
+        "--wait",
+        "--pipe",
+        "--unit=llvm-opt-task154-full-build-1.service",
+        "--expand-environment=no",
+        "-p",
+        "MemoryMax=18274127872",
+        "-p",
+        "MemorySwapMax=0",
+        "-p",
+        "CPUQuota=400%",
+        "-p",
+        "Nice=19",
+        "-p",
+        "IOSchedulingClass=idle",
+        "-p",
+        "OOMPolicy=stop",
+        "-p",
+        "KillMode=control-group",
+        "-p",
+        "TimeoutStopSec=120",
+        "-p",
+        "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task154/attempt-1",
+        "-p",
+        "ExecStopPost=/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task151/orchestration/capture_stop.py /home/linhao/Toolchain/development/llvm-optimize/archive/task154/attempt-1/stop-cgroup.json",
+        "/usr/bin/python3",
+        "-B",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task154/build.py",
+        "/home/linhao/Toolchain/development/llvm-optimize/archive/task154/attempt-1",
+        "4"
+      ],
+      "start": "2026-11-25T08:32:02.183939-08:00"
+    }
+  ],
   "last_admission_check": {
-    "at": "2026-11-25T07:56:52.486171-08:00",
-    "mem_available": 23330844672,
-    "home_available": 263770025984,
+    "at": "2026-11-25T08:26:59.848016-08:00",
+    "mem_available": 22395604992,
+    "home_available": 277426151424,
     "disk_required": 302154457695,
     "plan": {
-      "memory_max": 19035877376,
+      "memory_max": 18100637696,
       "floor": 10737418240,
       "admitted": true,
       "tier": "dynamic",
@@ -46,5 +135,5 @@
     },
     "reason": "waiting for 139-D memory floor or build disk allowance"
   },
-  "admitted": false
+  "admitted": true
 }
