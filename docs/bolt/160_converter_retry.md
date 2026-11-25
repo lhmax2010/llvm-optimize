@@ -69,3 +69,60 @@ G1–G3 的输入与产物字节及 SHA256 已核对。保留原插桩来源，G
 
 [160 补充逐库清单](../../tools/bolt/results/task160/backup-supplement/small.json)
 
+## 160 补充 · 属主修正后的仓库复核
+
+**删除 12/23 个授权仓库，3 个自测库继续保留。** 本轮净释放 2,666,496 B。
+
+原目录删除的已分配空间 79,044,608 B，新增 bundle 占用 76,378,112 B。/home 可用空间从 273,231,630,336 B 变为 268,306,079,744 B，全盘同期变化 -4,925,550,592 B。
+
+小型库分别打包。大型 LLVM 库使用一个自包含的标准 Git bundle。共享 pack 保留每个源库的全部对象 ID。原有 refs 和通过 Git fsck 获取的 lost refs 在隔离的临时库中登记。bundle 由空库验证并镜像克隆，逐库比对每个 ref 与对象 ID，再按原路径检查是否打开或挂载后才删除。 [Git bundle 格式](https://git-scm.com/docs/gitformat-bundle)
+
+| Bundle 路径（相对归档目录） | 源库数 | Ref 数 | 文件字节 | SHA256 |
+|---|---:|---:|---:|---|
+| `09-archive-fix-full-build-20260927/test-package-bfd-4a09ebac/verified.bundle` | 1 | 1 | 3,888 | `aa24db039d54efcf18f197e5e7b8b6d1ece2fa7935e06ca0c8555cfe1f45bd15` |
+| `09-archive-fix-full-build-20260927/test-package-lld-6ad747a2/verified.bundle` | 1 | 1 | 3,871 | `b1c11584a40084dc8185f23bafb9d752ddaaa0128db0d112f179e37366da03da` |
+| `18-release-x86-full-build-20261013/round2-eight-output-proof_test-package-bfd-1b27e3f6/verified.bundle` | 1 | 1 | 6,107 | `cd5505935917856ed297f6c0e953a7d53d431a1b68703eed1ca184307d01a608` |
+| `18-release-x86-full-build-20261013/round2-eight-output-proof_test-package-lld-40f1e6ad/verified.bundle` | 1 | 1 | 6,107 | `806e098f1256be9e7c5c489a9b4d3554fcf2ef3cf0bb8553cc553e4b34958f98` |
+| `24-llvm-strip-alternative-20260929/test-package-bfd-03f3e641/verified.bundle` | 1 | 1 | 4,514 | `731b1abebcf3efe21fd325742fd892ccda3467f52b5a73743408146a42a3af4c` |
+| `24-llvm-strip-alternative-20260929/test-package-lld-c8f02f6f/verified.bundle` | 1 | 1 | 4,505 | `e74fed385f6aea2653cd4296739387ab3656c7cebcae0a1a948c9c3a5e88719d` |
+| `25-llvm-strip-x86_64-20261009/continue-20261009_test-package-bfd-2ca8bd4a/verified.bundle` | 1 | 1 | 5,810 | `859f0b39925ece69d146f4bebf19d29e0606f7dd97f1e85fbc1dc14a2cfee5d1` |
+| `25-llvm-strip-x86_64-20261009/continue-20261009_test-package-lld-81b277b8/verified.bundle` | 1 | 1 | 5,804 | `dcd392b4731b6bfcdd95b2094eba41b798490691cc6e6ccc9bc1c0f35f300051` |
+| `36-qb_analysis/work3_control_findutils-5ecf1d1e/verified.bundle` | 1 | 136 | 34,526,960 | `cede6c74ed7144d24a1065d8eb9e0233abf9285464a3aa98e52931055916bff1` |
+| `36-qb_analysis/work3_control_which-3a31a668/verified.bundle` | 1 | 61 | 161,861 | `7a2433a1290b22673aa38cdbb088b92f381109dbef3f4ce746018ff54d3a4c78` |
+| `36-qb_analysis/work3_coreutils-38da01e5/verified.bundle` | 1 | 162 | 7,091,459 | `197266ba9be06cd3ab965336fe42e6ec2beeec8d352afc6de651c63ebea72022` |
+| `36-qb_analysis/work3_findutils-01add93a/verified.bundle` | 1 | 136 | 34,526,960 | `cede6c74ed7144d24a1065d8eb9e0233abf9285464a3aa98e52931055916bff1` |
+
+bundle 保存在 `archive/backup-unique/task160/bundles/`。逐库原始 refs、lost refs、核对和删除回执均已归档。
+
+`root-fd4d3568` 的 pack 独立重算 SHA-1，索引及反向索引 SHA256、配置、HEAD 和空的 refs 与 `root-8885f3e3` 一致，复用了该库的 fsck 输出。源库与共享镜像的对象 ID 仍逐库核对。
+
+`patch-apply-check-6105a95d` 的 pack 独立重算 SHA-1，索引及反向索引 SHA256、配置、HEAD 和空的 refs 与 `patch-apply-check-c54a3707` 一致，复用了该库的 fsck 输出。源库与共享镜像的对象 ID 仍逐库核对。
+
+- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/04-pgo-resource-20261102/source-D-aa70a0e3/verified.git`。
+- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/05-review-round3-continue-20261012/patch-apply-check-c54a3707/verified.git`。
+- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/05-review-round3-continue-20261012/patch-work-617ca250/verified.git`。
+- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/10-archive-followup-review-20261014/apply-check-5b6fd066/verified.git`。
+- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/10-archive-followup-review-20261014/submit-work-4512d286/verified.git`。
+- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/18-release-x86-full-build-20261013/latest-base_source-ae3cb8ab/verified.git`。
+- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/19-release-attribution-20261013/patch-apply-check-6105a95d/verified.git`。
+- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/19-release-attribution-20261013/patch-work-45589d5e/verified.git`。
+- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/29-llvm-hybrid-trial/root-8885f3e3/verified.git`。
+- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/30-llvm-archivefix-trial/root-fd4d3568/verified.git`。
+- 保留 `/home/linhao/Toolchain/development/llvm-optimize/temp/deleted-repo-backup-20261105/32-followup-356949-ps2-message-20261014/review-work-c226bed9/verified.git`。
+
+大型库阶段 STOP 原文
+
+~~~text
+Traceback (most recent call last):
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/backup-supplement/large.py", line 264, in <module>
+    execute()
+  File "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/backup-supplement/large.py", line 217, in execute
+    if backup.file_hash(pending)!=info['sha256']:
+       ^^^^^^^^^^^^^^^^
+AttributeError: module 'compact_backup' has no attribute 'file_hash'
+~~~
+
+
+2026-11-25T08:01:48.021633-08:00 复核，154-B 仍等待磁盘准入。 /home 可用 268,306,075,648 B，磁盘准入线 302,154,457,695 B。复核时 MemAvailable 为 21,797,650,432 B。
+
+[Bundle 清单和逐库核对](../../tools/bolt/results/task160/backup-supplement/summary.json) · [154-B 单元回执](../../tools/bolt/results/task160/backup-supplement/task154.json)
