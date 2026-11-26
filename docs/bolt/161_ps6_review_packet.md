@@ -133,6 +133,8 @@ Signed-off-by: Hao Lin <hao.lin@samsung.com>
 
 最小环境额外检查的 opt-viewer 夹具由 Python 3 启动，随后在必需模块导入处退出。`opt-diff.py` 缺 `yaml`、`opt-stats.py` 缺 `yaml`、`opt-viewer.py` 缺 `pygments`、`optrecord.py` 缺 `yaml`。 这些原文保留在测试日志中。要求返回 0 的 scan-view 和其余分析器入口均通过。
 
+**既有的可选依赖限制，不做修改。** 这四个 opt-viewer 脚本需要 Python 环境自行提供 PyYAML 或 Pygments。维持工具链包的现有依赖集合，此次不给工具链包新增 Python 依赖。
+
 RPM 4.14.1 三架构展开通过，8 项编排与取证测试通过。每个匹配路径新增一条精确 sed 命令。Requires 未变化。 [补丁 7](../../tools/bolt/results/task163/ps6/patch7.diff) · [七个补丁](../../tools/bolt/results/task163/ps6/series.json) · [展开](../../tools/bolt/results/task163/ps6/rpmspec.json)
 
 GBS 仅用 154-B 的 clang、llvm、libllvm 作 LLVM provider，检查 llvm-devel 未安装。scan-view 由已安装包复制，其他五个脚本与 opt-viewer 数据只作为 llvm-devel RPM 的提取夹具。逐字节比对后在测试包的 BUILDROOT 执行同样的 sed 命令。完整打包验证留给 QB。
