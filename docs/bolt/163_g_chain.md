@@ -11,8 +11,10 @@ G5 取 58 号 D 的 BOLT 子阶段 cgroup 观测峰值 14,664,306,688 B。该区
 | 步骤 | 状态 | 档位 / 并行 | MemoryMax B | MemAvailable B | /home 可用 B | 时段 PST | 等待 / 执行 s | cgroup 峰值 B | 原因 |
 |---|---|---|---:|---:|---:|---|---:|---:|---|
 | G5 | FAIL | dynamic / 4/4/1 | 16578727936 | 20873695232 | 169351675904 | 2026-11-26T01:08:06-08:00 → 2026-11-26T01:08:09-08:00 | 1200.002 / 2.395 | 11063296 | [Errno 2] No such file or directory: '/home/linhao/Toolchain/development/llvm-optimize/archive/task163/recipe.sha' |
-| G6 | PENDING | — | — | — | — | — → — | — / — | — | — |
+| G6 | SKIPPED | — | — | 20740775936 | 169340944384 | — → 2026-11-26T01:08:19-08:00 | — / — | — | preceding stage did not pass |
 | G7 | PENDING | — | — | — | — | — → — | — / — | — | — |
 | G8 | PENDING | — | — | — | — | — → — | — / — | — | — |
 
 [G5 回执](../../tools/bolt/results/task163/G5/result.json)
+
+[G6 回执](../../tools/bolt/results/task163/G6/result.json)
