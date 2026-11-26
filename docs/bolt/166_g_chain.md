@@ -12,9 +12,11 @@ G5 取 58 号 D 的 BOLT 子阶段 cgroup 观测峰值 14,664,306,688 B。该区
 |---|---|---|---:|---:|---:|---|---:|---:|---|
 | G5 | FAIL | historical-peak / 4/4/1 | 18862358528 | 22083584000 | 156518502400 | 2026-11-26T03:38:25-08:00 → 2026-11-26T03:53:42-08:00 | 0.0 / 916.842 | 13785956352 | profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'bolt-tools-relink', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441'}], 'started_at': '2026-11-26T11:38:44+00:00', 'admission': [{'at': '2026-11-26T11:38:44+00:00', 'memory': 22491115520, 'disk': {'/home': 156518469632, '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles': 156518469632}, 'admission_memory': 22083584000, 'stage': 'bolt-tools-relink', 'memory_max': 18862358528, 'floor': 16863952896, 'admitted': True, 'tier': 'historical-peak', 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'actual_memory_max': 18862358528}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441/build-1.txt', 'ended_at': '2026-11-26T11:53:40+00:00'} |
 | G6 | SKIPPED | — | — | 26106208256 | 150201425920 | — → 2026-11-26T03:53:56-08:00 | — / — | — | preceding stage did not pass |
-| G7 | PENDING | — | — | — | — | — → — | — / — | — | — |
+| G7 | SKIPPED | — | — | 26045743104 | 150201348096 | — → 2026-11-26T03:54:01-08:00 | — / — | — | preceding stage did not pass |
 | G8 | PENDING | — | — | — | — | — → — | — / — | — | — |
 
 [G5 回执](../../tools/bolt/results/task166/G5/result.json)
 
 [G6 回执](../../tools/bolt/results/task166/G6/result.json)
+
+[G7 回执](../../tools/bolt/results/task166/G7/result.json)
