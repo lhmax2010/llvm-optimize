@@ -9,9 +9,11 @@ G4 的 clang-22、Ninja 输入和 23 个成品 RPM 已逐项核对。RPM 原位�
 |---|---|---|---:|---:|---:|---:|---|
 | G5 | SKIPPED | — | — | 17954267136 | 222012657664 | — | memory below floor |
 | G6 | SKIPPED | — | — | 17970012160 | 222008430592 | — | preceding stage did not pass |
-| G7 | PENDING | — | — | — | — | — | — |
+| G7 | SKIPPED | — | — | 17879654400 | 222003163136 | — | preceding stage did not pass |
 | G8 | PENDING | — | — | — | — | — | — |
 
 [G5 回执](../../tools/bolt/results/task162/G5/result.json)
 
 [G6 回执](../../tools/bolt/results/task162/G6/result.json)
+
+[G7 回执](../../tools/bolt/results/task162/G7/result.json)
