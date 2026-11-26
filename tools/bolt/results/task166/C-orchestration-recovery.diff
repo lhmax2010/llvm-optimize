@@ -1,0 +1,172 @@
+--- /home/linhao/Toolchain/development/llvm-optimize/archive/task163/orchestration/handoff.py
++++ /home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/handoff.py
+@@ -86,6 +86,21 @@
+         raise ValueError("G4 clang changed after handoff")
+     return path
+ 
++def runtime_library(line, root, loader):
++    found = re.match(r"\s*(\S+) => (/\S+) \(", line)
++    if not found:
++        return None
++    name, filename = found.groups()
++    source = Path(filename)
++    resolved = source.resolve(strict=True)
++    if resolved.is_relative_to(root):
++        if Path(name).name == name:
++            return name, source
++        if (name in (f"/lib64/{loader.name}", f"/usr/lib64/{loader.name}")
++                and resolved == loader.resolve(strict=True)):
++            return None
++    raise RuntimeError(f"unexpected runtime dependency: {line}")
++
+ def retain_runtime(archive, root, elf):
+     confined(root,archive)
+     lib=root/"usr/lib64"
+@@ -98,14 +113,11 @@
+         argv=[str(loader),"--library-path",str(lib),"--list",str(program)]
+         result=subprocess.run(argv,check=True,text=True,capture_output=True,timeout=30)
+         for line in result.stdout.splitlines():
+-            found=re.match(r"\s*(\S+) => (/\S+) \(",line)
+-            if found:
+-                name,filename=found.groups()
+-                p=Path(filename)
+-                if Path(name).name!=name or not p.resolve(strict=True).is_relative_to(root):
+-                    raise RuntimeError(f"unexpected runtime dependency: {line}")
+-                old=libraries.setdefault(name,p)
+-                if old!=p:
++            dependency = runtime_library(line, root, loader)
++            if dependency:
++                name, source = dependency
++                old = libraries.setdefault(name, source)
++                if old != source:
+                     raise RuntimeError(f"inconsistent runtime dependency: {name}")
+     for name,source in libraries.items():
+         shutil.copy2(source,dest/name)
+--- /home/linhao/Toolchain/development/llvm-optimize/archive/task163/orchestration/profile_stage.py
++++ /home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/profile_stage.py
+@@ -23,6 +23,18 @@
+     return historical(stage,available)
+ 
+ pgo_pair.stage_admission = chosen
++
++if os.environ.get("TASK166_RECOVER_G5") == "1":
++    original_custom = pgo_pair.Pipeline.custom
++    recovery = Path(__file__).resolve().parents[1] / "recover_g5.py"
++
++    def custom_with_g5_recovery(self, name):
++        if name in ("bolt-tools", "relink-strip-debug"):
++            return [self.action(["/usr/bin/python3", "-B", str(recovery), name])]
++        return original_custom(self, name)
++
++    pgo_pair.Pipeline.custom = custom_with_g5_recovery
++
+ write_provenance = pgo_pair.save
+ def record_reused_ir_source(path, value, *args, **kwargs):
+     ir_source = path.with_name("ir-source-identity.json")
+--- /home/linhao/Toolchain/development/llvm-optimize/archive/task163/orchestration/dispatch.py
++++ /home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/dispatch.py
+@@ -3,6 +3,7 @@
+ from pathlib import Path
+ 
+ from handoff import BUILD, cleanup, g4_scratch, preserve_clang, save
++from g5_admission import historical_plan
+ from policy import DEADLINE, G6_DEADLINE, GIB, ZONE, STEPS, admit, blocked, disk_limits, expired, oom_killed, stop_line, terminal
+ 
+ W,B,A=map(Path,sys.argv[1:4])
+@@ -12,8 +13,8 @@
+ RUN="/usr/bin/systemd-run"
+ GIT="/usr/bin/git"
+ START_NOW=(SCRIPTS.parent/'temporary-start-clearance').exists()
+-IO_ADMISSION=100.0 if START_NOW else 30.0
+-IO_INTERRUPT=80.0 if START_NOW else 55.0
++IO_ADMISSION=100.0
++IO_INTERRUPT=80.0
+ IO_INTERRUPT_SECONDS=180
+ MEMORY_INTERRUPT=6*GIB
+ 
+@@ -78,16 +79,19 @@
+            "G8":"no comparable compression measurement"}
+ 
+ def admission_timeout(step):
+-    return 10800 if step=="G4" else float("inf") if step=="G6" else 3600
+-
+-def select(step, disk, on_wait=None):
++    return 10800 if step=="G4" else float("inf") if step in ("G5","G6") else 3600
++
++def select(step, disk, on_wait=None, retry=False):
+     started=time.monotonic()
+     checks=[]
+     timeout=admission_timeout(step)
+-    until=G6_DEADLINE if step=="G6" else DEADLINE
++    until=G6_DEADLINE if step in ("G5","G6") else DEADLINE
+     while True:
+         observed=resources()
+-        limit=admit(step,observed["mem_available"])
++        available=observed["mem_available"]
++        limit=historical_plan(available) if step=="G5" else admit(step,available)
++        if step=="G5" and retry and available<19*GIB:
++            limit["admitted"]=False
+         observed.update(memory_plan=limit,disk_required=disk,step=step)
+         checks.append(observed)
+         spent=time.monotonic()-started
+@@ -122,8 +126,12 @@
+     path.mkdir(exist_ok=True)
+     unit=UNIT+"-"+step.lower()+f"-{attempt}.service"
+     mem,jobs,tier=(selected[x] for x in ("memory_max","jobs","tier"))
+-    cpu=200
+-    stop_snapshot=path/f"cgroup-stop-{attempt}.json"
++    obs=checks[-1]
++    load1=float(Path("/proc/loadavg").read_text().split()[0])
++    cores=len(os.sched_getaffinity(0))
++    cpu=(min(jobs,2 if load1>=cores/2 or obs["io_full_avg60"]>=20 else 3)*100
++         if step=="G5" else 200)
++    stop_snapshot=path/f"cgroup-stop-166-{attempt}.json"
+     working=g4_scratch(A)/BUILD if step=="G5" else path
+     argv=[RUN,"--user","--wait","--pipe","--unit="+unit,"--expand-environment=no",
+           "-p","MemoryMax="+str(mem),"-p","MemorySwapMax=0","-p","CPUQuota="+str(cpu)+"%",
+@@ -132,13 +140,17 @@
+           "-p",f"ExecStopPost=/usr/bin/python3 -B {SCRIPTS/'capture_stop.py'} {stop_snapshot}",
+           "--setenv=TZ=America/Los_Angeles","--setenv=TASK133_WORKSPACE="+str(W),
+           "--setenv=TASK138_UNIT="+unit.removesuffix(".service"),
++          "--setenv=TASK166_RUN_ROOT="+str(A),
++          "--setenv=TASK166_WORKER_RECEIPT="+f"worker-166-{attempt}.json",
+           "--setenv=TASK133_ADMISSION_MEMORY="+str(checks[-1]["mem_available"]),
+           "/usr/bin/python3","-B",str(SCRIPTS/"worker.py"),str(A),step,tier,str(jobs),str(mem),str(cpu)]
++    if step == "G5" and attempt in (2, 3):
++        argv.insert(argv.index("/usr/bin/python3"), "--setenv=TASK166_RECOVER_G5=1")
+     if step=="G5" and tier=="historical-peak":
+         argv.insert(argv.index("/usr/bin/python3"), "--setenv=TASK163_G5_HISTORICAL=1")
+     row={"step":step,"attempt":attempt,"started_at":stamp(),**selected,"cpu_percent":cpu,
+          "admission":checks,"admission_wait_seconds":round(wait,3),"unit":unit,"argv":argv}
+-    write(path/"started.json",row)
++    write(path/f"started-166-{attempt}.json",row)
+     print("START",step,tier,checks[-1],flush=True)
+     t0=time.monotonic()
+     stats={}
+@@ -146,7 +158,7 @@
+     high_io_since=None
+     next_watchdog=t0
+     deadline_stop=None
+-    logpath=path/("service.log" if attempt==1 else f"service-{attempt}.log")
++    logpath=path/f"service-166-{attempt}.log"
+     with logpath.open("xb") as f:
+         process=subprocess.Popen(argv,stdout=f,stderr=subprocess.STDOUT)
+         while True:
+@@ -155,7 +167,7 @@
+             merge_stats(stats,readings)
+             snapshot.update(readings)
+             if time.monotonic()>=next_watchdog or process.poll() is not None:
+-                append(path/"resources.jsonl",snapshot)
++                append(path/f"resources-166-{attempt}.jsonl",snapshot)
+             if process.poll() is not None:
+                 break
+             now=time.monotonic()
+@@ -184,7 +196,7 @@
+     systemd=command([SYS,"--user","show",unit,"-p","Result,MemoryPeak,CPUUsageNSec,ActiveState,InvocationID"],timeout=15).stdout
+     if stop_snapshot.is_file():
+         merge_stats(stats,json.loads(stop_snapshot.read_text()))
+-    identity=path/"worker.json"
++    identity=path/f"worker-166-{attempt}.json"
+     worker=json.loads(identity.read_text()) if identity.is_file() else {}
+     if not stop_snapshot.is_file():
+         merge_stats(stats,worker.get("cgroup_end",{}))
