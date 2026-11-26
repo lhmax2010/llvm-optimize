@@ -1,0 +1,60 @@
+{
+  "attempt": "A-retry",
+  "status": "FAIL",
+  "checks": {
+    "llvm-devel-absent": {
+      "status": "PASS",
+      "rc": 1
+    },
+    "provider-clang": {
+      "status": "PASS",
+      "rc": 0
+    },
+    "provider-llvm": {
+      "status": "PASS",
+      "rc": 0
+    },
+    "provider-libllvm": {
+      "status": "PASS",
+      "rc": 0
+    },
+    "scan-build": {
+      "status": "PASS",
+      "rc": 0
+    },
+    "report-html-assets": {
+      "status": "PASS",
+      "rc": 0
+    },
+    "analyze-build": {
+      "status": "PASS",
+      "rc": 0
+    },
+    "intercept-build": {
+      "status": "PASS",
+      "rc": 0
+    },
+    "scan-build-py": {
+      "status": "PASS",
+      "rc": 0
+    },
+    "scan-view": {
+      "status": "FAIL",
+      "rc": 127
+    }
+  },
+  "help_logs": {
+    "analyze-build": "A-retry-analyze-build-help.txt",
+    "intercept-build": "A-retry-intercept-build-help.txt",
+    "scan-build-py": "A-retry-scan-build-py-help.txt",
+    "scan-view": "A-retry-scan-view-help.txt"
+  },
+  "rpm_build_succeeded": false,
+  "source_logs": [
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task162/A-retry/service.txt",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task162/A-retry/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/logs/fail/llvm-analyzer-smoke-1-1/log.txt"
+  ],
+  "local_files": [],
+  "at": "2026-11-25T21:31:06.782552-08:00",
+  "reason": "首轮 GBS 源码目录缺失。补齐后复测进入 %build，scan-view --help 因入口使用 env python 而返回 127，其余项目通过。"
+}

@@ -93,3 +93,25 @@ Signed-off-by: Pareek Eshaan <e.pareek@samsung.com>
 Co-Authored-By: Cline SR
 Signed-off-by: Hao Lin <hao.lin@samsung.com>
 ~~~
+
+## 162-A · PS6 功能复测
+
+**FAIL**。首轮 GBS 源码目录缺失。补齐后复测进入 %build，scan-view --help 因入口使用 env python 而返回 127，其余项目通过。
+
+测试包的 BuildRequires 仅为 clang、perl、python3。GBS 配置优先使用 154-B 的本地 RPM 仓库。项目配置的 Support 行移去 llvm-devel，实际安装状态仍由 spec 内的 rpm -q 核对。
+清理输出文件为 0 B，原构建根已不存在。 [复测 df](../../tools/bolt/results/task162/df-before.txt) · [清理核对](../../tools/bolt/results/task162/sudo-recheck.json)
+
+| 功能 | 结果 | 退出码与原文 |
+|---|---|---|
+| llvm-devel-absent | PASS | 1 |
+| provider-clang | PASS | 0 |
+| provider-llvm | PASS | 0 |
+| provider-libllvm | PASS | 0 |
+| scan-build | PASS | 0 |
+| report-html-assets | PASS | 0 |
+| analyze-build | PASS | 0 [原文](../../tools/bolt/results/task162/A-retry-analyze-build-help.txt) |
+| intercept-build | PASS | 0 [原文](../../tools/bolt/results/task162/A-retry-intercept-build-help.txt) |
+| scan-build-py | PASS | 0 [原文](../../tools/bolt/results/task162/A-retry-scan-build-py-help.txt) |
+| scan-view | FAIL | 127 [原文](../../tools/bolt/results/task162/A-retry-scan-view-help.txt) |
+
+[GBS 输出](../../tools/bolt/results/task162/A-retry-gbs.txt) · [systemd 记录](../../tools/bolt/results/task162/A-retry-systemd.txt) · [RPM 构建原文](../../tools/bolt/results/task162/A-retry-build-fail.txt) · [首轮 GBS 输出](../../tools/bolt/results/task162/A-gbs.txt)

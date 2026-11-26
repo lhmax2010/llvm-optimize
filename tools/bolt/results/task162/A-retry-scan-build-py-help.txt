@@ -1,0 +1,147 @@
+[  162s] + rc=0
+[  162s] + LC_ALL=C
+[  162s] + scan-build-py --help
+[  162s] /usr/lib/libscanbuild/__init__.py:201: SyntaxWarning: 'return' in a 'finally' block
+[  162s]   return result
+[  162s] usage: scan-build-py [-h] [--verbose] [--override-compiler] [--use-cc <path>]
+[  162s]                      [--use-c++ <path>] [--intercept-first] [--status-bugs]
+[  162s]                      [--exclude <directory>] [--output <path>] [--keep-empty]
+[  162s]                      [--html-title <title>] [--plist | --plist-html |
+[  162s]                      --plist-multi-file | --sarif | --sarif-html]
+[  162s]                      [--use-analyzer <path>] [--no-failure-reports]
+[  162s]                      [--analyze-headers] [--stats] [--internal-stats]
+[  162s]                      [--maxloop <loop count>] [--store <model>]
+[  162s]                      [--constraints <model>] [--analyzer-config <options>]
+[  162s]                      [--force-analyze-debug-code]
+[  162s]                      [--load-plugin <plugin library>]
+[  162s]                      [--enable-checker <checker name>]
+[  162s]                      [--disable-checker <checker name>] [--help-checkers]
+[  162s]                      [--help-checkers-verbose]
+[  162s]                      ...
+[  162s] 
+[  162s] positional arguments:
+[  162s]   build                 Command to run.
+[  162s] 
+[  162s] options:
+[  162s]   -h, --help            show this help message and exit
+[  162s]   --verbose, -v         Enable verbose output from 'scan-build-py'. A second,
+[  162s]                         third and fourth flags increases verbosity. (default:
+[  162s]                         0)
+[  162s]   --override-compiler   Always resort to the compiler wrapper even when better
+[  162s]                         intercept methods are available. (default: False)
+[  162s]   --use-cc <path>       When 'scan-build-py' analyzes a project by interposing
+[  162s]                         a compiler wrapper, which executes a real compiler for
+[  162s]                         compilation and do other tasks (record the compiler
+[  162s]                         invocation). Because of this interposing, 'scan-build-
+[  162s]                         py' does not know what compiler your project normally
+[  162s]                         uses. Instead, it simply overrides the CC environment
+[  162s]                         variable, and guesses your default compiler. If you
+[  162s]                         need 'scan-build-py' to use a specific compiler for
+[  162s]                         *compilation* then you can use this option to specify
+[  162s]                         a path to that compiler. (default: x86_64-tizen-linux-
+[  162s]                         gnu-clang)
+[  162s]   --use-c++ <path>      This is the same as "--use-cc" but for C++ code.
+[  162s]                         (default: x86_64-tizen-linux-gnu-clang++)
+[  162s]   --intercept-first     Run the build commands first, intercept compiler calls
+[  162s]                         and then run the static analyzer afterwards. Generally
+[  162s]                         speaking it has better coverage on build commands.
+[  162s]                         With '--override-compiler' it use compiler wrapper,
+[  162s]                         but does not run the analyzer till the build is
+[  162s]                         finished. (default: False)
+[  162s]   --status-bugs         The exit status of 'scan-build-py' is the same as the
+[  162s]                         executed build command. This option ignores the build
+[  162s]                         exit status and sets to be non zero if it found
+[  162s]                         potential bugs or zero otherwise. (default: False)
+[  162s]   --exclude <directory>
+[  162s]                         Do not run static analyzer against files found in this
+[  162s]                         directory. (You can specify this option multiple
+[  162s]                         times.) Could be useful when project contains 3rd
+[  162s]                         party libraries. (default: [])
+[  162s]   --analyze-headers     Also analyze functions in #included files. By default,
+[  162s]                         such functions are skipped unless they are called by
+[  162s]                         functions within the main source file. (default:
+[  162s]                         False)
+[  162s] 
+[  162s] output control options:
+[  162s]   --output, -o <path>   Specifies the output directory for analyzer reports.
+[  162s]                         Subdirectory will be created if default directory is
+[  162s]                         targeted. (default: /tmp)
+[  162s]   --keep-empty          Don't remove the build results directory even if no
+[  162s]                         issues were reported. (default: False)
+[  162s]   --html-title <title>  Specify the title used on generated HTML pages. If not
+[  162s]                         specified, a default title will be used. (default:
+[  162s]                         None)
+[  162s]   --plist, -plist       Cause the results as a set of .plist files. (default:
+[  162s]                         html)
+[  162s]   --plist-html, -plist-html
+[  162s]                         Cause the results as a set of .html and .plist files.
+[  162s]                         (default: html)
+[  162s]   --plist-multi-file, -plist-multi-file
+[  162s]                         Cause the results as a set of .plist files with extra
+[  162s]                         information on related files. (default: html)
+[  162s]   --sarif, -sarif       Cause the results as a result.sarif file. (default:
+[  162s]                         html)
+[  162s]   --sarif-html, -sarif-html
+[  162s]                         Cause the results as a result.sarif file and .html
+[  162s]                         files. (default: html)
+[  162s] 
+[  162s] advanced options:
+[  162s]   --use-analyzer <path>
+[  162s]                         'scan-build-py' uses the 'clang' executable relative
+[  162s]                         to itself for static analysis. One can override this
+[  162s]                         behavior with this option by using the 'clang'
+[  162s]                         packaged with Xcode (on OS X) or from the PATH.
+[  162s]                         (default: clang)
+[  162s]   --no-failure-reports, -no-failure-reports
+[  162s]                         Do not create a 'failures' subdirectory that includes
+[  162s]                         analyzer crash reports and preprocessed source files.
+[  162s]                         (default: True)
+[  162s]   --stats, -stats       Generates visitation statistics for the project.
+[  162s]                         (default: False)
+[  162s]   --internal-stats      Generate internal analyzer statistics. (default:
+[  162s]                         False)
+[  162s]   --maxloop, -maxloop <loop count>
+[  162s]                         Specify the number of times a block can be visited
+[  162s]                         before giving up. Increase for more comprehensive
+[  162s]                         coverage at a cost of speed. (default: None)
+[  162s]   --store, -store <model>
+[  162s]                         Specify the store model used by the analyzer. 'region'
+[  162s]                         specifies a field- sensitive store model. 'basic'
+[  162s]                         which is far less precise but can more quickly analyze
+[  162s]                         code. 'basic' was the default store model for
+[  162s]                         checker-0.221 and earlier. (default: None)
+[  162s]   --constraints, -constraints <model>
+[  162s]                         Specify the constraint engine used by the analyzer.
+[  162s]                         Specifying 'basic' uses a simpler, less powerful
+[  162s]                         constraint model used by checker-0.160 and earlier.
+[  162s]                         (default: None)
+[  162s]   --analyzer-config, -analyzer-config <options>
+[  162s]                         Provide options to pass through to the analyzer's
+[  162s]                         -analyzer-config flag. Several options are separated
+[  162s]                         with comma: 'key1=val1,key2=val2' Available options:
+[  162s]                         stable-report-filename=true or false (default) Switch
+[  162s]                         the page naming to: report-<filename>-<function/method
+[  162s]                         name>-<id>.html instead of report-XXXXXX.html
+[  162s]                         (default: None)
+[  162s]   --force-analyze-debug-code
+[  162s]                         Tells analyzer to enable assertions in code even if
+[  162s]                         they were disabled during compilation, enabling more
+[  162s]                         precise results. (default: False)
+[  162s] 
+[  162s] checker options:
+[  162s]   --load-plugin, -load-plugin <plugin library>
+[  162s]                         Loading external checkers using the clang plugin
+[  162s]                         interface. (default: None)
+[  162s]   --enable-checker, -enable-checker <checker name>
+[  162s]                         Enable specific checker. (default: None)
+[  162s]   --disable-checker, -disable-checker <checker name>
+[  162s]                         Disable specific checker. (default: None)
+[  162s]   --help-checkers       A default group of checkers is run unless explicitly
+[  162s]                         disabled. Exactly which checkers constitute the
+[  162s]                         default group is a function of the operating system in
+[  162s]                         use. These can be printed with this flag. (default:
+[  162s]                         False)
+[  162s]   --help-checkers-verbose
+[  162s]                         Print all available checkers and mark the enabled
+[  162s]                         ones. (default: False)
+[  162s] + printf 'TASK162_HELP_END %s\n' scan-build-py

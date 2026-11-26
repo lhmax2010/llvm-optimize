@@ -1,0 +1,42 @@
+[  162s] + rc=0
+[  162s] + LC_ALL=C
+[  162s] + intercept-build --help
+[  162s] /usr/lib/libscanbuild/__init__.py:201: SyntaxWarning: 'return' in a 'finally' block
+[  162s]   return result
+[  162s] usage: intercept-build [-h] [--verbose] [--cdb <file>] [--override-compiler]
+[  162s]                        [--use-cc <path>] [--use-c++ <path>] [--append]
+[  162s]                        ...
+[  162s] 
+[  162s] positional arguments:
+[  162s]   build                Command to run.
+[  162s] 
+[  162s] options:
+[  162s]   -h, --help           show this help message and exit
+[  162s]   --verbose, -v        Enable verbose output from 'intercept-build'. A second,
+[  162s]                        third and fourth flags increases verbosity. (default:
+[  162s]                        0)
+[  162s]   --cdb <file>         The JSON compilation database. (default:
+[  162s]                        compile_commands.json)
+[  162s]   --override-compiler  Always resort to the compiler wrapper even when better
+[  162s]                        intercept methods are available. (default: False)
+[  162s]   --use-cc <path>      When 'intercept-build' analyzes a project by
+[  162s]                        interposing a compiler wrapper, which executes a real
+[  162s]                        compiler for compilation and do other tasks (record the
+[  162s]                        compiler invocation). Because of this interposing,
+[  162s]                        'intercept-build' does not know what compiler your
+[  162s]                        project normally uses. Instead, it simply overrides the
+[  162s]                        CC environment variable, and guesses your default
+[  162s]                        compiler. If you need 'intercept-build' to use a
+[  162s]                        specific compiler for *compilation* then you can use
+[  162s]                        this option to specify a path to that compiler.
+[  162s]                        (default: x86_64-tizen-linux-gnu-clang)
+[  162s]   --use-c++ <path>     This is the same as "--use-cc" but for C++ code.
+[  162s]                        (default: x86_64-tizen-linux-gnu-clang++)
+[  162s] 
+[  162s] advanced options:
+[  162s]   --append             Extend existing compilation database with new entries.
+[  162s]                        Duplicate entries are detected and not present in the
+[  162s]                        final output. The output is not continuously updated,
+[  162s]                        it's done when the build command finished. (default:
+[  162s]                        False)
+[  162s] + printf 'TASK162_HELP_END %s\n' intercept-build
