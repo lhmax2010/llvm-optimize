@@ -1,0 +1,27 @@
+42: %endif
+43: 
+44: %if %{defined _toolchain}
+45: %define _toolchain_override clang
+46: %define llvm_release_build 0
+47: %else
+48: %define llvm_release_build 1
+49: %endif
+50: 
+380: MLGO_REQUIRED_RUNTIME_OBJECTS="xla_compiled_cpu_function.cc.o cpu_function_runtime.cc.o custom_call_status.cc.o executable_run_options.cc.o runtime_single_threaded_matmul_f32.cc.o"
+381: %endif
+382: 
+383: mkdir -p build
+384: cd build
+385: %if %{llvm_pgo_enabled}
+386: %if %{llvm_release_build}
+387: %global llvm_pgo_project D
+388: %else
+389: %global llvm_pgo_project T
+390: %endif
+391: python3 -B %{SOURCE1201} pgo-prepare "%{SOURCE1204}" %{llvm_pgo_project} "$PWD/pgo-profiles" "%{SOURCE1202}"%{?llvm_pgo_bolt_source} || exit 1
+392: %endif
+393: cmake \
+394:     -G Ninja \
+395:     -DTIZEN=1 \
+396: %if %{llvm_pgo_enabled}
+397:     -DLLVM_PROFDATA_FILE="$PWD/pgo-profiles/clang.profdata" \
