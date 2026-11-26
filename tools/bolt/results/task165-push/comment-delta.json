@@ -1,0 +1,14 @@
+{
+  "added": [
+    {
+      "message": "Patch Set 7:\n\nPS7 on top of PS6: fixes for the items listed in the PS6 review.\n\n1. llvm provides llvm-xray and llvm-prof-tools, and clang provides clang-analyzer (= %{version}-%{release}). The Obsoletes bound is now \"<\", so a package never obsoletes its own Provides.\n2. The scan-build report resources (/usr/share/scan-build) and its man page move from llvm-devel to clang. The scan-view data (/usr/share/scan-view) moves from llvm-devel to llvm, next to scan-view.\n3. libscanbuild and libear are no longer removed in %install and are shipped in clang, so analyze-build, intercept-build and scan-build-py can import them. No Python runtime requirement is added to any package.\n4. The six installed scripts that start with \"#!/usr/bin/env python\" (scan-view, run-find-all-symbols.py and four opt-viewer scripts) are switched to python3 in %install, followed by a check that fails the build if a rewrite does not apply.\n5. Your item 3: the OpenMP symlink comment now describes the actual install directory. Your item 5: #undef for the helper macros and the is16BitMemOperand alignment in X86BoltMnemonicTables.cpp.\n6. The commit message body is rewritten to describe the change against the base.\n\nTested on x86_64: full llvm build, with the file lists of all packages matching the intended moves and the clang Requires unchanged. With only clang, llvm and libllvm installed (no llvm-devel), scan-build writes its HTML report, and scan-view, analyze-build, intercept-build and scan-build-py --help run. The opt-viewer scripts still need the optional yaml and pygments Python modules, which are not part of the base.",
+      "reviewer": {
+        "email": "hao.lin@samsung.com",
+        "name": "Lin Hao",
+        "username": "lhmax2025"
+      },
+      "timestamp": 1795692209
+    }
+  ],
+  "removed": []
+}

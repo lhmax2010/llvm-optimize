@@ -1,0 +1,40 @@
+--- P7 message
++++ P8 message
+@@ -22,19 +22,27 @@
+ LLVM version and checks that the installed providers share one version
+ and release, sets BOLT_TARGETS_TO_BUILD per architecture and verifies
+ target registration, keeps the distribution LDFLAGS, derives
+-LLVM_LIBDIR_SUFFIX from %{_lib}, and lets CMake install merge-fdata
+-once. bolt requires libllvm = %{version} at runtime.
++LLVM_LIBDIR_SUFFIX from %{_lib}, and installs merge-fdata through its
++CMake rule. bolt requires libllvm = %{version} at runtime.
+ 
+ clang now ships scan-build, scan-build-py, analyze-build and
+-intercept-build together with the libexec scripts, the report
+-resources and the Python modules they use. Scripts that used an
+-unversioned Python interpreter now use Python 3 shebangs. llvm
+-ships the scan-view data next to scan-view. llvm and clang provide
+-the llvm-xray, llvm-prof-tools and clang-analyzer names and
+-obsolete their older versions.
++intercept-build with their libexec scripts, report resources, manual
++page and Python modules; the modules are no longer deleted at install
++time. The scan-view data moves from llvm-devel to llvm, next to
++scan-view. Six installed scripts now use Python 3 shebangs, and
++packaging checks the new first lines. No Python runtime requirement is
++added. llvm and clang provide the llvm-xray, llvm-prof-tools and
++clang-analyzer names and obsolete their older versions.
+ 
+-The --build-id=sha1 flag is added to the executable and shared-library
+-linker flags; module linker flags keep their existing settings.
++Later revisions withdrew armv7l BOLT packaging and the llvm python3
++requirement described in the history above. When MLGO is enabled,
++%build extracts the verify assets if their directory is absent,
++including when %prep was skipped.
++
++The standalone spec adds --build-id=sha1 to the executable and shared
++library linker flags. The llvm spec adds it to those flags when
++_toolchain is defined, as it always is on x86_64. Module linker flags
++keep their existing settings.
+ 
+ Change-Id: Ie2c1d45cea6703a0caef72187397275a03e66468
+ Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>

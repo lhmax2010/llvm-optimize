@@ -1,0 +1,25 @@
+[  131s] TASK165_NEGATIVE_BEGIN
+[  131s] + set +e
+[  131s] + negative_rc=1
+[  131s] + set -e
+[  131s] + cat negative-raw.txt
+[  131s] + set -e
+[  131s] + sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-guard-1-1.x86_64/usr/bin/scan-view
+[  131s] + sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-guard-1-1.x86_64/usr/share/clang/run-find-all-symbols.py
+[  131s] + sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-guard-1-1.x86_64/usr/share/opt-viewer/opt-diff.py
+[  131s] + sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-guard-1-1.x86_64/usr/share/opt-viewer/opt-stats.py
+[  131s] + sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-guard-1-1.x86_64/usr/share/opt-viewer/opt-viewer.py
+[  131s] + sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-guard-1-1.x86_64/usr/share/opt-viewer/optrecord.py
+[  131s] + for f in usr/bin/scan-view usr/share/clang/run-find-all-symbols.py usr/share/opt-viewer/opt-diff.py usr/share/opt-viewer/opt-stats.py usr/share/opt-viewer/opt-viewer.py usr/share/opt-viewer/optrecord.py
+[  131s] ++ head -n 1 /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-guard-1-1.x86_64/usr/bin/scan-view
+[  131s] + test '#!/usr/bin/python' = '#!/usr/bin/env python3'
+[  131s] + echo 'Unexpected interpreter in usr/bin/scan-view'
+[  131s] Unexpected interpreter in usr/bin/scan-view
+[  131s] + exit 1
+[  131s] + printf 'TASK165_NEGATIVE_RC %s\n' 1
+[  131s] TASK165_NEGATIVE_RC 1
+[  131s] + test 1 -eq 1
+[  131s] + grep -Fx 'Unexpected interpreter in usr/bin/scan-view' negative-raw.txt
+[  131s] Unexpected interpreter in usr/bin/scan-view
+[  131s] + printf 'TASK165_NEGATIVE_PASS\n'
+[  131s] TASK165_NEGATIVE_PASS

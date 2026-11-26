@@ -1,0 +1,44 @@
+diff --git a/packaging/llvm-tools-subpkgs.spec b/packaging/llvm-tools-subpkgs.spec
+index 6fc901a8eac1367a4b3a032a7fa142f5919f8946..2331768912727e4ec79d90ae5dd63c194e8fb414 100644
+--- a/packaging/llvm-tools-subpkgs.spec
++++ b/packaging/llvm-tools-subpkgs.spec
+@@ -170,4 +170,3 @@ cd ..
+ %{_prefix}/bin/merge-fdata
+ %{_libdir}/libbolt_rt_instr.a
+ %{_libdir}/libbolt_rt_hugify.a
+-
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 51b559b8586f234e766f46502af8ddf2444c67e8..c46b127744158a867c64dc03bb4962ef2f874278 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -108,8 +108,7 @@ BuildRequires: clang, llvm, libllvm
+ 
+ 
+ Requires: libllvm = %{version}-%{release}
+-# llvm-xray and llvm-prof-tools used to be separate subpackages
+-# (llvm-tools-subpkgs.spec) that owned these files; llvm takes them over
++# llvm provides these legacy package names and obsoletes older versions.
+ Provides: llvm-xray = %{version}-%{release}
+ Obsoletes: llvm-xray < %{version}-%{release}
+ Provides: llvm-prof-tools = %{version}-%{release}
+@@ -152,6 +151,7 @@ Summary: Clang %{version} (C Language family frontend for LLVM)
+ License: NCSA
+ Requires: llvm = %{version}-%{release}
+ Provides: libclang.so.%{version}
++# clang provides the legacy clang-analyzer name and obsoletes older versions.
+ Provides: clang-analyzer = %{version}-%{release}
+ Obsoletes: clang-analyzer < %{version}-%{release}
+ 
+@@ -797,6 +797,12 @@ sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/sh
+ sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/opt-viewer/opt-stats.py"
+ sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/opt-viewer/opt-viewer.py"
+ sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/opt-viewer/optrecord.py"
++for f in usr/bin/scan-view usr/share/clang/run-find-all-symbols.py \
++         usr/share/opt-viewer/opt-diff.py usr/share/opt-viewer/opt-stats.py \
++         usr/share/opt-viewer/opt-viewer.py usr/share/opt-viewer/optrecord.py; do
++    test "$(head -n 1 "%{buildroot}/$f")" = '#!/usr/bin/env python3' ||
++        { echo "Unexpected interpreter in $f" >&2; exit 1; }
++done
+ 
+ %post -n clang -p /sbin/ldconfig
+ %postun -n clang -p /sbin/ldconfig

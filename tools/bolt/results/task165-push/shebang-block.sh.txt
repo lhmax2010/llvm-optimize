@@ -1,0 +1,12 @@
+sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/bin/scan-view"
+sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/clang/run-find-all-symbols.py"
+sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/opt-viewer/opt-diff.py"
+sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/opt-viewer/opt-stats.py"
+sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/opt-viewer/opt-viewer.py"
+sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/opt-viewer/optrecord.py"
+for f in usr/bin/scan-view usr/share/clang/run-find-all-symbols.py \
+         usr/share/opt-viewer/opt-diff.py usr/share/opt-viewer/opt-stats.py \
+         usr/share/opt-viewer/opt-viewer.py usr/share/opt-viewer/optrecord.py; do
+    test "$(head -n 1 "%{buildroot}/$f")" = '#!/usr/bin/env python3' ||
+        { echo "Unexpected interpreter in $f" >&2; exit 1; }
+done
