@@ -1,28 +1,28 @@
 {
   "step": "G5",
-  "attempt": 1,
-  "started_at": "2026-11-26T03:38:25-08:00",
-  "memory_max": 18862358528,
+  "attempt": 2,
+  "started_at": "2026-11-26T03:58:12-08:00",
+  "memory_max": 21789810688,
   "floor": 16863952896,
   "admitted": true,
   "tier": "historical-peak",
-  "jobs": 4,
-  "thinlto_jobs": 4,
+  "jobs": 6,
+  "thinlto_jobs": 6,
   "link_jobs": 1,
-  "cpu_percent": 200,
+  "cpu_percent": 300,
   "admission": [
     {
-      "time": "2026-11-26T03:38:25-08:00",
-      "mem_available": 22083584000,
-      "home_available": 156518502400,
-      "io_full_avg60": 21.96,
+      "time": "2026-11-26T03:58:12-08:00",
+      "mem_available": 25011036160,
+      "home_available": 150190710784,
+      "io_full_avg60": 9.39,
       "memory_plan": {
-        "memory_max": 18862358528,
+        "memory_max": 21789810688,
         "floor": 16863952896,
         "admitted": true,
         "tier": "historical-peak",
-        "jobs": 4,
-        "thinlto_jobs": 4,
+        "jobs": 6,
+        "thinlto_jobs": 6,
         "link_jobs": 1
       },
       "disk_required": 78318382080,
@@ -30,20 +30,20 @@
     }
   ],
   "admission_wait_seconds": 0.0,
-  "unit": "llvm-opt-task166-g-chain-g5-1.service",
+  "unit": "llvm-opt-task166-g-chain-g5-2.service",
   "argv": [
     "/usr/bin/systemd-run",
     "--user",
     "--wait",
     "--pipe",
-    "--unit=llvm-opt-task166-g-chain-g5-1.service",
+    "--unit=llvm-opt-task166-g-chain-g5-2.service",
     "--expand-environment=no",
     "-p",
-    "MemoryMax=18862358528",
+    "MemoryMax=21789810688",
     "-p",
     "MemorySwapMax=0",
     "-p",
-    "CPUQuota=200%",
+    "CPUQuota=300%",
     "-p",
     "Nice=19",
     "-p",
@@ -57,13 +57,14 @@
     "-p",
     "WorkingDirectory=/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build",
     "-p",
-    "ExecStopPost=/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/capture_stop.py /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G5/cgroup-stop-166-1.json",
+    "ExecStopPost=/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/capture_stop.py /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G5/cgroup-stop-166-2.json",
     "--setenv=TZ=America/Los_Angeles",
     "--setenv=TASK133_WORKSPACE=/home/linhao/Toolchain/development/llvm-optimize",
-    "--setenv=TASK138_UNIT=llvm-opt-task166-g-chain-g5-1",
+    "--setenv=TASK138_UNIT=llvm-opt-task166-g-chain-g5-2",
     "--setenv=TASK166_RUN_ROOT=/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run",
-    "--setenv=TASK166_WORKER_RECEIPT=worker-166-1.json",
-    "--setenv=TASK133_ADMISSION_MEMORY=22083584000",
+    "--setenv=TASK166_WORKER_RECEIPT=worker-166-2.json",
+    "--setenv=TASK133_ADMISSION_MEMORY=25011036160",
+    "--setenv=TASK166_RECOVER_G5=1",
     "--setenv=TASK163_G5_HISTORICAL=1",
     "/usr/bin/python3",
     "-B",
@@ -71,65 +72,106 @@
     "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run",
     "G5",
     "historical-peak",
-    "4",
-    "18862358528",
-    "200"
+    "6",
+    "21789810688",
+    "300"
   ],
-  "status": "FAIL",
-  "reason": "profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'bolt-tools-relink', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441'}], 'started_at': '2026-11-26T11:38:44+00:00', 'admission': [{'at': '2026-11-26T11:38:44+00:00', 'memory': 22491115520, 'disk': {'/home': 156518469632, '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles': 156518469632}, 'admission_memory': 22083584000, 'stage': 'bolt-tools-relink', 'memory_max': 18862358528, 'floor': 16863952896, 'admitted': True, 'tier': 'historical-peak', 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'actual_memory_max': 18862358528}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441/build-1.txt', 'ended_at': '2026-11-26T11:53:40+00:00'}",
-  "rc": 1,
-  "ended_at": "2026-11-26T03:53:42-08:00",
-  "seconds": 916.842,
+  "status": "PASS",
+  "reason": "",
+  "rc": 0,
+  "ended_at": "2026-11-26T03:58:45-08:00",
+  "seconds": 32.873,
   "resources": {
-    "memory.peak": "13785956352",
-    "memory.max": "18862358528",
+    "memory.peak": "3860570112",
+    "memory.max": "21789810688",
     "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
     "memory.swap.peak": "0",
-    "memory.stat": "anon 4993024\nfile 11421306880\nkernel 182939648\nkernel_stack 0\npagetables 90112\nsec_pagetables 0\npercpu 352\nsock 0\nvmalloc 0\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 0\nfile_dirty 619249664\nfile_writeback 16777216\nswapcached 0\nanon_thp 0\nfile_thp 174063616\nshmem_thp 0\ninactive_anon 0\nactive_anon 4911104\ninactive_file 8728027136\nactive_file 2693279744\nunevictable 0\nslab_reclaimable 182647688\nslab_unreclaimable 194880\nslab 182842568\nworkingset_refault_anon 0\nworkingset_refault_file 532\nworkingset_activate_anon 0\nworkingset_activate_file 1\nworkingset_restore_anon 0\nworkingset_restore_file 0\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgpromote_success 0\npgscan 1552608\npgsteal 1552228\npswpin 0\npswpout 0\npgscan_kswapd 1544988\npgscan_direct 7620\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 1544608\npgsteal_direct 7620\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 15415620\npgmajfault 24688\npgrefill 6180\npgactivate 379\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nnuma_pages_migrated 0\nnuma_pte_updates 0\nnuma_hint_faults 0",
+    "memory.stat": "anon 4984832\nfile 3828895744\nkernel 774144\nkernel_stack 0\npagetables 94208\nsec_pagetables 0\npercpu 704\nsock 0\nvmalloc 0\nshmem 0\nzswap 0\nzswapped 0\nfile_mapped 0\nfile_dirty 5996544\nfile_writeback 0\nswapcached 0\nanon_thp 0\nfile_thp 0\nshmem_thp 0\ninactive_anon 0\nactive_anon 4964352\ninactive_file 3807244288\nactive_file 21647360\nunevictable 0\nslab_reclaimable 647056\nslab_unreclaimable 24280\nslab 671336\nworkingset_refault_anon 0\nworkingset_refault_file 989948\nworkingset_activate_anon 0\nworkingset_activate_file 1\nworkingset_restore_anon 0\nworkingset_restore_file 6\nworkingset_nodereclaim 0\npgdemote_kswapd 0\npgdemote_direct 0\npgdemote_khugepaged 0\npgdemote_proactive 0\npgpromote_success 0\npgscan 114175\npgsteal 114175\npswpin 0\npswpout 0\npgscan_kswapd 114047\npgscan_direct 128\npgscan_khugepaged 0\npgscan_proactive 0\npgsteal_kswapd 114047\npgsteal_direct 128\npgsteal_khugepaged 0\npgsteal_proactive 0\npgfault 22693\npgmajfault 14\npgrefill 0\npgactivate 0\npgdeactivate 0\npglazyfree 0\npglazyfreed 0\nswpin_zero 0\nswpout_zero 0\nzswpin 0\nzswpout 0\nzswpwb 0\nthp_fault_alloc 0\nthp_collapse_alloc 0\nthp_swpout 0\nthp_swpout_fallback 0\nnuma_pages_migrated 0\nnuma_pte_updates 0\nnuma_hint_faults 0",
     "VmHWM_sample": {
-      "bytes": 9662111744,
-      "pid": 89282,
-      "argv": "/usr/bin/ld.lld --hash-style=gnu --eh-frame-hdr -m elf_x86_64 -pie -dynamic-linker /lib64/ld-linux-x86-64.so.2 -o /home/abuild/133n-bolt/clang-relinked /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/Scrt1.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/crti.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/crtbeginS.o -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0 -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64 -L/lib/../lib64 -L/usr/lib64 -L/usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../x86_64-tizen-linux-gnu/lib -L/lib -L/usr/lib -plugin-opt=mcpu=nehalem -plugin-opt=O3 -plugin-opt=thinlto -plugin-opt=-function-sections=1 -plugin-opt=-data-sections=1 -plugin-opt=cs-profile-path=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/pgo-profiles/clang.profdata --gc-sections --thinlto-jobs=4 --color-diagnostics --thinlto-cache-dir=/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lto.cache --export-dynamic --dependency-file=/home/abuild/133n-bolt/clang-relinked.d tools/clang/tools/driver/CMakeFiles/clang.dir/driver.cpp.o tools/clang/tools/driver/CMakeFiles/clang.dir/cc1_main.cpp.o tools/clang/tools/driver/CMakeFiles/clang.dir/cc1as_main.cpp.o tools/clang/tools/driver/CMakeFiles/clang.dir/cc1gen_reproducer_main.cpp.o tools/clang/tools/driver/CMakeFiles/clang.dir/clang-driver.cpp.o -rpath $ORIGIN/../lib64:/home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64: lib64/libLLVMX86CodeGen.a lib64/libLLVMX86AsmParser.a lib64/libLLVMX86Desc.a lib64/libLLVMX86Disassembler.a lib64/libLLVMX86Info.a lib64/libLLVMARMCodeGen.a lib64/libLLVMARMAsmParser.a lib64/libLLVMARMDesc.a lib64/libLLVMARMDisassembler.a lib64/libLLVMARMInfo.a lib64/libLLVMARMUtils.a lib64/libLLVMAArch64CodeGen.a lib64/libLLVMAArch64AsmParser.a lib64/libLLVMAArch64Desc.a lib64/libLLVMAArch64Disassembler.a lib64/libLLVMAArch64Info.a lib64/libLLVMAArch64Utils.a lib64/libLLVMBPFCodeGen.a lib64/libLLVMBPFAsmParser.a lib64/libLLVMBPFDesc.a lib64/libLLVMBPFDisassembler.a lib64/libLLVMBPFInfo.a lib64/libLLVMAnalysis.a lib64/libLLVMCodeGen.a lib64/libLLVMCore.a lib64/libLLVMipo.a lib64/libLLVMAggressiveInstCombine.a lib64/libLLVMInstCombine.a lib64/libLLVMInstrumentation.a lib64/libLLVMMC.a lib64/libLLVMMCParser.a lib64/libLLVMObjCARCOpts.a lib64/libLLVMOption.a lib64/libLLVMScalarOpts.a lib64/libLLVMSupport.a lib64/libLLVMTargetParser.a lib64/libLLVMTransformUtils.a lib64/libLLVMVectorize.a lib64/libclangBasic.a lib64/libclangCodeGen.a lib64/libclangDriver.a lib64/libclangFrontend.a lib64/libclangFrontendTool.a lib64/libclangOptions.a lib64/libclangSerialization.a lib64/libLLVMAsmPrinter.a lib64/libLLVMMCDisassembler.a lib64/libLLVMCoverage.a lib64/libLLVMFrontendDriver.a lib64/libLLVMLTO.a lib64/libLLVMPasses.a lib64/libLLVMCFGuard.a lib64/libLLVMGlobalISel.a lib64/libLLVMSelectionDAG.a lib64/libLLVMCodeGenTypes.a lib64/libLLVMIRPrinter.a lib64/libLLVMTarget.a lib64/libLLVMCoroutines.a lib64/libLLVMSandboxIR.a lib64/libLLVMHipStdPar.a lib64/libLLVMCGData.a lib64/libLLVMBitWriter.a lib64/libLLVMLinker.a lib64/libLLVMExtensions.a lib64/libclangExtractAPI.a lib64/libclangInstallAPI.a lib64/libLLVMTextAPIBinaryReader.a lib64/libclangRewriteFrontend.a lib64/libclangStaticAnalyzerFrontend.a lib64/libclangStaticAnalyzerCheckers.a lib64/libclangStaticAnalyzerCore.a lib64/libclangCrossTU.a lib64/libLLVMWindowsDriver.a lib64/libclangIndex.a lib64/libLLVMPlugins.a lib64/libclangParse.a lib64/libclangSema.a lib64/libclangAPINotes.a lib64/libclangEdit.a lib64/libclangAnalysisLifetimeSafety.a lib64/libclangAnalysis.a lib64/libclangASTMatchers.a lib64/libclangAST.a lib64/libclangSupport.a lib64/libclangFormat.a lib64/libclangToolingInclusions.a lib64/libclangToolingCore.a lib64/libclangRewrite.a lib64/libclangLex.a lib64/libLLVMFrontendOpenMP.a lib64/libLLVMFrontendOffloading.a lib64/libLLVMObjectYAML.a lib64/libLLVMFrontendAtomic.a lib64/libLLVMProfileData.a lib64/libLLVMSymbolize.a lib64/libLLVMDebugInfoGSYM.a lib64/libLLVMDebugInfoDWARF.a lib64/libLLVMDebugInfoPDB.a lib64/libLLVMDebugInfoCodeView.a lib64/libLLVMDebugInfoMSF.a lib64/libLLVMDebugInfoBTF.a lib64/libLLVMObject.a lib64/libLLVMDebugInfoDWARFLowLevel.a lib64/libLLVMIRReader.a lib64/libLLVMBitReader.a lib64/libLLVMAsmParser.a lib64/libLLVMTextAPI.a lib64/libLLVMFrontendHLSL.a lib64/libLLVMBinaryFormat.a lib64/libLLVMRemarks.a lib64/libLLVMBitstreamReader.a lib64/libLLVMFrontendDirective.a lib64/libLLVMDemangle.a -lrt -ldl -lm /usr/lib64/libz.so -rpath-link /home/abuild/rpmbuild/BUILD/llvm-22.1.8/build/lib64 --emit-relocs -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/crtendS.o /usr/bin/../lib64/gcc/x86_64-tizen-linux-gnu/14.2.0/../../../../lib64/crtn.o"
+      "bytes": 21635072,
+      "pid": 92384,
+      "argv": "/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/worker.py /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run G5 historical-peak 6 21789810688 300"
     }
   },
-  "systemd": "Result=exit-code\nMemoryPeak=13785956352\nCPUUsageNSec=862422901000\nActiveState=failed\nInvocationID=0f98ffffbf7a404a94e345ad9d0fe06f\n",
+  "systemd": "Result=success\nMemoryPeak=[not set]\nCPUUsageNSec=[not set]\nActiveState=inactive\nInvocationID=\n",
   "worker": {
-    "status": "STOP",
-    "reason": "profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'bolt-tools-relink', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441'}], 'started_at': '2026-11-26T11:38:44+00:00', 'admission': [{'at': '2026-11-26T11:38:44+00:00', 'memory': 22491115520, 'disk': {'/home': 156518469632, '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles': 156518469632}, 'admission_memory': 22083584000, 'stage': 'bolt-tools-relink', 'memory_max': 18862358528, 'floor': 16863952896, 'admitted': True, 'tier': 'historical-peak', 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'actual_memory_max': 18862358528}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441/build-1.txt', 'ended_at': '2026-11-26T11:53:40+00:00'}",
-    "error": "Traceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/worker.py\", line 166, in <module>\n    out=generate(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/pgosteps.py\", line 296, in generate\n    raise RuntimeError(f\"profile skill exited {proc.returncode}: {err}\")\nRuntimeError: profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'bolt-tools-relink', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441'}], 'started_at': '2026-11-26T11:38:44+00:00', 'admission': [{'at': '2026-11-26T11:38:44+00:00', 'memory': 22491115520, 'disk': {'/home': 156518469632, '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles': 156518469632}, 'admission_memory': 22083584000, 'stage': 'bolt-tools-relink', 'memory_max': 18862358528, 'floor': 16863952896, 'admitted': True, 'tier': 'historical-peak', 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'actual_memory_max': 18862358528}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441/build-1.txt', 'ended_at': '2026-11-26T11:53:40+00:00'}\n",
+    "status": "PASS",
+    "details": {
+      "stage": "bolt-tools-relink",
+      "artifacts": [
+        {
+          "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools.json",
+          "bytes": 808,
+          "sha256": "1a29146efc86e9887f6a5fb0c293338268cb1bbdab3bfdcbc10b1afa5c980960"
+        },
+        {
+          "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-config/bolt-artifacts/llvm-bolt",
+          "bytes": 573015048,
+          "sha256": "a1727cce73252ea5fed83edd25c38c6b7e2100096ff6fdd4611cec224d3106b8"
+        },
+        {
+          "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-config/bolt-artifacts/merge-fdata",
+          "bytes": 10909776,
+          "sha256": "16f53a6ec04281951c95f1835c8a74df29f388c25c401b020e06f877a843c8a8"
+        },
+        {
+          "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/clang-with-relocs",
+          "bytes": 212234128,
+          "sha256": "ebf8581b041d992d285c246cb0ba188baf0f3b6e42a32ff9a0be6c67bd31257d"
+        },
+        {
+          "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-config/bolt-artifacts/libbolt_rt_instr.a",
+          "bytes": 33468,
+          "sha256": "4d00fc0a9c00913892ef2a3851a44a1c0ba39b695c7c9ca463883f317a9916ff"
+        }
+      ],
+      "bolt_match": null
+    },
     "cgroup_end": {
-      "memory.peak": "13785956352",
+      "memory.peak": "3860570112",
       "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
-      "memory.max": "18862358528",
-      "memory.stat": "anon 10588160\nfile 11421298688",
+      "memory.max": "21789810688",
+      "memory.stat": "anon 10543104\nfile 3828887552",
       "memory.swap.peak": "0"
     }
   },
   "watchdog": null,
   "oom_killed": false,
-  "log_path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G5/service-166-1.log",
-  "log_tail": "Running as unit: llvm-opt-task166-g-chain-g5-1.service\nLLVM_BUILD_JOBS planned bolt-tools-relink {\"jobs\": 4, \"thinlto_jobs\": 4, \"link_jobs\": 1}\n/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/profile_stage.py --config /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-config/config.json --output /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles --stages bolt-tools-relink --memory-available-bytes 22083584000 --resume\nSTOP: command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441/build-1.txt\n{\n  \"status\": \"STOP\",\n  \"project\": \"T\",\n  \"stages\": [\n    {\n      \"name\": \"bolt-tools-relink\",\n      \"status\": \"STOP\",\n      \"attempt\": \"/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441\"\n    }\n  ],\n  \"started_at\": \"2026-11-26T11:38:44+00:00\",\n  \"admission\": [\n    {\n      \"at\": \"2026-11-26T11:38:44+00:00\",\n      \"memory\": 22491115520,\n      \"disk\": {\n        \"/home\": 156518469632,\n        \"/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles\": 156518469632\n      },\n      \"admission_memory\": 22083584000,\n      \"stage\": \"bolt-tools-relink\",\n      \"memory_max\": 18862358528,\n      \"floor\": 16863952896,\n      \"admitted\": true,\n      \"tier\": \"historical-peak\",\n      \"jobs\": 4,\n      \"thinlto_jobs\": 4,\n      \"link_jobs\": 1,\n      \"actual_memory_max\": 18862358528\n    }\n  ],\n  \"reason\": \"command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441/build-1.txt\",\n  \"ended_at\": \"2026-11-26T11:53:40+00:00\"\n}\nTraceback (most recent call last):\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/worker.py\", line 166, in <module>\n    out=generate(A,D,W,B,TASK,TIER,JOBS,MEM,CPU)\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/pgosteps.py\", line 296, in generate\n    raise RuntimeError(f\"profile skill exited {proc.returncode}: {err}\")\nRuntimeError: profile skill exited 1: {'status': 'STOP', 'project': 'T', 'stages': [{'name': 'bolt-tools-relink', 'status': 'STOP', 'attempt': '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441'}], 'started_at': '2026-11-26T11:38:44+00:00', 'admission': [{'at': '2026-11-26T11:38:44+00:00', 'memory': 22491115520, 'disk': {'/home': 156518469632, '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles': 156518469632}, 'admission_memory': 22083584000, 'stage': 'bolt-tools-relink', 'memory_max': 18862358528, 'floor': 16863952896, 'admitted': True, 'tier': 'historical-peak', 'jobs': 4, 'thinlto_jobs': 4, 'link_jobs': 1, 'actual_memory_max': 18862358528}], 'reason': 'command failed (1); see /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795693154435989441/build-1.txt', 'ended_at': '2026-11-26T11:53:40+00:00'}\n\nFinished with result: exit-code\nMain processes terminated with: code=exited/status=1\nService runtime: 15min 16.790s\nCPU time consumed: 14min 22.422s\nMemory peak: 12.8G\nMemory swap peak: 0B\n",
+  "log_path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G5/service-166-2.log",
+  "log_tail": "Running as unit: llvm-opt-task166-g-chain-g5-2.service; invocation ID: 8dc4e0169bd04346b1eaea5ac42de743\nLLVM_BUILD_JOBS planned bolt-tools-relink {\"jobs\": 6, \"thinlto_jobs\": 6, \"link_jobs\": 1}\n/usr/bin/python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task166/orchestration/profile_stage.py --config /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-config/config.json --output /home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles --stages bolt-tools-relink --memory-available-bytes 25011036160 --resume\n{\n  \"status\": \"PARTIAL\",\n  \"project\": \"T\",\n  \"stages\": [\n    {\n      \"name\": \"bolt-tools-relink\",\n      \"status\": \"PASS\",\n      \"attempt\": \"/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-tools-relink-1795694320857610188\"\n    }\n  ],\n  \"started_at\": \"2026-11-26T11:58:23+00:00\",\n  \"admission\": [\n    {\n      \"at\": \"2026-11-26T11:58:23+00:00\",\n      \"memory\": 25138622464,\n      \"disk\": {\n        \"/home\": 150190686208,\n        \"/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles\": 150190686208\n      },\n      \"admission_memory\": 25011036160,\n      \"stage\": \"bolt-tools-relink\",\n      \"memory_max\": 21789810688,\n      \"floor\": 16863952896,\n      \"admitted\": true,\n      \"tier\": \"historical-peak\",\n      \"jobs\": 6,\n      \"thinlto_jobs\": 6,\n      \"link_jobs\": 1,\n      \"actual_memory_max\": 21789810688\n    }\n  ],\n  \"ended_at\": \"2026-11-26T11:58:45+00:00\"\n}\nFinished with result: success\nMain processes terminated with: code=exited/status=0\nService runtime: 32.785s\nCPU time consumed: 5.270s\nMemory peak: 3.5G\nMemory swap peak: 0B\n",
   "end_measurement": {
-    "time": "2026-11-26T03:53:42-08:00",
-    "mem_available": 26089631744,
-    "home_available": 150201757696,
-    "io_full_avg60": 72.73
+    "time": "2026-11-26T03:58:45-08:00",
+    "mem_available": 25100079104,
+    "home_available": 150184689664,
+    "io_full_avg60": 15.58
   },
   "cleanup": {
-    "roots": [],
+    "roots": [
+      {
+        "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0",
+        "estimated_allocated_bytes_removed": 48905203712,
+        "entries_removed": 221653,
+        "remaining": true,
+        "skipped_sample": [
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/usr/share/upgrade'",
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/var/cache/ldconfig'",
+          "[Errno 13] Permission denied: '/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G4/gbs-root/local/BUILD-ROOTS/scratch.x86_64.0/root'"
+        ]
+      }
+    ],
     "before": {
-      "time": "2026-11-26T03:53:42-08:00",
-      "mem_available": 26089631744,
-      "home_available": 150201757696,
-      "io_full_avg60": 72.73
+      "time": "2026-11-26T03:58:45-08:00",
+      "mem_available": 25100079104,
+      "home_available": 150184689664,
+      "io_full_avg60": 15.58
     },
     "after": {
-      "time": "2026-11-26T03:53:44-08:00",
-      "mem_available": 26116403200,
-      "home_available": 150201757696,
-      "io_full_avg60": 72.87
+      "time": "2026-11-26T04:00:24-08:00",
+      "mem_available": 25051836416,
+      "home_available": 199175417856,
+      "io_full_avg60": 25.96
     },
-    "df_delta": 0,
-    "estimated_allocated_bytes_removed": 0
+    "df_delta": 48990728192,
+    "estimated_allocated_bytes_removed": 48905203712
   }
 }
