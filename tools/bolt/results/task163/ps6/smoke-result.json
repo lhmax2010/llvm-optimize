@@ -1,5 +1,5 @@
 {
-  "status": "FAIL",
+  "status": "PASS",
   "checks": {
     "llvm-devel-absent": {
       "status": "PASS",
@@ -65,65 +65,79 @@
   "files": {
     "/usr/bin/scan-view": {
       "before_rc": 127,
-      "before_line": "+ head -n 1 /usr/bin/scan-view",
-      "after_line": "+ rc=0",
+      "before_line": "#!/usr/bin/env python",
+      "after_line": "#!/usr/bin/env python3",
       "help_result": {
         "status": "PASS",
         "rc": 0
       },
-      "correct": false
+      "missing_modules": [],
+      "correct": true
     },
     "/usr/share/clang/run-find-all-symbols.py": {
       "before_rc": 127,
-      "before_line": "+ head -n 1 devel-fixture/usr/share/clang/run-find-all-symbols.py",
-      "after_line": "+ rc=0",
+      "before_line": "#!/usr/bin/env python",
+      "after_line": "#!/usr/bin/env python3",
       "help_result": {
         "status": "PASS",
         "rc": 0
       },
-      "correct": false
+      "missing_modules": [],
+      "correct": true
     },
     "/usr/share/opt-viewer/opt-diff.py": {
       "before_rc": 127,
-      "before_line": "+ head -n 1 devel-fixture/usr/share/opt-viewer/opt-diff.py",
-      "after_line": "+ rc=0",
+      "before_line": "#!/usr/bin/env python",
+      "after_line": "#!/usr/bin/env python3",
       "help_result": {
         "status": "FAIL",
         "rc": 1
       },
-      "correct": false
+      "missing_modules": [
+        "yaml"
+      ],
+      "correct": true
     },
     "/usr/share/opt-viewer/opt-stats.py": {
       "before_rc": 127,
-      "before_line": "+ head -n 1 devel-fixture/usr/share/opt-viewer/opt-stats.py",
-      "after_line": "+ rc=0",
+      "before_line": "#!/usr/bin/env python",
+      "after_line": "#!/usr/bin/env python3",
       "help_result": {
         "status": "FAIL",
         "rc": 1
       },
-      "correct": false
+      "missing_modules": [
+        "yaml"
+      ],
+      "correct": true
     },
     "/usr/share/opt-viewer/opt-viewer.py": {
       "before_rc": 127,
-      "before_line": "+ head -n 1 devel-fixture/usr/share/opt-viewer/opt-viewer.py",
-      "after_line": "+ rc=0",
+      "before_line": "#!/usr/bin/env python",
+      "after_line": "#!/usr/bin/env python3",
       "help_result": {
         "status": "FAIL",
         "rc": 1
       },
-      "correct": false
+      "missing_modules": [
+        "pygments"
+      ],
+      "correct": true
     },
     "/usr/share/opt-viewer/optrecord.py": {
       "before_rc": 127,
-      "before_line": "+ head -n 1 devel-fixture/usr/share/opt-viewer/optrecord.py",
-      "after_line": "+ rc=0",
+      "before_line": "#!/usr/bin/env python",
+      "after_line": "#!/usr/bin/env python3",
       "help_result": {
         "status": "FAIL",
         "rc": 1
       },
-      "correct": false
+      "missing_modules": [
+        "yaml"
+      ],
+      "correct": true
     }
   },
   "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task163/smoke/gbs-driver/local/repos/tizen_base_toolchain_standard/x86_64/logs/success/llvm-analyzer-shebang-smoke-1-1/log.txt",
-  "reason": "GBS or a required analyzer check failed"
+  "reason": null
 }

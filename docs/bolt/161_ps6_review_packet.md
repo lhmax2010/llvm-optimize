@@ -120,7 +120,7 @@ Signed-off-by: Hao Lin <hao.lin@samsung.com>
 
 ## 163-A · PS6 补丁 7
 
-**FAIL**。扫描 22 个 RPM、157 个可执行普通文件。
+**PASS**。扫描 22 个 RPM、157 个可执行普通文件。
 
 | 包 | 文件 | 原首行 | 修改前 --help rc | 修改后 --help rc |
 |---|---|---|---:|---:|
@@ -130,6 +130,8 @@ Signed-off-by: Hao Lin <hao.lin@samsung.com>
 | llvm-devel:x86_64 | `/usr/share/opt-viewer/opt-stats.py` | `#!/usr/bin/env python` | 127 | 1 |
 | llvm-devel:x86_64 | `/usr/share/opt-viewer/opt-viewer.py` | `#!/usr/bin/env python` | 127 | 1 |
 | llvm-devel:x86_64 | `/usr/share/opt-viewer/optrecord.py` | `#!/usr/bin/env python` | 127 | 1 |
+
+最小环境额外检查的 opt-viewer 夹具由 Python 3 启动，随后在必需模块导入处退出。`opt-diff.py` 缺 `yaml`、`opt-stats.py` 缺 `yaml`、`opt-viewer.py` 缺 `pygments`、`optrecord.py` 缺 `yaml`。 这些原文保留在测试日志中。要求返回 0 的 scan-view 和其余分析器入口均通过。
 
 RPM 4.14.1 三架构展开通过，8 项编排与取证测试通过。每个匹配路径新增一条精确 sed 命令。Requires 未变化。 [补丁 7](../../tools/bolt/results/task163/ps6/patch7.diff) · [七个补丁](../../tools/bolt/results/task163/ps6/series.json) · [展开](../../tools/bolt/results/task163/ps6/rpmspec.json)
 
@@ -147,6 +149,8 @@ GBS 仅用 154-B 的 clang、llvm、libllvm 作 LLVM provider，检查 llvm-deve
 - scan-view，PASS，退出码 0。
 
 [GBS 日志](../../tools/bolt/results/task163/ps6/gbs-journal.txt) · [结果](../../tools/bolt/results/task163/ps6/smoke-result.json) · [162 修改前失败](../../tools/bolt/results/task163/ps6/baseline-scan-view-help.txt) · [163 修改后原文](../../tools/bolt/results/task163/ps6/help-scan-view.txt)
+
+首轮取证把 shell 的 xtrace 行当成 shebang。修正后从同一份构建日志重新提取实际首行，未重跑 GBS。 [首轮取证](../../tools/bolt/results/task163/ps6/smoke-parser-first.json)
 
 [提交说明逐句核对](../../tools/bolt/results/task163/ps6/message-sentence-audit.md) · [说明 diff](../../tools/bolt/results/task163/ps6/p4-message.diff) · [文本门禁](../../tools/bolt/results/task163/ps6/message-gate.json)
 
