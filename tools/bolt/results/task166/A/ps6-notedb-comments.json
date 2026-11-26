@@ -1,0 +1,39 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4f7b7fb_1564f27e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 15296
+      },
+      "writtenOn": "2026-11-25T11:15:49Z",
+      "side": 1,
+      "message": "Hi~ Mr son\nThis is our review of PS6.\nThe analyzer moves in PS6 look correct to us.\n\nRe the open item from the PS5 review (exported X86 symbols): checked on the x86_64 build of this change (bolt/ is identical in PS5 and PS6). libLLVM.so.22.1 exports none of the functions defined by the BOLT X86 mirror (nm -D --defined-only), and the standalone llvm-bolt imports none of them from libLLVM (nm -D --undefined-only). The mirror definitions, including X86::isNOP, getX86SubSuperRegister and needsAddressSizeOverride, are local to llvm-bolt, so the mirror does not duplicate exported symbols.\n\nWhile checking the analyzer packaging we found a few more items. We are preparing fixes as small separate patches on top of PS6 and will post them here once they pass a full build:\n1. scan-build now ships in clang, but its report resources (/usr/share/scan-build/*) and its man page are in llvm-devel, which clang does not require, so scan-build installed with clang alone is missing the files it copies into its HTML report. The same applies to scan-view: the program is in llvm, its data is in llvm-devel. This is already the case in the base.\n2. analyze-build, intercept-build and scan-build-py import the libscanbuild and libear Python modules, which are not in any of the built RPMs. This is also already the case in the base.\n3. Add Provides: clang-analyzer, llvm-xray and llvm-prof-tools \u003d %{version}-%{release} next to the Obsoletes, with the Obsoletes bound changed to \"\u003c\" so that a package does not obsolete its own Provides. No package in the repositories we checked requires the old names, so this is hygiene rather than a breakage fix.\n4. Your non-blocking items 3 (OpenMP symlink comment) and 5 (#undef and alignment in X86BoltMnemonicTables.cpp).\n5. Commit message body: rewritten to describe the change against the base, as you noted in item 4.\n\nCould you hold the submit until these are posted? If you prefer to merge PS6 first, we can send them as a follow-up change instead.",
+      "revId": "06f3424c543a9645707f9afbbd9b5318280fffeb",
+      "serverId": "e010ba19-9d5d-4e2b-accf-c7c313b0558c"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7248393f_9908688d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 7427
+      },
+      "writtenOn": "2026-11-25T11:38:42Z",
+      "side": 1,
+      "message": "Sure~ Thanks for checking the X86 symbols on the build. We\u0027ll wait to submit until the fix patches are posted and reviewed on top of PS6.",
+      "parentUuid": "d4f7b7fb_1564f27e",
+      "revId": "06f3424c543a9645707f9afbbd9b5318280fffeb",
+      "serverId": "e010ba19-9d5d-4e2b-accf-c7c313b0558c"
+    }
+  ]
+}
