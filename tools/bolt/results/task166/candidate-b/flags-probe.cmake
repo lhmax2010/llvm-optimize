@@ -1,0 +1,25 @@
+set(LLVM_PROFDATA_FILE "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/candidates/B/profile-check/clang.profdata")
+set(CMAKE_CXX_COMPILER_ID Clang)
+function(append value)
+  foreach(variable IN LISTS ARGN)
+    set(${variable} "${${variable}} ${value}" PARENT_SCOPE)
+  endforeach()
+endfunction()
+if(LLVM_PROFDATA_FILE AND EXISTS ${LLVM_PROFDATA_FILE})
+  if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" )
+    append("-fprofile-instr-use=\"${LLVM_PROFDATA_FILE}\""
+      CMAKE_CXX_FLAGS
+      CMAKE_C_FLAGS)
+    if(NOT LINKER_IS_LLD_LINK)
+      append("-fprofile-instr-use=\"${LLVM_PROFDATA_FILE}\""
+        CMAKE_EXE_LINKER_FLAGS
+        CMAKE_SHARED_LINKER_FLAGS)
+    endif()
+  else()
+    message(FATAL_ERROR "LLVM_PROFDATA_FILE can only be specified when compiling with clang")
+  endif()
+elseif(LLVM_PROFDATA_FILE)
+  message(WARNING "LLVM_PROFDATA_FILE specified, but ${LLVM_PROFDATA_FILE} not found")
+endif()
+message("C_FLAGS=${CMAKE_C_FLAGS}")
+message("CXX_FLAGS=${CMAKE_CXX_FLAGS}")
