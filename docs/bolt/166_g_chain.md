@@ -25,3 +25,9 @@ G5 取 58 号 D 的 BOLT 子阶段 cgroup 观测峰值 14,664,306,688 B。该区
 
 157-B 状态为 **READY_AWAITING_PUSH**。已完成候选本地核对，由独立发布单元执行 157-B
 [候选回执](../../tools/bolt/results/task166/paired-candidate.json)
+
+## 157-B · 验证分支
+
+**PASS**。新建 `sandbox/lhmax2025/llvm-pgo-bolt-20261125`，集成提交 `070c94c9263e8b003a899e6c31bcee34f6a64640`，测试提交 `4080f55abfc7c48097c9bd7fdbf9334e37c661af`。远端 ls-remote 与测试提交一致，QB 由用户触发。
+
+[发布回执](../../tools/bolt/results/task166/candidate-upload/sandbox-result.json)
