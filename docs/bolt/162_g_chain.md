@@ -19,3 +19,6 @@ G4 的 clang-22、Ninja 输入和 23 个成品 RPM 已逐项核对。RPM 原位�
 [G7 回执](../../tools/bolt/results/task162/G7/result.json)
 
 [G8 回执](../../tools/bolt/results/task162/G8/result.json)
+
+157-B 状态为 **SKIPPED**。G6, G7 and G8 must pass
+[候选回执](../../tools/bolt/results/task162/paired-candidate.json)
