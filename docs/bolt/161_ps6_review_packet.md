@@ -1,5 +1,7 @@
 # 161 · 361624 PS6 评审材料
 
+**162-A 功能复测 FAIL，唯一失败项为 scan-view --help，退出码 127。** [入口与解释器核对](../../tools/bolt/results/task162/A-scan-view-entry.txt)
+
 154-B 的归档结论为 **PARTIAL**。证据提交 `5631413ab5e34fc6bd74f3344385ffcccb7f62a2`。
 补丁基底 `06f3424c543a9645707f9afbbd9b5318280fffeb`，顺序为 1、2、3、5、6、4。
 [完整合并 diff](../../tools/bolt/results/task161/ps6-final/ps6-to-final.diff) · [提交与 tree 核对](../../tools/bolt/results/task161/ps6-final/identity.json)
