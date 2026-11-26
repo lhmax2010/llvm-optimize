@@ -1,0 +1,16 @@
+--- patch6
++++ patch7
+@@ -343,6 +343,13 @@
+ 
+ rm -rf /home/linhao/Toolchain/development/llvm-optimize/archive/task163/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/lib/debug/*
+ 
++
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "/home/linhao/Toolchain/development/llvm-optimize/archive/task163/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/bin/scan-view"
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "/home/linhao/Toolchain/development/llvm-optimize/archive/task163/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/share/clang/run-find-all-symbols.py"
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "/home/linhao/Toolchain/development/llvm-optimize/archive/task163/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/share/opt-viewer/opt-diff.py"
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "/home/linhao/Toolchain/development/llvm-optimize/archive/task163/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/share/opt-viewer/opt-stats.py"
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "/home/linhao/Toolchain/development/llvm-optimize/archive/task163/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/share/opt-viewer/opt-viewer.py"
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "/home/linhao/Toolchain/development/llvm-optimize/archive/task163/rpm/BUILDROOT/llvm-22.1.8-1.arm/usr/share/opt-viewer/optrecord.py"
+ 
+ %post -n clang -p /sbin/ldconfig
+ %postun -n clang -p /sbin/ldconfig

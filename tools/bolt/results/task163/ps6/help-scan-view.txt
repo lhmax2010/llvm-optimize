@@ -1,0 +1,25 @@
++ rc=0
++ test -x /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-smoke-1-1.x86_64/usr/bin/scan-view
++ head -n 1 /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-smoke-1-1.x86_64/usr/bin/scan-view
+#!/usr/bin/env python3
++ LC_ALL=C
++ /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-smoke-1-1.x86_64/usr/bin/scan-view --help
+usage: scan-view [-h] [--host HOST] [--port PORT] [--debug] [--auto-reload]
+                 [--no-browser] [--allow-all-hosts]
+                 <results directory>
+
+The clang static analyzer results viewer.
+
+positional arguments:
+  <results directory>
+
+options:
+  -h, --help           show this help message and exit
+  --host HOST          Host interface to listen on. (default=127.0.0.1)
+  --port PORT          Port to listen on. (default=8181)
+  --debug              Print additional debugging information.
+  --auto-reload        Automatically update module for each request.
+  --no-browser         Don't open a webbrowser on startup.
+  --allow-all-hosts    Allow connections from any host (access restricted to
+                       "127.0.0.1" by default)
++ printf 'TASK163_HELP_END %s\n' scan-view

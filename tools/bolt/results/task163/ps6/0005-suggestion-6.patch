@@ -1,0 +1,31 @@
+From 2960ffa545a38ee71dbb38861af7831933033089 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Wed, 25 Nov 2026 03:19:33 -0800
+Subject: [PATCH] packaging: retain scan-build-py runtime modules
+
+---
+ packaging/llvm.spec | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index a50283596f66bad285eaa8b96f46b54c4ecd7e8e..1d8d7e10b8a09fa1356af758bd000bad0b6e9243 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -759,8 +759,6 @@ mkdir -p %{buildroot}%{python3_sitelib}
+ cp -a ../clang/bindings/python/clang %{buildroot}%{python3_sitelib}/
+ 
+ rm -rf %{buildroot}%{_libdir}/debug/*
+-rm -rf %{buildroot}/usr/lib/libear/*
+-rm -rf %{buildroot}/usr/lib/libscanbuild/*
+ 
+ %ifarch x86_64
+ # Run after compilation has finished; these workers do not overlap build jobs.
+@@ -965,6 +963,8 @@ echo "plugin load /usr/share/dotnet.tizen/netcoreapp/SOS/libsosplugin.so" > /roo
+ %{_prefix}/libexec/ccc-analyzer
+ %{_prefix}/libexec/intercept-c++
+ %{_prefix}/libexec/intercept-cc
++%{_prefix}/lib/libscanbuild
++%{_prefix}/lib/libear
+ %{_prefix}/bin/clang-include-cleaner
+ %{_prefix}/bin/clang-include-fixer
+ %{_prefix}/bin/clang-offload-bundler

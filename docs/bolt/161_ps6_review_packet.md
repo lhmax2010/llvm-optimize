@@ -1,6 +1,6 @@
 # 161 · 361624 PS6 评审材料
 
-**162-A 功能复测 FAIL，唯一失败项为 scan-view --help，退出码 127。** [入口与解释器核对](../../tools/bolt/results/task162/A-scan-view-entry.txt)
+**163-A 功能验证 FAIL。** 163 的补丁系列与日志见本报告末尾。历史 162-A 的 scan-view 退出码为 127。
 
 154-B 的归档结论为 **PARTIAL**。证据提交 `5631413ab5e34fc6bd74f3344385ffcccb7f62a2`。
 补丁基底 `06f3424c543a9645707f9afbbd9b5318280fffeb`，顺序为 1、2、3、5、6、4。
@@ -117,3 +117,81 @@ Signed-off-by: Hao Lin <hao.lin@samsung.com>
 | scan-view | FAIL | 127 [原文](../../tools/bolt/results/task162/A-retry-scan-view-help.txt) |
 
 [GBS 输出](../../tools/bolt/results/task162/A-retry-gbs.txt) · [systemd 记录](../../tools/bolt/results/task162/A-retry-systemd.txt) · [RPM 构建原文](../../tools/bolt/results/task162/A-retry-build-fail.txt) · [首轮 GBS 输出](../../tools/bolt/results/task162/A-gbs.txt)
+
+## 163-A · PS6 补丁 7
+
+**FAIL**。扫描 22 个 RPM、157 个可执行普通文件。
+
+| 包 | 文件 | 原首行 | 修改前 --help rc | 修改后 --help rc |
+|---|---|---|---:|---:|
+| llvm:x86_64 | `/usr/bin/scan-view` | `#!/usr/bin/env python` | 127 | 0 |
+| llvm-devel:x86_64 | `/usr/share/clang/run-find-all-symbols.py` | `#!/usr/bin/env python` | 127 | 0 |
+| llvm-devel:x86_64 | `/usr/share/opt-viewer/opt-diff.py` | `#!/usr/bin/env python` | 127 | 1 |
+| llvm-devel:x86_64 | `/usr/share/opt-viewer/opt-stats.py` | `#!/usr/bin/env python` | 127 | 1 |
+| llvm-devel:x86_64 | `/usr/share/opt-viewer/opt-viewer.py` | `#!/usr/bin/env python` | 127 | 1 |
+| llvm-devel:x86_64 | `/usr/share/opt-viewer/optrecord.py` | `#!/usr/bin/env python` | 127 | 1 |
+
+RPM 4.14.1 三架构展开通过，8 项编排与取证测试通过。每个匹配路径新增一条精确 sed 命令。Requires 未变化。 [补丁 7](../../tools/bolt/results/task163/ps6/patch7.diff) · [七个补丁](../../tools/bolt/results/task163/ps6/series.json) · [展开](../../tools/bolt/results/task163/ps6/rpmspec.json)
+
+GBS 仅用 154-B 的 clang、llvm、libllvm 作 LLVM provider，检查 llvm-devel 未安装。scan-view 由已安装包复制，其他五个脚本与 opt-viewer 数据只作为 llvm-devel RPM 的提取夹具。逐字节比对后在测试包的 BUILDROOT 执行同样的 sed 命令。完整打包验证留给 QB。
+
+- llvm-devel-absent，PASS，退出码 1。
+- provider-clang，PASS，退出码 0。
+- provider-llvm，PASS，退出码 0。
+- provider-libllvm，PASS，退出码 0。
+- scan-build，PASS，退出码 0。
+- report-html-assets，PASS，退出码 0。
+- analyze-build，PASS，退出码 0。
+- intercept-build，PASS，退出码 0。
+- scan-build-py，PASS，退出码 0。
+- scan-view，PASS，退出码 0。
+
+[GBS 日志](../../tools/bolt/results/task163/ps6/gbs-journal.txt) · [结果](../../tools/bolt/results/task163/ps6/smoke-result.json) · [162 修改前失败](../../tools/bolt/results/task163/ps6/baseline-scan-view-help.txt) · [163 修改后原文](../../tools/bolt/results/task163/ps6/help-scan-view.txt)
+
+[提交说明逐句核对](../../tools/bolt/results/task163/ps6/message-sentence-audit.md) · [说明 diff](../../tools/bolt/results/task163/ps6/p4-message.diff) · [文本门禁](../../tools/bolt/results/task163/ps6/message-gate.json)
+
+~~~text
+packaging: split tool subpackages into a standalone llvm-tools-subpkgs spec
+
+* 3a5189033a1f - packaging: move tool subpackages to a standalone llvm-tools-subpkgs spec
+* d364b338759a - bolt: create ZLIB/LibXml2 targets in standalone build
+* 28e72ec6b05d - bolt: mirror X86 mnemonic tables and helpers for standalone build
+* 1b9c1ce174de - packaging: add --build-id=sha1 to toolchain linker flags
+* 0cc528da035e - bolt: standalone build fixes for LLVM_LINK_LLVM_DYLIB=ON
+* 3abe328e2c30 - packaging: build profiling tools and BOLT for armv7l (Tizen)
+* d3f74e4f484d - packaging: add Obsoletes and python3 Requires to llvm; tidy tools subpackages
+* c7edd8f43c66 - packaging: note that scan-build needs clang at runtime
+* 67304f964043 - packaging: install with DESTDIR and do not ship libgomp/libiomp5 links
+
+Build BOLT from the standalone llvm-tools-subpkgs spec against the
+installed LLVM packages on x86_64 and aarch64. That build links
+libLLVM.so, while in-tree BOLT keeps linking the LLVM component
+libraries; BOLT_LLVM_LINK_MODE selects the mode before its consumers.
+The X86 helper mirror is compiled only for the standalone dylib build
+and is listed in LLVM_OPTIONAL_SOURCES otherwise, and the inherited
+runtime C and C++ flags are cleared only for standalone builds.
+
+The standalone spec pins its LLVM provider build requirements to the
+LLVM version and checks that the installed providers share one version
+and release, sets BOLT_TARGETS_TO_BUILD per architecture and verifies
+target registration, keeps the distribution LDFLAGS, derives
+LLVM_LIBDIR_SUFFIX from %{_lib}, and lets CMake install merge-fdata
+once. bolt requires libllvm = %{version} at runtime.
+
+clang now ships scan-build, scan-build-py, analyze-build and
+intercept-build together with the libexec scripts, the report
+resources and the Python modules they use. Scripts that used an
+unversioned Python interpreter now use Python 3 shebangs. llvm
+ships the scan-view data next to scan-view. llvm and clang provide
+the llvm-xray, llvm-prof-tools and clang-analyzer names and
+obsolete their older versions.
+
+The --build-id=sha1 flag is added to the executable and shared-library
+linker flags; module linker flags keep their existing settings.
+
+Change-Id: Ie2c1d45cea6703a0caef72187397275a03e66468
+Signed-off-by: Dongkyun Son <dongkyun.s@samsung.com>
+Signed-off-by: Pareek Eshaan <e.pareek@samsung.com>
+Co-Authored-By: Cline SR
+Signed-off-by: Hao Lin <hao.lin@samsung.com>
+~~~

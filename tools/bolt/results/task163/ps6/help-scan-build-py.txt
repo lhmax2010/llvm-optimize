@@ -1,0 +1,148 @@
++ rc=0
++ test -x /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-smoke-1-1.x86_64/usr/bin/scan-build-py
++ LC_ALL=C
++ scan-build-py --help
+/usr/lib/libscanbuild/__init__.py:201: SyntaxWarning: 'return' in a 'finally' block
+  return result
+usage: scan-build-py [-h] [--verbose] [--override-compiler] [--use-cc <path>]
+                     [--use-c++ <path>] [--intercept-first] [--status-bugs]
+                     [--exclude <directory>] [--output <path>] [--keep-empty]
+                     [--html-title <title>] [--plist | --plist-html |
+                     --plist-multi-file | --sarif | --sarif-html]
+                     [--use-analyzer <path>] [--no-failure-reports]
+                     [--analyze-headers] [--stats] [--internal-stats]
+                     [--maxloop <loop count>] [--store <model>]
+                     [--constraints <model>] [--analyzer-config <options>]
+                     [--force-analyze-debug-code]
+                     [--load-plugin <plugin library>]
+                     [--enable-checker <checker name>]
+                     [--disable-checker <checker name>] [--help-checkers]
+                     [--help-checkers-verbose]
+                     ...
+
+positional arguments:
+  build                 Command to run.
+
+options:
+  -h, --help            show this help message and exit
+  --verbose, -v         Enable verbose output from 'scan-build-py'. A second,
+                        third and fourth flags increases verbosity. (default:
+                        0)
+  --override-compiler   Always resort to the compiler wrapper even when better
+                        intercept methods are available. (default: False)
+  --use-cc <path>       When 'scan-build-py' analyzes a project by interposing
+                        a compiler wrapper, which executes a real compiler for
+                        compilation and do other tasks (record the compiler
+                        invocation). Because of this interposing, 'scan-build-
+                        py' does not know what compiler your project normally
+                        uses. Instead, it simply overrides the CC environment
+                        variable, and guesses your default compiler. If you
+                        need 'scan-build-py' to use a specific compiler for
+                        *compilation* then you can use this option to specify
+                        a path to that compiler. (default: x86_64-tizen-linux-
+                        gnu-clang)
+  --use-c++ <path>      This is the same as "--use-cc" but for C++ code.
+                        (default: x86_64-tizen-linux-gnu-clang++)
+  --intercept-first     Run the build commands first, intercept compiler calls
+                        and then run the static analyzer afterwards. Generally
+                        speaking it has better coverage on build commands.
+                        With '--override-compiler' it use compiler wrapper,
+                        but does not run the analyzer till the build is
+                        finished. (default: False)
+  --status-bugs         The exit status of 'scan-build-py' is the same as the
+                        executed build command. This option ignores the build
+                        exit status and sets to be non zero if it found
+                        potential bugs or zero otherwise. (default: False)
+  --exclude <directory>
+                        Do not run static analyzer against files found in this
+                        directory. (You can specify this option multiple
+                        times.) Could be useful when project contains 3rd
+                        party libraries. (default: [])
+  --analyze-headers     Also analyze functions in #included files. By default,
+                        such functions are skipped unless they are called by
+                        functions within the main source file. (default:
+                        False)
+
+output control options:
+  --output, -o <path>   Specifies the output directory for analyzer reports.
+                        Subdirectory will be created if default directory is
+                        targeted. (default: /tmp)
+  --keep-empty          Don't remove the build results directory even if no
+                        issues were reported. (default: False)
+  --html-title <title>  Specify the title used on generated HTML pages. If not
+                        specified, a default title will be used. (default:
+                        None)
+  --plist, -plist       Cause the results as a set of .plist files. (default:
+                        html)
+  --plist-html, -plist-html
+                        Cause the results as a set of .html and .plist files.
+                        (default: html)
+  --plist-multi-file, -plist-multi-file
+                        Cause the results as a set of .plist files with extra
+                        information on related files. (default: html)
+  --sarif, -sarif       Cause the results as a result.sarif file. (default:
+                        html)
+  --sarif-html, -sarif-html
+                        Cause the results as a result.sarif file and .html
+                        files. (default: html)
+
+advanced options:
+  --use-analyzer <path>
+                        'scan-build-py' uses the 'clang' executable relative
+                        to itself for static analysis. One can override this
+                        behavior with this option by using the 'clang'
+                        packaged with Xcode (on OS X) or from the PATH.
+                        (default: clang)
+  --no-failure-reports, -no-failure-reports
+                        Do not create a 'failures' subdirectory that includes
+                        analyzer crash reports and preprocessed source files.
+                        (default: True)
+  --stats, -stats       Generates visitation statistics for the project.
+                        (default: False)
+  --internal-stats      Generate internal analyzer statistics. (default:
+                        False)
+  --maxloop, -maxloop <loop count>
+                        Specify the number of times a block can be visited
+                        before giving up. Increase for more comprehensive
+                        coverage at a cost of speed. (default: None)
+  --store, -store <model>
+                        Specify the store model used by the analyzer. 'region'
+                        specifies a field- sensitive store model. 'basic'
+                        which is far less precise but can more quickly analyze
+                        code. 'basic' was the default store model for
+                        checker-0.221 and earlier. (default: None)
+  --constraints, -constraints <model>
+                        Specify the constraint engine used by the analyzer.
+                        Specifying 'basic' uses a simpler, less powerful
+                        constraint model used by checker-0.160 and earlier.
+                        (default: None)
+  --analyzer-config, -analyzer-config <options>
+                        Provide options to pass through to the analyzer's
+                        -analyzer-config flag. Several options are separated
+                        with comma: 'key1=val1,key2=val2' Available options:
+                        stable-report-filename=true or false (default) Switch
+                        the page naming to: report-<filename>-<function/method
+                        name>-<id>.html instead of report-XXXXXX.html
+                        (default: None)
+  --force-analyze-debug-code
+                        Tells analyzer to enable assertions in code even if
+                        they were disabled during compilation, enabling more
+                        precise results. (default: False)
+
+checker options:
+  --load-plugin, -load-plugin <plugin library>
+                        Loading external checkers using the clang plugin
+                        interface. (default: None)
+  --enable-checker, -enable-checker <checker name>
+                        Enable specific checker. (default: None)
+  --disable-checker, -disable-checker <checker name>
+                        Disable specific checker. (default: None)
+  --help-checkers       A default group of checkers is run unless explicitly
+                        disabled. Exactly which checkers constitute the
+                        default group is a function of the operating system in
+                        use. These can be printed with this flag. (default:
+                        False)
+  --help-checkers-verbose
+                        Print all available checkers and mark the enabled
+                        ones. (default: False)
++ printf 'TASK163_HELP_END %s\n' scan-build-py

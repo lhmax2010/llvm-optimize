@@ -1,0 +1,18 @@
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index 1d8d7e10b8a09fa1356af758bd000bad0b6e9243..51b559b8586f234e766f46502af8ddf2444c67e8 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -791,6 +791,13 @@ python3 -B %{SOURCE1201} install "%{buildroot}" "$BOLT_WORK/clang.candidate" \
+ 
+ %endif
+ %endif
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/bin/scan-view"
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/clang/run-find-all-symbols.py"
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/opt-viewer/opt-diff.py"
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/opt-viewer/opt-stats.py"
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/opt-viewer/opt-viewer.py"
++sed -i '1s|^#!/usr/bin/env python$|#!/usr/bin/env python3|' "%{buildroot}/usr/share/opt-viewer/optrecord.py"
++
+ %post -n clang -p /sbin/ldconfig
+ %postun -n clang -p /sbin/ldconfig
+ 

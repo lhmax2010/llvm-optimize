@@ -1,0 +1,43 @@
++ rc=0
++ test -x /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-smoke-1-1.x86_64/usr/bin/intercept-build
++ LC_ALL=C
++ intercept-build --help
+/usr/lib/libscanbuild/__init__.py:201: SyntaxWarning: 'return' in a 'finally' block
+  return result
+usage: intercept-build [-h] [--verbose] [--cdb <file>] [--override-compiler]
+                       [--use-cc <path>] [--use-c++ <path>] [--append]
+                       ...
+
+positional arguments:
+  build                Command to run.
+
+options:
+  -h, --help           show this help message and exit
+  --verbose, -v        Enable verbose output from 'intercept-build'. A second,
+                       third and fourth flags increases verbosity. (default:
+                       0)
+  --cdb <file>         The JSON compilation database. (default:
+                       compile_commands.json)
+  --override-compiler  Always resort to the compiler wrapper even when better
+                       intercept methods are available. (default: False)
+  --use-cc <path>      When 'intercept-build' analyzes a project by
+                       interposing a compiler wrapper, which executes a real
+                       compiler for compilation and do other tasks (record the
+                       compiler invocation). Because of this interposing,
+                       'intercept-build' does not know what compiler your
+                       project normally uses. Instead, it simply overrides the
+                       CC environment variable, and guesses your default
+                       compiler. If you need 'intercept-build' to use a
+                       specific compiler for *compilation* then you can use
+                       this option to specify a path to that compiler.
+                       (default: x86_64-tizen-linux-gnu-clang)
+  --use-c++ <path>     This is the same as "--use-cc" but for C++ code.
+                       (default: x86_64-tizen-linux-gnu-clang++)
+
+advanced options:
+  --append             Extend existing compilation database with new entries.
+                       Duplicate entries are detected and not present in the
+                       final output. The output is not continuously updated,
+                       it's done when the build command finished. (default:
+                       False)
++ printf 'TASK163_HELP_END %s\n' intercept-build

@@ -1,0 +1,13 @@
++ rc=0
++ head -n 1 /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-smoke-1-1.x86_64/usr/share/opt-viewer/opt-viewer.py
+#!/usr/bin/env python3
++ LC_ALL=C
++ /home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-smoke-1-1.x86_64/usr/share/opt-viewer/opt-viewer.py --help
+/home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-smoke-1-1.x86_64/usr/share/opt-viewer/opt-viewer.py:138: SyntaxWarning: "\S" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\S"? A raw string is also an option.
+  indent = re.sub("\S", " ", indent)
+Traceback (most recent call last):
+  File "/home/abuild/rpmbuild/BUILDROOT/llvm-analyzer-shebang-smoke-1-1.x86_64/usr/share/opt-viewer/opt-viewer.py", line 16, in <module>
+    from pygments import highlight
+ModuleNotFoundError: No module named 'pygments'
++ rc=1
++ printf 'TASK163_HELP_END %s rc=%s\n' /usr/share/opt-viewer/opt-viewer.py 1

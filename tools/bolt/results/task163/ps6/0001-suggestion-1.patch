@@ -1,0 +1,36 @@
+From 09b187fa3d5061d1ae431e97d3756786ed7529b1 Mon Sep 17 00:00:00 2001
+From: Hao Lin <hao.lin@samsung.com>
+Date: Wed, 25 Nov 2026 01:14:55 -0800
+Subject: [PATCH] packaging: retain versioned analyzer and profiling provides
+
+---
+ packaging/llvm.spec | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index b6c3a914ed93570bde7f14e3e140e0d9b2bb9b97..41f3e6be98004c04c71b12de672f34b6a315801e 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -110,8 +110,10 @@ BuildRequires: clang, llvm, libllvm
+ Requires: libllvm = %{version}-%{release}
+ # llvm-xray and llvm-prof-tools used to be separate subpackages
+ # (llvm-tools-subpkgs.spec) that owned these files; llvm takes them over
+-Obsoletes: llvm-xray <= %{version}-%{release}
+-Obsoletes: llvm-prof-tools <= %{version}-%{release}
++Provides: llvm-xray = %{version}-%{release}
++Obsoletes: llvm-xray < %{version}-%{release}
++Provides: llvm-prof-tools = %{version}-%{release}
++Obsoletes: llvm-prof-tools < %{version}-%{release}
+ 
+ %description
+ LLVM is a compiler infrastructure designed for compile-time, link-time, runtime,
+@@ -150,7 +152,8 @@ Summary: Clang %{version} (C Language family frontend for LLVM)
+ License: NCSA
+ Requires: llvm = %{version}-%{release}
+ Provides: libclang.so.%{version}
+-Obsoletes: clang-analyzer <= %{version}-%{release}
++Provides: clang-analyzer = %{version}-%{release}
++Obsoletes: clang-analyzer < %{version}-%{release}
+ 
+ %description -n clang
+ A new front-end for the C family of languages is in development.
