@@ -199,3 +199,9 @@ Signed-off-by: Pareek Eshaan <e.pareek@samsung.com>
 Co-Authored-By: Cline SR
 Signed-off-by: Hao Lin <hao.lin@samsung.com>
 ~~~
+
+## 163-B · PS6 QB 验证候选
+
+**PASS**。六个产品补丁推至新分支 `sandbox/lhmax2025/llvm-361624-ps6-fixes-20261126`，远端 SHA 为 `e6baffc9a84ea930d366e9574ebe8557f243578a`。Tizen RPM 4.14.1 三架构展开、六个新提交对外文字门禁均通过。补丁 4 是提交说明附件。QB 由用户触发。
+
+[提交清单与远端回执](../../tools/bolt/results/task163/ps6/sandbox-result.json)
