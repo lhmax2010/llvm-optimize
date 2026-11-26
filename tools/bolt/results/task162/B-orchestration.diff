@@ -1,0 +1,180 @@
+--- handoff.py.160
++++ handoff.py.162
+@@ -34,6 +34,29 @@
+         digest=hashlib.file_digest(f,"sha256").hexdigest()
+     return {"path":str(p),"bytes":p.stat().st_size,"sha256":digest}
+ 
++def g4_scratch(archive):
++    return confined(archive/"G4"/SUFFIX,archive)
++
++def namespace_command(root,argv,*,writable=False):
++    tool=Path("/usr/bin/bwrap")
++    if not os.getuid() or tool.stat().st_mode & (stat.S_ISUID|stat.S_ISGID):
++        raise RuntimeError("G5 requires an unprivileged build namespace")
++    env=["LC_ALL=C","PATH=/usr/bin:/bin","HOME=/home/abuild"]
++    env.extend(key+"="+os.environ[key] for key in
++               ("PROFILE_JOBS","PROFILE_THINLTO_JOBS","PROFILE_LINK_JOBS") if key in os.environ)
++    return [str(tool),"--unshare-user","--uid",str(os.getuid()),"--gid",str(os.getgid()),
++            "--cap-drop","ALL","--unshare-pid","--unshare-net",
++            "--bind" if writable else "--ro-bind",str(root),"/",
++            "--proc","/proc","--dev","/dev","--chdir","/"+str(BUILD),
++            "/usr/bin/env","-i",*env,*map(str,argv)]
++
++def attach_g4(archive,retained):
++    stage=archive/"G4"
++    root=g4_scratch(archive)
++    save(stage/"g5-handoff.json", {"scratch":str(root),"original_scratch":str(root),
++                                  "clang":retained,"ninja":receipt(root/BUILD/"build.ninja"),
++                                  "mode":"in-place"})
++
+ def preserve_clang(archive):
+     stage=archive/"G4"
+     p=stage/SUFFIX/BUILD/"bin/clang-22"
+@@ -49,23 +72,19 @@
+         if target.exists():
+             log=prune(target,archive)
+             save(stage/(name+"-cleanup.json"),log)
+-    source=confined(stage/SUFFIX,archive)
+-    target=archive/"G5"/SUFFIX
+-    target.parent.mkdir(parents=True,exist_ok=True)
+-    if target.exists():
+-        raise FileExistsError(target)
+-    source.rename(target)
+-    save(stage/"g5-handoff.json", {"scratch":str(target),"original_scratch":str(source),
+-                                    "clang":retained,"ninja": receipt(target/BUILD/"build.ninja"),
+-                                    "reason":"G5 relink requires the PGO object files and original Ninja graph"})
++    attach_g4(archive,retained)
+     return retained
+ 
+ def verify_handoff(archive):
+     row=json.loads((archive/"G4/g5-handoff.json").read_text())
+-    path=confined(archive/"G5"/SUFFIX,archive)
+-    assert str(path)==row["scratch"]
+-    assert receipt(path/BUILD/"build.ninja")==row["ninja"]
+-    assert receipt(path/BUILD/"bin/clang-22")["sha256"]==row["clang"]["sha256"]
++    path=g4_scratch(archive)
++    if row["scratch"]!=str(path) or row.get("mode")!="in-place":
++        raise ValueError("G5 handoff does not identify the original G4 root")
++    if receipt(path/BUILD/"build.ninja")!=row["ninja"]:
++        raise ValueError("G4 Ninja graph changed after handoff")
++    if receipt(path/BUILD/"bin/clang-22")["sha256"]!=row["clang"]["sha256"]:
++        raise ValueError("G4 clang changed after handoff")
++    return path
+ 
+ def retain_runtime(archive, root, elf):
+     confined(root,archive)
+--- pgosteps.py.160
++++ pgosteps.py.162
+@@ -5,6 +5,7 @@
+  gbs_config,export,macros,prep,run_gbs,settle_root,delete_intermediate,
+  chroot,rpm_meta,unpack,log_lines,INNER,
+ )
++from handoff import g4_scratch, namespace_command
+ 
+ R=(Path(__file__).resolve().parent.parent/"recipe.sha").read_text().strip()
+ WORK="temp/task134-offline-profile"
+@@ -214,17 +215,11 @@
+   settle_root(root)
+  # The next stage consumes the live Ninja graph, archives and link command.
+  # It releases BUILD once the relinked ELF and BOLT tools are checked out.
+-def inner_exec(root,argv):
+- return (*chroot(root,"/usr/bin/env","-i","LC_ALL=C","PATH=/usr/bin:/bin","HOME=/home/abuild",
+-                 *(key+"="+os.environ[key] for key in ("PROFILE_JOBS","PROFILE_THINLTO_JOBS","PROFILE_LINK_JOBS") if key in os.environ),
+-                 "/bin/sh","-c","cd \"$1\"; shift; exec \"$@\"","/bin/sh",BUILD_DIR),*map(str,argv))
+ def adapt_tools(a,w,b,jobs):
+- root=scratch(a/"G5")
++ root=g4_scratch(a)
+  g=root/BUILD_DIR.lstrip("/")
+- iv=("/usr/bin/sudo","-n","/usr/sbin/chroot","--userspec=1000:1000")
+  def call(*argv,**kwargs):
+-  full=inner_exec(root,argv)
+-  return checked(*iv,*full[3:],**kwargs)
++  return checked(*namespace_command(root,argv,writable=True),**kwargs)
+  d=a/"G5"
+  # Capture the clang relink command after applying this stage's pools and backend cap.
+  local=root/"home/abuild/133n-bolt"
+@@ -252,14 +247,12 @@
+  assert sha(runtime[0])==sha(assets/"libbolt_rt_instr.a")
+  save(d/"tool-artifacts.json",[receipt(p) for p in assets.iterdir()])
+ def adapt_link(a,w,b,jobs):
+- root=scratch(a/"G5")
++ root=g4_scratch(a)
+  local=root/"home/abuild/133n-bolt"
+  base="/home/abuild/133n-bolt/"
+  d=a/"G5"
+- iv=("/usr/bin/sudo","-n","/usr/sbin/chroot","--userspec=1000:1000")
+  def call(*argv,**kwargs):
+-  full=inner_exec(root,argv)
+-  return checked(*iv,*full[3:],**kwargs)
++  return checked(*namespace_command(root,argv,writable=True),**kwargs)
+  helper="/home/abuild/rpmbuild/SOURCES/clang-bolt-helper.py"
+  call(PY,"-B",helper,"replay",base+"link.original",base+"clang-relinked",base+"clang-relinked.d",base+"relink.sh",
+       output=d/"relink-plan.log")
+--- dispatch.py.160
++++ dispatch.py.162
+@@ -2,7 +2,7 @@
+ from datetime import datetime
+ from pathlib import Path
+ 
+-from handoff import cleanup, preserve_clang, save
++from handoff import BUILD, cleanup, g4_scratch, preserve_clang, save
+ from policy import DEADLINE, G6_DEADLINE, GIB, ZONE, STEPS, admit, blocked, disk_limits, expired, oom_killed, stop_line, terminal
+ 
+ W,B,A=map(Path,sys.argv[1:4])
+@@ -73,7 +73,7 @@
+ def admission_timeout(step):
+     return 10800 if step=="G4" else float("inf") if step=="G6" else 3600
+ 
+-def select(step, disk):
++def select(step, disk, on_wait=None):
+     started=time.monotonic()
+     checks=[]
+     timeout=admission_timeout(step)
+@@ -94,6 +94,8 @@
+         if remaining<=0:
+             return None,reason,checks,spent
+         append(A/"admission-live.jsonl",observed)
++        if on_wait:
++            on_wait(observed,reason)
+         print("WAIT",step,reason,observed,flush=True)
+         time.sleep(min(600,remaining))
+ 
+@@ -114,10 +116,11 @@
+     mem,jobs,tier=(selected[x] for x in ("memory_max","jobs","tier"))
+     cpu=jobs*100 if jobs>1 else 200
+     stop_snapshot=path/f"cgroup-stop-{attempt}.json"
++    working=g4_scratch(A)/BUILD if step=="G5" else path
+     argv=[RUN,"--user","--wait","--pipe","--unit="+unit,"--expand-environment=no",
+           "-p","MemoryMax="+str(mem),"-p","MemorySwapMax=0","-p","CPUQuota="+str(cpu)+"%",
+           "-p","Nice=19","-p","IOSchedulingClass=idle","-p","OOMPolicy=stop","-p","KillMode=control-group",
+-          "-p","TimeoutStopSec=120","-p","WorkingDirectory="+str(path),
++          "-p","TimeoutStopSec=120","-p","WorkingDirectory="+str(working),
+           "-p",f"ExecStopPost=/usr/bin/python3 -B {SCRIPTS/'capture_stop.py'} {stop_snapshot}",
+           "--setenv=TZ=America/Los_Angeles","--setenv=TASK133_WORKSPACE="+str(W),
+           "--setenv=TASK138_UNIT="+unit.removesuffix(".service"),
+@@ -199,9 +202,12 @@
+             item=path/"BUILDROOT-cleanup.json"
+             if item.exists():
+                 result.append(json.loads(item.read_text()))
+-        # G4's scratch name is absent after the verified handoff. Only G5 owns
+-        # the moved scratch. Later stages consume copied tools and libraries.
+-        result.extend(cleanup(path,A))
++        else:
++            result.extend(cleanup(path,A))
++        if step=="G5" and row["status"]=="PASS":
++            # Only the root is expendable. The G4 RPM repository is its sibling.
++            from handoff import prune
++            result.append(prune(g4_scratch(A),A))
+     except Exception as exc:
+         row["cleanup_error"]=f"{type(exc).__name__}: {exc}"
+         if row["status"]=="PASS":
+--- ninja-in-g4.160
++++ ninja-in-g4.162
+@@ -11,4 +11,6 @@
+     commands) test "$#" = 4 && test "$3" = -s ;;
+     *) exit 2 ;;
+ esac
+-exec /usr/bin/sudo -n /usr/sbin/chroot --userspec=1000:1000 "$root" /bin/sh -c 'cd "$1"; shift; exec /usr/bin/ninja "$@"' /bin/sh "$dir" "$@"
++exec /usr/bin/bwrap --unshare-user --uid "$(/usr/bin/id -u)" --gid "$(/usr/bin/id -g)" \
++    --cap-drop ALL --unshare-pid --unshare-net --ro-bind "$root" / --proc /proc --dev /dev \
++    --chdir "$dir" /usr/bin/env -i LC_ALL=C PATH=/usr/bin:/bin /usr/bin/ninja "$@"
