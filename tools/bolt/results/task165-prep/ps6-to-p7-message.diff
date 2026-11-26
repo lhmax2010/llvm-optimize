@@ -1,0 +1,45 @@
+--- PS6 commit message
++++ P7 commit message
+@@ -10,22 +10,28 @@
+ * c7edd8f43c66 - packaging: note that scan-build needs clang at runtime
+ * 67304f964043 - packaging: install with DESTDIR and do not ship libgomp/libiomp5 links
+ 
+-Keep in-tree BOLT on component libraries by setting BOLT_LLVM_LINK_MODE
+-before its consumers. List the X86 mirror in LLVM_OPTIONAL_SOURCES, as
+-only standalone dylib builds compile it. Clear the inherited runtime C
+-and C++ flags only for standalone builds.
++Build BOLT from the standalone llvm-tools-subpkgs spec against the
++installed LLVM packages on x86_64 and aarch64. That build links
++libLLVM.so, while in-tree BOLT keeps linking the LLVM component
++libraries; BOLT_LLVM_LINK_MODE selects the mode before its consumers.
++The X86 helper mirror is compiled only for the standalone dylib build
++and is listed in LLVM_OPTIONAL_SOURCES otherwise, and the inherited
++runtime C and C++ flags are cleared only for standalone builds.
+ 
+-Restore ARM;BPF as the armv7l LLVM target list and drop the explicit
+-python3 requirement from llvm. Limit the standalone spec to x86_64 and
+-aarch64, set BOLT_TARGETS_TO_BUILD per architecture, and verify target
+-registration.
++The standalone spec pins its LLVM provider build requirements to the
++LLVM version and checks that the installed providers share one version
++and release, sets BOLT_TARGETS_TO_BUILD per architecture and verifies
++target registration, keeps the distribution LDFLAGS, derives
++LLVM_LIBDIR_SUFFIX from %{_lib}, and lets CMake install merge-fdata
++once. bolt requires libllvm = %{version} at runtime.
+ 
+-Bind the LLVM provider build requirements to the LLVM version and check
+-that the installed providers share one version and release. Require
+-libllvm = %{version} at runtime for bolt and drop its explicit
+-compiler-rt runtime requirement. Derive LLVM_LIBDIR_SUFFIX from %{_lib},
+-retain distribution LDFLAGS, correct the debug packaging comments, and
+-let CMake install merge-fdata once.
++clang now ships scan-build, scan-build-py, analyze-build and
++intercept-build together with the libexec scripts, the report
++resources and the Python modules they use. Scripts that used an
++unversioned Python interpreter now use Python 3 shebangs. llvm
++ships the scan-view data next to scan-view. llvm and clang provide
++the llvm-xray, llvm-prof-tools and clang-analyzer names and
++obsolete their older versions.
+ 
+ The --build-id=sha1 flag is added to the executable and shared-library
+ linker flags; module linker flags keep their existing settings.
