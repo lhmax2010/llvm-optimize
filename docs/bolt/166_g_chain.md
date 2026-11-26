@@ -22,3 +22,6 @@ G5 取 58 号 D 的 BOLT 子阶段 cgroup 观测峰值 14,664,306,688 B。该区
 [G7 回执](../../tools/bolt/results/task166/G7/result.json)
 
 [G8 回执](../../tools/bolt/results/task166/G8/result.json)
+
+157-B 状态为 **SKIPPED**。G6, G7 and G8 must pass
+[候选回执](../../tools/bolt/results/task166/paired-candidate.json)
