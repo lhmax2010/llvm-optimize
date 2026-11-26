@@ -1,0 +1,59 @@
+{
+  "qualified_clang": {
+    "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/clang-bolt-qualified",
+    "bytes": 259554288,
+    "sha256": "6213d40a9124f3b696933efedd89c739072d24d4fd69f8a7ce22f20893006f00"
+  },
+  "G5": {
+    "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/clang-with-relocs",
+    "bytes": 212234128,
+    "sha256": "ebf8581b041d992d285c246cb0ba188baf0f3b6e42a32ff9a0be6c67bd31257d"
+  },
+  "G6": {
+    "path": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/clang.fdata",
+    "bytes": 190924537,
+    "sha256": "ca204830fa20c451ea9ebec6f50eb31c40f0be1b13445e9be6f90ab253b5f99a"
+  },
+  "actual_rewrite": {
+    "argv": [
+      "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-config/bolt-runtime-libs/ld-linux-x86-64.so.2",
+      "--library-path",
+      "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-config/bolt-runtime-libs",
+      "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-config/bolt-artifacts/llvm-bolt",
+      "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/clang-with-relocs",
+      "-data=/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/clang.fdata",
+      "-reorder-blocks=ext-tsp",
+      "-reorder-functions=cdsort",
+      "-split-functions",
+      "-split-all-cold",
+      "-split-eh",
+      "-dyno-stats",
+      "--thread-count=1",
+      "-stale-threshold=5",
+      "-use-old-text",
+      "-o",
+      "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/clang-bolt-qualified"
+    ],
+    "cwd": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles",
+    "exit_code": 0,
+    "seconds": 45.415,
+    "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/run/G-profiles/bolt-match-1795694812351523149/rewrite.txt",
+    "trusted_tool": true,
+    "log_identity": {
+      "bytes": 4823,
+      "sha256": "fb3baa3df06b1feb74539bbc4f77aa91ce7b270bdefa4144e65cb97707837f0d"
+    }
+  },
+  "product_options": [
+    "-reorder-blocks=ext-tsp",
+    "-reorder-functions=cdsort",
+    "-split-functions",
+    "-split-all-cold",
+    "-split-eh",
+    "-dyno-stats",
+    "--thread-count=1",
+    "-stale-threshold=5",
+    "-use-old-text"
+  ],
+  "product_recipe": "ce627fa087233d9da415887222009155fe8b5029"
+}

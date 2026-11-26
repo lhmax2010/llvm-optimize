@@ -31,3 +31,17 @@ G5 取 58 号 D 的 BOLT 子阶段 cgroup 观测峰值 14,664,306,688 B。该区
 **PASS**。新建 `sandbox/lhmax2025/llvm-pgo-bolt-20261125`，集成提交 `070c94c9263e8b003a899e6c31bcee34f6a64640`，测试提交 `4080f55abfc7c48097c9bd7fdbf9334e37c661af`。远端 ls-remote 与测试提交一致，QB 由用户触发。
 
 [发布回执](../../tools/bolt/results/task166/candidate-upload/sandbox-result.json)
+
+## C · 五个 TU 的四变体核对
+
+**PASS**。
+
+| TU | 四变体逐字节一致 |
+|---|---|
+| zlib-compress | 是 |
+| zlib-adler32 | 是 |
+| zlib-inffast | 是 |
+| llvm-ELF | 是 |
+| llvm-Metadata | 是 |
+
+[变体、逐对对象和编译原文](../../tools/bolt/results/task166/C/)
