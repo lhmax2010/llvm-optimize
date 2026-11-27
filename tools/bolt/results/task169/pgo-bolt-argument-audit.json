@@ -1,0 +1,52 @@
+{
+  "spec_lines": [
+    {
+      "line": 28,
+      "text": "%define llvm_pgo_bolt_source --bolt-profile \"%{SOURCE1203}\""
+    },
+    {
+      "line": 391,
+      "text": "python3 -B %{SOURCE1201} pgo-prepare \"%{SOURCE1204}\" %{llvm_pgo_project} \"$PWD/pgo-profiles\" \"%{SOURCE1202}\"%{?llvm_pgo_bolt_source} || exit 1"
+    }
+  ],
+  "expanded_line": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task160/candidates/B/assets/clang-bolt-helper.py pgo-prepare \"/home/linhao/Toolchain/development/llvm-optimize/archive/task160/candidates/B/assets/llvm-profiles.manifest\" T \"$PWD/pgo-profiles\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task160/candidates/B/assets/T-clang.profdata.xz\"--bolt-profile \"/home/linhao/Toolchain/development/llvm-optimize/archive/task160/candidates/B/assets/T-clang.fdata.xz\" || exit 1",
+  "shlex_argv": [
+    "python3",
+    "-B",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/candidates/B/assets/clang-bolt-helper.py",
+    "pgo-prepare",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/candidates/B/assets/llvm-profiles.manifest",
+    "T",
+    "$PWD/pgo-profiles",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/candidates/B/assets/T-clang.profdata.xz--bolt-profile",
+    "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/candidates/B/assets/T-clang.fdata.xz",
+    "||",
+    "exit",
+    "1"
+  ],
+  "fused_argument": "/home/linhao/Toolchain/development/llvm-optimize/archive/task160/candidates/B/assets/T-clang.profdata.xz--bolt-profile",
+  "1240310_error": "[   78s] BOLT_GATE_FAILED: missing profile mapping: ('D', True, False)",
+  "manifest_status": "UNQUALIFIED",
+  "manifest_keys": [
+    [
+      "T",
+      true,
+      false
+    ],
+    [
+      "T",
+      true,
+      true
+    ]
+  ],
+  "prior_static_validators": [
+    {
+      "line": 302,
+      "text": "        argv+=[\"--bolt-profile\",paired]"
+    },
+    {
+      "line": 336,
+      "text": "                require(\"--bolt-profile\" in prepare[0] and str(paired) in prepare[0] and"
+    }
+  ]
+}
