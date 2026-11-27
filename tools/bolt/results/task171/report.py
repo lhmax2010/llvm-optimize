@@ -59,6 +59,8 @@ def render(meta, audit=None):
            f" [构建身份]({LINK}build.json) · [QB 概览快照]({LINK}qb-overview.json)",""]
     if meta.get("qb_overview_read_error"):
         s.extend(["最后回读 QB 概览时遇到连接或授权阻塞，终态以发布的逐架构包日志核对。",""])
+    if meta.get("local_audit_error"):
+        s.extend([f"本地核对停止。{meta['local_audit_error']} [原文]({LINK}audit-error.txt)",""])
     if not audit:
         s.extend(["**构建结果待发布。**", "",
                   "已核实构建页和 Gerrit 分支头。三架构结论、包日志门禁、成品身份及条件补测待产物发布。",""])

@@ -4,7 +4,7 @@ import subprocess
 import sys
 import time
 import traceback
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 
 from collect import (A,E,BUILD,TERMINAL,FilesPending,overview,archive_logs,audit_logs,
                      download_rpms,elf_check,read,save,ensure_dirs)
@@ -25,7 +25,7 @@ def wait_for_artifacts():
         read_error=None
         try:
             meta=overview()
-        except FilesPending as error:
+        except (FilesPending, subprocess.TimeoutExpired) as error:
             read_error=str(error)
         terminal=meta["overall"] in TERMINAL
         if terminal or read_error:
@@ -41,15 +41,27 @@ def wait_for_artifacts():
         time.sleep(POLL)
 
 
+def wait_for_rpms(meta):
+    while True:
+        try:
+            return download_rpms()
+        except (FilesPending, URLError, TimeoutError) as error:
+            if isinstance(error,HTTPError) and error.code not in (404,408,429,500,502,503,504):
+                raise
+            status("WAIT_RPMS",qb=meta,reason=str(error))
+            time.sleep(POLL)
+
+
 def main():
     ensure_dirs()
+    meta, logs = None, None
     try:
         meta,receipts=wait_for_artifacts()
         status("LOG_AUDIT",qb=meta)
         logs=audit_logs(receipts)
         if logs["x86_64"]["status"]=="PASS":
             status("RPM_AUDIT",qb=meta)
-            rpms=download_rpms()
+            rpms=wait_for_rpms(meta)
             compare=elf_check(rpms)
             if not compare["same_sha256"]:
                 status("BENCHMARK",qb=meta,clang=compare)
@@ -59,8 +71,18 @@ def main():
         rev=publish(meta,logs)
         status("DONE",qb=meta,bolt_v4=rev)
     except (OSError,RuntimeError,ValueError,subprocess.SubprocessError) as error:
-        (A/"STOP.txt").write_text(traceback.format_exc())
-        status("STOP",reason=str(error))
+        raw=traceback.format_exc()
+        (A/"STOP.txt").write_text(raw)
+        if logs is not None:
+            (E/"audit-error.txt").write_text(raw)
+            meta={**meta,"local_audit_error":str(error)}
+            try:
+                rev=publish(meta,logs)
+            except (OSError,RuntimeError,ValueError,subprocess.SubprocessError):
+                rev=None
+            status("STOP",qb=meta,reason=str(error),bolt_v4=rev)
+        else:
+            status("STOP",reason=str(error))
         raise
 
 
