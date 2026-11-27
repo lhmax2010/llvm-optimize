@@ -1,0 +1,96 @@
+--- candidate.py before
++++ candidate.py after
+@@ -23,6 +23,7 @@
+ SKILL=B/"tools/skills/tizen-llvm-offline-profile/scripts"
+ sys.path.insert(0,str(SKILL))
+ from manifest import file_identity, pack
++from check_helper_argv import check as verify_helper_argv
+ ENV={**os.environ,"LC_ALL":"C","GIT_TERMINAL_PROMPT":"0",
+      "GIT_SSH_COMMAND":"/usr/bin/ssh -o BatchMode=yes -o ConnectTimeout=20",
+      "GIT_AUTHOR_NAME":"Hao Lin","GIT_AUTHOR_EMAIL":"hao.lin@samsung.com",
+@@ -239,19 +240,43 @@
+           "packaging: enable clang PGO with BOLT for build verification (test only, not for merge)")
+     return integration,test,assets
+ 
+-def expand(d,name,arch,spec):
++def rpm_settings(arch):
+     e={**ENV,"RPM_CONFIGDIR":str(R/"usr/lib/rpm")}
+-    ver=command([*RPM,"--version"],env=e).stdout
+-    require("4.14.1" in ver,"RPM parser is not the designated version")
+-    (d/"rpm-version.txt").write_text(ver)
+     showrc=command([*RPM,"--showrc"],env=e).stdout
+     macro=next(x.split(": ",1)[1] for x in showrc.splitlines() if x.startswith("Macro path:"))
+     macro=":".join(p for p in macro.split(":") if p.startswith(str(R)))
+     profile="x86-debug" if arch=="x86_64" else arch
+-    opts=["--macros",macro+":"+str(MACROS/f"toolchain-{profile}.macros"),
+-          "--target",arch+"-tizen-linux","--define","_toolchain clang",
++    return e, ["--macros",macro+":"+str(MACROS/f"toolchain-{profile}.macros")]
++
++
++def expand(d,name,arch,spec):
++    e, macros=rpm_settings(arch)
++    ver=command([*RPM,"--version"],env=e).stdout
++    require("4.14.1" in ver,"RPM parser is not the designated version")
++    (d/"rpm-version.txt").write_text(ver)
++    opts=[*macros,"--target",arch+"-tizen-linux","--define","_toolchain clang",
+           "--define","_topdir "+str(d/"rpmdir"),"--define","_sourcedir "+str(spec.parent)]
+     return logged(d,f"{name}-{arch}",[*RPM,"-P",*opts,spec],env=e).stdout
++
++
++def candidate_argv_gate(d,spec,helper,profile_name,bolt_name):
++    env, macros=rpm_settings("x86_64")
++    cfg={"argv":RPM,"env":{"RPM_CONFIGDIR":env["RPM_CONFIGDIR"]},"base_args":macros}
++    result=verify_helper_argv(spec,helper,cfg,d/"argv-fixed",profile_name,bolt_name,
++                              "llvm-profiles.manifest")
++    require(result["status"]=="PASS","helper argument matrix failed")
++    return result
++
++
++def require_argv_receipt(d,tip):
++    result=read(d/"argv-fixed/result.json")
++    cases={f"{project}-pgo{pgo}-bolt{bolt}" for project in ("T","D")
++           for pgo in (0,1) for bolt in (0,1)}
++    require(result["status"]=="PASS" and result["matrix"].keys()==cases and all(
++        not row["errors"] for row in result["matrix"].values()),"helper argument matrix is incomplete")
++    for path,field in ((SPEC,"spec_sha256"),(HELPER,"helper_sha256")):
++        actual=hashlib.sha256(show(tip,path).encode("utf-8")).hexdigest()
++        require(actual==result[field],"helper argument receipt does not match candidate blob: "+path)
+ 
+ def build_flags_probe(d,unpacked,test):
+     cmake=show(test,"llvm/cmake/modules/HandleLLVMOptions.cmake")
+@@ -290,6 +315,13 @@
+     require(spec.read_text()==show(test,SPEC),"candidate spec working copy differs from Git")
+     default=assets/"integration-llvm.spec"
+     default.write_text(show(base,SPEC))
++    if bolt:
++        bolt_name=row["bolt_profile"]["file"]
++    else:
++        source1203=re.findall(r"Source1203:\s+([^\s]+[.]xz)",spec.read_text())
++        require(len(source1203)==1,"cannot identify the optional Source1203 asset")
++        (bolt_name,)=source1203
++    candidate_argv_gate(d,spec,helper,asset.name,bolt_name)
+     cli=[sys.executable,"-B",SKILL/"manifest.py","check","--manifest",manifest,"--project","T",
+          "--pgo","on","--bolt","on" if bolt else "off","--allow-unqualified"]
+     logged(d,"skill-manifest-check",cli)
+@@ -348,7 +380,7 @@
+         results[arch]="PASS"
+     return {"rpmspec":results,"skill_manifest":"PASS","packaged_manifest":"PASS",
+             "integration_rejects_unqualified":"PASS","verification_only_status_difference":"PASS",
+-            "compile_flag_script":flag,"profile":receipt(asset),"manifest":receipt(manifest),
++            "compile_flag_script":flag,"helper_argv_matrix":"PASS","profile":receipt(asset),"manifest":receipt(manifest),
+             "variant":"PGO+BOLT" if bolt else "PGO-only","project":"T",
+             **({"bolt_profile":receipt(paired),"stale_threshold":5} if bolt else {})}
+ 
+@@ -370,9 +402,10 @@
+         else:
+             save(directory/(full.name+".json"),info)
+ 
+-def upload(d,kind,tip):
++def upload(d,kind,tip,*,branch=None):
++    require_argv_receipt(d,tip)
+     label="only" if kind=="A" else "bolt"
+-    branch=f"sandbox/lhmax2025/llvm-pgo-{label}-20261125"
++    branch=branch or f"sandbox/lhmax2025/llvm-pgo-{label}-20261125"
+     ref="refs/heads/"+branch
+     before=logged(d,"sandbox-before",[*GIT,"ls-remote","--exit-code","--heads",REMOTE,ref],
+                   expect=(2,),timeout=45)

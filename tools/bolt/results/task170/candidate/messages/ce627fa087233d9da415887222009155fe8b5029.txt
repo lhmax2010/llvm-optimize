@@ -1,0 +1,7 @@
+packaging: retry native archive memory failures
+
+Defer archive members whose compiler reports memory exhaustion until
+the parallel workers finish. Retry them serially with a larger address
+space limit while preserving the original inputs and compiler options.
+
+Signed-off-by: Hao Lin <hao.lin@samsung.com>

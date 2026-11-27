@@ -28,3 +28,33 @@ The count function is the packaging implementation. The file-level checker addit
 ## Runtime dependencies
 
 Use llvm-readelf to inspect ELF sections, symbol tables and dynamic entries. Check regular archives through readelf's member enumeration and reject malformed or external thin members. Reject __llvm_prf_* sections, __llvm_profile_* symbols and libclang_rt.profile* NEEDED libraries. Check the installed executable/shared payload and each static-devel archive member after native conversion. The compiler resource archive contains the profile runtime for use as a build input. Check for that runtime in the audited executables, shared libraries and static-devel members. Inspect the corresponding unstripped build artifacts if the release strips the required symbol table. Record missing coverage rather than treating a stripped symbol table as proof about local symbols. Do not use ldd on an .a file.
+
+
+## Packaging helper argument matrix
+
+Run this gate before publishing any QB profile verification candidate. Provide
+an RPM runner JSON file with `argv` for Tizen 4.14.1 rpmspec and any required
+loader prefix, `base_args` for the platform macro options, and optional
+`env` for RPM_CONFIGDIR. Point the checker at the exact candidate spec and
+helper in their packaging directory.
+
+~~~sh
+/usr/bin/python3 -B /path/to/skill/scripts/check_helper_argv.py \
+  --rpm-config /path/to/rpm-runner.json \
+  --spec /path/to/packaging/llvm.spec \
+  --helper /path/to/packaging/clang-bolt-helper.py \
+  --profile-name T-clang.profdata.xz --bolt-profile-name T-clang.fdata.xz \
+  --output /path/to/argv-receipts
+~~~
+
+Supply the Source filenames declared by the candidate. The checker expands
+T and D with PGO and BOLT independently enabled and disabled. It expands
+the install-post macro explicitly, evaluates only the helper argument words
+in Bash, and parses them with the imported helper's own argparse parser.
+Build commands, redirections, helper subcommands, and command substitutions
+are outside the gate's execution path. Wrapped helper calls include the
+forwarded argument words for each step.
+
+Require all eight cases and bind the receipt's spec and helper SHA-256 to the
+candidate before publication. An argument check for D verifies the project
+operand. Qualification of the D profile mapping remains a separate check.

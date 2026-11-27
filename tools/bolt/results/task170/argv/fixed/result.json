@@ -1,0 +1,2486 @@
+{
+  "status": "PASS",
+  "spec_sha256": "f31c4dd0197393a311be52d8d5ab23fa28e60d38af4c91e7dd41ecfdd79a5ad4",
+  "helper_sha256": "e0ee38253e83ba66a731831972f0900f9ffa2b1182777a5bca06a683c90e435c",
+  "rpm_version": "RPM version 4.14.1",
+  "matrix": {
+    "T-pgo1-bolt1": {
+      "calls": [
+        {
+          "line": 364,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-prepare \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest\" T \"$PWD/pgo-profiles\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz\" --bolt-profile \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.fdata.xz\" || exit 1",
+          "argv": [
+            "pgo-prepare",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest",
+            "T",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/pgo-profiles",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz",
+            "--bolt-profile",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.fdata.xz"
+          ],
+          "parsed": {
+            "cmd": "pgo-prepare",
+            "manifest": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest",
+            "project": "T",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/pgo-profiles",
+            "profile": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz",
+            "bolt_profile": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.fdata.xz"
+          }
+        },
+        {
+          "line": 421,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-check-ninja \"$PWD\" || exit 1",
+          "argv": [
+            "pgo-check-ninja",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture"
+          ],
+          "parsed": {
+            "cmd": "pgo-check-ninja",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture"
+          }
+        },
+        {
+          "line": 473,
+          "template_line": null,
+          "invocation": "  python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-diagnose \"$1\" \"$2\" || bolt_status_exit $?",
+          "argv": [
+            "disk-diagnose",
+            "fixture-stage",
+            "fixture.log"
+          ],
+          "parsed": {
+            "cmd": "disk-diagnose",
+            "step": "fixture-stage",
+            "log": "fixture.log",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 494,
+          "template_line": null,
+          "invocation": "    printf '%s\\n' \"$bolt_output\" | python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-diagnose \"$bolt_stage\" /dev/stdin || bolt_status_exit $?",
+          "argv": [
+            "disk-diagnose",
+            "fixture-stage",
+            "/dev/stdin"
+          ],
+          "parsed": {
+            "cmd": "disk-diagnose",
+            "step": "fixture-stage",
+            "log": "/dev/stdin",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 525,
+          "template_line": 512,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "manifest-copy",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/manifest-copy.log",
+            "--",
+            "cp",
+            "install_manifest.txt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-manifest-before.txt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "manifest-copy",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/manifest-copy.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cp",
+              "install_manifest.txt",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-manifest-before.txt"
+            ]
+          }
+        },
+        {
+          "line": 526,
+          "template_line": 512,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "ordinary-copy",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-copy.log",
+            "--",
+            "cp",
+            "-p",
+            "bin/clang-22",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-clang-22"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "ordinary-copy",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-copy.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cp",
+              "-p",
+              "bin/clang-22",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-clang-22"
+            ]
+          }
+        },
+        {
+          "line": 529,
+          "template_line": 512,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "configure",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/configure.log",
+            "--",
+            "cmake",
+            "-S",
+            "../llvm",
+            "-B",
+            ".",
+            "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+            "-DBOLT_BUILD_TOOLS=OFF",
+            "-DBOLT_ENABLE_RUNTIME=OFF",
+            "-DBOLT_INCLUDE_TESTS=OFF",
+            "-DBOLT_TARGETS_TO_BUILD=X86"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "configure",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/configure.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cmake",
+              "-S",
+              "../llvm",
+              "-B",
+              ".",
+              "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+              "-DBOLT_BUILD_TOOLS=OFF",
+              "-DBOLT_ENABLE_RUNTIME=OFF",
+              "-DBOLT_INCLUDE_TESTS=OFF",
+              "-DBOLT_TARGETS_TO_BUILD=X86"
+            ]
+          }
+        },
+        {
+          "line": 534,
+          "template_line": 512,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "dry-run-begin",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-begin.log",
+            "--",
+            "/bin/echo",
+            "BOLT_TOOL_DRY_RUN_BEGIN"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "dry-run-begin",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-begin.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "/bin/echo",
+              "BOLT_TOOL_DRY_RUN_BEGIN"
+            ]
+          }
+        },
+        {
+          "line": 537,
+          "template_line": 512,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "dry-run-end",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-end.log",
+            "--",
+            "/bin/echo",
+            "BOLT_TOOL_DRY_RUN_END"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "dry-run-end",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-end.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "/bin/echo",
+              "BOLT_TOOL_DRY_RUN_END"
+            ]
+          }
+        },
+        {
+          "line": 514,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report begin",
+          "argv": [
+            "disk-report",
+            "begin"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "begin",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 516,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py preflight || bolt_status_exit $?",
+          "argv": [
+            "preflight"
+          ],
+          "parsed": {
+            "cmd": "preflight"
+          }
+        },
+        {
+          "line": 517,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py certified || bolt_status_exit $?",
+          "argv": [
+            "certified"
+          ],
+          "parsed": {
+            "cmd": "certified"
+          }
+        },
+        {
+          "line": 523,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py installed-baseline \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/installed-baseline.json\" || bolt_status_exit $?",
+          "argv": [
+            "installed-baseline",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/installed-baseline.json"
+          ],
+          "parsed": {
+            "cmd": "installed-baseline",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "output": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/installed-baseline.json"
+          }
+        },
+        {
+          "line": 524,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py snapshot \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/install-before.json\" || bolt_status_exit $?",
+          "argv": [
+            "snapshot",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json"
+          ],
+          "parsed": {
+            "cmd": "snapshot",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "output": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json"
+          }
+        },
+        {
+          "line": 527,
+          "template_line": null,
+          "invocation": "bolt_checked link-command \"$BOLT_WORK/link-command.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step link-command \"$BOLT_WORK/link-command.log\" --output \"$BOLT_WORK/link.original\" -- ninja -t commands -s bin/clang-22",
+          "argv": [
+            "run-step",
+            "link-command",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link-command.log",
+            "--output",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link.original",
+            "--",
+            "ninja",
+            "-t",
+            "commands",
+            "-s",
+            "bin/clang-22"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "link-command",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link-command.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--output",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link.original",
+              "--",
+              "ninja",
+              "-t",
+              "commands",
+              "-s",
+              "bin/clang-22"
+            ]
+          }
+        },
+        {
+          "line": 536,
+          "template_line": null,
+          "invocation": "bolt_checked tool-dry-run \"$BOLT_WORK/tool-dry-run.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step tool-dry-run \"$BOLT_WORK/tool-dry-run.log\" --output \"$BOLT_WORK/tool-dry-run.txt\" -- env LC_ALL=C NINJA_STATUS='[%f/%t] ' ninja -n llvm-bolt",
+          "argv": [
+            "run-step",
+            "tool-dry-run",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.log",
+            "--output",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt",
+            "--",
+            "env",
+            "LC_ALL=C",
+            "NINJA_STATUS=[%f/%t] ",
+            "ninja",
+            "-n",
+            "llvm-bolt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "tool-dry-run",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--output",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt",
+              "--",
+              "env",
+              "LC_ALL=C",
+              "NINJA_STATUS=[%f/%t] ",
+              "ninja",
+              "-n",
+              "llvm-bolt"
+            ]
+          }
+        },
+        {
+          "line": 538,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-plan \"$BOLT_WORK/tool-dry-run.txt\" > \"$BOLT_WORK/tool-plan.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-plan",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt"
+          ],
+          "parsed": {
+            "cmd": "tool-plan",
+            "input": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt"
+          }
+        },
+        {
+          "line": 540,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-prepare \"$PWD\" \"$BOLT_WORK/tool-plan.json\" \"$BOLT_WORK/tool-before.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-prepare",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json"
+          ],
+          "parsed": {
+            "cmd": "tool-prepare",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "plan": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json"
+          }
+        },
+        {
+          "line": 542,
+          "template_line": null,
+          "invocation": "bolt_checked tool-build \"$BOLT_WORK/tool-build.txt\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step tool-build \"$BOLT_WORK/tool-build.txt\" --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C NINJA_STATUS='[%f/%t] ' ninja -j 6 llvm-bolt",
+          "argv": [
+            "run-step",
+            "tool-build",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "--success-marker",
+            "BOLT_NINJA_EXIT_0",
+            "--",
+            "env",
+            "LC_ALL=C",
+            "NINJA_STATUS=[%f/%t] ",
+            "ninja",
+            "-j",
+            "6",
+            "llvm-bolt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "tool-build",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--success-marker",
+              "BOLT_NINJA_EXIT_0",
+              "--",
+              "env",
+              "LC_ALL=C",
+              "NINJA_STATUS=[%f/%t] ",
+              "ninja",
+              "-j",
+              "6",
+              "llvm-bolt"
+            ]
+          }
+        },
+        {
+          "line": 543,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-verify \"$PWD\" \"$BOLT_WORK/tool-plan.json\" \"$BOLT_WORK/tool-build.txt\"   \"$BOLT_WORK/tool-before.json\" \"$BOLT_WORK/tool-build-verification.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-verify",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build-verification.json"
+          ],
+          "parsed": {
+            "cmd": "tool-verify",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "plan": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json",
+            "result": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build-verification.json"
+          }
+        },
+        {
+          "line": 546,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report tool-built",
+          "argv": [
+            "disk-report",
+            "tool-built"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "tool-built",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 547,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pipeline \"$PWD\" \"$BOLT_WORK\" \"$PWD/bin/llvm-bolt\" --debug-symbols || bolt_status_exit $?",
+          "argv": [
+            "pipeline",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/bin/llvm-bolt",
+            "--debug-symbols"
+          ],
+          "parsed": {
+            "cmd": "pipeline",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt",
+            "tool": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/bin/llvm-bolt",
+            "cache_dir": null,
+            "debug_symbols": true
+          }
+        },
+        {
+          "line": 549,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report pipeline",
+          "argv": [
+            "disk-report",
+            "pipeline"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "pipeline",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 552,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py compare-root \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/install-before.json\"   \"$BOLT_WORK/install-after-pipeline.json\" || bolt_status_exit $?",
+          "argv": [
+            "compare-root",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-after-pipeline.json"
+          ],
+          "parsed": {
+            "cmd": "compare-root",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "baseline": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json",
+            "after": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-after-pipeline.json"
+          }
+        },
+        {
+          "line": 557,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py cache-release \"$PWD\" \"$BOLT_WORK\"",
+          "argv": [
+            "cache-release",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt"
+          ],
+          "parsed": {
+            "cmd": "cache-release",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt"
+          }
+        },
+        {
+          "line": 604,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py install \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/clang.candidate\"   \"$BOLT_WORK/install-state.json\" \"$BOLT_WORK/identity.json\" || bolt_status_exit $?",
+          "argv": [
+            "install",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/clang.candidate",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-state.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/identity.json"
+          ],
+          "parsed": {
+            "cmd": "install",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "candidate": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/clang.candidate",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-state.json",
+            "identity": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/identity.json"
+          }
+        },
+        {
+          "line": 856,
+          "template_line": null,
+          "invocation": "    python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py post \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate\" --resource-dir \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22\" --debugfiles-list \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list\" || bolt_status_exit $? ",
+          "argv": [
+            "post",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate",
+            "--resource-dir",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22",
+            "--debugfiles-list",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list"
+          ],
+          "parsed": {
+            "cmd": "post",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json",
+            "ordinary": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate",
+            "resource_dir": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22",
+            "debugfiles_list": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list"
+          }
+        },
+        {
+          "line": 858,
+          "template_line": null,
+          "invocation": "    bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report post",
+          "argv": [
+            "disk-report",
+            "post"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "post",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        }
+      ],
+      "errors": []
+    },
+    "T-pgo1-bolt0": {
+      "calls": [
+        {
+          "line": 364,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-prepare \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest\" T \"$PWD/pgo-profiles\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz\"  || exit 1",
+          "argv": [
+            "pgo-prepare",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest",
+            "T",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/pgo-profiles",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz"
+          ],
+          "parsed": {
+            "cmd": "pgo-prepare",
+            "manifest": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest",
+            "project": "T",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/pgo-profiles",
+            "profile": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz",
+            "bolt_profile": null
+          }
+        },
+        {
+          "line": 421,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-check-ninja \"$PWD\" || exit 1",
+          "argv": [
+            "pgo-check-ninja",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture"
+          ],
+          "parsed": {
+            "cmd": "pgo-check-ninja",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture"
+          }
+        },
+        {
+          "line": 753,
+          "template_line": null,
+          "invocation": "    python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-post \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build\" --enabled || exit 1",
+          "argv": [
+            "pgo-post",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build",
+            "--enabled"
+          ],
+          "parsed": {
+            "cmd": "pgo-post",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build",
+            "enabled": true
+          }
+        }
+      ],
+      "errors": []
+    },
+    "T-pgo0-bolt1": {
+      "calls": [
+        {
+          "line": 467,
+          "template_line": null,
+          "invocation": "  python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-diagnose \"$1\" \"$2\" || bolt_status_exit $?",
+          "argv": [
+            "disk-diagnose",
+            "fixture-stage",
+            "fixture.log"
+          ],
+          "parsed": {
+            "cmd": "disk-diagnose",
+            "step": "fixture-stage",
+            "log": "fixture.log",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 488,
+          "template_line": null,
+          "invocation": "    printf '%s\\n' \"$bolt_output\" | python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-diagnose \"$bolt_stage\" /dev/stdin || bolt_status_exit $?",
+          "argv": [
+            "disk-diagnose",
+            "fixture-stage",
+            "/dev/stdin"
+          ],
+          "parsed": {
+            "cmd": "disk-diagnose",
+            "step": "fixture-stage",
+            "log": "/dev/stdin",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 519,
+          "template_line": 506,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "manifest-copy",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/manifest-copy.log",
+            "--",
+            "cp",
+            "install_manifest.txt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-manifest-before.txt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "manifest-copy",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/manifest-copy.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cp",
+              "install_manifest.txt",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-manifest-before.txt"
+            ]
+          }
+        },
+        {
+          "line": 520,
+          "template_line": 506,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "ordinary-copy",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-copy.log",
+            "--",
+            "cp",
+            "-p",
+            "bin/clang-22",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-clang-22"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "ordinary-copy",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-copy.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cp",
+              "-p",
+              "bin/clang-22",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-clang-22"
+            ]
+          }
+        },
+        {
+          "line": 523,
+          "template_line": 506,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "configure",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/configure.log",
+            "--",
+            "cmake",
+            "-S",
+            "../llvm",
+            "-B",
+            ".",
+            "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+            "-DBOLT_BUILD_TOOLS=OFF",
+            "-DBOLT_ENABLE_RUNTIME=OFF",
+            "-DBOLT_INCLUDE_TESTS=OFF",
+            "-DBOLT_TARGETS_TO_BUILD=X86"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "configure",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/configure.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cmake",
+              "-S",
+              "../llvm",
+              "-B",
+              ".",
+              "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+              "-DBOLT_BUILD_TOOLS=OFF",
+              "-DBOLT_ENABLE_RUNTIME=OFF",
+              "-DBOLT_INCLUDE_TESTS=OFF",
+              "-DBOLT_TARGETS_TO_BUILD=X86"
+            ]
+          }
+        },
+        {
+          "line": 528,
+          "template_line": 506,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "dry-run-begin",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-begin.log",
+            "--",
+            "/bin/echo",
+            "BOLT_TOOL_DRY_RUN_BEGIN"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "dry-run-begin",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-begin.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "/bin/echo",
+              "BOLT_TOOL_DRY_RUN_BEGIN"
+            ]
+          }
+        },
+        {
+          "line": 531,
+          "template_line": 506,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "dry-run-end",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-end.log",
+            "--",
+            "/bin/echo",
+            "BOLT_TOOL_DRY_RUN_END"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "dry-run-end",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-end.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "/bin/echo",
+              "BOLT_TOOL_DRY_RUN_END"
+            ]
+          }
+        },
+        {
+          "line": 508,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report begin",
+          "argv": [
+            "disk-report",
+            "begin"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "begin",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 510,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py preflight || bolt_status_exit $?",
+          "argv": [
+            "preflight"
+          ],
+          "parsed": {
+            "cmd": "preflight"
+          }
+        },
+        {
+          "line": 511,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py certified || bolt_status_exit $?",
+          "argv": [
+            "certified"
+          ],
+          "parsed": {
+            "cmd": "certified"
+          }
+        },
+        {
+          "line": 517,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py installed-baseline \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/installed-baseline.json\" || bolt_status_exit $?",
+          "argv": [
+            "installed-baseline",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/installed-baseline.json"
+          ],
+          "parsed": {
+            "cmd": "installed-baseline",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "output": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/installed-baseline.json"
+          }
+        },
+        {
+          "line": 518,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py snapshot \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/install-before.json\" || bolt_status_exit $?",
+          "argv": [
+            "snapshot",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json"
+          ],
+          "parsed": {
+            "cmd": "snapshot",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "output": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json"
+          }
+        },
+        {
+          "line": 521,
+          "template_line": null,
+          "invocation": "bolt_checked link-command \"$BOLT_WORK/link-command.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step link-command \"$BOLT_WORK/link-command.log\" --output \"$BOLT_WORK/link.original\" -- ninja -t commands -s bin/clang-22",
+          "argv": [
+            "run-step",
+            "link-command",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link-command.log",
+            "--output",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link.original",
+            "--",
+            "ninja",
+            "-t",
+            "commands",
+            "-s",
+            "bin/clang-22"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "link-command",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link-command.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--output",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link.original",
+              "--",
+              "ninja",
+              "-t",
+              "commands",
+              "-s",
+              "bin/clang-22"
+            ]
+          }
+        },
+        {
+          "line": 522,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py unpack /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-v2.fdata.xz \"$BOLT_WORK/profile.fdata\" || bolt_status_exit $?",
+          "argv": [
+            "unpack",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-v2.fdata.xz",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/profile.fdata"
+          ],
+          "parsed": {
+            "cmd": "unpack",
+            "source": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-v2.fdata.xz",
+            "output": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/profile.fdata"
+          }
+        },
+        {
+          "line": 530,
+          "template_line": null,
+          "invocation": "bolt_checked tool-dry-run \"$BOLT_WORK/tool-dry-run.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step tool-dry-run \"$BOLT_WORK/tool-dry-run.log\" --output \"$BOLT_WORK/tool-dry-run.txt\" -- env LC_ALL=C NINJA_STATUS='[%f/%t] ' ninja -n llvm-bolt",
+          "argv": [
+            "run-step",
+            "tool-dry-run",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.log",
+            "--output",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt",
+            "--",
+            "env",
+            "LC_ALL=C",
+            "NINJA_STATUS=[%f/%t] ",
+            "ninja",
+            "-n",
+            "llvm-bolt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "tool-dry-run",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--output",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt",
+              "--",
+              "env",
+              "LC_ALL=C",
+              "NINJA_STATUS=[%f/%t] ",
+              "ninja",
+              "-n",
+              "llvm-bolt"
+            ]
+          }
+        },
+        {
+          "line": 532,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-plan \"$BOLT_WORK/tool-dry-run.txt\" > \"$BOLT_WORK/tool-plan.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-plan",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt"
+          ],
+          "parsed": {
+            "cmd": "tool-plan",
+            "input": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt"
+          }
+        },
+        {
+          "line": 534,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-prepare \"$PWD\" \"$BOLT_WORK/tool-plan.json\" \"$BOLT_WORK/tool-before.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-prepare",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json"
+          ],
+          "parsed": {
+            "cmd": "tool-prepare",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "plan": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json"
+          }
+        },
+        {
+          "line": 536,
+          "template_line": null,
+          "invocation": "bolt_checked tool-build \"$BOLT_WORK/tool-build.txt\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step tool-build \"$BOLT_WORK/tool-build.txt\" --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C NINJA_STATUS='[%f/%t] ' ninja -j 6 llvm-bolt",
+          "argv": [
+            "run-step",
+            "tool-build",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "--success-marker",
+            "BOLT_NINJA_EXIT_0",
+            "--",
+            "env",
+            "LC_ALL=C",
+            "NINJA_STATUS=[%f/%t] ",
+            "ninja",
+            "-j",
+            "6",
+            "llvm-bolt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "tool-build",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--success-marker",
+              "BOLT_NINJA_EXIT_0",
+              "--",
+              "env",
+              "LC_ALL=C",
+              "NINJA_STATUS=[%f/%t] ",
+              "ninja",
+              "-j",
+              "6",
+              "llvm-bolt"
+            ]
+          }
+        },
+        {
+          "line": 537,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-verify \"$PWD\" \"$BOLT_WORK/tool-plan.json\" \"$BOLT_WORK/tool-build.txt\"   \"$BOLT_WORK/tool-before.json\" \"$BOLT_WORK/tool-build-verification.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-verify",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build-verification.json"
+          ],
+          "parsed": {
+            "cmd": "tool-verify",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "plan": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json",
+            "result": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build-verification.json"
+          }
+        },
+        {
+          "line": 540,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report tool-built",
+          "argv": [
+            "disk-report",
+            "tool-built"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "tool-built",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 541,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pipeline \"$PWD\" \"$BOLT_WORK\" \"$PWD/bin/llvm-bolt\" --debug-symbols || bolt_status_exit $?",
+          "argv": [
+            "pipeline",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/bin/llvm-bolt",
+            "--debug-symbols"
+          ],
+          "parsed": {
+            "cmd": "pipeline",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt",
+            "tool": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/bin/llvm-bolt",
+            "cache_dir": null,
+            "debug_symbols": true
+          }
+        },
+        {
+          "line": 543,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report pipeline",
+          "argv": [
+            "disk-report",
+            "pipeline"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "pipeline",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 546,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py compare-root \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/install-before.json\"   \"$BOLT_WORK/install-after-pipeline.json\" || bolt_status_exit $?",
+          "argv": [
+            "compare-root",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-after-pipeline.json"
+          ],
+          "parsed": {
+            "cmd": "compare-root",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "baseline": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json",
+            "after": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-after-pipeline.json"
+          }
+        },
+        {
+          "line": 551,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py cache-release \"$PWD\" \"$BOLT_WORK\"",
+          "argv": [
+            "cache-release",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt"
+          ],
+          "parsed": {
+            "cmd": "cache-release",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt"
+          }
+        },
+        {
+          "line": 598,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py install \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/clang.candidate\"   \"$BOLT_WORK/install-state.json\" \"$BOLT_WORK/identity.json\" || bolt_status_exit $?",
+          "argv": [
+            "install",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/clang.candidate",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-state.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/identity.json"
+          ],
+          "parsed": {
+            "cmd": "install",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "candidate": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/clang.candidate",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-state.json",
+            "identity": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/identity.json"
+          }
+        },
+        {
+          "line": 850,
+          "template_line": null,
+          "invocation": "    python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py post \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate\" --resource-dir \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22\" --debugfiles-list \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list\" || bolt_status_exit $? ",
+          "argv": [
+            "post",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate",
+            "--resource-dir",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22",
+            "--debugfiles-list",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list"
+          ],
+          "parsed": {
+            "cmd": "post",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json",
+            "ordinary": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate",
+            "resource_dir": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22",
+            "debugfiles_list": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list"
+          }
+        },
+        {
+          "line": 852,
+          "template_line": null,
+          "invocation": "    bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report post",
+          "argv": [
+            "disk-report",
+            "post"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "post",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        }
+      ],
+      "errors": []
+    },
+    "T-pgo0-bolt0": {
+      "calls": [
+        {
+          "line": 747,
+          "template_line": null,
+          "invocation": "    python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-post \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build\"  || exit 1",
+          "argv": [
+            "pgo-post",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build"
+          ],
+          "parsed": {
+            "cmd": "pgo-post",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build",
+            "enabled": false
+          }
+        }
+      ],
+      "errors": []
+    },
+    "D-pgo1-bolt1": {
+      "calls": [
+        {
+          "line": 369,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-prepare \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest\" D \"$PWD/pgo-profiles\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz\" --bolt-profile \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.fdata.xz\" || exit 1",
+          "argv": [
+            "pgo-prepare",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest",
+            "D",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/pgo-profiles",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz",
+            "--bolt-profile",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.fdata.xz"
+          ],
+          "parsed": {
+            "cmd": "pgo-prepare",
+            "manifest": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest",
+            "project": "D",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/pgo-profiles",
+            "profile": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz",
+            "bolt_profile": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.fdata.xz"
+          }
+        },
+        {
+          "line": 426,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-check-ninja \"$PWD\" || exit 1",
+          "argv": [
+            "pgo-check-ninja",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture"
+          ],
+          "parsed": {
+            "cmd": "pgo-check-ninja",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture"
+          }
+        },
+        {
+          "line": 478,
+          "template_line": null,
+          "invocation": "  python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-diagnose \"$1\" \"$2\" || bolt_status_exit $?",
+          "argv": [
+            "disk-diagnose",
+            "fixture-stage",
+            "fixture.log"
+          ],
+          "parsed": {
+            "cmd": "disk-diagnose",
+            "step": "fixture-stage",
+            "log": "fixture.log",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 499,
+          "template_line": null,
+          "invocation": "    printf '%s\\n' \"$bolt_output\" | python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-diagnose \"$bolt_stage\" /dev/stdin || bolt_status_exit $?",
+          "argv": [
+            "disk-diagnose",
+            "fixture-stage",
+            "/dev/stdin"
+          ],
+          "parsed": {
+            "cmd": "disk-diagnose",
+            "step": "fixture-stage",
+            "log": "/dev/stdin",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 530,
+          "template_line": 517,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "manifest-copy",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/manifest-copy.log",
+            "--",
+            "cp",
+            "install_manifest.txt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-manifest-before.txt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "manifest-copy",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/manifest-copy.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cp",
+              "install_manifest.txt",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-manifest-before.txt"
+            ]
+          }
+        },
+        {
+          "line": 531,
+          "template_line": 517,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "ordinary-copy",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-copy.log",
+            "--",
+            "cp",
+            "-p",
+            "bin/clang-22",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-clang-22"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "ordinary-copy",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-copy.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cp",
+              "-p",
+              "bin/clang-22",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-clang-22"
+            ]
+          }
+        },
+        {
+          "line": 534,
+          "template_line": 517,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "configure",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/configure.log",
+            "--",
+            "cmake",
+            "-S",
+            "../llvm",
+            "-B",
+            ".",
+            "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+            "-DBOLT_BUILD_TOOLS=OFF",
+            "-DBOLT_ENABLE_RUNTIME=OFF",
+            "-DBOLT_INCLUDE_TESTS=OFF",
+            "-DBOLT_TARGETS_TO_BUILD=X86"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "configure",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/configure.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cmake",
+              "-S",
+              "../llvm",
+              "-B",
+              ".",
+              "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+              "-DBOLT_BUILD_TOOLS=OFF",
+              "-DBOLT_ENABLE_RUNTIME=OFF",
+              "-DBOLT_INCLUDE_TESTS=OFF",
+              "-DBOLT_TARGETS_TO_BUILD=X86"
+            ]
+          }
+        },
+        {
+          "line": 539,
+          "template_line": 517,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "dry-run-begin",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-begin.log",
+            "--",
+            "/bin/echo",
+            "BOLT_TOOL_DRY_RUN_BEGIN"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "dry-run-begin",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-begin.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "/bin/echo",
+              "BOLT_TOOL_DRY_RUN_BEGIN"
+            ]
+          }
+        },
+        {
+          "line": 542,
+          "template_line": 517,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "dry-run-end",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-end.log",
+            "--",
+            "/bin/echo",
+            "BOLT_TOOL_DRY_RUN_END"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "dry-run-end",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-end.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "/bin/echo",
+              "BOLT_TOOL_DRY_RUN_END"
+            ]
+          }
+        },
+        {
+          "line": 519,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report begin",
+          "argv": [
+            "disk-report",
+            "begin"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "begin",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 521,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py preflight || bolt_status_exit $?",
+          "argv": [
+            "preflight"
+          ],
+          "parsed": {
+            "cmd": "preflight"
+          }
+        },
+        {
+          "line": 522,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py certified || bolt_status_exit $?",
+          "argv": [
+            "certified"
+          ],
+          "parsed": {
+            "cmd": "certified"
+          }
+        },
+        {
+          "line": 528,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py installed-baseline \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/installed-baseline.json\" || bolt_status_exit $?",
+          "argv": [
+            "installed-baseline",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/installed-baseline.json"
+          ],
+          "parsed": {
+            "cmd": "installed-baseline",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "output": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/installed-baseline.json"
+          }
+        },
+        {
+          "line": 529,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py snapshot \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/install-before.json\" || bolt_status_exit $?",
+          "argv": [
+            "snapshot",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json"
+          ],
+          "parsed": {
+            "cmd": "snapshot",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "output": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json"
+          }
+        },
+        {
+          "line": 532,
+          "template_line": null,
+          "invocation": "bolt_checked link-command \"$BOLT_WORK/link-command.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step link-command \"$BOLT_WORK/link-command.log\" --output \"$BOLT_WORK/link.original\" -- ninja -t commands -s bin/clang-22",
+          "argv": [
+            "run-step",
+            "link-command",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link-command.log",
+            "--output",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link.original",
+            "--",
+            "ninja",
+            "-t",
+            "commands",
+            "-s",
+            "bin/clang-22"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "link-command",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link-command.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--output",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link.original",
+              "--",
+              "ninja",
+              "-t",
+              "commands",
+              "-s",
+              "bin/clang-22"
+            ]
+          }
+        },
+        {
+          "line": 541,
+          "template_line": null,
+          "invocation": "bolt_checked tool-dry-run \"$BOLT_WORK/tool-dry-run.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step tool-dry-run \"$BOLT_WORK/tool-dry-run.log\" --output \"$BOLT_WORK/tool-dry-run.txt\" -- env LC_ALL=C NINJA_STATUS='[%f/%t] ' ninja -n llvm-bolt",
+          "argv": [
+            "run-step",
+            "tool-dry-run",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.log",
+            "--output",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt",
+            "--",
+            "env",
+            "LC_ALL=C",
+            "NINJA_STATUS=[%f/%t] ",
+            "ninja",
+            "-n",
+            "llvm-bolt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "tool-dry-run",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--output",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt",
+              "--",
+              "env",
+              "LC_ALL=C",
+              "NINJA_STATUS=[%f/%t] ",
+              "ninja",
+              "-n",
+              "llvm-bolt"
+            ]
+          }
+        },
+        {
+          "line": 543,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-plan \"$BOLT_WORK/tool-dry-run.txt\" > \"$BOLT_WORK/tool-plan.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-plan",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt"
+          ],
+          "parsed": {
+            "cmd": "tool-plan",
+            "input": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt"
+          }
+        },
+        {
+          "line": 545,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-prepare \"$PWD\" \"$BOLT_WORK/tool-plan.json\" \"$BOLT_WORK/tool-before.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-prepare",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json"
+          ],
+          "parsed": {
+            "cmd": "tool-prepare",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "plan": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json"
+          }
+        },
+        {
+          "line": 547,
+          "template_line": null,
+          "invocation": "bolt_checked tool-build \"$BOLT_WORK/tool-build.txt\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step tool-build \"$BOLT_WORK/tool-build.txt\" --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C NINJA_STATUS='[%f/%t] ' ninja -j 6 llvm-bolt",
+          "argv": [
+            "run-step",
+            "tool-build",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "--success-marker",
+            "BOLT_NINJA_EXIT_0",
+            "--",
+            "env",
+            "LC_ALL=C",
+            "NINJA_STATUS=[%f/%t] ",
+            "ninja",
+            "-j",
+            "6",
+            "llvm-bolt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "tool-build",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--success-marker",
+              "BOLT_NINJA_EXIT_0",
+              "--",
+              "env",
+              "LC_ALL=C",
+              "NINJA_STATUS=[%f/%t] ",
+              "ninja",
+              "-j",
+              "6",
+              "llvm-bolt"
+            ]
+          }
+        },
+        {
+          "line": 548,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-verify \"$PWD\" \"$BOLT_WORK/tool-plan.json\" \"$BOLT_WORK/tool-build.txt\"   \"$BOLT_WORK/tool-before.json\" \"$BOLT_WORK/tool-build-verification.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-verify",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build-verification.json"
+          ],
+          "parsed": {
+            "cmd": "tool-verify",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "plan": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json",
+            "result": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build-verification.json"
+          }
+        },
+        {
+          "line": 551,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report tool-built",
+          "argv": [
+            "disk-report",
+            "tool-built"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "tool-built",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 552,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pipeline \"$PWD\" \"$BOLT_WORK\" \"$PWD/bin/llvm-bolt\" || bolt_status_exit $?",
+          "argv": [
+            "pipeline",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/bin/llvm-bolt"
+          ],
+          "parsed": {
+            "cmd": "pipeline",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt",
+            "tool": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/bin/llvm-bolt",
+            "cache_dir": null,
+            "debug_symbols": false
+          }
+        },
+        {
+          "line": 554,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report pipeline",
+          "argv": [
+            "disk-report",
+            "pipeline"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "pipeline",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 557,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py compare-root \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/install-before.json\"   \"$BOLT_WORK/install-after-pipeline.json\" || bolt_status_exit $?",
+          "argv": [
+            "compare-root",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-after-pipeline.json"
+          ],
+          "parsed": {
+            "cmd": "compare-root",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "baseline": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json",
+            "after": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-after-pipeline.json"
+          }
+        },
+        {
+          "line": 562,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py cache-release \"$PWD\" \"$BOLT_WORK\"",
+          "argv": [
+            "cache-release",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt"
+          ],
+          "parsed": {
+            "cmd": "cache-release",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt"
+          }
+        },
+        {
+          "line": 609,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py install \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/clang.candidate\"   \"$BOLT_WORK/install-state.json\" \"$BOLT_WORK/identity.json\" || bolt_status_exit $?",
+          "argv": [
+            "install",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/clang.candidate",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-state.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/identity.json"
+          ],
+          "parsed": {
+            "cmd": "install",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "candidate": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/clang.candidate",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-state.json",
+            "identity": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/identity.json"
+          }
+        },
+        {
+          "line": 861,
+          "template_line": null,
+          "invocation": "    python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py post \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate\" --resource-dir \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22\" --debugfiles-list \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list\" || bolt_status_exit $? ",
+          "argv": [
+            "post",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate",
+            "--resource-dir",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22",
+            "--debugfiles-list",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list"
+          ],
+          "parsed": {
+            "cmd": "post",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json",
+            "ordinary": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate",
+            "resource_dir": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22",
+            "debugfiles_list": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list"
+          }
+        },
+        {
+          "line": 863,
+          "template_line": null,
+          "invocation": "    bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report post",
+          "argv": [
+            "disk-report",
+            "post"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "post",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        }
+      ],
+      "errors": []
+    },
+    "D-pgo1-bolt0": {
+      "calls": [
+        {
+          "line": 369,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-prepare \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest\" D \"$PWD/pgo-profiles\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz\"  || exit 1",
+          "argv": [
+            "pgo-prepare",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest",
+            "D",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/pgo-profiles",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz"
+          ],
+          "parsed": {
+            "cmd": "pgo-prepare",
+            "manifest": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/llvm-profiles.manifest",
+            "project": "D",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/pgo-profiles",
+            "profile": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/T-clang.profdata.xz",
+            "bolt_profile": null
+          }
+        },
+        {
+          "line": 426,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-check-ninja \"$PWD\" || exit 1",
+          "argv": [
+            "pgo-check-ninja",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture"
+          ],
+          "parsed": {
+            "cmd": "pgo-check-ninja",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture"
+          }
+        },
+        {
+          "line": 758,
+          "template_line": null,
+          "invocation": "    python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-post \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build\" --enabled || exit 1",
+          "argv": [
+            "pgo-post",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build",
+            "--enabled"
+          ],
+          "parsed": {
+            "cmd": "pgo-post",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build",
+            "enabled": true
+          }
+        }
+      ],
+      "errors": []
+    },
+    "D-pgo0-bolt1": {
+      "calls": [
+        {
+          "line": 472,
+          "template_line": null,
+          "invocation": "  python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-diagnose \"$1\" \"$2\" || bolt_status_exit $?",
+          "argv": [
+            "disk-diagnose",
+            "fixture-stage",
+            "fixture.log"
+          ],
+          "parsed": {
+            "cmd": "disk-diagnose",
+            "step": "fixture-stage",
+            "log": "fixture.log",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 493,
+          "template_line": null,
+          "invocation": "    printf '%s\\n' \"$bolt_output\" | python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-diagnose \"$bolt_stage\" /dev/stdin || bolt_status_exit $?",
+          "argv": [
+            "disk-diagnose",
+            "fixture-stage",
+            "/dev/stdin"
+          ],
+          "parsed": {
+            "cmd": "disk-diagnose",
+            "step": "fixture-stage",
+            "log": "/dev/stdin",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 524,
+          "template_line": 511,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "manifest-copy",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/manifest-copy.log",
+            "--",
+            "cp",
+            "install_manifest.txt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-manifest-before.txt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "manifest-copy",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/manifest-copy.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cp",
+              "install_manifest.txt",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-manifest-before.txt"
+            ]
+          }
+        },
+        {
+          "line": 525,
+          "template_line": 511,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "ordinary-copy",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-copy.log",
+            "--",
+            "cp",
+            "-p",
+            "bin/clang-22",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-clang-22"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "ordinary-copy",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-copy.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cp",
+              "-p",
+              "bin/clang-22",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/ordinary-clang-22"
+            ]
+          }
+        },
+        {
+          "line": 528,
+          "template_line": 511,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "configure",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/configure.log",
+            "--",
+            "cmake",
+            "-S",
+            "../llvm",
+            "-B",
+            ".",
+            "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+            "-DBOLT_BUILD_TOOLS=OFF",
+            "-DBOLT_ENABLE_RUNTIME=OFF",
+            "-DBOLT_INCLUDE_TESTS=OFF",
+            "-DBOLT_TARGETS_TO_BUILD=X86"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "configure",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/configure.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "cmake",
+              "-S",
+              "../llvm",
+              "-B",
+              ".",
+              "-DLLVM_ENABLE_PROJECTS=clang;lldb;clang-tools-extra;lld;compiler-rt;openmp;bolt",
+              "-DBOLT_BUILD_TOOLS=OFF",
+              "-DBOLT_ENABLE_RUNTIME=OFF",
+              "-DBOLT_INCLUDE_TESTS=OFF",
+              "-DBOLT_TARGETS_TO_BUILD=X86"
+            ]
+          }
+        },
+        {
+          "line": 533,
+          "template_line": 511,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "dry-run-begin",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-begin.log",
+            "--",
+            "/bin/echo",
+            "BOLT_TOOL_DRY_RUN_BEGIN"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "dry-run-begin",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-begin.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "/bin/echo",
+              "BOLT_TOOL_DRY_RUN_BEGIN"
+            ]
+          }
+        },
+        {
+          "line": 536,
+          "template_line": 511,
+          "invocation": "  bolt_checked \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step \"$bolt_stage\" \"$BOLT_WORK/$bolt_stage.log\" -- \"$@\"",
+          "argv": [
+            "run-step",
+            "dry-run-end",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-end.log",
+            "--",
+            "/bin/echo",
+            "BOLT_TOOL_DRY_RUN_END"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "dry-run-end",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/dry-run-end.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "/bin/echo",
+              "BOLT_TOOL_DRY_RUN_END"
+            ]
+          }
+        },
+        {
+          "line": 513,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report begin",
+          "argv": [
+            "disk-report",
+            "begin"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "begin",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 515,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py preflight || bolt_status_exit $?",
+          "argv": [
+            "preflight"
+          ],
+          "parsed": {
+            "cmd": "preflight"
+          }
+        },
+        {
+          "line": 516,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py certified || bolt_status_exit $?",
+          "argv": [
+            "certified"
+          ],
+          "parsed": {
+            "cmd": "certified"
+          }
+        },
+        {
+          "line": 522,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py installed-baseline \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/installed-baseline.json\" || bolt_status_exit $?",
+          "argv": [
+            "installed-baseline",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/installed-baseline.json"
+          ],
+          "parsed": {
+            "cmd": "installed-baseline",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "output": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/installed-baseline.json"
+          }
+        },
+        {
+          "line": 523,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py snapshot \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/install-before.json\" || bolt_status_exit $?",
+          "argv": [
+            "snapshot",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json"
+          ],
+          "parsed": {
+            "cmd": "snapshot",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "output": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json"
+          }
+        },
+        {
+          "line": 526,
+          "template_line": null,
+          "invocation": "bolt_checked link-command \"$BOLT_WORK/link-command.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step link-command \"$BOLT_WORK/link-command.log\" --output \"$BOLT_WORK/link.original\" -- ninja -t commands -s bin/clang-22",
+          "argv": [
+            "run-step",
+            "link-command",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link-command.log",
+            "--output",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link.original",
+            "--",
+            "ninja",
+            "-t",
+            "commands",
+            "-s",
+            "bin/clang-22"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "link-command",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link-command.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--output",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/link.original",
+              "--",
+              "ninja",
+              "-t",
+              "commands",
+              "-s",
+              "bin/clang-22"
+            ]
+          }
+        },
+        {
+          "line": 527,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py unpack /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-v2.fdata.xz \"$BOLT_WORK/profile.fdata\" || bolt_status_exit $?",
+          "argv": [
+            "unpack",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-v2.fdata.xz",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/profile.fdata"
+          ],
+          "parsed": {
+            "cmd": "unpack",
+            "source": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-v2.fdata.xz",
+            "output": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/profile.fdata"
+          }
+        },
+        {
+          "line": 535,
+          "template_line": null,
+          "invocation": "bolt_checked tool-dry-run \"$BOLT_WORK/tool-dry-run.log\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step tool-dry-run \"$BOLT_WORK/tool-dry-run.log\" --output \"$BOLT_WORK/tool-dry-run.txt\" -- env LC_ALL=C NINJA_STATUS='[%f/%t] ' ninja -n llvm-bolt",
+          "argv": [
+            "run-step",
+            "tool-dry-run",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.log",
+            "--output",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt",
+            "--",
+            "env",
+            "LC_ALL=C",
+            "NINJA_STATUS=[%f/%t] ",
+            "ninja",
+            "-n",
+            "llvm-bolt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "tool-dry-run",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.log",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--output",
+              "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt",
+              "--",
+              "env",
+              "LC_ALL=C",
+              "NINJA_STATUS=[%f/%t] ",
+              "ninja",
+              "-n",
+              "llvm-bolt"
+            ]
+          }
+        },
+        {
+          "line": 537,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-plan \"$BOLT_WORK/tool-dry-run.txt\" > \"$BOLT_WORK/tool-plan.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-plan",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt"
+          ],
+          "parsed": {
+            "cmd": "tool-plan",
+            "input": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-dry-run.txt"
+          }
+        },
+        {
+          "line": 539,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-prepare \"$PWD\" \"$BOLT_WORK/tool-plan.json\" \"$BOLT_WORK/tool-before.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-prepare",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json"
+          ],
+          "parsed": {
+            "cmd": "tool-prepare",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "plan": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json"
+          }
+        },
+        {
+          "line": 541,
+          "template_line": null,
+          "invocation": "bolt_checked tool-build \"$BOLT_WORK/tool-build.txt\" python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py run-step tool-build \"$BOLT_WORK/tool-build.txt\" --success-marker BOLT_NINJA_EXIT_0 -- env LC_ALL=C NINJA_STATUS='[%f/%t] ' ninja -j 6 llvm-bolt",
+          "argv": [
+            "run-step",
+            "tool-build",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "--success-marker",
+            "BOLT_NINJA_EXIT_0",
+            "--",
+            "env",
+            "LC_ALL=C",
+            "NINJA_STATUS=[%f/%t] ",
+            "ninja",
+            "-j",
+            "6",
+            "llvm-bolt"
+          ],
+          "parsed": {
+            "cmd": "run-step",
+            "step": "tool-build",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "output": null,
+            "success_marker": null,
+            "argv": [
+              "--success-marker",
+              "BOLT_NINJA_EXIT_0",
+              "--",
+              "env",
+              "LC_ALL=C",
+              "NINJA_STATUS=[%f/%t] ",
+              "ninja",
+              "-j",
+              "6",
+              "llvm-bolt"
+            ]
+          }
+        },
+        {
+          "line": 542,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py tool-verify \"$PWD\" \"$BOLT_WORK/tool-plan.json\" \"$BOLT_WORK/tool-build.txt\"   \"$BOLT_WORK/tool-before.json\" \"$BOLT_WORK/tool-build-verification.json\" || bolt_status_exit $?",
+          "argv": [
+            "tool-verify",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build-verification.json"
+          ],
+          "parsed": {
+            "cmd": "tool-verify",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "plan": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-plan.json",
+            "log": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build.txt",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-before.json",
+            "result": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/tool-build-verification.json"
+          }
+        },
+        {
+          "line": 545,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report tool-built",
+          "argv": [
+            "disk-report",
+            "tool-built"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "tool-built",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 546,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pipeline \"$PWD\" \"$BOLT_WORK\" \"$PWD/bin/llvm-bolt\" || bolt_status_exit $?",
+          "argv": [
+            "pipeline",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/bin/llvm-bolt"
+          ],
+          "parsed": {
+            "cmd": "pipeline",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt",
+            "tool": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/bin/llvm-bolt",
+            "cache_dir": null,
+            "debug_symbols": false
+          }
+        },
+        {
+          "line": 548,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report pipeline",
+          "argv": [
+            "disk-report",
+            "pipeline"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "pipeline",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        },
+        {
+          "line": 551,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py compare-root \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/install-before.json\"   \"$BOLT_WORK/install-after-pipeline.json\" || bolt_status_exit $?",
+          "argv": [
+            "compare-root",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-after-pipeline.json"
+          ],
+          "parsed": {
+            "cmd": "compare-root",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "baseline": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-before.json",
+            "after": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-after-pipeline.json"
+          }
+        },
+        {
+          "line": 556,
+          "template_line": null,
+          "invocation": "bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py cache-release \"$PWD\" \"$BOLT_WORK\"",
+          "argv": [
+            "cache-release",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt"
+          ],
+          "parsed": {
+            "cmd": "cache-release",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt"
+          }
+        },
+        {
+          "line": 603,
+          "template_line": null,
+          "invocation": "python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py install \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"$BOLT_WORK/clang.candidate\"   \"$BOLT_WORK/install-state.json\" \"$BOLT_WORK/identity.json\" || bolt_status_exit $?",
+          "argv": [
+            "install",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/clang.candidate",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-state.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/identity.json"
+          ],
+          "parsed": {
+            "cmd": "install",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "candidate": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/clang.candidate",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/install-state.json",
+            "identity": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/build-fixture/clang-bolt/identity.json"
+          }
+        },
+        {
+          "line": 855,
+          "template_line": null,
+          "invocation": "    python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py post \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate\" --resource-dir \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22\" --debugfiles-list \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list\" || bolt_status_exit $? ",
+          "argv": [
+            "post",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate",
+            "--resource-dir",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22",
+            "--debugfiles-list",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list"
+          ],
+          "parsed": {
+            "cmd": "post",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "state": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/install-state.json",
+            "ordinary": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/ordinary-clang-22",
+            "work": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build/clang-bolt/post-gate",
+            "resource_dir": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64/usr/lib64/clang/22",
+            "debugfiles_list": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/debugfiles.list"
+          }
+        },
+        {
+          "line": 857,
+          "template_line": null,
+          "invocation": "    bolt_optional python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py disk-report post",
+          "argv": [
+            "disk-report",
+            "post"
+          ],
+          "parsed": {
+            "cmd": "disk-report",
+            "stage": "post",
+            "build": null,
+            "work": null,
+            "root": null
+          }
+        }
+      ],
+      "errors": []
+    },
+    "D-pgo0-bolt0": {
+      "calls": [
+        {
+          "line": 752,
+          "template_line": null,
+          "invocation": "    python3 -B /home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/assets/clang-bolt-helper.py pgo-post \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64\" \"/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build\"  || exit 1",
+          "argv": [
+            "pgo-post",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build"
+          ],
+          "parsed": {
+            "cmd": "pgo-post",
+            "root": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILDROOT/llvm-22.1.8-1.x86_64",
+            "build": "/home/linhao/Toolchain/development/llvm-optimize/archive/task170/candidate/argv-fixed/rpmdir/BUILD/llvm-22.1.8/build",
+            "enabled": false
+          }
+        }
+      ],
+      "errors": []
+    }
+  }
+}

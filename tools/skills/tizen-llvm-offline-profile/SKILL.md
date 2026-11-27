@@ -40,6 +40,8 @@ The example GBS commands are templates. In the instrumented packaging copy, add 
 
 For release integration, use conditional Source declarations for the compressed profiles and manifest, validate both compressed and uncompressed SHA-256 and sizes before use, and select one row by T/D identity and effective PGO/BOLT switches. Reject PLACEHOLDER, missing, or duplicate mappings. Keep clang_pgo off by default until acceptance. The llvm_speedup master switch controls PGO, hybrid linking and BOLT. When PGO is off, continue to use Source1200 if BOLT is on. Keep compiler-rt and OpenMP outside PGO and run the payload dependency check on each output mode. Perform package and object qualification before marking READY.
 
+Before pushing a QB candidate, require the [packaging helper argument matrix](references/gates.md#packaging-helper-argument-matrix) on that candidate's exact spec and helper. Keep a shell word boundary between the quoted PGO Source path and the optional BOLT argument macro.
+
 ## Run safely and finish
 
 With `resources.stage_admission` enabled, launch each selected stage in its own capped service. Reserve 4 GiB from MemAvailable and cap a heavy stage at 24 GiB. Full package builds require at least 10 GiB in the child cgroup. BOLT instrumentation, training and merge require at least 18 GiB and keep their existing serial command structure. See [resource-budget.md](references/resource-budget.md) for the other stage floors and thresholds.

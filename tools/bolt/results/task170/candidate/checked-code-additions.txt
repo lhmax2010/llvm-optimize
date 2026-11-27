@@ -1,0 +1,6 @@
+python3 -B %{SOURCE1201} pgo-prepare "%{SOURCE1204}" %{llvm_pgo_project} "$PWD/pgo-profiles" "%{SOURCE1202}" %{?llvm_pgo_bolt_source} || exit 1
+def select_pgo_profile(manifest, project, pgo, bolt, *, allow_unqualified=False):
+    require(doc['status'] == 'READY' or (allow_unqualified and doc['status'] == 'UNQUALIFIED'),
+            'profile manifest is not READY (PLACEHOLDER is not usable)')
+    row = select_pgo_profile(manifest, project, True, bolt_profile is not None, allow_unqualified=True)
+%bcond_without clang_pgo

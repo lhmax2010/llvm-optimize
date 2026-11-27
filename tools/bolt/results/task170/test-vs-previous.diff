@@ -1,0 +1,13 @@
+diff --git a/packaging/llvm.spec b/packaging/llvm.spec
+index f5057ae8787e..064309fe88f1 100644
+--- a/packaging/llvm.spec
++++ b/packaging/llvm.spec
+@@ -388,7 +388,7 @@ cd build
+ %else
+ %global llvm_pgo_project T
+ %endif
+-python3 -B %{SOURCE1201} pgo-prepare "%{SOURCE1204}" %{llvm_pgo_project} "$PWD/pgo-profiles" "%{SOURCE1202}"%{?llvm_pgo_bolt_source} || exit 1
++python3 -B %{SOURCE1201} pgo-prepare "%{SOURCE1204}" %{llvm_pgo_project} "$PWD/pgo-profiles" "%{SOURCE1202}" %{?llvm_pgo_bolt_source} || exit 1
+ %endif
+ cmake \
+     -G Ninja \
